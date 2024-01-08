@@ -275,7 +275,7 @@ in a "future" callback.
 
 For ease of programming, we recommend using virtual thread or suspend function to handle synchronous RPC calls.
 
-# Solving the puzzle of multithreading performance issue in Java
+## Solving the puzzle of multithreading performance issue in Java
 
 Before the availability of virtual thread technology, Java VM is using kernel thread for code execution.
 If you have a lot of users hitting your service concurrently, multiple threads are created to serve
