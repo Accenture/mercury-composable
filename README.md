@@ -6,10 +6,10 @@ Reference engine for building "Composable architecture and applications".
 
 This project leverages the power of Java version 21 (LTS) virtual thread feature.
 
-Inside a single method, your code is running sequentially and synchronous request-response (RPC) calls
-operate exactly as intended. However, your function is suspended when waiting for a response from another
-function, database query or an external resource, thus reducing CPU consumption and dramatically
-increasing application throughput to handle more transactions and users.
+Inside a user function, your code is running sequentially and synchronous request-response (RPC) calls
+appear to be "blocking". However, your function is actually suspended when waiting for a response from
+another function, database query or an external resource, thus reducing CPU consumption and
+dramatically increasing application throughput to handle more transactions and users.
 
 If you need compatibility with lower Java version down to version 1.8, please visit
 Mercury 3.0 in https://github.com/Accenture/mercury
