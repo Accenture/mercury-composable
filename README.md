@@ -43,10 +43,10 @@ selectively and incrementally.
 With Mercury 3.1, you have complete control to precisely tune your application for optimal performance and throughput
 using three function execution strategies:
 
-1. _Virtual thread_ - this is the default execution style for a functional block
+1. _Virtual thread_ - this is the default execution style for a functional block in pure Java
 2. _Suspend function_ - if you prefer coding in Kotlin, this allows you to define a function as a "coroutine" that is
    comparable to Java virtual thread.
-3. _Kernel thread pool_ - you can define a function to run in a kernel thread pool for computational intensive task
+3. _Kernel thread pool_ - you can define a function to run in a kernel thread pool for computationally intensive task
    or legacy code that must run in a kernel thread
 
 January 2024

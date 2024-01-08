@@ -277,56 +277,42 @@ For ease of programming, we recommend using virtual thread or suspend function t
 
 ## Solving the puzzle of multithreading performance
 
-Before the availability of virtual thread technology, Java VM is using kernel thread for code execution.
-If you have a lot of users hitting your service concurrently, multiple threads are created to serve
-the concurrent requests.
+Before the availability of virtual thread technology, Java VM is using kernel threads for code execution.
+If you have a lot of users hitting your service concurrently, multiple threads are created to serve concurrent
+requests.
 
-When your code serving the requests make blocking call to other services, the kernel threads are
-busy while your user functions waits for responses. Kernel threads that are in wait state is
-consuming CPU time.
+When your code serving the requests make blocking call to other services, the kernel threads are busy while your
+user functions wait for responses. Kernel threads that are in the wait state is consuming CPU time.
 
 If the blocking calls finish very quickly, this may not be an issue.
 
-However, when the blocking calls take longer to complete, a lot of outstanding kernel threads that are
-waiting for responses would compete for CPU resources, resulting in higher internal friction in the JVM that
-makes your application running slower. This is not a productive use of computer resources.
+However, when the blocking calls take longer to complete, a lot of outstanding kernel threads that are waiting
+for responses would compete for CPU resources, resulting in higher internal friction in the JVM that makes your
+application running slower. This is not a productive use of computer resources.
 
-This type of performance issue caused by internal friction is very difficult to avoid. 
-While event driven and reactive programming that uses asynchronous processing and callbacks would address
-this artificial bottleneck, unfortunately asynchronous and callback style code are harder to implement and maintain
-when the application complexity increases.
+This type of performance issue caused by internal friction is very difficult to avoid. While event driven and
+reactive programming that uses asynchronous processing and callbacks would address this artificial bottleneck,
+asynchronous code is harder to implement and maintain when the application complexity increases.
 
-It would be ideal if we can write sequential code that does not block. Sequential code is much easier to
-write and read because it communicates the intent of the code clearly.
+It would be ideal if we can write sequential code that does not block. Sequential code is much easier to write
+and read because it communicates the intent of the code clearly.
 
 Leveraging Java 21 virtual thread, Mercury 3.1 allows the developer to write code in a sequential manner.
 When code in your function makes an RPC call to another service using the PostOffice's "request" API, it returns
 a Java Future object but the "Future" object itself is running in a virtual thread. This means when your code
-retrieves the RPC result using the ".get()" method, your code appears "blocked" while waiting for the response
+retrieves the RPC result using the "get" method, your code appears "blocked" while waiting for the response
 from the target service.
 
-Although your code appears to be "blocked", the virtual thread is actually "suspended". It will wake up when the
-response arrives. When a virtual thread is suspended, it does not consume CPU time and the memory structure
-for keeping the thread in suspend mode is very small. Virtual thread technology is designed to support tens of 
-thousands, if not millions, of concurrent RPC requests in a single compute machine, container or serverless instance.
+Although your code appears to be "blocked", the virtual thread is “suspended”. It will wake up when the response
+arrives. When a virtual thread is suspended, it does not consume CPU time and the memory structure for keeping
+the thread in suspend mode is very small. Virtual thread technology is designed to support tens of thousands,
+if not millions, of concurrent RPC requests in a single compute machine, container or serverless instance.
 
 Mercury 3.1 supports mixed thread management - virtual threads, suspend functions and kernel threads.
 
-Functions running in different types of threads are connected loosely in events. This functional isolation and
-encapsulation means that you can precisely control how your application performs for each functional logic block.
+Functions running in different types of threads are connected loosely in events. This functional isolation
+and encapsulation mean that you can precisely control how your application performs for each functional logic block.
 
-Kotlin suspend function is similar to Java 21 virtual thread if you prefer coding in Kotlin or if your production
-environment requires lower versions of Java such as version 1.8 and 11.
-
-Once your existing code is encapsulated in a functional wrapper using virtual threads (the default setting),
-your application would run faster without substantial refactoring to reactive programming style.
-
-Your sequential code would perform not only as fast as reactive programming but also better.
-It is more intuitive and much easier to implement and maintain.
-
-It is important to note that Mercury 3.1 function wrapper can hold not only sequential code. You can also use
-object-oriented or reactive code inside. The mix-n-match and ease of performance diagnosis and tuning would
-contribute to higher code quality and business agility.
 
 <br/>
 
