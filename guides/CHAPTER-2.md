@@ -281,10 +281,11 @@ Before the availability of virtual thread technology, Java VM is using kernel th
 If you have a lot of users hitting your service concurrently, multiple threads are created to serve
 the concurrent requests.
 
-When each of the requests make blocking call to other services, the kernel threads are engaged while your
-user functions waits for responses. Kernel threads that are in wait state is consuming CPU time.
+When your code serving the requests make blocking call to other services, the kernel threads are
+busy while your user functions waits for responses. Kernel threads that are in wait state is
+consuming CPU time.
 
-When the blocking calls finish very quickly, this may not be an issue.
+If the blocking calls finish very quickly, this may not be an issue.
 
 However, when the blocking calls take longer to complete, a lot of outstanding kernel threads that are
 waiting for responses would compete for CPU resources, resulting in higher internal friction in the JVM that
