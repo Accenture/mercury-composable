@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
@@ -54,20 +55,27 @@ public class AsyncHelloWorld {
         EventEnvelope req = new EventEnvelope();
         req.setTo("hello.world").setBody(forward).setHeader("seq", n);
         return Mono.create(callback -> {
+            /*
+             * The "po.request" get method appears to be "blocking".
+             * However, since this function runs as a virtual thread.
+             * It behaves as a suspend function so it does not consume CPU resources
+             * while waiting for a response.
+             *
+             * Note that this is just for demo purpose.
+             * po.asyncRequest is equally convenient because Spring Mono API is reactive.
+             * See AsyncHelloConcurrent for the example.
+             */
             try {
-                po.asyncRequest(req, 3000)
-                    .onSuccess(event -> {
-                        Map<String, Object> result = new HashMap<>();
-                        result.put("status", event.getStatus());
-                        result.put("headers", event.getHeaders());
-                        result.put("body", event.getBody());
-                        result.put("execution_time", event.getExecutionTime());
-                        result.put("round_trip", event.getRoundTrip());
-                        callback.success(result);
-                    })
-                    .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
-            } catch (IOException e) {
-                callback.error(e);
+                EventEnvelope response = po.request(req, 3000, false).get();
+                Map<String, Object> result = new HashMap<>();
+                result.put("status", response.getStatus());
+                result.put("headers", response.getHeaders());
+                result.put("body", response.getBody());
+                result.put("execution_time", response.getExecutionTime());
+                result.put("round_trip", response.getRoundTrip());
+                callback.success(result);
+            } catch (ExecutionException | IOException | InterruptedException e) {
+                callback.error(new AppException(500, e.getMessage()));
             }
         });
     }
