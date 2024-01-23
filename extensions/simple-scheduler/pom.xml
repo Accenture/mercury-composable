@@ -20,7 +20,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <snakeyaml.version>2.2</snakeyaml.version>
-        <hazelcast.version>5.3.6</hazelcast.version>
         <artemis.version>2.31.2</artemis.version>
         <kafka.version>3.6.0</kafka.version>
         <gson.version>2.10.1</gson.version>
@@ -47,20 +46,10 @@
             <version>3.1.0</version>
         </dependency>
 
-        <!-- select your cloud connector (hazelcast-connector or kafka-connector).
-
-             For convenience, both Kafka and Hazelcast connectors are added.
-             you can select the connector from command line without recompiling from source.
-
-             For production, please select only one cloud connector to reduce memory footprint. -->
+        <!-- Optionally, select your cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>3.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>hazelcast-connector</artifactId>
             <version>3.1.0</version>
         </dependency>
 

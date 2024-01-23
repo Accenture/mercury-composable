@@ -24,7 +24,7 @@ precedence.
 | jax.rs.application.path                | /api                                                            | Optional* |
 | show.env.variables                     | comma separated list of variable names                          | Optional  |
 | show.application.properties            | comma separated list of property names                          | Optional  |
-| cloud.connector                        | kafka, hazelcast, none, etc.                                    | Optional  |
+| cloud.connector                        | kafka, none, etc.                                               | Optional  |
 | cloud.services                         | e.g. some.interesting.service                                   | Optional  |
 | snake.case.serialization               | true (recommended)                                              | Optional  |
 | safe.data.models                       | packages pointing to your PoJo classes                          | Optional  |

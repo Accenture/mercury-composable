@@ -1,6 +1,6 @@
 # Cloud connectors
 
-Mercury has been integrated and tested with both event stream systems and enterprise service bus messaging systems
+Mercury has been tested with both event stream systems and enterprise service bus messaging systems
 including Kafka, Hazelcast, ActiveMQ Artemis and TIBCO EMS.
 
 An integrated cloud connector using Apache Kafka is included.
