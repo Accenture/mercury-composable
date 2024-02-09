@@ -793,7 +793,7 @@ public class PostOfficeTest extends TestBase {
         platform.registerPrivate(TRACE_DETECTOR, f, 1);
         EventEnvelope request = new EventEnvelope().setTo(TRACE_DETECTOR).setBody("ok");
         Future<EventEnvelope> response = po.asyncRequest(request, 5000);
-        response.onSuccess(result -> bench.offer(result));
+        response.onSuccess(bench::offer);
         platform.release(TRACE_DETECTOR);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assert result != null;
@@ -809,7 +809,7 @@ public class PostOfficeTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", TRACE_ID, TRACE_PATH);
         EventEnvelope request = new EventEnvelope().setTo(COROUTINE_TRACE_DETECTOR).setBody("ok");
         Future<EventEnvelope> response = po.asyncRequest(request, 5000);
-        response.onSuccess(result -> bench.offer(result));
+        response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assert result != null;
         Assert.assertEquals(Boolean.TRUE, result.getBody());
@@ -1265,7 +1265,6 @@ public class PostOfficeTest extends TestBase {
         Assert.assertEquals(NUMBER_THREE, map.getElement("body"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void remoteEventApiKotlinAuthTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -1291,11 +1290,7 @@ public class PostOfficeTest extends TestBase {
     @Test
     public void remoteEventApiWithLargePayloadTest() throws IOException, InterruptedException {
         // create a large payload of 100 KB
-        StringBuilder sb = new StringBuilder();
-        for (int i=0; i < 10000; i++) {
-            sb.append("123456789.");
-        }
-        String PAYLOAD = sb.toString();
+        String PAYLOAD = "123456789.".repeat(10000);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         PostOffice po = new PostOffice("unit.test", "1230", "TEST /remote/event/large");
@@ -1320,11 +1315,7 @@ public class PostOfficeTest extends TestBase {
     @Test
     public void remoteEventApiWithLargePayloadKotlinTest() throws IOException, InterruptedException {
         // create a large payload of 100 KB
-        StringBuilder sb = new StringBuilder();
-        for (int i=0; i < 10000; i++) {
-            sb.append("123456789.");
-        }
-        String PAYLOAD = sb.toString();
+        String PAYLOAD = "123456789.".repeat(10000);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         PostOffice po = new PostOffice("unit.test", "1231", "TEST /remote/event/large/k");
@@ -1424,7 +1415,6 @@ public class PostOfficeTest extends TestBase {
         Assert.assertEquals("Missing outgoing event", ex.getMessage());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void remoteEventApiRouteNotFoundTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -1560,7 +1550,7 @@ public class PostOfficeTest extends TestBase {
         Assert.assertTrue(upstream instanceof List);
         List<Map<String, Object>> upstreamList = (List<Map<String, Object>>) upstream;
         Assert.assertEquals(1, upstreamList.size());
-        Map<String, Object> health = upstreamList.get(0);
+        Map<String, Object> health = upstreamList.getFirst();
         Assert.assertEquals("mock.connector", health.get("service"));
         Assert.assertEquals("mock.topic", health.get("topics"));
         Assert.assertEquals("fine", health.get("message"));
@@ -1690,7 +1680,7 @@ public class PostOfficeTest extends TestBase {
         String MULTI_CORES = "multi.cores";
         LambdaFunction f= (headers, input, instance) -> {
             int n = counter.incrementAndGet();
-            long id = Thread.currentThread().getId();
+            long id = Thread.currentThread().threadId();
             log.debug("Instance #{}, count={}, thread #{} {}", instance, n, id, input);
             threads.put(id, true);
             if (n == CYCLES) {
