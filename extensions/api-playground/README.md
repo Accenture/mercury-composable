@@ -23,7 +23,7 @@ To change this file location, you can:
 application.
 
 ```
-java -Dapi.playground.apps=another_location -jar api-playground-3.1.0.jar
+java -Dapi.playground.apps=another_location -jar api-playground-3.1.1.jar
 ```
 
 When you click the "API playground" in the top navigation bar, it will reload the application dropdown box with the 
@@ -35,12 +35,12 @@ Please visit http://127.0.0.1:8200 after starting this application.
 
 Using default API specs location,
 ```
-java -jar api-playground-3.1.0.jar
+java -jar api-playground-3.1.1.jar
 ```
 
 With user defined API specs location,
 ```
-java -Dapi.playground.apps=another_location -jar api-playground-3.1.0.jar
+java -Dapi.playground.apps=another_location -jar api-playground-3.1.1.jar
 ```
 
 ## How this application is created?

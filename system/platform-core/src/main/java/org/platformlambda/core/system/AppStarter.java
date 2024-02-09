@@ -374,8 +374,8 @@ public class AppStarter {
         String wsEndpoint = path + "/{handle}";
         try {
             Object o = cls.getDeclaredConstructor().newInstance();
-            if (o instanceof LambdaFunction) {
-                wsLambdas.put(path, (LambdaFunction) o);
+            if (o instanceof LambdaFunction f) {
+                wsLambdas.put(path, f);
                 log.info("{} loaded as WEBSOCKET SERVER endpoint {}", cls.getName(), wsEndpoint);
             } else {
                 log.error("Unable to load {} ({}) because it is not an instance of {}",

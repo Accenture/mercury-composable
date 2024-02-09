@@ -163,7 +163,7 @@ called "lambda-example" like this:
 
 ```shell
 cd sandbox/mercury-composable/examples/lambda-example
-java -jar target/lambda-example-3.1.0.jar
+java -jar target/lambda-example-3.1.1.jar
 ```
 
 You will find the following console output when the app starts
@@ -354,7 +354,7 @@ query parameters, cookies, etc.
 
 When you click the "rebuild" button in IDE and run the "MainApp", the new function will be available in the 
 application. Alternatively, you can also do `mvn clean package` to generate a new executable JAR and run the 
-JAR from command line using "java -jar target/lambda-example-3.1.0.jar".
+JAR from command line using "java -jar target/lambda-example-3.1.1.jar".
 
 To test your new function, visit http://127.0.0.1:8085/api/hello/my/function
 

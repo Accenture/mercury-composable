@@ -35,8 +35,7 @@ public class MainApp implements EntryPoint {
     }
 
     @Override
-    public void start(String[] args) throws Exception {
-
+    public void start(String[] args) {
         // Set personality to REST - this must be done in the beginning
         ServerPersonality.getInstance().setType(ServerPersonality.Type.REST);
 

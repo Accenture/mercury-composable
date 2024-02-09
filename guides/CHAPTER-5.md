@@ -35,7 +35,7 @@ You can also build and run the application from command line like this:
 ```shell
 cd sandbox/mercury-composable/examples/lambda-example
 mvn clean package
-java -jar target/lambda-example-3.1.0.jar
+java -jar target/lambda-example-3.1.1.jar
 ```
 
 The lambda-example is a sample application that you can use as a template to write your own code. Please review
@@ -309,7 +309,7 @@ In this fashion, you can create unit tests to test suspend functions in an event
 
 The pom.xml is pre-configured to generate an executable JAR. The following is extracted from the pom.xml.
 
-The main class is `AppStarter` that will load the "main application" and use it as the entry point to
+The main class is `AutoStart` that will load the "main application" and use it as the entry point to
 run the application.
 
 ```xml
@@ -317,7 +317,7 @@ run the application.
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-maven-plugin</artifactId>
     <configuration>
-        <mainClass>org.platformlambda.core.system.AppStarter</mainClass>
+        <mainClass>org.platformlambda.core.system.AutoStart</mainClass>
     </configuration>
     <executions>
         <execution>
@@ -335,11 +335,11 @@ Composable application is designed to be deployable using Kubernetes or serverle
 A sample Dockerfile for an executable JAR may look like this:
 
 ```shell
-FROM adoptopenjdk/openjdk11:jre-11.0.11_9-alpine
+FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
 EXPOSE 8083
 WORKDIR /app
-COPY target/your-app-name.jar .
-ENTRYPOINT ["java","-jar","your-app-name.jar"]
+COPY target/rest-spring-3-example-3.1.1.jar .
+ENTRYPOINT ["java","-jar","rest-spring-3-example-3.1.1.jar"]
 ```
 
 ## Distributed tracing

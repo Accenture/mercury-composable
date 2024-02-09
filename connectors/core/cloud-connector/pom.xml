@@ -7,24 +7,20 @@
     <artifactId>cloud-connector</artifactId>
 
     <packaging>jar</packaging>
-    <version>3.1.0</version>
+    <version>3.1.1</version>
     <name>Cloud connector module</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.1</version>
+        <version>3.2.2</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <snakeyaml.version>2.2</snakeyaml.version>
         <kafka.version>3.6.1</kafka.version>
         <gson.version>2.10.1</gson.version>
-        <netty.version>4.1.104.Final</netty.version>
-        <slf4j.version>2.0.9</slf4j.version>
-        <log4j2.version>2.22.0</log4j2.version>
         <kotlin.version>1.9.22</kotlin.version>
         <java.version>21</java.version>
     </properties>
@@ -41,7 +37,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -170,7 +166,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.5</version>
                 <configuration>
                     <skipTests>false</skipTests>
                 </configuration>

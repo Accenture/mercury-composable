@@ -176,8 +176,8 @@ public class MonitorService implements LambdaFunction {
                 handleOpen(headers);
             } else if (WsEnvelope.CLOSE.equals(type)) {
                 handleClose(headers);
-            } else if (WsEnvelope.BYTES.equals(type) && input instanceof byte[]) {
-                handleBytes(headers, (byte[]) input);
+            } else if (WsEnvelope.BYTES.equals(type) && input instanceof byte[] b) {
+                handleBytes(headers, b);
             }
             return true;
         } else {

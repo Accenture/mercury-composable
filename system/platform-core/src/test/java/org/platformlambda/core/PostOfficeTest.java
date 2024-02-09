@@ -303,7 +303,7 @@ public class PostOfficeTest extends TestBase {
         client.start();
         bench.poll(5, TimeUnit.SECONDS);
         Assert.assertEquals(1, welcome.size());
-        Assert.assertEquals(WELCOME, welcome.get(0));
+        Assert.assertEquals(WELCOME, welcome.getFirst());
         client.close();
     }
 
