@@ -774,11 +774,10 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void traceHeaderTest() throws IOException, InterruptedException {
+    public void traceHeaderTest() throws IOException, ExecutionException, InterruptedException {
         String TRACE_DETECTOR = "trace.detector";
         String TRACE_ID = "101";
         String TRACE_PATH = "GET /api/trace";
-        BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         PostOffice po = new PostOffice("unit.test", TRACE_ID, TRACE_PATH);
         LambdaFunction f = (headers, input, instance) -> {
@@ -791,27 +790,20 @@ public class PostOfficeTest extends TestBase {
             }
         };
         platform.registerPrivate(TRACE_DETECTOR, f, 1);
-        EventEnvelope request = new EventEnvelope().setTo(TRACE_DETECTOR).setBody("ok");
-        Future<EventEnvelope> response = po.asyncRequest(request, 5000);
-        response.onSuccess(bench::offer);
+        EventEnvelope req = new EventEnvelope().setTo(TRACE_DETECTOR).setBody("ok");
+        EventEnvelope result = po.request(req, 5000).get();
         platform.release(TRACE_DETECTOR);
-        EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        assert result != null;
         Assert.assertEquals(Boolean.TRUE, result.getBody());
     }
 
     @Test
-    public void coroutineTraceHeaderTest() throws IOException, InterruptedException {
+    public void coroutineTraceHeaderTest() throws IOException, InterruptedException, ExecutionException {
         String COROUTINE_TRACE_DETECTOR = "coroutine.trace.detector";
         String TRACE_ID = "102";
         String TRACE_PATH = "GET /api/trace";
-        BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         PostOffice po = new PostOffice("unit.test", TRACE_ID, TRACE_PATH);
-        EventEnvelope request = new EventEnvelope().setTo(COROUTINE_TRACE_DETECTOR).setBody("ok");
-        Future<EventEnvelope> response = po.asyncRequest(request, 5000);
-        response.onSuccess(bench::offer);
-        EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        assert result != null;
+        EventEnvelope req = new EventEnvelope().setTo(COROUTINE_TRACE_DETECTOR).setBody("ok");
+        EventEnvelope result = po.request(req, 5000).get();
         Assert.assertEquals(Boolean.TRUE, result.getBody());
     }
 
