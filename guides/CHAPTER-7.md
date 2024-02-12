@@ -186,7 +186,8 @@ You may also add variable references to the application.properties (or applicati
 "server.port" in this example.
 
 > Note: The configuration based "event-over-HTTP" feature does not support fork-n-join request API.
-        You can achieve similar parallel processing using multiple po.request that returns Java Future.
+        You can achieve similar parallel processing using multiple calls to "po.request API"
+        where each call returns a Java "Future".
 
 ## Advantages
 
