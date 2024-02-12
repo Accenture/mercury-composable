@@ -56,6 +56,11 @@ class FastRPC(headers: Map<String, String>) {
         val dest = request.to ?: throw IllegalArgumentException(EventEmitter.MISSING_ROUTING_PATH)
         val to = po.substituteRouteIfAny(dest)
         request.to = to
+        val targetHttp: String? = if (request.getHeader("_") == null) po.getEventHttpTarget(to) else null
+        if (targetHttp != null) {
+            val forwardEvent = EventEnvelope(request.toMap()).setHeader("_", "await_request")
+            return awaitRequest(forwardEvent, timeout, po.getEventHttpHeaders(to), targetHttp, true)
+        }
         propagateTrace(request)
         val from = request.from
         val traceId = request.traceId

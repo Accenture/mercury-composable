@@ -15,6 +15,7 @@ For release notes before version 3.1, please refer to https://github.com/Accentu
 ### Added
 
 1. AutoStart to run application as Spring Boot if the rest-spring-3 library is packaged in app
+2. Configurable "Event over HTTP" - automatic forward events over HTTP using a configuration
 
 ### Removed
 

@@ -40,7 +40,7 @@ public class MulticastTest {
     public static void setup() throws InterruptedException {
         // The multicast.yaml configuration will be loaded when the EventEmitter singleton initializes
         EventEmitter po = EventEmitter.getInstance();
-        log.info("Unit test loaded with {}. Multicast ready? {}", po, po.isMulticastEnabled());
+        log.info("Multicast ready? {}", po.isMulticastEnabled());
         int n = 0;
         while (!po.isMulticastEnabled()) {
             Thread.sleep(WAIT_INTERVAL);

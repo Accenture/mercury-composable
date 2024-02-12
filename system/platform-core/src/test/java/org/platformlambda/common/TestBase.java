@@ -109,12 +109,19 @@ public class TestBase {
             blockingWait(SERVICE_LOADED, 20);
         }
         EventEmitter po = EventEmitter.getInstance();
-        log.info("Unit test loaded with {}. Journal ready? {}", po, po.isJournalEnabled());
+        log.info("Journal ready? {}", po.isJournalEnabled());
         int n = 0;
         while (!po.isJournalEnabled()) {
             Thread.sleep(WAIT_INTERVAL);
             n++;
             log.info("Waiting for journal engine to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
+        }
+        log.info("Event over HTTP config ready? {}", po.isEventHttpConfigEnabled());
+        n = 0;
+        while (!po.isEventHttpConfigEnabled()) {
+            Thread.sleep(WAIT_INTERVAL);
+            n++;
+            log.info("Waiting for Event over HTTP config to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
         }
     }
 
