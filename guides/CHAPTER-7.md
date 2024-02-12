@@ -90,18 +90,13 @@ public class HelloPoJoEventOverHttp {
         EventEnvelope req = new EventEnvelope().setTo("hello.pojo").setHeader("id", id);
         return Mono.create(callback -> {
             try {
-                // to add security header(s) such as "Authorization", replace the empty map with some key-values
-                po.asyncRequest(req, 5000, Collections.emptyMap(), remoteEndpoint, true)
-                        .onSuccess(event -> {
-                            // confirm that the PoJo object is transported correctly over the event stream system
-                            if (event.getBody() instanceof SamplePoJo result) {
-                                callback.success(result);
-                            } else {
-                                callback.error(new AppException(event.getStatus(), event.getError()));
-                            }
-                        })
-                        .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
-            } catch (IOException e) {
+                EventEnvelope response = po.request(req, 3000, Collections.emptyMap(), remoteEndpoint, true).get();
+                if (response.getBody() instanceof SamplePoJo result) {
+                    callback.success(result);
+                } else {
+                    callback.error(new AppException(response.getStatus(), response.getError()));
+                }
+            } catch (IOException | ExecutionException | InterruptedException e) {
                 callback.error(e);
             }
         });
@@ -164,6 +159,8 @@ and then create the configuration file "event-over-http.yaml" like this:
 ```yaml
 event:
   http:
+  - route: 'hello.pojo2'
+    target: 'http://127.0.0.1:${lambda.example.port}/api/event'
   - route: 'event.http.test'
     target: 'http://127.0.0.1:${server.port}/api/event'
     # optional security headers
@@ -175,15 +172,50 @@ event:
       authorization: 'demo'
 ```
 
-In the above example, there are two routes (event.http.test and event.save.get) with target URLs. If additional
-authentication is required for the peer's "/api/event" endpoint, you may add a set of security headers in each
-route.
+In the above example, there are three routes (hello.pojo2, event.http.test and event.save.get) with target URLs.
+If additional authentication is required for the peer's "/api/event" endpoint, you may add a set of security
+headers in each route.
 
 When you send asynchronous event or make a RPC call to "event.save.get" service, it will be forwarded to the
 peer's "event-over-HTTP" endpoint (`/api/event`) accordingly.
 
 You may also add variable references to the application.properties (or application.yaml) file, such as
 "server.port" in this example.
+
+An example in the rest-spring-3-example subproject is shown below to illustrate this service abstraction.
+In this example, the remote Event-over-HTTP endpoint address is resolved from the event-over-http.yaml
+configuration.
+
+```java
+@RestController
+public class HelloPoJoEventOverHttpByConfig {
+
+    @GetMapping("/api/pojo2/http/{id}")
+    public Mono<SamplePoJo> getPoJo(@PathVariable("id") Integer id) {
+        String traceId = Utility.getInstance().getUuid();
+        PostOffice po = new PostOffice("hello.pojo.endpoint", traceId, "GET /api/pojo2/http");
+        /*
+         * "hello.pojo2" resides in the lambda-example and is reachable by "Event-over-HTTP".
+         * In HelloPojoEventOverHttp.java, it demonstrates the use of Event-over-HTTP API.
+         * In this example, it illustrates the use of the "Event-over-HTTP by configuration" feature.
+         * Please see application.properties and event-over-http.yaml files for more details.
+         */
+        EventEnvelope req = new EventEnvelope().setTo("hello.pojo2").setHeader("id", id);
+        return Mono.create(callback -> {
+            try {
+                EventEnvelope response = po.request(req, 3000, false).get();
+                if (response.getBody() instanceof SamplePoJo result) {
+                    callback.success(result);
+                } else {
+                    callback.error(new AppException(response.getStatus(), response.getError()));
+                }
+            } catch (IOException | ExecutionException | InterruptedException e) {
+                callback.error(e);
+            }
+        });
+    }
+}
+```
 
 > Note: The configuration based "event-over-HTTP" feature does not support fork-n-join request API.
         You can achieve similar parallel processing using multiple calls to "po.request API"

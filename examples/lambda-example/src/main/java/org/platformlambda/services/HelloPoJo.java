@@ -35,8 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * It is not defined in the REST automation system's rest.yaml configuration file.
  * <p>
  * You will need this in the rest-spring-example demo.
+ * <p>
+ * hello.pojo2 is an alias of hello.pojo - it is used to illustrate the
+ * "Event-over-HTTP by configuration" feature from the rest-spring-example.
  */
-@PreLoad(route="hello.pojo", instances=10, isPrivate = false)
+@PreLoad(route="hello.pojo, hello.pojo2", instances=10, isPrivate = false)
 public class HelloPoJo implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(HelloPoJo.class);
 

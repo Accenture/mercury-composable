@@ -1,0 +1,4 @@
+event:
+  http:
+  - route: 'hello.pojo2'
+    target: 'http://127.0.0.1:${lambda.example.port}/api/event'
