@@ -230,16 +230,18 @@ public class EventEmitter {
                         try {
                             new URI(target);
                             eventHttpTargets.put(route, target);
+                            int headerCount = 0;
                             Object h = reader.get("event.http["+i+"].headers");
                             if (h instanceof Map m) {
                                 Map<String, String> headers = new HashMap<>();
                                 for (Object k: m.keySet()) {
-                                    String value = reader.getProperty("event.http["+i+"].headers."+k);
-                                    headers.put(k.toString(), value);
+                                    headers.put(k.toString(), reader.getProperty("event.http["+i+"].headers."+k));
+                                    headerCount++;
                                 }
                                 eventHttpHeaders.put(route, headers);
                             }
-
+                            log.info("Event-over-HTTP {} -> {} with {} header{}", route, target,
+                                    headerCount, headerCount == 1? "" : "s");
                         } catch (URISyntaxException e) {
                             log.error("Invalid Event over HTTP config entry - check target {}", target);
                         }
