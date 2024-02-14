@@ -24,6 +24,7 @@ For release notes before version 3.1, please refer to https://github.com/Accentu
 ### Changed
 
 1. Open sources library update (Spring Boot 3.2.2, Vertx 4.5.3 and MsgPack 0.9.8)
+2. Rename application parameter "event.worker.pool" to "kernel.thread.pool"
 
 ---
 ## Version 3.1.0, 1/5/2023
