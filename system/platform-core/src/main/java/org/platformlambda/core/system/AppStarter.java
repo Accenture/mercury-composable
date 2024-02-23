@@ -32,10 +32,7 @@ import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.annotations.WebSocketService;
-import org.platformlambda.core.models.EntryPoint;
-import org.platformlambda.core.models.KotlinLambdaFunction;
-import org.platformlambda.core.models.LambdaFunction;
-import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.models.*;
 import org.platformlambda.core.util.*;
 import org.platformlambda.core.websocket.server.MinimalistHttpHandler;
 import org.platformlambda.core.websocket.server.WsRequestHandler;
@@ -223,12 +220,31 @@ public class AppStarter {
                             int instances = getInstancesFromEnv(preload.envInstances(), preload.instances());
                             boolean isPrivate = preload.isPrivate();
                             Object o = cls.getDeclaredConstructor().newInstance();
+                            CustomSerializer mapper = null;
+                            if (!preload.customSerializer().isEmpty()) {
+                                try {
+                                    Class<?> m = Class.forName(preload.customSerializer());
+                                    Object mapperObj = m.getDeclaredConstructor().newInstance();
+                                    if (mapperObj instanceof CustomSerializer serializer) {
+                                        mapper = serializer;
+                                    } else {
+                                        throw new IllegalArgumentException("invalid implementation of CustomSerializer");
+                                    }
+                                } catch (Exception ce) {
+                                    log.error("Skipping custom serializer {} for {} - {}: {}",
+                                            preload.customSerializer(), routes,
+                                            ce.getClass().getSimpleName(), ce.getMessage());
+                                }
+                            }
                             if (o instanceof TypedLambdaFunction f) {
                                 for (String r : routes) {
                                     if (isPrivate) {
                                         platform.registerPrivate(r, f, instances);
                                     } else {
                                         platform.register(r, f, instances);
+                                    }
+                                    if (mapper != null) {
+                                        platform.setCustomSerializer(r, mapper);
                                     }
                                 }
                             } else if (o instanceof KotlinLambdaFunction f) {
@@ -237,6 +253,9 @@ public class AppStarter {
                                         platform.registerKotlinPrivate(r, f, instances);
                                     } else {
                                         platform.registerKotlin(r, f, instances);
+                                    }
+                                    if (mapper != null) {
+                                        platform.setCustomSerializer(r, mapper);
                                     }
                                 }
                             } else {

@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import io.vertx.core.Future;
 import org.junit.Assert;
 import org.junit.Test;
+import org.platformlambda.common.SimplePoJo;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
@@ -1502,6 +1503,32 @@ public class PostOfficeTest extends TestBase {
         assert response != null;
         map = (Map<String, Object>) response.getBody();
         Assert.assertEquals(Utility.getInstance().date2str(now), map.get("body"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCustomSerializer() throws IOException, ExecutionException, InterruptedException {
+        PostOffice po = new PostOffice("custom.serializer.test", "10108", "/custom/serializer");
+        SimplePoJo pojo = new SimplePoJo();
+        pojo.name = "hello";
+        pojo.address = "world";
+        pojo.telephone = 12345678;
+        // test java user function
+        EventEnvelope result1 = po.request(
+                new EventEnvelope().setTo("custom.serializer.service.java").setBody(pojo), 5000).get();
+        Assert.assertTrue(result1.getBody() instanceof Map);
+        Map<String, Object> data1 = (Map<String, Object>) result1.getBody();
+        Assert.assertEquals(pojo.name, data1.get("name"));
+        Assert.assertEquals(pojo.address, data1.get("address"));
+        Assert.assertEquals(pojo.telephone, data1.get("telephone"));
+        // test kotlin user function
+        EventEnvelope result2 = po.request(
+                new EventEnvelope().setTo("custom.serializer.service.kotlin").setBody(pojo), 5000).get();
+        Assert.assertTrue(result2.getBody() instanceof Map);
+        Map<String, Object> data2 = (Map<String, Object>) result2.getBody();
+        Assert.assertEquals(pojo.name, data2.get("name"));
+        Assert.assertEquals(pojo.address, data2.get("address"));
+        Assert.assertEquals(pojo.telephone, data2.get("telephone"));
     }
 
     private static class SimpleCallback implements TypedLambdaFunction<PoJo, Void>, PoJoMappingExceptionHandler {

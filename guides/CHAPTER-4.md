@@ -345,15 +345,24 @@ processing is more challenging to write.
 The industry trend is to use sequential non-blocking method instead of "asynchronous callback" because your code
 will be much easier to read.
 
-You can use the `awaitRequest` method to read the next block of data from an event stream.
+Since Mercury version 3.1, the default function execution engine is using Java virtual threads. 
+"Request-response" style code will be executed sequentially. If you use the PostOffice's "request" method,
+it will return a Java Future object. You can use the Future's ".get()" method to retrieve the response
+synchronously. Behind the curtain, the request is running in a virtual thread and it does not block the
+rest of the application while waiting for a response, thus enhancing overall application throughput.
 
-An example for reading a stream is shown in the `FileUploadDemo` kotlin class in the lambda-example project.
-It is using a simple "while" loop to read the stream. When the function fetches the next block of data using
-the `awaitRequest` method, the function is suspended until the next data block or "end of stream" signal is received.
+This is conceptually similar to the "await" keyword in other programming languages.
+
+If you prefer the Kotlin programming language, you may use the FastRPC's awaitRequest API.
+
+An example for reading a stream using the `awaitRequest` method is shown in the `FileUploadDemo` kotlin class
+in the lambda-example project. It is using a simple "while" loop to read the stream. When the function fetches
+the next block of data using the `awaitRequest` method, the function is suspended until the next data block or
+"end of stream" signal is received.
 
 It may look like this:
 
-```kotlin
+```java
 val po = PostOffice(headers, instance)
 val fastRPC = FastRPC(headers)
 
@@ -380,14 +389,10 @@ while (true) {
 Since the code style is "sequential non-blocking", using a "while" loop does not block the "event loop" provided
 that you are using an "await" API inside the while-loop.
 
-In this fashion, the intent of the code is clear. Sequential non-blocking method offers high throughput because
+In this fashion, the intent of the code is clear. Sequential non-blocking method offers higher throughput because
 it does not consume CPU resources while the function is waiting for a response from another function.
 
 We recommend sequential non-blocking style for more sophisticated event streaming logic.
-
-> Note: "await" methods are only supported in KotlinLambdaFunction which is a suspend function.
-        When Java 19 virtual thread feature becomes officially available, we will enhance
-        the function execution strategies accordingly.
 
 ## Orchestration layer
 

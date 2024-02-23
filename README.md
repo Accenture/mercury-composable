@@ -199,11 +199,8 @@ Since the functions are running cooperatively, the overheads of context switchin
 Technically, the functions are running sequentially. When each function finishes execution very quickly,
 they appear as running concurrently.
 
-In Java 19, the virtual thread feature was introduced as an experimental feature. 
-It is officially supported in Java 21 LTS. 
-
-Virtual thread is more than coroutine. It is comparable to Kotlin suspend function that we will discuss below.
-However, it is implemented in the "Thread" API of the standard library, therefore reducing code complexity.
+Since December 2023, virtual thread technology becomes officially supported in Java version 21 LTS.
+It is implemented in the "Thread" API of the standard library.
 
 > Figure 6 - Cooperative multitasking
 

@@ -510,6 +510,45 @@ using the dollar-bracket syntax `${reference:default_value}`.
 
 > e.g. "some.key=${MY_ENV_VARIABLE}", "some.key=${my.key}"
 
+## Custom serializer
+
+We are using GSON as the underlying serializer to handle common use cases. However, there may be
+situation that you want to use your own custom serialization library.
+
+To do that, you may write a serializer that implements the CustomSerializer interface:
+
+```java
+public interface CustomSerializer {
+
+    public Map<String, Object> toMap(Object obj);
+
+    public <T> T toPoJo(Object obj, Class<T> toValueType);
+
+}
+```
+
+You may configure a user function to use a custom serializer by adding the "customSerializer" parameter
+in the `PreLoad` annotation. For example,
+
+```java
+@PreLoad(route="my.user.function", customSerializer = "com.accenture.JacksonSerializer")
+public class MyUserFunction implements TypedLambdaFunction<SimplePoJo, SimplePoJo> {
+    @Override
+    public SimplePoJo handleEvent(Map<String, String> headers, SimplePoJo input, int instance) throws Exception {
+        return input;
+    }
+}
+```
+
+If you register your function dynamically in code, you can use the following `platform API` to assign
+a custom serializer.
+
+```java
+public void setCustomSerializer(String route, CustomSerializer mapper);
+// e.g.
+// platform.setCustomSerializer(new JacksonSerializer());
+```
+
 ## Minimalist API design for event orchestration
 
 As a best practice, we advocate a minimalist approach in API integration.
@@ -553,9 +592,6 @@ it passes regression tests and meets stability and performance benchmarks in our
 
 Mercury is developed as an engine for you to build the latest cloud native and composable applications.
 While we are updating the technology frequently, the essential internals and the core APIs are stable.
-
-We are monitoring the progress of the upcoming Java 19 Virtual Thread feature and will include it in our API
-when it becomes officially available.
 
 ## Technical support
 

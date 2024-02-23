@@ -420,6 +420,22 @@ public class Platform {
         }
     }
 
+    public void setCustomSerializer(String route, CustomSerializer mapper) {
+        if (!hasRoute(route)) {
+            throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
+        }
+        ServiceDef service = registry.get(route);
+        if (service == null) {
+            throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
+        }
+        service.setCustomSerializer(mapper);
+        if (mapper == null) {
+            log.info("Custom serializer cleared for {}", route);
+        } else {
+            log.info("Serializer {} assigned to {}", mapper.getClass(), route);
+        }
+    }
+
     /**
      * Check the route registered in this application instance
      *
