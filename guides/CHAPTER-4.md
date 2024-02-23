@@ -208,7 +208,7 @@ If you prefer coding in Kotlin, you can implement a "suspend function" using the
 The following code segment illustrates the creation of the "hello.world" function that makes a non-blocking RPC
 call to "another.service".
 
-```kotlin
+```java
 @PreLoad(route="hello.world", instances=10)
 class FileUploadDemo: KotlinLambdaFunction<AsyncHttpRequest, Any> {
     override suspend fun handleEvent(headers: Map<String, String>, input: AsyncHttpRequest, 
@@ -223,7 +223,7 @@ class FileUploadDemo: KotlinLambdaFunction<AsyncHttpRequest, Any> {
 
 The API method signature for non-blocking RPC and fork-n-join are as follows:
 
-```kotlin
+```java
 @Throws(IOException::class)
 suspend fun awaitRequest(request: EventEnvelope, timeout: Long): EventEnvelope
 

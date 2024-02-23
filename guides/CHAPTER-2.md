@@ -151,7 +151,7 @@ For example, to make a RPC call to another function, you can use the `awaitReque
 
 Please refer to the `FileUploadDemo` class in the "examples/lambda-example" project.
 
-```kotlin
+```java
 val po = PostOffice(headers, instance)
 val fastRPC = FastRPC(headers)
 

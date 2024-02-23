@@ -109,7 +109,7 @@ res.onSuccess(response -> {
 
 In a suspend function using KotlinLambdaFunction, the same logic may look like this:
 
-```kotlin
+```java
 val fastRPC = FastRPC(headers)
 val req = AsyncHttpRequest()
 req.setMethod("GET")
@@ -173,7 +173,7 @@ For simplicity and readability, we recommend using "suspend function" to read th
 
 It may look like this:
 
-```kotlin
+```java
 val po = PostOffice(headers, instance)
 val fastRPC = FastRPC(headers)
 

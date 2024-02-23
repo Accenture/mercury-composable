@@ -126,7 +126,7 @@ public Future<EventEnvelope> request(final EventEnvelope event, long timeout,
 
 ### Sequential non-blocking API (Kotlin suspend function)
 
-```kotlin
+```java
 suspend fun awaitRequest(request: EventEnvelope?, timeout: Long, 
                           headers: Map<String, String>,
                           eventEndpoint: String, rpc: Boolean): EventEnvelope

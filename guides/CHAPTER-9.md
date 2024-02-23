@@ -380,11 +380,26 @@ response.onSuccess(results -> {
 
 ### Make a sequential non-blocking RPC call
 
-You can make a sequential non-blocking RPC call from one function to another. The FastRPC is similar to the PostOffice.
+You can make a sequential non-blocking RPC call from one function to another.
+
+The most convenient method to make a sequential non-blocking RPC call is to use the PostOffice's request API.
+
+```java
+// for a single RPC call
+PostOffice po = new PostOffice(headers, instance);
+EventEnvelope result = po.request(requestEvent, timeoutInMills).get();
+
+// for a fork-n-join call
+PostOffice po = new PostOffice(headers, instance);
+List<EventEnvelope> result = po.request(requestEvents, timeoutInMills).get();
+```
+
+If you prefer the Kotlin programming language, you may use the FastRPC API.
+
 It is the event manager for KotlinLambdaFunction. You can create an instance of the FastRPC using the "headers"
 parameters in the input arguments of your function.
 
-```kotlin
+```java
 val fastRPC = new FastRPC(headers)
 val request = EventEnvelope().setTo("another.function")
                             .setHeader("some_key", "some_value").setBody(somePoJo)
@@ -409,7 +424,7 @@ without consuming a lot of CPU resources because it is "suspended" while waiting
 
 You can make a sequential non-blocking fork-n-join call using the FastRPC API like this:
 
-```kotlin
+```java
 val fastRPC = FastRPC(headers)
 val template = EventEnvelope().setTo("hello.world").setHeader("someKey", "someValue")
 val requests  = ArrayList<EventEnvelope>()
@@ -546,7 +561,7 @@ a custom serializer.
 ```java
 public void setCustomSerializer(String route, CustomSerializer mapper);
 // e.g.
-// platform.setCustomSerializer(new JacksonSerializer());
+// platform.setCustomSerializer("my.function", new JacksonSerializer());
 ```
 
 ## Minimalist API design for event orchestration
