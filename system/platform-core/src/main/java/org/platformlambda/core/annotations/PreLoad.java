@@ -28,11 +28,10 @@ import java.lang.annotation.*;
  * your user function. It should point to a fully qualified classpath to a class implementing
  * the CustomSerializer interface.
  * <p>
- * envInstances is optional. It overrides the "instances" parameter using environment or application.properties.
- * <p>
- * 1. To get value from an environment variable, use this format ${ENV_VAR_NAME:defaultValue}.
- * 2. To get value from application.properties or application.yml, just set it to the parameter name.
- * Note that System property can override the application.properties/application.yml config.
+ * envInstances is optional. If present, it must be a parameter in application.properties (or application.yml).
+ * The parameter may fetch value from an environment variable using "${ENV_VAR:default_value}" format.
+ * If the parameter does not exist, or it does not resolve to a numeric value, the "instances" value in this
+ * annotation will be used instead.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

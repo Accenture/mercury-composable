@@ -285,7 +285,7 @@ public class AppStarter {
             Utility util = Utility.getInstance();
             AppConfigReader config = AppConfigReader.getInstance();
             String env = config.getProperty(envInstances);
-            return Math.max(1, env != null? util.str2int(env) : instances);
+            return Math.max(1, util.isDigits(env)? util.str2int(env) : instances);
         }
     }
 
