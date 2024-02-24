@@ -42,7 +42,6 @@ public @interface PreLoad {
     String customSerializer() default "";
     int instances() default 1;
     String envInstances() default "";
-
     boolean isPrivate() default true;
 
 }

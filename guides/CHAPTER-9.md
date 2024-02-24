@@ -549,7 +549,7 @@ in the `PreLoad` annotation. For example,
 @PreLoad(route="my.user.function", customSerializer = "com.accenture.JacksonSerializer")
 public class MyUserFunction implements TypedLambdaFunction<SimplePoJo, SimplePoJo> {
     @Override
-    public SimplePoJo handleEvent(Map<String, String> headers, SimplePoJo input, int instance) throws Exception {
+    public SimplePoJo handleEvent(Map<String, String> headers, SimplePoJo input, int instance) {
         return input;
     }
 }
