@@ -427,7 +427,7 @@ public class AppStarter {
 
     private record Housekeeper(ConcurrentMap<String, AsyncContextHolder> contexts) {
 
-        public void removeExpiredConnections() {
+        private void removeExpiredConnections() {
                 if (housekeeperNotRunning.compareAndSet(true, false)) {
                     Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
                         try {
