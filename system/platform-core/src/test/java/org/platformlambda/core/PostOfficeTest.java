@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import io.vertx.core.Future;
 import org.junit.Assert;
 import org.junit.Test;
+import org.platformlambda.common.JacksonSerializer;
 import org.platformlambda.common.SimplePoJo;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.annotations.EventInterceptor;
@@ -1508,7 +1509,8 @@ public class PostOfficeTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void testCustomSerializer() throws IOException, ExecutionException, InterruptedException {
-        PostOffice po = new PostOffice("custom.serializer.test", "10108", "/custom/serializer");
+        PostOffice po = new PostOffice("custom.serializer.test",
+                "10108", "/custom/serializer", new JacksonSerializer());
         SimplePoJo pojo = new SimplePoJo();
         pojo.name = "hello";
         pojo.address = "world";
@@ -1521,6 +1523,10 @@ public class PostOfficeTest extends TestBase {
         Assert.assertEquals(pojo.name, data1.get("name"));
         Assert.assertEquals(pojo.address, data1.get("address"));
         Assert.assertEquals(pojo.telephone, data1.get("telephone"));
+        SimplePoJo responsePoJo1 = po.getResponseBodyAsPoJo(result1, SimplePoJo.class);
+        Assert.assertEquals(pojo.name, responsePoJo1.name);
+        Assert.assertEquals(pojo.address, responsePoJo1.address);
+        Assert.assertEquals(pojo.telephone, responsePoJo1.telephone);
         // test kotlin user function
         EventEnvelope result2 = po.request(
                 new EventEnvelope().setTo("custom.serializer.service.kotlin").setBody(pojo), 5000).get();
@@ -1529,6 +1535,10 @@ public class PostOfficeTest extends TestBase {
         Assert.assertEquals(pojo.name, data2.get("name"));
         Assert.assertEquals(pojo.address, data2.get("address"));
         Assert.assertEquals(pojo.telephone, data2.get("telephone"));
+        SimplePoJo responsePoJo2 = po.getResponseBodyAsPoJo(result2, SimplePoJo.class);
+        Assert.assertEquals(pojo.name, responsePoJo2.name);
+        Assert.assertEquals(pojo.address, responsePoJo2.address);
+        Assert.assertEquals(pojo.telephone, responsePoJo2.telephone);
     }
 
     private static class SimpleCallback implements TypedLambdaFunction<PoJo, Void>, PoJoMappingExceptionHandler {

@@ -212,27 +212,26 @@ public class AppStarter {
                 try {
                     Class<?> cls = Class.forName(serviceName);
                     if (Feature.isRequired(cls)) {
-                        PreLoad preload = cls.getAnnotation(PreLoad.class);
-                        List<String> routes = util.split(preload.route(), ", ");
+                        PreLoad svc = cls.getAnnotation(PreLoad.class);
+                        List<String> routes = util.split(svc.route(), ", ");
                         if (routes.isEmpty()) {
                             log.error("Unable to preload {} - missing service route(s)", serviceName);
                         } else {
-                            int instances = getInstancesFromEnv(preload.envInstances(), preload.instances());
-                            boolean isPrivate = preload.isPrivate();
+                            int instances = getInstancesFromEnv(svc.envInstances(), svc.instances());
+                            boolean isPrivate = svc.isPrivate();
                             Object o = cls.getDeclaredConstructor().newInstance();
                             CustomSerializer mapper = null;
-                            if (!preload.customSerializer().isEmpty()) {
+                            if (svc.customSerializer() != Void.class) {
                                 try {
-                                    Class<?> m = Class.forName(preload.customSerializer());
-                                    Object mapperObj = m.getDeclaredConstructor().newInstance();
+                                    Object mapperObj = svc.customSerializer().getDeclaredConstructor().newInstance();
                                     if (mapperObj instanceof CustomSerializer serializer) {
                                         mapper = serializer;
                                     } else {
-                                        throw new IllegalArgumentException("invalid implementation of CustomSerializer");
+                                        throw new IllegalArgumentException("Invalid implementation of CustomSerializer");
                                     }
                                 } catch (Exception ce) {
                                     log.error("Skipping custom serializer {} for {} - {}: {}",
-                                            preload.customSerializer(), routes,
+                                            svc.customSerializer(), routes,
                                             ce.getClass().getSimpleName(), ce.getMessage());
                                 }
                             }

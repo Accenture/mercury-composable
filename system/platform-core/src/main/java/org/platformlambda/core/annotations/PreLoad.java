@@ -18,6 +18,8 @@
 
 package org.platformlambda.core.annotations;
 
+import org.platformlambda.core.models.CustomSerializer;
+
 import java.lang.annotation.*;
 
 /**
@@ -39,7 +41,7 @@ import java.lang.annotation.*;
 public @interface PreLoad {
 
     String route();
-    String customSerializer() default "";
+    Class<?> customSerializer() default Void.class;
     int instances() default 1;
     String envInstances() default "";
     boolean isPrivate() default true;

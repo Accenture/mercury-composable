@@ -271,7 +271,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         }
                     } else {
                         // when using custom serializer, the result will be converted to a Map
-                        if (customSerializer != null && isPoJo(result)) {
+                        if (customSerializer != null && Utility.getInstance().isPoJo(result)) {
                             response.body = customSerializer.toMap(result)
                         } else {
                             response.body = result
@@ -384,14 +384,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                 inputOutput[OUTPUT] = output
                 ps.setException(status, ex.message).setInputOutput(inputOutput)
             }
-        }
-
-        private fun isPoJo(o: Any?): Boolean {
-            if (o == null || o is Map<*, *> || o is String || o is Number || o is Boolean) {
-                return false
-            }
-            val clsName = o.javaClass.name
-            return !clsName.startsWith("java.")
         }
 
         private fun simplifyCastError(error: String?): String {
