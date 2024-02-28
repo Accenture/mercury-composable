@@ -146,20 +146,22 @@ public class PostOffice {
     }
 
     /**
-     * Convert the event response body into a PoJo using a configured custom serializer
+     * Convert the event response body into a PoJo
+     *
      * @param response event
      * @param toValueType class
      * @return pojo
      * @param <T> pojo class
      */
     public <T> T getResponseBodyAsPoJo(EventEnvelope response, Class<T> toValueType) {
-        if (serializer == null) {
-            throw new IllegalArgumentException("Custom serializer not configured");
-        }
         if (response.getRawBody() instanceof Map) {
-            return serializer.toPoJo(response.getRawBody(), toValueType);
+            if (serializer == null) {
+                return response.getBody(toValueType);
+            } else {
+                return serializer.toPoJo(response.getRawBody(), toValueType);
+            }
         } else {
-            throw new IllegalArgumentException("Response body is not a PoJo");
+            throw new IllegalArgumentException("Event body is not a PoJo");
         }
     }
 
