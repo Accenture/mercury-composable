@@ -23,7 +23,6 @@ import org.platformlambda.core.models.CustomSerializer;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TraceInfo;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ public class PostOffice {
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
     public static final String MISSING_EVENT = "Missing outgoing event";
-
     private final String myRoute;
     private final String myTraceId;
     private final String myTracePath;
