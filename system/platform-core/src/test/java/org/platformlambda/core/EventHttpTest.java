@@ -75,7 +75,8 @@ public class EventHttpTest extends TestBase {
                 .setReplyTo(BLOCKING_EVENT_WAIT);
         PostOffice po = new PostOffice("unit.test", "1200001", "EVENT /save/then/get");
         po.send(save);
-        wait1.poll(5, TimeUnit.SECONDS);
+        Object serviceResponse = wait1.poll(5, TimeUnit.SECONDS);
+        Assert.assertEquals("saved", serviceResponse);
         EventEnvelope get = new EventEnvelope().setTo(ROUTE).setHeader("type", "get");
         EventEnvelope response = po.request(get, 10000).get();
         Assert.assertEquals(HELLO, response.getBody());

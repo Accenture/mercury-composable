@@ -19,24 +19,25 @@
 package org.platformlambda.core.mock;
 
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 @PreLoad(route="event.save.get", isPrivate = false)
-public class SaveAndGet implements LambdaFunction {
+public class SaveAndGet implements TypedLambdaFunction<EventEnvelope, Object> {
     private static final Logger log = LoggerFactory.getLogger(SaveAndGet.class);
 
     private static Object store = "?";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
-        log.info("Got headers={}, body={}", headers, input);
+    public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
+        log.info("Got headers={}, body={} replyTo={}", headers, input.getBody(), input.getReplyTo());
         String type = headers.get("type");
         if ("save".equals(type)) {
-            store = input;
+            store = input.getBody();
             return "saved";
         }
         if ("get".equals(type)) {

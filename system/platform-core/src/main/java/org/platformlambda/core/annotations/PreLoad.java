@@ -18,8 +18,6 @@
 
 package org.platformlambda.core.annotations;
 
-import org.platformlambda.core.models.CustomSerializer;
-
 import java.lang.annotation.*;
 
 /**
