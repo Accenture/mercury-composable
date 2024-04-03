@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.2</version>
+        <version>3.2.4</version>
         <relativePath/>
     </parent>
 
@@ -50,19 +50,19 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-lang-kotlin-coroutines</artifactId>
-            <version>4.5.3</version>
+            <version>4.5.5</version>
         </dependency>
 
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-client</artifactId>
-            <version>4.5.3</version>
+            <version>4.5.5</version>
         </dependency>
 
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-            <version>4.5.3</version>
+            <version>4.5.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version>
+            <version>33.1.0-jre</version>
         </dependency>
 
         <dependency>
