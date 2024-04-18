@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 3.1.2, 4/17/2023
+
+### Added
+
+Added "app-config-reader.yml" file in the resources folder so that you can override
+the default application configuration files.
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Open sources library update (Spring Boot 3.2.4, Vertx 4.5.5)
+2. Improve AppConfigReader and ConfigReader to use the app-config-reader.yml file.
+
+---
 ## Version 3.1.1, 2/8/2023
 
 ### Added

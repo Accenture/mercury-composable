@@ -58,6 +58,33 @@ precedence.
 
 `*` - when using the "rest-spring" library
 
+## Base configuration files
+
+By default, the system assumes the following application configuration files:
+
+1. application.properties
+2. application.yml
+
+You can change this behavior by adding the `app-config-reader.yml` in your project's `resources` folder.
+
+```yaml
+resources:
+  - application.properties
+  - application.yml
+```
+
+You can tell the system to load application configuration from different set of files.
+You can use either PROPERTIES or YAML files. YAML files can use "yml" or "yaml" extension.
+
+For example, you may use only "application.yml" file without scanning application.properties.
+
+## Compatibility with Spring Boot
+
+Depending on your use cases, you may point the system to use the same Spring's application files
+or use a different set of configuration files.
+
+Note that the system does not support more than one Spring configuration "profile".
+
 # Static HTML contents
 
 You can place static HTML files (e.g. the HTML bundle for a UI program) in the "resources/public" folder or
@@ -164,7 +191,7 @@ To enable distributed trace logging, please set this in log4j2.xml:
 
 # Built-in XML serializer
 
-The platform-core includes built-in serializers for JSON and XML in the AsyncHttpClient, JAX-RS and
+The platform-core includes built-in serializers for JSON and XML in the AsyncHttpClient and
 Spring RestController. The XML serializer is designed for simple use cases. If you need to handle more
 complex XML data structure, you can disable the XML serializer by adding the following HTTP request
 header.

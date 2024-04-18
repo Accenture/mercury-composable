@@ -41,15 +41,8 @@ public class ConfigReader implements ConfigBase {
     private static final String YML = ".yml";
     private static final String YAML = ".yaml";
     private static final String DOT_PROPERTIES = ".properties";
-    private static final String CONFIG_LOOP = "* config loop *";
-    /*
-     * A normalized map has composite keys expanded into simple key.
-     * e.g. "hello.world: 1" becomes "hello: world: 1"
-     */
-    private boolean isNormalized = true;
 
     private static AppConfigReader baseConfig;
-    private Map<String, Object> properties = new HashMap<>();
     private MultiLevelMap config = new MultiLevelMap(new HashMap<>());
 
     /**
@@ -64,18 +57,6 @@ public class ConfigReader implements ConfigBase {
         if (ConfigReader.baseConfig == null) {
             ConfigReader.baseConfig = config;
         }
-    }
-
-    /**
-     * Keys in YAML configuration files are normalized for easy
-     * retrieval using the underlying MultiLevelMap module.
-     * <p>
-     * Property configuration file is kept in original structure.
-     *
-     * @return true if the configuration file is normalized.
-     */
-    public boolean isNormalizedMap() {
-        return isNormalized;
     }
 
     /**
@@ -119,7 +100,7 @@ public class ConfigReader implements ConfigBase {
         if (systemProperty != null) {
             return systemProperty;
         }
-        Object value = isNormalized? config.getElement(key) : properties.get(key);
+        Object value = config.getElement(key);
         if (value == null) {
             value = defaultValue;
         }
@@ -142,8 +123,8 @@ public class ConfigReader implements ConfigBase {
                     } else {
                         List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
                         if (refs.contains(middle)) {
-                            log.warn("Config loop for '{}' detected", key);
-                            middle = CONFIG_LOOP;
+                            log.error("Config loop for '{}' detected", key);
+                            middle = null;
                         } else {
                             refs.add(middle);
                             loopDetection.put(loopId, refs);
@@ -199,8 +180,9 @@ public class ConfigReader implements ConfigBase {
      *
      * @return map of key-values
      */
+    @Override
     public Map<String, Object> getMap() {
-        return isNormalized? config.getMap() : properties;
+        return config.getMap();
     }
 
     /**
@@ -214,7 +196,7 @@ public class ConfigReader implements ConfigBase {
         if (key == null || key.isEmpty()) {
             return false;
         }
-        return isNormalized? config.exists(key) : properties.containsKey(key);
+        return config.exists(key);
     }
 
     /**
@@ -224,7 +206,7 @@ public class ConfigReader implements ConfigBase {
      */
     @Override
     public boolean isEmpty() {
-        return isNormalized? config.isEmpty() : properties.isEmpty();
+        return config.isEmpty();
     }
 
     /**
@@ -272,23 +254,25 @@ public class ConfigReader implements ConfigBase {
         }
         try {
             if (isYaml) {
+                Utility util = Utility.getInstance();
                 Yaml yaml = new Yaml();
-                String data = Utility.getInstance().stream2str(in);
+                String data = util.getUTF(util.stream2bytes(in, false));
                 Map<String, Object> m = yaml.load(data.contains("\t")? data.replace("\t", "  ") : data);
                 enforceKeysAsText(m);
                 config = new MultiLevelMap(normalizeMap(m));
-                isNormalized = true;
             } else if (path.endsWith(JSON)) {
                 Map<String, Object> m = SimpleMapper.getInstance().getMapper().readValue(in, Map.class);
                 enforceKeysAsText(m);
                 config = new MultiLevelMap(normalizeMap(m));
-                isNormalized = true;
             } else if (path.endsWith(DOT_PROPERTIES)) {
-                properties = new HashMap<>();
+                config = new MultiLevelMap();
                 Properties p = new Properties();
                 p.load(in);
-                p.forEach((k, v) -> properties.put(String.valueOf(k), v));
-                isNormalized = false;
+                Map<String, Object> map = new HashMap<>();
+                p.forEach((k,v) -> map.put(String.valueOf(k), v));
+                List<String> keys = new ArrayList<>(map.keySet());
+                Collections.sort(keys);
+                keys.forEach(k -> config.setElement(k, map.get(k)));
             }
         } finally {
             try {
@@ -307,13 +291,14 @@ public class ConfigReader implements ConfigBase {
     public void load(Map<String, Object> map) {
         enforceKeysAsText(map);
         config = new MultiLevelMap(normalizeMap(map));
-        isNormalized = true;
     }
 
     private Map<String, Object> normalizeMap(Map<String, Object> map) {
         Map<String, Object> flat = Utility.getInstance().getFlatMap(map);
+        List<String> keys = new ArrayList<>(flat.keySet());
+        Collections.sort(keys);
         MultiLevelMap multiMap = new MultiLevelMap(new HashMap<>());
-        flat.forEach(multiMap::setElement);
+        keys.forEach(k -> multiMap.setElement(k, flat.get(k)));
         return multiMap.getMap();
     }
 
