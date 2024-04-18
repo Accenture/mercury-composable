@@ -5,7 +5,7 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>rest-spring-3-example</artifactId>
-    <version>3.1.2</version>
+    <version>3.1.1</version>
     <packaging>jar</packaging>
     <name>Spring Boot 3 example</name>
 
@@ -18,7 +18,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kafka.version>3.7.0</kafka.version>
+        <kafka.version>3.6.1</kafka.version>
         <gson.version>2.10.1</gson.version>
         <kotlin.version>1.9.22</kotlin.version>
         <java.version>21</java.version>
@@ -36,14 +36,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>3.1.2</version>
+            <version>3.1.1</version>
         </dependency>
 
         <!-- Optionally, select your optional cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>3.1.2</version>
+            <version>3.1.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->

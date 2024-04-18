@@ -106,18 +106,18 @@ The benchmark client is pre-configured to run in standalone mode. You can start 
 
 ```shell
 cd sandbox/mercury-composable/benchmark-client
-java -jar target/benchmark-client-3.1.2.jar
+java -jar target/benchmark-client-3.1.1.jar
 ```
 
 To run the benchmark in client-server mode, please start the server and client apps like this:
 
 ```shell
 cd sandbox/mercury-composable/benchmark-server
-java -jar target/benchmark-server-3.1.2.jar
+java -jar target/benchmark-server-3.1.1.jar
 cd sandbox/mercury-composable/connectors/adapter/kafka/kafka-presence
-java -jar target/kafka-presence-3.1.2.jar
+java -jar target/kafka-presence-3.1.1.jar
 cd sandbox/mercury-composable/benchmark-client
-java -Dcloud.connector=kafka -jar target/benchmark-client-3.1.2.jar
+java -Dcloud.connector=kafka -jar target/benchmark-client-3.1.1.jar
 ```
 
 Note that you can either update the application.properties in the client application or

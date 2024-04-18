@@ -41,14 +41,14 @@ First, build and run the lambda-example application in port 8085.
 
 ```shell
 cd examples/lambda-example
-java -jar target/lambda-example-3.1.2.jar
+java -jar target/lambda-example-3.1.1.jar
 ```
 
 Second, build and run the rest-spring-example application.
 
 ```shell
 cd examples/rest-spring-example-3
-java -jar target/rest-spring-3-example-3.1.2.jar
+java -jar target/rest-spring-3-example-3.1.1.jar
 ```
 
 The rest-spring-3-example application will run as a Spring Boot application in port 8083 and 8086.
