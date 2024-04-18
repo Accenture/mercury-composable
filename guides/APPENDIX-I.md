@@ -15,7 +15,7 @@ precedence.
 | web.component.scan                     | your own package path or parent path                            | Yes       |
 | server.port                            | e.g. 8083                                                       | Yes*1     |
 | rest.automation                        | true if you want to enable automation                           | Optional  |
-| yaml.rest.automation                   | Rest automation config file. e.g. classpath:/rest.yaml          | Optional  |
+| yaml.rest.automation                   | Points to config file. e.g. classpath:/rest.yaml                | Optional  |
 | rest.server.port                       | e.g. 8085                                                       | Optional  |
 | websocket.server.port                  | Alias for rest.server.port                                      | Optional  |
 | static.html.folder                     | classpath:/public/                                              | Yes       |
