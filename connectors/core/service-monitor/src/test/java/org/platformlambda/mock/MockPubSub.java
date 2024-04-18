@@ -43,7 +43,7 @@ public class MockPubSub implements PubSubProvider {
         } catch (IOException e) {
             // this should not happen
         }
-        Map<String, Object> map = util.getFlatMap(reader.getMap());
+        Map<String, Object> map = reader.getCompositeKeyValues();
         for (String item: map.keySet()) {
             topicStore.put(item, 1);
         }

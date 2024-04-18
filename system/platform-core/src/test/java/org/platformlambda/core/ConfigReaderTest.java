@@ -232,14 +232,14 @@ public class ConfigReaderTest {
         reader.load("classpath:/test.properties");
         String value = reader.getProperty("recursive.key");
         // In case of config loop, the system will not resolve a parameter value.
-        Assert.assertEquals(CONFIG_LOOP, value);
+        Assert.assertNull(value);
     }
 
     @Test
     public void multiLevelLoopErrorTest() {
         AppConfigReader config = AppConfigReader.getInstance();
-        Object value = config.get("looping.test");
-        Assert.assertEquals(CONFIG_LOOP, value);
+        Object value = config.get("looping.test.1");
+        Assert.assertEquals("1000", value);
     }
 
     @Test
@@ -264,6 +264,28 @@ public class ConfigReaderTest {
         String value = reader.getProperty("test.no_default");
         // when there is no default value in the reference, it will return empty string as the default value.
         Assert.assertEquals("hello world", value);
+    }
+
+    @Test
+    public void compositeKeyValueTest() throws IOException {
+        AppConfigReader config = AppConfigReader.getInstance();
+        // prove that config.getMap() method returns raw data without value substitution
+        Map<String, Object> raw = config.getMap();
+        MultiLevelMap multi = new MultiLevelMap(raw);
+        Assert.assertEquals("${recursive.key}", multi.getElement("recursive.key"));
+        // prove that config.get() method resolves value substitution
+        Assert.assertNull(config.get("recursive.key"));
+        // prove that compositeKeyValues return the same value as config.get() method
+        Map<String, Object> map = config.getCompositeKeyValues();
+        Assert.assertEquals(config.get("application.feature.route.substitution"),
+                            map.get("application.feature.route.substitution"));
+        // and it works for secondary configuration file too
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.yaml");
+        Map<String, Object> kv = reader.getCompositeKeyValues();
+        String port = config.getProperty("server.port");
+        Assert.assertEquals(port+" is server port", kv.get("hello.location[3]"));
+        Assert.assertEquals("Server port is "+port, kv.get("hello.location[4]"));
     }
 
 }

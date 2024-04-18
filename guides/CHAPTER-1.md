@@ -163,7 +163,7 @@ called "lambda-example" like this:
 
 ```shell
 cd sandbox/mercury-composable/examples/lambda-example
-java -jar target/lambda-example-3.1.1.jar
+java -jar target/lambda-example-3.1.2.jar
 ```
 
 You will find the following console output when the app starts
@@ -182,14 +182,14 @@ When REST automation is turned on, the system will start a lightweight non-block
 By default, it will search for the "rest.yaml" file from "/tmp/config/rest.yaml" and then from "classpath:/rest.yaml".
 Classpath refers to configuration files under the "resources" folder in your source code project.
 
-To instruct the system to load from a specific path. You can add the `rest.automation.yaml` parameter.
+To instruct the system to load from a specific path. You can add the `yaml.rest.automation` parameter.
 
 To select another server port, change the `rest.server.port` parameter.
 
 ```properties
 rest.server.port=8085
 rest.automation=true
-rest.automation.yaml=classpath:/rest.yaml
+yaml.rest.automation=classpath:/rest.yaml
 ```
 
 To create a REST endpoint, you can add an entry in the "rest" section of the "rest.yaml" config file like this:
@@ -354,7 +354,7 @@ query parameters, cookies, etc.
 
 When you click the "rebuild" button in IDE and run the "MainApp", the new function will be available in the 
 application. Alternatively, you can also do `mvn clean package` to generate a new executable JAR and run the 
-JAR from command line using "java -jar target/lambda-example-3.1.1.jar".
+JAR from command line using "java -jar target/lambda-example-3.1.2.jar".
 
 To test your new function, visit http://127.0.0.1:8085/api/hello/my/function
 

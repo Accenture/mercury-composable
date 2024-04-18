@@ -35,7 +35,7 @@ You can also build and run the application from command line like this:
 ```shell
 cd sandbox/mercury-composable/examples/lambda-example
 mvn clean package
-java -jar target/lambda-example-3.1.1.jar
+java -jar target/lambda-example-3.1.2.jar
 ```
 
 The lambda-example is a sample application that you can use as a template to write your own code. Please review
@@ -338,8 +338,8 @@ A sample Dockerfile for an executable JAR may look like this:
 FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
 EXPOSE 8083
 WORKDIR /app
-COPY target/rest-spring-3-example-3.1.1.jar .
-ENTRYPOINT ["java","-jar","rest-spring-3-example-3.1.1.jar"]
+COPY target/rest-spring-3-example-3.1.2.jar .
+ENTRYPOINT ["java","-jar","rest-spring-3-example-3.1.2.jar"]
 ```
 
 ## Distributed tracing
