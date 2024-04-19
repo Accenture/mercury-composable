@@ -34,8 +34,6 @@ import java.util.UUID;
 
 public class ConfigReaderTest {
 
-    private static final String CONFIG_LOOP = "* config loop *";
-
     @BeforeClass
     public static void setup() {
         ConfigReader.setBaseConfig(AppConfigReader.getInstance());
