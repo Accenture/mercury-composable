@@ -36,7 +36,6 @@ public class MockPubSub implements PubSubProvider {
     private static final Map<String, LambdaFunction> subscriptions = new HashMap<>();
 
     public MockPubSub() {
-        Utility util = Utility.getInstance();
         ConfigReader reader = new ConfigReader();
         try {
             reader.load("classpath:/topic-substitution.yaml");
