@@ -43,7 +43,7 @@ public class ConfigReader implements ConfigBase {
     private static final String DOT_PROPERTIES = ".properties";
 
     private static AppConfigReader baseConfig;
-    private MultiLevelMap config = new MultiLevelMap(new HashMap<>());
+    private MultiLevelMap config = new MultiLevelMap();
     private final Map<String, Object> cachedFlatMap = new HashMap<>();
 
     /**
@@ -315,7 +315,7 @@ public class ConfigReader implements ConfigBase {
         Map<String, Object> flat = Utility.getInstance().getFlatMap(map);
         List<String> keys = new ArrayList<>(flat.keySet());
         Collections.sort(keys);
-        MultiLevelMap multiMap = new MultiLevelMap(new HashMap<>());
+        MultiLevelMap multiMap = new MultiLevelMap();
         keys.forEach(k -> multiMap.setElement(k, flat.get(k)));
         return multiMap.getMap();
     }
