@@ -355,7 +355,7 @@ public class AppStarter {
                             platform.registerPrivate(ASYNC_HTTP_RESPONSE,
                                                         new ServiceResponseHandler(contexts), 200);
                         } catch (IOException e) {
-                            log.error("Unable to register HTTP request/response handlers  - {}", e.getMessage());
+                            log.error("Unable to register HTTP request/response handlers - {}", e.getMessage());
                         }
                         // start timeout handler
                         Housekeeper housekeeper = new Housekeeper(contexts);

@@ -113,7 +113,7 @@ public class MinimalistHttpTest extends TestBase {
         Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(value="unchecked")
     @Test
     public void remoteRouteEndpointTest() throws IOException, InterruptedException {
         Map<String, String> headers = new HashMap<>();
