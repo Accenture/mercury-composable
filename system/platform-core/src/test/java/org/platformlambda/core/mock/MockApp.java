@@ -25,8 +25,14 @@ import org.platformlambda.core.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The first condition of the OptionalService will fail
+ * and the second condition will pass.
+ * <p>
+ * Since it is a OR statement, it will be evaluated as true.
+ */
 @MainApplication
-@OptionalService("rest.automation")
+@OptionalService("server.port = 8080, rest.automation")
 public class MockApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MockApp.class);
 

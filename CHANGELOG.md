@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 3.1.3, 4/24/2023
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Enhanced OptionalService annotation.
+
+---
 ## Version 3.1.2, 4/17/2023
 
 ### Added
@@ -25,6 +40,7 @@ N/A
 
 1. Open sources library update (Spring Boot 3.2.5, Vertx 4.5.7)
 2. Improve AppConfigReader and ConfigReader to use the app-config-reader.yml file.
+3. Enhanced OptionalService annotation.
 
 ---
 ## Version 3.1.1, 2/8/2023
