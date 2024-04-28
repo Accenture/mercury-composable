@@ -107,6 +107,26 @@ rest:
     headers: header_1
 
 #
+# Optional HTTP GET request filter for static HTML/CSS/JS files
+# -------------------------------------------------------------
+#
+# This provides a programmatic way to protect certain static content.
+#
+# The filter can be used to inspect HTTP path, headers and parameters.
+# The typical use case is to check cookies and perform browser redirection
+# for SSO login. Another use case is to selectively add security HTTP
+# response headers such as cache control and X-Frame-Options.
+#
+# In the following example, the filter applies to all static content
+# HTTP-GET requests except those with the file extension ".css".
+# You can implement a function with the service route "http.request.filter".
+# The input to the function will be an AsyncHttpRequest object.
+#
+static-content-filter:
+  path: ["/"]
+  excludes: [".css"]
+  service: "http.request.filter"
+#
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #
 # Access-Control-Allow-Origin must be "*" or domain name starting with "http://" or "https://"

@@ -18,10 +18,7 @@
 
 package org.platformlambda.automation.config;
 
-import org.platformlambda.automation.models.AssignedRoute;
-import org.platformlambda.automation.models.CorsInfo;
-import org.platformlambda.automation.models.HeaderInfo;
-import org.platformlambda.automation.models.RouteInfo;
+import org.platformlambda.automation.models.*;
 import org.platformlambda.core.system.AppStarter;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -77,6 +74,7 @@ public class RoutingEntry {
     private static final Map<String, HeaderInfo> requestHeaderInfo = new HashMap<>();
     private static final Map<String, HeaderInfo> responseHeaderInfo = new HashMap<>();
     private static final List<String> urlPaths = new ArrayList<>();
+    private static SimpleHttpFilter requestFilter;
     private static final RoutingEntry instance = new RoutingEntry();
 
     private RoutingEntry() {
@@ -85,6 +83,10 @@ public class RoutingEntry {
 
     public static RoutingEntry getInstance() {
         return instance;
+    }
+
+    public SimpleHttpFilter getRequestFilter() {
+        return requestFilter;
     }
 
     public AssignedRoute getRouteInfo(String method, String url) {
@@ -192,8 +194,39 @@ public class RoutingEntry {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(value="unchecked")
+    private SimpleHttpFilter getFilter(ConfigReader config) {
+        Object path = config.get("static-content-filter.path");
+        Object exclusion = config.get("static-content-filter.excludes");
+        String service = config.getProperty("static-content-filter.service");
+        if (path instanceof List && exclusion instanceof List && service != null && !service.isEmpty()) {
+            if (Utility.getInstance().validServiceName(service)) {
+                log.info("Static content HTTP-GET filter installed: {} -> {}, excludes extensions {}",
+                        path, service, exclusion);
+                List<String> pathList = new ArrayList<>();
+                List<String> excludeExtensions = new ArrayList<>();
+                List<Object> pList = (List<Object>) path;
+                List<Object> eList = (List<Object>) exclusion;
+                for (int i=0; i < pList.size(); i++) {
+                    pathList.add(config.getProperty("static-content-filter.path["+i+"]"));
+                }
+                for (int i=0; i < eList.size(); i++) {
+                    excludeExtensions.add(config.getProperty("static-content-filter.excludes["+i+"]"));
+                }
+                if (pathList.isEmpty()) {
+                    log.error("Static content HTTP-GET filter {} ignored: - path is empty", service);
+                }
+                return new SimpleHttpFilter(pathList, excludeExtensions, service);
+            } else {
+                log.error("Static content HTTP-GET filter ignored: '{} -> {}' - invalid service name", path, service);
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings(value = "unchecked")
     public void load(ConfigReader config) {
+        requestFilter = getFilter(config);
         if (config.exists(HEADERS)) {
             Object headerList = config.get(HEADERS);
             boolean valid = false;
@@ -497,7 +530,8 @@ public class RoutingEntry {
     @SuppressWarnings("unchecked")
     private List<String> validateServiceList(Object svcList) {
         Utility util = Utility.getInstance();
-        List<String> list = svcList instanceof String str? Collections.singletonList(str) : (List<String>) svcList;
+        List<String> list = svcList instanceof String?
+                Collections.singletonList((String) svcList) : (List<String>) svcList;
         List<String> result = new ArrayList<>();
         for (String item: list) {
             String service = item.trim().toLowerCase();

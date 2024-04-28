@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 3.1.4, 4/28/2023
+
+### Added
+
+Added optional static content HTTP-GET request filter in rest.yaml
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 3.1.3, 4/24/2023
 
 ### Added

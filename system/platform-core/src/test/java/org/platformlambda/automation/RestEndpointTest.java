@@ -40,7 +40,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class RestEndpointTest extends TestBase {
@@ -73,7 +72,8 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void optionsMethodTest() throws IOException, InterruptedException, ExecutionException {
+    public void optionsMethodTest() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("OPTIONS");
@@ -86,7 +86,9 @@ public class RestEndpointTest extends TestBase {
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
-        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench::offer);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // response is an empty string
         Assert.assertEquals("", response.getBody());
@@ -94,9 +96,10 @@ public class RestEndpointTest extends TestBase {
         Assert.assertEquals("*", response.getHeader("access-control-Allow-Origin"));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(value = "unchecked")
     @Test
-    public void serviceTest() throws IOException, InterruptedException, ExecutionException {
+    public void serviceTest() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -109,7 +112,9 @@ public class RestEndpointTest extends TestBase {
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
-        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench::offer);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         Assert.assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -121,10 +126,12 @@ public class RestEndpointTest extends TestBase {
         Assert.assertEquals(10, map.getElement("timeout"));
         Assert.assertEquals("y", map.getElement("parameters.query.x1"));
         Assert.assertEquals(list, map.getElement("parameters.query.x2"));
+        // the HTTP request filter will not execute because /api path is excluded
+        Assert.assertNull(response.getHeader("x-filter"));
     }
 
     @Test
-    public void uriPathSecurityTest() throws IOException, InterruptedException, ExecutionException {
+    public void uriPathSecurityTest() throws IOException, InterruptedException {
         uriPathSecurity("/api/hello/world moved to https://evil.site?hello world=abc",
                 "/api/hello/world moved to https");
         uriPathSecurity("/api/hello/world <div>test</div>",
@@ -136,7 +143,8 @@ public class RestEndpointTest extends TestBase {
     }
 
     @SuppressWarnings("unchecked")
-    private void uriPathSecurity(String uri, String expected) throws IOException, InterruptedException, ExecutionException {
+    private void uriPathSecurity(String uri, String expected) throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -149,7 +157,9 @@ public class RestEndpointTest extends TestBase {
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
-        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench::offer);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         Assert.assertEquals(404, response.getStatus());
         Assert.assertTrue(response.getBody() instanceof Map);
@@ -243,14 +253,16 @@ public class RestEndpointTest extends TestBase {
         Assert.assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
-        stream2bytes(in, result).onSuccess(bench2::offer);
+        stream2bytes(in, result).onSuccess(done -> bench2.offer(done));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         Assert.assertEquals(Boolean.TRUE, done);
         Assert.assertArrayEquals(b, result.toByteArray());
     }
 
     private Future<Boolean> stream2bytes(AsyncObjectStreamReader in, ByteArrayOutputStream out) {
-        return Future.future(promise -> fetchNextBlock(promise, in, out));
+        return Future.future(promise -> {
+            fetchNextBlock(promise, in, out);
+        });
     }
 
     private void fetchNextBlock(Promise<Boolean> promise,
@@ -260,12 +272,14 @@ public class RestEndpointTest extends TestBase {
         block.onSuccess(data -> {
             try {
                 if (data != null) {
-                    if (data instanceof byte[] b) {
+                    if (data instanceof byte[]) {
+                        byte[] b = (byte[]) data;
                         if (b.length > 0) {
                             out.write(b);
                         }
                     }
-                    if (data instanceof String text) {
+                    if (data instanceof String) {
+                        String text = (String) data;
                         if (!text.isEmpty()) {
                             out.write(util.getUTF((String) data));
                         }
@@ -384,7 +398,6 @@ public class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(response);
         Assert.assertNotNull(response.getHeader("stream"));
         String streamId = response.getHeader("stream");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
@@ -512,6 +525,7 @@ public class RestEndpointTest extends TestBase {
     public void postXmlAsText() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
+        SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("POST");
         req.setUrl("/api/hello/world");
@@ -598,8 +612,8 @@ public class RestEndpointTest extends TestBase {
         Assert.assertTrue(response.getBody() instanceof List);
         List<Map<String, Object>> list = (List<Map<String, Object>>) response.getBody();
         Assert.assertEquals(1, list.size());
-        Assert.assertEquals(HashMap.class, list.getFirst().getClass());
-        MultiLevelMap map = new MultiLevelMap(list.getFirst());
+        Assert.assertEquals(HashMap.class, list.get(0).getClass());
+        MultiLevelMap map = new MultiLevelMap(list.get(0));
         Assert.assertEquals("application/json", map.getElement("headers.content-type"));
         Assert.assertEquals("application/json", map.getElement("headers.accept"));
         Assert.assertEquals(false, map.getElement("https"));
@@ -790,7 +804,7 @@ public class RestEndpointTest extends TestBase {
         Assert.assertTrue(map.getElement("body") instanceof List);
         List<Map<String, Object>> received = (List<Map<String, Object>>) map.getElement("body");
         Assert.assertEquals(1, received.size());
-        Assert.assertEquals(data, received.getFirst());
+        Assert.assertEquals(data, received.get(0));
     }
 
     @Test
@@ -844,7 +858,7 @@ public class RestEndpointTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
-        req.setUrl("/index");
+        req.setUrl("/");
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
@@ -857,6 +871,8 @@ public class RestEndpointTest extends TestBase {
         InputStream in = this.getClass().getResourceAsStream("/public/index.html");
         String content = util.stream2str(in);
         Assert.assertEquals(content, html);
+        // the HTTP request filter will add a test header
+        Assert.assertEquals("demo", response.getHeader("x-filter"));
     }
 
     @Test
@@ -879,6 +895,8 @@ public class RestEndpointTest extends TestBase {
         InputStream in = this.getClass().getResourceAsStream("/public/sample.css");
         String content = util.stream2str(in);
         Assert.assertEquals(content, html);
+        // the HTTP request filter is not executed because ".css" extension is excluded in rest.yaml
+        Assert.assertNull(response.getHeader("x-filter"));
     }
 
     @Test
@@ -901,6 +919,8 @@ public class RestEndpointTest extends TestBase {
         InputStream in = this.getClass().getResourceAsStream("/public/sample.js");
         String content = util.stream2str(in);
         Assert.assertEquals(content, html);
+        // the HTTP request filter will add a test header
+        Assert.assertEquals("demo", response.getHeader("x-filter"));
     }
 
     @Test
