@@ -22,7 +22,7 @@ N/A
 
 ### Changed
 
-N/A
+Updated syntax for static-content-filter
 
 ---
 ## Version 3.1.3, 4/24/2023
