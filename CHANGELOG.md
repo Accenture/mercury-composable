@@ -12,6 +12,9 @@ For release notes before version 3.1, please refer to https://github.com/Accentu
 ---
 ## Version 3.1.5, 5/1/2024
 
+This version supercedes 3.1.4 due to updated data structure
+for static content handling.
+
 ### Added
 
 Added optional static-content.no-cache-pages in rest.yaml
