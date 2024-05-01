@@ -10,7 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
-## Version 3.1.4, 4/28/2023
+## Version 3.1.5, 5/1/2024
+
+### Added
+
+Added optional static-content.no-cache-pages in rest.yaml
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated data structure for static-content section in rest.yaml
+
+---
+## Version 3.1.4, 4/28/2024
 
 ### Added
 
@@ -25,7 +40,7 @@ N/A
 Updated syntax for static-content-filter
 
 ---
-## Version 3.1.3, 4/24/2023
+## Version 3.1.3, 4/24/2024
 
 ### Added
 
@@ -40,7 +55,7 @@ N/A
 Enhanced OptionalService annotation.
 
 ---
-## Version 3.1.2, 4/17/2023
+## Version 3.1.2, 4/17/2024
 
 ### Added
 
@@ -58,7 +73,7 @@ N/A
 3. Enhanced OptionalService annotation.
 
 ---
-## Version 3.1.1, 2/8/2023
+## Version 3.1.1, 2/8/2024
 
 ### Added
 
@@ -76,7 +91,7 @@ N/A
 2. Rename application parameter "event.worker.pool" to "kernel.thread.pool"
 
 ---
-## Version 3.1.0, 1/5/2023
+## Version 3.1.0, 1/5/2024
 
 ### Added
 
