@@ -25,7 +25,6 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * KernelThreadRunner is added for unit test purpose.
