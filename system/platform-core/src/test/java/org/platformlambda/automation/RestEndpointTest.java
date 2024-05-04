@@ -705,7 +705,6 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-
         // HTTP head response may include custom headers and content-length
         Assert.assertEquals("HEAD request received", response.getHeader("X-Response"));
         Assert.assertEquals("100", response.getHeader("Content-Length"));
