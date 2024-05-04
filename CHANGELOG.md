@@ -26,7 +26,8 @@ N/A
 
 ### Changed
 
-Updated data structure for static-content section in rest.yaml
+1. Updated data structure for static-content section in rest.yaml
+2. Fixed bug for setting multiple HTTP cookies
 
 ---
 ## Version 3.1.4, 4/28/2024
