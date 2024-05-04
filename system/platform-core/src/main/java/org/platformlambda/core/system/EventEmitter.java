@@ -85,7 +85,6 @@ public class EventEmitter {
 
     private EventEmitter() {
         Platform platform = Platform.getInstance();
-        log.info("Starting application instance {}", platform.getOrigin());
         AppConfigReader config = AppConfigReader.getInstance();
         String multicast = config.getProperty(MULTICAST_YAML);
         if (multicast != null) {
@@ -124,7 +123,7 @@ public class EventEmitter {
                     reader.load(eventHttpConfig);
                     eventHttpEnabled = true;
                 } catch (IOException e) {
-                    log.error("Unable to load journal config - {}", e.getMessage());
+                    log.error("Unable to load event-over-http config - {}", e.getMessage());
                 }
                 loadHttpRoutes(eventHttpConfig, reader);
             });
@@ -137,6 +136,10 @@ public class EventEmitter {
 
     public static EventEmitter getInstance() {
         return INSTANCE;
+    }
+
+    public String getId() {
+        return Platform.getInstance().getOrigin();
     }
 
     public boolean isMulticastEnabled() {
