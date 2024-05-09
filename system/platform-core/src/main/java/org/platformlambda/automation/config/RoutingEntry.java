@@ -199,7 +199,7 @@ public class RoutingEntry {
         return true;
     }
 
-    @SuppressWarnings(value="unchecked")
+    @SuppressWarnings("unchecked")
     private List<String> getNoCacheConfig(ConfigReader config) {
         Object noCache = config.get("static-content.no-cache-pages");
         if (noCache != null) {
