@@ -19,7 +19,7 @@ precedence.
 | yaml.event.over.http                   | Config location. e.g. classpath:/event-over-http.yaml           | Optional    |
 | yaml.multicast                         | Config location. e.g. classpath:/multicast.yaml                 | Optional    |
 | yaml.journal                           | Config location. e.g. classpath:/journal.yaml                   | Optional    |
-| yaml.flow.automation                   | Default config location classpath:/flows.yaml                   | EventScript |
+| yaml.flow.automation                   | Config location. e.g. classpath:/flows.yaml                     | EventScript |
 | rest.server.port                       | e.g. 8085                                                       | Optional    |
 | websocket.server.port                  | Alias for rest.server.port                                      | Optional    |
 | static.html.folder                     | classpath:/public/                                              | Yes         |
