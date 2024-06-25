@@ -15,7 +15,8 @@ A composable application is designed in 3 steps:
 2. Create a configuration file to represent the event flow
 3. Write a user story for each user function
 
-To get started, please begin with [Chapter one](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/).
+To get started, please visit [Chapter one](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/).
+We will illustrate the methodology with a composable application example.
 
 # Conquer Complexity: Embrace Composable Design Patterns
 
