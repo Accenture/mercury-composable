@@ -1,0 +1,60 @@
+flow:
+  id: 'parallel-test'
+  description: 'Test parallel processing'
+  ttl: 1s
+
+first:
+  task: 'begin.parallel.test'
+
+tasks:
+  - input:
+      - 'int(2) -> count'
+    process: 'begin.parallel.test'
+    output: []
+    description: 'Setup counter for two parallel tasks'
+    execution: parallel
+    next:
+      - 'parallel.one'
+      - 'parallel.two'
+
+  - input:
+      - 'text(hello-world-one) -> key1'
+    process: 'parallel.one'
+    output:
+      - 'result.key1 -> model.key1'
+      - 'result.decision -> decision'
+    description: 'Hello world'
+    execution: decision
+    next:
+      - 'echo.one'
+      - 'echo.two'
+
+  - input:
+      - 'text(hello-world-two) -> key2'
+    process: 'parallel.two'
+    output:
+      - 'result.key2 -> model.key2'
+      - 'result.decision -> decision'
+    description: 'Hello world'
+    execution: decision
+    next:
+      - 'echo.one'
+      - 'echo.two'
+
+  - input:
+      - 'model.key1 -> key1'
+      - 'model.key2 -> key2'
+    process: 'echo.one'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Hello world'
+    execution: end
+
+  - input:
+      - 'model.key1 -> key1'
+      - 'model.key2 -> key2'
+    process: 'echo.two'
+    output: []
+    description: 'Hello world'
+    execution: sink

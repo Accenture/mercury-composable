@@ -570,15 +570,17 @@ public class RoutingEntry {
                 for (String m: allMethods) {
                     String key = m+":"+nUrl;
                     routes.put(key, info);
+                    String flowHint = info.flowId == null? "" : ", flow=" + info.flowId;
                     // OPTIONS method is not traced
                     if (OPTIONS_METHOD.equals(m)) {
                         log.info("{} {} -> {}, timeout={}s", m, nUrl, info.services, info.timeoutSeconds);
                     } else if (info.defaultAuthService != null) {
-                        log.info("{} {} -> {} -> {}, timeout={}s, tracing={}",
-                                m, nUrl, info.defaultAuthService, info.services, info.timeoutSeconds, info.tracing);
+                        log.info("{} {} -> {} -> {}, timeout={}s, tracing={}{}",
+                                m, nUrl, info.defaultAuthService, info.services,
+                                info.timeoutSeconds, info.tracing, flowHint);
                     } else {
-                        log.info("{} {} -> {}, timeout={}s, tracing={}",
-                                m, nUrl, info.services, info.timeoutSeconds, info.tracing);
+                        log.info("{} {} -> {}, timeout={}s, tracing={}{}",
+                                m, nUrl, info.services, info.timeoutSeconds, info.tracing, flowHint);
                     }
                 }
             }

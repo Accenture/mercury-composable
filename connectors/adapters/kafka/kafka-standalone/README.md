@@ -23,7 +23,7 @@ After this step, you can start/stop it from the Docker Desktop app.
 
 ## IMPORTANT - Known problem as of September 2021
 
-Please use Java version 11 or 19 to run this standalone Kafka server application.
+Please use Java version 11 or higher to run this standalone Kafka server application.
 
 The FileChannelImplementation class would throw "Map Failed" error when running in Java version 1.8.0_292 or
 version 15. This would result in system failure. The kafka client will go into an endless loop when it retries

@@ -1,6 +1,6 @@
 # Developer's Guide
 
-Mercury version 3 is a toolkit for writing composable applications.
+Mercury Composable is a software development toolkit for writing composable applications.
 
 [Chapter 1 - Getting Started](CHAPTER-1.md)
 
@@ -8,7 +8,7 @@ Mercury version 3 is a toolkit for writing composable applications.
 
 [Chapter 3 - REST automation](CHAPTER-3.md)
 
-[Chapter 4 - Event orchestration](CHAPTER-4.md)
+[Chapter 4 - Event Script syntax](CHAPTER-4.md)
 
 [Chapter 5 - Build, test and deploy](CHAPTER-5.md)
 

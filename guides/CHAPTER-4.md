@@ -1,419 +1,770 @@
-﻿# Event orchestration
+﻿# Event Script syntax
 
-In traditional programming, we can write modular software components and wire them together as a single application.
-There are many ways to do that. You can rely on a "dependency injection" framework. In many cases, you would need
-to write orchestration logic to coordinate how the various components talk to each other to process a transaction.
+Event Script uses YAML to represent an end-to-end transaction flow. A transaction is a business use case, and
+the flow can be an API service, a batch job or a real-time transaction.
 
-In a composable application, you write modular functions using the first principle of "input-process-output".
+## flows.yml
 
-Functions communicate with each other using events and each function has a "handleEvent" method to process "input"
-and return result as "output". Writing software component in the first principle makes Test Driven Development (TDD)
-straight forward. You can write mock function and unit tests before you put in actual business logic.
+This configuration file sits in the project "resources" project and contains a list of filenames.
 
-Mocking an event-driven function in a composable application is as simple as overriding the function's route name
-with a mock function.
+It may look like this.
+```yaml
+flows:
+  - 'get-profile.yml'
+  - 'create-profile.yml'
+  - 'delete-profile.yml'
 
-## Register a function with the in-memory event system
-
-There are two ways to register a function:
-
-1. Programmatic registration
-2. Declarative registration
-
-In programmatic registration, you can register a function like this:
-
-```shell
-Platform platform = Platform.getInstance();
-platform.registerPrivate("my.function", new MyFunction(), 10);
+location: 'classpath:/flows/'
 ```
 
-In the above example, You obtain a singleton instance of the Platform API class and use it to register a private
-function `MyFunction` with a route name "my.function".
+The "location" tag is optional. If present, you can tell the system to load the flow config files from
+another folder location.
 
-In declarative approach, you use the `PreLoad` annotation to register a class with an event handler.
+## Writing new REST endpoint and function
 
-Your function should implement the LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction. 
-While LambdaFunction is untyped, the event system can transport PoJo and your function should
-test the object type and cast it to the correct PoJo.
+You can use the "flow-demo" subproject as a template to write your own composable application.
 
-TypedLambdaFunction and KotlinLambdaFunction are typed, and you must declare the input and output classes
-according to the input/output API contract of your function.
+For each filename in the flows.yml, you should create a corresponding configuration file under the
+"resources/flows" folder.
 
-For example, the SimpleDemoEndpoint has the "PreLoad" annotation to declare the route name and number of worker
-instances.
+Let's write a new flow called "greetings". You can copy-n-paste the following into a file called "greetings.yml"
+under the "resources/flows" folder.
 
-By default, LambdaFunction and TypedLambdaFunction are executed using "virtual threads" for the worker instances.
-To change a function to use kernel thread, you can add the `KernelThreadRunner` annotation.
+```yaml
+flow:
+  id: 'greetings'
+  description: 'Simplest flow'
+  ttl: 10s
+
+first:
+  task: 'greeting.demo'
+
+tasks:
+    - input:
+        - 'input.path_parameter.user -> user'
+      process: 'greeting.demo'
+      output:
+        - 'text(application/json) -> output.header.content-type'
+        - 'result -> output.body'
+      description: 'Hello World'
+      execution: end
+```
+
+In the application.properties, you can specify the following parameter:
+
+```
+yaml.flow.automation=classpath:/flows.yaml
+```
+
+and update the "flows.yaml" file in the resources folder as follows:
+
+```yaml
+flows:
+  - 'get-profile.yml'
+  - 'create-profile.yml'
+  - 'delete-profile.yml'
+  - 'greetings.yml'
+```
+
+Then, you can add a new REST endpoint in the "rest.yaml" configuration file like this.
+
+```yaml
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/greeting/{user}"
+    flow: 'greetings'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+```
+
+The above REST endpoint takes the path parameter "user". The task executor will map the path parameter to the
+input arguments (headers and body) in your function. Now you can write your new function with the named route
+"greeting.demo". Please copy-n-paste the following into a Java class called "Greetings" and save in the package
+under "my.organization.tasks" in the source project.
+
+> "my.organization" package name is an example. Please replace it with your actual organization package path.
 
 ```java
-@KernelThreadRunner
-@PreLoad(route = "hello.simple", instances = 10)
-public class SimpleDemoEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+@PreLoad(route="greeting.demo", instances=10, isPrivate = false)
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    private static final String USER = "user";
+
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        // business logic here
-    }
-}
-```
-
-Once a function is created using the declarative method, you can override it with a mock function by using the
-programmatic registration method in a unit test.
-
-## Private vs public functions
-
-When you use the programmatic registration approach, you can use the "register" or the "registerPrivate" method to
-set the function as "public" or "private" respectively. For declarative approach, the `PreLoad` annotation
-contains a parameter to define the visibility of the function.
-
-```java
-// or register it as "public"
-platform.register("my.function", new MyFunction(), 10);
-
-// register a function as "private"
-platform.registerPrivate("my.function", new MyFunction(), 10);
-```
-
-A private function is visible by other functions in the same application memory space.
-
-A public function is accessible by other function from another application instance using service mesh or
-"Event over HTTP" method. We will discuss inter-container communication in [Chapter-7](CHAPTER-7.md) and 
-[Chapter-8](CHAPTER-8.md).
-
-## Post Office API
-
-To send an asynchronous event or an event RPC call from one function to another, you can use the `PostOffice` APIs.
-
-In your function, you can obtain an instance of the PostOffice like this:
-
-```java
-@Override
-public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-    PostOffice po = new PostOffice(headers, instance);
-    // e.g. po.send and po.asyncRequest for sending asynchronous event and making RPC call
-}
-```
-
-The PostOffice API detects if tracing is enabled in the incoming request. If yes, it will propagate tracing
-information to "downstream" functions.
-
-## Event patterns
-
-1. RPC `“Request-response”, best for interactivity`
-2. Asynchronous `e.g. Drop-n-forget`
-3. Callback `e.g. Progressive rendering`
-4. Pipeline `e.g. Work-flow application`
-5. Streaming `e.g. File transfer`
-
-### Request-response (RPC)
-
-In enterprise application, RPC is the most common pattern in making call from one function to another.
-
-The "calling" function makes a request and waits for the response from the "called" function.
-
-In Mercury version 3, there are 2 types of RPC calls - "asynchronous" and "sequential non-blocking".
-
-#### Asynchronous RPC
-
-You can use the `asyncRequest` method to make an asynchronous RPC call. Asynchronous means that the response
-will be delivered to the `onSuccess` or `onFailure` callback method.
-
-Note that normal response and exception are sent to the onSuccess method and timeout exception to the onFailure
-method.
-
-If you set "timeoutException" to false, the timeout exception will be delivered to the onSuccess callback and
-the onFailure callback will be ignored.
-
-```java
-Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout) 
-                                   throws IOException;
-Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout, 
-                                   boolean timeoutException) throws IOException;
-
-// example
-EventEnvelope request = new EventEnvelope().setTo(SERVICE).setBody(TEXT);
-Future<EventEnvelope> response = po.asyncRequest(request, 2000);
-response.onSuccess(result -> {
-    // handle the response event
-}).onFailure(ex -> {
-    // handle timeout exception
-});
-```
-
-The timeout value is measured in milliseconds.
-
-#### Asynchronous fork-n-join
-
-A special version of RPC is the fork-n-join API. This allows you to make concurrent requests to multiple functions.
-The system will consolidate all responses and return them as a list of events.
-
-Normal responses and user defined exceptions are sent to the onSuccess method and timeout exception to the onFailure
-method. Your function will receive all responses or a timeout exception.
-
-If you set "timeoutException" to false, partial results will be delivered to the onSuccess method when one or
-more services fail to respond on-time. The onFailure method is not required.
-
-```java
-Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> event, long timeout) 
-                                         throws IOException;
-
-Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> event, long timeout, 
-                                         boolean timeoutException) throws IOException;
-
-// example
-List<EventEnvelope> requests = new ArrayList<>();
-requests.add(new EventEnvelope().setTo(SERVICE1).setBody(TEXT1));
-requests.add(new EventEnvelope().setTo(SERVICE2).setBody(TEXT2));
-Future<List<EventEnvelope>> responses = po.asyncRequest(requests, 2000);
-responses.onSuccess(events -> {
-    // handle the response events
-}).onFailure(ex -> {
-    // handle timeout exception
-});
-```
-
-#### Asynchronous programming technique
-
-When your function is a service by itself, asynchronous RPC and fork-n-join require different programming approaches. 
-
-There are two ways to do that:
-1. Your function returns an immediate result and waits for the response(s) to the onSuccess or onFailure callback
-2. Your function is implemented as an "EventInterceptor"
-
-For the first approach, your function can return an immediate result telling the caller that your function would need
-time to process the request. This works when the caller can be reached by a callback.
-
-For the second approach, your function is annotated with the keyword `EventInterceptor`. 
-It can immediately return a "null" response that will be ignored by the event system. Your function can inspect
-the "replyTo" address and correlation ID in the incoming event and include them in a future response to the caller.
-
-#### Sequential non-blocking RPC and fork-n-join
-
-The easiest way to do synchronous RPC call in a "sequential non-blocking" way is to run your function in a virtual
-thread (_Note that this is the default behavior and you don't need to set anything_).
-
-```java
-// for a single RPC call
-PostOffice po = new PostOffice(headers, instance);
-Future<EventEnvelope> future = po.request(requestEvent, timeoutInMills);
-EventEnvelope result = future.get();
-
-// for a fork-n-join call
-PostOffice po = new PostOffice(headers, instance);
-Future<List<EventEnvelope>> future = po.request(requestEvents, timeoutInMills);
-List<EventEnvelope> result = future.get();
-```
-
-If you prefer coding in Kotlin, you can implement a "suspend function" using the KotlinLambdaFunction interface.
-
-The following code segment illustrates the creation of the "hello.world" function that makes a non-blocking RPC
-call to "another.service".
-
-```java
-@PreLoad(route="hello.world", instances=10)
-class FileUploadDemo: KotlinLambdaFunction<AsyncHttpRequest, Any> {
-    override suspend fun handleEvent(headers: Map<String, String>, input: AsyncHttpRequest, 
-                                     instance: Int): Any {
-        val fastRPC = FastRPC(headers)
-        // your business logic here...
-        val req = EventEnvelope().setTo("another.service").setBody(myPoJo)
-        return fastRPC.awaitRequest(req, 5000)
-    }
-}
-```
-
-The API method signature for non-blocking RPC and fork-n-join are as follows:
-
-```java
-@Throws(IOException::class)
-suspend fun awaitRequest(request: EventEnvelope, timeout: Long): EventEnvelope
-
-@Throws(IOException::class)
-suspend fun awaitRequest(requests: List<EventEnvelope>, timeout: Long): List<EventEnvelope>
-```
-
-### Asynchronous drop-n-forget
-
-To make an asynchronous call from one function to another, use the `send` method.
-
-```java
-void send(String to, Kv... parameters) throws IOException;
-void send(String to, Object body) throws IOException;
-void send(String to, Object body, Kv... parameters) throws IOException;
-void send(final EventEnvelope event) throws IOException;
-```
-Kv is a key-value pair for holding one parameter.
-
-Asynchronous event calls are handled in the background so that your function can continue processing.
-For example, sending a notification message to a user.
-
-### Callback
-
-You can declare another function as a "callback". When you send a request to another function, you can set the 
-"replyTo" address in the request event. When a response is received, your callback function will be invoked to 
-handle the response event.
-
-```java
-EventEnvelope req = new EventEnvelope().setTo("some.service")
-                        .setBody(myPoJo).setReplyTo("my.callback");
-po.send(req);
-```
-
-In the above example, you have a callback function with route name "my.callback". You send the request event
-with a MyPoJo object as payload to the "some.service" function. When a response is received, the "my.callback"
-function will get the response as input.
-
-### Pipeline
-
-Pipeline is a linked list of event calls. There are many ways to do pipeline. One way is to keep the pipeline plan
-in an event's header and pass the event across multiple functions where you can set the "replyTo" address from the
-pipeline plan. You should handle exception cases when a pipeline breaks in the middle of a transaction.
-
-An example of the pipeline header key-value may look like this:
-
-```properties
-pipeline=service.1, service.2, service.3, service.4, service.5
-```
-
-In the above example, when the pipeline event is received by a function, the function can check its position
-in the pipeline by comparing its own route name with the pipeline plan.
-
-```java
-PostOffice po = new PostOffice(headers, instance);
-
-// some business logic here...
-String myRoute = po.getRoute();
-```
-Suppose myRoute is "service.2", the function can send the response event to "service.3".
-When "service.3" receives the event, it can send its response event to the next one. i.e. "service.4".
-
-When the event reaches the last service ("service.5"), the processing will complete.
-
-### Streaming
-
-If you set a function as singleton (i.e. one worker instance), it will receive event in an orderly fashion.
-This way you can "stream" events to the function, and it will process the events one by one.
-
-Another means to do streaming is to create an "ObjectStreamIO" event stream like this:
-
-```java
-ObjectStreamIO stream = new ObjectStreamIO(60);
-ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
-out.write(messageOne);
-out.write(messageTwo);
-out.close();
-
-String streamId = stream.getInputStreamId();
-// pass the streamId to another function
-```
-
-In the code segment above, your function creates an object event stream and writes 2 messages into the stream
-It obtains the streamId of the event stream and sends it to another function. The other function can read the
-data blocks orderly.
-
-You must declare "end of stream" by closing the output stream. If you do not close an output stream,
-it remains open and idle. If a function is trying to read an input stream using the stream ID and the
-next data block is not available, it will time out.
-
-A stream will be automatically closed when the idle inactivity timer is reached. In the above example, 
-ObjectStreamIO(60) means an idle inactivity timer of 60 seconds.
-
-There are two ways to read an input event stream - asynchronous or sequential non-blocking.
-
-#### AsyncObjectStreamReader
-
-To read events from a stream, you can create an instance of the AsyncObjectStreamReader like this:
-
-```java
-AsyncObjectStreamReader in = new AsyncObjectStreamReader(stream.getInputStreamId(), 8000);
-Future<Object> block = in.get();
-block.onSuccess(b -> {
-    if (b != null) {
-        // process the data block
-    } else {
-        // end of stream. Do additional processing.
-        in.close();
-    }
-});
-```
-
-The above illustrates reading the first block of data. The function would need to iteratively read the stream
-until end of stream (i.e. when the stream returns null). As a result, asynchronous application code for stream
-processing is more challenging to write.
-
-#### Sequential non-blocking method
-
-The industry trend is to use sequential non-blocking method instead of "asynchronous callback" because your code
-will be much easier to read.
-
-Since Mercury version 3.1, the default function execution engine is using Java virtual threads. 
-"Request-response" style code will be executed sequentially. If you use the PostOffice's "request" method,
-it will return a Java Future object. You can use the Future's ".get()" method to retrieve the response
-synchronously. Behind the curtain, the request is running in a virtual thread and it does not block the
-rest of the application while waiting for a response, thus enhancing overall application throughput.
-
-This is conceptually similar to the "await" keyword in other programming languages.
-
-If you prefer the Kotlin programming language, you may use the FastRPC's awaitRequest API.
-
-An example for reading a stream using the `awaitRequest` method is shown in the `FileUploadDemo` kotlin class
-in the lambda-example project. It is using a simple "while" loop to read the stream. When the function fetches
-the next block of data using the `awaitRequest` method, the function is suspended until the next data block or
-"end of stream" signal is received.
-
-It may look like this:
-
-```java
-val po = PostOffice(headers, instance)
-val fastRPC = FastRPC(headers)
-
-val req = EventEnvelope().setTo(streamId).setHeader(TYPE, READ)
-while (true) {
-    val event = fastRPC.awaitRequest(req, 5000)
-    if (event.status == 408) {
-        // handle input stream timeout
-        break
-    }
-    if ("eof" == event.headers["type"]) {
-        po.send(streamId, Kv("type", "close"))
-        break
-    }
-    if ("data" == event.headers["type"]) {
-        val block = event.body
-        if (block is ByteArray) {
-            // handle the data block from the input stream
+    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        if (input.containsKey(USER)) {
+            String user = input.get(USER).toString();
+            Map<String, Object> result = new HashMap<>();
+            result.put(USER, user);
+            result.put("message", "Welcome");
+            result.put("time", new Date());
+            return result;
+        } else {
+            throw new IllegalArgumentException("Missing path parameter 'user'");
         }
     }
 }
 ```
 
-Since the code style is "sequential non-blocking", using a "while" loop does not block the "event loop" provided
-that you are using an "await" API inside the while-loop.
+For the flow-engine to find your new function, please update the key-value for "web.component.scan" in
+application.properties:
 
-In this fashion, the intent of the code is clear. Sequential non-blocking method offers higher throughput because
-it does not consume CPU resources while the function is waiting for a response from another function.
+```text
+web.component.scan=com.accenture,my.organization
+```
 
-We recommend sequential non-blocking style for more sophisticated event streaming logic.
+To test your new REST endpoint, flow configuration and function, please point your browser to
 
-## Orchestration layer
+```text
+http://127.0.0.1:8100/api/greeting/my_name
+```
 
-Once you have implemented modular functions in a self-contained manner, the best practice is to write one or more
-functions to do "event orchestration".
+You can replace "my_name" with your first name to see the response to the browser.
 
-Think of the orchestration function as a music conductor who guides the whole team to perform.
+## Flow configuration syntax
 
-For event orchestration, your function can be the "conductor" that sends events to the individual functions so that
-they operate together as a single application. To simplify design, the best practice is to apply event orchestration
-for each transaction or use case. The event orchestration function also serves as a living documentation about how
-your application works. It makes your code more readable.
+In your "greetings.yml" file above, you find the following key-values:
 
-## Event Script
+`flow.id` - Each flow must have a unique flow ID. The flow ID is usually originated from a user facing endpoint
+through an event adapter. For example, you may write an adapter to listen to a cloud event in a serverless deployment.
+In The most common one is the HTTP adapter.
 
-To automate event orchestration, there is an enterprise add-on module called "Event Script".
-This is the idea of "config over code" or "declarative programming". The primary purpose of "Event Script"
-is to reduce coding effort so that the team can focus in improving application design and code quality. 
-Please contact your Accenture representative if you would like to evaluate the additional tool.
+The flow ID is originated from the "rest.yaml". The `flow-engine` will find the corresponding flow configuration
+and create a new flow instance to process the user request.
 
-In the next chapter, we will discuss the build, test and deploy process.
+`flow.description` - this describes the purpose of the flow
+
+`flow.ttl` - "Time to live (TTL)" timer for each flow. You can define the maximum time for a flow to finish processing.
+All events are delivered asynchronously and there is no timeout value for each event. The TTL defines the time budget
+for a complete end-to-end flow. Upon expiry, an unfinished flow will be aborted.
+
+`first.task` - this points to the route name of a function (aka "task") to which the flow engine will deliver
+the incoming event.
+
+The configuration file contains a list of task entries where each task is defined by "input", "process", "output"
+and "execution" type. In the above example, the execution type is "end", meaning that it is the end of a transaction
+and its result set can be sent to the user.
+
+## Underlying Event System
+
+The Event Script system uses Accenture Mercury version 3 as the event system where Mercury is a wrapper of
+Eclipse Vertx, Kotlin coroutine and suspend function.
+
+The integration points are intentionally minimalist. For most use cases, the user application does not need
+to make any API calls to the underlying event system.
+
+## REST automation and HTTP adapter
+
+The most common transaction entry point is a REST endpoint. The event flow may look like this:
+
+```text
+Request -> "http.request" -> "task.executor" -> user defined tasks -> "async.http.response" -> Response
+```
+
+REST automation is part of the Mercury platform-core library. It contains a non-blocking HTTP server that converts
+HTTP requests and responses into events.
+
+It routes an HTTP request event to the HTTP adapter if the "flow" tag is provided.
+
+In the following example, the REST endpoint definition is declared in a "rest.yaml" configuration. It will route
+the URI "/api/decision" to the HTTP adapter that exposes its service route name as "http.flow.adapter".
+
+```yaml
+rest:
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/decision?decision=_"
+    flow: 'decision-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+```
+
+The "cors" and "headers" tags are optional. When specified, the REST endpoint will insert CORS headers and HTTP request
+headers accordingly.
+
+For rest.yaml syntax, please refer to https://accenture.github.io/mercury-composable/guides/CHAPTER-3
+
+The HTTP adapter maps the HTTP request dataset and the flow ID into a standard event envelope for delivery to the
+flow engine.
+
+The HTTP request dataset, addressable with the "input." namespace, contains the following:
+
+| Key            | Values                                         |
+|:---------------|:-----------------------------------------------|
+| method         | HTTP method                                    |
+| uri            | URI path                                       |
+| header         | HTTP headers                                   |
+| cookie         | HTTP cookies                                   |
+| path_parameter | Path parameters if any                         |
+| query          | HTTP query parameters if any                   |
+| body           | HTTP request body if any                       |
+| stream         | input stream route ID if any                   |
+| ip             | remote IP address                              |
+| filename       | filename if request is a multipart file upload |
+| session        | authenticated session key-values if any        |
+
+For easy matching, keys of headers, cookies, query and path parameters are case-insensitive.
+
+Regular API uses JSON and XML and they will be converted to a hashmap in the event's body.
+
+For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
+the binary payload. Please refer to the following mercury 3.0 guide for details.
+
+> https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#send-http-request-body-as-a-stream
+
+> https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#read-http-response-body-stream
+
+## Task and its corresponding function
+
+Each task in a flow must have a corresponding function. You can assign a task name to the function using the
+`Preload` annotation like this.
+
+```java
+@PreLoad(route="greeting.demo", instances=10)
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    @Override
+    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        // business logic here
+        return someOutput;
+    }
+}
+```
+
+The "route" in the Preload annotation is the task name. The "instances" define the maximum number of "workers" that
+the function can handle concurrently. The system is designed to be reactive and the function does not consume memory
+and CPU resources until an event arrives.
+
+You may also define concurrency using environment variable. You can replace the "instances" with `envInstances` using
+standard environment variable syntax like `${SOME_ENV_VARIABLE:default_value}`.
+
+## Task list
+
+All tasks for a flow are defined in the "tasks" section.
+
+### Input/Output data mapping
+
+A function is self-contained. This modularity reduces application complexity because the developer only needs interface
+contract details for a specific function.
+
+To handle this level of modularity, the system provides configurable input/output data mapping.
+
+There are five types of datasets:
+
+| Type                                  | Keyword and/or namespace   |
+|:--------------------------------------|:---------------------------|
+| Flow input dataset                    | `input.` or `http.input.`  |
+| Flow output dataset                   | `output.` or `http.output.`|
+| Function input body                   | no namespace required      |
+| Function input or output headers      | `header` or `header.`      |
+| Function output result set            | `result.`                  |
+| Function output status code           | `status`                   |
+| State machine dataset                 | `model.`                   |
+| Decision value from a task            | `decision`                 |
+
+"http.input." and "http.output." are aliases of "input." and "output." respectively.
+
+The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
+(See "Decision" in the task section).
+
+Each flow has its end-to-end input and output.
+
+Each function has its input headers, input body and output result set.
+Optionally, a function can return an EventEnvelope object to hold its result set in the "body", a "status" code
+and one or more header key-values.
+
+Since each function is stateless, a state machine (with namespace `model.`) is available as a temporary memory store
+for transaction states that can be passed from one task to another.
+
+All variables are addressable using the standard dot-bracket convention.
+
+For example, "hello.world" will retrieve the value `100` from this data structure:
+```json
+{
+  "hello":  {
+    "world": 100
+  }
+}
+```
+
+and "numbers[1]" will retrieve the value `200` below:
+```json
+{ "numbers":  [100, 200] }
+```
+
+The assignment is done using the "->" syntax.
+
+In the following example, the HTTP input query parameter 'amount' is passed as input body argument 'amount'
+to the task 'simple.decision'. The result (function "return value") from the task will be mapped to the
+special "decision" variable that the flow engine will evaluate. This assumes the result is a boolean or
+numeric value.
+
+The "decision" value is also saved to the state machine (`model`) for subsequent tasks to evaluate.
+
+```yaml
+  - input:
+      - 'input.query.amount -> amount'
+    process: 'simple.decision'
+    output:
+      - 'result -> decision'
+      - 'result -> model.decision'
+```
+
+### Special handling for header
+
+When function input keyword `header` is specified in the "right hand side" of an input data mapping statement,
+it refers to the input event envelope's headers. Therefore, it assumes the "left hand side" to resolve into
+a Map object of key-values. Otherwise, it will reject the input data mapping statement with an error like this:
+
+```text
+Invalid input mapping 'text(ok) -> header', expect: Map, Actual: String
+```
+
+When function input namespace `header.` is used, the system will map the value resolved from the "left hand side"
+statement into the specific header.
+
+For example, the input data mapping statement `text(ok) -> header.demo` will set "demo=ok" into input event
+envelope's headers.
+
+When function output keyword `header` is specified in the "left hand side" of an output data mapping statement,
+it will resolve as a Map from the function output event envelope's headers.
+
+Similarly, when function output namespace `header.` is used, the system will resolve the value from a specific
+key of the function output event envelope's headers.
+
+### Using PoJo as function input body
+
+The input/output data mapping is done in a schemaless fashion so that you can set any key-values accordingly.
+
+To specify PoJo, you can use the TypedLambdaFunction to configure input and output in your function.
+
+Since a data structure is passed to your function's input argument as key-values, you would need to create a
+PoJo class to deserialize the data structure.
+
+To tell the system that your function is expecting input as a PoJo, you can use the special notation "*" in
+the right hand side.
+
+For example, the following entry tells the system to set the value in "model.dataset" as a PoJo input.
+
+```yaml
+  - input:
+      - 'model.dataset -> *'
+```
+
+> If the value from the left hand side is not a map, the system will ignore the input mapping command and
+print out an error message in the application log.
+
+### Setting function input headers
+
+When function input body is used to hold a PoJo, we may use function input headers to pass other arguments
+to the function without changing the data structure of a user defined PoJo.
+
+In the following example, the HTTP query parameter "userid" will be mappped to the function input header
+key "user" and the HTTP request body will be mapped to the function input body.
+
+```yaml
+  - input:
+      - 'input.query.userid -> header.user'
+      - 'input.body -> *'
+    process: 'my.user.function'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+```
+
+## Task types
+
+### Decision task
+
+A decision task makes decision to select the next task to execute. It has the tag `execution=decision`.
+
+In the output data mapping section, it must map the corresponding result set or its key-value to the `decision` object.
+
+The "next" tag contains a list of tasks to be selected based on the decision value.
+
+If decision value is boolean, a `true` value will select the first item. Otherwise, the second item will be selected.
+
+If decision value is an integer, the number should start from 1 where the corresponding item will be selected.
+
+```yaml
+tasks:
+  - input:
+      - 'input.query.decision -> decision'
+    process: 'simple.decision'
+    output:
+      - 'result.data -> model.decision'
+      - 'result.data -> decision'
+    description: 'Simple decision test'
+    execution: decision
+    next:
+      - 'decision.case.one'
+      - 'decision.case.two'
+```
+
+### Response task
+
+A response task will provide result set as a flow output or "response". A response task allows the flow to respond
+to the user or caller immediately and then move on to the next task asynchronously. For example, telling the user
+that it has accepted a request and then moving on to process the request that may take longer time to run.
+
+A response task has the tag `execution=response` and a "next" task.
+
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+      - 'result -> output.body'
+    description: 'Pass a pojo to another task'
+    execution: response
+    next:
+      - 'sequential.two'
+```
+
+### End task
+
+An end task indicates that it is the last task of the transaction processing in a flow. If the flow has not executed
+a response task, the end task will generate the response. Response is defined by output data mapping.
+
+This task has the tag `execution=end`.
+
+For example, the greeting task in the unit tests is an end task.
+```yaml
+    - input:
+        - 'input.path_parameter.user -> user'
+      process: 'greeting.demo'
+      output:
+        - 'text(application/json) -> output.header.content-type'
+        - 'result -> output.body'
+      description: 'Hello World'
+      execution: end
+```
+
+### Sequential task
+
+Upon completion of a sequential task, the next task will be executed.
+
+This task has the tag `execution=sequential`.
+
+In the following example, `sequential.two` will be executed when `sequential.one` finishes.
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: sequential
+    next:
+      - 'sequential.two'
+```
+
+### Parallel task
+
+Upon completion of a `parallel` task, all tasks in the "next" task list will be executed in parallel.
+
+This task has the tag `execution=parallel`.
+
+In this example, `parallel.one` and `parallel.two` will run after `begin.parallel.test`
+```yaml
+tasks:
+  - input:
+      - 'int(2) -> count'
+    process: 'begin.parallel.test'
+    output: []
+    description: 'Setup counter for two parallel tasks'
+    execution: parallel
+    next:
+      - 'parallel.one'
+      - 'parallel.two'
+```
+
+### Fork-n-join task
+
+Fork-n-join is a parallel processing pattern.
+
+A "fork" task will execute multiple "next" tasks in parallel and then consolidate the result sets before running
+the "join" task.
+
+This task has the tag `execution=fork`. It must have a list of "next" tasks and a "join" task.
+
+It may look like this:
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: fork
+    next:
+      - 'echo.one'
+      - 'echo.two'
+    join: 'join.task'
+```
+
+### Sink task
+
+A sink task is a task without any next tasks. Sink tasks are used by fork-n-join and pipeline tasks as reusable modules.
+
+This task has the tag `execution=sink`.
+```yaml
+  - input:
+      - 'text(hello-world-two) -> key2'
+    process: 'echo.two'
+    output:
+      - 'result.key2 -> model.key2'
+    description: 'Hello world'
+    execution: sink
+```
+
+# Pipeline Feature
+
+Pipeline is an advanced feature of Event Script.
+
+## Pipeline task
+
+A pipeline is a list of tasks that will be executed orderly within the current task.
+
+When the pipeline is done, the system will execute the "next" task.
+
+This task has the tag `execution=pipeline`.
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: pipeline
+    pipeline:
+      - 'echo.one'
+      - 'echo.two'
+    next:
+      - 'echo.three'
+```
+
+### Advanced features
+
+Some special uses of pipelines include "if-then-else" and "for/while loops". This is like running a mini-flow
+inside a pipeline.
+
+### Simple for-loop
+
+In the following example, the `loop.statement` contains a for-loop that uses a variable in the state machine to
+evaluate the loop.
+
+In this example, the pipeline will be executed three times before passing control to the "next" task.
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: pipeline
+    loop:
+      statement: 'for (model.n = 0; model.n < 3; model.n++)'
+    pipeline:
+      - 'echo.one'
+      - 'echo.two'
+      - 'echo.three'
+    next:
+      - 'echo.four'
+```
+
+### Simple while loop
+
+The `loop.statement` may use a "while loop" syntax like this:
+
+```yaml
+    loop:
+      statement: 'while (model.running)'
+```
+
+To exit the above while loop, one of the functions in the pipeline should return a boolean "false" value with
+output "data mapping" to the `model.running` variable.
+
+### For loop with break/continue decision
+
+In the following example, the system will evaluate if the `model.quit` variable exists.
+If yes, the `break` or `continue` condition will be executed.
+
+The state variable is obtained after output data mapping and any task in the pipeline can set a key-value for
+mapping into the state variable.
+
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: pipeline
+    loop:
+      statement: 'for (model.n = 0; model.n < 3; model.n++)'
+      condition:
+        mode: sequential
+        statements:
+          - 'if (model.quit) break'
+    pipeline:
+      - 'echo.one'
+      - 'echo.two'
+      - 'echo.three'
+    next:
+      - 'echo.four'
+```
+
+### For loop with if-then-else statement
+
+The condition statement may use a "if-then-else" statement. Instead of break or continue, the statement will evaluate
+if another task will be executed.
+
+The `condition.mode` may be sequential or parallel. When it is set to sequential, the selected task will be executed,
+and the pipeline will resume.
+
+When it is set to parallel, the pipeline will resume immediately without waiting for the selected task to finish.
+The selected task will therefore run in parallel by itself. This allows a pipeline to spin up another parallel
+task for some asynchronous processing. e.g. sending a notification message to the user in the middle of
+a transaction.
+
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: pipeline
+    loop:
+      statement: 'for (model.n = 0; model.n < 4; model.n++)'
+      condition:
+        mode: parallel
+        statements:
+          - 'if (model.jump) echo.ext1 else echo.ext2'
+    pipeline:
+      - 'echo.one'
+      - 'echo.two'
+      - 'echo.three'
+    next:
+      - 'echo.four'
+```
+
+# Handling Exception
+
+You can define exception handler at the top level or at the task level.
+
+## What is an exception?
+
+Exception is said to occur when a user function throws exception or returns an EventEnvelope object with
+a status code equals to or larger than 400.
+
+The event status uses the same numbering scheme as HTTP exception status code.
+Therefore, status code less than 400 is not considered an exception.
+
+## Top-level exception handler
+
+Top-level exception handler is a "catch-all" handler. You can define it like this:
+
+```yaml
+flow:
+  id: 'greetings'
+  description: 'Simplest flow of one task'
+  ttl: 10s
+  exception: 'v1.my.exception.handler'
+```
+
+In this example, the `v1.my.exception.handler` should point to a corresponding exception handler that you provide.
+
+The following input arguments will be delivered to your function when exception happens.
+
+| Key     | Description                  |
+|:--------|:-----------------------------|
+| status  | Exception status code        |
+| message | Error message                |
+| stack   | Stack trace in a text string |
+
+The exception handler function can be an "end" task to abort the transaction or a decision task
+to take care of the exception. For example, the exception handler can be a "circuit-breaker" to retry a request.
+
+## Task-level exception handler
+
+To define a task-level exception handler, you can attach it to a task like this:
+
+```yaml
+  - input:
+      - 'model.pojo2 -> data'
+      - 'text(just a test) -> exception'
+    process: 'echo.two'
+    output:
+      - 'result.data -> model.pojo3'
+      - 'model.none -> model.pojo2'
+    description: 'second step of a pipeline'
+    execution: sink
+    exception: 'v1.specific.exception'
+```
+
+## IMPORTANT
+
+When a task-level exception handler throws exception, it will be caught by the top-level exception handler, if any.
+
+A top-level exception handler should not throw exception. Otherwise it may go into an exception loop.
+
+Therefore, we recommend that an exception handler should return regular result set in a PoJo or a Map object.
+
+An example of task-level exception handler is shown in the "HelloException.class" in the unit test section of
+the event script engine where it set the status code in the result set so that the system can map the status code
+from the result set to the next task or to the HTTP output status code.
+
+# Other Features
+
+## Future task scheduling
+
+You may add a “delay” tag in a task so that it will be executed later.
+This feature is usually used for unit tests or "future task scheduling".
+
+Since the system is event-driven and non-blocking, the delay is simulated by event scheduling.
+It does not block the processing flow.
+
+| Type           | Value                  | Example           |
+|:---------------|:-----------------------|:------------------|
+| Fixed delay    | Milliseconds           | delay=1000        |
+| Variable delay | State machine variable | delay=model.delay |
+
+When delay is set to a state variable that its value is not configured by a prior data mapping,
+the delay command will be ignored.
+
+An example task that has an artificial delay of 2 seconds:
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.ex -> exception'
+      - 'text(hello world) -> greeting'
+    process: 'greeting.test'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Hello World'
+    execution: end
+    delay: 2000
+```
 <br/>
 
 |            Chapter-3            |                   Home                    |               Chapter-5                |

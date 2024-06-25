@@ -1,5 +1,11 @@
 # Design notes
 
+## Orchestration by configuration
+
+The recommended way to write a composable application is orchestration by configuration using "Event Script".
+
+This would potentially reduce code size by half.
+
 ## Support sequential synchronous RPC in a non-blocking fashion
 
 The foundation library (platform-core) has been integrated with Java 21 virtual thread and 
@@ -36,6 +42,10 @@ The convertValue method has been consolidated into the readValue method.
 
 For efficient and serialization performance, we use MsgPack as schemaless binary transport for
 EventEnvelope that contains event metadata, headers and payload.
+
+### User provided serializers
+
+This provides more flexibility for user function to take full control of their PoJo serialization needs.
 
 ### Custom JSON and XML serializers
 

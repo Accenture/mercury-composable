@@ -1,0 +1,52 @@
+flow:
+  id: 'fork-n-join-test'
+  description: 'Test fork-n-join flow'
+  ttl: 1s
+
+first:
+  task: 'sequential.one'
+
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+    description: 'Pass a pojo to another task'
+    execution: fork
+    next:
+      - 'echo.one'
+      - 'echo.two'
+    join: 'join.task'
+
+  - input:
+      - 'text(hello-world-one) -> key1'
+    process: 'echo.one'
+    output:
+      - 'result.key1 -> model.key1'
+    description: 'Hello world'
+    execution: sink
+
+  - input:
+      - 'text(hello-world-two) -> key2'
+    process: 'echo.two'
+    output:
+      - 'result.key2 -> model.key2'
+    description: 'Hello world'
+    execution: sink
+
+  #
+  # the "*" pojo mapping entry must be the first one in the input mapping
+  # so that the subsequent update to the pojo is possible.
+  #
+  - input:
+      - 'model.pojo -> *'
+      - 'model.key1 -> key1'
+      - 'model.key2 -> key2'
+    process: 'join.task'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Return result'
+    execution: end

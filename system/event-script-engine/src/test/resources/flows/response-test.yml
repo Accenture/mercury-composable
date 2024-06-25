@@ -1,0 +1,29 @@
+flow:
+  id: 'response-test'
+  description: 'Test a flow with immediate response'
+  ttl: 10s
+
+first:
+  task: 'sequential.one'
+
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+      - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
+      - 'result -> output.body'
+    description: 'Pass a pojo to another task'
+    execution: response
+    next:
+      - 'sequential.two'
+
+  - input:
+      - 'model.pojo -> pojo'
+    process: 'sequential.two'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Return result'
+    execution: end

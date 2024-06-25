@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.0, 6/24/2024
+
+This version merges Event Script into the Mercury Composable repository.
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Update Spring Boot to version 3.3.1
+2. Update Guava to version 33.2.1-jre
+3. Update Vertx to version 4.5.8
+4. Update Kotlin to version 2.0.0
+5. Update classgraph to version 4.8.174
+6. Optional reply event for a flow configuration
+
+> Kafka-standalone is still using Spring Boot 3.2.5 due to compatibility issue
+
+---
 ## Version 3.1.5, 5/1/2024
 
 This version supercedes 3.1.4 due to updated data structure

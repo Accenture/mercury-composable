@@ -11,12 +11,12 @@ As discussed in Chapter-1, a function may look like this:
 
 ```java
 @PreLoad(route = "my.first.function", instances = 10)
-public class MyFirstFunction implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+public class MyFirstFunction implements TypedLambdaFunction<MyPoJo, AnotherPoJo> {
 
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+    public AnotherPojo handleEvent(Map<String, String> headers, MyPoJo input, int instance) {
         // your business logic here
-        return input;
+        return result;
     }
 }
 ```
@@ -24,23 +24,13 @@ public class MyFirstFunction implements TypedLambdaFunction<AsyncHttpRequest, Ob
 A function is an event listener with the "handleEvent" method. The data structures of input and output are defined
 by API interface contract during application design phase.
 
-In the above example, the input is AsyncHttpRequest because this function is designed to handle an HTTP request event
-from a REST endpoint defined in the "rest.yaml" configuration file. We set the output as "Object" so that there is
-flexibility in returning a HashMap or a PoJo. You can also enforce the use of a PoJo by updating the output type.
+In the above example, the input is MyPoJo and the output is AnotherPoJo.
 
-A single transaction may involve multiple functions. For example, the user submits a form from a browser that
-sends an HTTP request to a function. In MVC pattern, the function receiving the user's input is the "controller".
-It carries out input validation and forwards the event to a business logic function (the "view")
-that performs some processing and then submits the event to a data persistent function (the "model") to save
-a record into the database.
+For the event orchestration, PoJos are treated as key-value Maps so that you can use the dot-bracket convention
+to map subset of a PoJo from one function to another if needed.
 
-In cloud native application, the transaction flow may be more sophisticated than the typical "mvc" style. You can do
-"event orchestration" in the function receiving the HTTP request and then make event requests to various functions.
-
-This "event orchestration" can be done by code using the "PostOffice" and/or "FastRPC" API.
-
-To further reduce coding effort, you can perform "event orchestration" by configuration using "Event Script".
-Event Script is available as an optional enterprise add-on module from Accenture.
+When the input is used for a PoJo, you may also pass parameters to the user function as headers. We will discuss
+this in Chapter 3 "Event Script syntax".
 
 ## Extensible authentication function
 
@@ -71,8 +61,7 @@ You can also control the status code and error message by throwing an `AppExcept
 throw new AppException(401, "Invalid credentials");
 ```
 
-A composable application is assembled from a collection of modular functions. For example, data persistence functions
-and authentication functions are likely to be reusable in many applications.
+A composable application is assembled from a collection of self-contained functions that are highly reusable.
 
 ## Number of workers for a function
 
@@ -104,11 +93,11 @@ A function is executed when an event arrives. There are three function execution
 By default, the system will run your function as a virtual thread because this is the most efficient execution
 strategy.
 
-The "Thread" object in the standard library will operate in a non-blocking fashion. This means it is safe to use
+The "Thread" object in the standard library will operate in non-blocking mode. This means it is safe to use
 the Thread.sleep() method. It will release control to the event loop when your function enters into sleep, thus
 freeing CPU resources for other functions.
 
-We have added the "request" methods in the PostOffice API to support synchronous RPC that leverages the virtual
+We have added the "request" methods in the PostOffice API to support non-blocking RPC that leverages the virtual
 thread resource suspend/resume functionality.
 
 ```java
@@ -119,15 +108,8 @@ EventEnvelope result = future.get();
 EventEnvelope result = po.request(requestEvent, timeout).get();
 ```
 
-However, there are a few things that you should avoid when using virtual threads:
-
-1. The "synchronized" keyword - when using the synchronized keyword, the Java VM will be blocked in the synchronized
-   block or method. As a result, all virtual threads will be blocked. You certainly don't want this "stop the world"
-   scenario.
-2. ThreadLocal variables - do not set variables under ThreadLocal. Java virtual threads are very lightweight.
-   Adding local thread variables would increase the memory footprint. Instead, you should use a ConcurrentHashMap
-   indexed by the function's route name and "instance" number to ensure that you have a bounded set of temporary data
-   in memory. You should delete the entry unique to your function instance when your function instance exits.
+> The PostOffice API is used when you want to do orchestration by code. If you are using Event Script, you can
+  manage event flows using one or more configuration files.
 
 ### Suspend function
 
@@ -151,7 +133,7 @@ For example, to make a RPC call to another function, you can use the `awaitReque
 
 Please refer to the `FileUploadDemo` class in the "examples/lambda-example" project.
 
-```java
+```kotlin
 val po = PostOffice(headers, instance)
 val fastRPC = FastRPC(headers)
 
@@ -240,6 +222,9 @@ For very large file download, you may want to write the FileDownloadDemo functio
 with the `EventInterceptor` annotation or implement a suspend function using KotlinLambdaFunction. Suspend function
 is non-blocking.
 
+> The FastRPC API is used when you want to do orchestration by code. If you are using Event Script, you can
+  manage event flows using one or more configuration files.
+
 ### Kernel thread pool
 
 When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
@@ -273,7 +258,8 @@ Your code will move on to execute using a "future" that will execute callback me
 Another approach is to annotate the function as an `EventInterceptor` so that your function can respond to the user
 in a "future" callback.
 
-For ease of programming, we recommend using virtual thread or suspend function to handle synchronous RPC calls.
+For ease of programming, we recommend using virtual thread or suspend function to handle synchronous RPC calls
+in a non-blocking manner.
 
 ## Solving the puzzle of multithreading performance
 
@@ -297,7 +283,7 @@ asynchronous code is harder to implement and maintain when the application compl
 It would be ideal if we can write sequential code that does not block. Sequential code is much easier to write
 and read because it communicates the intent of the code clearly.
 
-Leveraging Java 21 virtual thread, Mercury 3.1 allows the developer to write code in a sequential manner.
+Leveraging Java 21 virtual thread, Mercury Composable allows the developer to write code in a sequential manner.
 When code in your function makes an RPC call to another service using the PostOffice's "request" API, it returns
 a Java Future object but the "Future" object itself is running in a virtual thread. This means when your code
 retrieves the RPC result using the "get" method, your code appears "blocked" while waiting for the response
@@ -308,7 +294,7 @@ arrives. When a virtual thread is suspended, it does not consume CPU time and th
 the thread in suspend mode is very small. Virtual thread technology is designed to support tens of thousands,
 if not millions, of concurrent RPC requests in a single compute machine, container or serverless instance.
 
-Mercury 3.1 supports mixed thread management - virtual threads, suspend functions and kernel threads.
+Mercury Composable supports mixed thread management - virtual threads, suspend functions and kernel threads.
 
 Functions running in different types of threads are connected loosely in events. This functional isolation
 and encapsulation mean that you can precisely control how your application performs for each functional logic block.

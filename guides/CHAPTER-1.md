@@ -1,6 +1,6 @@
 # Introduction
 
-Mercury version 3 is a toolkit for writing composable applications.
+Mercury Composable is a software development toolkit for writing composable applications.
 
 At the platform level, composable architecture refers to loosely coupled platform services, utilities, and
 business applications. With modular design, you can assemble platform components and applications to create
@@ -18,23 +18,313 @@ easier to design, develop, maintain, deploy, and scale.
 
 > Figure 1 - Composable application architecture
 
-![architecture.png](../diagrams/figure-9.png)
+![Composable Application Architecture](../diagrams/composable-application.png)
 
-As shown in Figure 1, a minimalist composable application consists of three user defined components:
+As shown in Figure 1, a composable application contains the following:
 
-1. Main modules that provides an entry point to your application
-2. One or more business logic modules (shown as "function-1" to "function-3" in the diagram)
-3. An event orchestration module to command the business logic modules to work together as an application
+1. *Flow adapter*: it listens to user API endpoints for onwards delivery to an event orchestrator.
+2. *Event orchestrator*: it sends events to a set of user functions for them to work together as an application. 
+3. *User functions*: these are self-contained functions with clear input and output that are immutable.
 
-and a composable event engine that provides:
+### HTTP flow adapter
 
-1. REST automation
-2. An in-memory event system (aka "event loop")
-3. Local pub/sub system
+A non-blocking HTTP flow adapter is built-in. For other external interface types, you can implement your own
+flow adapters. e.g. Adapters for MQ, Kafka, Serverless, File based staging area, etc.
+
+The standard HTTP flow adapter leverages the underlying Mercury REST automation system to serve user facing REST
+API endpoints. For example, a hypothetical "get profile" endpoint is created like this in the "rest.yaml"
+configuration file:
+
+```yaml
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/profile/{profile_id}"
+    flow: 'get-profile'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+```
+
+In this REST configuration entry, the system creates a REST API endpoint for "GET /api/profile/{profile_id}".
+When a request arrives at this endpoint, the HTTP request will be converted to an incoming event by the flow adapter
+that routes the event to the "orchestrator" to execute a new instance of the "get-profile" flow.
+
+### Flow configuration example
+
+The orchestrator is driven by configuration instead of code. A hypothetical "get profile" flow is defined in
+a YAML file like this:
+
+```yaml
+flow:
+  id: 'get-profile'
+  description: 'Get a user profile using profile ID'
+  ttl: 10s
+  exception: 'v1.hello.exception'
+
+first:
+  task: 'v1.get.profile'
+
+tasks:
+  - input:
+      - 'input.path_parameter.profile_id -> header.profile_id'
+    process: 'v1.get.profile'
+    output:
+      - 'result -> model.profile'
+    description: 'Retrieve user profile from database using profile_id'
+    execution: sequential
+    next:
+      - 'v1.decrypt.fields'
+
+  - input:
+      - 'model.profile -> dataset'
+      - 'text(telephone, address) -> protected_fields'
+    process: 'v1.decrypt.fields'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Decrypt fields'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.hello.exception'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
+    execution: end
+```
+
+Note that the flow configuration is referring user functions by their "route" names. It is because all user functions
+are self-contained with clearly defined input and output and the orchestrator would set their inputs and collect their
+outputs accordingly. Note that you can map selected key-values or the whole event as a business object and this
+decoupling promotes highly reusable user functional software.
+
+The orchestrator will also create a "state machine" to manage a transaction flow because each user function is
+stateless. The "state machine" is referenced using the namespace "model".
+
+### Assigning a route name to a user function
+
+You can assign a route name to a Java class using the `PreLoad` annotation like this:
+
+```java
+@PreLoad(route="v1.get.profile", instances=100)
+public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Profile> {
+
+    @Override
+    public Profile handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        // your business logic here
+        return result;
+    }
+}
+```
+
+Inside the "handleEvent" method, you can write regular Java code using your preferred coding style and
+framework. You can define input/output as Map or PoJo.
+
+## Building the Mercury libraries from source
+
+Mercury Composable leverages the best of Java 21 virtual threading technology. Therefore, you would need to
+install Java JDK version 21 or higher. You also need maven version 3.9.7 or higher to build the libraries.
+
+Assuming you clone the Mercury repository into the "sandbox" directory, you may build the libraries like this.
+
+```shell
+cd sandbox/mercury-composable
+mvn clean install
+```
+
+The compiled libraries will be saved to your local ".m2" maven repository. For convenience, you may also publish
+the Mercury libraries into your enterprise artifactory.
+
+We use "maven" build scripts. If your organization uses other build tools such as gradle, please convert them
+accordingly.
+
+## Things to avoid with Java 21
+
+By default, user functions are executed using Java 21 virtual threading technology. However, for performance reason, 
+there are two things that you MUST avoid:
+
+1. *Synchronized keyword*: This will block the whole event loop in Java 21, meaning that your whole application is
+   blocked when the synchronized block executes.
+2. *ThreadLocal*: Java 21 virtual thread is designed to be very light weight. When you use ThreadLocal variables,
+   the "virtual thread" becomes heavy weighted and the Garbage Collector may have difficulties catching up.
+
+Since Mercury provides thread management abstraction, there is no need to use the Synchronized keyword and
+ThreadLocal variables. The built-in "state machine" is a better place to keep your runtime variables for each
+transaction. 
+
+Interestingly, the "Thread" and "Future" APIs are safe to use in a virtual thread.
+
+If you are putting legacy code inside a new user function and the legacy code runs in blocking mode, you can
+annotate the user function with the "KernelThreadRunner" class. This tells the system to turn on compatibility
+mode to support the blocking code. The kernel thread would isolate the blocking code from the rest of the
+application. However, kernel threads are limited resources. While virtual threads can support tens of thousands of
+cooperative concurrent execution, kernel threads are limited to 250, depending on the number of CPU cores that the
+target machine has.
+
+## Composable application example
+
+Let's take a test drive of a composable application example in the "examples/composable-example" subproject.
+
+You can use your favorite IDE to run the example or execute it from a terminal using command line.
+
+To run it from the command line, you may do this:
+
+```shell
+cd sandbox/mercury-composable/examples/composable-example
+java -jar target/composable-example-4.0.0.jar
+```
+
+If you run the application from the IDE, you may execute the "main" method in the `MainApp` class under the
+"com.accenture.demo.start" package folder.
+
+The first step in designing a composable application is to draw an event flow diagram. This is similar to
+a data flow diagram where the arrows are labeled with the event objects. Note that event flow diagram is
+not a flow chart and thus decision box is not required. If a user function (also known as a "task") contains
+decision logic, you can draw two or more output from the task to connect to the next set of functions. 
+For example, label the arrows as true, false or a number starting from 1.
+
+The composable-example application is a hypothetical "profile management system" where you can create a profile,
+browse or delete it.
+
+> Figure 2 - Event flow diagram
+
+![Event Flow Diagram](../diagrams/event-flow-diagram.png)
+
+As shown in Figure 2, there are three event flows. One for "get profile", one for "delete profile" and the other
+one for "create profile".
+
+The REST endpoints for the three use cases are shown in the "rest.yaml" configuration file under the "main/resources"
+in the example subproject.
+
+You also find the following configuration parameters in "application.properties":
+
+```properties
+rest.server.port=8100
+rest.automation=true
+yaml.rest.automation=classpath:/rest.yaml
+yaml.flow.automation=classpath:/flows.yaml
+```
+
+The flow configuration files are shown in the "main/resources/flows" folder where you will find the flow configuration
+files for the three event flows, namely get-profile.yml, delete-profile.yml and create-profile.yml.
+
+### Starting the application
+
+When the application is started, you will see application log like this:
+
+```log
+CompileFlows:142 - Loaded create-profile
+CompileFlows:142 - Loaded delete-profile
+CompileFlows:142 - Loaded get-profile
+CompileFlows:144 - Event scripts deployed: 3
+...
+ServiceQueue:91 - PRIVATE v1.get.profile with 100 instances started as virtual threads
+...
+RoutingEntry:582 - GET /api/profile/{profile_id} -> [http.flow.adapter], timeout=10s, tracing=true, flow=get-profile
+...
+AppStarter:378 - Modules loaded in 663 ms
+AppStarter:365 - Reactive HTTP server running on port-8100
+```
+
+Note that the above log is trimmed for presentation purpose.
+
+It shows that the 3 flow configuration files are compiled as objects for performance reason. The user functions are
+loaded into the event system and the REST endpoints are rendered from the "rest.yaml" file.
+
+### Testing the application
+
+You can create a test user profile with this python code. Alternatively, you can also use PostMan or other means
+to do this.
+
+```python
+>>> import requests, json
+>>> d = { 'id': 12345, 'name': 'Hello World', 'address': '100 World Blvd', 'telephone': '123-456-7890' }
+>>> h = { 'content-type': 'application/json', 'accept': 'application/json' }
+>>> r = requests.post('http://127.0.0.1:8100/api/profile', data=json.dumps(d), headers=h)
+>>> print(r.status_code)
+201
+>>> print(r.text)
+{
+  "profile": {
+    "address": "***",
+    "name": "Hello World",
+    "telephone": "***",
+    "id": 12345
+  },
+  "type": "CREATE",
+  "secure": [
+    "address",
+    "telephone"
+  ]
+}
+```
+
+To verify that the user profile has been created, you can point your browser to
+
+```text
+http://127.0.0.1:8100/api/profile/12345
+```
+
+Your browser will return the following:
+```json
+{
+  "address": "100 World Blvd",
+  "name": "Hello World",
+  "telephone": "123-456-7890",
+  "id": 12345
+}
+```
+
+You have successfully tested the two REST endpoints. Tracing information in the application log may look like this:
+
+```log
+DistributedTrace:76 - trace={path=POST /api/profile, service=http.flow.adapter, success=true, 
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.524Z, 
+                            exec_time=0.284, from=http.request, id=f6a6ae62340e43afb0a6f30445166e08}
+DistributedTrace:76 - trace={path=POST /api/profile, service=event.script.manager, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.525Z,
+                            exec_time=0.57, from=http.flow.adapter, id=f6a6ae62340e43afb0a6f30445166e08}
+DistributedTrace:76 - trace={path=POST /api/profile, service=v1.create.profile, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.526Z,
+                            exec_time=0.342, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+DistributedTrace:76 - trace={path=POST /api/profile, service=async.http.response, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
+                            exec_time=0.294, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+DistributedTrace:76 - trace={path=POST /api/profile, service=v1.encrypt.fields, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
+                            exec_time=3.64, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+SaveProfile:52 - Profile 12345 saved
+TaskExecutor:186 - Flow create-profile (f6a6ae62340e43afb0a6f30445166e08) completed in 11 ms
+DistributedTrace:76 - trace={path=POST /api/profile, service=v1.save.profile, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.533Z,
+                            exec_time=2.006, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+
+DistributedTrace:76 - trace={path=GET /api/profile/12345, service=http.flow.adapter, success=true, 
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.089Z,
+                            exec_time=0.152, from=http.request, id=1a29105044e94cc3ac68aee002f6f429}
+DistributedTrace:76 - trace={path=GET /api/profile/12345, service=event.script.manager, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.090Z,
+                            exec_time=0.291, from=http.flow.adapter, id=1a29105044e94cc3ac68aee002f6f429}
+DistributedTrace:76 - trace={path=GET /api/profile/12345, service=v1.get.profile, success=true,
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.091Z,
+                            exec_time=1.137, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
+DistributedTrace:76 - trace={path=GET /api/profile/12345, service=v1.decrypt.fields, success=true, 
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.093Z,
+                            exec_time=1.22, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
+TaskExecutor:186 - Flow get-profile (1a29105044e94cc3ac68aee002f6f429) completed in 4 ms
+DistributedTrace:76 - trace={path=GET /api/profile/12345, service=async.http.response, success=true, 
+                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.095Z, 
+                            exec_time=0.214, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
+```
 
 ### Main module
 
-Each application has an entry point. You may implement an entry point in a main application like this:
+Every application has an entry point. The MainApp in the example app contains the entry point like this:
 
 ```java
 @MainApplication
@@ -50,329 +340,28 @@ public class MainApp implements EntryPoint {
 }
 ```
 
-For a command line use case, your main application ("MainApp") module would get command line arguments and
-send the request as an event to a business logic function for processing.
+Since your application is event driven, the main application does not need any additional code in the above
+example. However, this is a good place to put application initialization code if any.
 
-For a backend application, the MainApp is usually used to do some "initialization" or setup steps for your
-services.
+There is also a "BeforeApplication" annotation if you want to run some start up code before the event system
+is started.
 
-### Business logic modules
+## Dependency management
 
-Your user function module may look like this:
+As a best practice, your user functions should not have any dependencies with other user functions.
 
-```java
-@PreLoad(route = "hello.simple", instances = 10)
-public class SimpleDemoEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
-    @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        // business logic here
-        return result;
-    }
-}
-```
+However, within a single user function, you may use your preferred framework or libraries. 
+For maintainability, we do recommend to reduce library dependencies as much as you can. For example, you want to
+push JDBC or JPA dependency to a small number of user functions (for `CRUD` operation) so that the rest of the
+user functions do not need any DB dependencies.
 
-Each function in a composable application should be implemented in the first principle of "input-process-output".
-It should be stateless and self-contained. i.e. it has no direct dependencies with any other functions in the
-composable application. Each function is addressable by a unique "route name" and you can use PoJo for input and output.
+## Deploy your application
 
-In the above example, the function is reachable with the route name "hello.simple". The input is an AsyncHttpRequest
-object, meaning that this function is a "Backend for Frontend (BFF)" module that is invoked by a REST endpoint.
+Composable design can be used to create microservices. You can put related functions in a bounded context with
+database persistence.
 
-When a function finishes processing, its output will be delivered to the next function.
-
-> Writing code in the first principle of "input-process-output" promotes Test Driven Development (TDD) because
-  interface contact is clearly defined. Self-containment means code is more readable too.
-
-### Event orchestration
-
-A transaction may pass through one or more user functions. For example, you can write a user function to receive a
-request from a user, make requests to some user functions, and consolidate the responses before responding to the
-user.
-
-Note that event orchestration is optional. In the most basic REST application, the REST automation system can send
-the user request to a function directly. When the function finishes processing, its output will be routed as
-a HTTP response to the user.
-
-### The Composable engine
-
-Event routing is done behind the curtain by the composable engine which consists of the REST automation service,
-an in-memory event system ("event loop") and an optional localized pub/sub system.
-
-### REST automation
-
-REST automation creates REST endpoints by configuration rather than code. You can define a REST endpoint like this:
-
-```yaml
-  - service: "hello.world"
-    methods: ['GET']
-    url: "/api/hello/world"
-    timeout: 10s
-```
-
-In this example, when a HTTP request is received at the URL path "/api/hello/world", the REST automation system
-will convert the HTTP request into an event for onward delivery to the user defined function "hello.world". 
-Your function will receive the HTTP request as input and return a result set that will be sent as a HTTP response
-to the user.
-
-For more sophisticated business logic, you can write a function to receive the HTTP request and do 
-"event orchestration". i.e. you can do data transformation and send "events" to other user functions to
-process the request.
-
-### In-memory event system
-
-The composable engine encapsulates the Eclipse vertx event bus library for event routing. It exposes the 
-"PostOffice" API for your orchestration function to send async or RPC events.
-
-### Local pub/sub system
-
-The in-memory event system is designed for point-to-point delivery. In some use cases, you may like to have
-a broadcast channel so that more than one function can receive the same event. For example, sending notification
-events to multiple functions. The optional local pub/sub system provides this multicast capability.
-
-### Other user facing channels
-
-While REST is the most popular user facing interface, there are other communication means such as event triggers
-in a serverless environment. You can write a function to listen to these external event triggers and send the events
-to your user defined functions. This custom "adapter" pattern is illustrated as the dotted line path in Figure 1.
-
-## Build the platform libraries
-
-The first step is to build Mercury libraries from source.
-To simplify the process, you may publish the libraries to your enterprise artifactory.
-
-```shell
-mkdir sandbox
-cd sandox
-git clone https://github.com/Accenture/mercury-composable.git
-cd mercury-composable
-mvn clean install
-```
-
-The above sample script clones the Mercury open sources project and builds the libraries from source.
-
-The pre-requisite is maven 3.8.6 and Openjdk 21 or higher.
-
-This will build the mercury libraries and the sample applications.
-
-The `platform-core` project is the foundation library for writing composable application.
-
-## Run the lambda-example application
-
-Assuming you follow the suggested project directory above, you can run a sample composable application
-called "lambda-example" like this:
-
-```shell
-cd sandbox/mercury-composable/examples/lambda-example
-java -jar target/lambda-example-3.1.2.jar
-```
-
-You will find the following console output when the app starts
-
-```text
-Exact API paths [/api/event, /api/hello/download, /api/hello/upload, /api/hello/world]
-Wildcard API paths [/api/hello/download/{filename}, /api/hello/generic/{id}]
-```
-
-Application parameters are defined in the resources/application.properties file (or application.yml if you prefer).
-When `rest.automation=true` is defined, the system will parse the "rest.yaml" configuration for REST endpoints.
-
-## Light-weight non-blocking HTTP server
-
-When REST automation is turned on, the system will start a lightweight non-blocking HTTP server.
-By default, it will search for the "rest.yaml" file from "/tmp/config/rest.yaml" and then from "classpath:/rest.yaml".
-Classpath refers to configuration files under the "resources" folder in your source code project.
-
-To instruct the system to load from a specific path. You can add the `yaml.rest.automation` parameter.
-
-To select another server port, change the `rest.server.port` parameter.
-
-```properties
-rest.server.port=8085
-rest.automation=true
-yaml.rest.automation=classpath:/rest.yaml
-```
-
-To create a REST endpoint, you can add an entry in the "rest" section of the "rest.yaml" config file like this:
-
-```yaml
-  - service: "hello.download"
-    methods: [ 'GET' ]
-    url: "/api/hello/download"
-    timeout: 20s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-```
-
-The above example creates the "/api/hello/download" endpoint to route requests to the "hello.download" function.
-We will elaborate more about REST automation in [Chapter-3](CHAPTER-3.md).
-
-## Function is an event handler
-
-A function is executed when an event arrives. You can define a "route name" for each function.
-It is created by a class implementing one of the following interfaces:
-
-1. `TypedLambdaFunction` allows you to use PoJo or HashMap as input and output
-2. `LambdaFunction` is untyped, but it will transport PoJo from the caller to the input of your function
-3. `KotlinLambdaFunction` is a typed lambda function for coding in Kotlin
-
-> TypedLambdaFunction and LambdaFunction are pure Java functional wrappers.
-
-## Execute the "hello.world" function
-
-With the application started in a command terminal, please use a browser to point to:
-http://127.0.0.1:8085/api/hello/world
-
-It will echo the HTTP headers from the browser like this:
-
-```json
-{
-  "headers": {},
-  "instance": 1,
-  "origin": "20230324b709495174a649f1b36d401f43167ba9",
-  "body": {
-    "headers": {
-      "sec-fetch-mode": "navigate",
-      "sec-fetch-site": "none",
-      "sec-ch-ua-mobile": "?0",
-      "accept-language": "en-US,en;q=0.9",
-      "sec-ch-ua-platform": "\"Windows\"",
-      "upgrade-insecure-requests": "1",
-      "sec-fetch-user": "?1",
-      "accept": "text/html,application/xhtml+xml,application/xml,*/*",
-      "sec-fetch-dest": "document",
-      "user-agent": "Mozilla/5.0 Chrome/111.0.0.0"
-    },
-    "method": "GET",
-    "ip": "127.0.0.1",
-    "https": false,
-    "url": "/api/hello/world",
-    "timeout": 10
-  }
-}
-```
-
-### Where is the "hello.world" function?
-
-The function is defined in the MainApp class in the source project with the following segment of code:
-
-```java
-LambdaFunction echo = (headers, input, instance) -> {
-    log.info("echo #{} got a request", instance);
-    Map<String, Object> result = new HashMap<>();
-    result.put("headers", headers);
-    result.put("body", input);
-    result.put("instance", instance);
-    result.put("origin", platform.getOrigin());
-    return result;
-};
-// Register the above inline lambda function
-platform.register("hello.world", echo, 10);
-```
-
-The Hello World function is written as an "inline lambda function". It is registered programmatically using
-the `platform.register` API.
-
-The rest of the functions in the demo app are written using regular classes implementing the LambdaFunction,
-TypedLambdaFunction and KotlinLambdaFunction interfaces.
-
-## TypedLambdaFunction
-
-Let's examine the `SimpleDemoEndpoint` example under the "services" folder. It may look like this:
-
-```java
-@PreLoad(route = "hello.simple", instances = 10)
-public class SimpleDemoEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
-    @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        // business logic here
-    }
-}
-```
-
-The `PreLoad` annotation assigns a route name to the Java class and registers it with an in-memory event system.
-The `instances` parameter tells the system to create a number of workers to serve concurrent requests.
-
-> Note that you don't need a lot of workers to handle a larger number of users
-  and requests provided that your function can finish execution very quickly.
-
-By default, the system will run the function as a "virtual thread". There are three function execution strategies
-(virtual thread, suspend function and kernel thread pool). We will explain the concept in [Chapter-2](CHAPTER-2.md)
-
-In a composable application, a function is designed using the first principle of "input-process-output".
-
-In the "hello.simple" function above, the input is an HTTP request expressed as a class of `AsyncHttpRequest`.
-You can ignore `headers` input argument for the moment. We will cover it later.
-
-The output is declared as "Object" so that the function can return any data structure using a HashMap or PoJo.
-
-You may want to review the REST endpoint `/api/simple/{task}/*` in the rest.yaml config file to see how it is
-connected to the "hello.simple" function.
-
-We take a minimalist approach for the rest.yaml syntax. The parser will detect any syntax errors. Please check
-application log to ensure all REST endpoint entries in rest.yaml file are valid.
-
-## Write your first function
-
-Using the lambda-example as a template, let's create your first function by adding a function in the 
-"services" package folder. You will give it the route name "my.first.function" in the "PreLoad" annotation.
-
-> Note that route name must use lower case letters and numbers separated by the period character.
-
-```java
-
-@PreLoad(route = "my.first.function", instances = 10)
-public class MyFirstFunction implements TypedLambdaFunction<AsyncHttpRequest, Object> {
-
-    @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        // your business logic here
-        return input;
-    }
-}
-```
-
-To connect this function with a REST endpoint, you can declare a new REST endpoint in the rest.yaml like this:
-
-```yaml
-  - service: "my.first.function"
-    methods: [ 'GET' ]
-    url: "/api/hello/my/function"
-    timeout: 20s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-```
-
-If you do not put any business logic, the above function will echo the incoming HTTP request object back to the
-browser.
-
-Now you can examine the input HTTP request object and perform some data transformation before returning a result.
-
-The AsyncHttpRequest class allows you to access data structure such as HTTP method, URL, path parameters,
-query parameters, cookies, etc.
-
-When you click the "rebuild" button in IDE and run the "MainApp", the new function will be available in the 
-application. Alternatively, you can also do `mvn clean package` to generate a new executable JAR and run the 
-JAR from command line using "java -jar target/lambda-example-3.1.2.jar".
-
-To test your new function, visit http://127.0.0.1:8085/api/hello/my/function
-
-## Event driven design
-
-Your function automatically uses an in-memory event bus. The HTTP request from the browser is converted to
-an event by the system for delivery to your function as the "input" argument.
-
-The underlying HTTP server is asynchronous and non-blocking.
-i.e. it does not consume CPU resources while waiting for a response.
-
-This composable architecture allows you to design and implement applications so that you have precise control of
-performance and throughput. Performance tuning is much easier.
-
-## Deploy your new application
-
-You can assemble related functions in a single composable application, and it can be compiled and built into
-a single "executable" for deployment using `mvn clean package`.
+Each composable application can be compiled and built into a single "executable" for deployment using
+`mvn clean package`.
 
 The executable JAR is in the target folder. 
 
@@ -387,9 +376,26 @@ WORKDIR /app
 COPY target/your-app-name.jar .
 ENTRYPOINT ["java","-jar","your-app-name.jar"]
 ```
-<br/>
 
 The above Dockerfile will fetch Openjdk 21 packaged in "Ubuntu 22.04 LTS".
+
+## Orchestration by configuration
+
+The best practice for composable design is orchestration by configuration (`Event Script`) that we have discussed above.
+
+We will examine the Event Script syntax in [Chapter 4](CHAPTER-4.md).
+
+Generally, you do not need to use Mercury core APIs in your user functions.
+
+For composable applications that use Event Script, Mercury core APIs (Platform, PostOffice and FastRPC) are only
+required for writing unit tests, "custom flow adapters", "legacy functional wrappers" or "external gateways".
+
+## Orchestration by code
+
+However, if you prefer to write orchestration logic by code, you can use the Mercury core APIs
+to do event-driven programming. API overview will be covered in [Chapter 9](CHAPTER-9.md).
+
+<br/>
 
 |                   Home                    |                  Chapter-2                  |
 |:-----------------------------------------:|:-------------------------------------------:|
