@@ -30,7 +30,7 @@ import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Map;
 
-@PreLoad(route="v1.encrypt.fields", instances=10)
+@PreLoad(route="v1.encrypt.fields", instances=100)
 public class EncryptFields implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     private static final Utility util = Utility.getInstance();
