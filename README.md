@@ -5,6 +5,8 @@ to be a comprehensive toolkit to write composable applications including microse
 This technology was filed under US Patent application 18/459,307. The source code is provided as is under
 Apache 2.0 license.
 
+June 2024
+
 # Getting Started
 
 A composable application is designed in 3 steps:
