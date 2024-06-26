@@ -8,7 +8,7 @@
 
     <packaging>jar</packaging>
     <version>4.0.0</version>
-    <name>Composable example</name>
+    <name>Composable example using Event Script</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

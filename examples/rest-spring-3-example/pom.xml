@@ -7,7 +7,7 @@
     <artifactId>rest-spring-3-example</artifactId>
     <version>4.0.0</version>
     <packaging>jar</packaging>
-    <name>Spring Boot 3 example</name>
+    <name>Spring Boot 3 example using platform-core</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

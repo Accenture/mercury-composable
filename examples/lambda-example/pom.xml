@@ -8,7 +8,7 @@
 
     <packaging>jar</packaging>
     <version>4.0.0</version>
-    <name>Composable application example</name>
+    <name>Lambda example using platform-core</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
