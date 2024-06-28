@@ -148,7 +148,7 @@ accordingly.
 By default, user functions are executed using Java 21 virtual threading technology. However, for performance reason, 
 there are two things that you MUST avoid:
 
-1. *Synchronized keyword*: This will block the whole event loop in Java 21, meaning that your whole application is
+1. *Synchronized keyword*: This will block the event loop in the Java VM, meaning that your whole application is
    blocked when the synchronized block executes.
 2. *ThreadLocal*: Java 21 virtual thread is designed to be very light weight. When you use ThreadLocal variables,
    the "virtual thread" becomes heavy weighted and the Garbage Collector may have difficulties catching up.
