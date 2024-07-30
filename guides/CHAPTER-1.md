@@ -366,8 +366,9 @@ web.component.scan=com.accenture, your.package.name
 Since Event Script (Orchestration by configuration) is an enterprise extension, the package "com.accenture"
 is required.
 
-> You should replace "your.package.name" with the real package name that you use in your application.
-Usually this is your organization software ID or "namespace".
+> You should replace "your.package.name" with the real package name(s) that you use in your application.
+  Usually this is your organization software ID or "namespace".
+  "web.component.scan" is a comma separated list of package names.
 
 ## Deploy your application
 
