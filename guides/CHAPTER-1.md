@@ -355,6 +355,20 @@ For maintainability, we do recommend to reduce library dependencies as much as y
 push JDBC or JPA dependency to a small number of user functions (for `CRUD` operation) so that the rest of the
 user functions do not need any DB dependencies.
 
+## Component Scan
+
+Please update the following in the application.properties (or application.yml) to include your own functions:
+
+```properties
+web.component.scan=com.accenture, your.package.name
+```
+
+Since Event Script (Orchestration by configuration) is an enterprise extension, the package "com.accenture"
+is required.
+
+> You should replace "your.package.name" with the real package name that you use in your application.
+Usually this is your organization software ID or "namespace".
+
 ## Deploy your application
 
 Composable design can be used to create microservices. You can put related functions in a bounded context with
