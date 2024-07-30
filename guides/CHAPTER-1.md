@@ -357,7 +357,7 @@ user functions do not need any DB dependencies.
 
 ## Component Scan
 
-Please update the following in the application.properties (or application.yml) to include your own functions:
+Please update the following in the application.properties (or application.yml) to include packages of your own functions:
 
 ```properties
 web.component.scan=com.accenture, your.package.name
