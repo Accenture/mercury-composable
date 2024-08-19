@@ -10,6 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.1, 8/19/2024
+
+This version merges Event Script into the Mercury Composable repository.
+
+### Added
+
+new File read/write feature in Event Script's I/O data mapping
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Update Spring Boot to version 3.3.2
+2. Update Guava to version 33.3.0-jre
+3. Update Vertx to version 4.5.9
+4. Update Kotlin to version 2.0.10
+5. Change "upstream" to "dependency" in the "/health" endpoint
+
+---
 ## Version 4.0.0, 6/24/2024
 
 This version merges Event Script into the Mercury Composable repository.
