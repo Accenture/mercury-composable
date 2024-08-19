@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -176,7 +175,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         Assert.assertEquals("UP", result.get("status"));
         MultiLevelMap map = new MultiLevelMap(result);
-        Assert.assertEquals("mock-cloud", map.getElement("upstream[0].service"));
+        Assert.assertEquals("mock-cloud", map.getElement("dependency[0].service"));
         log.info("health report: {}", result);
     }
 

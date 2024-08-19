@@ -16,6 +16,18 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/file/vault"
+    flow: 'file-vault-test'
+    timeout: 10s
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/circuit/breaker/{accept}"
+    flow: 'circuit-breaker-example'
+    timeout: 10s
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/greeting/{user}?ex=_"
     flow: 'greetings'
     timeout: 10s

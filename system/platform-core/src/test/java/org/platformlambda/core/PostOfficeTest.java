@@ -1236,11 +1236,11 @@ public class PostOfficeTest extends TestBase {
         Assert.assertEquals("UP", map.get("status"));
         Assert.assertEquals("platform-core", map.get("name"));
         Assert.assertEquals(platform.getOrigin(), map.get("origin"));
-        Object upstream = map.get("upstream");
-        Assert.assertTrue(upstream instanceof List);
-        List<Map<String, Object>> upstreamList = (List<Map<String, Object>>) upstream;
-        Assert.assertEquals(1, upstreamList.size());
-        Map<String, Object> health = upstreamList.getFirst();
+        Object dependency = map.get("dependency");
+        Assert.assertTrue(dependency instanceof List);
+        List<Map<String, Object>> dependencyList = (List<Map<String, Object>>) dependency;
+        Assert.assertEquals(1, dependencyList.size());
+        Map<String, Object> health = dependencyList.getFirst();
         Assert.assertEquals("mock.connector", health.get("service"));
         Assert.assertEquals("mock.topic", health.get("topics"));
         Assert.assertEquals("fine", health.get("message"));

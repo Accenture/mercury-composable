@@ -7,13 +7,13 @@
     <artifactId>kafka-connector</artifactId>
 
     <packaging>jar</packaging>
-    <version>4.0.0</version>
+    <version>4.0.1</version>
     <name>Cloud connector for Kafka cluster</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.1</version>
+        <version>3.3.2</version>
         <relativePath/>
     </parent>
 
@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kafka.version>3.7.0</kafka.version>
         <gson.version>2.11.0</gson.version>
-        <kotlin.version>2.0.0</kotlin.version>
+        <kotlin.version>2.0.10</kotlin.version>
         <java.version>21</java.version>
     </properties>
 
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.0.0</version>
+            <version>4.0.1</version>
         </dependency>
 
         <dependency>

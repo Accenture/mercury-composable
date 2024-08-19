@@ -1,0 +1,49 @@
+flow:
+  id: 'circuit-breaker-example'
+  description: 'Demonstrate simple circuit breaker logic'
+  ttl: 10s
+
+first:
+  task: 'breakable.function'
+
+tasks:
+  - input:
+      - 'input.path_parameter.accept -> accept'
+      - 'model.attempt -> attempt'
+    process: 'breakable.function'
+    output:
+      - 'int(0) -> model.attempt'
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'This function will break until the "accept" number is reached'
+    execution: end
+    exception: 'v1.circuit.breaker'
+
+  - input:
+      - 'model.attempt -> attempt'
+      - 'int(2) -> max_attempts'
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.circuit.breaker'
+    output:
+      - 'result.attempt -> model.attempt'
+      - 'result.decision -> decision'
+      - 'result.status -> model.status'
+      - 'result.message -> model.message'
+    description: 'Just a demo circuit breaker'
+    execution: decision
+    next:
+      - 'breakable.function'
+      - 'abort.request'
+
+  - input:
+      - 'model.status -> status'
+      - 'model.message -> message'
+    process: 'abort.request'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'This function aborts a request'
+    execution: end

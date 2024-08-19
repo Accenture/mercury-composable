@@ -21,6 +21,7 @@ tasks:
       - 'v1.encrypt.fields'
 
   - input:
+      - 'file(text:/tmp/keystore/demo.txt) -> b64_key'
       - 'input.body -> dataset'
       - 'text(address, telephone) -> protected_fields'
     process: 'v1.encrypt.fields'

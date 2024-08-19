@@ -250,20 +250,44 @@ contract details for a specific function.
 
 To handle this level of modularity, the system provides configurable input/output data mapping.
 
-There are five types of datasets:
+Namespaces for I/O data mapping
 
-| Type                                  | Keyword and/or namespace   |
-|:--------------------------------------|:---------------------------|
-| Flow input dataset                    | `input.` or `http.input.`  |
-| Flow output dataset                   | `output.` or `http.output.`|
-| Function input body                   | no namespace required      |
-| Function input or output headers      | `header` or `header.`      |
-| Function output result set            | `result.`                  |
-| Function output status code           | `status`                   |
-| State machine dataset                 | `model.`                   |
-| Decision value from a task            | `decision`                 |
+| Type                              | Keyword and/or namespace     |
+|:----------------------------------|:-----------------------------|
+| Flow input dataset                | `input.` or `http.input.`    |
+| Flow output dataset               | `output.` or `http.output.`  |
+| Function input body               | no namespace required        |
+| Function input or output headers  | `header` or `header.`        |
+| Function output result set        | `result.`                    |
+| Function output status code       | `status`                     |
+| State machine dataset             | `model.`                     |
+| Decision value from a task        | `decision`                   |
 
-"http.input." and "http.output." are aliases of "input." and "output." respectively.
+Constants for input data mapping (Left-hand-side argument)
+
+| Type      | Keyword and/or namespace                            |
+|:----------|:----------------------------------------------------|
+| String    | `text(example_value)`                               |
+| Integer   | `int(number)`                                       |
+| Long      | `long(number)`                                      |
+| Float     | `float(number)`                                     |
+| Double    | `double(number)`                                    |
+| Boolean   | `boolean(true or false)`                            |
+| File      | `file(text:file_path)`<br>`file(binary:file_path)`  |
+
+For input data mapping, the "file" constant type is used to load some file content as an argument of a user function.
+You can tell the system to render the file as "text" or "binary".
+
+Special content type for output data mapping (Right-hand-side argument)
+
+| Type   | Keyword            |
+|:-------|:-------------------|
+| File   | `file(file_path)`  |
+
+For output data mapping, the "file" content type is used to save some data from the output of a user function
+to a file in the local file system.
+
+For HTTP Flow Adapter, "http.input." and "http.output." are aliases of "input." and "output." respectively.
 
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
 (See "Decision" in the task section).
@@ -705,20 +729,62 @@ to take care of the exception. For example, the exception handler can be a "circ
 
 ## Task-level exception handler
 
-To define a task-level exception handler, you can attach it to a task like this:
+You can attach an exception handler to a task. One typical use is the "circuit breaker" pattern.
+In the following example, the user function "breakable.function" may throw an exception for some error condition.
+The exception will be caught by the "v1.circuit.breaker" function.
 
 ```yaml
   - input:
-      - 'model.pojo2 -> data'
-      - 'text(just a test) -> exception'
-    process: 'echo.two'
+      - 'input.path_parameter.accept -> accept'
+      - 'model.attempt -> attempt'
+    process: 'breakable.function'
     output:
-      - 'result.data -> model.pojo3'
-      - 'model.none -> model.pojo2'
-    description: 'second step of a pipeline'
-    execution: sink
-    exception: 'v1.specific.exception'
+      - 'int(0) -> model.attempt'
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'This demo function will break until the "accept" number is reached'
+    execution: end
+    exception: 'v1.circuit.breaker'
 ```
+
+The configuration for the circuit breaker function may look like this:
+
+```yaml
+  - input:
+      - 'model.attempt -> attempt'
+      - 'int(2) -> max_attempts'
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.circuit.breaker'
+    output:
+      - 'result.attempt -> model.attempt'
+      - 'result.decision -> decision'
+      - 'result.status -> model.status'
+      - 'result.message -> model.message'
+    description: 'Just a demo circuit breaker'
+    execution: decision
+    next:
+      - 'breakable.function'
+      - 'abort.request'
+```
+
+An exception handler will be provided with the "error" object that contains error code, error message and an exception
+stack trace. The exception handler can inspect the error object to make decision of the next step.
+
+For circuit breaker, we can keep the number of retry attempts in the state machine under "model.attempt" or any
+key name that you prefer. In the above example, it sets an integer constant of 2 for the maximum attempts.
+
+The circuit breaker can then evaluate if the number of attempts is less than the maximum attempts. If yes, it will
+return a decision of "true" value to tell the system to route to the "breakable.function" again. Otherwise, it will
+return a decision of "false" value to abort the request.
+
+A more sophisticated circuit breaker may be configured with "alternative execution paths" depending on the error
+status and stack trace. In this case, the decision value can be a number from 1 to n that corresponds to the "next"
+task list.
+
+Exception handlers may be used in both queries and transactions. For a complex transaction, the exception handler
+may implement some data rollback logic or recovery mechanism.
 
 ## IMPORTANT
 

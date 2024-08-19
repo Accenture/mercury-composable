@@ -55,16 +55,16 @@ class HealthService : KotlinLambdaFunction<EventEnvelope, Any> {
         /*
          * Checking dependencies
          */
-        val upstream: MutableList<Map<String, Any?>> = ArrayList()
-        checkServices(fastRPC, upstream, optionalServices, false)
-        if (!checkServices(fastRPC, upstream, requiredServices, true)) {
+        val dependency: MutableList<Map<String, Any?>> = ArrayList()
+        checkServices(fastRPC, dependency, optionalServices, false)
+        if (!checkServices(fastRPC, dependency, requiredServices, true)) {
             up = false
         }
         // save the current health status
         po.send(EventEmitter.ACTUATOR_SERVICES, up, Kv(TYPE, HEALTH_STATUS))
-        // checkServices will update the "upstream" service list
-        result[UPSTREAM] = upstream
-        if (upstream.isEmpty()) {
+        // checkServices will update the "dependency" service list
+        result[DEPENDENCY] = dependency
+        if (dependency.isEmpty()) {
             result[MESSAGE] = "Did you forget to define $REQUIRED_SERVICES or $OPTIONAL_SERVICES"
         }
         result[STATUS] = if (up) "UP" else "DOWN"
@@ -81,14 +81,14 @@ class HealthService : KotlinLambdaFunction<EventEnvelope, Any> {
         return response
     }
 
-    private suspend fun checkServices(fastRPC: FastRPC, upstream: MutableList<Map<String, Any?>>,
+    private suspend fun checkServices(fastRPC: FastRPC, dependency: MutableList<Map<String, Any?>>,
                                       services: List<String>, required: Boolean): Boolean {
         var up = true
         for (route in services) {
             val m: MutableMap<String, Any?> = HashMap()
             m[ROUTE] = route
             m[REQUIRED] = required
-            upstream.add(m)
+            dependency.add(m)
             try {
                 val key = "$INFO/$route"
                 if (!cache.exists(key)) {
@@ -150,7 +150,7 @@ class HealthService : KotlinLambdaFunction<EventEnvelope, Any> {
         private const val NAME = "name"
         private const val STATUS_CODE = "status_code"
         private const val REQUIRED = "required"
-        private const val UPSTREAM = "upstream"
+        private const val DEPENDENCY = "dependency"
         private const val NOT_FOUND = "not found"
         private const val PLEASE_CHECK = "Please check - "
         private const val CONTENT_TYPE = "content-type"

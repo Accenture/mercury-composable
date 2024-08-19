@@ -24,7 +24,6 @@ import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
@@ -36,11 +35,10 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
     private static final Utility util = Utility.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
 
+    private static final String B64_MASTER_KEY = "b64_key";
     private static final String PROTECTED_FIELDS = "protected_fields";
     private static final String DATASET = "dataset";
     private static final String MISSING = "Missing ";
-    private static final String TEMP_KEY_STORE = "/tmp/keystore";
-    private static final String DEMO_MASTER_KEY = "demo.txt";
 
     @SuppressWarnings("unchecked")
     @Override
@@ -50,14 +48,18 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
         if (!input.containsKey(PROTECTED_FIELDS)) {
             throw new IllegalArgumentException(MISSING+PROTECTED_FIELDS);
         }
+        if (!input.containsKey(B64_MASTER_KEY)) {
+            throw new IllegalArgumentException(MISSING+ B64_MASTER_KEY);
+        }
         if (input.containsKey(DATASET)) {
+            String masterKey = input.get(B64_MASTER_KEY).toString();
             Map<String, Object> dataset = (Map<String, Object>) input.get(DATASET);
             MultiLevelMap map = new MultiLevelMap(dataset);
             List<String> fields = util.split((String) input.get(PROTECTED_FIELDS), ", ");
             for (String f: fields) {
                 if (map.exists(f)) {
                     String cipherText = map.getElement(f).toString();
-                    map.setElement(f, decryptField(cipherText));
+                    map.setElement(f, decryptField(cipherText, masterKey));
                 }
             }
             return dataset;
@@ -66,19 +68,9 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
         }
     }
 
-    private String decryptField(String cipherText) throws GeneralSecurityException, IOException {
-        File folder = new File(TEMP_KEY_STORE);
-        if (!folder.exists()) {
-            folder.mkdirs();
-        }
-        File f = new File(folder, DEMO_MASTER_KEY);
-        if (!f.exists()) {
-            String b64Key = util.bytesToBase64(crypto.generateAesKey(256));
-            util.str2file(f, b64Key);
-        }
-        byte[] key = util.base64ToBytes(util.file2str(f));
+    private String decryptField(String cipherText, String masterKey) throws GeneralSecurityException, IOException {
         byte[] encrypted = util.base64ToBytes(cipherText);
-        byte[] b = crypto.aesDecrypt(encrypted, key);
+        byte[] b = crypto.aesDecrypt(encrypted, util.base64ToBytes(masterKey));
         return util.getUTF(b);
     }
 

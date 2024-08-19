@@ -11,17 +11,84 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class FlowTests extends TestBase {
-
     private static final String HTTP_CLIENT = "async.http.request";
+
+    @Test
+    public void fileVaultTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        final String HELLO = "hello world";
+        File f1 = new File("/tmp/temp-test-input.txt");
+        Utility util = Utility.getInstance();
+        util.str2file(f1, HELLO);
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/file/vault");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        Assert.assertEquals(200, result.getStatus());
+        File f2 = new File("/tmp/temp-test-output.txt");
+        Assert.assertTrue(f2.exists());
+        String text = util.file2str(f2);
+        Assert.assertEquals(HELLO, text);
+        File f3 = new File("/tmp/temp-test-match.txt");
+        Assert.assertTrue(f3.exists());
+        String matched = util.file2str(f3);
+        Assert.assertEquals("true", matched);
+        File f4 = new File("/tmp/temp-test-binary");
+        Assert.assertTrue(f4.exists());
+        String binary = util.file2str(f4);
+        Assert.assertEquals("binary", binary);
+        f1.deleteOnExit();
+        f2.deleteOnExit();
+        f3.deleteOnExit();
+        f4.deleteOnExit();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void circuitBreakerRetryTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/circuit/breaker/2");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        Assert.assertEquals(200, result.getStatus());
+        Assert.assertTrue(result.getBody() instanceof Map);
+        Map<String, Object> output = (Map<String, Object>) result.getBody();
+        Assert.assertEquals(2, output.get("attempt"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void circuitBreakerAbortTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        // the max_attempt is 2 for the circuit breaker and thus this will break
+        request.setUrl("/api/circuit/breaker/3");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        Assert.assertEquals(400, result.getStatus());
+        Assert.assertTrue(result.getBody() instanceof Map);
+        Map<String, Object> output = (Map<String, Object>) result.getBody();
+        Assert.assertEquals("Just a demo exception for circuit breaker to handle", output.get("message"));
+    }
 
     @SuppressWarnings("unchecked")
     @Test
