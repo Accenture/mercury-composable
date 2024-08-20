@@ -31,6 +31,7 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -71,7 +72,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FLOAT_TYPE = "float(";
     private static final String DOUBLE_TYPE = "double(";
     private static final String BOOLEAN_TYPE = "boolean(";
+    private static final String FILE_TYPE = "file(";
     private static final String CLOSE_BRACKET = ")";
+    private static final String TEXT_FILE = "text:";
+    private static final String BINARY_FILE = "binary:";
     private static final String MAP_TO = "->";
     private static final String ALL = "*";
     private static final String END = "end";
@@ -237,25 +241,51 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         consolidated.removeElement(rhs);
                     }
                 } else {
-                    value = getConstantValue(lhs);
+                    value = getConstantValue(lhs, rhs);
                 }
                 if (value != null) {
-                    boolean valid = true;
+                    boolean required = true;
+                    if (rhs.startsWith(FILE_TYPE)) {
+                        required = false;
+                        SimpleFileDescriptor fd = new SimpleFileDescriptor(rhs);
+                        File f = new File(fd.fileName);
+                        // automatically create parent folder
+                        if (!f.exists()) {
+                            String parentPath = f.getParent();
+                            if (!("/".equals(parentPath))) {
+                                File parent = f.getParentFile();
+                                if (!parent.exists() && parent.mkdirs()) {
+                                    log.info("Folder {} created", parentPath);
+                                }
+                            }
+                        }
+                        if (!f.exists() || (!f.isDirectory() && f.canWrite())) {
+                            if (value instanceof byte[] b) {
+                                util.bytes2file(f, b);
+                            } else if (value instanceof String str) {
+                                util.str2file(f, str);
+                            } else {
+                                util.str2file(f, value.toString());
+                            }
+                        } else {
+                            log.warn("Failed data mapping {} -> {} - Cannot write {}", lhs, rhs, fd.fileName);
+                        }
+                    }
                     if (rhs.equals(OUTPUT_STATUS)) {
                         int status = value instanceof Integer ? (Integer) value : util.str2int(value.toString());
                         if (status < 100 || status > 599) {
                             log.error("Invalid output mapping '{}' - expect: valid HTTP status code, actual: {}",
                                     entry, value);
-                            valid = false;
+                            required = false;
                         }
                     } else if (rhs.equals(OUTPUT_HEADER)) {
                         if (!(value instanceof Map)) {
                             log.error("Invalid output mapping '{}' - expect: Map, actual: {}",
                                     entry, value.getClass().getSimpleName());
-                            valid = false;
+                            required = false;
                         }
                     }
-                    if (valid) {
+                    if (required) {
                         consolidated.setElement(rhs, value);
                     }
                 }
@@ -629,7 +659,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     // Assume left hand side is be a constant
                     if (rhs.startsWith(HEADER_NAMESPACE)) {
                         String k = rhs.substring(HEADER_NAMESPACE.length());
-                        Object v = getConstantValue(lhs);
+                        Object v = getConstantValue(lhs, rhs);
                         if (!k.isEmpty() && v != null) {
                             optionalHeaders.put(k, v.toString());
                         }
@@ -676,7 +706,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private Object getConstantValue(String lhs) {
+    @SuppressWarnings("unchecked")
+    private Object getConstantValue(String lhs, String rhs) {
         int last = lhs.lastIndexOf(CLOSE_BRACKET);
         if (last > 0) {
             if (lhs.startsWith(TEXT_TYPE)) {
@@ -697,14 +728,48 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (lhs.startsWith(BOOLEAN_TYPE)) {
                 return TRUE.equalsIgnoreCase(lhs.substring(BOOLEAN_TYPE.length(), last).trim());
             }
+            if (lhs.startsWith(FILE_TYPE)) {
+                SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
+                File f = new File(fd.fileName);
+                if (f.exists() && !f.isDirectory() && f.canRead()) {
+                    if (fd.binary) {
+                        return util.file2bytes(f);
+                    } else {
+                        return util.file2str(f);
+                    }
+                } else {
+                    log.warn("Failed data mapping {} -> {} - Cannot read {}", lhs, rhs, fd.fileName);
+                }
+            }
         }
         return null;
     }
 
     private void setConstantValue(String lhs, String rhs, MultiLevelMap target) {
-        Object value = getConstantValue(lhs);
+        Object value = getConstantValue(lhs, rhs);
         if (value != null) {
             target.setElement(rhs, value);
+        }
+    }
+
+    private static class SimpleFileDescriptor {
+        final public String fileName;
+        final public boolean binary;
+
+        public SimpleFileDescriptor(String value) {
+            int last = value.lastIndexOf(CLOSE_BRACKET);
+            final String fileDescriptor = value.substring(FILE_TYPE.length(), last).trim();
+            if (fileDescriptor.startsWith(TEXT_FILE)) {
+                fileName = fileDescriptor.substring(TEXT_FILE.length());
+                binary = false;
+            } else if (fileDescriptor.startsWith(BINARY_FILE)) {
+                fileName = fileDescriptor.substring(BINARY_FILE.length());
+                binary = true;
+            } else {
+                // default fileType is binary
+                fileName = fileDescriptor;
+                binary = true;
+            }
         }
     }
 

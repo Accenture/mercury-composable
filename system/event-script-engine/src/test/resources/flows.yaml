@@ -1,4 +1,6 @@
 flows:
+  - 'file-vault-test.yml'
+  - 'circuit-breaker-example.yml'
   - 'greetings.yml'
   - 'timeout-test.yml'
   - 'decision-test.yml'

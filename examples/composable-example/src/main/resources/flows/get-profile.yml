@@ -19,6 +19,7 @@ tasks:
       - 'v1.decrypt.fields'
 
   - input:
+      - 'file(text:/tmp/keystore/demo.txt) -> b64_key'
       - 'model.profile -> dataset'
       - 'text(telephone, address) -> protected_fields'
     process: 'v1.decrypt.fields'

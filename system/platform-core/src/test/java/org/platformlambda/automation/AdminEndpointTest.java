@@ -154,9 +154,9 @@ public class AdminEndpointTest extends TestBase {
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap map = new MultiLevelMap(result);
         Assert.assertEquals("UP", map.getElement("status"));
-        Assert.assertEquals("fine", map.getElement("upstream[0].message"));
-        Assert.assertEquals(200, map.getElement("upstream[0].status_code"));
-        Assert.assertEquals("mock.connector", map.getElement("upstream[0].service"));
+        Assert.assertEquals("fine", map.getElement("dependency[0].message"));
+        Assert.assertEquals(200, map.getElement("dependency[0].status_code"));
+        Assert.assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet(localHost, "/livenessprobe", null);
         assert response != null;
@@ -175,10 +175,10 @@ public class AdminEndpointTest extends TestBase {
         Assert.assertEquals(400, response.getStatus());
         MultiLevelMap map = new MultiLevelMap(result);
         Assert.assertEquals("DOWN", map.getElement("status"));
-        Assert.assertEquals("just a test", map.getElement("upstream[0].message"));
-        // original status code from upstream service is preserved
-        Assert.assertEquals(500, map.getElement("upstream[0].status_code"));
-        Assert.assertEquals("mock.connector", map.getElement("upstream[0].service"));
+        Assert.assertEquals("just a test", map.getElement("dependency[0].message"));
+        // original status code from dependency service is preserved
+        Assert.assertEquals(500, map.getElement("dependency[0].status_code"));
+        Assert.assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet(localHost, "/livenessprobe", null);
         assert response != null;

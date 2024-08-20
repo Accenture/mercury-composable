@@ -277,7 +277,7 @@ You can visit http://127.0.0.1:8080/health and it will show something like this:
 
 ```json
 {
-  "upstream": [
+  "dependency": [
     {
       "route": "cloud.connector.health",
       "status_code": 200,
@@ -300,7 +300,7 @@ Similarly, you can check the health status of the rest-spring-2-example applicat
 
 ```json
 {
-  "upstream": [
+  "dependency": [
     {
       "route": "cloud.connector.health",
       "status_code": 200,
