@@ -373,7 +373,7 @@ public class WorkerHandler {
     private String simplifyCastError(Throwable ex) {
         String error = ex.getMessage();
         if (error == null) {
-            return null;
+            return "null";
         } else if (ex instanceof ClassCastException) {
             int sep = error.lastIndexOf(" (");
             return sep > 0 ? error.substring(0, sep) : error;

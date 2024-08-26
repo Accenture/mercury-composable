@@ -389,7 +389,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
         private fun simplifyCastError(ex: Throwable): String? {
             val error = ex.message
             if (error == null) {
-                return null
+                return "null"
             } else if (ex is ClassCastException) {
                 val sep = error.lastIndexOf(" (")
                 return if (sep > 0) error.substring(0, sep) else error
