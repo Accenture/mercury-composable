@@ -321,8 +321,8 @@ public class WorkerHandler {
                 status = 500;
             }
             Throwable ex = util.getRootCause(e);
-            if (f instanceof PoJoMappingExceptionHandler handler) {
-                String error = simplifyCastError(ex.getMessage());
+            String error = simplifyCastError(ex);
+            if (f instanceof MappingExceptionHandler handler) {
                 try {
                     handler.onError(parentRoute, new AppException(status, error), event, instance);
                 } catch (Exception e3) {
@@ -337,7 +337,7 @@ public class WorkerHandler {
             Map<String, Object> output = new HashMap<>();
             if (replyTo != null) {
                 EventEnvelope response = new EventEnvelope();
-                response.setTo(replyTo).setStatus(status).setBody(ex.getMessage());
+                response.setTo(replyTo).setStatus(status).setBody(error);
                 response.setException(e).setExecutionTime(diff).setFrom(def.getRoute());
                 if (event.getCorrelationId() != null) {
                     response.setCorrelationId(event.getCorrelationId());
@@ -360,22 +360,25 @@ public class WorkerHandler {
                 if (status >= 500) {
                     log.error("Unhandled exception for "+route, ex);
                 } else {
-                    log.warn("Unhandled exception for {} - {}", route, ex.getMessage());
+                    log.warn("Unhandled exception for {} - {}", route, error);
                 }
             }
             output.put(STATUS, status);
-            output.put(EXCEPTION, ex.getMessage());
+            output.put(EXCEPTION, error);
             inputOutput.put(OUTPUT, output);
-            return ps.setException(status, ex.getMessage()).setInputOutput(inputOutput);
+            return ps.setException(status, error).setInputOutput(inputOutput);
         }
     }
 
-    private String simplifyCastError(String error) {
+    private String simplifyCastError(Throwable ex) {
+        String error = ex.getMessage();
         if (error == null) {
-            return "null";
-        } else {
+            return null;
+        } else if (ex instanceof ClassCastException) {
             int sep = error.lastIndexOf(" (");
             return sep > 0 ? error.substring(0, sep) : error;
+        } else {
+            return error;
         }
     }
 

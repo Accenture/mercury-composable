@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import org.platformlambda.core.exception.AppException
 import org.platformlambda.core.models.AsyncHttpRequest
 import org.platformlambda.core.models.EventEnvelope
-import org.platformlambda.core.models.PoJoMappingExceptionHandler
+import org.platformlambda.core.models.MappingExceptionHandler
 import org.platformlambda.core.models.ProcessStatus
 import org.platformlambda.core.util.Utility
 import org.slf4j.LoggerFactory
@@ -335,8 +335,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     }
                 }
                 val ex = Utility.getInstance().getRootCause(e)
-                if (f is PoJoMappingExceptionHandler) {
-                    val error = simplifyCastError(ex.message)
+                val error = simplifyCastError(ex)
+                if (f is MappingExceptionHandler) {
                     try {
                         f.onError(parentRoute, AppException(status, error), event, instance)
                     } catch (e3: Exception) {
@@ -351,7 +351,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                 val output: MutableMap<String, Any?> = HashMap()
                 if (replyTo != null) {
                     val response = EventEnvelope()
-                    response.setTo(replyTo).setStatus(status).body = ex.message
+                    response.setTo(replyTo).setStatus(status).body = error
                     response.exception = e
                     response.executionTime = diff
                     response.from = def.route
@@ -376,22 +376,25 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     if (status >= 500) {
                         log.error("Unhandled exception for $route", ex)
                     } else {
-                        log.warn("Unhandled exception for {} - {}", route, ex.message)
+                        log.warn("Unhandled exception for {} - {}", route, error)
                     }
                 }
                 output[STATUS] = status
-                output[EXCEPTION] = ex.message
+                output[EXCEPTION] = error
                 inputOutput[OUTPUT] = output
-                ps.setException(status, ex.message).setInputOutput(inputOutput)
+                ps.setException(status, error).setInputOutput(inputOutput)
             }
         }
 
-        private fun simplifyCastError(error: String?): String {
-            return if (error == null) {
-                "null"
-            } else {
+        private fun simplifyCastError(ex: Throwable): String? {
+            val error = ex.message
+            if (error == null) {
+                return null
+            } else if (ex is ClassCastException) {
                 val sep = error.lastIndexOf(" (")
-                if (sep > 0) error.substring(0, sep) else error
+                return if (sep > 0) error.substring(0, sep) else error
+            } else {
+                return error
             }
         }
 

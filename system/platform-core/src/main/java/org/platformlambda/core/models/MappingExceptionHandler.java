@@ -30,7 +30,7 @@ import org.platformlambda.core.exception.AppException;
  * <p>
  * With this interface, your application can catch this and handle properly.
  */
-public interface PoJoMappingExceptionHandler {
+public interface MappingExceptionHandler {
 
     void onError(String route, AppException error, EventEnvelope event, int instance);
 }

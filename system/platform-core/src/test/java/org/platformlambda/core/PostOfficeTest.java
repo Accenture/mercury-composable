@@ -1541,7 +1541,7 @@ public class PostOfficeTest extends TestBase {
         Assert.assertEquals(pojo.telephone, responsePoJo2.telephone);
     }
 
-    private static class SimpleCallback implements TypedLambdaFunction<PoJo, Void>, PoJoMappingExceptionHandler {
+    private static class SimpleCallback implements TypedLambdaFunction<PoJo, Void>, MappingExceptionHandler {
 
         private final BlockingQueue<Object> bench;
         private final String traceId;

@@ -357,11 +357,12 @@ it will resolve as a Map from the function output event envelope's headers.
 Similarly, when function output namespace `header.` is used, the system will resolve the value from a specific
 key of the function output event envelope's headers.
 
-### Using PoJo as function input body
+### Function input and output
 
-The input/output data mapping is done in a schemaless fashion so that you can set any key-values accordingly.
+To support flexible input data mapping, the input to a function must be either `Map<String, Object>` or `PoJo`.
+The output (i.e. result set) of a function can be Map, PoJo or Java primitive.
 
-To specify PoJo, you can use the TypedLambdaFunction to configure input and output in your function.
+Your function can implement the `TypedLambdaFunction` interface to configure input and output.
 
 Since a data structure is passed to your function's input argument as key-values, you would need to create a
 PoJo class to deserialize the data structure.
