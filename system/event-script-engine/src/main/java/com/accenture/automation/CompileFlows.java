@@ -67,6 +67,7 @@ public class CompileFlows implements EntryPoint {
     private static final String FLOAT_TYPE = "float(";
     private static final String DOUBLE_TYPE = "double(";
     private static final String BOOLEAN_TYPE = "boolean(";
+    private static final String CLASSPATH_TYPE = "classpath(";
     private static final String FILE_TYPE = "file(";
     private static final String CLOSE_BRACKET = ")";
     private static final String MAP_TO = "->";
@@ -593,7 +594,8 @@ public class CompileFlows implements EntryPoint {
                         lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     return true;
                 } else {
-                    return (lhs.startsWith(TEXT_TYPE) || lhs.startsWith(FILE_TYPE) ||
+                    return (lhs.startsWith(TEXT_TYPE) ||
+                            lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
                             lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
                             lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
                             lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
@@ -608,7 +610,7 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = output.substring(0, sep).trim();
             String rhs = output.substring(sep+2).trim();
-            return validOutputLhs(lhs) && validOutputRhs(lhs, rhs, isDecision);
+            return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
         }
         return false;
     }
@@ -629,10 +631,7 @@ public class CompileFlows implements EntryPoint {
         }
     }
 
-    private boolean validOutputRhs(String lhs, String rhs, boolean isDecision) {
-        if (lhs.startsWith(FILE_TYPE) && rhs.startsWith(FILE_TYPE)) {
-            return false;
-        }
+    private boolean validOutputRhs(String rhs, boolean isDecision) {
         return (rhs.equals(DECISION) && isDecision) || rhs.startsWith(FILE_TYPE) ||
                 rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE);
     }

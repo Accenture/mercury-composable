@@ -1,4 +1,4 @@
-# API overview
+# API Overview
 
 ## Main application
 
@@ -580,7 +580,7 @@ To interpret an event response from a RPC call, you can use the following PostOf
 MyPoJo result = po.getResponseBodyAsPoJo(responseEvent, MyPoJo.class);
 ```
 
-## Minimalist API design for event orchestration
+## Minimalist API design
 
 As a best practice, we advocate a minimalist approach in API integration.
 To build powerful composable applications, the above set of APIs is sufficient to perform
@@ -593,10 +593,10 @@ Other APIs in the toolkits are used internally to build the engine itself, and t
 They are mostly convenient methods and utilities. The engine is fully encapsulated and any internal API changes
 are not likely to impact your applications.
 
-## Optional Event Scripting
+## Event Scripting
 
-To further reduce coding effort, you can perform "event orchestration" by configuration using "Event Script".
-It is available as an enterprise add-on module from Accenture.
+To further reduce coding effort, you can perform "event choreography" by configuration using "Event Script".
+Please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md)
 
 ## Co-existence with other development frameworks
 
@@ -632,4 +632,4 @@ for details.
 
 |          Chapter-8           |                   Home                    |
 |:----------------------------:|:-----------------------------------------:|
-| [Service mesh](CHAPTER-8.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | 
+| [Service Mesh](CHAPTER-8.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | 

@@ -31,10 +31,7 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +62,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String MODEL_NAMESPACE = "model.";
     private static final String RESULT_NAMESPACE = "result.";
     private static final String ERROR_NAMESPACE = "error.";
+    private static final String INPUT_HEADER_NAMESPACE = "input.header.";
     private static final String HEADER_NAMESPACE = "header.";
     private static final String TEXT_TYPE = "text(";
     private static final String INTEGER_TYPE = "int(";
@@ -72,6 +70,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FLOAT_TYPE = "float(";
     private static final String DOUBLE_TYPE = "double(";
     private static final String BOOLEAN_TYPE = "boolean(";
+    private static final String CLASSPATH_TYPE = "classpath(";
     private static final String FILE_TYPE = "file(";
     private static final String CLOSE_BRACKET = ")";
     private static final String TEXT_FILE = "text:";
@@ -227,9 +226,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (sep > 0) {
                 String lhs = entry.substring(0, sep).trim();
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
-                if (isInput) {
-                    lhs = lhs.toLowerCase();
-                }
                 final Object value;
                 String rhs = entry.substring(sep+2).trim();
                 if (isInput || lhs.startsWith(MODEL_NAMESPACE)
@@ -604,7 +600,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 String lhs = entry.substring(0, sep).trim();
                 String rhs = entry.substring(sep+2).trim();
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
-                if (isInput) {
+                if (lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
                     lhs = lhs.toLowerCase();
                 }
                 if (rhs.startsWith(MODEL_NAMESPACE)) {
@@ -626,7 +622,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     // normal case to input argument
                     Object value = source.getElement(lhs);
                     if (value == null) {
-                        target.removeElement(rhs);
+                        // if null value, clear model's data
+                        if (rhs.startsWith(MODEL_NAMESPACE)) {
+                            target.removeElement(rhs);
+                        }
                     } else {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {
@@ -706,7 +705,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Object getConstantValue(String lhs, String rhs) {
         int last = lhs.lastIndexOf(CLOSE_BRACKET);
         if (last > 0) {
@@ -741,6 +739,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     log.warn("Failed data mapping {} -> {} - Cannot read {}", lhs, rhs, fd.fileName);
                 }
             }
+            if (lhs.startsWith(CLASSPATH_TYPE)) {
+                SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
+                InputStream in = this.getClass().getResourceAsStream(fd.fileName);
+                if (in != null) {
+                    if (fd.binary) {
+                        return util.stream2bytes(in);
+                    } else {
+                        return util.stream2str(in);
+                    }
+                } else {
+                    log.warn("Failed data mapping {} -> {} - Missing classpath {}", lhs, rhs, fd.fileName);
+                }
+            }
         }
         return null;
     }
@@ -758,7 +769,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
         public SimpleFileDescriptor(String value) {
             int last = value.lastIndexOf(CLOSE_BRACKET);
-            final String fileDescriptor = value.substring(FILE_TYPE.length(), last).trim();
+            final int offset;
+            if (value.startsWith(FILE_TYPE)) {
+                offset = FILE_TYPE.length();
+            } else if (value.startsWith(CLASSPATH_TYPE)) {
+                offset = CLASSPATH_TYPE.length();
+            } else {
+                // this should not occur
+                offset = 0;
+            }
+            final String fileDescriptor = value.substring(offset, last).trim();
             if (fileDescriptor.startsWith(TEXT_FILE)) {
                 fileName = fileDescriptor.substring(TEXT_FILE.length());
                 binary = false;

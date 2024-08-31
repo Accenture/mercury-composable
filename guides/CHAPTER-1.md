@@ -22,8 +22,8 @@ easier to design, develop, maintain, deploy, and scale.
 
 As shown in Figure 1, a composable application contains the following:
 
-1. *Flow adapter*: it listens to user API endpoints for onwards delivery to an event orchestrator.
-2. *Event orchestrator*: it sends events to a set of user functions for them to work together as an application. 
+1. *Flow adapters*: Each flow adapter listens to requests for onwards delivery to an event manager.
+2. *Event Manager*: it sends events to a set of user functions for them to work together as an application. 
 3. *User functions*: these are self-contained functions with clear input and output that are immutable.
 
 ### HTTP flow adapter
@@ -48,11 +48,11 @@ configuration file:
 
 In this REST configuration entry, the system creates a REST API endpoint for "GET /api/profile/{profile_id}".
 When a request arrives at this endpoint, the HTTP request will be converted to an incoming event by the flow adapter
-that routes the event to the "orchestrator" to execute a new instance of the "get-profile" flow.
+that routes the event to the "event manager" to execute a new instance of the "get-profile" flow.
 
 ### Flow configuration example
 
-The orchestrator is driven by configuration instead of code. A hypothetical "get profile" flow is defined in
+The event manager is driven by configuration instead of code. A hypothetical "get profile" flow is defined in
 a YAML file like this:
 
 ```yaml
@@ -99,11 +99,11 @@ tasks:
 ```
 
 Note that the flow configuration is referring user functions by their "route" names. It is because all user functions
-are self-contained with clearly defined input and output and the orchestrator would set their inputs and collect their
+are self-contained with clearly defined input and output and the event manager would set their inputs and collect their
 outputs accordingly. Note that you can map selected key-values or the whole event as a business object and this
 decoupling promotes highly reusable user functional software.
 
-The orchestrator will also create a "state machine" to manage a transaction flow because each user function is
+The event manager will create a "state machine" to manage each transaction flow because all user functions are
 stateless. The "state machine" is referenced using the namespace "model".
 
 ### Assigning a route name to a user function
@@ -363,7 +363,7 @@ Please update the following in the application.properties (or application.yml) t
 web.component.scan=com.accenture, your.package.name
 ```
 
-Since Event Script (Orchestration by configuration) is an enterprise extension, the package "com.accenture"
+Since Event Script (i.e. Event choreography by configuration) is an enterprise extension, the package "com.accenture"
 is required.
 
 > You should replace "your.package.name" with the real package name(s) that you use in your application.
@@ -394,10 +394,9 @@ ENTRYPOINT ["java","-jar","your-app-name.jar"]
 
 The above Dockerfile will fetch Openjdk 21 packaged in "Ubuntu 22.04 LTS".
 
-## Orchestration by configuration
+## Event choreography by configuration
 
-The best practice for composable design is orchestration by configuration (`Event Script`) that we have discussed above.
-
+The best practice for composable design is event choreography by configuration (`Event Script`) discussed above.
 We will examine the Event Script syntax in [Chapter 4](CHAPTER-4.md).
 
 Generally, you do not need to use Mercury core APIs in your user functions.
@@ -407,7 +406,12 @@ required for writing unit tests, "custom flow adapters", "legacy functional wrap
 
 ## Orchestration by code
 
-However, if you prefer to write orchestration logic by code, you can use the Mercury core APIs
+*Orchestration by code is strongly discouraged because it would result in tightly coupled code*. 
+
+For example, just an "Import" statement of another function would create tight coupling of two pieces of code, 
+even when using reactive or event-driven programming styles.
+
+However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core APIs
 to do event-driven programming. API overview will be covered in [Chapter 9](CHAPTER-9.md).
 
 <br/>

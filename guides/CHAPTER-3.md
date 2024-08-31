@@ -1,4 +1,4 @@
-# REST automation
+# REST Automation
 
 The platform-core foundation library contains a built-in non-blocking HTTP server that you can use to create REST
 endpoints. Behind the curtain, it is using the vertx web client and server libraries.
@@ -286,4 +286,4 @@ code and error message accordingly.
 
 |                   Chapter-2                   |                   Home                    |              Chapter-4              |
 |:---------------------------------------------:|:-----------------------------------------:|:-----------------------------------:|
-| [Function execution strategies](CHAPTER-2.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Event orchestration](CHAPTER-4.md) |
+| [Function Execution Strategies](CHAPTER-2.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Event Script Syntax](CHAPTER-4.md) |

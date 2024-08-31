@@ -5,9 +5,8 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-standalone</artifactId>
-
     <packaging>jar</packaging>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
     <name>Standalone kafka system for dev</name>
 
     <parent>
@@ -37,7 +36,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.0.1</version>
+            <version>4.0.2</version>
         </dependency>
 
         <dependency>

@@ -1,0 +1,18 @@
+flow:
+  id: 'header-test'
+  description: 'Test input data mapping of headers'
+  ttl: 10s
+
+first:
+  task: 'header.parser'
+
+tasks:
+  - input:
+      # this pass all input headers as an input map
+      - 'input.header -> *'
+    process: 'header.parser'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Return result'
+    execution: end

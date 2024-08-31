@@ -1,4 +1,6 @@
 flows:
+  - 'body-test.yml'
+  - 'header-test.yml'
   - 'file-vault-test.yml'
   - 'circuit-breaker-example.yml'
   - 'greetings.yml'

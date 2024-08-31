@@ -10,10 +10,14 @@ tasks:
   - input:
       - 'file(text:/tmp/temp-test-input.txt) -> text'
       - 'file(binary:/tmp/temp-test-input.txt) -> binary'
+      - 'classpath(text:/files/hello.txt) -> text_resource'
+      - 'classpath(binary:/files/hello.txt) -> binary_resource'
     process: 'file.vault'
     output:
       - 'result.text -> file(/tmp/temp-test-output.txt)'
       - 'result.matched -> file(/tmp/temp-test-match.txt)'
       - 'result.binary -> file(/tmp/temp-test-binary)'
+      - 'text(text/plain) -> output.header.content-type'
+      - 'result.text_resource -> output.body'
     description: 'Hello World'
     execution: end

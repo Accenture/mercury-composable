@@ -1,4 +1,4 @@
-# Build, test and deploy
+# Build, Test and Deploy
 
 The first step in writing an application is to create an entry point for your application.
 
@@ -392,4 +392,4 @@ containing the performance metrics data and a "journal" section with the request
 
 |              Chapter-4              |                   Home                    |          Chapter-6          |
 |:-----------------------------------:|:-----------------------------------------:|:---------------------------:|
-| [Event orchestration](CHAPTER-4.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](CHAPTER-6.md) |
+| [Event Script Syntax](CHAPTER-4.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](CHAPTER-6.md) |

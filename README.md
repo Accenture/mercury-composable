@@ -5,7 +5,7 @@ codebase. It is a comprehensive toolkit to write composable applications includi
 serverless. This technology was filed under US Patent application 18/459,307. The source code is provided
 as is under the Apache 2.0 license.
 
-June 2024
+August 2024
 
 # Getting Started
 
@@ -15,10 +15,11 @@ A composable application is designed in 3 steps:
 2. Create a configuration file to represent the event flow
 3. Write a user story for each user function
 
-To get started, please visit [Chapter one](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/).
+To get started, please visit [Chapter 1, Developer Guide](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/).
+
 We will illustrate the methodology with a composable application example.
 
-# Conquer Complexity: Embrace Composable Design Patterns
+# Conquer Complexity: Embrace Composable Design
 
 ## Introduction
 
@@ -50,9 +51,9 @@ promotes modularity and scalability.
 
 At its core, composable design emphasizes two principles:
 
-1.	*Self-Contained Functions*: Each function should be a well-defined unit, handling its own logic and transformations
+1.	*Self-Contained Functions*: Each function is a well-defined unit, handling its own logic and transformations
     with minimal dependencies.
-2.	*Event-Driven Orchestration*: Functions communicate through events, allowing for loose coupling and independent
+2.	*Event Choreography*: Functions communicate through events, allowing for loose coupling and independent
     execution.
 
 ## Benefits of Composable Design
@@ -62,22 +63,24 @@ At its core, composable design emphasizes two principles:
 - *Superior Performance*: Loose coupling reduces bottlenecks and encourages asynchronous execution.
 - *Streamlined Testing*: Well-defined functions facilitate unit testing and isolate potential issues.
 - *Simplified Debugging*: Independent functions make it easier to pinpoint the source of errors.
-- *Technology Agnostic*: Composable code is less dependent on specific frameworks, allowing for easier future
-  adaptations.
+- *Technology Agnostic*: You may use your preferred frameworks and tools to write composable code, 
+  allowing for easier future adaptations.
 
 ## Implementing Composable Design
 
-While seemingly simple, implementing composable design can involve some initial complexity. 
+While seemingly simple, implementing composable design can involve some initial complexity.
+
 Here's a breakdown of the approach:
 
 - *Function Design*: Each function serves a specific purpose, with clearly defined inputs and outputs.
 - *Event Communication*: Functions communicate through well-defined events, avoiding direct dependencies.
-- *Orchestration*: An orchestrator, either code-based or configuration-driven, sequences and triggers functions
+- *Choreography*: An event manager, with a state machine and event flow configuration, sequences and triggers functions
   based on events.
 
 ## Conclusion
 
 Composable design patterns offer a powerful paradigm for building maintainable, scalable, and future-proof applications.
 By embracing the principles of self-contained functions and event-driven communication, you can conquer complexity and
-write code that is a joy to work with. Are you ready to take your development practices to the next level? 
-Embrace composable design today!
+write code that is a joy to work with. 
+
+Are you ready to take your development practices to the next level? Embrace composable design now!

@@ -1,4 +1,4 @@
-﻿# Event Script syntax
+﻿# Event Script Syntax
 
 Event Script uses YAML to represent an end-to-end transaction flow. A transaction is a business use case, and
 the flow can be an API service, a batch job or a real-time transaction.
@@ -109,7 +109,7 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<S
 For the flow-engine to find your new function, please update the key-value for "web.component.scan" in
 application.properties:
 
-```text
+```properties
 web.component.scan=com.accenture,my.organization
 ```
 
@@ -265,18 +265,20 @@ Namespaces for I/O data mapping
 
 Constants for input data mapping (Left-hand-side argument)
 
-| Type      | Keyword and/or namespace                            |
-|:----------|:----------------------------------------------------|
-| String    | `text(example_value)`                               |
-| Integer   | `int(number)`                                       |
-| Long      | `long(number)`                                      |
-| Float     | `float(number)`                                     |
-| Double    | `double(number)`                                    |
-| Boolean   | `boolean(true or false)`                            |
-| File      | `file(text:file_path)`<br>`file(binary:file_path)`  |
+| Type      | Keyword and/or namespace                                     |
+|:----------|:-------------------------------------------------------------|
+| String    | `text(example_value)`                                        |
+| Integer   | `int(number)`                                                |
+| Long      | `long(number)`                                               |
+| Float     | `float(number)`                                              |
+| Double    | `double(number)`                                             |
+| Boolean   | `boolean(true or false)`                                     |
+| File      | `file(text:file_path)`<br>`file(binary:file_path)`           |
+| Classpath | `classpath(text:file_path)`<br>`classpath(binary:file_path)` |
 
 For input data mapping, the "file" constant type is used to load some file content as an argument of a user function.
-You can tell the system to render the file as "text" or "binary".
+You can tell the system to render the file as "text" or "binary". Similarly, the "classpath" constant type refers
+to static file in the application source code's "resources" folder.
 
 Special content type for output data mapping (Right-hand-side argument)
 
@@ -287,7 +289,7 @@ Special content type for output data mapping (Right-hand-side argument)
 For output data mapping, the "file" content type is used to save some data from the output of a user function
 to a file in the local file system.
 
-For HTTP Flow Adapter, "http.input." and "http.output." are aliases of "input." and "output." respectively.
+For HTTP Flow Adapter, "http.input." and "http.output." namespaces are aliases of "input." and "output." respectively.
 
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
 (See "Decision" in the task section).
@@ -364,8 +366,8 @@ The output (i.e. result set) of a function can be Map, PoJo or Java primitive.
 
 Your function can implement the `TypedLambdaFunction` interface to configure input and output.
 
-Since a data structure is passed to your function's input argument as key-values, you would need to create a
-PoJo class to deserialize the data structure.
+Since a data structure is passed to your function's input argument as key-values, you may create a PoJo class
+to deserialize the data structure.
 
 To tell the system that your function is expecting input as a PoJo, you can use the special notation "*" in
 the right hand side.
@@ -408,9 +410,10 @@ In the output data mapping section, it must map the corresponding result set or 
 
 The "next" tag contains a list of tasks to be selected based on the decision value.
 
-If decision value is boolean, a `true` value will select the first item. Otherwise, the second item will be selected.
+If decision value is boolean, a `true` value will select the first task. Otherwise, the second task will be selected.
 
-If decision value is an integer, the number should start from 1 where the corresponding item will be selected.
+If decision value is an integer, the number should *start from 1* where the corresponding "next" task
+will be selected.
 
 ```yaml
 tasks:
@@ -475,7 +478,7 @@ Upon completion of a sequential task, the next task will be executed.
 
 This task has the tag `execution=sequential`.
 
-In the following example, `sequential.two` will be executed when `sequential.one` finishes.
+In the following example, `sequential.two` will be executed after `sequential.one`.
 ```yaml
 tasks:
   - input:
@@ -836,4 +839,4 @@ tasks:
 
 |            Chapter-3            |                   Home                    |               Chapter-5                |
 |:-------------------------------:|:-----------------------------------------:|:--------------------------------------:|
-| [REST automation](CHAPTER-3.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Build, test and deploy](CHAPTER-5.md) |
+| [REST Automation](CHAPTER-3.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Build, Test and Deploy](CHAPTER-5.md) |

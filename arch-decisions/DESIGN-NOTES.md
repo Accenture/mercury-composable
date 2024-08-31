@@ -1,8 +1,8 @@
 # Design notes
 
-## Orchestration by configuration
+## Event choreography by configuration
 
-The recommended way to write a composable application is orchestration by configuration using "Event Script".
+The recommended way to write a composable application is event choreography by configuration using "Event Script".
 
 This would potentially reduce code size by half.
 

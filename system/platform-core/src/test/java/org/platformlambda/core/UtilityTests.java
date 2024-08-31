@@ -259,7 +259,6 @@ public class UtilityTests {
         String HELLO_WORLD = "hello.world";
         String NULL_KEY_VALUE = "this.is.nil";
         String NOT_EXIST_KEY = "key.not.exist";
-
         MultiLevelMap mm = new MultiLevelMap();
         mm.setElement(HELLO, WORLD);
         mm.setElement(NULL_KEY_VALUE, null);
@@ -271,8 +270,13 @@ public class UtilityTests {
         // key does not exist
         Assert.assertFalse(mm.keyExists(NOT_EXIST_KEY));
         // delete a key-value
+        mm.removeElement(HELLO);
+        Assert.assertNull(mm.getElement(HELLO));
+        mm.removeElement(HELLO_WORLD).setElement(HELLO_WORLD, null);
+        Assert.assertTrue(mm.keyExists(HELLO_WORLD));
         mm.removeElement(HELLO_WORLD);
         Assert.assertEquals(Collections.EMPTY_MAP, mm.getElement(HELLO));
+        Assert.assertFalse(mm.keyExists(HELLO_WORLD));
     }
 
     @Test

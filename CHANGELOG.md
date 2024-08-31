@@ -10,9 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
-## Version 4.0.1, 8/19/2024
+## Version 4.0.2, 8/31/2024
 
-This version merges Event Script into the Mercury Composable repository.
+### Added
+
+1. New "classpath" namespace for input data mapping
+2. Support for input data mapping to handle subset of input request body as a Map or PoJo
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Remove the class "type" variable from AsyncHttpRequest
+2. Improve the "removeElement" method in MultiLevelMap
+3. Make HTTP input request header labels key-insensitive
+4. Update Spring Boot to version 3.3.3
+
+---
+## Version 4.0.1, 8/19/2024
 
 ### Added
 

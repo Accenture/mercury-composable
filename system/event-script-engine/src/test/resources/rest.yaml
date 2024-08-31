@@ -15,6 +15,18 @@ rest:
     tracing: true
 
   - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/body/test"
+    flow: 'body-test'
+    timeout: 10s
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/header/test"
+    flow: 'header-test'
+    timeout: 10s
+
+  - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/file/vault"
     flow: 'file-vault-test'

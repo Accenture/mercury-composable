@@ -1,8 +1,11 @@
-# Function execution strategies
+# Function Execution Strategies
 
 ## Define a function
 
-In a composable application, each function is self-contained with zero or minimal dependencies.
+In a composable application, each function is self-contained with zero dependencies with other user functions.
+
+Only flow adapter, data adapter, notification function or gateway has a single external dependency such as
+a network event system, a database or an external REST resource.
 
 A function is a class that implements the LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction interface.
 Within each function boundary, it may have private methods that are fully contained within the class.
@@ -26,7 +29,7 @@ by API interface contract during application design phase.
 
 In the above example, the input is MyPoJo and the output is AnotherPoJo.
 
-For the event orchestration, PoJos are treated as key-value Maps so that you can use the dot-bracket convention
+For event choreography, PoJos are treated as key-value Maps so that you can use the dot-bracket convention
 to map subset of a PoJo from one function to another if needed.
 
 When the input is used for a PoJo, you may also pass parameters to the user function as headers. We will discuss
@@ -60,6 +63,12 @@ You can also control the status code and error message by throwing an `AppExcept
 ```shell
 throw new AppException(401, "Invalid credentials");
 ```
+
+Alternatively, you may implement authentication as a user function in the first step of an event flow. In this case,
+the input to the function is defined by the "input data mapping" rules in the event flow configuration. 
+
+The advantage of this approach is that authentication is shown as part of an event flow so that the application design
+intention is clear.
 
 A composable application is assembled from a collection of self-contained functions that are highly reusable.
 
@@ -304,4 +313,4 @@ and encapsulation mean that you can precisely control how your application perfo
 
 |          Chapter-1           |                   Home                    |            Chapter-3            |
 |:----------------------------:|:-----------------------------------------:|:-------------------------------:|
-| [Introduction](CHAPTER-1.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [REST automation](CHAPTER-3.md) |
+| [Introduction](CHAPTER-1.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [REST Automation](CHAPTER-3.md) |

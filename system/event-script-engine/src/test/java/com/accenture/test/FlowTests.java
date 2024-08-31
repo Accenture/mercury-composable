@@ -15,6 +15,8 @@ import org.platformlambda.core.util.Utility;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -26,6 +28,65 @@ public class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
 
     @Test
+    public void bodyTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        final String HELLO = "hello world";
+        final String VALUE_A = "A";
+        final String VALUE_B = "B";
+        final int SEQ = 1;
+        Map<String, Object> pojoBody = new HashMap<>();
+        pojoBody.put("user", HELLO);
+        pojoBody.put("sequence", SEQ);
+        pojoBody.put("date", new Date());
+        pojoBody.put("key1", VALUE_A);
+        pojoBody.put("key2", VALUE_B);
+        // put the pojo data structure into a holder to test "input data mapping" feature
+        Map<String, Object> holder = new HashMap<>();
+        holder.put("Holder", pojoBody);
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST")
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json")
+                .setBody(holder)
+                .setUrl("/api/body/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        // override body class type as PoJo
+        result.setType(PoJo.class.getTypeName());
+        Assert.assertTrue(result.getBody() instanceof PoJo);
+        PoJo restored = (PoJo) result.getBody();
+        Assert.assertEquals(HELLO, restored.user);
+        Assert.assertEquals(SEQ, restored.sequence);
+        Assert.assertEquals(VALUE_A, restored.key1);
+        Assert.assertEquals(VALUE_B, restored.key2);
+        Utility util = Utility.getInstance();
+        // verify that result contains headers set by "input data mapping" earlier
+        Assert.assertEquals(SEQ, util.str2int(result.getHeader("X-Sequence")));
+        Assert.assertEquals("AAA", result.getHeader("X-Tag"));
+        Assert.assertEquals("async-http-client", result.getHeader("x-agent"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void headerTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/header/test");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        Assert.assertTrue(result.getBody() instanceof Map);
+        Map<String, Object> body = (Map<String, Object>) result.getBody();
+        // verify that input headers are mapped to the function's input body
+        Assert.assertEquals("header-test", body.get("x-flow-id"));
+        Assert.assertEquals("async-http-client", body.get("user-agent"));
+        Assert.assertEquals("application/json", body.get("accept"));
+    }
+
+    @Test
     public void fileVaultTest() throws IOException, ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         final String HELLO = "hello world";
@@ -33,11 +94,16 @@ public class FlowTests extends TestBase {
         Utility util = Utility.getInstance();
         util.str2file(f1, HELLO);
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/file/vault");
+        request.setTargetHost(HOST).setMethod("GET")
+                .setHeader("accept", "application/json").setUrl("/api/file/vault");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
+        // "output data mapping" will pass the input classpath file as output body
+        InputStream in = this.getClass().getResourceAsStream("/files/hello.txt");
+        String resourceContent = util.stream2str(in);
+        Assert.assertEquals(resourceContent, result.getBody());
+        Assert.assertEquals("text/plain", result.getHeader("content-type"));
         Assert.assertEquals(200, result.getStatus());
         File f2 = new File("/tmp/temp-test-output.txt");
         Assert.assertTrue(f2.exists());
@@ -62,8 +128,8 @@ public class FlowTests extends TestBase {
     public void circuitBreakerRetryTest() throws IOException, ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/circuit/breaker/2");
+        request.setTargetHost(HOST).setMethod("GET")
+                .setHeader("accept", "application/json").setUrl("/api/circuit/breaker/2");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();

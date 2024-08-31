@@ -47,6 +47,20 @@ public class FileVaultReadWrite implements TypedLambdaFunction<Map<String, Objec
         } else {
             result.put("error", "Input must be a map of text and binary key values");
         }
+        Object textRes = input.get("text_resource");
+        Object binaryRes = input.get("binary_resource");
+        if (textRes instanceof String && binaryRes instanceof byte[] b) {
+            String str = Utility.getInstance().getUTF(b);
+            if (text.equals(str)) {
+                result.put("text_resource", textRes);
+                result.put("matched", true);
+            } else {
+                result.put("matched", false);
+                result.put("text_resource", "Input text and binary values do not match");
+            }
+        } else {
+            result.put("error", "Input must be a map of text and binary key values");
+        }
         return result;
     }
 }
