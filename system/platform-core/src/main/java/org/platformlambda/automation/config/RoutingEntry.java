@@ -224,42 +224,44 @@ public class RoutingEntry {
 
     @SuppressWarnings(value="unchecked")
     private SimpleHttpFilter getFilter(ConfigReader config) {
-        Object path = config.get("static-content.filter.path");
-        Object exclusion = config.get("static-content.filter.exclusion");
-        String service = config.getProperty("static-content.filter.service");
-        if (path instanceof List && service != null && !service.isEmpty()) {
-            if (!Utility.getInstance().validServiceName(service)) {
-                log.error("Static content filter ignored: '{} -> {}' - invalid service name", path, service);
-                return null;
-            }
-            List<String> pathList = new ArrayList<>();
-            List<String> exclusionList = new ArrayList<>();
-            List<Object> pList = (List<Object>) path;
-            for (int i=0; i < pList.size(); i++) {
-                pathList.add(config.getProperty("static-content.filter.path["+i+"]"));
-            }
-            if (pathList.isEmpty()) {
-                log.error("static-content.filter.path is empty");
-                return null;
-            }
-            if (exclusion instanceof List) {
-                List<Object> eList = (List<Object>) exclusion;
-                for (int i=0; i < eList.size(); i++) {
-                    exclusionList.add(config.getProperty("static-content.filter.exclusion["+i+"]"));
+        if (config.exists("static-content.filter")) {
+            Object path = config.get("static-content.filter.path");
+            Object exclusion = config.get("static-content.filter.exclusion");
+            String service = config.getProperty("static-content.filter.service");
+            if (path instanceof List && service != null && !service.isEmpty()) {
+                if (!Utility.getInstance().validServiceName(service)) {
+                    log.error("Static content filter ignored: '{} -> {}' - invalid service name", path, service);
+                    return null;
                 }
+                List<String> pathList = new ArrayList<>();
+                List<String> exclusionList = new ArrayList<>();
+                List<Object> pList = (List<Object>) path;
+                for (int i = 0; i < pList.size(); i++) {
+                    pathList.add(config.getProperty("static-content.filter.path[" + i + "]"));
+                }
+                if (pathList.isEmpty()) {
+                    log.error("static-content.filter.path is empty");
+                    return null;
+                }
+                if (exclusion instanceof List) {
+                    List<Object> eList = (List<Object>) exclusion;
+                    for (int i = 0; i < eList.size(); i++) {
+                        exclusionList.add(config.getProperty("static-content.filter.exclusion[" + i + "]"));
+                    }
+                }
+                if (invalidFilterParameters(pathList)) {
+                    log.error("static-content.filter.path ignored - invalid syntax {}", path);
+                    return null;
+                }
+                if (invalidFilterParameters(exclusionList)) {
+                    log.error("static-content.filter.exclusion ignored - invalid syntax {}", exclusion);
+                    return null;
+                }
+                log.info("static-content.filter loaded: {} -> {}, exclusion {}", pathList, service, exclusionList);
+                return new SimpleHttpFilter(pathList, exclusionList, service);
+            } else {
+                log.error("static-content.filter ignored - please check syntax");
             }
-            if (invalidFilterParameters(pathList)) {
-                log.error("static-content.filter.path ignored - invalid syntax {}", path);
-                return null;
-            }
-            if (invalidFilterParameters(exclusionList)) {
-                log.error("static-content.filter.exclusion ignored - invalid syntax {}", exclusion);
-                return null;
-            }
-            log.info("static-content.filter loaded: {} -> {}, exclusion {}", pathList, service, exclusionList);
-            return new SimpleHttpFilter(pathList, exclusionList, service);
-        } else {
-            log.error("static-content.filter ignored - please check syntax");
         }
         return null;
     }
