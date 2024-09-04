@@ -197,11 +197,66 @@ public class AppStarter {
     }
 
     @SuppressWarnings("rawtypes")
+    private static Map<String, Object> getPreloadOverride() {
+        Map<String, Object> result = new HashMap<>();
+        Utility util = Utility.getInstance();
+        AppConfigReader config = AppConfigReader.getInstance();
+        ConfigReader overrideConfig = new ConfigReader();
+        String overridePath = config.getProperty("yaml.preload.override");
+        if (overridePath != null) {
+            try {
+                overrideConfig.load(overridePath);
+                Object o = overrideConfig.get("preload");
+                if (o instanceof List oList) {
+                    for (int i=0; i < oList.size(); i++) {
+                        Object m = overrideConfig.get("preload["+i+"]");
+                        if (m instanceof Map oMap) {
+                            String original = overrideConfig.getProperty("preload["+i+"].original");
+                            Object routeList = overrideConfig.get("preload["+i+"].routes");
+                            int instances = util.str2int(overrideConfig.getProperty("preload["+i+"].instances"));
+                            if (original == null || original.isEmpty()) {
+                                throw new IllegalArgumentException("preload["+i+"] does not contain 'original'");
+                            }
+                            if (routeList instanceof List rList) {
+                                List<String> routes = new ArrayList<>();
+                                for (int j=0; j < rList.size(); j++) {
+                                    routes.add(overrideConfig.getProperty("preload["+i+"].routes["+j+"]"));
+                                }
+                                result.put(original, routes);
+                                result.put("_"+original, instances);
+                            } else {
+                                throw new IllegalArgumentException("preload["+i+"].routes must be a list");
+                            }
+                        } else {
+                            throw new IllegalArgumentException("preload["+i+"] is not a map of original and routes");
+                        }
+                    }
+                } else {
+                    throw new IllegalArgumentException("preload must be a list of key-values for original and routes");
+                }
+            } catch (IOException | IllegalArgumentException e) {
+                log.error("Skipping preload override config - {}", e.getMessage());
+            }
+        }
+        return result;
+    }
+
+    private static String getMatchedPreload(Map<String, Object> preloadOverride, List<String> routes) {
+        for (String r: routes) {
+            if (preloadOverride.containsKey(r)) {
+                return r;
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private static void preload() {
         EventEmitter po = EventEmitter.getInstance();
         log.info("Preloading started - {}", po.getId());
         Utility util = Utility.getInstance();
         Platform platform = Platform.getInstance();
+        Map<String, Object> preloadOverride = getPreloadOverride();
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
         Set<String> packages = scanner.getPackages(true);
         for (String p : packages) {
@@ -218,6 +273,18 @@ public class AppStarter {
                             log.error("Unable to preload {} - missing service route(s)", serviceName);
                         } else {
                             int instances = getInstancesFromEnv(svc.envInstances(), svc.instances());
+                            String original = getMatchedPreload(preloadOverride, routes);
+                            if (original != null) {
+                                routes = (List<String>) preloadOverride.get(original);
+                                int updatedInstances = (Integer) preloadOverride.get("_" + original);
+                                if (updatedInstances > 0) {
+                                    log.info("Preload override [{}] to {}, instances {} to {}",
+                                            svc.route(), routes, instances, updatedInstances);
+                                    instances = updatedInstances;
+                                } else {
+                                    log.info("Preload override [{}] to {}", svc.route(), routes);
+                                }
+                            }
                             boolean isPrivate = svc.isPrivate();
                             Object o = cls.getDeclaredConstructor().newInstance();
                             CustomSerializer mapper = null;

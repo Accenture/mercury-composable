@@ -1,0 +1,11 @@
+preload:
+  - original: 'v1.dummy.one'
+    routes:
+      - 'v1.dummy.one.1'
+      - 'v1.dummy.one.2'
+    # "instances" tag is optional
+    instances: 20
+  - original: 'v1.dummy.two'
+    routes:
+      - 'v1.dummy.two.1'
+      - 'v1.dummy.two.2'
