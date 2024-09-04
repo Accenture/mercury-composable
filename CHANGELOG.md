@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.3, 9/4/2024
+
+### Added
+
+The "preload override" feature is added. This allows overriding a reusable composable library with a set of new
+route names that are unique for use in an event flow configuration script.
+
+For details, Please refer to [Chapter 4, Developer Guide](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/)
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.0.2, 8/31/2024
 
 ### Added

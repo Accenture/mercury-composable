@@ -239,6 +239,51 @@ and CPU resources until an event arrives.
 You may also define concurrency using environment variable. You can replace the "instances" with `envInstances` using
 standard environment variable syntax like `${SOME_ENV_VARIABLE:default_value}`.
 
+## Assigning multiple route names to a single function
+
+When the same function is reused in a single event flow configuration script, you would need multiple route names for
+the same function. It is because a unique route name is required to define a "task" that is associated with a function.
+
+You can use a comma separated list as the route name like this:
+
+```java
+@PreLoad(route="greeting.case.1, greeting.case.2", instances=10)
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>>
+```
+
+## Overriding the route name of a reusable composable library
+
+However, if you want to publish your function as a reusable library in the artifactory, you should use a single
+route name and use a "preload-override.yaml" file to override the default route name to a list of route names
+that are used in your event flow configuration.
+
+```yaml
+preload:
+  - original: 'greeting.demo'
+    routes:
+      - 'greeting.case.1'
+      - 'greeting.case.2'
+    # "instances" tag is optional
+    instances: 20
+  - original: 'v1.another.reusable.function'
+    routes:
+      - 'v1.reusable.1'
+      - 'v1.reusable.2'
+```
+
+In the above example, the function associated with "greeting.demo" will be preloaded as "greeting.case.1"
+and "greeting.case.2". The number of maximum concurrent instances is also changed from 10 to 20.
+
+Note that the second example "v1.another.reusable.function" is overridden as "v1.reusable.1" and "v1.reusable.2"
+and the number of concurrent instances is not changed.
+
+Assuming the above file is "preload-override.yaml" in the "resources" folder of the application source code project, 
+you should add the following parameter in application.properties to activate this preload override feature.
+
+```properties
+yaml.preload.override=classpath:/preload-override.yaml
+```
+
 ## Task list
 
 All tasks for a flow are defined in the "tasks" section.

@@ -498,6 +498,16 @@ public class Platform {
     }
 
     /**
+     * Retrieve the number of instances for a given function
+     * @param route name of a function
+     * @return number of instances if found, otherwise -1
+     */
+    public int getConcurrency(String route) {
+        ServiceDef service = registry.get(route);
+        return service != null? service.getConcurrency() : -1;
+    }
+
+    /**
      * Register a lambda function written in Java function that implements TypedLambdaFunction or LambdaFunction
      *
      * @param route name of the service
