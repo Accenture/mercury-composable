@@ -16,7 +16,7 @@ For release notes before version 3.1, please refer to https://github.com/Accentu
 
 New feature for AsyncHttpClient to render small streaming HTTP response (i.e. chunked binary data) as byte array.
 
-For details, Please refer to [Chapter 4, Developer Guide](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/)
+For details, Please refer to [Appendix III, Developer Guide](https://accenture.github.io/mercury-composable/guides/APPENDIX-III/)
 
 ### Removed
 
