@@ -42,7 +42,7 @@ public class FlowTests extends TestBase {
         pojoBody.put("key2", VALUE_B);
         // put the pojo data structure into a holder to test "input data mapping" feature
         Map<String, Object> holder = new HashMap<>();
-        holder.put("Holder", pojoBody);
+        holder.put("pojoHolder", pojoBody);
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
                 .setHeader("accept", "application/json")

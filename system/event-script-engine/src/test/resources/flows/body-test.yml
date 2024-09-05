@@ -8,8 +8,8 @@ first:
 
 tasks:
   - input:
-      - 'input.body.Holder -> *'
-      - 'input.body.Holder.sequence -> header.sequence'
+      - 'input.body.pojoHolder -> *'
+      - 'input.body.pojoHolder.sequence -> header.sequence'
       # input header is case-insensitive
       - 'input.header.User-Agent -> header.agent'
       - 'text(AAA) -> header.tag'
