@@ -49,6 +49,8 @@ public class EventEnvelope {
     private static final String EXECUTION_FIELD = "exec_time";
     private static final String ROUND_TRIP_FIELD = "round_trip";
     private static final String JSON_FIELD = "json";
+    private static final String STREAM = "stream";
+    private static final String X_CONTENT_LENGTH = "x-content-length";
     // message-ID
     private static final String ID_FLAG = "0";
     // metrics
@@ -110,6 +112,7 @@ public class EventEnvelope {
     private boolean optional = false;
     private boolean encoded = false;
     private boolean exRestored = false;
+    private boolean checkStream = true;
     private int broadcastLevel = 0;
 
     public EventEnvelope() {
@@ -221,6 +224,7 @@ public class EventEnvelope {
      * @return body in map or primitive form
      */
     public Object getRawBody() {
+        showStreamWarning();
         return body;
     }
 
@@ -240,6 +244,7 @@ public class EventEnvelope {
      */
     @SuppressWarnings("unchecked")
     public Object getBody() {
+        showStreamWarning();
         if (!encoded) {
             if (type == null) {
                 setBody(body);
@@ -270,6 +275,18 @@ public class EventEnvelope {
         return optional? Optional.ofNullable(originalObject) : originalObject;
     }
 
+    private void showStreamWarning() {
+        if (body == null && checkStream) {
+            // check the signature of streaming HTTP content from AsyncHttpClient
+            checkStream = false;
+            String streamId = getHeader(STREAM);
+            if (streamId != null && streamId.startsWith("stream.") && getHeader(X_CONTENT_LENGTH) != null) {
+                String sid = streamId.contains("@") ? streamId.substring(0, streamId.indexOf('@')) : streamId;
+                log.info("Event contains streaming content - {}", sid);
+            }
+        }
+    }
+
     /**
      * Get event exception if any
      *
@@ -298,6 +315,7 @@ public class EventEnvelope {
      * @return converted body
      */
     public <T> T getBody(Class<T> toValueType) {
+        showStreamWarning();
         return SimpleMapper.getInstance().getMapper().readValue(body, toValueType);
     }
 
@@ -312,6 +330,7 @@ public class EventEnvelope {
      */
     @SuppressWarnings("unchecked")
     public <T> T getBody(Class<T> toValueType, Class<?>... parameterClass) {
+        showStreamWarning();
         if (parameterClass.length == 0) {
             throw new IllegalArgumentException("Missing parameter class");
         }

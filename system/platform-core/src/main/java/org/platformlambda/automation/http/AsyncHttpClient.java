@@ -77,6 +77,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "application/xml";
     private static final String X_RAW_XML = "x-raw-xml";
+    private static final String X_NO_STREAM = "x-small-payload-as-bytes";
     private static final String APPLICATION_JAVASCRIPT = "application/javascript";
     private static final String TEXT_PREFIX = "text/";
     private static final String REGULAR_FACTORY = "regular.";
@@ -96,7 +97,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String INPUT_STREAM_SUFFIX = ".in";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
-    private static final String X_CONTENT_LENGTH = "x-content-length";
+    private static final String X_CONTENT_LENGTH = "X-Content-Length";
     private static final String TIMEOUT = "timeout";
     private static final String USER_AGENT_NAME = "async-http-client";
     /*
@@ -563,7 +564,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             if (input.getReplyTo() != null) {
                 String resContentType = res.getHeader(CONTENT_TYPE);
                 String contentLen = res.getHeader(CONTENT_LENGTH);
-                if (contentLen != null || isTextResponse(resContentType)) {
+                boolean renderAsBytes = "true".equals(request.getHeader(X_NO_STREAM));
+                if (renderAsBytes || contentLen != null || isTextResponse(resContentType)) {
+                    int len = 0;
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     try {
                         while (true) {
@@ -573,6 +576,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                             } else {
                                 try {
                                     out.write(block);
+                                    len += block.length;
                                 } catch (IOException e) {
                                     // ok to ignore
                                 }
@@ -580,6 +584,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                         }
                     } finally {
                         queue.close();
+                    }
+                    if (renderAsBytes || contentLen != null) {
+                        response.setHeader(X_CONTENT_LENGTH, len);
                     }
                     byte[] b = out.toByteArray();
                     if (resContentType != null) {

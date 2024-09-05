@@ -48,6 +48,13 @@ public class ConfigReaderTest {
     }
 
     @Test
+    public void defaultValueForNonExistEnvVar() throws IOException {
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.yaml");
+        Assert.assertEquals("text(http://127.0.0.1:8100) -> test", reader.getProperty("hello.no_env_var"));
+    }
+
+    @Test
     public void systemPropertySubstitution() throws IOException {
         final String HELLO = "HELLO";
         System.setProperty("sample.system.property", HELLO);

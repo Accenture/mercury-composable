@@ -17,6 +17,7 @@ hello:
   - '${server.port} is server port'
   - 'Server port is ${server.port}'
   path: ${system.path}
+  no_env_var: 'text(${NON_EXIST_ENV_VAR:http://127.0.0.1:8100}) -> test'
 
 test:
   default: "hello ${no.such.key:1000}"

@@ -71,7 +71,14 @@ rest:
   - service: "hello.world"
     methods: ['GET', 'PUT', 'POST']
     url: "/api/simple/{task}/*"
-    timeout: 12
+    timeout: 12s
+    cors: cors_1
+    headers: header_1
+
+  - service: "hello.bytes"
+    methods: ['GET']
+    url: "/api/hello/bytes"
+    timeout: 10s
     cors: cors_1
     headers: header_1
 

@@ -27,10 +27,7 @@ import org.platformlambda.common.TestBase;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
-import org.platformlambda.core.system.EventEmitter;
-import org.platformlambda.core.system.Platform;
-import org.platformlambda.core.system.PostOffice;
-import org.platformlambda.core.system.ServiceDef;
+import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -39,6 +36,7 @@ import org.platformlambda.core.websocket.client.PersistentWsClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -55,6 +53,69 @@ public class PostOfficeTest extends TestBase {
     private static final CryptoApi crypto = new CryptoApi();
     private static final BlockingQueue<String> interceptorBench = new ArrayBlockingQueue<>(1);
     private static final String HELLO_ALIAS = "hello.alias";
+
+    @Test
+    public void httpClientRenderSmallPayloadAsBytes() throws IOException, ExecutionException, InterruptedException {
+        final String HELLO = "hello world 0123456789";
+        final AppConfigReader config = AppConfigReader.getInstance();
+        String port = config.getProperty("server.port");
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setTargetHost("http://127.0.0.1:"+port).setHeader("X-Small-Payload-As-Bytes", "true")
+                .setUrl("/api/hello/bytes").setMethod("GET");
+        EventEnvelope httpResponse = new EventEnvelope().setTo("async.http.request").setBody(req);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope response = po.request(httpResponse, 5000).get();
+        Assert.assertTrue(response.getBody() instanceof byte[]);
+        if (response.getBody() instanceof byte[] b) {
+            Assert.assertEquals(HELLO, Utility.getInstance().getUTF(b));
+        }
+        // HTTP response header "x-content-length" is provided by AsyncHttpClient when rendering small payload as bytes
+        Assert.assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
+    }
+
+    @Test
+    public void httpClientDetectStreamingContent() throws IOException, ExecutionException, InterruptedException {
+        final String HELLO = "hello world 0123456789";
+        final AppConfigReader config = AppConfigReader.getInstance();
+        String port = config.getProperty("server.port");
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setTargetHost("http://127.0.0.1:"+port).setUrl("/api/hello/bytes").setMethod("GET");
+        EventEnvelope httpResponse = new EventEnvelope().setTo("async.http.request").setBody(req);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope response = po.request(httpResponse, 5000).get();
+        /*
+         * The system will print an INFO log when your app tries to read the empty response body
+         * in an EventEnvelope that contains streaming content.
+         *
+         * It would look like this:
+         * EventEnvelope:285 - Event contains streaming content - stream.869af6eb40f043cfb855b8795df63fde.in
+         */
+        Assert.assertNull(response.getBody());
+        String streamId = response.getHeader("stream");
+        Assert.assertNotNull(streamId);
+        Assert.assertTrue(streamId.startsWith("stream."));
+        // HTTP response header "x-content-length" is provided by AsyncHttpClient when rendering small payload as bytes
+        Assert.assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
+        // Read stream content
+        EventEnvelope streamRequest = new EventEnvelope().setTo(streamId).setHeader("type", "read");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        while (true) {
+            EventEnvelope event = po.request(streamRequest, 5000).get();
+            if ("eof".equals(event.getHeader("type"))) {
+                log.info("Closing {}", streamId);
+                po.send(streamId, new Kv("type", "close"));
+                break;
+            }
+            if ("data".equals(event.getHeader("type"))) {
+                Object block = event.getBody();
+                if (block instanceof byte[] b) {
+                    out.write(b);
+                }
+            }
+        }
+        String content = Utility.getInstance().getUTF(out.toByteArray());
+        Assert.assertEquals(HELLO, content);
+    }
 
     @Test
     public void concurrentEventTest() throws InterruptedException {

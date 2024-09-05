@@ -101,13 +101,37 @@ list.add("b");
 req.setQueryParameter("x2", list);
 req.setTargetHost("http://127.0.0.1:8083");
 EventEnvelope request = new EventEnvelope().setTo("async.http.request").setBody(req);
+EventEnvelope res = po.request(request, 5000);
+// the result is in res.getBody()
+```
+
+By default, your user function is running in a virtual thread.
+While the RPC call looks like synchronous, the po.request API will run in non-blocking mode in the same fashion
+as the "async/await" pattern.
+
+For reactive programming, you can use the "asyncRequest" API like this:
+
+```java
+PostOffice po = new PostOffice(headers, instance);
+AsyncHttpRequest req = new AsyncHttpRequest();
+req.setMethod("GET");
+req.setHeader("accept", "application/json");
+req.setUrl("/api/hello/world?hello world=abc");
+req.setQueryParameter("x1", "y");
+List<String> list = new ArrayList<>();
+list.add("a");
+list.add("b");
+req.setQueryParameter("x2", list);
+req.setTargetHost("http://127.0.0.1:8083");
+EventEnvelope request = new EventEnvelope().setTo("async.http.request").setBody(req);
 Future<EventEnvelope> res = po.asyncRequest(request, 5000);
 res.onSuccess(response -> {
    // do something with the result 
 });
 ```
 
-In a suspend function using KotlinLambdaFunction, the same logic may look like this:
+If you prefer writing in Kotlin, you can create a suspend function using KotlinLambdaFunction, 
+the same logic may look like this:
 
 ```java
 val fastRPC = FastRPC(headers)
@@ -159,19 +183,49 @@ while ((len = in.read(buffer, 0, buffer.length)) != -1) {
 }
 // closing the output stream would send a EOF signal to the stream
 out.close();
-// tell the HTTP client to read the input stream
+// tell the HTTP client to read the input stream by setting the streamId in the AsyncHttpRequest object
 req.setStreamRoute(stream.getInputStreamId());
 ```
 
 ## Read HTTP response body stream
 
-If content length is not given, the response body will be received as a stream.
+If content length is not given, the response body would arrive as a stream.
 
-Your application should check if the HTTP response header "stream" exists. Its value is an input "stream ID".
+Your application should check if the HTTP response header "stream" exists. Its value is the input "stream ID".
 
-For simplicity and readability, we recommend using "suspend function" to read the input byte-array stream.
+For simplicity and readability, we recommend using the PostOffice's "request" API to read the input byte-array stream.
 
-It may look like this:
+It looks like this:
+
+```java
+PostOffice po = PostOffice(headers, instance);
+EventEnvelope req = new EventEnvelope().setTo(streamId).setHeader("type", "read");
+while (true) {
+    EventEnvelope event = po.request(req, 5000).get();
+    if (event.getStatus() == 400) {
+        // handle input stream timeout
+     }
+     if ("eof".equals(event.getHeader("type"))) {
+         log.info("Closing {}", streamId);
+         po.send(streamId, new Kv("type", "close"));
+         break;
+     }
+     if ("data".equals(event.getHeader("type"))) {
+         Object block = event.getBody();
+         if (block instanceof byte[] b) {
+            // handle the byte array "b"
+         }
+     }
+}
+```
+
+You can also use the new PostOffice's request API running in Java 21 virtual thread that follows the
+"async/await" pattern. Therefore, the "while" loop above has no harm.
+
+By default, a user function is executed in a virtual thread which effectively is an "async" function and
+the PostOffice "request" API operates in the non-blocking "await" mode.
+
+If you prefers writing in Kotlin, it may look like this:
 
 ```java
 val po = PostOffice(headers, instance)
@@ -196,6 +250,26 @@ while (true) {
     }
 }
 ```
+
+## Rendering a small payload of streaming content
+
+If the streaming HTTP response is certain to be a small payload (i.e. Kilobytes), you can optimize
+the rendering by adding the HTTP request header (X-Small-Payload-As-Bytes=true) in the AsyncHttpRequest object.
+
+```java
+AsyncHttpRequest req = new AsyncHttpRequest();
+req.setMethod("GET");
+req.setUrl("/api/some/binary/content");
+req.setTargetHost("https://service_provider_host");
+req.setHeader("X-Small-Payload-As-Bytes", "true");
+```
+
+Note that the AsyncHttpClient will insert a custom HTTP response header "X-Content-Length" to show the size
+of the payload.
+
+> IMPORTANT: This optimization does not validate the size of the streaming content. Therefore, it is possible for
+             the streaming content to trigger an "out of memory" exception. You must make sure the streaming content
+             is small enough before using the "X-Small-Payload-As-Bytes" HTTP request header.
 
 ## Content length for HTTP request
 
