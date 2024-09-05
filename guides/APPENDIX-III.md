@@ -191,7 +191,7 @@ req.setStreamRoute(stream.getInputStreamId());
 
 If content length is not given, the response body would arrive as a stream.
 
-Your application should check if the HTTP response header "stream" exists. Its value is the input "stream ID".
+Your application should check if the HTTP response header "stream" exists. Its value is the input "streamId".
 
 For simplicity and readability, we recommend using the PostOffice's "request" API to read the input byte-array stream.
 
@@ -218,9 +218,6 @@ while (true) {
      }
 }
 ```
-
-You can also use the new PostOffice's request API running in Java 21 virtual thread that follows the
-"async/await" pattern. Therefore, the "while" loop above has no harm.
 
 By default, a user function is executed in a virtual thread which effectively is an "async" function and
 the PostOffice "request" API operates in the non-blocking "await" mode.
