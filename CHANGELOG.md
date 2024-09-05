@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.4, 9/5/2024
+
+### Added
+
+New feature for AsyncHttpClient to render small streaming HTTP response (i.e. chunked binary data) as byte array.
+
+For details, Please refer to [Chapter 4, Developer Guide](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/)
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix for parsing default value of environment variable in ConfigReader. 
+This resolves an issue when the special character colon (":") is used more than once in the default value.
+
+---
 ## Version 4.0.3, 9/4/2024
 
 ### Added

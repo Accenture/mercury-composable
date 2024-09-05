@@ -250,8 +250,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                             String parentPath = f.getParent();
                             if (!("/".equals(parentPath))) {
                                 File parent = f.getParentFile();
-                                if (!parent.exists() && parent.mkdirs()) {
-                                    log.info("Folder {} created", parentPath);
+                                if (!parent.exists()) {
+                                    if (parent.mkdirs()) {
+                                        log.info("Folder {} created", parentPath);
+                                    } else {
+                                        log.error("Unable to create folder {} - please check access rights", parentPath);
+                                    }
                                 }
                             }
                         }
