@@ -56,7 +56,7 @@ certificate, and save it in the "/tmp" folder before your main application start
 
 ## Event envelope
 
-Mercury version 3 is an event engine that encapsulates Eclipse Vertx and Kotlin coroutine and suspend function.
+Mercury is an event engine that encapsulates Eclipse Vertx and Kotlin coroutine and suspend function.
 
 A composable application is a collection of functions that communicate with each other in events.
 Each event is transported by an event envelope. Let's examine the envelope.
@@ -73,6 +73,30 @@ Headers and body are optional, but you must provide at least one of them. If the
 or body, the system will send your event as a "ping" command to the target function. The response acknowledgements
 that the target function exists. This ping/pong protocol tests the event loop or service mesh. This test mechanism
 is useful for DevSecOps admin dashboard.
+
+## PoJo transport
+
+Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output.
+
+If you use the EventEnvelope as input, PoJo payload is provided as a HashMap in the event's body.
+
+The original class name of the PoJo payload is saved in the event's type attribute.
+You can compare and restore the PoJo like this:
+
+```java
+if (SamplePoJo.class.getName().equals(input.getType())) {
+    SamplePoJo pojo = input.getBody(SamplePoJo.class);
+    // do something with your input PoJo
+}
+```
+
+If you use the "untyped" LambdaFunction, the input "Object" is a HashMap and you would need to convert it back
+to a PoJo using the SimpleMapper or a serializer of your choice.
+
+For example,
+```java
+SamplePoJo pojo = SimpleMapper.getInstance().getMapper().readValue((Map<String, Object>) input, SamplePoJo.class);
+```
 
 ## Custom exception using AppException
 

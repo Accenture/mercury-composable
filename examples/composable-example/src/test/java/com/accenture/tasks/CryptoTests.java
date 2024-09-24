@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
-import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
@@ -33,13 +32,12 @@ import java.util.concurrent.ExecutionException;
 
 public class CryptoTests extends TestBase {
     private static final Utility util = Utility.getInstance();
-    private static final CryptoApi crypto = new CryptoApi();
 
     @SuppressWarnings("unchecked")
     @Test
     public void encryptAndDecryptTest() throws IOException, ExecutionException, InterruptedException {
-        String b64Key = util.bytesToBase64(crypto.generateAesKey(256));
-        PostOffice po = new PostOffice("unit.test", "1000", "test /crypto");
+        String b64Key = util.bytesToBase64(crypto.generateAesKey(strongCrypto? 256 : 128));
+        PostOffice po = new PostOffice("unit.test", "1000", "TEST /crypto");
         String KEY1 = "k1";
         String KEY2 = "k2";
         String KEY1_DATA = "hello";
@@ -74,4 +72,5 @@ public class CryptoTests extends TestBase {
         Assert.assertEquals(KEY1_DATA, decrypted.get(KEY1));
         Assert.assertEquals(KEY2_DATA, decrypted.get(KEY2));
     }
+
 }

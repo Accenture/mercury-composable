@@ -90,7 +90,7 @@ public class CryptoTest {
     public void invalidRsaKeyLength() {
         IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class,
                                             () -> crypto.generateRsaKey(1000));
-        Assert.assertEquals("Key size must be one of [1024, 2048, 3072, 4096]", ex.getMessage());
+        Assert.assertEquals("Key size must be one of [2048, 3072, 4096]", ex.getMessage());
     }
 
     @Test
@@ -158,9 +158,9 @@ public class CryptoTest {
         Assert.assertEquals(20, hashed.length);
         hashedFromStream = crypto.getSHA1(new ByteArrayInputStream(input.getBytes()));
         Assert.assertArrayEquals(hashed, hashedFromStream);
-        hashed = crypto.getMd5(input.getBytes());
-        Assert.assertEquals(16, hashed.length);
-        hashedFromStream = crypto.getMd5(new ByteArrayInputStream(input.getBytes()));
+        hashed = crypto.getSHA256(input.getBytes());
+        Assert.assertEquals(32, hashed.length);
+        hashedFromStream = crypto.getSHA256(new ByteArrayInputStream(input.getBytes()));
         Assert.assertArrayEquals(hashed, hashedFromStream);
     }
 

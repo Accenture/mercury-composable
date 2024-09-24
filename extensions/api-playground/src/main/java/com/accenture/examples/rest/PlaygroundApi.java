@@ -99,14 +99,23 @@ public class PlaygroundApi {
             if (!ready) {
                 callback.error(new AppException(503, "API playground not ready"));
             } else {
-                File f = new File(dir, id);
-                if (f.exists()) {
-                    callback.success(ResponseEntity.status(200).body(Utility.getInstance().file2str(f)));
+                String path = safePath(id);
+                if (path == null) {
+                    callback.error(new AppException(503, "Path parameter 'id' must not contain path traversal text"));
                 } else {
-                    callback.error(new AppException(404, "File not found"));
+                    File f = new File(dir, path);
+                    if (f.exists()) {
+                        callback.success(ResponseEntity.status(200).body(Utility.getInstance().file2str(f)));
+                    } else {
+                        callback.error(new AppException(404, "File not found"));
+                    }
                 }
             }
         });
+    }
+
+    private String safePath(String path) {
+        return path.startsWith("../") || path.contains("/../")? null : path;
     }
 
 }

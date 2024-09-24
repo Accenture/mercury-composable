@@ -172,23 +172,20 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                  * If the service is an interceptor or the input argument is EventEnvelope,
                  * we will pass the original event envelope instead of the message body.
                  */
-                val inputBody: Any?
+                var inputBody: Any?
                 if (useEnvelope || (interceptor && def.inputClass == null)) {
                     inputBody = event
                 } else {
                     if (event.rawBody is Map<*, *> && def.inputClass != null) {
                         if (def.inputClass == AsyncHttpRequest::class.java) {
                             // handle special case
-                            event.type = null
                             inputBody = AsyncHttpRequest(event.rawBody)
                         } else {
                             // automatically convert Map to PoJo
                             if (customSerializer != null) {
-                                event.type = null
                                 inputBody = customSerializer.toPoJo(event.rawBody, def.inputClass)
                             } else {
-                                event.type = def.inputClass.name
-                                inputBody = event.body
+                                inputBody = event.getBody(def.inputClass)
                             }
                         }
                     } else {
@@ -255,9 +252,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                             response.body = result.rawBody
                             if (customSerializer == null) {
                                 response.type = result.type;
-                                if (result.parametricType != null) {
-                                    response.parametricType = result.parametricType
-                                }
                             }
                             for ((key, value) in headers) {
                                 if (key != MY_ROUTE && key != MY_TRACE_ID && key != MY_TRACE_PATH) {

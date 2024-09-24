@@ -43,12 +43,17 @@ public class HelloPoJoEventOverHttp {
         String remoteEndpoint = "http://127.0.0.1:"+remotePort+"/api/event";
         String traceId = Utility.getInstance().getUuid();
         PostOffice po = new PostOffice("hello.pojo.endpoint", traceId, "GET /api/pojo/http");
+        /*
+         * "hello.pojo" resides in the lambda-example and is reachable by "Event-over-HTTP".
+         * In this module, it demonstrates the use of Event-over-HTTP API.
+         */
         EventEnvelope req = new EventEnvelope().setTo("hello.pojo").setHeader("id", id);
         return Mono.create(callback -> {
             try {
                 EventEnvelope response = po.request(req, 3000, Collections.emptyMap(), remoteEndpoint, true).get();
-                if (response.getBody() instanceof SamplePoJo result) {
-                    callback.success(result);
+                if (SamplePoJo.class.getName().equals(response.getType())) {
+                    SamplePoJo pojo = response.getBody(SamplePoJo.class);
+                    callback.success(pojo);
                 } else {
                     callback.error(new AppException(response.getStatus(), response.getError()));
                 }

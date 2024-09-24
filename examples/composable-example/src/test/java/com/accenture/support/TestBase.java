@@ -20,18 +20,33 @@ package com.accenture.support;
 
 import org.junit.BeforeClass;
 import org.platformlambda.core.system.AutoStart;
+import org.platformlambda.core.util.CryptoApi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.security.Security;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestBase {
+    private static final Logger log = LoggerFactory.getLogger(TestBase.class);
 
     private static final AtomicInteger startCounter = new AtomicInteger(0);
+    protected static final CryptoApi crypto = new CryptoApi();
+    protected static boolean strongCrypto;
 
     @BeforeClass
     public static void setup() {
         // execute only once
         if (startCounter.incrementAndGet() == 1) {
             AutoStart.main(new String[0]);
+            strongCrypto = crypto.strongCryptoSupported();
+            if (!strongCrypto) {
+                log.warn("Not using Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy");
+                log.info("AES-128 supported");
+            } else {
+                log.info("Using Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy");
+                log.info("AES-256 supported");
+            }
         }
     }
 }

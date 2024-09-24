@@ -18,9 +18,7 @@
 
 package org.platformlambda.core.serializers;
 
-import org.platformlambda.core.models.PoJoList;
 import org.platformlambda.core.models.TypedPayload;
-import org.platformlambda.core.util.SimpleCache;
 import org.platformlambda.core.util.Utility;
 
 import java.util.*;
@@ -30,10 +28,7 @@ public class PayloadMapper {
     public static final String LIST = "L";
     public static final String PRIMITIVE = "P";
     public static final String NOTHING = "N";
-    public static final String JAVA_CLASS_CACHE = "java.class.cache";
-    private static final long FIVE_MINUTES = 5 * 60 * 1000L;
 
-    private static final SimpleCache cache = SimpleCache.createCache(JAVA_CLASS_CACHE, FIVE_MINUTES);
     private static final PayloadMapper PAYLOAD_MAPPER_INSTANCE = new PayloadMapper();
 
     public static PayloadMapper getInstance() {
@@ -60,40 +55,29 @@ public class PayloadMapper {
     }
 
     private TypedPayload encodeList(List<Object> objects, boolean binary) {
-        boolean primitive = false;
-        String pojoInside = null;
+        SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
+        Utility util = Utility.getInstance();
         List<Object> list = new ArrayList<>();
         for (Object o: objects) {
             if (o == null) {
                 list.add(null);
+            } else if (isPrimitive(o)) {
+                list.add(o);
             } else if (isPrimitive(o) || o instanceof Map) {
                 list.add(o);
-                primitive = true;
             } else {
-                if (pojoInside == null) {
-                    pojoInside = o.getClass().getName();
-                }
-                if (pojoInside.equals(o.getClass().getName())) {
-                    list.add(o);
+                if (util.isPoJo(o)) {
+                    if (binary) {
+                        list.add(mapper.readValue(o, Map.class));
+                    } else {
+                        list.add(mapper.writeValueAsBytes(o));
+                    }
                 } else {
-                    throw new IllegalArgumentException("Unable to serialize because it is a list of mixed types");
+                    throw new IllegalArgumentException("Unable to serialize because it is not a list of PoJo");
                 }
             }
         }
-        if (pojoInside != null && primitive) {
-            throw new IllegalArgumentException("Unable to serialize because it is a list of mixed types");
-        }
-        return pojoInside != null? getTypedPayloadFromList(list, pojoInside, binary) : new TypedPayload(LIST, list);
-    }
-
-    private TypedPayload getTypedPayloadFromList(List<Object> list, String pojoInside, boolean binary) {
-        PoJoList<Object> pojoList = new PoJoList<>();
-        for (Object pojo: list) {
-            pojoList.add(pojo);
-        }
-        TypedPayload result = getTypedPayload(pojoList, binary);
-        result.setParametricType(pojoInside);
-        return result;
+        return new TypedPayload(LIST, list);
     }
 
     private TypedPayload getTypedPayload(Object obj, boolean binary) {
@@ -105,58 +89,8 @@ public class PayloadMapper {
         }
     }
 
-    public Object decode(TypedPayload typed) throws ClassNotFoundException {
-        String type = typed.getType();
-        if (NOTHING.equals(type)) {
-            return null;
-        }
-        if (PRIMITIVE.equals(type) || LIST.equals(type) || MAP.equals(type)) {
-            return typed.getPayload();
-        }
-        if (type.contains(".")) {
-            Class<?> cls = getClassByName(type);
-            if (cls != null) {
-                List<String> paraClass = Utility.getInstance().split(typed.getParametricType(), ", ");
-                SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
-                if (paraClass.isEmpty()) {
-                    return mapper.readValue(typed.getPayload(), cls);
-                } else {
-                    Class<?>[] paraClsList = new Class<?>[paraClass.size()];
-                    for (int i=0; i < paraClass.size(); i++) {
-                        Class<?> pc = getClassByName(paraClass.get(i));
-                        if (pc == null) {
-                            throw new ClassNotFoundException(paraClass.get(i)+" not found");
-                        }
-                        paraClsList[i] = pc;
-                    }
-                    return mapper.restoreGeneric(typed.getPayload(), cls, paraClsList);
-                }
-            } else {
-                throw new ClassNotFoundException(type+" not found");
-            }
-
-        } else {
-            return typed.getPayload();
-        }
-    }
-
-    public Class<?> getClassByName(String name) {
-        Object cached = cache.get(name);
-        if (cached instanceof Class) {
-            return (Class<?>) cached;
-        }
-        if (cached instanceof Boolean) {
-            return null;
-        }
-        try {
-            Class<?> cls = Class.forName(name);
-            cache.put(name, cls);
-            return cls;
-
-        } catch (ClassNotFoundException e) {
-            cache.put(name, false);
-            return null;
-        }
+    public Object decode(TypedPayload typed) {
+        return typed.getPayload();
     }
 
     public boolean isPrimitive(Object obj) {

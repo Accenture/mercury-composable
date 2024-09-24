@@ -20,7 +20,7 @@ package org.platformlambda.core.util;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -28,6 +28,7 @@ import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -36,24 +37,22 @@ import java.util.List;
 
 public class CryptoApi {
 
-    public static final String PUBLIC = ".pub";
-    public static final String PRIVATE = ".key";
-    private static final int IV_LENGTH = 16;
+    private static final int IV_LENGTH = 12;
     private static final SecureRandom random = new SecureRandom();
     private static final int BUFFER_SIZE = 1024;
     private static final String RSA = "RSA";
     private static final String DSA = "DSA";
     private static final String AES = "AES";
-    private static final String MD5 = "MD5";
     private static final String SHA1 = "SHA1";
     private static final String SHA256 = "SHA-256";
     private static final String HMAC_SHA1 = "HmacSHA1";
     private static final String HMAC_SHA256 = "HmacSHA256";
-    private static final int RSA_1024 = 1024;
-    private static final int[] RSA_KEY_SIZES = {1024, 2048, 3072, 4096};
-    private static final String SHA1_DSA = "SHA1withDSA"; // or SHA256withDSA
-    private static final String SHA1_RSA = "SHA1withRSA"; // or SHA256withRSA
-    private static final String AES_PADDING = "AES/CBC/PKCS5Padding";
+    private static final int RSA_2048 = 2048;
+    private static final int DSA_2048 = 2048;
+    private static final int[] PUBLIC_KEY_SIZES = {2048, 3072, 4096};
+    private static final String SHA_256_WITH_DSA = "SHA256withDSA";
+    private static final String SHA_1_WITH_RSA = "SHA1withRSA";
+    private static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
     private static final String RSA_PADDING = "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
     private static final String CORRUPTED_IV = "Corrupted IV";
     private static final String DASHES = "-----";
@@ -69,7 +68,7 @@ public class CryptoApi {
      * @return keypair
      */
     public KeyPair generateRsaKey() {
-        return generateRsaKey(RSA_1024);
+        return generateRsaKey(RSA_2048);
     }
 
     public KeyPair generateRsaKey(int keySize) {
@@ -84,7 +83,7 @@ public class CryptoApi {
             }
         } else {
             List<Integer> allowed = new ArrayList<>();
-            for (int size: RSA_KEY_SIZES) {
+            for (int size: PUBLIC_KEY_SIZES) {
                 allowed.add(size);
             }
             throw new IllegalArgumentException("Key size must be one of "+ allowed);
@@ -92,7 +91,7 @@ public class CryptoApi {
     }
 
     private boolean allowedRsaKeySize(int keySize) {
-        for (int allowed: RSA_KEY_SIZES) {
+        for (int allowed: PUBLIC_KEY_SIZES) {
             if (allowed == keySize) {
                 return true;
             }
@@ -103,7 +102,7 @@ public class CryptoApi {
     /**
      * Get private key bytes
      *
-     * @param keyPair RSA-1024 or DSA-1024 key pair
+     * @param keyPair RSA-2048 or DSA-1024 key pair
      * @return PKCS-8 encoded byte array
      */
     public byte[] getEncodedPrivateKey(KeyPair keyPair) {
@@ -129,7 +128,7 @@ public class CryptoApi {
     /**
      * Get public key bytes
      *
-     * @param keyPair RSA-1024 or DSA-1024 key pair
+     * @param keyPair RSA-2048 or DSA-1024 key pair
      * @return X509 encoded byte array
      */
     public byte[] getEncodedPublicKey(KeyPair keyPair) {
@@ -159,7 +158,7 @@ public class CryptoApi {
      */
     public byte[] rsaSign(byte[] data, byte[] privateKey) throws GeneralSecurityException {
         PrivateKey key = getPrivate(privateKey, true);
-        Signature dsa = Signature.getInstance(SHA1_RSA);
+        Signature dsa = Signature.getInstance(SHA_1_WITH_RSA);
         dsa.initSign(key);
         dsa.update(data);
         return dsa.sign();
@@ -191,7 +190,7 @@ public class CryptoApi {
      */
     public boolean rsaVerify(byte[] data, byte[] signature, byte[] publicKey) throws GeneralSecurityException {
         PublicKey key = getPublic(publicKey, true);
-        Signature dsa = Signature.getInstance(SHA1_RSA);
+        Signature dsa = Signature.getInstance(SHA_1_WITH_RSA);
         dsa.initVerify(key);
         dsa.update(data);
         return dsa.verify(signature);
@@ -202,7 +201,7 @@ public class CryptoApi {
     ////////////////////////
 
     public KeyPair generateDsaKey() {
-        return generateDsaKey(1024);
+        return generateDsaKey(DSA_2048);
     }
 
     public KeyPair generateDsaKey(int keySize) {
@@ -217,7 +216,7 @@ public class CryptoApi {
             }
         } else {
             List<Integer> allowed = new ArrayList<>();
-            for (int size: RSA_KEY_SIZES) {
+            for (int size: PUBLIC_KEY_SIZES) {
                 allowed.add(size);
             }
             throw new IllegalArgumentException("Key size must be one of "+ allowed);
@@ -233,7 +232,7 @@ public class CryptoApi {
      */
     public byte[] dsaSign(byte[] data, byte[] privateKey) throws GeneralSecurityException {
         PrivateKey key = getPrivate(privateKey, false);
-        Signature dsa = Signature.getInstance(SHA1_DSA);
+        Signature dsa = Signature.getInstance(SHA_256_WITH_DSA);
         dsa.initSign(key);
         dsa.update(data);
         return dsa.sign();
@@ -249,7 +248,7 @@ public class CryptoApi {
      */
     public boolean dsaVerify(byte[] data, byte[] signature, byte[] publicKey) throws GeneralSecurityException {
         PublicKey key = getPublic(publicKey, false);
-        Signature dsa = Signature.getInstance(SHA1_DSA);
+        Signature dsa = Signature.getInstance(SHA_256_WITH_DSA);
         dsa.initVerify(key);
         dsa.update(data);
         return dsa.verify(signature);
@@ -275,14 +274,11 @@ public class CryptoApi {
     }
 
     public void aesEncrypt(InputStream clearIn, OutputStream encryptedOut, byte[] key) throws GeneralSecurityException, IOException {
-        aesEncrypt(clearIn, encryptedOut, key, getIv(), AES_PADDING);
-    }
-
-    public void aesEncrypt(InputStream clearIn, OutputStream encryptedOut, byte[] key, byte[] iv, String algorithm)
-            throws GeneralSecurityException, IOException {
+        byte[] iv = getIv();
         SecretKeySpec secret = new SecretKeySpec(key, AES);
-        Cipher cipher = Cipher.getInstance(algorithm);
-        cipher.init(Cipher.ENCRYPT_MODE, secret, new IvParameterSpec(iv));
+        Cipher cipher = Cipher.getInstance(AES_GCM_NO_PADDING);
+        AlgorithmParameterSpec ivSpec = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, secret, ivSpec);
         encryptedOut.write(iv);
         int len;
         byte[] buffer = new byte[BUFFER_SIZE];
@@ -298,18 +294,14 @@ public class CryptoApi {
 
     public void aesDecrypt(InputStream encryptedIn, OutputStream clearOut, byte[] key) throws GeneralSecurityException, IOException {
         byte[] iv = new byte[IV_LENGTH];
-        int len = encryptedIn.read(iv);
-        if (len < IV_LENGTH) {
+        int ivLen = encryptedIn.read(iv);
+        if (ivLen < IV_LENGTH) {
             throw new IOException(CORRUPTED_IV);
         }
-        aesDecrypt(encryptedIn, clearOut, key, iv, AES_PADDING);
-    }
-
-    public void aesDecrypt(InputStream encryptedIn, OutputStream clearOut, byte[] key, byte[] iv, String algorithm)
-            throws GeneralSecurityException, IOException {
         SecretKeySpec secret = new SecretKeySpec(key, AES);
-        Cipher cipher = Cipher.getInstance(algorithm);
-        cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
+        Cipher cipher = Cipher.getInstance(AES_GCM_NO_PADDING);
+        AlgorithmParameterSpec ivSpec = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.DECRYPT_MODE, secret, ivSpec);
         int len;
         byte[] buffer = new byte[BUFFER_SIZE];
         while ((len = encryptedIn.read(buffer, 0, buffer.length)) != -1) {
@@ -323,14 +315,11 @@ public class CryptoApi {
     }
 
     public byte[] aesEncrypt(byte[] clearText, byte[] key) throws GeneralSecurityException, IOException {
-        return aesEncrypt(clearText, key, getIv(), AES_PADDING);
-    }
-
-    public byte[] aesEncrypt(byte[] clearText, byte[] key, byte[] iv, String algorithm)
-            throws GeneralSecurityException, IOException {
+        byte[] iv = getIv();
         SecretKeySpec secret = new SecretKeySpec(key, AES);
-        Cipher cipher = Cipher.getInstance(algorithm);
-        cipher.init(Cipher.ENCRYPT_MODE, secret, new IvParameterSpec(iv));
+        Cipher cipher = Cipher.getInstance(AES_GCM_NO_PADDING);
+        AlgorithmParameterSpec ivSpec = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, secret, ivSpec);
         byte[] encrypted = cipher.doFinal(clearText);
         // prepend random IV so encrypting the same text multiple times would generate different results
         ByteArrayOutputStream out = new ByteArrayOutputStream(encrypted.length);
@@ -345,14 +334,10 @@ public class CryptoApi {
         }
         byte[] iv = Arrays.copyOfRange(encrypted, 0, IV_LENGTH);
         byte[] payload = Arrays.copyOfRange(encrypted, IV_LENGTH, encrypted.length);
-        return aesDecrypt(payload, key, iv, AES_PADDING);
-    }
-
-    public byte[] aesDecrypt(byte[] payload, byte[] key, byte[] iv, String algorithm)
-            throws GeneralSecurityException {
         SecretKeySpec secret = new SecretKeySpec(key, AES);
-        Cipher cipher = Cipher.getInstance(algorithm);
-        cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
+        Cipher cipher = Cipher.getInstance(AES_GCM_NO_PADDING);
+        AlgorithmParameterSpec ivSpec = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.DECRYPT_MODE, secret, ivSpec);
         return cipher.doFinal(payload);
     }
 
@@ -369,14 +354,6 @@ public class CryptoApi {
     /////////////////////
     // Hashing utilities
     /////////////////////
-
-    public byte[] getMd5(byte[] data) {
-        return getHash(data, MD5);
-    }
-
-    public byte[] getMd5(InputStream in) throws IOException {
-        return getHash(in, MD5);
-    }
 
     public byte[] getSHA1(byte[] data) {
         return getHash(data, SHA1);
@@ -440,7 +417,7 @@ public class CryptoApi {
 
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             // this should not happen
-            return null;
+            return new byte[0];
         }
     }
 

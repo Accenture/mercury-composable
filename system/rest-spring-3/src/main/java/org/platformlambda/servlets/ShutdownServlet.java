@@ -25,6 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.helper.ServletHelper;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -48,7 +49,7 @@ public class ShutdownServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String origin = request.getHeader(APP_INSTANCE);
+        String origin = ServletHelper.safeText(request.getHeader(APP_INSTANCE));
         if (origin == null) {
             response.sendError(400, "Missing "+ APP_INSTANCE +" in request header");
             return;

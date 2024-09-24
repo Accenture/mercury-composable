@@ -16,27 +16,20 @@
 
  */
 
-package org.platformlambda.core.util.models;
+package org.platformlambda.helper;
 
-public class ObjectWithGenericType<T> {
+public class ServletHelper {
 
-    private T content;
-    private int id;
-
-    public T getContent() {
-        return content;
-    }
-
-    public void setContent(T content) {
-        this.content = content;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    public static String safeText(String text) {
+        if (text == null) {
+            return null;
+        } else {
+            return text.replace("<", "")
+                    .replace(">", "")
+                    .replace("&", "")
+                    .replace("\r", "")
+                    .replace("\n", "");
+        }
     }
 
 }

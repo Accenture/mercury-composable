@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
@@ -236,8 +237,8 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo
-        Assert.assertTrue(o instanceof PoJo);
-        PoJo result = (PoJo) o;
+        Assert.assertTrue(o instanceof Map);
+        PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
         Assert.assertEquals(input.getNumber(), result.getNumber());
         Assert.assertEquals(input.getName(), result.getName());
         Assert.assertEquals(input.getAddress(), result.getAddress());
@@ -252,8 +253,8 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo when the intermediate value becomes an integer
-        Assert.assertTrue(o instanceof PoJo);
-        PoJo result = (PoJo) o;
+        Assert.assertTrue(o instanceof Map);
+        PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
         Assert.assertEquals(input.getLongNumber(), result.getLongNumber());
         Assert.assertEquals(input.getName(), result.getName());
         Assert.assertEquals(input.getAddress(), result.getAddress());
@@ -268,8 +269,8 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo when the intermediate value becomes an integer
-        Assert.assertTrue(o instanceof PoJo);
-        PoJo result = (PoJo) o;
+        Assert.assertTrue(o instanceof Map);
+        PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
         Assert.assertEquals(input.getBigInteger(), result.getBigInteger());
         Assert.assertEquals(input.getName(), result.getName());
         Assert.assertEquals(input.getAddress(), result.getAddress());
@@ -284,8 +285,8 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo when the intermediate value becomes an integer
-        Assert.assertTrue(o instanceof PoJo);
-        PoJo result = (PoJo) o;
+        Assert.assertTrue(o instanceof Map);
+        PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
         Assert.assertEquals(input.getBigDecimal(), result.getBigDecimal());
         Assert.assertEquals(input.getName(), result.getName());
         Assert.assertEquals(input.getAddress(), result.getAddress());

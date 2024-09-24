@@ -62,45 +62,9 @@ public class PayloadMapperTest {
         byte[] b = event1.toBytes();
         EventEnvelope event2 = new EventEnvelope();
         event2.load(b);
-        Assert.assertEquals(PoJo.class, event2.getBody().getClass());
-    }
-
-    @Test
-    public void rejectUnauthorizedClass() throws IOException {
-        UnauthorizedObj input = new UnauthorizedObj();
-        input.setName("hello world");
-        input.setNumber(12345);
-        EventEnvelope event1 = new EventEnvelope();
-        event1.setBody(input);
-        byte[] b = event1.toBytes();
-        EventEnvelope event2 = new EventEnvelope();
-        event2.load(b);
-        /*
-         * Since the object is not in the safe.data.models list, the data is decoded as a simple HashMap.
-         * Deserialization to the UnauthorizedObj is not performed.
-         */
-        Assert.assertEquals(HashMap.class, event2.getBody().getClass());
-    }
-
-    @Test
-    public void acceptSafeJavaDefaultClasses() {
-        SimpleMapper.getInstance().getSafeMapper(String.class);
-        SimpleMapper.getInstance().getSafeMapper(byte[].class);
-        SimpleMapper.getInstance().getSafeMapper(Date.class);
-        SimpleMapper.getInstance().getSafeMapper(Integer.class);
-        SimpleMapper.getInstance().getSafeMapper(Map.class);
-        SimpleMapper.getInstance().getSafeMapper(HashMap.class);
-        SimpleMapper.getInstance().getSafeMapper(List.class);
-        SimpleMapper.getInstance().getSafeMapper(ArrayList.class);
-        SimpleMapper.getInstance().getSafeMapper(Number.class);
-    }
-
-    @Test
-    public void rejectUnsafeClasses() {
-        String MESSAGE = "Class " + UnauthorizedObj.class.getName() + " not in safe.data.models";
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class,
-                () ->  SimpleMapper.getInstance().getSafeMapper(UnauthorizedObj.class));
-        Assert.assertEquals(MESSAGE, ex.getMessage());
+        // pojo is transported as a Map
+        PoJo o = SimpleMapper.getInstance().getMapper().readValue(event2.getBody(), PoJo.class);
+        Assert.assertEquals(name, o.getName());
     }
 
     @Test
@@ -115,17 +79,13 @@ public class PayloadMapperTest {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
-
         EventEnvelope event1 = new EventEnvelope();
         event1.setBody(input);
         byte[] b = event1.toBytes();
-
         EventEnvelope event2 = new EventEnvelope();
         event2.load(b);
-        Assert.assertEquals(input.getClass(), event2.getBody().getClass());
         Assert.assertTrue(event2.isBinary());
-
-        PoJo o = (PoJo) event2.getBody();
+        PoJo o = SimpleMapper.getInstance().getMapper().readValue(event2.getBody(), PoJo.class);
         Assert.assertEquals(input.getName(), o.getName());
         Assert.assertEquals(input.getNumber(), o.getNumber());
         return b.length;
@@ -135,18 +95,14 @@ public class PayloadMapperTest {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
-
         EventEnvelope event1 = new EventEnvelope();
         event1.setBody(input);
         event1.setBinary(false);
         byte[] b = event1.toBytes();
-
         EventEnvelope event2 = new EventEnvelope();
         event2.load(b);
-        Assert.assertEquals(input.getClass(), event2.getBody().getClass());
         Assert.assertFalse(event2.isBinary());
-
-        PoJo o = (PoJo) event2.getBody();
+        PoJo o = SimpleMapper.getInstance().getMapper().readValue(event2.getBody(), PoJo.class);
         Assert.assertEquals(input.getName(), o.getName());
         Assert.assertEquals(input.getNumber(), o.getNumber());
         return b.length;
@@ -157,13 +113,12 @@ public class PayloadMapperTest {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
-
         TypedPayload typed = converter.encode(input, true);
         Assert.assertEquals(input.getClass().getName(), typed.getType());
         Assert.assertTrue(typed.getPayload() instanceof Map);
         Object converted = converter.decode(typed);
-        Assert.assertTrue(converted instanceof PoJo);
-        PoJo o = (PoJo) converted;
+        Assert.assertTrue(converted instanceof Map);
+        PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
         Assert.assertEquals(input.getName(), o.getName());
         Assert.assertEquals(input.getNumber(), o.getNumber());
     }
@@ -177,8 +132,8 @@ public class PayloadMapperTest {
         Assert.assertEquals(input.getClass().getName(), typed.getType());
         Assert.assertTrue(typed.getPayload() instanceof byte[]);
         Object converted = converter.decode(typed);
-        Assert.assertTrue(converted instanceof PoJo);
-        PoJo o = (PoJo) converted;
+        Assert.assertTrue(converted instanceof byte[]);
+        PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
         Assert.assertEquals(input.getName(), o.getName());
         Assert.assertEquals(input.getNumber(), o.getNumber());
     }

@@ -30,6 +30,7 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.helper.ServletHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -60,10 +61,10 @@ public abstract class ServletBase extends HttpServlet {
                 return;
             }
         }
-        final String origin = appOrigin == null? myOrigin : appOrigin;
+        final String origin = ServletHelper.safeText(appOrigin == null? myOrigin : appOrigin);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-        String accept = request.getHeader(ACCEPT);
+        String accept = ServletHelper.safeText(request.getHeader(ACCEPT));
         event.setHeader(ACCEPT_CONTENT, accept != null? accept : MediaType.APPLICATION_JSON_VALUE);
         if (origin.equals(myOrigin)) {
             event.setTo(EventEmitter.ACTUATOR_SERVICES);

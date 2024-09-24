@@ -68,7 +68,6 @@ public class HelloGeneric implements TypedLambdaFunction<AsyncHttpRequest, Objec
             genericObject.setContent(mock);
             // Set the sample pojo into the generic object holder
             result.setBody(genericObject);
-            result.setParametricType(SamplePoJo.class);
             return result;
         } else {
             throw new AppException(404, "Not found. Try id = 1");

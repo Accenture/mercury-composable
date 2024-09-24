@@ -52,10 +52,9 @@ public class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
-        // override body class type as PoJo
-        result.setType(PoJo.class.getTypeName());
-        Assert.assertTrue(result.getBody() instanceof PoJo);
-        PoJo restored = (PoJo) result.getBody();
+        // Take return value as PoJo
+        Assert.assertTrue(result.getBody() instanceof Map);
+        PoJo restored = result.getBody(PoJo.class);
         Assert.assertEquals(HELLO, restored.user);
         Assert.assertEquals(SEQ, restored.sequence);
         Assert.assertEquals(VALUE_A, restored.key1);
