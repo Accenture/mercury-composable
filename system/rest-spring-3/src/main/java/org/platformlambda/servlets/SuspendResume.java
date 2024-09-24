@@ -24,6 +24,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.helper.ServletHelper;
 
 import java.io.IOException;
 import java.util.List;
@@ -41,7 +42,7 @@ public class SuspendResume {
     public static void handle(boolean resume, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String type = resume? RESUME : SUSPEND;
-        String origin = request.getHeader(APP_INSTANCE);
+        String origin = ServletHelper.safeText(request.getHeader(APP_INSTANCE));
         if (origin == null) {
             response.sendError(400, "Missing "+ APP_INSTANCE +" in request header");
             return;

@@ -45,7 +45,6 @@ public class EventEnvelope {
     private static final String BODY_FIELD = "body";
     private static final String EXCEPTION_FIELD = "exception";
     private static final String OBJ_TYPE_FIELD = "obj_type";
-    private static final String PARA_TYPE_FIELD = "para_type";
     private static final String EXECUTION_FIELD = "exec_time";
     private static final String ROUND_TRIP_FIELD = "round_trip";
     private static final String JSON_FIELD = "json";
@@ -98,8 +97,6 @@ public class EventEnvelope {
     private String extra;
     // type: Map = "M", List = "L", Primitive = "P", Nothing = "N"
     private String type;
-    // parametricType contains a list of one or more parameter types if the PoJo is a generic class
-    private String parametricType;
     private Integer status;
     private Object body;
     private Object originalObject;
@@ -110,7 +107,6 @@ public class EventEnvelope {
     private boolean endOfRoute = false;
     private boolean binary = true;
     private boolean optional = false;
-    private boolean encoded = false;
     private boolean exRestored = false;
     private boolean checkStream = true;
     private int broadcastLevel = 0;
@@ -206,10 +202,6 @@ public class EventEnvelope {
         return headers;
     }
 
-    public String getParametricType() {
-        return parametricType;
-    }
-
     public String getType() {
         return type;
     }
@@ -242,35 +234,10 @@ public class EventEnvelope {
      *
      * @return original or restored event body
      */
-    @SuppressWarnings("unchecked")
     public Object getBody() {
         showStreamWarning();
-        if (!encoded) {
-            if (type == null) {
-                setBody(body);
-            }
-            TypedPayload typed = new TypedPayload(type, body);
-            if (parametricType != null) {
-                typed.setParametricType(parametricType);
-            }
-            try {
-                // validate class name in safe data model list
-                if (typed.getType().contains(".")) {
-                    SimpleMapper.getInstance().getSafeMapper(typed.getType());
-                }
-                Object obj = converter.decode(typed);
-                if (obj instanceof PoJoList) {
-                    PoJoList<Object> list = (PoJoList<Object>) obj;
-                    originalObject = list.getList();
-                } else {
-                    originalObject = obj;
-                }
-
-            } catch (Exception e) {
-                log.warn("Fall back to Map - {}", simpleError(e.getMessage()));
-                originalObject = body;
-            }
-            encoded = true;
+        if (body != null && originalObject == null) {
+            originalObject = body;
         }
         return optional? Optional.ofNullable(originalObject) : originalObject;
     }
@@ -319,6 +286,33 @@ public class EventEnvelope {
         return SimpleMapper.getInstance().getMapper().readValue(body, toValueType);
     }
 
+    @SuppressWarnings("rawtypes")
+    public List<Object> getBodyAsListOfPoJo(Class<?> toValueType) {
+        showStreamWarning();
+        List pojoList = null;
+        List<Object> result = new ArrayList<>();
+        // for compatibility with previous version
+        if (body instanceof Map m) {
+            Object o = m.get("list");
+            if (o instanceof List oList) {
+                pojoList = oList;
+            }
+        } else if (body instanceof List oList) {
+            pojoList = oList;
+        }
+        if (pojoList != null) {
+            var mapper = SimpleMapper.getInstance().getMapper();
+            for (Object o: pojoList) {
+                if (o instanceof Map) {
+                    result.add(mapper.readValue(o, toValueType));
+                } else {
+                    result.add(null);
+                }
+            }
+        }
+        return result;
+    }
+
     /**
      * Convert body to another class type
      * (Best effort conversion - some fields may be lost if interface contracts are not compatible)
@@ -328,25 +322,12 @@ public class EventEnvelope {
      * @param <T> class type
      * @return converted body
      */
-    @SuppressWarnings("unchecked")
     public <T> T getBody(Class<T> toValueType, Class<?>... parameterClass) {
         showStreamWarning();
         if (parameterClass.length == 0) {
             throw new IllegalArgumentException("Missing parameter class");
         }
-        StringBuilder sb = new StringBuilder();
-        for (Class<?> cls: parameterClass) {
-            sb.append(cls.getName());
-            sb.append(',');
-        }
-        String pType = sb.substring(0, sb.length()-1);
-        TypedPayload typed = new TypedPayload(toValueType.getName(), body).setParametricType(pType);
-        try {
-            return (T) converter.decode(typed);
-        } catch (ClassNotFoundException e) {
-            // this should not occur because the classes are given as arguments
-            throw new IllegalArgumentException(e.getMessage());
-        }
+        return SimpleMapper.getInstance().getMapper().restoreGeneric(body, toValueType, parameterClass);
     }
 
     public EventEnvelope setId(String id) {
@@ -626,12 +607,10 @@ public class EventEnvelope {
             payload = body;
         }
         // encode body and save object type
-        this.encoded = true;
         this.originalObject = payload instanceof Date d? Utility.getInstance().date2str(d) : payload;
         TypedPayload typed = converter.encode(payload, binary);
         this.body = typed.getPayload();
         this.type = typed.getType();
-        this.parametricType = typed.getParametricType();
         return this;
     }
 
@@ -705,8 +684,8 @@ public class EventEnvelope {
      * does not work, you may turn off binary mode by setting it to false.
      * <p>
      * When it is set to false, the Java object in the payload will be encoded
-     * using JSON (jackson serialization). This option should be used as the
-     * last resort because it would reduce performance and increase encoded payload size.
+     * using JSON bytes. This option should be used as the last resort because
+     * it would reduce performance and increase encoded payload size.
      *
      * @param binary true or false
      * @return this EventEnvelope
@@ -729,37 +708,6 @@ public class EventEnvelope {
         return this;
     }
 
-    /**
-     * For Java object with generic types, you may tell EventEnvelope to transport
-     * the parameterized Class(es) so that the object can be deserialized correctly.
-     *
-     * @param parameterClass one or more parameter classes
-     * @return this EventEnvelope
-     */
-    public EventEnvelope setParametricType(Class<?>... parameterClass) {
-        StringBuilder sb = new StringBuilder();
-        for (Class<?> cls: parameterClass) {
-            sb.append(cls.getName());
-            sb.append(',');
-        }
-        if (!sb.isEmpty()) {
-            this.parametricType = sb.substring(0, sb.length()-1);
-        }
-        return this;
-    }
-
-    /**
-     * For Java object with generic types, you may tell EventEnvelope to transport
-     * the parameterized Class so that the object can be deserialized correctly.
-     *
-     * @param parametricType a single parameter class
-     * @return this EventEnvelope
-     */
-    public EventEnvelope setParametricType(String parametricType) {
-        this.parametricType = parametricType;
-        return this;
-    }
-
     public EventEnvelope copy() {
         EventEnvelope event = new EventEnvelope();
         event.originalObject = this.originalObject;
@@ -767,7 +715,6 @@ public class EventEnvelope {
         event.setTo(this.getTo());
         event.setHeaders(this.getHeaders());
         event.setType(this.getType());
-        event.setParametricType(this.getParametricType());
         event.setBroadcastLevel(this.getBroadcastLevel());
         event.setFrom(this.getFrom());
         event.setBinary(this.isBinary());
@@ -846,9 +793,6 @@ public class EventEnvelope {
             }
             if (message.containsKey(OBJ_TYPE_FLAG)) {
                 type = (String) message.get(OBJ_TYPE_FLAG);
-            }
-            if (message.containsKey(PARA_TYPES_FLAG)) {
-                parametricType = (String) message.get(PARA_TYPES_FLAG);
             }
             if (message.containsKey(EXECUTION_FLAG)) {
                 if (message.get(EXECUTION_FLAG) instanceof Float f) {
@@ -939,9 +883,6 @@ public class EventEnvelope {
         if (type != null) {
             message.put(OBJ_TYPE_FLAG, type);
         }
-        if (parametricType != null) {
-            message.put(PARA_TYPES_FLAG, parametricType);
-        }
         if (executionTime != null) {
             message.put(EXECUTION_FLAG, executionTime);
         }
@@ -1008,9 +949,6 @@ public class EventEnvelope {
         }
         if (message.containsKey(OBJ_TYPE_FIELD)) {
             type = (String) message.get(OBJ_TYPE_FIELD);
-        }
-        if (message.containsKey(PARA_TYPE_FIELD)) {
-            parametricType = (String) message.get(PARA_TYPE_FIELD);
         }
         if (message.containsKey(EXECUTION_FIELD)) {
             if (message.get(EXECUTION_FIELD) instanceof Float f) {
@@ -1080,9 +1018,6 @@ public class EventEnvelope {
         }
         if (type != null) {
             message.put(OBJ_TYPE_FIELD, type);
-        }
-        if (parametricType != null) {
-            message.put(PARA_TYPE_FIELD, parametricType);
         }
         if (executionTime != null) {
             message.put(EXECUTION_FIELD, executionTime);

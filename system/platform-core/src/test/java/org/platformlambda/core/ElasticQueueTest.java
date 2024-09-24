@@ -20,16 +20,12 @@ package org.platformlambda.core;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.util.ElasticQueue;
-import org.platformlambda.core.util.ManagedCache;
-import org.platformlambda.core.util.SimpleCache;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
+import java.util.Map;
 
 public class ElasticQueueTest {
 
@@ -116,8 +112,8 @@ public class ElasticQueueTest {
             EventEnvelope data = new EventEnvelope();
             data.load(b);
             Assert.assertNotNull(data);
-            Assert.assertTrue(data.getBody() instanceof PoJo);
-            PoJo o = (PoJo) data.getBody();
+            Assert.assertTrue(data.getBody() instanceof Map);
+            PoJo o = data.getBody(PoJo.class);
             Assert.assertEquals(input, o.getName());
         }
         // read one more
@@ -130,10 +126,6 @@ public class ElasticQueueTest {
         Assert.assertTrue(spooler.isClosed());
         // closing again has no effect
         spooler.close();
-        // finally, verify if the PoJo class name is cached
-        SimpleCache cache = SimpleCache.getInstance(PayloadMapper.JAVA_CLASS_CACHE);
-        Assert.assertNotNull(cache);
-        Assert.assertTrue(cache.exists(PoJo.class.getName()));
     }
 
     @Test

@@ -40,16 +40,19 @@ public class HelloPoJoEventOverHttpByConfig {
         PostOffice po = new PostOffice("hello.pojo.endpoint", traceId, "GET /api/pojo2/http");
         /*
          * "hello.pojo2" resides in the lambda-example and is reachable by "Event-over-HTTP".
-         * In HelloPojoEventOverHttp.java, it demonstrates the use of Event-over-HTTP API.
+         *
          * In this example, it illustrates the use of the "Event-over-HTTP by configuration" feature.
          * Please see application.properties and event-over-http.yaml files for more details.
+         *
+         * It is a regular po.request call. The remote endpoint URL is resolved from the event-over-http.yaml file.
          */
         EventEnvelope req = new EventEnvelope().setTo("hello.pojo2").setHeader("id", id);
         return Mono.create(callback -> {
             try {
                 EventEnvelope response = po.request(req, 3000, false).get();
-                if (response.getBody() instanceof SamplePoJo result) {
-                    callback.success(result);
+                if (SamplePoJo.class.getName().equals(response.getType())) {
+                    SamplePoJo pojo = response.getBody(SamplePoJo.class);
+                    callback.success(pojo);
                 } else {
                     callback.error(new AppException(response.getStatus(), response.getError()));
                 }

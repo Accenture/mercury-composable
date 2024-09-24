@@ -53,16 +53,19 @@ public class HomePage extends HttpServlet {
 
 	public HomePage() {
 		if (indexPage == null || dir == null) {
-			InputStream swagger = this.getClass().getResourceAsStream("/swagger-ui/index.html");
-			if (swagger != null) {
-				ready = true;
-				InputStream res = this.getClass().getResourceAsStream("/index.html");
-				indexPage = Utility.getInstance().stream2str(res);
-				AppConfigReader config = AppConfigReader.getInstance();
-				String location = config.getProperty("api.playground.apps", "/tmp/api-playground");
-				dir = new File(location);
-			} else {
-				log.error("Missing swagger-ui HTML bundle files in the swagger-ui resource folder");
+			try (InputStream swagger = this.getClass().getResourceAsStream("/swagger-ui/index.html")) {
+				if (swagger != null) {
+					ready = true;
+					InputStream res = this.getClass().getResourceAsStream("/index.html");
+					indexPage = Utility.getInstance().stream2str(res);
+					AppConfigReader config = AppConfigReader.getInstance();
+					String location = config.getProperty("api.playground.apps", "/tmp/api-playground");
+					dir = new File(location);
+				} else {
+					throw new IOException("Missing '/resources/swagger-ui/index.html'");
+				}
+			} catch (IOException e) {
+				log.error("Unable to load home page - {}", e.getMessage());
 			}
 		}
 	}
@@ -102,20 +105,30 @@ public class HomePage extends HttpServlet {
 			}
 		}
 		result = result.replace("$dropdown", sb.toString());
-		String app = request.getParameter(APP);
+		String app = safeText(request.getParameter(APP));
 		if (app == null) {
 			result = result.replace("$url", "/playground/home.yaml");
 		} else {
 			File target = new File(dir, app);
 			if (target.exists()) {
-				result = result.replace("$url", "/api/specs/"+app);
+				result = result.replace("$url", "/api/specs/" + app);
 			} else {
-				response.sendError(404, "Application "+app+" not found");
+				response.sendError(404, "Application " + app + " not found");
 				return;
 			}
 		}
         response.getOutputStream().write(util.getUTF(result));
     }
+
+	private String safeText(String text) {
+		if (text == null) {
+			return null;
+		} else {
+			return text.replace("<", "")
+						.replace(">", "")
+						.replace("&", "");
+		}
+	}
 
     private List<String> getFiles() {
 		List<String> result = new ArrayList<>();

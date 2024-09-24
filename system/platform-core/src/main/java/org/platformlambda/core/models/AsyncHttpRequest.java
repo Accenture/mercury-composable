@@ -28,7 +28,6 @@ import java.util.*;
 
 public class AsyncHttpRequest {
 
-    private static final PayloadMapper converter = PayloadMapper.getInstance();
     private static final String HTTP_HEADERS = "headers";
     private static final String HTTP_METHOD = "method";
     private static final String IP_ADDRESS = "ip";
@@ -157,24 +156,11 @@ public class AsyncHttpRequest {
      * @param <T> class type
      * @return target class with parameter class(es)
      */
-    @SuppressWarnings("unchecked")
     public <T> T getBody(Class<T> toValueType, Class<?>... parameterClass) {
         if (parameterClass.length == 0) {
             throw new IllegalArgumentException("Missing parameter class");
         }
-        final var sb = new StringBuilder();
-        for (Class<?> cls: parameterClass) {
-            sb.append(cls.getName());
-            sb.append(',');
-        }
-        final var parametricType = sb.substring(0, sb.length()-1);
-        final var typed = new TypedPayload(toValueType.getName(), body).setParametricType(parametricType);
-        try {
-            return (T) converter.decode(typed);
-        } catch (ClassNotFoundException e) {
-            // this should not occur because the classes are given as arguments
-            throw new IllegalArgumentException(e.getMessage());
-        }
+        return SimpleMapper.getInstance().getMapper().restoreGeneric(body, toValueType, parameterClass);
     }
 
     /**

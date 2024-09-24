@@ -27,6 +27,7 @@ import org.platformlambda.common.TestBase;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
@@ -1522,8 +1523,11 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(PoJo.class, response.getBody().getClass());
-        PoJo pojo = (PoJo) response.getBody();
+        // for security, automatic PoJo class restore is disabled
+        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        // original PoJo class name is transported by the event envelope
+        Assert.assertEquals(PoJo.class.getName(), response.getType());
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(response.getBody(), PoJo.class);
         Assert.assertEquals(now, pojo.getDate());
         Assert.assertEquals(time, pojo.getTime());
         Assert.assertEquals(HELLO_WORLD, pojo.getName());

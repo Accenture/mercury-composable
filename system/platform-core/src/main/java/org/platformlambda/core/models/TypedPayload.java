@@ -22,7 +22,6 @@ public class TypedPayload {
 
     private final String type;
     private final Object payload;
-    private String parametricType;
 
     public TypedPayload(String type, Object payload) {
         this.type = type;
@@ -35,15 +34,6 @@ public class TypedPayload {
 
     public Object getPayload() {
         return payload;
-    }
-
-    public TypedPayload setParametricType(String parametricType) {
-        this.parametricType = parametricType;
-        return this;
-    }
-
-    public String getParametricType() {
-        return parametricType;
     }
 
 }

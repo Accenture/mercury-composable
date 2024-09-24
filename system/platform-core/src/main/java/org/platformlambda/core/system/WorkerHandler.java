@@ -175,16 +175,13 @@ public class WorkerHandler {
                 if (event.getRawBody() instanceof Map && def.getInputClass() != null) {
                     if (def.getInputClass() == AsyncHttpRequest.class) {
                         // handle special case
-                        event.setType(null);
                         inputBody = new AsyncHttpRequest(event.getRawBody());
                     } else {
                         // automatically convert Map to PoJo
                         if (customSerializer != null) {
-                            event.setType(null);
                             inputBody = customSerializer.toPoJo(event.getRawBody(), def.getInputClass());
                         } else {
-                            event.setType(def.getInputClass().getName());
-                            inputBody = event.getBody();
+                            inputBody = event.getBody(def.getInputClass());
                         }
                     }
                 } else {
@@ -240,14 +237,10 @@ public class WorkerHandler {
                          * When EventEnvelope is used as a return type, the system will transport
                          * 1. payload
                          * 2. key-values (as headers)
-                         * 3. optional parametric types for Java class that uses generic types
                          */
                         response.setBody(resultEvent.getRawBody());
                         if (customSerializer == null) {
                             response.setType(resultEvent.getType());
-                            if (resultEvent.getParametricType() != null) {
-                                response.setParametricType(resultEvent.getParametricType());
-                            }
                         }
                         for (Map.Entry<String, String> kv: headers.entrySet()) {
                             String k = kv.getKey();

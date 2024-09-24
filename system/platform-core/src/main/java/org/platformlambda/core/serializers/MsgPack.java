@@ -53,11 +53,7 @@ public class MsgPack {
             Map<String, Object> map = (Map<String, Object>) result;
             if (map.containsKey(TYPE)) {
                 if (map.size() == 2 && map.containsKey(DATA)) {
-                    try {
-                        return converter.decode(new TypedPayload((String) map.get(TYPE), map.get(DATA)));
-                    } catch (ClassNotFoundException e) {
-                        return map.get(DATA);
-                    }
+                    return map.get(DATA);
                 }
                 if (map.size() == 1 && map.get(TYPE).equals(PayloadMapper.NOTHING)) {
                     return null;
@@ -219,7 +215,6 @@ public class MsgPack {
             }
             return out.toByteArray();
         } else {
-            // PoJo
             TypedPayload typed = converter.encode(obj, true);
             Map<String, Object> map = new HashMap<>();
             map.put(TYPE, typed.getType());

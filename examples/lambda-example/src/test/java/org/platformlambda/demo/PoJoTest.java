@@ -26,6 +26,7 @@ import org.platformlambda.demo.common.TestBase;
 import org.platformlambda.models.SamplePoJo;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +44,7 @@ public class PoJoTest extends TestBase {
         po.asyncRequest(request, 800).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(SamplePoJo.class, response.getBody().getClass());
+        Assert.assertEquals(HashMap.class, response.getBody().getClass());
         SamplePoJo pojo = response.getBody(SamplePoJo.class);
         Assert.assertEquals(ID, pojo.getId());
         Assert.assertEquals(NAME, pojo.getName());

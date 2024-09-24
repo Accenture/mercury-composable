@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.5, 9/24/2024
+
+### Added
+
+N/A
+
+### Removed
+
+1. Feature for automatic PoJo transport in EventEnvelope and MsgPack
+2. Feature for safe.data.model deserialization
+3. Benchmark-server is no longer required
+
+### Changed
+
+1. Update OSS versions - vertx 4.5.10, kotlin 2.0.20, spring boot 3.3.4
+
+---
+
 ## Version 4.0.4, 9/5/2024
 
 ### Added

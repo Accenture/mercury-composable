@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.*;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
@@ -29,7 +30,6 @@ import java.util.*;
 
 public class GenericTypeTest {
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testListOfPoJo() throws IOException {
         int NUMBER_1 = 100;
@@ -51,14 +51,13 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        Assert.assertTrue(result.getBody() instanceof List);
-        List<PoJo> pojoList = (List<PoJo>) result.getBody();
+        List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         Assert.assertEquals(3, pojoList.size());
-        PoJo restored1 = pojoList.get(0);
+        PoJo restored1 = (PoJo) pojoList.getFirst();
         Assert.assertEquals(NAME_1, restored1.getName());
         Assert.assertEquals(NUMBER_1, restored1.getNumber());
         Assert.assertNull(pojoList.get(1));
-        PoJo restored2 = pojoList.get(2);
+        PoJo restored2 = (PoJo) pojoList.get(2);
         Assert.assertEquals(NAME_2, restored2.getName());
         Assert.assertEquals(NUMBER_2, restored2.getNumber());
     }
@@ -86,19 +85,19 @@ public class GenericTypeTest {
         EventEnvelope result = new EventEnvelope();
         result.load(b);
         Assert.assertTrue(result.getBody() instanceof List);
-        List<PoJo> pojoList = (List<PoJo>) result.getBody();
+        List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         Assert.assertEquals(3, pojoList.size());
-        PoJo restored1 = pojoList.get(0);
+        PoJo restored1 = (PoJo) pojoList.getFirst();
         Assert.assertEquals(NAME_1, restored1.getName());
         Assert.assertEquals(NUMBER_1, restored1.getNumber());
         Assert.assertNull(pojoList.get(1));
-        PoJo restored2 = pojoList.get(2);
+        PoJo restored2 = (PoJo) pojoList.get(2);
         Assert.assertEquals(NAME_2, restored2.getName());
         Assert.assertEquals(NUMBER_2, restored2.getNumber());
     }
 
     @Test
-    public void rejectMixedTypes() {
+    public void checkMixedTypes() {
         int NUMBER_1 = 100;
         String NAME_1 = "hello world";
         int NUMBER_2 = 200;
@@ -114,8 +113,12 @@ public class GenericTypeTest {
         list.add(2);
         list.add(pojo2);
         EventEnvelope event = new EventEnvelope();
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () -> event.setBody(list));
-        Assert.assertEquals("Unable to serialize because it is a list of mixed types", ex.getMessage());
+        event.setBody(list);
+        List<Object> pojoList = event.getBodyAsListOfPoJo(PoJo.class);
+        Assert.assertEquals(pojoList.getFirst().getClass(), PoJo.class);
+        // non-PoJo is converted to null
+        Assert.assertNull(pojoList.get(1));
+        Assert.assertEquals(pojoList.get(2).getClass(), PoJo.class);
     }
 
     @Test
@@ -158,69 +161,9 @@ public class GenericTypeTest {
         Assert.assertEquals(Collections.EMPTY_LIST, result.getBody());
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void correctParametricType() throws IOException {
-        int id = 100;
-        String name = "hello world";
-        ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
-        PoJo pojo = new PoJo();
-        pojo.setName(name);
-        genericObject.setContent(pojo);
-        genericObject.setId(id);
-        EventEnvelope event = new EventEnvelope();
-        event.setBody(genericObject);
-        event.setParametricType(PoJo.class);
-        EventEnvelope result = new EventEnvelope(event.toBytes());
-        Object o = result.getBody();
-        Assert.assertTrue(o instanceof ObjectWithGenericType);
-        ObjectWithGenericType<PoJo> gs = (ObjectWithGenericType<PoJo>) o;
-        Assert.assertEquals(id, gs.getId());
-        PoJo content = gs.getContent();
-        Assert.assertNotNull(content);
-        Assert.assertEquals(name, content.getName());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void missingTypingInfo() throws IOException {
-        int id = 100;
-        String name = "hello world";
-        ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
-        PoJo pojo = new PoJo();
-        pojo.setName(name);
-        genericObject.setContent(pojo);
-        genericObject.setId(100);
-        EventEnvelope event = new EventEnvelope();
-        event.setBody(genericObject);
-        // "event.setParametricType(PoJo.class)" is intentionally omitted to simulate the exception
-        EventEnvelope result = new EventEnvelope(event.toBytes());
-        Object o = result.getBody();
-        Assert.assertTrue(o instanceof ObjectWithGenericType);
-        ObjectWithGenericType<PoJo> gs = (ObjectWithGenericType<PoJo>) o;
-        // all fields except the ones with generic types can be deserialized correctly
-        Assert.assertEquals(id, gs.getId());
-        /*
-         * Without parametricType defined, the content inside the generic class is undefined
-         * and hashmap with key-values is used instead.
-         *
-         * Therefore, this will throw ClassCastException when you try to map the embedded content as PoJo.
-         */
-        ClassCastException ex = Assert.assertThrows(ClassCastException.class, () -> {
-            PoJo content = gs.getContent();
-            Assert.assertNotNull(content);
-        });
-        Assert.assertTrue(ex.getMessage().contains("cannot be cast to"));
-        // If you know the data structure, you can retrieve key-values using the raw format like this:
-        Assert.assertTrue(event.getRawBody() instanceof Map);
-        Map<String, Object> raw = (Map<String, Object>) event.getRawBody();
-        MultiLevelMap map = new MultiLevelMap(raw);
-        Assert.assertEquals(name, map.getElement("content.name"));
-    }
-
     @Test
     @SuppressWarnings("unchecked")
-    public void invalidParametricType() throws IOException {
+    public void restoreObjectWithParametric() throws IOException {
         Utility util = Utility.getInstance();
         int id = 123;
         String name = "hello world";
@@ -232,14 +175,13 @@ public class GenericTypeTest {
         genericObject.setId(id);
         EventEnvelope event = new EventEnvelope();
         event.setBody(genericObject);
-        event.setParametricType(String.class);  // setting an incorrect type
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        // When parametricType is incorrect, it will fall back to a map.
-        Object o = result.getBody();
-        Assert.assertTrue(o instanceof Map);
-        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) o);
+        ObjectWithGenericType<PoJo> o = result.getBody(ObjectWithGenericType.class, PoJo.class);
+        Assert.assertEquals(o.getClass(), ObjectWithGenericType.class);
+        Map<String, Object> restored = SimpleMapper.getInstance().getMapper().readValue(o, Map.class);
+        MultiLevelMap map = new MultiLevelMap(restored);
         Assert.assertEquals(name, map.getElement("content.name"));
         // numbers are encoded as string in map
         Assert.assertEquals(id, util.str2int(map.getElement("id").toString()));

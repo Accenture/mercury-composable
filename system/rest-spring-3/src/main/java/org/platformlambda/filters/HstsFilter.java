@@ -88,8 +88,7 @@ public class HstsFilter implements Filter {
                     }
                     for (String index : indexPageList) {
                         if (uri.equalsIgnoreCase(index)) {
-                            String q = req.getQueryString();
-                            res.sendRedirect(uri+indexPage + (q == null? "" : "?"+q));
+                            res.sendRedirect(uri+indexPage);
                             return;
                         }
                     }

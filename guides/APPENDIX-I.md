@@ -34,7 +34,6 @@ precedence.
 | cloud.connector                        | kafka, none, etc.                                               | Optional    |
 | cloud.services                         | e.g. some.interesting.service                                   | Optional    |
 | snake.case.serialization               | true (recommended)                                              | Optional    |
-| safe.data.models                       | packages pointing to your PoJo classes                          | Optional    |
 | protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional    |
 | trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
 | index.redirection                      | comma separated list of URI paths                               | Optional*   |
@@ -168,14 +167,9 @@ As a cloud native best practice, the folder must be under "/tmp". The default is
 The "running.in.cloud" parameter must be set to false when your apps are running in IDE or in your laptop. 
 When running in kubernetes, it can be set to true.
 
-# The safe.data.models parameter
+# The snake.case.serialization parameter
 
-PoJo may contain Java code. As a result, it is possible to inject malicious code that does harm when 
-deserializing a PoJo. This security risk applies to any JSON serialization engine.
-
-For added security and peace of mind, you may want to protect your PoJo package paths.
-When the `safe.data.models` parameter is configured, the underlying serializers for JAX-RS, Spring RestController
-and Servlets will respect this setting and enforce PoJo filtering.
+Serialization and de-serialization of events are performed automatically.
 
 If there is a genuine need to programmatically perform serialization, you may use the pre-configured serializer 
 so that the serialization behavior is consistent.

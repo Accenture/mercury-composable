@@ -68,8 +68,6 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
     @NotNull
     @Override
     public Object read(@NotNull Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
-        // validate class with white list before loading the input stream
-        SimpleMapper.getInstance().getSafeMapper(clazz);
         try {
             return xml.parse(inputMessage.getBody());
         } catch (IOException e) {
@@ -82,8 +80,7 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
     public void write(Object o, MediaType contentType, HttpOutputMessage outputMessage)
             throws HttpMessageNotWritableException, IOException {
         outputMessage.getHeaders().setContentType(XML_TYPE);
-        // this may be too late to validate because Spring RestController has already got the object
-        SimpleObjectMapper mapper = SimpleMapper.getInstance().getSafeMapper(o.getClass().getTypeName());
+        SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         OutputStream out = outputMessage.getBody();
         if (o instanceof String text) {
             out.write(util.getUTF(text));

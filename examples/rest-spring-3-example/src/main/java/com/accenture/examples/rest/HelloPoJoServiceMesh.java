@@ -42,8 +42,9 @@ public class HelloPoJoServiceMesh {
         return Mono.create(callback -> {
             try {
                 EventEnvelope response = po.request(req, 3000, false).get();
-                if (response.getBody() instanceof SamplePoJo result) {
-                    callback.success(result);
+                if (SamplePoJo.class.getName().equals(response.getType())) {
+                    SamplePoJo pojo = response.getBody(SamplePoJo.class);
+                    callback.success(pojo);
                 } else {
                     callback.error(new AppException(response.getStatus(), response.getError()));
                 }

@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class EventEnvelopeTest {
-    private static final Logger log = LoggerFactory.getLogger(EventEnvelope.class);
+    private static final Logger log = LoggerFactory.getLogger(EventEnvelopeTest.class);
     private static final String SET_COOKIE = "set-cookie";
 
     @Test
@@ -120,9 +120,8 @@ public class EventEnvelopeTest {
         Assert.assertTrue(target.getRawBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) target.getRawBody();
         Assert.assertEquals(HELLO, map.get("name"));
-        Assert.assertTrue(target.getBody() instanceof PoJo);
-        PoJo output = (PoJo) target.getBody();
-        Assert.assertEquals(HELLO, output.getName());
+        PoJo restored = target.getBody(PoJo.class);
+        Assert.assertEquals(HELLO, restored.getName());
     }
 
     @SuppressWarnings("unchecked")
@@ -136,16 +135,17 @@ public class EventEnvelopeTest {
         source.setBody(list);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        // raw body is encoded as a map containing a list of map
-        // e.g. {list=[{number=0, long_number=0, name=hello}]}
-        Assert.assertTrue(target.getRawBody() instanceof Map);
-        Map<String, Object> map = (Map<String, Object>) target.getRawBody();
+        Assert.assertTrue(target.getBody() instanceof List);
+        List<Object> restored = (List<Object>) target.getBody();
+        Map<String, Object> map = new HashMap<>();
+        map.put("list", restored);
         MultiLevelMap multi = new MultiLevelMap(map);
         Assert.assertEquals(HELLO, multi.getElement("list[0].name"));
         Assert.assertTrue(target.getBody() instanceof List);
-        List<PoJo> output = (List<PoJo>) target.getBody();
+        List<Object> output = target.getBodyAsListOfPoJo(PoJo.class);
         Assert.assertEquals(1, output.size());
-        Assert.assertEquals(HELLO, output.get(0).getName());
+        PoJo restoredPoJo = (PoJo) output.getFirst();
+        Assert.assertEquals(HELLO, restoredPoJo.getName());
     }
 
     @Test
@@ -170,19 +170,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void fluentTest() throws IOException {
-        EventEnvelope event = new EventEnvelope().setRoundTrip(1.1236f).setEndOfRoute().setBinary(true)
-                // the second one will replace the value set by the first one
-                .setParametricType("com.accenture.SomePoJo").setParametricType(PoJo.class);
-        byte[] b = event.toBytes();
-        EventEnvelope restored = new EventEnvelope(b);
-        Assert.assertEquals(PoJo.class.getName(), restored.getParametricType());
-        // verify that the system will save up to 3 decimal points
-        Assert.assertEquals(1.124f, restored.getRoundTrip(), 0);
-    }
-
-    @Test
-    public void mapSerializationTest() {
+    public void mapSerializationTest() throws IOException {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -222,14 +210,13 @@ public class EventEnvelopeTest {
         Assert.assertEquals("PUT /api/unit/test", target.getTracePath());
         Assert.assertEquals("b", map.getElement("headers.a"));
         Assert.assertEquals(true, map.getElement("json"));
-        Assert.assertTrue(target.getBody() instanceof PoJo);
-        PoJo output = (PoJo) target.getBody();
+        PoJo output = target.getBody(PoJo.class);
         Assert.assertEquals(HELLO, output.getName());
         Assert.assertEquals(HELLO, target.getException().getMessage());
         Assert.assertEquals(IllegalArgumentException.class, target.getException().getClass());
         Assert.assertTrue(map.getElement("exception") instanceof byte[]);
         byte[] b = (byte[]) map.getElement("exception");
-        log.info("Stacktrace binary payload size for {} = {}", IllegalArgumentException.class.getName(), b.length);
+        log.info("Stacktrace binary payload size = {}", b.length);
     }
 
     @Test

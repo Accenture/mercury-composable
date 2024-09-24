@@ -21,6 +21,7 @@ package org.platformlambda.core.util;
 import org.junit.Test;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.models.PoJo;
 
 import java.io.IOException;
@@ -112,9 +113,9 @@ public class MsgPackTest {
         input.setAddress("123 Planet Earth");
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
+        Assert.assertTrue(o instanceof Map);
         // successfully restored to PoJo
-        Assert.assertTrue(o instanceof PoJo);
-        PoJo result = (PoJo) o;
+        PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
         Assert.assertEquals(input.getNumber(), result.getNumber());
         Assert.assertEquals(input.getName(), result.getName());
         Assert.assertEquals(input.getAddress(), result.getAddress());
