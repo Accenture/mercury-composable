@@ -147,7 +147,7 @@ and its result set can be sent to the user.
 
 ## Underlying Event System
 
-The Event Script system uses platform-core as the event system where Mercury is a wrapper of
+The Event Script system uses platform-core as the event system where it encapsulates Java Virtual Threads,
 Eclipse Vertx, Kotlin coroutine and suspend function.
 
 The integration points are intentionally minimalist. For most use cases, the user application does not need
