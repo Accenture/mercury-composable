@@ -130,9 +130,6 @@ public class SimpleDemoEndpoint implements TypedLambdaFunction<AsyncHttpRequest,
 }
 ```
 
-By default, a Java function will run using a kernel thread. To tell the system that you want to run the function as
-a coroutine, you can add the `CoroutineRunner` annotation.
-
 The `PreLoad` annotation tells the system to preload the function into memory and register it into the event loop.
 You must provide a "route name" and configure the number of concurrent workers ("instances").
 
@@ -637,8 +634,14 @@ decide to use a regular Spring Boot application with Mercury or to pick the cust
 
 ## Template application for quick start
 
-You can use the `lambda-example` project as a template to start writing your own applications. It is preconfigured
-to support kernel threads, coroutine and suspend function.
+We recommend using the `composable-example` project as a template to start writing your Composable applications.
+You can follow the Composable methodology where you draw event flow diagrams to represent various use cases,
+convert them into event scripts that carry out event chorerography for your self-contained functions.
+
+For more information, please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md).
+
+If you prefer to do low-level event-driven programming, you can use the `lambda-example` project as a template.
+It is preconfigured to support kernel threads, coroutine and suspend function.
 
 ## Source code update frequency
 
