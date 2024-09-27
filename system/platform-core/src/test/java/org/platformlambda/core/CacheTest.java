@@ -18,10 +18,11 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.util.ManagedCache;
 import org.platformlambda.core.util.SimpleCache;
+
+import static org.junit.Assert.*;
 
 public class CacheTest {
 
@@ -35,18 +36,18 @@ public class CacheTest {
         String DATA = "hello";
         cache1.put(KEY, DATA);
         Object o = cache1.get(KEY);
-        Assert.assertEquals(DATA, o);
+        assertEquals(DATA, o);
         long n = cache1.size();
-        Assert.assertEquals(1, n);
+        assertEquals(1, n);
         // test expiry
         Thread.sleep(1050);
         // cached item will disappear in one second
         Object o2 = cache1.get(KEY);
-        Assert.assertNull(o2);
+        assertNull(o2);
         // test removal
         cache1.put(KEY, DATA);
         cache1.remove(KEY);
-        Assert.assertFalse(cache1.exists(KEY));
+        assertFalse(cache1.exists(KEY));
         cache1.cleanUp();
         cache1.clear();
     }
@@ -62,26 +63,26 @@ public class CacheTest {
         String DATA = "hello";
         long expiry = cache2.getExpiry();
         // test minimum expiry to be one second
-        Assert.assertEquals(1000, expiry);
+        assertEquals(1000, expiry);
         cache2.put(KEY, DATA);
         Object o = cache2.get(KEY);
-        Assert.assertEquals(DATA, o);
+        assertEquals(DATA, o);
         long n = cache2.size();
-        Assert.assertEquals(1, n);
+        assertEquals(1, n);
         cache2.remove(KEY);
         Object o2 = cache2.get(KEY);
-        Assert.assertNull(o2);
+        assertNull(o2);
         cache2.put(KEY, DATA);
         cache2.remove(KEY);
-        Assert.assertFalse(cache2.exists(KEY));
+        assertFalse(cache2.exists(KEY));
         cache2.put(KEY, DATA);
-        Assert.assertTrue(cache2.exists(KEY));
+        assertTrue(cache2.exists(KEY));
         Thread.sleep(500);
         // since minimum expiry is 1000 ms, the item should still be there
-        Assert.assertTrue(cache2.exists(KEY));
+        assertTrue(cache2.exists(KEY));
         Thread.sleep(600);
         // test expiry timer accuracy
-        Assert.assertFalse(cache2.exists(KEY));
+        assertFalse(cache2.exists(KEY));
         // test clean up
         cache2.cleanUp();
         // test clear cache

@@ -31,6 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class MinimalistHttpTest extends TestBase {
 
     private static final int HTTP_PORT = MINIMALIST_HTTP_PORT;
@@ -48,18 +51,18 @@ public class MinimalistHttpTest extends TestBase {
     public void homePageTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("Minimalist HTTP server supports these admin endpoints",
+        assertEquals("Minimalist HTTP server supports these admin endpoints",
                             multi.getElement("message"));
         int n = 0;
         for (String[] service: ADMIN_ENDPOINTS) {
-            Assert.assertEquals(service[0], multi.getElement("endpoints["+n+"]"));
+            assertEquals(service[0], multi.getElement("endpoints["+n+"]"));
             n++;
         }
-        Assert.assertTrue(multi.exists("time"));
-        Assert.assertEquals("platform-core", multi.getElement("name"));
+        assertTrue(multi.exists("time"));
+        assertEquals("platform-core", multi.getElement("name"));
     }
 
     @SuppressWarnings("unchecked")
@@ -67,12 +70,12 @@ public class MinimalistHttpTest extends TestBase {
     public void infoEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertEquals("REST", multi.getElement("personality"));
-        Assert.assertEquals(Platform.getInstance().getOrigin(), multi.getElement("origin"));
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertEquals("REST", multi.getElement("personality"));
+        assertEquals(Platform.getInstance().getOrigin(), multi.getElement("origin"));
     }
 
     @SuppressWarnings("unchecked")
@@ -82,10 +85,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -93,11 +96,11 @@ public class MinimalistHttpTest extends TestBase {
     public void libEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info/lib", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertTrue(result.containsKey("library"));
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertTrue(result.containsKey("library"));
     }
 
     @SuppressWarnings("unchecked")
@@ -107,10 +110,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings(value="unchecked")
@@ -120,10 +123,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info/routes", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -132,13 +135,13 @@ public class MinimalistHttpTest extends TestBase {
         MockCloud.setSimulateException(false);
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/health", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap map = new MultiLevelMap(result);
-        Assert.assertEquals("UP", map.getElement("status"));
-        Assert.assertEquals("fine", map.getElement("dependency[0].message"));
-        Assert.assertEquals(200, map.getElement("dependency[0].status_code"));
-        Assert.assertEquals("mock.connector", map.getElement("dependency[0].service"));
+        assertEquals("UP", map.getElement("status"));
+        assertEquals("fine", map.getElement("dependency[0].message"));
+        assertEquals(200, map.getElement("dependency[0].status_code"));
+        assertEquals("mock.connector", map.getElement("dependency[0].service"));
     }
 
     @SuppressWarnings("unchecked")
@@ -147,29 +150,29 @@ public class MinimalistHttpTest extends TestBase {
         MockCloud.setSimulateException(true);
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/health", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         // failed health check is returned as HTTP-400
-        Assert.assertEquals(400, response.getStatus());
+        assertEquals(400, response.getStatus());
         MultiLevelMap map = new MultiLevelMap(result);
-        Assert.assertEquals("DOWN", map.getElement("status"));
-        Assert.assertEquals("just a test", map.getElement("dependency[0].message"));
+        assertEquals("DOWN", map.getElement("status"));
+        assertEquals("just a test", map.getElement("dependency[0].message"));
         // original status code from dependency service is preserved
-        Assert.assertEquals(500, map.getElement("dependency[0].status_code"));
-        Assert.assertEquals("mock.connector", map.getElement("dependency[0].service"));
+        assertEquals(500, map.getElement("dependency[0].status_code"));
+        assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/livenessprobe", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof String);
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertEquals("Unhealthy. Please check '/health' endpoint.", response.getBody());
+        assertTrue(response.getBody() instanceof String);
+        assertEquals(400, response.getStatus());
+        assertEquals("Unhealthy. Please check '/health' endpoint.", response.getBody());
         MockCloud.setSimulateException(false);
         // try it again
         httpGet("http://127.0.0.1:"+ HTTP_PORT, "/health", null);
         response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/livenessprobe", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof String);
-        Assert.assertEquals("OK", response.getBody());
+        assertTrue(response.getBody() instanceof String);
+        assertEquals("OK", response.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -179,17 +182,17 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/health", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @Test
     public void livenessEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/livenessprobe", null);
         assert response != null;
-        Assert.assertEquals("OK", response.getBody());
+        assertEquals("OK", response.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -199,10 +202,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/livenessprobe", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -210,13 +213,13 @@ public class MinimalistHttpTest extends TestBase {
     public void envEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/env", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertTrue(multi.getElement("env") instanceof Map);
-        Assert.assertTrue(multi.getElement("routing.private") instanceof List);
-        Assert.assertTrue(multi.getElement("routing.public") instanceof List);
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertTrue(multi.getElement("env") instanceof Map);
+        assertTrue(multi.getElement("routing.private") instanceof List);
+        assertTrue(multi.getElement("routing.public") instanceof List);
     }
 
     @SuppressWarnings("unchecked")
@@ -226,10 +229,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/env", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -237,10 +240,10 @@ public class MinimalistHttpTest extends TestBase {
     public void shutdownUsingGetWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/shutdown", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("Resource not found", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("Resource not found", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -248,10 +251,10 @@ public class MinimalistHttpTest extends TestBase {
     public void suspendUsingGetWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/suspend/now", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("Resource not found", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("Resource not found", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -259,10 +262,10 @@ public class MinimalistHttpTest extends TestBase {
     public void resumeUsingGetWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/resume/now", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("Resource not found", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("Resource not found", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -270,10 +273,10 @@ public class MinimalistHttpTest extends TestBase {
     public void shutdownWithoutAppInstanceWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/shutdown", null, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(400, result.get("status"));
-        Assert.assertEquals("Missing X-App-Instance in request header", result.get("message"));
+        assertEquals(400, result.get("status"));
+        assertEquals("Missing X-App-Instance in request header", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -283,10 +286,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("X-App-Instance", "does-not-exist");
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/shutdown", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -294,10 +297,10 @@ public class MinimalistHttpTest extends TestBase {
     public void suspendWithoutAppInstanceWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/suspend/now", null, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(400, result.get("status"));
-        Assert.assertEquals("Missing X-App-Instance in request header", result.get("message"));
+        assertEquals(400, result.get("status"));
+        assertEquals("Missing X-App-Instance in request header", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -307,10 +310,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("X-App-Instance", "does-not-exist");
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/suspend/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -318,10 +321,10 @@ public class MinimalistHttpTest extends TestBase {
     public void resumeWithoutAppInstanceWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/resume/now", null, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(400, result.get("status"));
-        Assert.assertEquals("Missing X-App-Instance in request header", result.get("message"));
+        assertEquals(400, result.get("status"));
+        assertEquals("Missing X-App-Instance in request header", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -331,10 +334,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("X-App-Instance", "does-not-exist");
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/resume/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -344,10 +347,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("X-App-Instance", Platform.getInstance().getOrigin());
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/suspend/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("suspend", result.get("type"));
-        Assert.assertEquals(200, result.get("status"));
+        assertEquals("suspend", result.get("type"));
+        assertEquals(200, result.get("status"));
     }
 
     @SuppressWarnings("unchecked")
@@ -357,10 +360,10 @@ public class MinimalistHttpTest extends TestBase {
         headers.put("X-App-Instance", Platform.getInstance().getOrigin());
         EventEnvelope response = httpPost("http://127.0.0.1:"+ HTTP_PORT, "/resume/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("resume", result.get("type"));
-        Assert.assertEquals(200, result.get("status"));
+        assertEquals("resume", result.get("type"));
+        assertEquals(200, result.get("status"));
     }
 
     @SuppressWarnings("unchecked")
@@ -368,10 +371,10 @@ public class MinimalistHttpTest extends TestBase {
     public void pageNotExists() throws IOException, InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/no_such_page", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("Resource not found", result.get("message"));
+        assertEquals(404, result.get("status"));
+        assertEquals("Resource not found", result.get("message"));
     }
 
 }

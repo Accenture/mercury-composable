@@ -18,11 +18,12 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.util.Utility;
 
 import java.util.Date;
+
+import static org.junit.Assert.assertEquals;
 
 public class HtmlTimeTest {
 
@@ -34,7 +35,7 @@ public class HtmlTimeTest {
         Date normalizedTime = util.str2date(timestampWithoutMilli);
         String timestamp = util.getHtmlDate(normalizedTime);
         Date converted = util.getHtmlDate(timestamp);
-        Assert.assertEquals(normalizedTime, converted);
+        assertEquals(normalizedTime, converted);
     }
 
 }

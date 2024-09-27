@@ -22,10 +22,11 @@ import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleHttpCookie;
 
-import org.junit.Assert;
 import org.platformlambda.core.util.Utility;
 
 import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class SimpleCookieTest {
 
@@ -43,12 +44,12 @@ public class SimpleCookieTest {
     @Test
     public void validateCookie() {
         String cookie = createCookie("hello", "world").toString();
-        Assert.assertTrue(cookie.contains("Path=/;"));
-        Assert.assertTrue(cookie.contains("HttpOnly"));
-        Assert.assertTrue(cookie.contains("Secure;"));
-        Assert.assertTrue(cookie.contains("hello=world;"));
-        Assert.assertTrue(cookie.contains("Max-Age=60;"));
-        Assert.assertTrue(cookie.contains("GMT;"));
+        assertTrue(cookie.contains("Path=/;"));
+        assertTrue(cookie.contains("HttpOnly"));
+        assertTrue(cookie.contains("Secure;"));
+        assertTrue(cookie.contains("hello=world;"));
+        assertTrue(cookie.contains("Max-Age=60;"));
+        assertTrue(cookie.contains("GMT;"));
     }
 
     @Test
@@ -61,12 +62,12 @@ public class SimpleCookieTest {
         String WORLD = "world";
         event.setHeader(HELLO, WORLD);
         String cookies = event.getHeader(SET_COOKIE);
-        Assert.assertTrue(cookies.contains("|"));
+        assertTrue(cookies.contains("|"));
         List<String> cookieList = Utility.getInstance().split(cookies, "|");
-        Assert.assertEquals(2, cookieList.size());
-        Assert.assertTrue(cookieList.get(0).startsWith("key1=value1;"));
-        Assert.assertTrue(cookieList.get(1).startsWith("key2=value2;"));
-        Assert.assertEquals(WORLD, event.getHeader(HELLO));
+        assertEquals(2, cookieList.size());
+        assertTrue(cookieList.get(0).startsWith("key1=value1;"));
+        assertTrue(cookieList.get(1).startsWith("key2=value2;"));
+        assertEquals(WORLD, event.getHeader(HELLO));
     }
 
 }

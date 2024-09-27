@@ -1,6 +1,5 @@
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
@@ -14,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.*;
 
 public class LocalPubSubTest {
     private static final Logger log = LoggerFactory.getLogger(LocalPubSubTest.class);
@@ -29,14 +30,14 @@ public class LocalPubSubTest {
         // you can subscribe before you create the subscriber services
         boolean subscribe1 = ps.subscribe(TEST_TOPIC_ONE, SUBSCRIBER_ONE);
         boolean subscribe2 =ps.subscribe(TEST_TOPIC_ONE, SUBSCRIBER_TWO);
-        Assert.assertTrue(ps.topicExists(TEST_TOPIC_ONE));
-        Assert.assertTrue(subscribe1);
-        Assert.assertTrue(subscribe2);
+        assertTrue(ps.topicExists(TEST_TOPIC_ONE));
+        assertTrue(subscribe1);
+        assertTrue(subscribe2);
         List<String> members = ps.getSubscribers(TEST_TOPIC_ONE);
-        Assert.assertTrue(members.contains(SUBSCRIBER_ONE));
-        Assert.assertTrue(members.contains(SUBSCRIBER_TWO));
+        assertTrue(members.contains(SUBSCRIBER_ONE));
+        assertTrue(members.contains(SUBSCRIBER_TWO));
         List<String> topics = ps.getTopics();
-        Assert.assertTrue(topics.contains(TEST_TOPIC_ONE));
+        assertTrue(topics.contains(TEST_TOPIC_ONE));
         // now register the subscribers and send an event to the topic
         final AtomicInteger counter = new AtomicInteger(0);
         final BlockingQueue<Boolean> completion = new ArrayBlockingQueue<>(1);
@@ -56,18 +57,18 @@ public class LocalPubSubTest {
         final String TEXT = "test message";
         po.send(TEST_TOPIC_ONE, TEXT);
         completion.poll(5, TimeUnit.SECONDS);
-        Assert.assertEquals(2, result.size());
+        assertEquals(2, result.size());
         for (Map.Entry<String, Object> kv: result.entrySet()) {
-            Assert.assertEquals(TEXT, kv.getValue());
+            assertEquals(TEXT, kv.getValue());
             log.info("Result from {} is correct", kv.getKey());
         }
         ps.unsubscribe(TEST_TOPIC_ONE, SUBSCRIBER_ONE);
         List<String> membersAgain = ps.getSubscribers(TEST_TOPIC_ONE);
-        Assert.assertFalse(membersAgain.contains(SUBSCRIBER_ONE));
-        Assert.assertTrue(membersAgain.contains(SUBSCRIBER_TWO));
+        assertFalse(membersAgain.contains(SUBSCRIBER_ONE));
+        assertTrue(membersAgain.contains(SUBSCRIBER_TWO));
         // When you delete a topic, its subscriptions, if any, will be void.
         ps.deleteTopic(TEST_TOPIC_ONE);
         List<String> topicsAgain = ps.getTopics();
-        Assert.assertFalse(topicsAgain.contains(TEST_TOPIC_ONE));
+        assertFalse(topicsAgain.contains(TEST_TOPIC_ONE));
     }
 }

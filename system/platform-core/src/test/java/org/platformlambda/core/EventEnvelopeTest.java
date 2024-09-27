@@ -1,6 +1,5 @@
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
@@ -13,6 +12,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static org.junit.Assert.*;
+
 public class EventEnvelopeTest {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelopeTest.class);
     private static final String SET_COOKIE = "set-cookie";
@@ -23,7 +24,7 @@ public class EventEnvelopeTest {
         event.setHeader(SET_COOKIE, "a=100");
         event.setHeader(SET_COOKIE, "b=200");
         // set-cookie is a special case for composite value
-        Assert.assertEquals("a=100|b=200", event.getHeader(SET_COOKIE));
+        assertEquals("a=100|b=200", event.getHeader(SET_COOKIE));
     }
 
     @Test
@@ -33,8 +34,8 @@ public class EventEnvelopeTest {
         source.setBody(HELLO);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertEquals(true, target.getRawBody());
-        Assert.assertEquals(true, target.getBody());
+        assertEquals(true, target.getRawBody());
+        assertEquals(true, target.getBody());
     }
 
     @Test
@@ -44,8 +45,8 @@ public class EventEnvelopeTest {
         source.setBody(VALUE);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertEquals(VALUE, target.getRawBody());
-        Assert.assertEquals(VALUE, target.getBody());
+        assertEquals(VALUE, target.getRawBody());
+        assertEquals(VALUE, target.getBody());
     }
 
     @Test
@@ -56,8 +57,8 @@ public class EventEnvelopeTest {
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         // long will be compressed to integer by MsgPack
-        Assert.assertEquals(VALUE.intValue(), target.getRawBody());
-        Assert.assertEquals(VALUE.intValue(), target.getBody());
+        assertEquals(VALUE.intValue(), target.getRawBody());
+        assertEquals(VALUE.intValue(), target.getBody());
     }
 
     @Test
@@ -67,8 +68,8 @@ public class EventEnvelopeTest {
         source.setBody(VALUE);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertEquals(VALUE, target.getRawBody());
-        Assert.assertEquals(VALUE, target.getBody());
+        assertEquals(VALUE, target.getRawBody());
+        assertEquals(VALUE, target.getBody());
     }
 
     @Test
@@ -78,8 +79,8 @@ public class EventEnvelopeTest {
         source.setBody(VALUE);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertEquals(VALUE, target.getRawBody());
-        Assert.assertEquals(VALUE, target.getBody());
+        assertEquals(VALUE, target.getRawBody());
+        assertEquals(VALUE, target.getBody());
     }
 
     @Test
@@ -91,8 +92,8 @@ public class EventEnvelopeTest {
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         // big decimal is converted to string if it is not encoded in a PoJo
-        Assert.assertEquals(VALUE, target.getRawBody());
-        Assert.assertEquals(VALUE, target.getBody());
+        assertEquals(VALUE, target.getRawBody());
+        assertEquals(VALUE, target.getBody());
     }
 
     @Test
@@ -103,8 +104,8 @@ public class EventEnvelopeTest {
         source.setBody(NOW);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertEquals(util.date2str(NOW), target.getRawBody());
-        Assert.assertEquals(util.date2str(NOW), target.getBody());
+        assertEquals(util.date2str(NOW), target.getRawBody());
+        assertEquals(util.date2str(NOW), target.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -117,11 +118,11 @@ public class EventEnvelopeTest {
         source.setBody(pojo);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertTrue(target.getRawBody() instanceof Map);
+        assertTrue(target.getRawBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) target.getRawBody();
-        Assert.assertEquals(HELLO, map.get("name"));
+        assertEquals(HELLO, map.get("name"));
         PoJo restored = target.getBody(PoJo.class);
-        Assert.assertEquals(HELLO, restored.getName());
+        assertEquals(HELLO, restored.getName());
     }
 
     @SuppressWarnings("unchecked")
@@ -135,17 +136,17 @@ public class EventEnvelopeTest {
         source.setBody(list);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        Assert.assertTrue(target.getBody() instanceof List);
+        assertTrue(target.getBody() instanceof List);
         List<Object> restored = (List<Object>) target.getBody();
         Map<String, Object> map = new HashMap<>();
         map.put("list", restored);
         MultiLevelMap multi = new MultiLevelMap(map);
-        Assert.assertEquals(HELLO, multi.getElement("list[0].name"));
-        Assert.assertTrue(target.getBody() instanceof List);
+        assertEquals(HELLO, multi.getElement("list[0].name"));
+        assertTrue(target.getBody() instanceof List);
         List<Object> output = target.getBodyAsListOfPoJo(PoJo.class);
-        Assert.assertEquals(1, output.size());
+        assertEquals(1, output.size());
         PoJo restoredPoJo = (PoJo) output.getFirst();
-        Assert.assertEquals(HELLO, restoredPoJo.getName());
+        assertEquals(HELLO, restoredPoJo.getName());
     }
 
     @Test
@@ -158,15 +159,15 @@ public class EventEnvelopeTest {
         EventEnvelope event = new EventEnvelope();
         event.addTag(TAG_WITH_NO_VALUE).addTag(HELLO, WORLD).addTag(ROUTING, DATA);
         // When a tag is created with no value, the system will set a "*" as a filler.
-        Assert.assertEquals("*", event.getTag(TAG_WITH_NO_VALUE));
-        Assert.assertEquals(WORLD, event.getTag(HELLO));
-        Assert.assertEquals(DATA, event.getTag(ROUTING));
+        assertEquals("*", event.getTag(TAG_WITH_NO_VALUE));
+        assertEquals(WORLD, event.getTag(HELLO));
+        assertEquals(DATA, event.getTag(ROUTING));
         event.removeTag(HELLO).removeTag(ROUTING);
-        Assert.assertNull(event.getTag(HELLO));
-        Assert.assertNull(event.getTag(ROUTING));
-        Assert.assertEquals(TAG_WITH_NO_VALUE+"=*", event.getExtra());
+        assertNull(event.getTag(HELLO));
+        assertNull(event.getTag(ROUTING));
+        assertEquals(TAG_WITH_NO_VALUE+"=*", event.getExtra());
         event.removeTag(TAG_WITH_NO_VALUE);
-        Assert.assertNull(event.getExtra());
+        assertNull(event.getExtra());
     }
 
     @Test
@@ -194,27 +195,27 @@ public class EventEnvelopeTest {
         source.setRoundTrip(2.0f);
         EventEnvelope target = new EventEnvelope(source.toMap());
         MultiLevelMap map = new MultiLevelMap(target.toMap());
-        Assert.assertEquals(HELLO, map.getElement("body.name"));
-        Assert.assertEquals(10, map.getElement("body.number"));
-        Assert.assertEquals(0, map.getElement("body.long_number"));
-        Assert.assertEquals("y", target.getTag("x"));
-        Assert.assertEquals(1.23f, target.getExecutionTime(), 0f);
-        Assert.assertEquals(2.0f, target.getRoundTrip(), 0f);
-        Assert.assertEquals("121", target.getCorrelationId());
-        Assert.assertEquals(400, target.getStatus());
-        Assert.assertEquals(1, target.getBroadcastLevel());
-        Assert.assertEquals(source.getId(), target.getId());
-        Assert.assertEquals(source.getFrom(), target.getFrom());
-        Assert.assertEquals(source.getReplyTo(), target.getReplyTo());
-        Assert.assertEquals("101", target.getTraceId());
-        Assert.assertEquals("PUT /api/unit/test", target.getTracePath());
-        Assert.assertEquals("b", map.getElement("headers.a"));
-        Assert.assertEquals(true, map.getElement("json"));
+        assertEquals(HELLO, map.getElement("body.name"));
+        assertEquals(10, map.getElement("body.number"));
+        assertEquals(0, map.getElement("body.long_number"));
+        assertEquals("y", target.getTag("x"));
+        assertEquals(1.23f, target.getExecutionTime(), 0f);
+        assertEquals(2.0f, target.getRoundTrip(), 0f);
+        assertEquals("121", target.getCorrelationId());
+        assertEquals(400, target.getStatus());
+        assertEquals(1, target.getBroadcastLevel());
+        assertEquals(source.getId(), target.getId());
+        assertEquals(source.getFrom(), target.getFrom());
+        assertEquals(source.getReplyTo(), target.getReplyTo());
+        assertEquals("101", target.getTraceId());
+        assertEquals("PUT /api/unit/test", target.getTracePath());
+        assertEquals("b", map.getElement("headers.a"));
+        assertEquals(true, map.getElement("json"));
         PoJo output = target.getBody(PoJo.class);
-        Assert.assertEquals(HELLO, output.getName());
-        Assert.assertEquals(HELLO, target.getException().getMessage());
-        Assert.assertEquals(IllegalArgumentException.class, target.getException().getClass());
-        Assert.assertTrue(map.getElement("exception") instanceof byte[]);
+        assertEquals(HELLO, output.getName());
+        assertEquals(HELLO, target.getException().getMessage());
+        assertEquals(IllegalArgumentException.class, target.getException().getClass());
+        assertTrue(map.getElement("exception") instanceof byte[]);
         byte[] b = (byte[]) map.getElement("exception");
         log.info("Stacktrace binary payload size = {}", b.length);
     }
@@ -224,7 +225,7 @@ public class EventEnvelopeTest {
         EventEnvelope source = new EventEnvelope();
         source.setBody(Optional.of("hello"));
         EventEnvelope target = new EventEnvelope(source.toMap());
-        Assert.assertEquals(Optional.of("hello"), target.getBody());
+        assertEquals(Optional.of("hello"), target.getBody());
     }
 
 }

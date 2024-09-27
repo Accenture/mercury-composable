@@ -1,6 +1,5 @@
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
@@ -14,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
 
 public class ExceptionTransportTest {
 
@@ -39,8 +40,8 @@ public class ExceptionTransportTest {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertEquals(DEMO, response.getError());
+        assertEquals(400, response.getStatus());
+        assertEquals(DEMO, response.getError());
 
     }
 
@@ -55,10 +56,10 @@ public class ExceptionTransportTest {
         EventEmitter po = EventEmitter.getInstance();
         po.send(request);
         EventEnvelope result = callbackBench.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getException());
-        Assert.assertTrue(result.getException() instanceof IllegalArgumentException);
-        Assert.assertEquals(DEMO, result.getException().getMessage());
+        assertNotNull(result);
+        assertNotNull(result.getException());
+        assertTrue(result.getException() instanceof IllegalArgumentException);
+        assertEquals(DEMO, result.getException().getMessage());
     }
 
     private static class MyCallBack implements TypedLambdaFunction<EventEnvelope, Object> {

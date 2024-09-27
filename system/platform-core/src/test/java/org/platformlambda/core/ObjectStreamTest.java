@@ -19,7 +19,6 @@
 package org.platformlambda.core;
 
 import io.vertx.core.Future;
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.system.AsyncObjectStreamReader;
 import org.platformlambda.core.system.ObjectStreamIO;
@@ -34,6 +33,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.*;
+
 public class ObjectStreamTest {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamTest.class);
 
@@ -44,21 +45,21 @@ public class ObjectStreamTest {
         String TEXT = "hello world";
         // The minimum timeout is one second if you set it to a smaller value
         ObjectStreamIO unused = new ObjectStreamIO(0);
-        Assert.assertEquals(1, unused.getExpirySeconds());
+        assertEquals(1, unused.getExpirySeconds());
         String unusedStream = unused.getInputStreamId().substring(0, unused.getInputStreamId().indexOf('@'));
         // create a stream with 5 second expiry
         ObjectStreamIO stream = new ObjectStreamIO(5);
         ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
         out.write(TEXT);
         Map<String, Object> info = ObjectStreamIO.getStreamInfo();
-        Assert.assertNotNull(info.get("count"));
+        assertNotNull(info.get("count"));
         int count = util.str2int(info.get("count").toString());
-        Assert.assertTrue(count > 0);
+        assertTrue(count > 0);
         String id = stream.getInputStreamId().substring(0, stream.getInputStreamId().indexOf('@'));
-        Assert.assertTrue(info.containsKey(id));
+        assertTrue(info.containsKey(id));
         AsyncObjectStreamReader in = new AsyncObjectStreamReader(stream.getInputStreamId(), 5000);
         in.get().onSuccess(data -> {
-            Assert.assertEquals(TEXT, data);
+            assertEquals(TEXT, data);
             bench.offer(true);
         });
         bench.poll(10, TimeUnit.SECONDS);
@@ -71,17 +72,17 @@ public class ObjectStreamTest {
         ObjectStreamIO.checkExpiredStreams();
         Map<String, Object> allStreams = ObjectStreamIO.getStreamInfo();
         // the unused stream has already expired
-        Assert.assertFalse(allStreams.containsKey(unusedStream));
+        assertFalse(allStreams.containsKey(unusedStream));
         log.info("{} has expired", unusedStream);
         // The stream has not yet expired
-        Assert.assertTrue(allStreams.containsKey(id));
+        assertTrue(allStreams.containsKey(id));
         log.info("{} is still active", id);
         // Sleep past the 5-second mark
         Thread.sleep(4000);
         ObjectStreamIO.checkExpiredStreams();
         allStreams = ObjectStreamIO.getStreamInfo();
         // It should be gone at this point
-        Assert.assertFalse(allStreams.containsKey(id));
+        assertFalse(allStreams.containsKey(id));
     }
 
     @Test
@@ -105,10 +106,10 @@ public class ObjectStreamTest {
         log.info("Beginning of Stream");
         fetchNextBlock(in, 0, bench);
         Integer count = bench.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(count);
-        Assert.assertEquals(CYCLES, count.intValue());
-        Assert.assertTrue(in.isStreamEnd());
-        Assert.assertTrue(in.isClosed());
+        assertNotNull(count);
+        assertEquals(CYCLES, count.intValue());
+        assertTrue(in.isStreamEnd());
+        assertTrue(in.isClosed());
     }
 
     private void fetchNextBlock(AsyncObjectStreamReader in, int count, BlockingQueue<Integer> bench) {
