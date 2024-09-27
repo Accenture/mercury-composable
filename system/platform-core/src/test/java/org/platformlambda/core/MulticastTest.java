@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.platformlambda.core.models.LambdaFunction;
@@ -31,6 +30,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.*;
 
 public class MulticastTest {
     private static final Logger log = LoggerFactory.getLogger(MulticastTest.class);
@@ -69,16 +70,16 @@ public class MulticastTest {
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         platform.waitForProvider("v1.hello.world", 5).onSuccess(bench::offer);
         boolean available = Boolean.TRUE.equals(bench.poll(5, TimeUnit.SECONDS));
-        Assert.assertTrue(available);
+        assertTrue(available);
         for (String t: targets) {
             platform.registerPrivate(t, f, 1);
         }
         // Event targeted to v1.hello.world will be multicasted to v1.hello.service.1 and v1.hello.service.2
         po.send("v1.hello.world", TEXT);
         completion.poll(5, TimeUnit.SECONDS);
-        Assert.assertEquals(2, result.size());
+        assertEquals(2, result.size());
         for (Map.Entry<String, Object> kv: result.entrySet()) {
-            Assert.assertEquals(TEXT, kv.getValue());
+            assertEquals(TEXT, kv.getValue());
             log.info("Result from {} is correct", kv.getKey());
         }
     }

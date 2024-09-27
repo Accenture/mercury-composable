@@ -16,6 +16,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class GreetingTest extends TestBase {
 
     @SuppressWarnings("unchecked")
@@ -30,9 +33,9 @@ public class GreetingTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        Assert.assertEquals("Hello, World", map.getElement("content.greeting"));
+        assertEquals("Hello, World", map.getElement("content.greeting"));
     }
 
     @SuppressWarnings("unchecked")
@@ -48,9 +51,9 @@ public class GreetingTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        Assert.assertEquals("Hello, user", map.getElement("content.greeting"));
+        assertEquals("Hello, user", map.getElement("content.greeting"));
     }
 
 }

@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -31,6 +30,10 @@ import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 
 public class PayloadSegmentationTest {
     private static final String TEST_STRING = "123456789.";
@@ -66,7 +69,7 @@ public class PayloadSegmentationTest {
                     }
                 } else {
                     bench.offer(b.length);
-                    Assert.assertEquals(b.length, sb.length());
+                    assertEquals(b.length, sb.length());
                 }
             }
             return true;
@@ -77,8 +80,8 @@ public class PayloadSegmentationTest {
         multipart.outgoing(RECEIVER, event);
         // wait for receiver to acknowledge message
         Integer size = bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(size);
-        Assert.assertEquals((int) size, sb.length());
+        assertNotNull(size);
+        assertEquals((int) size, sb.length());
     }
 
 }

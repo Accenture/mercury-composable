@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
@@ -26,6 +25,8 @@ import org.platformlambda.core.util.ElasticQueue;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static org.junit.Assert.*;
 
 public class ElasticQueueTest {
 
@@ -40,21 +41,21 @@ public class ElasticQueueTest {
         byte[] b = spooler.peek();
         EventEnvelope first = new EventEnvelope();
         first.load(b);
-        Assert.assertEquals(firstItem, first.getBody());
+        assertEquals(firstItem, first.getBody());
 
         b = spooler.read();
         EventEnvelope firstAgain = new EventEnvelope();
         firstAgain.load(b);
-        Assert.assertEquals(firstItem, firstAgain.getBody());
+        assertEquals(firstItem, firstAgain.getBody());
 
         b = spooler.read();
         EventEnvelope second = new EventEnvelope();
         second.load(b);
-        Assert.assertEquals(secondItem, second.getBody());
-        Assert.assertNull(spooler.peek());
-        Assert.assertNull(spooler.read());
+        assertEquals(secondItem, second.getBody());
+        assertNull(spooler.peek());
+        assertNull(spooler.read());
         // elastic queue should be automatically closed when all messages are consumed
-        Assert.assertTrue(spooler.isClosed());
+        assertTrue(spooler.isClosed());
         // close elastic queue
         spooler.close();
     }
@@ -87,10 +88,10 @@ public class ElasticQueueTest {
             event.setBody(input);
             spooler.write(event.toBytes());
             byte[] b = spooler.read();
-            Assert.assertNotNull(b);
+            assertNotNull(b);
             EventEnvelope data = new EventEnvelope();
             data.load(b);
-            Assert.assertEquals(input, data.getBody());
+            assertEquals(input, data.getBody());
         }
         /*
          * Test overflow to temporary storage
@@ -111,19 +112,19 @@ public class ElasticQueueTest {
             byte[] b = spooler.read();
             EventEnvelope data = new EventEnvelope();
             data.load(b);
-            Assert.assertNotNull(data);
-            Assert.assertTrue(data.getBody() instanceof Map);
+            assertNotNull(data);
+            assertTrue(data.getBody() instanceof Map);
             PoJo o = data.getBody(PoJo.class);
-            Assert.assertEquals(input, o.getName());
+            assertEquals(input, o.getName());
         }
         // read one more
         byte[] someData = spooler.read();
-        Assert.assertNotNull(someData);
+        assertNotNull(someData);
         spooler.close();
         // it should return null when there are no more messages to be read
         byte[] nothing = spooler.read();
-        Assert.assertNull(nothing);
-        Assert.assertTrue(spooler.isClosed());
+        assertNull(nothing);
+        assertTrue(spooler.isClosed());
         // closing again has no effect
         spooler.close();
     }
@@ -140,13 +141,13 @@ public class ElasticQueueTest {
                 spooler.write(event.toBytes());
                 if (i < ElasticQueue.MEMORY_BUFFER) {
                     byte[] b = spooler.read();
-                    Assert.assertNotNull(b);
+                    assertNotNull(b);
                     EventEnvelope data = new EventEnvelope();
                     data.load(b);
-                    Assert.assertEquals(input, data.getBody());
+                    assertEquals(input, data.getBody());
                 }
             }
-            Assert.assertFalse(spooler.isClosed());
+            assertFalse(spooler.isClosed());
         }
     }
 

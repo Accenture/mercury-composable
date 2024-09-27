@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -27,6 +26,8 @@ import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.util.*;
+
+import static org.junit.Assert.*;
 
 public class GenericTypeTest {
 
@@ -52,14 +53,14 @@ public class GenericTypeTest {
         EventEnvelope result = new EventEnvelope();
         result.load(b);
         List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
-        Assert.assertEquals(3, pojoList.size());
+        assertEquals(3, pojoList.size());
         PoJo restored1 = (PoJo) pojoList.getFirst();
-        Assert.assertEquals(NAME_1, restored1.getName());
-        Assert.assertEquals(NUMBER_1, restored1.getNumber());
-        Assert.assertNull(pojoList.get(1));
+        assertEquals(NAME_1, restored1.getName());
+        assertEquals(NUMBER_1, restored1.getNumber());
+        assertNull(pojoList.get(1));
         PoJo restored2 = (PoJo) pojoList.get(2);
-        Assert.assertEquals(NAME_2, restored2.getName());
-        Assert.assertEquals(NUMBER_2, restored2.getNumber());
+        assertEquals(NAME_2, restored2.getName());
+        assertEquals(NUMBER_2, restored2.getNumber());
     }
 
     @SuppressWarnings("unchecked")
@@ -84,16 +85,16 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        Assert.assertTrue(result.getBody() instanceof List);
+        assertTrue(result.getBody() instanceof List);
         List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
-        Assert.assertEquals(3, pojoList.size());
+        assertEquals(3, pojoList.size());
         PoJo restored1 = (PoJo) pojoList.getFirst();
-        Assert.assertEquals(NAME_1, restored1.getName());
-        Assert.assertEquals(NUMBER_1, restored1.getNumber());
-        Assert.assertNull(pojoList.get(1));
+        assertEquals(NAME_1, restored1.getName());
+        assertEquals(NUMBER_1, restored1.getNumber());
+        assertNull(pojoList.get(1));
         PoJo restored2 = (PoJo) pojoList.get(2);
-        Assert.assertEquals(NAME_2, restored2.getName());
-        Assert.assertEquals(NUMBER_2, restored2.getNumber());
+        assertEquals(NAME_2, restored2.getName());
+        assertEquals(NUMBER_2, restored2.getNumber());
     }
 
     @Test
@@ -115,10 +116,10 @@ public class GenericTypeTest {
         EventEnvelope event = new EventEnvelope();
         event.setBody(list);
         List<Object> pojoList = event.getBodyAsListOfPoJo(PoJo.class);
-        Assert.assertEquals(pojoList.getFirst().getClass(), PoJo.class);
+        assertEquals(pojoList.getFirst().getClass(), PoJo.class);
         // non-PoJo is converted to null
-        Assert.assertNull(pojoList.get(1));
-        Assert.assertEquals(pojoList.get(2).getClass(), PoJo.class);
+        assertNull(pojoList.get(1));
+        assertEquals(pojoList.get(2).getClass(), PoJo.class);
     }
 
     @Test
@@ -132,8 +133,8 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        Assert.assertTrue(result.getBody() instanceof List);
-        Assert.assertEquals(list, result.getBody());
+        assertTrue(result.getBody() instanceof List);
+        assertEquals(list, result.getBody());
     }
 
     @Test
@@ -147,8 +148,8 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        Assert.assertTrue(result.getBody() instanceof List);
-        Assert.assertEquals(Arrays.asList(array), result.getBody());
+        assertTrue(result.getBody() instanceof List);
+        assertEquals(Arrays.asList(array), result.getBody());
     }
 
     @Test
@@ -158,7 +159,7 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        Assert.assertEquals(Collections.EMPTY_LIST, result.getBody());
+        assertEquals(Collections.EMPTY_LIST, result.getBody());
     }
 
     @Test
@@ -179,13 +180,13 @@ public class GenericTypeTest {
         EventEnvelope result = new EventEnvelope();
         result.load(b);
         ObjectWithGenericType<PoJo> o = result.getBody(ObjectWithGenericType.class, PoJo.class);
-        Assert.assertEquals(o.getClass(), ObjectWithGenericType.class);
+        assertEquals(o.getClass(), ObjectWithGenericType.class);
         Map<String, Object> restored = SimpleMapper.getInstance().getMapper().readValue(o, Map.class);
         MultiLevelMap map = new MultiLevelMap(restored);
-        Assert.assertEquals(name, map.getElement("content.name"));
+        assertEquals(name, map.getElement("content.name"));
         // numbers are encoded as string in map
-        Assert.assertEquals(id, util.str2int(map.getElement("id").toString()));
-        Assert.assertEquals(id, util.str2int(map.getElement("content.number").toString()));
+        assertEquals(id, util.str2int(map.getElement("id").toString()));
+        assertEquals(id, util.str2int(map.getElement("content.number").toString()));
     }
 
     @SuppressWarnings("unchecked")
@@ -203,9 +204,9 @@ public class GenericTypeTest {
         request.setBody(genericObject);
         AsyncHttpRequest restored = new AsyncHttpRequest(request.toMap());
         ObjectWithGenericType<PoJo> o = restored.getBody(ObjectWithGenericType.class, PoJo.class);
-        Assert.assertEquals(NAME, o.getContent().getName());
-        Assert.assertEquals(ID, o.getContent().getNumber());
-        Assert.assertEquals(ID, o.getId());
+        assertEquals(NAME, o.getContent().getName());
+        assertEquals(ID, o.getContent().getNumber());
+        assertEquals(ID, o.getId());
     }
 
     @SuppressWarnings("unchecked")
@@ -225,10 +226,10 @@ public class GenericTypeTest {
         EventEnvelope restored = new EventEnvelope(b);
         ObjectWithGenericTypeVariance<PoJoVariance> o =
                 restored.getBody(ObjectWithGenericTypeVariance.class, PoJoVariance.class);
-        Assert.assertEquals(NAME, o.getContent().getName());
-        Assert.assertEquals(ID, o.getContent().getNumber());
-        Assert.assertEquals(ID, o.getId());
-        Assert.assertTrue(restored.getRawBody() instanceof Map);
+        assertEquals(NAME, o.getContent().getName());
+        assertEquals(ID, o.getContent().getNumber());
+        assertEquals(ID, o.getId());
+        assertTrue(restored.getRawBody() instanceof Map);
     }
 
     @Test
@@ -243,9 +244,9 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope restored = new EventEnvelope(b);
         PoJoVariance o = restored.getBody(PoJoVariance.class);
-        Assert.assertEquals(NAME, o.getName());
-        Assert.assertEquals(ID, o.getNumber());
-        Assert.assertTrue(restored.getRawBody() instanceof Map);
+        assertEquals(NAME, o.getName());
+        assertEquals(ID, o.getNumber());
+        assertTrue(restored.getRawBody() instanceof Map);
     }
 
     @Test
@@ -256,10 +257,10 @@ public class GenericTypeTest {
         event.setBody(id);
         byte[] b = event.toBytes();
         EventEnvelope restored = new EventEnvelope(b);
-        Assert.assertEquals(100, restored.getBody());
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class,
+        assertEquals(100, restored.getBody());
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                                 () -> restored.getBody(PoJoVariance.class));
-        Assert.assertEquals(MESSAGE, ex.getMessage());
+        assertEquals(MESSAGE, ex.getMessage());
     }
 
 }

@@ -19,7 +19,6 @@
 package org.platformlambda.core;
 
 import io.vertx.core.Future;
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.EventEnvelope;
@@ -38,6 +37,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.*;
+
 public class EventHttpTest extends TestBase {
 
     @Test
@@ -48,9 +49,9 @@ public class EventHttpTest extends TestBase {
         String SHOULD_BE_TARGET = "http://127.0.0.1:" + serverPort+ "/api/event";
         EventEmitter po = EventEmitter.getInstance();
         String target = po.getEventHttpTarget(ROUTE);
-        Assert.assertEquals(SHOULD_BE_TARGET, target);
+        assertEquals(SHOULD_BE_TARGET, target);
         Map<String, String> headers = po.getEventHttpHeaders(ROUTE);
-        Assert.assertEquals("demo", headers.get("authorization"));
+        assertEquals("demo", headers.get("authorization"));
     }
 
     @Test
@@ -76,19 +77,19 @@ public class EventHttpTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", "1200001", "EVENT /save/then/get");
         po.send(save);
         Object serviceResponse = wait1.poll(5, TimeUnit.SECONDS);
-        Assert.assertEquals("saved", serviceResponse);
+        assertEquals("saved", serviceResponse);
         EventEnvelope get = new EventEnvelope().setTo(ROUTE).setHeader("type", "get");
         EventEnvelope response = po.request(get, 10000).get();
-        Assert.assertEquals(HELLO, response.getBody());
+        assertEquals(HELLO, response.getBody());
         Future<EventEnvelope> asyncResponse = po.asyncRequest(get, 10000);
         asyncResponse.onSuccess(evt -> wait2.offer(evt.getBody()));
         Object result = wait2.poll(5, TimeUnit.SECONDS);
-        Assert.assertEquals(HELLO, result);
+        assertEquals(HELLO, result);
         // test kotlin FastRPC
         EventEnvelope forward = new EventEnvelope().setTo("event.api.forwarder")
                                 .setBody(get.toBytes()).setHeader("timeout", 10000);
         EventEnvelope kotlinResponse = po.request(forward, 10000).get();
-        Assert.assertEquals(HELLO, kotlinResponse.getBody());
+        assertEquals(HELLO, kotlinResponse.getBody());
     }
 
     @Test
@@ -105,10 +106,10 @@ public class EventHttpTest extends TestBase {
                 "http://127.0.0.1:"+port+"/api/event", true);
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(401, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof String);
-        Assert.assertEquals("Unauthorized", result.getBody());
+        assertNotNull(result);
+        assertEquals(401, result.getStatus());
+        assertTrue(result.getBody() instanceof String);
+        assertEquals("Unauthorized", result.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -128,12 +129,12 @@ public class EventHttpTest extends TestBase {
         response.onSuccess(bench::offer);
         // add 500 ms to the bench to capture HTTP-408 response if any
         EventEnvelope result = bench.poll(TIMEOUT + 500, TimeUnit.MILLISECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
-        Assert.assertEquals("world", map.getElement("headers.hello"));
-        Assert.assertEquals(PAYLOAD, map.getElement("body"));
+        assertEquals("world", map.getElement("headers.hello"));
+        assertEquals(PAYLOAD, map.getElement("body"));
     }
 
     @SuppressWarnings("unchecked")
@@ -153,12 +154,12 @@ public class EventHttpTest extends TestBase {
         response.onSuccess(bench::offer);
         // add 500 ms to the bench to capture HTTP-408 response if any
         EventEnvelope result = bench.poll(TIMEOUT + 500, TimeUnit.MILLISECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
-        Assert.assertEquals("world", map.getElement("headers.hello"));
-        Assert.assertEquals(PAYLOAD, map.getElement("body"));
+        assertEquals("world", map.getElement("headers.hello"));
+        assertEquals(PAYLOAD, map.getElement("body"));
     }
 
     @SuppressWarnings("unchecked")
@@ -176,14 +177,14 @@ public class EventHttpTest extends TestBase {
                 "http://127.0.0.1:"+port+"/api/event", false);
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
+        assertNotNull(result);
         // status code 202 indicates that a drop-n-forget event has been sent asynchronously
-        Assert.assertEquals(202, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertEquals(202, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) result.getBody();
-        Assert.assertTrue(map.containsKey("time"));
-        Assert.assertEquals("async", map.get("type"));
-        Assert.assertEquals(true, map.get("delivered"));
+        assertTrue(map.containsKey("time"));
+        assertEquals("async", map.get("type"));
+        assertEquals(true, map.get("delivered"));
     }
 
     @SuppressWarnings("unchecked")
@@ -202,14 +203,14 @@ public class EventHttpTest extends TestBase {
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
+        assertNotNull(result);
         // status code 202 indicates that a drop-n-forget event has been sent asynchronously
-        Assert.assertEquals(202, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertEquals(202, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) result.getBody();
-        Assert.assertTrue(map.containsKey("time"));
-        Assert.assertEquals("async", map.get("type"));
-        Assert.assertEquals(true, map.get("delivered"));
+        assertTrue(map.containsKey("time"));
+        assertEquals("async", map.get("type"));
+        assertEquals(true, map.get("delivered"));
     }
 
     @SuppressWarnings("unchecked")
@@ -228,12 +229,12 @@ public class EventHttpTest extends TestBase {
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
-        Assert.assertEquals("world", map.getElement("headers.hello"));
-        Assert.assertEquals(NUMBER_THREE, map.getElement("body"));
+        assertEquals("world", map.getElement("headers.hello"));
+        assertEquals(NUMBER_THREE, map.getElement("body"));
     }
 
     @Test
@@ -251,10 +252,10 @@ public class EventHttpTest extends TestBase {
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(401, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof String);
-        Assert.assertEquals("Unauthorized", result.getBody());
+        assertNotNull(result);
+        assertEquals(401, result.getStatus());
+        assertTrue(result.getBody() instanceof String);
+        assertEquals("Unauthorized", result.getBody());
     }
 
     @Test
@@ -266,10 +267,10 @@ public class EventHttpTest extends TestBase {
         securityHeaders.put("Authorization", "demo");
         PostOffice po = new PostOffice("unit.test", TRACE_ID, "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setBody(NUMBER_THREE).setHeader("hello", "world");
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 po.asyncRequest(event, TIMEOUT, securityHeaders,
                         "http://127.0.0.1:"+port+"/api/event", true));
-        Assert.assertEquals("Missing routing path", ex.getMessage());
+        assertEquals("Missing routing path", ex.getMessage());
     }
 
     @Test
@@ -279,10 +280,10 @@ public class EventHttpTest extends TestBase {
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
         PostOffice po = new PostOffice("unit.test", TRACE_ID, "TEST /remote/event");
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 po.asyncRequest(null, TIMEOUT, securityHeaders,
                         "http://127.0.0.1:"+port+"/api/event", true));
-        Assert.assertEquals("Missing outgoing event", ex.getMessage());
+        assertEquals("Missing outgoing event", ex.getMessage());
     }
 
     @Test
@@ -301,8 +302,8 @@ public class EventHttpTest extends TestBase {
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert result != null;
-        Assert.assertEquals(404, result.getStatus());
-        Assert.assertEquals("Route some.dummy.route not found", result.getError());
+        assertEquals(404, result.getStatus());
+        assertEquals("Route some.dummy.route not found", result.getError());
     }
 
     @Test
@@ -323,8 +324,8 @@ public class EventHttpTest extends TestBase {
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assert result != null;
-        Assert.assertEquals(403, result.getStatus());
-        Assert.assertEquals(DEMO_FUNCTION+" is private", result.getError());
+        assertEquals(403, result.getStatus());
+        assertEquals(DEMO_FUNCTION+" is private", result.getError());
     }
 
     @Test
@@ -343,8 +344,8 @@ public class EventHttpTest extends TestBase {
                 "http://127.0.0.1:"+port+"/api/event", true);
         EventEnvelope result = future.get();
         assert result != null;
-        Assert.assertEquals(403, result.getStatus());
-        Assert.assertEquals(DEMO_FUNCTION+" is private", result.getError());
+        assertEquals(403, result.getStatus());
+        assertEquals(DEMO_FUNCTION+" is private", result.getError());
     }
 
     @SuppressWarnings("unchecked")
@@ -360,14 +361,14 @@ public class EventHttpTest extends TestBase {
         java.util.concurrent.Future<EventEnvelope> future = po.request(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
         EventEnvelope result = future.get();
-        Assert.assertNotNull(result);
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
-        Assert.assertEquals("world", map.getElement("headers.hello"));
+        assertEquals("world", map.getElement("headers.hello"));
         // validate that session information is passed by the demo authentication service "event.api.auth"
-        Assert.assertEquals("demo", map.getElement("headers.user"));
-        Assert.assertEquals(NUMBER_THREE, map.getElement("body"));
+        assertEquals("demo", map.getElement("headers.user"));
+        assertEquals(NUMBER_THREE, map.getElement("body"));
     }
 
     @SuppressWarnings("unchecked")
@@ -385,14 +386,14 @@ public class EventHttpTest extends TestBase {
                 "http://127.0.0.1:"+port+"/api/event", true);
         response.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
-        Assert.assertEquals("world", map.getElement("headers.hello"));
+        assertEquals("world", map.getElement("headers.hello"));
         // validate that session information is passed by the demo authentication service "event.api.auth"
-        Assert.assertEquals("demo", map.getElement("headers.user"));
-        Assert.assertEquals(NUMBER_THREE, map.getElement("body"));
+        assertEquals("demo", map.getElement("headers.user"));
+        assertEquals(NUMBER_THREE, map.getElement("body"));
     }
 
 }

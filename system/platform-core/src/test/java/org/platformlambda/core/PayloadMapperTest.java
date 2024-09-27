@@ -24,13 +24,12 @@ import org.platformlambda.core.models.TypedPayload;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.models.PoJo;
-import com.unsafe.models.UnauthorizedObj;
+import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.util.*;
 
-import org.junit.Assert;
-import org.platformlambda.core.util.Utility;
+import static org.junit.Assert.*;
 
 public class PayloadMapperTest {
 
@@ -46,10 +45,10 @@ public class PayloadMapperTest {
         byte[] b = event1.toBytes();
         EventEnvelope event2 = new EventEnvelope();
         event2.load(b);
-        Assert.assertTrue(event2.getBody() instanceof Optional);
+        assertTrue(event2.getBody() instanceof Optional);
         Optional<Object> value = (Optional<Object>) event2.getBody();
-        Assert.assertTrue(value.isPresent());
-        Assert.assertEquals(text, value.get());
+        assertTrue(value.isPresent());
+        assertEquals(text, value.get());
     }
 
     @Test
@@ -64,7 +63,7 @@ public class PayloadMapperTest {
         event2.load(b);
         // pojo is transported as a Map
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(event2.getBody(), PoJo.class);
-        Assert.assertEquals(name, o.getName());
+        assertEquals(name, o.getName());
     }
 
     @Test
@@ -72,7 +71,7 @@ public class PayloadMapperTest {
         int len1 = pojoInEventUsingMsgPack();
         int len2 = pojoInEventUsingGson();
         // transport size is larger when using JSON
-        Assert.assertTrue(len2 > len1);
+        assertTrue(len2 > len1);
     }
 
     private int pojoInEventUsingMsgPack() throws IOException {
@@ -84,10 +83,10 @@ public class PayloadMapperTest {
         byte[] b = event1.toBytes();
         EventEnvelope event2 = new EventEnvelope();
         event2.load(b);
-        Assert.assertTrue(event2.isBinary());
+        assertTrue(event2.isBinary());
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(event2.getBody(), PoJo.class);
-        Assert.assertEquals(input.getName(), o.getName());
-        Assert.assertEquals(input.getNumber(), o.getNumber());
+        assertEquals(input.getName(), o.getName());
+        assertEquals(input.getNumber(), o.getNumber());
         return b.length;
     }
 
@@ -101,10 +100,10 @@ public class PayloadMapperTest {
         byte[] b = event1.toBytes();
         EventEnvelope event2 = new EventEnvelope();
         event2.load(b);
-        Assert.assertFalse(event2.isBinary());
+        assertFalse(event2.isBinary());
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(event2.getBody(), PoJo.class);
-        Assert.assertEquals(input.getName(), o.getName());
-        Assert.assertEquals(input.getNumber(), o.getNumber());
+        assertEquals(input.getName(), o.getName());
+        assertEquals(input.getNumber(), o.getNumber());
         return b.length;
     }
 
@@ -114,13 +113,13 @@ public class PayloadMapperTest {
         input.setName("hello world");
         input.setNumber(12345);
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(input.getClass().getName(), typed.getType());
-        Assert.assertTrue(typed.getPayload() instanceof Map);
+        assertEquals(input.getClass().getName(), typed.getType());
+        assertTrue(typed.getPayload() instanceof Map);
         Object converted = converter.decode(typed);
-        Assert.assertTrue(converted instanceof Map);
+        assertTrue(converted instanceof Map);
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
-        Assert.assertEquals(input.getName(), o.getName());
-        Assert.assertEquals(input.getNumber(), o.getNumber());
+        assertEquals(input.getName(), o.getName());
+        assertEquals(input.getNumber(), o.getNumber());
     }
 
     @Test
@@ -129,13 +128,13 @@ public class PayloadMapperTest {
         input.setName("hello world");
         input.setNumber(12345);
         TypedPayload typed = converter.encode(input, false);
-        Assert.assertEquals(input.getClass().getName(), typed.getType());
-        Assert.assertTrue(typed.getPayload() instanceof byte[]);
+        assertEquals(input.getClass().getName(), typed.getType());
+        assertTrue(typed.getPayload() instanceof byte[]);
         Object converted = converter.decode(typed);
-        Assert.assertTrue(converted instanceof byte[]);
+        assertTrue(converted instanceof byte[]);
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
-        Assert.assertEquals(input.getName(), o.getName());
-        Assert.assertEquals(input.getNumber(), o.getNumber());
+        assertEquals(input.getName(), o.getName());
+        assertEquals(input.getNumber(), o.getNumber());
     }
 
     @Test
@@ -146,10 +145,10 @@ public class PayloadMapperTest {
         event.setBody(now);
         Object o = event.getBody();
         // date object is serialized as ISO-8601 timestamp when the setBody method is called
-        Assert.assertEquals(util.date2str(now), o);
+        assertEquals(util.date2str(now), o);
         byte[] b = event.toBytes();
         EventEnvelope restored = new EventEnvelope(b);
-        Assert.assertEquals(util.date2str(now), restored.getBody());
+        assertEquals(util.date2str(now), restored.getBody());
     }
 
     @Test
@@ -157,88 +156,88 @@ public class PayloadMapperTest {
         Map<String, Object> input = new HashMap<>();
         input.put("hello", "world");
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.MAP, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.MAP, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertString() throws ClassNotFoundException {
         String input = "hello world";
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertBytes() throws ClassNotFoundException {
         byte[] input = "hello world".getBytes();
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertNull() throws ClassNotFoundException {
         TypedPayload typed = converter.encode(null, true);
-        Assert.assertEquals(PayloadMapper.NOTHING, typed.getType());
-        Assert.assertNull(typed.getPayload());
+        assertEquals(PayloadMapper.NOTHING, typed.getType());
+        assertNull(typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertNull(converted);
+        assertNull(converted);
     }
 
     @Test
     public void convertBoolean() throws ClassNotFoundException {
         TypedPayload typed = converter.encode(true, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(true, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(true, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(true, converted);
+        assertEquals(true, converted);
     }
 
     @Test
     public void convertInteger() throws ClassNotFoundException {
         Integer input = 12345;
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertLong() throws ClassNotFoundException {
         Long input = 123456L;
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertFloat() throws ClassNotFoundException {
         Float input = 12.34f;
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertDouble() throws ClassNotFoundException {
         Double input = 12.34d;
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
@@ -246,10 +245,10 @@ public class PayloadMapperTest {
         Utility util = Utility.getInstance();
         Date input = new Date();
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        Assert.assertEquals(util.date2str(input), typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
+        assertEquals(util.date2str(input), typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(util.date2str(input), converted);
+        assertEquals(util.date2str(input), converted);
     }
 
     @Test
@@ -258,19 +257,19 @@ public class PayloadMapperTest {
         input.add("hello");
         input.add("world");
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.LIST, typed.getType());
-        Assert.assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.LIST, typed.getType());
+        assertEquals(input, typed.getPayload());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(input, converted);
+        assertEquals(input, converted);
     }
 
     @Test
     public void convertArray() throws ClassNotFoundException {
         String[] input = {"hello", "world"};
         TypedPayload typed = converter.encode(input, true);
-        Assert.assertEquals(PayloadMapper.LIST, typed.getType());
+        assertEquals(PayloadMapper.LIST, typed.getType());
         Object converted = converter.decode(typed);
-        Assert.assertEquals(Arrays.asList(input), converted);
+        assertEquals(Arrays.asList(input), converted);
     }
 
 }

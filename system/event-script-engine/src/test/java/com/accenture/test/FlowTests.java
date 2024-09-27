@@ -24,6 +24,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
 
@@ -53,17 +56,17 @@ public class FlowTests extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
         // Take return value as PoJo
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertTrue(result.getBody() instanceof Map);
         PoJo restored = result.getBody(PoJo.class);
-        Assert.assertEquals(HELLO, restored.user);
-        Assert.assertEquals(SEQ, restored.sequence);
-        Assert.assertEquals(VALUE_A, restored.key1);
-        Assert.assertEquals(VALUE_B, restored.key2);
+        assertEquals(HELLO, restored.user);
+        assertEquals(SEQ, restored.sequence);
+        assertEquals(VALUE_A, restored.key1);
+        assertEquals(VALUE_B, restored.key2);
         Utility util = Utility.getInstance();
         // verify that result contains headers set by "input data mapping" earlier
-        Assert.assertEquals(SEQ, util.str2int(result.getHeader("X-Sequence")));
-        Assert.assertEquals("AAA", result.getHeader("X-Tag"));
-        Assert.assertEquals("async-http-client", result.getHeader("x-agent"));
+        assertEquals(SEQ, util.str2int(result.getHeader("X-Sequence")));
+        assertEquals("AAA", result.getHeader("X-Tag"));
+        assertEquals("async-http-client", result.getHeader("x-agent"));
     }
 
     @SuppressWarnings("unchecked")
@@ -77,12 +80,12 @@ public class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertTrue(result.getBody() instanceof Map);
         Map<String, Object> body = (Map<String, Object>) result.getBody();
         // verify that input headers are mapped to the function's input body
-        Assert.assertEquals("header-test", body.get("x-flow-id"));
-        Assert.assertEquals("async-http-client", body.get("user-agent"));
-        Assert.assertEquals("application/json", body.get("accept"));
+        assertEquals("header-test", body.get("x-flow-id"));
+        assertEquals("async-http-client", body.get("user-agent"));
+        assertEquals("application/json", body.get("accept"));
     }
 
     @Test
@@ -101,21 +104,21 @@ public class FlowTests extends TestBase {
         // "output data mapping" will pass the input classpath file as output body
         InputStream in = this.getClass().getResourceAsStream("/files/hello.txt");
         String resourceContent = util.stream2str(in);
-        Assert.assertEquals(resourceContent, result.getBody());
-        Assert.assertEquals("text/plain", result.getHeader("content-type"));
-        Assert.assertEquals(200, result.getStatus());
+        assertEquals(resourceContent, result.getBody());
+        assertEquals("text/plain", result.getHeader("content-type"));
+        assertEquals(200, result.getStatus());
         File f2 = new File("/tmp/temp-test-output.txt");
-        Assert.assertTrue(f2.exists());
+        assertTrue(f2.exists());
         String text = util.file2str(f2);
-        Assert.assertEquals(HELLO, text);
+        assertEquals(HELLO, text);
         File f3 = new File("/tmp/temp-test-match.txt");
-        Assert.assertTrue(f3.exists());
+        assertTrue(f3.exists());
         String matched = util.file2str(f3);
-        Assert.assertEquals("true", matched);
+        assertEquals("true", matched);
         File f4 = new File("/tmp/temp-test-binary");
-        Assert.assertTrue(f4.exists());
+        assertTrue(f4.exists());
         String binary = util.file2str(f4);
-        Assert.assertEquals("binary", binary);
+        assertEquals("binary", binary);
         f1.deleteOnExit();
         f2.deleteOnExit();
         f3.deleteOnExit();
@@ -132,10 +135,10 @@ public class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertEquals(200, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         Map<String, Object> output = (Map<String, Object>) result.getBody();
-        Assert.assertEquals(2, output.get("attempt"));
+        assertEquals(2, output.get("attempt"));
     }
 
     @SuppressWarnings("unchecked")
@@ -149,10 +152,10 @@ public class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
-        Assert.assertEquals(400, result.getStatus());
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertEquals(400, result.getStatus());
+        assertTrue(result.getBody() instanceof Map);
         Map<String, Object> output = (Map<String, Object>) result.getBody();
-        Assert.assertEquals("Just a demo exception for circuit breaker to handle", output.get("message"));
+        assertEquals("Just a demo exception for circuit breaker to handle", output.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -169,32 +172,32 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(USER, result.get("user"));
-        Assert.assertEquals(getAppName(), result.get("name"));
-        Assert.assertEquals("hello world", result.get("greeting"));
-        Assert.assertTrue(result.containsKey("original"));
+        assertEquals(USER, result.get("user"));
+        assertEquals(getAppName(), result.get("name"));
+        assertEquals("hello world", result.get("greeting"));
+        assertTrue(result.containsKey("original"));
         Map<String, Object> original = (Map<String, Object>) result.get("original");
-        Assert.assertEquals(201, res.getStatus());
+        assertEquals(201, res.getStatus());
         // output mapping 'input.header -> header' delivers the result EventEnvelope's headers
-        Assert.assertEquals("test-header", res.getHeader("demo"));
+        assertEquals("test-header", res.getHeader("demo"));
         // output mapping 'header.demo -> output.header.x-demo' maps the original header "demo" to "x-demo"
-        Assert.assertEquals("test-header", res.getHeader("x-demo"));
+        assertEquals("test-header", res.getHeader("x-demo"));
         /*
          * serialization compresses numbers to long and float
          * if the number is not greater than MAX integer or float
          */
-        Assert.assertEquals(12345, original.get("long_number"));
-        Assert.assertEquals(12.345, original.get("float_number"));
-        Assert.assertEquals(12.345, original.get("double_number"));
-        Assert.assertEquals(true, original.get("boolean_value"));
-        Assert.assertEquals(System.getenv("PATH"), original.get("path"));
+        assertEquals(12345, original.get("long_number"));
+        assertEquals(12.345, original.get("float_number"));
+        assertEquals(12.345, original.get("double_number"));
+        assertEquals(true, original.get("boolean_value"));
+        assertEquals(System.getenv("PATH"), original.get("path"));
         // the "demo" key-value is collected from the input headers to the test function
-        Assert.assertEquals("ok", result.get("demo1"));
-        Assert.assertEquals(USER, result.get("demo2"));
+        assertEquals("ok", result.get("demo1"));
+        assertEquals(USER, result.get("demo2"));
         // input mapping 'input.header -> header' relays all HTTP headers
-        Assert.assertEquals("greetings", result.get("demo3"));
+        assertEquals("greetings", result.get("demo3"));
     }
 
     private String getAppName() {
@@ -216,10 +219,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(400, result.get("status"));
-        Assert.assertEquals("just a test", result.get("message"));
+        assertEquals(400, result.get("status"));
+        assertEquals("just a test", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -236,10 +239,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(408, result.get("status"));
-        Assert.assertEquals("Flow timeout for 1000 ms", result.get("message"));
+        assertEquals(408, result.get("status"));
+        assertEquals("Flow timeout for 1000 ms", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -257,20 +260,20 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(false, result.get("decision"));
-        Assert.assertEquals("two", result.get("from"));
+        assertEquals(false, result.get("decision"));
+        assertEquals("two", result.get("from"));
         // setting decision to true will trigger decision.case.one
         request.setQueryParameter("decision", "true");
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(true, result.get("decision"));
-        Assert.assertEquals("one", result.get("from"));
+        assertEquals(true, result.get("decision"));
+        assertEquals("one", result.get("from"));
     }
 
     @SuppressWarnings("unchecked")
@@ -288,20 +291,20 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(2, result.get("decision"));
-        Assert.assertEquals("two", result.get("from"));
+        assertEquals(2, result.get("decision"));
+        assertEquals("two", result.get("from"));
         // setting decision to 1 will trigger decision.case.one
         request.setQueryParameter("decision", 1);
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(1, result.get("decision"));
-        Assert.assertEquals("one", result.get("from"));
+        assertEquals(1, result.get("decision"));
+        assertEquals("one", result.get("from"));
     }
 
     @SuppressWarnings("unchecked")
@@ -319,10 +322,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(500, result.get("status"));
-        Assert.assertTrue(result.get("message").toString().contains("invalid decision"));
+        assertEquals(500, result.get("status"));
+        assertTrue(result.get("message").toString().contains("invalid decision"));
     }
 
     @SuppressWarnings("unchecked")
@@ -340,18 +343,18 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         MultiLevelMap result = new MultiLevelMap((Map<String, Object>) res.getBody());
-        Assert.assertEquals(SEQ, result.getElement("pojo.sequence"));
-        Assert.assertEquals(USER, result.getElement("pojo.user"));
+        assertEquals(SEQ, result.getElement("pojo.sequence"));
+        assertEquals(USER, result.getElement("pojo.user"));
         /*
          * serialization compresses numbers to long and float
          * if the number is not greater than MAX integer or float
          */
-        Assert.assertEquals(12345, result.getElement("integer"));
-        Assert.assertEquals(12345, result.getElement("long"));
-        Assert.assertEquals(12.345, result.getElement("float"));
-        Assert.assertEquals(12.345, result.getElement("double"));
+        assertEquals(12345, result.getElement("integer"));
+        assertEquals(12345, result.getElement("long"));
+        assertEquals(12.345, result.getElement("float"));
+        assertEquals(12.345, result.getElement("double"));
     }
 
     @SuppressWarnings("unchecked")
@@ -369,10 +372,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(SEQ, result.get("sequence"));
-        Assert.assertEquals(USER, result.get("user"));
+        assertEquals(SEQ, result.get("sequence"));
+        assertEquals(USER, result.get("user"));
     }
 
     @SuppressWarnings("unchecked")
@@ -392,10 +395,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(SEQ, result.get("sequence"));
-        Assert.assertEquals(USER, result.get("user"));
+        assertEquals(SEQ, result.get("sequence"));
+        assertEquals(USER, result.get("user"));
     }
 
     @SuppressWarnings("unchecked")
@@ -413,13 +416,13 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
-        Assert.assertEquals(SEQ, pw.sequence);
-        Assert.assertEquals(USER, pw.user);
-        Assert.assertEquals("hello-world-one", pw.key1);
-        Assert.assertEquals("hello-world-two", pw.key2);
+        assertEquals(SEQ, pw.sequence);
+        assertEquals(USER, pw.user);
+        assertEquals("hello-world-one", pw.key1);
+        assertEquals("hello-world-two", pw.key2);
     }
 
     @SuppressWarnings("unchecked")
@@ -437,12 +440,12 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertTrue(result.containsKey("data"));
+        assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        Assert.assertEquals(SEQ, pojo.sequence);
-        Assert.assertEquals(USER, pojo.user);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
     }
 
     @SuppressWarnings("unchecked")
@@ -460,13 +463,13 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertTrue(result.containsKey("data"));
+        assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        Assert.assertEquals(SEQ, pojo.sequence);
-        Assert.assertEquals(USER, pojo.user);
-        Assert.assertEquals(3, result.get("n"));
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(3, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")
@@ -484,13 +487,13 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertTrue(result.containsKey("data"));
+        assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        Assert.assertEquals(SEQ, pojo.sequence);
-        Assert.assertEquals(USER, pojo.user);
-        Assert.assertEquals(2, result.get("n"));
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(2, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")
@@ -508,13 +511,13 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertTrue(result.containsKey("data"));
+        assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        Assert.assertEquals(SEQ, pojo.sequence);
-        Assert.assertEquals(USER, pojo.user);
-        Assert.assertEquals(4, result.get("n"));
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(4, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")
@@ -532,13 +535,13 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertTrue(result.containsKey("data"));
+        assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        Assert.assertEquals(SEQ, pojo.sequence);
-        Assert.assertEquals(USER, pojo.user);
-        Assert.assertEquals(4, result.get("n"));
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(4, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")
@@ -556,13 +559,13 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertTrue(result.containsKey("data"));
+        assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        Assert.assertEquals(SEQ, pojo.sequence);
-        Assert.assertEquals(USER, pojo.user);
-        Assert.assertEquals(4, result.get("n"));
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(4, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")
@@ -580,10 +583,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertEquals(400, result.get("status"));
-        Assert.assertEquals("just a test", result.get("message"));
+        assertEquals(400, result.get("status"));
+        assertEquals("just a test", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -599,10 +602,10 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        Assert.assertTrue(res.getBody() instanceof Map);
+        assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(2, ParallelTask.bench.size());
+        assertEquals(2, ParallelTask.bench.size());
         // At the end of parallel execution of 2 tasks, the bench should have received 2 key-values
         Map<String, Object> map1 = ParallelTask.bench.poll(5, TimeUnit.SECONDS);
         Assert.assertNotNull(map1);
@@ -610,9 +613,9 @@ public class FlowTests extends TestBase {
         Map<String, Object> map2 = ParallelTask.bench.poll(5, TimeUnit.SECONDS);
         Assert.assertNotNull(map2);
         consolidated.putAll(map2);
-        Assert.assertEquals(2, consolidated.size());
-        Assert.assertTrue(consolidated.containsKey("key1"));
-        Assert.assertTrue(consolidated.containsKey("key2"));
+        assertEquals(2, consolidated.size());
+        assertTrue(consolidated.containsKey("key1"));
+        assertTrue(consolidated.containsKey("key2"));
     }
 
 }

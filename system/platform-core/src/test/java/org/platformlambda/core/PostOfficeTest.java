@@ -48,6 +48,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.Assert.*;
+
 public class PostOfficeTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(PostOfficeTest.class);
 
@@ -66,12 +68,12 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope httpResponse = new EventEnvelope().setTo("async.http.request").setBody(req);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope response = po.request(httpResponse, 5000).get();
-        Assert.assertTrue(response.getBody() instanceof byte[]);
+        assertTrue(response.getBody() instanceof byte[]);
         if (response.getBody() instanceof byte[] b) {
-            Assert.assertEquals(HELLO, Utility.getInstance().getUTF(b));
+            assertEquals(HELLO, Utility.getInstance().getUTF(b));
         }
         // HTTP response header "x-content-length" is provided by AsyncHttpClient when rendering small payload as bytes
-        Assert.assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
+        assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
     }
 
     @Test
@@ -91,12 +93,12 @@ public class PostOfficeTest extends TestBase {
          * It would look like this:
          * EventEnvelope:285 - Event contains streaming content - stream.869af6eb40f043cfb855b8795df63fde.in
          */
-        Assert.assertNull(response.getBody());
+        assertNull(response.getBody());
         String streamId = response.getHeader("stream");
-        Assert.assertNotNull(streamId);
-        Assert.assertTrue(streamId.startsWith("stream."));
+        assertNotNull(streamId);
+        assertTrue(streamId.startsWith("stream."));
         // HTTP response header "x-content-length" is provided by AsyncHttpClient when rendering small payload as bytes
-        Assert.assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
+        assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
         // Read stream content
         EventEnvelope streamRequest = new EventEnvelope().setTo(streamId).setHeader("type", "read");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -115,7 +117,7 @@ public class PostOfficeTest extends TestBase {
             }
         }
         String content = Utility.getInstance().getUTF(out.toByteArray());
-        Assert.assertEquals(HELLO, content);
+        assertEquals(HELLO, content);
     }
 
     @Test
@@ -166,7 +168,7 @@ public class PostOfficeTest extends TestBase {
         long diff = System.currentTimeMillis() - begin;
         // demonstrate parallelism that the total time consumed should not be too far from the artificial delay
         log.info("Finished in {} ms", diff);
-        Assert.assertEquals(CYCLES, passes.get());
+        assertEquals(CYCLES, passes.get());
     }
 
     @SuppressWarnings("unchecked")
@@ -179,9 +181,9 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(new EventEnvelope().setTo(HELLO_ALIAS).setBody(MESSAGE), TIMEOUT).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> body = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(MESSAGE, body.get("body"));
+        assertEquals(MESSAGE, body.get("body"));
     }
 
 
@@ -194,16 +196,16 @@ public class PostOfficeTest extends TestBase {
         java.util.concurrent.Future<EventEnvelope> future = po.request(new EventEnvelope().setTo(HELLO_ALIAS).setBody(MESSAGE), TIMEOUT);
         assert future != null;
         EventEnvelope response = future.get();
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> body = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(MESSAGE, body.get("body"));
+        assertEquals(MESSAGE, body.get("body"));
     }
 
     @Test
     public void nullRouteListTest() {
         EventEmitter po = EventEmitter.getInstance();
-        Assert.assertFalse(po.exists((String[]) null));
-        Assert.assertFalse(po.exists((String) null));
+        assertFalse(po.exists((String[]) null));
+        assertFalse(po.exists((String) null));
     }
 
     @SuppressWarnings("unchecked")
@@ -218,10 +220,10 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
-        Assert.assertEquals(BODY, result.get("body"));
+        assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
+        assertEquals(BODY, result.get("body"));
     }
 
     @SuppressWarnings("unchecked")
@@ -234,10 +236,10 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(RPC_TIMEOUT_CHECK).setBody(BODY);
         EventEnvelope response = po.request(request, TIMEOUT).get();
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
-        Assert.assertEquals(BODY, result.get("body"));
+        assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
+        assertEquals(BODY, result.get("body"));
     }
 
     @SuppressWarnings("unchecked")
@@ -256,17 +258,17 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(requests, TIMEOUT).onSuccess(bench::offer);
         List<EventEnvelope> responses = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert responses != null;
-        Assert.assertEquals(CYCLE, responses.size());
+        assertEquals(CYCLE, responses.size());
         List<Integer> payloads = new ArrayList<>();
         for (EventEnvelope response: responses) {
-            Assert.assertTrue(response.getBody() instanceof Map);
+            assertTrue(response.getBody() instanceof Map);
             Map<String, Object> result = (Map<String, Object>) response.getBody();
-            Assert.assertTrue(result.containsKey(BODY));
-            Assert.assertTrue(result.get(BODY) instanceof Integer);
+            assertTrue(result.containsKey(BODY));
+            assertTrue(result.get(BODY) instanceof Integer);
             payloads.add((Integer) result.get(BODY));
-            Assert.assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
+            assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
         }
-        Assert.assertEquals(CYCLE, payloads.size());
+        assertEquals(CYCLE, payloads.size());
     }
 
     @SuppressWarnings("unchecked")
@@ -283,17 +285,17 @@ public class PostOfficeTest extends TestBase {
         }
         List<EventEnvelope> responses = po.request(requests, TIMEOUT).get();
         assert responses != null;
-        Assert.assertEquals(CYCLE, responses.size());
+        assertEquals(CYCLE, responses.size());
         List<Integer> payloads = new ArrayList<>();
         for (EventEnvelope response: responses) {
-            Assert.assertTrue(response.getBody() instanceof Map);
+            assertTrue(response.getBody() instanceof Map);
             Map<String, Object> result = (Map<String, Object>) response.getBody();
-            Assert.assertTrue(result.containsKey(BODY));
-            Assert.assertTrue(result.get(BODY) instanceof Integer);
+            assertTrue(result.containsKey(BODY));
+            assertTrue(result.get(BODY) instanceof Integer);
             payloads.add((Integer) result.get(BODY));
-            Assert.assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
+            assertEquals(String.valueOf(TIMEOUT), result.get(EventEmitter.RPC));
         }
-        Assert.assertEquals(CYCLE, payloads.size());
+        assertEquals(CYCLE, payloads.size());
     }
 
     @Test
@@ -306,16 +308,16 @@ public class PostOfficeTest extends TestBase {
         // timeout is returned as a regular event
         java.util.concurrent.Future<EventEnvelope> future = po.request(request, TIMEOUT, false);
         EventEnvelope result = future.get();
-        Assert.assertEquals(408, result.getStatus());
-        Assert.assertEquals("Timeout for "+TIMEOUT+" ms", result.getBody());
+        assertEquals(408, result.getStatus());
+        assertEquals("Timeout for "+TIMEOUT+" ms", result.getBody());
         // timeout is thrown as an ExecutionException wrapping a TimeoutException
-        ExecutionException e = Assert.assertThrows(ExecutionException.class, () ->
+        ExecutionException e = assertThrows(ExecutionException.class, () ->
                 po.request(request, TIMEOUT, true).get());
-        Assert.assertNotNull(e);
-        Assert.assertEquals(ExecutionException.class, e.getClass());
+        assertNotNull(e);
+        assertEquals(ExecutionException.class, e.getClass());
         Throwable ex = e.getCause();
-        Assert.assertEquals(TimeoutException.class, ex.getClass());
-        Assert.assertEquals("Timeout for "+TIMEOUT+" ms", ex.getMessage());
+        assertEquals(TimeoutException.class, ex.getClass());
+        assertEquals("Timeout for "+TIMEOUT+" ms", ex.getMessage());
     }
 
     @Test
@@ -337,19 +339,19 @@ public class PostOfficeTest extends TestBase {
                 if (txPaths.isEmpty()) {
                     txPaths.add(txPath);
                 }
-                Assert.assertNotNull(txPath);
+                assertNotNull(txPath);
                 po.send(txPath, WELCOME.getBytes());
                 po.send(txPath, MESSAGE);
                 po.send(txPath, END);
             }
             if ("string".equals(headers.get("type"))) {
-                Assert.assertTrue(input instanceof String);
+                assertTrue(input instanceof String);
                 String text = (String) input;
-                Assert.assertEquals(MESSAGE, text);
+                assertEquals(MESSAGE, text);
                 bench.offer(true);
             }
             if ("bytes".equals(headers.get("type"))) {
-                Assert.assertTrue(input instanceof byte[]);
+                assertTrue(input instanceof byte[]);
                 welcome.add(util.getUTF( (byte[]) input));
             }
             return true;
@@ -366,8 +368,8 @@ public class PostOfficeTest extends TestBase {
                 Collections.singletonList("ws://127.0.0.1:"+PORT+"/ws/hello"));
         client.start();
         bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertEquals(1, welcome.size());
-        Assert.assertEquals(WELCOME, welcome.getFirst());
+        assertEquals(1, welcome.size());
+        assertEquals(WELCOME, welcome.getFirst());
         client.close();
     }
 
@@ -382,9 +384,9 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertEquals(MESSAGE, response.getBody());
-        Assert.assertEquals(AppException.class, response.getException().getClass());
+        assertEquals(400, response.getStatus());
+        assertEquals(MESSAGE, response.getBody());
+        assertEquals(AppException.class, response.getException().getClass());
         log.info("Exception transported - {}", response.getException().toString());
         log.info("Stack trace transported through the response event:");
         StackTraceElement[] elements = response.getException().getStackTrace();
@@ -407,21 +409,21 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
+        assertEquals(400, response.getStatus());
         // event error is mapped to the root cause
-        Assert.assertEquals(SQL_ERROR, response.getError());
+        assertEquals(SQL_ERROR, response.getError());
         // nested exception is transported by the response event
         Throwable ex = response.getException();
         // immediate exception
-        Assert.assertEquals(AppException.class, ex.getClass());
+        assertEquals(AppException.class, ex.getClass());
         AppException appEx = (AppException) ex;
-        Assert.assertEquals(400, appEx.getStatus());
-        Assert.assertEquals(MESSAGE, appEx.getMessage());
+        assertEquals(400, appEx.getStatus());
+        assertEquals(MESSAGE, appEx.getMessage());
         // nested exception
         Throwable nested = ex.getCause();
-        Assert.assertNotNull(nested);
-        Assert.assertEquals(SQLException.class, nested.getClass());
-        Assert.assertEquals(SQL_ERROR, nested.getMessage());
+        assertNotNull(nested);
+        assertEquals(SQLException.class, nested.getClass());
+        assertEquals(SQL_ERROR, nested.getMessage());
     }
 
     @Test
@@ -431,7 +433,7 @@ public class PostOfficeTest extends TestBase {
         Future<Boolean> status = platform.waitForProvider("cloud.connector", 10);
         status.onSuccess(bench::offer);
         Boolean result = bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertEquals(Boolean.TRUE, result);
+        assertEquals(Boolean.TRUE, result);
     }
 
     @Test
@@ -441,7 +443,7 @@ public class PostOfficeTest extends TestBase {
         Future<Boolean> status = platform.waitForProvider("no.such.service", 1);
         status.onSuccess(bench::offer);
         Boolean result = bench.poll(12, TimeUnit.SECONDS);
-        Assert.assertNotEquals(Boolean.TRUE, result);
+        assertNotEquals(Boolean.TRUE, result);
     }
 
     @Test
@@ -464,12 +466,12 @@ public class PostOfficeTest extends TestBase {
         Future<Boolean> status = platform.waitForProvider(NO_OP, 5);
         status.onSuccess(bench1::offer);
         Boolean result = bench1.poll(12, TimeUnit.SECONDS);
-        Assert.assertEquals(Boolean.TRUE, result);
+        assertEquals(Boolean.TRUE, result);
         EventEnvelope request = new EventEnvelope().setTo(NO_OP).setBody("ok");
         po.asyncRequest(request, 5000).onSuccess(bench2::offer);
         EventEnvelope response = bench2.poll(12, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(true, response.getBody());
+        assertEquals(true, response.getBody());
         platform.release(NO_OP);
         platform.release(PENDING_SERVICE);
     }
@@ -485,23 +487,23 @@ public class PostOfficeTest extends TestBase {
          * for this unit test.
          */
         Platform platform = Platform.getInstance();
-        Assert.assertEquals(APP_ID, platform.getAppId());
+        assertEquals(APP_ID, platform.getAppId());
         Utility util = Utility.getInstance();
         // validate the hashing algorithm
         String id = util.getUuid();
         byte[] hash = crypto.getSHA256(util.getUTF(platform.getAppId()));
         id = util.bytes2hex(hash).substring(0, id.length());
         String originId = util.getDateOnly(new Date()) + id;
-        Assert.assertEquals(platform.getOrigin(), originId);
+        assertEquals(platform.getOrigin(), originId);
     }
 
     @Test
     public void registerInvalidRoute() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("invalidFormat", noOp, 1));
-        Assert.assertEquals("Invalid route name - use 0-9, a-z, period, hyphen or underscore characters",
+        assertEquals("Invalid route name - use 0-9, a-z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
@@ -509,35 +511,35 @@ public class PostOfficeTest extends TestBase {
     public void registerNullRoute() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register(null, noOp, 1));
-        Assert.assertEquals("Missing service routing path", ex.getMessage());
+        assertEquals("Missing service routing path", ex.getMessage());
     }
 
     @Test
     public void registerNullService() {
         Platform platform = Platform.getInstance();
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("no.service", null, 1));
-        Assert.assertEquals("Missing LambdaFunction instance", ex.getMessage());
+        assertEquals("Missing LambdaFunction instance", ex.getMessage());
     }
 
     @Test
     public void reservedExtensionNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("nothing.com", noOp, 1));
-        Assert.assertEquals("Invalid route nothing.com which is use a reserved extension", ex.getMessage());
+        assertEquals("Invalid route nothing.com which is use a reserved extension", ex.getMessage());
     }
 
     @Test
     public void reservedFilenameNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("thumbs.db", noOp, 1));
-        Assert.assertEquals("Invalid route thumbs.db which is a reserved Windows filename", ex.getMessage());
+        assertEquals("Invalid route thumbs.db which is a reserved Windows filename", ex.getMessage());
     }
 
     @Test
@@ -554,13 +556,13 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope result = bench.poll(10, TimeUnit.SECONDS);
         assert result != null;
-        Assert.assertEquals(true, result.getBody());
+        assertEquals(true, result.getBody());
         // reload as private
         platform.registerPrivate(SERVICE, FALSE_FUNCTION, 1);
         po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(false, response.getBody());
+        assertEquals(false, response.getBody());
         // convert to public
         platform.makePublic(SERVICE);
         platform.release(SERVICE);
@@ -570,9 +572,9 @@ public class PostOfficeTest extends TestBase {
     public void emptyRouteNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("", noOp, 1));
-        Assert.assertEquals("Invalid route name - use 0-9, a-z, period, hyphen or underscore characters",
+        assertEquals("Invalid route name - use 0-9, a-z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
@@ -580,7 +582,7 @@ public class PostOfficeTest extends TestBase {
     public void checkLocalRouting() {
         Platform platform = Platform.getInstance();
         ConcurrentMap<String, ServiceDef> routes = platform.getLocalRoutingTable();
-        Assert.assertFalse(routes.isEmpty());
+        assertFalse(routes.isEmpty());
     }
 
     @Test
@@ -588,29 +590,29 @@ public class PostOfficeTest extends TestBase {
         BlockingQueue<List<String>> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
-        Assert.assertFalse(po.exists());
-        Assert.assertTrue(po.exists(HELLO_WORLD));
-        Assert.assertFalse(po.exists(HELLO_WORLD, "unknown.service"));
-        Assert.assertFalse(po.exists(HELLO_WORLD, "unknown.1", "unknown.2"));
+        assertFalse(po.exists());
+        assertTrue(po.exists(HELLO_WORLD));
+        assertFalse(po.exists(HELLO_WORLD, "unknown.service"));
+        assertFalse(po.exists(HELLO_WORLD, "unknown.1", "unknown.2"));
         Future<List<String>> asyncResponse1 = po.search(HELLO_WORLD);
         asyncResponse1.onSuccess(bench::offer);
         List<String> origins = bench.poll(5, TimeUnit.SECONDS);
         assert origins != null;
-        Assert.assertTrue(origins.contains(platform.getOrigin()));
+        assertTrue(origins.contains(platform.getOrigin()));
         Future<List<String>> asyncResponse2 = po.search(HELLO_WORLD, true);
         asyncResponse2.onSuccess(bench::offer);
         List<String> remoteOrigins = bench.poll(5, TimeUnit.SECONDS);
         assert remoteOrigins != null;
-        Assert.assertTrue(remoteOrigins.isEmpty());
-        Assert.assertTrue(po.exists(platform.getOrigin()));
+        assertTrue(remoteOrigins.isEmpty());
+        assertTrue(po.exists(platform.getOrigin()));
     }
 
     @Test
     public void testNonExistRoute() {
         EventEmitter po = EventEmitter.getInstance();
-        IOException ex = Assert.assertThrows(IOException.class, () ->
+        IOException ex = assertThrows(IOException.class, () ->
                 po.send("undefined.route", "OK"));
-        Assert.assertEquals("Route undefined.route not found", ex.getMessage());
+        assertEquals("Route undefined.route not found", ex.getMessage());
     }
 
     @Test
@@ -625,20 +627,20 @@ public class PostOfficeTest extends TestBase {
                 .setTraceId(TRACE_ID).setTracePath("GET /2").setBody(2);
         String id1 = po.sendLater(event1, new Date(now+(FIVE_SECONDS/10)));
         String id2 = po.sendLater(event2, new Date(now+FIVE_SECONDS));
-        Assert.assertEquals(event1.getId(), id1);
-        Assert.assertEquals(event2.getId(), id2);
+        assertEquals(event1.getId(), id1);
+        assertEquals(event2.getId(), id2);
         List<String> future1 = po.getFutureEvents(HELLO_WORLD);
-        Assert.assertEquals(2, future1.size());
-        Assert.assertTrue(future1.contains(id1));
-        Assert.assertTrue(future1.contains(id2));
+        assertEquals(2, future1.size());
+        assertTrue(future1.contains(id1));
+        assertTrue(future1.contains(id2));
         List<String> futureRoutes = po.getAllFutureEvents();
-        Assert.assertTrue(futureRoutes.contains(HELLO_WORLD));
+        assertTrue(futureRoutes.contains(HELLO_WORLD));
         Date time = po.getFutureEventTime(id2);
         long diff = time.getTime() - now;
-        Assert.assertEquals(FIVE_SECONDS, diff);
+        assertEquals(FIVE_SECONDS, diff);
         po.cancelFutureEvent(id2);
         List<String> futureEvents = po.getFutureEvents(HELLO_WORLD);
-        Assert.assertTrue(futureEvents.contains(id1));
+        assertTrue(futureEvents.contains(id1));
         po.cancelFutureEvent(id1);
     }
 
@@ -648,9 +650,9 @@ public class PostOfficeTest extends TestBase {
         String ANOTHER_FUNCTION = "another.function";
         EventEmitter po = EventEmitter.getInstance();
         List<String> routes = po.getJournaledRoutes();
-        Assert.assertEquals(2, routes.size());
-        Assert.assertEquals(ANOTHER_FUNCTION, routes.get(0));
-        Assert.assertEquals(MY_FUNCTION, routes.get(1));
+        assertEquals(2, routes.size());
+        assertEquals(ANOTHER_FUNCTION, routes.get(0));
+        assertEquals(MY_FUNCTION, routes.get(1));
     }
 
     @SuppressWarnings("unchecked")
@@ -688,13 +690,13 @@ public class PostOfficeTest extends TestBase {
         Map<String, Object> result = bench.poll(10, TimeUnit.SECONDS);
         platform.release(TRANSACTION_JOURNAL_RECORDER);
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals(MY_FUNCTION, multi.getElement("trace.service"));
-        Assert.assertEquals(FROM, multi.getElement("trace.from"));
-        Assert.assertEquals(traceId, multi.getElement("trace.id"));
-        Assert.assertEquals(true, multi.getElement("trace.success"));
-        Assert.assertEquals(HELLO, multi.getElement("journal.input.body"));
-        Assert.assertEquals(RETURN_VALUE, multi.getElement("journal.output.body"));
-        Assert.assertEquals(WORLD, multi.getElement("annotations.hello"));
+        assertEquals(MY_FUNCTION, multi.getElement("trace.service"));
+        assertEquals(FROM, multi.getElement("trace.from"));
+        assertEquals(traceId, multi.getElement("trace.id"));
+        assertEquals(true, multi.getElement("trace.success"));
+        assertEquals(HELLO, multi.getElement("journal.input.body"));
+        assertEquals(RETURN_VALUE, multi.getElement("journal.output.body"));
+        assertEquals(WORLD, multi.getElement("annotations.hello"));
     }
 
     @SuppressWarnings("unchecked")
@@ -729,22 +731,22 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope event = new EventEnvelope().setTo(MY_FUNCTION).setBody(HELLO);
         po.asyncRequest(event, 8000)
             .onSuccess(response -> {
-                Assert.assertEquals(response.getBody(), RETURN_VALUE);
+                assertEquals(response.getBody(), RETURN_VALUE);
                 log.info("RPC response verified");
             });
         // wait for function completion
         Map<String, Object> result = bench.poll(10, TimeUnit.SECONDS);
         platform.release(TRANSACTION_JOURNAL_RECORDER);
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals(MY_FUNCTION, multi.getElement("trace.service"));
-        Assert.assertEquals(FROM, multi.getElement("trace.from"));
-        Assert.assertEquals(traceId, multi.getElement("trace.id"));
-        Assert.assertEquals(true, multi.getElement("trace.success"));
-        Assert.assertEquals(HELLO, multi.getElement("journal.input.body"));
-        Assert.assertEquals(RETURN_VALUE, multi.getElement("journal.output.body"));
-        Assert.assertEquals(WORLD, multi.getElement("annotations.hello"));
+        assertEquals(MY_FUNCTION, multi.getElement("trace.service"));
+        assertEquals(FROM, multi.getElement("trace.from"));
+        assertEquals(traceId, multi.getElement("trace.id"));
+        assertEquals(true, multi.getElement("trace.success"));
+        assertEquals(HELLO, multi.getElement("journal.input.body"));
+        assertEquals(RETURN_VALUE, multi.getElement("journal.output.body"));
+        assertEquals(WORLD, multi.getElement("annotations.hello"));
         // round trip latency is NOT available in journal. It is only delivered to "distributed.trace.forwarder"
-        Assert.assertFalse(multi.exists("trace.round_trip"));
+        assertFalse(multi.exists("trace.round_trip"));
     }
 
     @SuppressWarnings("unchecked")
@@ -782,11 +784,11 @@ public class PostOfficeTest extends TestBase {
         platform.release(DISTRIBUTED_TRACE_FORWARDER);
         platform.release(SIMPLE_FUNCTION);
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals(SIMPLE_FUNCTION, multi.getElement("trace.service"));
-        Assert.assertEquals(FROM, multi.getElement("trace.from"));
-        Assert.assertEquals(traceId, multi.getElement("trace.id"));
-        Assert.assertEquals(true, multi.getElement("trace.success"));
-        Assert.assertEquals(WORLD, multi.getElement("annotations.hello"));
+        assertEquals(SIMPLE_FUNCTION, multi.getElement("trace.service"));
+        assertEquals(FROM, multi.getElement("trace.from"));
+        assertEquals(traceId, multi.getElement("trace.id"));
+        assertEquals(true, multi.getElement("trace.success"));
+        assertEquals(WORLD, multi.getElement("annotations.hello"));
     }
 
     @SuppressWarnings("unchecked")
@@ -820,7 +822,7 @@ public class PostOfficeTest extends TestBase {
         PostOffice po = new PostOffice(FROM, traceId, "GET /api/hello/telemetry");
         po.asyncRequest(new EventEnvelope().setTo(SIMPLE_FUNCTION).setBody(HELLO), 8000)
             .onSuccess(response -> {
-               Assert.assertEquals(response.getBody(), RETURN_VALUE);
+               assertEquals(response.getBody(), RETURN_VALUE);
                log.info("RPC response verified");
             });
         // wait for function completion
@@ -828,13 +830,13 @@ public class PostOfficeTest extends TestBase {
         platform.release(DISTRIBUTED_TRACE_FORWARDER);
         platform.release(SIMPLE_FUNCTION);
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals(SIMPLE_FUNCTION, multi.getElement("trace.service"));
-        Assert.assertEquals(FROM, multi.getElement("trace.from"));
-        Assert.assertEquals(traceId, multi.getElement("trace.id"));
-        Assert.assertEquals(true, multi.getElement("trace.success"));
-        Assert.assertEquals(WORLD, multi.getElement("annotations.hello"));
+        assertEquals(SIMPLE_FUNCTION, multi.getElement("trace.service"));
+        assertEquals(FROM, multi.getElement("trace.from"));
+        assertEquals(traceId, multi.getElement("trace.id"));
+        assertEquals(true, multi.getElement("trace.success"));
+        assertEquals(WORLD, multi.getElement("annotations.hello"));
         // round trip latency is available because RPC metrics are delivered to the caller
-        Assert.assertTrue(multi.exists("trace.round_trip"));
+        assertTrue(multi.exists("trace.round_trip"));
     }
 
     @Test
@@ -857,7 +859,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(TRACE_DETECTOR).setBody("ok");
         EventEnvelope result = po.request(req, 5000).get();
         platform.release(TRACE_DETECTOR);
-        Assert.assertEquals(Boolean.TRUE, result.getBody());
+        assertEquals(Boolean.TRUE, result.getBody());
     }
 
     @Test
@@ -868,7 +870,7 @@ public class PostOfficeTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", TRACE_ID, TRACE_PATH);
         EventEnvelope req = new EventEnvelope().setTo(COROUTINE_TRACE_DETECTOR).setBody("ok");
         EventEnvelope result = po.request(req, 5000).get();
-        Assert.assertEquals(Boolean.TRUE, result.getBody());
+        assertEquals(Boolean.TRUE, result.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -880,18 +882,18 @@ public class PostOfficeTest extends TestBase {
         Future<EventEnvelope> asyncResponse = po.ping(HELLO_WORLD, 5000);
         asyncResponse.onSuccess(bench::offer);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
+        assertNotNull(result);
         // ping does not execute the target function so execution time should be zero
-        Assert.assertEquals(0, result.getExecutionTime(), 0.0);
-        Assert.assertTrue(result.getRoundTrip() >= 0);
-        Assert.assertTrue(result.getBody() instanceof Map);
+        assertEquals(0, result.getExecutionTime(), 0.0);
+        assertTrue(result.getRoundTrip() >= 0);
+        assertTrue(result.getBody() instanceof Map);
         Map<String, Object> response = (Map<String, Object>) result.getBody();
-        Assert.assertTrue(response.containsKey("time"));
-        Assert.assertTrue(response.containsKey("service"));
-        Assert.assertEquals("pong", response.get("type"));
-        Assert.assertEquals(platform.getName(), response.get("app"));
-        Assert.assertEquals(platform.getOrigin(), response.get("origin"));
-        Assert.assertEquals("This response is generated when you send an event without headers and body",
+        assertTrue(response.containsKey("time"));
+        assertTrue(response.containsKey("service"));
+        assertEquals("pong", response.get("type"));
+        assertEquals(platform.getName(), response.get("app"));
+        assertEquals(platform.getOrigin(), response.get("origin"));
+        assertEquals("This response is generated when you send an event without headers and body",
                 response.get("reason"));
         log.info("Ping successfully - {}", response.get("message"));
     }
@@ -916,7 +918,7 @@ public class PostOfficeTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", "222", "/broadcast/test");
         po.send(new EventEnvelope().setTo(HELLO_WORLD).setBody(MESSAGE).setReplyTo(CALLBACK));
         String result = bench.poll(10, TimeUnit.SECONDS);
-        Assert.assertEquals(DONE, result);
+        assertEquals(DONE, result);
         // these are drop-n-forget since there are no reply-to address
         po.send(HELLO_WORLD, new Kv("test", "message"), new Kv("key", "value"));
         po.send(HELLO_WORLD, "some message", new Kv("hello", "world"));
@@ -926,7 +928,7 @@ public class PostOfficeTest extends TestBase {
         // this one has replyTo
         po.broadcast(new EventEnvelope().setTo(HELLO_WORLD).setBody(MESSAGE).setReplyTo(CALLBACK));
         result = bench.poll(10, TimeUnit.SECONDS);
-        Assert.assertEquals(DONE, result);
+        assertEquals(DONE, result);
         platform.release(CALLBACK);
     }
 
@@ -947,7 +949,7 @@ public class PostOfficeTest extends TestBase {
         emitter.send(FIRST, Optional.empty());
         String result = interceptorBench.poll(5, TimeUnit.SECONDS);
         // validate the "from" address
-        Assert.assertEquals(FIRST, result);
+        assertEquals(FIRST, result);
     }
 
     @Test
@@ -958,8 +960,8 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 800).onFailure(bench::offer);
         Throwable ex = bench.poll(10, TimeUnit.SECONDS);
         assert ex != null;
-        Assert.assertEquals("Timeout for 800 ms", ex.getMessage());
-        Assert.assertEquals(TimeoutException.class, ex.getClass());
+        assertEquals("Timeout for 800 ms", ex.getMessage());
+        assertEquals(TimeoutException.class, ex.getClass());
     }
 
     @Test
@@ -972,9 +974,9 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 800).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertEquals("just a test", response.getError());
-        Assert.assertEquals(AppException.class, response.getException().getClass());
+        assertEquals(400, response.getStatus());
+        assertEquals("just a test", response.getError());
+        assertEquals(AppException.class, response.getException().getClass());
     }
 
     @Test
@@ -987,9 +989,9 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 800).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(input, result.get("body"));
+        assertEquals(input, result.get("body"));
     }
 
     @Test
@@ -1009,9 +1011,9 @@ public class PostOfficeTest extends TestBase {
             success.offer(event);
         });
         EventEnvelope result = success.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(200, result.getStatus());
-        Assert.assertEquals(TEXT, result.getBody());
+        assertNotNull(result);
+        assertEquals(200, result.getStatus());
+        assertEquals(TEXT, result.getBody());
     }
 
     @Test
@@ -1033,9 +1035,9 @@ public class PostOfficeTest extends TestBase {
             completion.offer(event);
         });
         EventEnvelope result = completion.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(STATUS, result.getStatus());
-        Assert.assertEquals(ERROR, result.getBody());
+        assertNotNull(result);
+        assertEquals(STATUS, result.getStatus());
+        assertEquals(ERROR, result.getBody());
     }
 
     @Test
@@ -1063,12 +1065,12 @@ public class PostOfficeTest extends TestBase {
             success.offer(event);
         });
         List<EventEnvelope> result = success.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(PARALLEL_INSTANCES, result.size());
+        assertNotNull(result);
+        assertEquals(PARALLEL_INSTANCES, result.size());
         for (EventEnvelope r: result) {
-            Assert.assertTrue(r.getBody() instanceof String);
+            assertTrue(r.getBody() instanceof String);
             String text = (String) r.getBody();
-            Assert.assertTrue(text.startsWith(TEXT));
+            assertTrue(text.startsWith(TEXT));
             log.info("Received response #{} {} - {}", r.getCorrelationId(), r.getId(), text);
         }
     }
@@ -1097,9 +1099,9 @@ public class PostOfficeTest extends TestBase {
         Future<List<EventEnvelope>> future = po.asyncRequest(requests, TIMEOUT, true);
         future.onFailure(exception::offer);
         Throwable e = exception.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(e);
-        Assert.assertEquals(TimeoutException.class, e.getClass());
-        Assert.assertEquals("Timeout for "+TIMEOUT+" ms", e.getMessage());
+        assertNotNull(e);
+        assertEquals(TimeoutException.class, e.getClass());
+        assertEquals("Timeout for "+TIMEOUT+" ms", e.getMessage());
         platform.release(SERVICE);
     }
 
@@ -1129,10 +1131,10 @@ public class PostOfficeTest extends TestBase {
         future.onSuccess(result::offer);
         List<EventEnvelope> responses = result.poll(10, TimeUnit.SECONDS);
         assert responses != null;
-        Assert.assertEquals(PARALLEL_INSTANCES, responses.size());
+        assertEquals(PARALLEL_INSTANCES, responses.size());
         for (EventEnvelope evt: responses) {
-            Assert.assertNotNull(evt.getBody());
-            Assert.assertTrue(evt.getBody().toString().startsWith(TEXT));
+            assertNotNull(evt.getBody());
+            assertTrue(evt.getBody().toString().startsWith(TEXT));
         }
         platform.release(SERVICE);
     }
@@ -1148,10 +1150,10 @@ public class PostOfficeTest extends TestBase {
         EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        Assert.assertEquals(2, map.getElement("body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("headers.body"));
+        assertEquals(2, map.getElement("body"));
+        assertEquals(HELLO_WORLD, map.getElement("headers.body"));
     }
 
     @Test
@@ -1168,8 +1170,8 @@ public class PostOfficeTest extends TestBase {
         EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(408, response.getStatus());
-        Assert.assertEquals("Timeout for 500 ms", response.getError());
+        assertEquals(408, response.getStatus());
+        assertEquals("Timeout for 500 ms", response.getError());
     }
 
     @SuppressWarnings("unchecked")
@@ -1186,21 +1188,21 @@ public class PostOfficeTest extends TestBase {
         EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        Assert.assertEquals(4, map.getMap().size());
-        Assert.assertEquals(0, map.getElement("cid-0.body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("cid-0.headers.body"));
-        Assert.assertEquals("true", map.getElement("cid-0.headers." + FORK_N_JOIN));
-        Assert.assertEquals(1, map.getElement("cid-1.body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("cid-1.headers.body"));
-        Assert.assertEquals("true", map.getElement("cid-1.headers." + FORK_N_JOIN));
-        Assert.assertEquals(2, map.getElement("cid-2.body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("cid-2.headers.body"));
-        Assert.assertEquals("true", map.getElement("cid-2.headers." + FORK_N_JOIN));
-        Assert.assertEquals(3, map.getElement("cid-3.body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("cid-3.headers.body"));
-        Assert.assertEquals("true", map.getElement("cid-3.headers." + FORK_N_JOIN));
+        assertEquals(4, map.getMap().size());
+        assertEquals(0, map.getElement("cid-0.body"));
+        assertEquals(HELLO_WORLD, map.getElement("cid-0.headers.body"));
+        assertEquals("true", map.getElement("cid-0.headers." + FORK_N_JOIN));
+        assertEquals(1, map.getElement("cid-1.body"));
+        assertEquals(HELLO_WORLD, map.getElement("cid-1.headers.body"));
+        assertEquals("true", map.getElement("cid-1.headers." + FORK_N_JOIN));
+        assertEquals(2, map.getElement("cid-2.body"));
+        assertEquals(HELLO_WORLD, map.getElement("cid-2.headers.body"));
+        assertEquals("true", map.getElement("cid-2.headers." + FORK_N_JOIN));
+        assertEquals(3, map.getElement("cid-3.body"));
+        assertEquals(HELLO_WORLD, map.getElement("cid-3.headers.body"));
+        assertEquals("true", map.getElement("cid-3.headers." + FORK_N_JOIN));
     }
 
     @SuppressWarnings("unchecked")
@@ -1217,16 +1219,16 @@ public class PostOfficeTest extends TestBase {
         EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         // since 2 requests will time out with artificial delay of one second, there will only be 2 responses.
-        Assert.assertEquals(2, map.getMap().size());
-        Assert.assertEquals(1, map.getElement("cid-1.body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("cid-1.headers.body"));
-        Assert.assertEquals("true", map.getElement("cid-1.headers." + FORK_N_JOIN));
-        Assert.assertEquals(3, map.getElement("cid-3.body"));
-        Assert.assertEquals(HELLO_WORLD, map.getElement("cid-3.headers.body"));
-        Assert.assertEquals("true", map.getElement("cid-3.headers." + FORK_N_JOIN));
+        assertEquals(2, map.getMap().size());
+        assertEquals(1, map.getElement("cid-1.body"));
+        assertEquals(HELLO_WORLD, map.getElement("cid-1.headers.body"));
+        assertEquals("true", map.getElement("cid-1.headers." + FORK_N_JOIN));
+        assertEquals(3, map.getElement("cid-3.body"));
+        assertEquals(HELLO_WORLD, map.getElement("cid-3.headers.body"));
+        assertEquals("true", map.getElement("cid-3.headers." + FORK_N_JOIN));
     }
 
     @Test
@@ -1240,10 +1242,10 @@ public class PostOfficeTest extends TestBase {
         Platform platform = Platform.getInstance();
         LambdaFunction tier2 = (headers, input, instance) -> {
             PostOffice po = new PostOffice(headers, instance);
-            Assert.assertEquals(ROUTE_TWO, po.getRoute());
-            Assert.assertEquals(TRACE_ID, po.getTraceId());
+            assertEquals(ROUTE_TWO, po.getRoute());
+            assertEquals(TRACE_ID, po.getTraceId());
             // annotations are local to a service and should not be transported to the next service
-            Assert.assertTrue(po.getTrace().annotations.isEmpty());
+            assertTrue(po.getTrace().annotations.isEmpty());
             return po.getTraceId();
         };
         platform.register(ROUTE_TWO, tier2, 1);
@@ -1256,13 +1258,13 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(event, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        Assert.assertEquals("world", map.getElement("headers.hello"));
-        Assert.assertEquals(testMessage, map.getElement("body"));
-        Assert.assertEquals(TRACE_ID, map.getElement("trace_id"));
-        Assert.assertEquals(TRACE_PATH, map.getElement("trace_path"));
-        Assert.assertEquals(ROUTE_ONE, map.getElement("route_one"));
+        assertEquals("world", map.getElement("headers.hello"));
+        assertEquals(testMessage, map.getElement("body"));
+        assertEquals(TRACE_ID, map.getElement("trace_id"));
+        assertEquals(TRACE_PATH, map.getElement("trace_path"));
+        assertEquals(ROUTE_ONE, map.getElement("route_one"));
     }
 
     @Test
@@ -1276,11 +1278,11 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 800).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(input, result.get("body"));
+        assertEquals(input, result.get("body"));
         Map<String, String> list = po.getRouteSubstitutionList();
-        Assert.assertTrue(list.containsKey("hello.test"));
+        assertTrue(list.containsKey("hello.test"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1293,20 +1295,20 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("UP", map.get("status"));
-        Assert.assertEquals("platform-core", map.get("name"));
-        Assert.assertEquals(platform.getOrigin(), map.get("origin"));
+        assertEquals("UP", map.get("status"));
+        assertEquals("platform-core", map.get("name"));
+        assertEquals(platform.getOrigin(), map.get("origin"));
         Object dependency = map.get("dependency");
-        Assert.assertTrue(dependency instanceof List);
+        assertTrue(dependency instanceof List);
         List<Map<String, Object>> dependencyList = (List<Map<String, Object>>) dependency;
-        Assert.assertEquals(1, dependencyList.size());
+        assertEquals(1, dependencyList.size());
         Map<String, Object> health = dependencyList.getFirst();
-        Assert.assertEquals("mock.connector", health.get("service"));
-        Assert.assertEquals("mock.topic", health.get("topics"));
-        Assert.assertEquals("fine", health.get("message"));
-        Assert.assertEquals("true", health.get("required").toString());
+        assertEquals("mock.connector", health.get("service"));
+        assertEquals("mock.topic", health.get("topics"));
+        assertEquals("fine", health.get("message"));
+        assertEquals("true", health.get("required").toString());
     }
 
     @SuppressWarnings("unchecked")
@@ -1318,14 +1320,14 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertTrue(result.containsKey("app"));
-        Assert.assertTrue(result.containsKey("memory"));
-        Assert.assertTrue(result.containsKey("personality"));
-        Assert.assertTrue(result.containsKey("vm"));
-        Assert.assertTrue(result.containsKey("streams"));
-        Assert.assertTrue(result.containsKey("origin"));
+        assertTrue(result.containsKey("app"));
+        assertTrue(result.containsKey("memory"));
+        assertTrue(result.containsKey("personality"));
+        assertTrue(result.containsKey("vm"));
+        assertTrue(result.containsKey("streams"));
+        assertTrue(result.containsKey("origin"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1337,10 +1339,10 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertTrue(result.containsKey("app"));
-        Assert.assertTrue(result.containsKey("library"));
+        assertTrue(result.containsKey("app"));
+        assertTrue(result.containsKey("library"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1354,13 +1356,13 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap multi = new MultiLevelMap((Map<String, Object>) response.getBody());
         Object journalRoutes = multi.getElement("journal");
-        Assert.assertTrue(journalRoutes instanceof List);
+        assertTrue(journalRoutes instanceof List);
         List<String> routes = (List<String>) journalRoutes;
-        Assert.assertTrue(routes.contains(MY_FUNCTION));
-        Assert.assertTrue(routes.contains(ANOTHER_FUNCTION));
+        assertTrue(routes.contains(MY_FUNCTION));
+        assertTrue(routes.contains(ANOTHER_FUNCTION));
     }
 
     @Test
@@ -1372,7 +1374,7 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals("OK", response.getBody());
+        assertEquals("OK", response.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -1385,11 +1387,11 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertTrue(result.containsKey("app"));
-        Assert.assertTrue(result.containsKey("routing"));
-        Assert.assertTrue(result.containsKey("env"));
+        assertTrue(result.containsKey("app"));
+        assertTrue(result.containsKey("routing"));
+        assertTrue(result.containsKey("env"));
     }
 
     @Test
@@ -1404,7 +1406,7 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(false, response.getBody());
+        assertEquals(false, response.getBody());
     }
 
     @Test
@@ -1418,7 +1420,7 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(MESSAGE, response.getBody());
+        assertEquals(MESSAGE, response.getBody());
     }
 
     @Test
@@ -1472,9 +1474,9 @@ public class PostOfficeTest extends TestBase {
         po.send(new EventEnvelope().setTo(POJO_HAPPY_CASE).setReplyTo(SIMPLE_CALLBACK).setBody(HELLO)
                         .setFrom("unit.test").setTrace(TRACE_ID, "HAPPY /10000"));
         Object result = bench.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(PoJo.class, result.getClass());
-        Assert.assertEquals(HELLO, ((PoJo) result).getName());
+        assertNotNull(result);
+        assertEquals(PoJo.class, result.getClass());
+        assertEquals(HELLO, ((PoJo) result).getName());
         platform.release(POJO_HAPPY_CASE);
         platform.release(SIMPLE_CALLBACK);
     }
@@ -1494,11 +1496,11 @@ public class PostOfficeTest extends TestBase {
         po.send(new EventEnvelope().setTo(POJO_ERROR_CASE).setReplyTo(SIMPLE_CALLBACK).setBody(HELLO)
                 .setTrace(TRACE_ID, "CAST /30000"));
         Object result = bench.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(AppException.class, result.getClass());
+        assertNotNull(result);
+        assertEquals(AppException.class, result.getClass());
         AppException ex = (AppException) result;
-        Assert.assertEquals(500, ex.getStatus());
-        Assert.assertTrue(ex.getMessage().contains("cannot be cast to"));
+        assertEquals(500, ex.getStatus());
+        assertTrue(ex.getMessage().contains("cannot be cast to"));
         platform.release(POJO_ERROR_CASE);
         platform.release(SIMPLE_CALLBACK);
     }
@@ -1524,29 +1526,29 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // for security, automatic PoJo class restore is disabled
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         // original PoJo class name is transported by the event envelope
-        Assert.assertEquals(PoJo.class.getName(), response.getType());
+        assertEquals(PoJo.class.getName(), response.getType());
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(response.getBody(), PoJo.class);
-        Assert.assertEquals(now, pojo.getDate());
-        Assert.assertEquals(time, pojo.getTime());
-        Assert.assertEquals(HELLO_WORLD, pojo.getName());
+        assertEquals(now, pojo.getDate());
+        assertEquals(time, pojo.getTime());
+        assertEquals(HELLO_WORLD, pojo.getName());
         // default values in PoJo
-        Assert.assertEquals(0, pojo.getNumber());
-        Assert.assertEquals(0L, pojo.getLongNumber());
+        assertEquals(0, pojo.getNumber());
+        assertEquals(0L, pojo.getLongNumber());
         // the demo function is designed to return its function execution types
-        Assert.assertEquals("true", response.getHeader("coroutine"));
-        Assert.assertEquals("false", response.getHeader("suspend"));
-        Assert.assertEquals("false", response.getHeader("interceptor"));
-        Assert.assertEquals("true", response.getHeader("tracing"));
+        assertEquals("true", response.getHeader("coroutine"));
+        assertEquals("false", response.getHeader("suspend"));
+        assertEquals("false", response.getHeader("interceptor"));
+        assertEquals("true", response.getHeader("tracing"));
         // the demo function will also echo the READ only route, trace ID and path
-        Assert.assertEquals(AUTO_MAPPING, response.getHeader("route"));
-        Assert.assertEquals(TRACE_ID, response.getHeader("trace_id"));
-        Assert.assertEquals(TRACE_PATH, response.getHeader("trace_path"));
+        assertEquals(AUTO_MAPPING, response.getHeader("route"));
+        assertEquals(TRACE_ID, response.getHeader("trace_id"));
+        assertEquals(TRACE_PATH, response.getHeader("trace_path"));
         // the system will filter out reserved metadata - my_route, my_trace_id, my_trace_path
-        Assert.assertNull(response.getHeader("my_route"));
-        Assert.assertNull(response.getHeader("my_trace_id"));
-        Assert.assertNull(response.getHeader("my_trace_path"));
+        assertNull(response.getHeader("my_route"));
+        assertNull(response.getHeader("my_trace_id"));
+        assertNull(response.getHeader("my_trace_path"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1561,14 +1563,14 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         Map<String, Object> map = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(number, map.get("body"));
+        assertEquals(number, map.get("body"));
         Date now = new Date();
         request = new EventEnvelope().setTo(HELLO_WORLD).setBody(now);
         po.asyncRequest(request, 5000).onSuccess(bench::offer);
         response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         map = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(Utility.getInstance().date2str(now), map.get("body"));
+        assertEquals(Utility.getInstance().date2str(now), map.get("body"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1583,27 +1585,27 @@ public class PostOfficeTest extends TestBase {
         // test java user function
         EventEnvelope result1 = po.request(
                 new EventEnvelope().setTo("custom.serializer.service.java").setBody(pojo), 5000).get();
-        Assert.assertTrue(result1.getBody() instanceof Map);
+        assertTrue(result1.getBody() instanceof Map);
         Map<String, Object> data1 = (Map<String, Object>) result1.getBody();
-        Assert.assertEquals(pojo.name, data1.get("name"));
-        Assert.assertEquals(pojo.address, data1.get("address"));
-        Assert.assertEquals(pojo.telephone, data1.get("telephone"));
+        assertEquals(pojo.name, data1.get("name"));
+        assertEquals(pojo.address, data1.get("address"));
+        assertEquals(pojo.telephone, data1.get("telephone"));
         SimplePoJo responsePoJo1 = po.getResponseBodyAsPoJo(result1, SimplePoJo.class);
-        Assert.assertEquals(pojo.name, responsePoJo1.name);
-        Assert.assertEquals(pojo.address, responsePoJo1.address);
-        Assert.assertEquals(pojo.telephone, responsePoJo1.telephone);
+        assertEquals(pojo.name, responsePoJo1.name);
+        assertEquals(pojo.address, responsePoJo1.address);
+        assertEquals(pojo.telephone, responsePoJo1.telephone);
         // test kotlin user function
         EventEnvelope result2 = po.request(
                 new EventEnvelope().setTo("custom.serializer.service.kotlin").setBody(pojo), 5000).get();
-        Assert.assertTrue(result2.getBody() instanceof Map);
+        assertTrue(result2.getBody() instanceof Map);
         Map<String, Object> data2 = (Map<String, Object>) result2.getBody();
-        Assert.assertEquals(pojo.name, data2.get("name"));
-        Assert.assertEquals(pojo.address, data2.get("address"));
-        Assert.assertEquals(pojo.telephone, data2.get("telephone"));
+        assertEquals(pojo.name, data2.get("name"));
+        assertEquals(pojo.address, data2.get("address"));
+        assertEquals(pojo.telephone, data2.get("telephone"));
         SimplePoJo responsePoJo2 = po.getResponseBodyAsPoJo(result2, SimplePoJo.class);
-        Assert.assertEquals(pojo.name, responsePoJo2.name);
-        Assert.assertEquals(pojo.address, responsePoJo2.address);
-        Assert.assertEquals(pojo.telephone, responsePoJo2.telephone);
+        assertEquals(pojo.name, responsePoJo2.name);
+        assertEquals(pojo.address, responsePoJo2.address);
+        assertEquals(pojo.telephone, responsePoJo2.telephone);
     }
 
     private static class SimpleCallback implements TypedLambdaFunction<PoJo, Void>, MappingExceptionHandler {

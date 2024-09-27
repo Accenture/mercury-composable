@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.MsgPack;
@@ -32,6 +31,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.*;
 
 public class MsgPackTest {
 
@@ -53,18 +54,18 @@ public class MsgPackTest {
         input.put(PayloadMapper.NOTHING, null);
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         Map<String, Object> result = (Map<String, Object>) o;
         // long number will be compressed into integer if applicable
-        Assert.assertEquals(Integer.class, result.get("integer").getClass());
+        assertEquals(Integer.class, result.get("integer").getClass());
         // MsgPack does not transport null elements in a map
-        Assert.assertFalse(result.containsKey(PayloadMapper.NOTHING));
+        assertFalse(result.containsKey(PayloadMapper.NOTHING));
         result.remove(PayloadMapper.NOTHING);
-        Assert.assertEquals(o, result);
+        assertEquals(o, result);
         // array is converted to list of objects
-        Assert.assertEquals(Arrays.asList(HELLO_WORLD), result.get("array"));
+        assertEquals(Arrays.asList(HELLO_WORLD), result.get("array"));
         // embedded pojo in a map is converted to the pojo's instance string
-        Assert.assertEquals(pojoInstanceString, result.get("pojo"));
+        assertEquals(pojoInstanceString, result.get("pojo"));
     }
 
     @Test
@@ -72,7 +73,7 @@ public class MsgPackTest {
         AtomicInteger input = new AtomicInteger(10000);
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input.get(), o);
+        assertEquals(input.get(), o);
     }
 
     @Test
@@ -81,7 +82,7 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // smaller number will be packed as integer
-        Assert.assertEquals((int) input.get(), o);
+        assertEquals((int) input.get(), o);
     }
 
     @Test
@@ -89,7 +90,7 @@ public class MsgPackTest {
         int input = 10000;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -98,7 +99,7 @@ public class MsgPackTest {
         Long input = 10L;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input.intValue(), o);
+        assertEquals(input.intValue(), o);
     }
 
     @SuppressWarnings("unchecked")
@@ -109,9 +110,9 @@ public class MsgPackTest {
         map.put("number", input);
         byte[] b = msgPack.pack(map);
         Object o = msgPack.unpack(b);
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         Map<String, Object> restored = (Map<String, Object>) o;
-        Assert.assertEquals(input, restored.get("number"));
+        assertEquals(input, restored.get("number"));
     }
 
     @SuppressWarnings("unchecked")
@@ -122,9 +123,9 @@ public class MsgPackTest {
         value.add(input);
         byte[] b = msgPack.pack(value);
         Object o = msgPack.unpack(b);
-        Assert.assertTrue(o instanceof List);
+        assertTrue(o instanceof List);
         List<Long> restored = (List<Long>) o;
-        Assert.assertEquals(input, restored.get(0));
+        assertEquals(input, restored.get(0));
     }
 
     @Test
@@ -132,7 +133,7 @@ public class MsgPackTest {
         BigInteger input = new BigInteger("10");
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input.toString(), o);
+        assertEquals(input.toString(), o);
     }
 
     @Test
@@ -140,21 +141,21 @@ public class MsgPackTest {
         BigDecimal input = new BigDecimal("0.0000000000012345");
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input.toPlainString(), o);
+        assertEquals(input.toPlainString(), o);
     }
 
     @Test
     public void dataIsNull() throws IOException {
         byte[] b = msgPack.pack(null);
         Object o = msgPack.unpack(b);
-        Assert.assertNull(o);
+        assertNull(o);
     }
 
     @Test
     public void dataIsBoolean() throws IOException {
         byte[] b = msgPack.pack(true);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(true, o);
+        assertEquals(true, o);
     }
 
     @Test
@@ -162,7 +163,7 @@ public class MsgPackTest {
         Float input = 3.2f;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -170,7 +171,7 @@ public class MsgPackTest {
         Double input = 3.2d;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -178,7 +179,7 @@ public class MsgPackTest {
         Double input = Float.MAX_VALUE + 1.0d;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -187,7 +188,7 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // date object is serialized as UTC string
-        Assert.assertEquals(Utility.getInstance().date2str(input), o);
+        assertEquals(Utility.getInstance().date2str(input), o);
     }
 
     @Test
@@ -200,7 +201,7 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // MsgPack transports null elements in an array list so that absolute sequencing can be preserved
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -208,7 +209,7 @@ public class MsgPackTest {
         String[] input = {"hello", "world", null, "1"};
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(Arrays.asList(input), o);
+        assertEquals(Arrays.asList(input), o);
     }
 
     @Test
@@ -216,7 +217,7 @@ public class MsgPackTest {
         Short number = 10;
         byte[] b = msgPack.pack(number);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals((int) number, o);
+        assertEquals((int) number, o);
     }
 
     @Test
@@ -225,7 +226,7 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(number);
         Object o = msgPack.unpack(b);
         // a single byte is converted to an integer
-        Assert.assertEquals((int) number, o);
+        assertEquals((int) number, o);
     }
 
     @Test
@@ -237,11 +238,11 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
-        Assert.assertEquals(input.getNumber(), result.getNumber());
-        Assert.assertEquals(input.getName(), result.getName());
-        Assert.assertEquals(input.getAddress(), result.getAddress());
+        assertEquals(input.getNumber(), result.getNumber());
+        assertEquals(input.getName(), result.getName());
+        assertEquals(input.getAddress(), result.getAddress());
     }
 
     @Test
@@ -253,11 +254,11 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo when the intermediate value becomes an integer
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
-        Assert.assertEquals(input.getLongNumber(), result.getLongNumber());
-        Assert.assertEquals(input.getName(), result.getName());
-        Assert.assertEquals(input.getAddress(), result.getAddress());
+        assertEquals(input.getLongNumber(), result.getLongNumber());
+        assertEquals(input.getName(), result.getName());
+        assertEquals(input.getAddress(), result.getAddress());
     }
 
     @Test
@@ -269,11 +270,11 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo when the intermediate value becomes an integer
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
-        Assert.assertEquals(input.getBigInteger(), result.getBigInteger());
-        Assert.assertEquals(input.getName(), result.getName());
-        Assert.assertEquals(input.getAddress(), result.getAddress());
+        assertEquals(input.getBigInteger(), result.getBigInteger());
+        assertEquals(input.getName(), result.getName());
+        assertEquals(input.getAddress(), result.getAddress());
     }
 
     @Test
@@ -285,11 +286,11 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // successfully restored to PoJo when the intermediate value becomes an integer
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
-        Assert.assertEquals(input.getBigDecimal(), result.getBigDecimal());
-        Assert.assertEquals(input.getName(), result.getName());
-        Assert.assertEquals(input.getAddress(), result.getAddress());
+        assertEquals(input.getBigDecimal(), result.getBigDecimal());
+        assertEquals(input.getName(), result.getName());
+        assertEquals(input.getAddress(), result.getAddress());
     }
 
 }

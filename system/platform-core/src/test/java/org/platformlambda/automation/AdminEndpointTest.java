@@ -34,6 +34,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
@@ -41,13 +44,13 @@ public class AdminEndpointTest extends TestBase {
     public void infoEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertEquals("REST", multi.getElement("personality"));
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertEquals("REST", multi.getElement("personality"));
         String origin = Platform.getInstance().getOrigin();
-        Assert.assertEquals(origin, multi.getElement("origin"));
+        assertEquals(origin, multi.getElement("origin"));
     }
 
     @SuppressWarnings("unchecked")
@@ -57,13 +60,13 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/xml");
         EventEnvelope response = httpGet(localHost, "/info", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertEquals("REST", multi.getElement("personality"));
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertEquals("REST", multi.getElement("personality"));
         String origin = Platform.getInstance().getOrigin();
-        Assert.assertEquals(origin, multi.getElement("origin"));
+        assertEquals(origin, multi.getElement("origin"));
     }
 
     @SuppressWarnings("unchecked")
@@ -73,11 +76,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet(localHost, "/info", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -86,11 +89,11 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         EventEnvelope response = httpGet("http://localhost:"+port, "/info", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("Resource not found", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("Resource not found", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -98,11 +101,11 @@ public class AdminEndpointTest extends TestBase {
     public void libEndpointTest() throws AppException, IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info/lib", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertTrue(result.containsKey("library"));
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertTrue(result.containsKey("library"));
     }
 
     @SuppressWarnings("unchecked")
@@ -112,11 +115,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet(localHost, "/info/lib", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -124,11 +127,11 @@ public class AdminEndpointTest extends TestBase {
     public void routeEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info/routes", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertTrue(result.get("routing") instanceof Map);
+        assertTrue(result.get("routing") instanceof Map);
         Map<String, Object> routing = (Map<String, Object>) result.get("routing");
-        Assert.assertEquals(new HashMap<>(), routing.get("routes"));
+        assertEquals(new HashMap<>(), routing.get("routes"));
     }
 
     @SuppressWarnings("unchecked")
@@ -138,11 +141,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet(localHost, "/info/routes", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -150,17 +153,17 @@ public class AdminEndpointTest extends TestBase {
     public void healthEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/health", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap map = new MultiLevelMap(result);
-        Assert.assertEquals("UP", map.getElement("status"));
-        Assert.assertEquals("fine", map.getElement("dependency[0].message"));
-        Assert.assertEquals(200, map.getElement("dependency[0].status_code"));
-        Assert.assertEquals("mock.connector", map.getElement("dependency[0].service"));
+        assertEquals("UP", map.getElement("status"));
+        assertEquals("fine", map.getElement("dependency[0].message"));
+        assertEquals(200, map.getElement("dependency[0].status_code"));
+        assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet(localHost, "/livenessprobe", null);
         assert response != null;
-        Assert.assertEquals("OK", response.getBody());
+        assertEquals("OK", response.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -169,27 +172,27 @@ public class AdminEndpointTest extends TestBase {
         MockCloud.setSimulateException(true);
         EventEnvelope response = httpGet(localHost, "/health", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         // failed health check is returned as HTTP-400
-        Assert.assertEquals(400, response.getStatus());
+        assertEquals(400, response.getStatus());
         MultiLevelMap map = new MultiLevelMap(result);
-        Assert.assertEquals("DOWN", map.getElement("status"));
-        Assert.assertEquals("just a test", map.getElement("dependency[0].message"));
+        assertEquals("DOWN", map.getElement("status"));
+        assertEquals("just a test", map.getElement("dependency[0].message"));
         // original status code from dependency service is preserved
-        Assert.assertEquals(500, map.getElement("dependency[0].status_code"));
-        Assert.assertEquals("mock.connector", map.getElement("dependency[0].service"));
+        assertEquals(500, map.getElement("dependency[0].status_code"));
+        assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet(localHost, "/livenessprobe", null);
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertEquals("Unhealthy. Please check '/health' endpoint.", response.getBody());
+        assertEquals(400, response.getStatus());
+        assertEquals("Unhealthy. Please check '/health' endpoint.", response.getBody());
         MockCloud.setSimulateException(false);
         // try it again
         httpGet(localHost, "/health", null);
         response = httpGet(localHost, "/livenessprobe", null);
         assert response != null;
-        Assert.assertEquals("OK", response.getBody());
+        assertEquals("OK", response.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -199,11 +202,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet(localHost, "/health", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -213,11 +216,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet(localHost, "/livenessprobe", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -225,13 +228,13 @@ public class AdminEndpointTest extends TestBase {
     public void envEndpointTest() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/env", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals("platform-core", multi.getElement("app.name"));
-        Assert.assertTrue(multi.getElement("env") instanceof Map);
-        Assert.assertTrue(multi.getElement("routing.private") instanceof List);
-        Assert.assertTrue(multi.getElement("routing.public") instanceof List);
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertTrue(multi.getElement("env") instanceof Map);
+        assertTrue(multi.getElement("routing.private") instanceof List);
+        assertTrue(multi.getElement("routing.public") instanceof List);
     }
 
     @SuppressWarnings("unchecked")
@@ -241,32 +244,32 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet(localHost, "/livenessprobe", headers);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @Test
     public void shutdownUsingGetWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/shutdown/now", null);
         assert response != null;
-        Assert.assertEquals(404, response.getStatus());
+        assertEquals(404, response.getStatus());
     }
 
     @Test
     public void suspendUsingGetWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/suspend/now", null);
         assert response != null;
-        Assert.assertEquals(404, response.getStatus());
+        assertEquals(404, response.getStatus());
     }
 
     @Test
     public void resumeUsingGetWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/resume/now", null);
         assert response != null;
-        Assert.assertEquals(404, response.getStatus());
+        assertEquals(404, response.getStatus());
     }
 
     @SuppressWarnings("unchecked")
@@ -274,10 +277,10 @@ public class AdminEndpointTest extends TestBase {
     public void shutdownWithoutAppInstanceWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpPost(localHost, "/shutdown", null, new HashMap<>());
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertEquals(400, response.getStatus());
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("Missing X-App-Instance in request header", result.get("message"));
+        assertEquals("Missing X-App-Instance in request header", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -287,11 +290,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpPost(localHost, "/shutdown", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -299,10 +302,10 @@ public class AdminEndpointTest extends TestBase {
     public void suspendWithoutAppInstanceWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpPost(localHost, "/suspend/now", null, new HashMap<>());
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertEquals(400, response.getStatus());
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("Missing X-App-Instance in request header", result.get("message"));
+        assertEquals("Missing X-App-Instance in request header", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -312,11 +315,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpPost(localHost, "/suspend/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -324,10 +327,10 @@ public class AdminEndpointTest extends TestBase {
     public void resumeWithoutAppInstanceWillFail() throws IOException, InterruptedException {
         EventEnvelope response = httpPost(localHost, "/resume/now", null, new HashMap<>());
         assert response != null;
-        Assert.assertEquals(400, response.getStatus());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertEquals(400, response.getStatus());
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("Missing X-App-Instance in request header", result.get("message"));
+        assertEquals("Missing X-App-Instance in request header", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -337,11 +340,11 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpPost(localHost, "/resume/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("does-not-exist is not reachable", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -351,10 +354,10 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", Platform.getInstance().getOrigin());
         EventEnvelope response = httpPost(localHost, "/suspend/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("suspend", result.get("type"));
-        Assert.assertEquals(200, result.get("status"));
+        assertEquals("suspend", result.get("type"));
+        assertEquals(200, result.get("status"));
     }
 
     @SuppressWarnings("unchecked")
@@ -364,60 +367,60 @@ public class AdminEndpointTest extends TestBase {
         headers.put("x-app-instance", Platform.getInstance().getOrigin());
         EventEnvelope response = httpPost(localHost, "/resume/now", headers, new HashMap<>());
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("resume", result.get("type"));
-        Assert.assertEquals(200, result.get("status"));
+        assertEquals("resume", result.get("type"));
+        assertEquals(200, result.get("status"));
     }
 
     @Test
     public void getIndexPage() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/index.html", null);
         assert response != null;
-        Assert.assertEquals("text/html", response.getHeader("content-type"));
+        assertEquals("text/html", response.getHeader("content-type"));
         Assert.assertNull(response.getHeader("ETag"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/index.html");
         String index = Utility.getInstance().stream2str(in);
-        Assert.assertEquals(index, text);
+        assertEquals(index, text);
     }
 
     @Test
     public void getCssPage() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.css", null);
         assert response != null;
-        Assert.assertEquals("text/css", response.getHeader("content-type"));
+        assertEquals("text/css", response.getHeader("content-type"));
         Assert.assertNotNull(response.getHeader("ETag"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/sample.css");
         String css = Utility.getInstance().stream2str(in);
-        Assert.assertEquals(css, text);
+        assertEquals(css, text);
     }
 
     @Test
     public void getTextPage() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.txt", null);
         assert response != null;
-        Assert.assertEquals("text/plain", response.getHeader("content-type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertEquals("text/plain", response.getHeader("content-type"));
+        assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/sample.txt");
         String plain = Utility.getInstance().stream2str(in);
-        Assert.assertEquals(plain, text);
+        assertEquals(plain, text);
     }
 
     @Test
     public void getJsPage() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.js", null);
         assert response != null;
-        Assert.assertEquals("text/javascript", response.getHeader("content-type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertEquals("text/javascript", response.getHeader("content-type"));
+        assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/sample.js");
         String js = Utility.getInstance().stream2str(in);
-        Assert.assertEquals(js, text);
+        assertEquals(js, text);
     }
 
     @SuppressWarnings("unchecked")
@@ -425,11 +428,11 @@ public class AdminEndpointTest extends TestBase {
     public void pageNotExists() throws IOException, InterruptedException {
         EventEnvelope response = httpGet(localHost, "/no_such_page", null);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(404, response.getStatus());
-        Assert.assertEquals(404, result.get("status"));
-        Assert.assertEquals("Resource not found", result.get("message"));
+        assertEquals(404, response.getStatus());
+        assertEquals(404, result.get("status"));
+        assertEquals("Resource not found", result.get("message"));
     }
 
 }
