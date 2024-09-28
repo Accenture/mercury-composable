@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -84,6 +85,8 @@ public class ServiceGateway {
     private static final String IF_NONE_MATCH = "If-None-Match";
     private static final int BUFFER_SIZE = 4 * 1024;
     private static final long FILTER_TIMEOUT = 10000;
+    private static final File SIGNATURE_FOLDER = new File(Utility.getInstance().getUuid());
+    private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
     private static final Map<String, String> mimeTypes = new HashMap<>();
@@ -367,12 +370,18 @@ public class ServiceGateway {
     private EtagFile getStaticFile(String path) {
         // For security, convert backslash into forward slash
         String normalizedPath = path.replace("\\", "/");
+        // for security, test for "path traversal" attack
+        Path testPath = new File(SIGNATURE_FOLDER, normalizedPath).toPath().normalize();
+        if (!testPath.startsWith(SIGNATURE_FOLDER_PATH)) {
+            log.debug("Reject path traversal attack - {}", normalizedPath);
+            // reject path traversal attempt
+            return null;
+        }
         List<String> parts = Utility.getInstance().split(normalizedPath, "/");
-        // For security, reject path that tries to read parent folder or hidden file.
-        for (String p: parts) {
-            if (p.trim().startsWith(".")) {
-                return null;
-            }
+        if (parts.contains("..")) {
+            // reject harmless path traversal
+            log.error("Reject harmless path traversal - {}", normalizedPath);
+            return null;
         }
         // assume ".html" if filename does not have a file extension
         String filename = parts.isEmpty()? INDEX_HTML : parts.getLast();
