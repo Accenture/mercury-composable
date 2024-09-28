@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>benchmark-client</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.5</version>
+    <version>4.0.6</version>
     <name>Benchmark client</name>
 
     <parent>
@@ -39,14 +39,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.6</version>
         </dependency>
 
         <!-- Optionally select your cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.6</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -129,6 +129,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>
@@ -141,6 +142,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>

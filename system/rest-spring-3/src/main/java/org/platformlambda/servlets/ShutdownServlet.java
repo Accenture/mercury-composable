@@ -25,7 +25,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
-import org.platformlambda.helper.ServletHelper;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -49,7 +48,7 @@ public class ShutdownServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String origin = ServletHelper.safeText(request.getHeader(APP_INSTANCE));
+        String origin = request.getHeader(APP_INSTANCE);
         if (origin == null) {
             response.sendError(400, "Missing "+ APP_INSTANCE +" in request header");
             return;
@@ -60,14 +59,14 @@ public class ShutdownServlet extends HttpServlet {
             event.setTo(EventEmitter.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
-                response.sendError(404, origin+" is not reachable");
+                response.sendError(404, "Target not reachable");
                 return;
             }
             event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
         }
         event.setHeader(USER, System.getProperty("user.name"));
         po.sendLater(event, new Date(System.currentTimeMillis() + GRACE_PERIOD));
-        response.sendError(200, origin+" will be shutdown in "+GRACE_PERIOD+" ms");
+        response.sendError(200, "Target will be shutdown in "+GRACE_PERIOD+" ms");
     }
 
 }

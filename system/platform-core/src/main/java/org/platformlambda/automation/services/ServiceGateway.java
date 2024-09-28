@@ -18,6 +18,7 @@
 
 package org.platformlambda.automation.services;
 
+import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Cookie;
@@ -298,7 +299,12 @@ public class ServiceGateway {
         if (hasCookies) {
             Set<Cookie> cookies = request.cookies();
             for (Cookie c : cookies) {
-                req.setCookie(c.getName(), c.getValue());
+                try {
+                    String value = ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
+                    req.setCookie(c.getName(), value);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid cookie {} ignored during filtering - {}", c.getName(), e.getMessage());
+                }
             }
         }
         return req.setRemoteIp(request.remoteAddress().hostAddress());
@@ -369,7 +375,7 @@ public class ServiceGateway {
             }
         }
         // assume ".html" if filename does not have a file extension
-        String filename = parts.isEmpty()? INDEX_HTML : parts.get(parts.size() - 1);
+        String filename = parts.isEmpty()? INDEX_HTML : parts.getLast();
         if (normalizedPath.endsWith("/")) {
             normalizedPath += INDEX_HTML;
             filename = INDEX_HTML;
@@ -395,7 +401,7 @@ public class ServiceGateway {
         InputStream in = this.getClass().getResourceAsStream(resourceFolder+path);
         if (in != null) {
             byte[] b = Utility.getInstance().stream2bytes(in);
-            return new EtagFile(util.bytes2hex(crypto.getSHA1(b)), b);
+            return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
         }
         return null;
     }
@@ -405,7 +411,7 @@ public class ServiceGateway {
         File f = new File(staticFolder, path);
         if (f.exists()) {
             byte[] b = Utility.getInstance().file2bytes(f);
-            return new EtagFile(util.bytes2hex(crypto.getSHA1(b)), b);
+            return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
         }
         return null;
     }
@@ -526,7 +532,12 @@ public class ServiceGateway {
         if (hasCookies) {
             Set<Cookie> cookies = request.cookies();
             for (Cookie c : cookies) {
-                req.setCookie(c.getName(), c.getValue());
+                try {
+                    String value = ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
+                    req.setCookie(c.getName(), value);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid cookie {} ignored during routing - {}", c.getName(), e.getMessage());
+                }
             }
         }
         RoutingEntry re = RoutingEntry.getInstance();
@@ -793,7 +804,7 @@ public class ServiceGateway {
             }
             sb.append('-');
         }
-        return sb.length() == 0? null : sb.substring(0, sb.length()-1);
+        return sb.isEmpty() ? null : sb.substring(0, sb.length()-1);
     }
 
 }

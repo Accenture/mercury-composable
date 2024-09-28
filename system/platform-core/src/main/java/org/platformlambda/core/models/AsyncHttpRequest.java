@@ -18,6 +18,7 @@
 
 package org.platformlambda.core.models;
 
+import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
@@ -252,7 +253,8 @@ public class AsyncHttpRequest {
     }
 
     public String getCookie(String key) {
-        return caseInsensitiveGet(cookies, key);
+        String value = caseInsensitiveGet(cookies, key);
+        return value.replace('\r', ' ').replace('\n', ' ');
     }
 
     public AsyncHttpRequest setCookie(String key, String value) {

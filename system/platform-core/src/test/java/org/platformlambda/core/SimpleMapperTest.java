@@ -19,6 +19,7 @@
 package org.platformlambda.core;
 
 import com.google.gson.JsonPrimitive;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -30,9 +31,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
 
 public class SimpleMapperTest {
 
@@ -49,14 +47,14 @@ public class SimpleMapperTest {
     public void typedNumberShouldMapDouble() {
         final JsonPrimitive number = new JsonPrimitive("1.12345678");
         Object result = SimpleMapper.getInstance().typedNumber(number);
-        assertThat(result, is(1.12345678d));
+        assertEquals(result, 1.12345678d);
     }
 
     @Test
     public void typedNumberShouldMapFloat() {
         final JsonPrimitive number = new JsonPrimitive("1.12");
         Object result = SimpleMapper.getInstance().typedNumber(number);
-        assertThat(result, is(1.12d));
+        assertEquals(result, 1.12d);
     }
 
     @Test

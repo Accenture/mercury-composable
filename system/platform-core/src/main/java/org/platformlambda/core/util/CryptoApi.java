@@ -43,10 +43,10 @@ public class CryptoApi {
     private static final String RSA = "RSA";
     private static final String DSA = "DSA";
     private static final String AES = "AES";
-    private static final String SHA1 = "SHA1";
     private static final String SHA256 = "SHA-256";
-    private static final String HMAC_SHA1 = "HmacSHA1";
+    private static final String SHA512 = "SHA-512";
     private static final String HMAC_SHA256 = "HmacSHA256";
+    private static final String HMAC_SHA512 = "HmacSHA512";
     private static final int RSA_2048 = 2048;
     private static final int DSA_2048 = 2048;
     private static final int[] PUBLIC_KEY_SIZES = {2048, 3072, 4096};
@@ -102,7 +102,7 @@ public class CryptoApi {
     /**
      * Get private key bytes
      *
-     * @param keyPair RSA-2048 or DSA-1024 key pair
+     * @param keyPair RSA-2048 or DSA-2048 key pair
      * @return PKCS-8 encoded byte array
      */
     public byte[] getEncodedPrivateKey(KeyPair keyPair) {
@@ -355,20 +355,20 @@ public class CryptoApi {
     // Hashing utilities
     /////////////////////
 
-    public byte[] getSHA1(byte[] data) {
-        return getHash(data, SHA1);
-    }
-
-    public byte[] getSHA1(InputStream in) throws IOException {
-        return getHash(in, SHA1);
-    }
-
     public byte[] getSHA256(byte[] data) {
         return getHash(data, SHA256);
     }
 
     public byte[] getSHA256(InputStream in) throws IOException {
         return getHash(in, SHA256);
+    }
+
+    public byte[] getSHA512(byte[] data) {
+        return getHash(data, SHA512);
+    }
+
+    public byte[] getSHA512(InputStream in) throws IOException {
+        return getHash(in, SHA512);
     }
 
     private byte[] getHash(byte[] data, String algorithm) {
@@ -400,12 +400,12 @@ public class CryptoApi {
     // HMAC utilities - cross-verified with Python hmac and hashlib
     ////////////////////////////////////////////////////////////////
 
-    public byte[] getHmacSha1(byte[] key, byte[] message) {
-        return getHmac(key, message, HMAC_SHA1);
-    }
-
     public byte[] getHmacSha256(byte[] key, byte[] message) {
         return getHmac(key, message, HMAC_SHA256);
+    }
+
+    public byte[] getHmacSha512(byte[] key, byte[] message) {
+        return getHmac(key, message, HMAC_SHA512);
     }
 
     private byte[] getHmac(byte[] key, byte[] message, String algorithm) {

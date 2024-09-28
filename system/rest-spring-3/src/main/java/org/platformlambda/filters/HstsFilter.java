@@ -22,13 +22,10 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @WebFilter(asyncSupported = true, value = "/*")
 public class HstsFilter implements Filter {
@@ -41,28 +38,16 @@ public class HstsFilter implements Filter {
     private static final String TRANSPORT_SECURITY_VALUE = "max-age=31536000; includeSubDomains";
 
     private static boolean loaded = false;
-    private static List<String> indexPageList = new ArrayList<>();
-    private static String indexPage = "index.html";
     private static boolean hstsRequired = false;
 
     @Override
     public void init(FilterConfig filterConfig) {
         if (!loaded) {
             loaded = true;
-            Utility util = Utility.getInstance();
             AppConfigReader reader = AppConfigReader.getInstance();
             // by default, HSTS header is enabled
             hstsRequired = "true".equals(reader.getProperty("hsts.feature", "true"));
             log.info("HSTS (RFC-6797) feature {}", hstsRequired? "enabled" : "disabled");
-            // index.html redirection
-            indexPage = reader.getProperty("index.page", "index.html");
-            String indexList = reader.getProperty("index.redirection");
-            if (indexList != null) {
-                List<String> normalizedList = new ArrayList<>();
-                util.split(indexList, ", ").forEach(s -> { normalizedList.add(s.endsWith("/")? s : s + "/"); });
-                indexPageList = normalizedList;
-                log.info("Index page redirection - {}", indexPageList);
-            }
         }
     }
 
@@ -80,19 +65,6 @@ public class HstsFilter implements Filter {
                 if (hstsRequired && HTTPS.equals(req.getHeader(PROTOCOL))) {
                     res.setHeader(TRANSPORT_SECURITY_KEY, TRANSPORT_SECURITY_VALUE);
                 }
-                // perform redirection to index page if needed
-                if (!indexPageList.isEmpty()) {
-                    String uri = req.getRequestURI();
-                    if (!uri.endsWith("/")) {
-                        uri += "/";
-                    }
-                    for (String index : indexPageList) {
-                        if (uri.equalsIgnoreCase(index)) {
-                            res.sendRedirect(uri+indexPage);
-                            return;
-                        }
-                    }
-                }
                 chain.doFilter(req, res);
             }
         } else {
@@ -104,6 +76,5 @@ public class HstsFilter implements Filter {
     public void destroy() {
         // no-op
     }
-
 
 }

@@ -760,7 +760,7 @@ public class Platform {
     private void logRecently(String message) {
         Utility util = Utility.getInstance();
         // this avoids printing duplicated log in a concurrent situation
-        String hash = util.getUTF(crypto.getSHA1(util.getUTF(message)));
+        String hash = util.getUTF(crypto.getSHA256(util.getUTF(message)));
         if (!cache.exists(hash)) {
             cache.put(hash, true);
             log.info(message);

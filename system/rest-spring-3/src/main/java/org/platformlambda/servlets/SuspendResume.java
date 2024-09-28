@@ -24,7 +24,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
-import org.platformlambda.helper.ServletHelper;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,7 +41,7 @@ public class SuspendResume {
     public static void handle(boolean resume, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String type = resume? RESUME : SUSPEND;
-        String origin = ServletHelper.safeText(request.getHeader(APP_INSTANCE));
+        String origin = request.getHeader(APP_INSTANCE);
         if (origin == null) {
             response.sendError(400, "Missing "+ APP_INSTANCE +" in request header");
             return;
@@ -54,7 +53,7 @@ public class SuspendResume {
             event.setTo(EventEmitter.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
-                response.sendError(404, origin+" is not reachable");
+                response.sendError(404, "Target not reachable");
                 return;
             }
             event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
@@ -63,9 +62,9 @@ public class SuspendResume {
         String when = !path.isEmpty() && NOW.equals(path.getFirst()) ? NOW : LATER;
         event.setHeader(WHEN, when);
         po.send(event);
-        String message = type+" request sent to " + origin;
+        String message = type+" request sent.";
         if (LATER.equals(when)) {
-            message += ". It will take effect in one minute.";
+            message += " It will take effect in one minute.";
         }
         response.sendError(200, message);
     }

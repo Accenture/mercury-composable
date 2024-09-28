@@ -30,7 +30,6 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
-import org.platformlambda.helper.ServletHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -61,16 +60,16 @@ public abstract class ServletBase extends HttpServlet {
                 return;
             }
         }
-        final String origin = ServletHelper.safeText(appOrigin == null? myOrigin : appOrigin);
+        final String origin = appOrigin == null? myOrigin : appOrigin;
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-        String accept = ServletHelper.safeText(request.getHeader(ACCEPT));
+        String accept = request.getHeader(ACCEPT);
         event.setHeader(ACCEPT_CONTENT, accept != null? accept : MediaType.APPLICATION_JSON_VALUE);
         if (origin.equals(myOrigin)) {
             event.setTo(EventEmitter.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
-                response.sendError(404, origin+" is not reachable");
+                response.sendError(404, "Target not reachable");
                 return;
             }
             event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
@@ -116,7 +115,7 @@ public abstract class ServletBase extends HttpServlet {
             HttpServletResponse res = (HttpServletResponse) context.getResponse();
             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
             try {
-                res.sendError(408, origin+" timeout");
+                res.sendError(408, "Target application timeout");
             } catch (IOException e) {
                 log.error("Unable to send HTTP response", e);
             }

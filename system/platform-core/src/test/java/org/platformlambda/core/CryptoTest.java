@@ -156,9 +156,9 @@ public class CryptoTest {
         assertEquals(32, hashed.length);
         byte[] hashedFromStream = crypto.getSHA256(new ByteArrayInputStream(input.getBytes()));
         assertArrayEquals(hashed, hashedFromStream);
-        hashed = crypto.getSHA1(input.getBytes());
-        assertEquals(20, hashed.length);
-        hashedFromStream = crypto.getSHA1(new ByteArrayInputStream(input.getBytes()));
+        hashed = crypto.getSHA512(input.getBytes());
+        assertEquals(64, hashed.length);
+        hashedFromStream = crypto.getSHA512(new ByteArrayInputStream(input.getBytes()));
         assertArrayEquals(hashed, hashedFromStream);
         hashed = crypto.getSHA256(input.getBytes());
         assertEquals(32, hashed.length);
@@ -167,20 +167,21 @@ public class CryptoTest {
     }
 
     @Test
-    public void hmac1Test() {
-        String expected = "8a3a84bcd0d0065e97f175d370447c7d02e00973";
-        byte[] key = "hello".getBytes();
-        byte[] message = "world".getBytes();
-        byte[] b = crypto.getHmacSha1(key, message);
-        assertEquals(expected, Utility.getInstance().bytes2hex(b));
-    }
-
-    @Test
     public void hmac256Test() {
         String expected = "f1ac9702eb5faf23ca291a4dc46deddeee2a78ccdaf0a412bed7714cfffb1cc4";
         byte[] key = "hello".getBytes();
         byte[] message = "world".getBytes();
         byte[] b = crypto.getHmacSha256(key, message);
+        assertEquals(expected, Utility.getInstance().bytes2hex(b));
+    }
+
+    @Test
+    public void hmac512Test() {
+        String expected = "6668ed2f7d016c5f12d7808fc4f2d1dc4851622d7f15616de947a823b3ee67d76" +
+                            "1b953f09560da301f832902020dd1c64f496df37eb7ac4fd2feeeb67d77ba9b";
+        byte[] key = "hello".getBytes();
+        byte[] message = "world".getBytes();
+        byte[] b = crypto.getHmacSha512(key, message);
         assertEquals(expected, Utility.getInstance().bytes2hex(b));
     }
 
