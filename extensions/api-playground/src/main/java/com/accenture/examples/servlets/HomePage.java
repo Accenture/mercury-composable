@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serial;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -105,30 +106,30 @@ public class HomePage extends HttpServlet {
 			}
 		}
 		result = result.replace("$dropdown", sb.toString());
-		String app = safeText(request.getParameter(APP));
+		boolean normal = true;
+		String app = request.getParameter(APP);
 		if (app == null) {
 			result = result.replace("$url", "/playground/home.yaml");
 		} else {
 			File target = new File(dir, app);
-			if (target.exists()) {
-				result = result.replace("$url", "/api/specs/" + app);
+			Path parentPath = dir.toPath();
+			Path targetPath = target.toPath();
+			if (!targetPath.normalize().startsWith(parentPath)) {
+				response.sendError(400, "Request contained path traversal");
+				normal = false;
 			} else {
-				response.sendError(404, "Application " + app + " not found");
-				return;
+				if (target.exists()) {
+					result = result.replace("$url", "/api/specs/" + app);
+				} else {
+					response.sendError(404, "Application not found");
+					normal = false;
+				}
 			}
 		}
-        response.getOutputStream().write(util.getUTF(result));
-    }
-
-	private String safeText(String text) {
-		if (text == null) {
-			return null;
-		} else {
-			return text.replace("<", "")
-						.replace(">", "")
-						.replace("&", "");
+		if (normal) {
+			response.getOutputStream().write(util.getUTF(result));
 		}
-	}
+    }
 
     private List<String> getFiles() {
 		List<String> result = new ArrayList<>();

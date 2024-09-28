@@ -5,7 +5,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>service-monitor</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.5</version>
+    <version>4.0.6</version>
     <name>Presence monitor module</name>
 
     <parent>
@@ -35,13 +35,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.6</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.6</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -94,6 +94,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>
@@ -106,6 +107,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>

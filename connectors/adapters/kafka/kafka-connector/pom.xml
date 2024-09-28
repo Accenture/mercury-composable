@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.5</version>
+    <version>4.0.6</version>
     <name>Cloud connector for Kafka cluster</name>
 
     <parent>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.6</version>
         </dependency>
 
         <dependency>
@@ -124,6 +124,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>
@@ -136,6 +137,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>

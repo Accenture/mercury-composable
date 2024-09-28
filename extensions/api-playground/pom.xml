@@ -6,7 +6,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>api-playground</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.5</version>
+    <version>4.0.6</version>
     <name>API playground using OpenAPI</name>
 
     <parent>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.6</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -87,6 +87,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>
@@ -99,6 +100,7 @@
                         <configuration>
                             <compilerArgs>
                                 <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>

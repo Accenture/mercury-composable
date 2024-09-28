@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 
 @RestController
@@ -99,23 +100,19 @@ public class PlaygroundApi {
             if (!ready) {
                 callback.error(new AppException(503, "API playground not ready"));
             } else {
-                String path = safePath(id);
-                if (path == null) {
-                    callback.error(new AppException(503, "Path parameter 'id' must not contain path traversal text"));
+                File f = new File(dir, id);
+                Path parent = dir.toPath();
+                Path target = f.toPath();
+                if (!target.normalize().startsWith(parent)) {
+                    callback.error(new AppException(400, "Request contained path traversal"));
+                }
+                if (f.exists()) {
+                    callback.success(ResponseEntity.status(200).body(Utility.getInstance().file2str(f)));
                 } else {
-                    File f = new File(dir, path);
-                    if (f.exists()) {
-                        callback.success(ResponseEntity.status(200).body(Utility.getInstance().file2str(f)));
-                    } else {
-                        callback.error(new AppException(404, "File not found"));
-                    }
+                    callback.error(new AppException(404, "File not found"));
                 }
             }
         });
-    }
-
-    private String safePath(String path) {
-        return path.startsWith("../") || path.contains("/../")? null : path;
     }
 
 }

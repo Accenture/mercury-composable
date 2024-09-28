@@ -469,9 +469,6 @@ public class Utility {
 
     public byte[] file2bytes(File f) {
         if (f != null) {
-            if (f.toString().contains("/../")) {
-                throw new IllegalArgumentException("file name contains path traversal");
-            }
             try {
                 FileInputStream in = new FileInputStream(f);
                 return stream2bytes(in);

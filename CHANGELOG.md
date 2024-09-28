@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.6, 9/27/2024
+
+### Added
+
+1. HTTP request Cookie value filtering using RFC-6265 strict syntax
+
+### Removed
+
+1. Automatic index page redirection filter for Spring Boot
+
+### Changed
+
+1. Upgrade SHA-1 to SHA-512 algorithm in CryptoAPI utility
+2. Fix security vulnerability associated with HTTP request header and cookie manipulation
+
+---
 ## Version 4.0.5, 9/24/2024
 
 ### Added

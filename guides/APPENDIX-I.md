@@ -36,8 +36,6 @@ precedence.
 | snake.case.serialization               | true (recommended)                                              | Optional    |
 | protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional    |
 | trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
-| index.redirection                      | comma separated list of URI paths                               | Optional*   |
-| index.page                             | default is index.html                                           | Optional*   |
 | hsts.feature                           | default is true                                                 | Optional*   |
 | application.feature.route.substitution | default is false                                                | Optional    |
 | application.feature.topic.substitution | default is false                                                | Optional    |
