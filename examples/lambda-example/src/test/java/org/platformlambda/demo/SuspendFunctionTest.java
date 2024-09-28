@@ -18,7 +18,7 @@
 
 package org.platformlambda.demo;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -75,20 +75,20 @@ public class SuspendFunctionTest extends TestBase {
         po.asyncRequest(request, 8000).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         System.out.println(response.getBody());
-        Assert.assertEquals(len, map.get("expected_size"));
-        Assert.assertEquals(len, map.get("actual_size"));
-        Assert.assertEquals(FILENAME, map.get("filename"));
-        Assert.assertEquals("Upload completed", map.get("message"));
+        assertEquals(len, map.get("expected_size"));
+        assertEquals(len, map.get("actual_size"));
+        assertEquals(FILENAME, map.get("filename"));
+        assertEquals("Upload completed", map.get("message"));
         // finally check that "hello.upload" has saved the test file
         File dir = new File("/tmp/upload-download-demo");
         File file = new File(dir, FILENAME);
-        Assert.assertTrue(file.exists());
-        Assert.assertEquals(len, file.length());
+        assertTrue(file.exists());
+        assertEquals(len, file.length());
         // compare file content
         byte[] b = Utility.getInstance().file2bytes(file);
-        Assert.assertArrayEquals(bytes.toByteArray(), b);
+        assertArrayEquals(bytes.toByteArray(), b);
     }
 }

@@ -20,7 +20,6 @@ package org.platformlambda.automation;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.platformlambda.common.TestBase;
@@ -42,7 +41,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class RestEndpointTest extends TestBase {
 
@@ -118,7 +117,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.accept"));
         assertEquals(false, map.getElement("https"));
@@ -129,7 +128,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("y", map.getElement("parameters.query.x1"));
         assertEquals(list, map.getElement("parameters.query.x2"));
         // the HTTP request filter will not execute because the request is not a static content request
-        Assert.assertNull(response.getHeader("x-filter"));
+        assertNull(response.getHeader("x-filter"));
     }
 
     @Test
@@ -164,7 +163,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(404, response.getStatus());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         assertEquals("Resource not found", map.get("message"));
         assertEquals(expected, map.get("path"));
@@ -189,7 +188,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(503, response.getStatus());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         assertEquals("Service v1.basic.auth not reachable", map.get("message"));
     }
@@ -211,7 +210,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(401, response.getStatus());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         assertEquals("Unauthorized", map.get("message"));
     }
@@ -249,16 +248,16 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertNull(response.getBody());
+        assertNull(response.getBody());
         // async.http.request returns a stream
         String streamId = response.getHeader("stream");
-        Assert.assertNotNull(streamId);
+        assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
         stream2bytes(in, result).onSuccess(done -> bench2.offer(done));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, done);
-        Assert.assertArrayEquals(b, result.toByteArray());
+        assertArrayEquals(b, result.toByteArray());
     }
 
     private Future<Boolean> stream2bytes(AsyncObjectStreamReader in, ByteArrayOutputStream out) {
@@ -325,8 +324,8 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof byte[]);
-        Assert.assertArrayEquals(b, (byte[]) response.getBody());
+        assertTrue(response.getBody() instanceof byte[]);
+        assertArrayEquals(b, (byte[]) response.getBody());
     }
 
     @Test
@@ -358,16 +357,16 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertNull(response.getBody());
+        assertNull(response.getBody());
         // async.http.request returns a stream
         String streamId = response.getHeader("stream");
-        Assert.assertNotNull(streamId);
+        assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
         stream2bytes(in, result).onSuccess(bench2::offer);
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, done);
-        Assert.assertArrayEquals(b, result.toByteArray());
+        assertArrayEquals(b, result.toByteArray());
     }
 
     @Test
@@ -400,14 +399,14 @@ public class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(response.getHeader("stream"));
+        assertNotNull(response.getHeader("stream"));
         String streamId = response.getHeader("stream");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
         stream2bytes(in, result).onSuccess(bench2::offer);
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, done);
-        Assert.assertArrayEquals(bytes.toByteArray(), result.toByteArray());
+        assertArrayEquals(bytes.toByteArray(), result.toByteArray());
     }
 
     @Test
@@ -442,14 +441,14 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertNotNull(response.getHeader("stream"));
+        assertNotNull(response.getHeader("stream"));
         String streamId = response.getHeader("stream");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
         stream2bytes(in, result).onSuccess(bench2::offer);
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, done);
-        Assert.assertArrayEquals(bytes.toByteArray(), result.toByteArray());
+        assertArrayEquals(bytes.toByteArray(), result.toByteArray());
     }
 
     @SuppressWarnings("unchecked")
@@ -473,7 +472,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.content-type"));
         assertEquals("application/json", map.getElement("headers.accept"));
@@ -482,7 +481,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals(10, map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof Map);
+        assertTrue(map.getElement("body") instanceof Map);
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
     }
@@ -509,7 +508,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/xml", map.getElement("headers.content-type"));
         assertEquals("application/xml", map.getElement("headers.accept"));
@@ -518,7 +517,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals("10", map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof Map);
+        assertTrue(map.getElement("body") instanceof Map);
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
     }
@@ -542,7 +541,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // when x-raw-xml header is true, the response is rendered as a string
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         Map<String, Object> payload = xml.parse((String) response.getBody());
         MultiLevelMap map = new MultiLevelMap(payload);
         assertEquals("application/xml", map.getElement("headers.content-type"));
@@ -553,7 +552,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals("10", map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof String);
+        assertTrue(map.getElement("body") instanceof String);
         assertEquals("hello world", map.getElement("body"));
     }
 
@@ -577,7 +576,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.content-type"));
         assertEquals("application/json", map.getElement("headers.accept"));
@@ -586,7 +585,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals(10, map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof Map);
+        assertTrue(map.getElement("body") instanceof Map);
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
     }
@@ -611,7 +610,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof List);
+        assertTrue(response.getBody() instanceof List);
         List<Map<String, Object>> list = (List<Map<String, Object>>) response.getBody();
         assertEquals(1, list.size());
         assertEquals(HashMap.class, list.get(0).getClass());
@@ -623,7 +622,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals(15, map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof Map);
+        assertTrue(map.getElement("body") instanceof Map);
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
     }
@@ -650,7 +649,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/xml", map.getElement("result.headers.content-type"));
         assertEquals("application/xml", map.getElement("result.headers.accept"));
@@ -660,7 +659,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("result.method"));
         assertEquals("127.0.0.1", map.getElement("result.ip"));
         assertEquals("15", map.getElement("result.timeout"));
-        Assert.assertTrue(map.getElement("result.body") instanceof Map);
+        assertTrue(map.getElement("result.body") instanceof Map);
         Map<String, Object> received = (Map<String, Object>) map.getElement("result.body");
         assertEquals(data, received);
     }
@@ -680,7 +679,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.accept"));
         assertEquals(false, map.getElement("https"));
@@ -688,7 +687,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("DELETE", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals(10, map.getElement("timeout"));
-        Assert.assertNull(map.getElement("body"));
+        assertNull(map.getElement("body"));
     }
 
     @Test
@@ -760,7 +759,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/xml", map.getElement("headers.content-type"));
         assertEquals("application/json", map.getElement("headers.accept"));
@@ -769,7 +768,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals(10, map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof Map);
+        assertTrue(map.getElement("body") instanceof Map);
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
     }
@@ -795,7 +794,7 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.content-type"));
         assertEquals("application/json", map.getElement("headers.accept"));
@@ -804,7 +803,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
         assertEquals(10, map.getElement("timeout"));
-        Assert.assertTrue(map.getElement("body") instanceof List);
+        assertTrue(map.getElement("body") instanceof List);
         List<Map<String, Object>> received = (List<Map<String, Object>>) map.getElement("body");
         assertEquals(1, received.size());
         assertEquals(data, received.get(0));
@@ -825,13 +824,13 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/html", response.getHeader("Content-Type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String html = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/index.html");
         String content = util.stream2str(in);
         assertEquals(content, html);
         // this page is configured for "no cache" and ETag should not exist
-        Assert.assertNull(response.getHeader("ETag"));
+        assertNull(response.getHeader("ETag"));
         // and it should have the cache-control headers
         assertEquals("no-cache, no-store", response.getHeader("Cache-Control"));
         assertEquals("no-cache", response.getHeader("Pragma"));
@@ -853,7 +852,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/html", response.getHeader("Content-Type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String html = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/index.html");
         String content = util.stream2str(in);
@@ -861,11 +860,47 @@ public class RestEndpointTest extends TestBase {
         // the HTTP request filter will add a test header
         assertEquals("demo", response.getHeader("x-filter"));
         // this page is configured for "no cache" and ETag should not exist
-        Assert.assertNull(response.getHeader("ETag"));
+        assertNull(response.getHeader("ETag"));
         // and it should have the cache-control headers
         assertEquals("no-cache, no-store", response.getHeader("Cache-Control"));
         assertEquals("no-cache", response.getHeader("Pragma"));
         assertEquals("Thu, 01 Jan 1970 00:00:00 GMT", response.getHeader("Expires"));
+    }
+
+    @Test
+    public void getResourceDirectoryNotAllowed() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        Utility util = Utility.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET");
+        req.setTargetHost("http://127.0.0.1:"+port).setUrl("/assets");
+        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench::offer);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertEquals("application/json", response.getHeader("Content-Type"));
+        assertEquals(404, response.getStatus());
+        assertTrue(response.getBody() instanceof Map);
+    }
+
+    @Test
+    public void pathTraversalDetection() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        Utility util = Utility.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET");
+        req.setTargetHost("http://127.0.0.1:"+port).setUrl("/test/%2e%2e/%2e%2e/index.html");
+        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench::offer);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertEquals("application/json", response.getHeader("Content-Type"));
+        assertEquals(404, response.getStatus());
+        assertTrue(response.getBody() instanceof Map);
     }
 
     @Test
@@ -883,15 +918,15 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/css", response.getHeader("Content-Type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String html = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/assets/another.css");
         String content = util.stream2str(in);
         assertEquals(content, html);
         // the HTTP request filter is not executed because ".css" extension is excluded in rest.yaml
-        Assert.assertNull(response.getHeader("x-filter"));
+        assertNull(response.getHeader("x-filter"));
         // this page is not configured for "no cache", thus there is a ETag response header
-        Assert.assertNotNull(response.getHeader("ETag"));
+        assertNotNull(response.getHeader("ETag"));
     }
 
     @Test
@@ -909,7 +944,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/javascript", response.getHeader("Content-Type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String html = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/sample.js");
         String content = util.stream2str(in);
@@ -933,7 +968,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("application/xml", response.getHeader("Content-Type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String html = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/sample.xml");
         String content = util.stream2str(in);
@@ -955,7 +990,7 @@ public class RestEndpointTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/plain", response.getHeader("Content-Type"));
-        Assert.assertTrue(response.getBody() instanceof String);
+        assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/assets/hello.txt");
         String content = util.stream2str(in);

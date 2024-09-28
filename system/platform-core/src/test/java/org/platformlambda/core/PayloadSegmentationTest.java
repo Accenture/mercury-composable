@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
 public class PayloadSegmentationTest {
     private static final String TEST_STRING = "123456789.";
     private static final int CYCLE = 30000;

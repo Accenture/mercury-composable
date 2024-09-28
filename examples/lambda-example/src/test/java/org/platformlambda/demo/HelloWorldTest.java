@@ -18,7 +18,7 @@
 
 package org.platformlambda.demo;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -50,12 +50,12 @@ public class HelloWorldTest extends TestBase {
         po.asyncRequest(request, 800).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        Assert.assertEquals(NAME, map.getElement("body.name"));
-        Assert.assertEquals(ADDRESS, map.getElement("body.address"));
-        Assert.assertEquals(TELEPHONE, map.getElement("body.telephone"));
-        Assert.assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
+        assertEquals(NAME, map.getElement("body.name"));
+        assertEquals(ADDRESS, map.getElement("body.address"));
+        assertEquals(TELEPHONE, map.getElement("body.telephone"));
+        assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
     }
 
     private class DemoPoJo {

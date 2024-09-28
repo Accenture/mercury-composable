@@ -1,8 +1,6 @@
 package com.accenture.tests;
 
 import com.accenture.common.TestBase;
-import io.vertx.core.Future;
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -11,10 +9,7 @@ import org.platformlambda.core.util.MultiLevelMap;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

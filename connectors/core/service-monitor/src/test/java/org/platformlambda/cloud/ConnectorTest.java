@@ -18,7 +18,7 @@
 
 package org.platformlambda.cloud;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.platformlambda.MainApp;
@@ -123,17 +123,17 @@ public class ConnectorTest extends TestBase {
         n = 0;
         while (n++ < 30) {
             EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-            Assert.assertTrue(response.getBody() instanceof Map);
+            assertTrue(response.getBody() instanceof Map);
             Map<String, Object> map = (Map<String, Object>) response.getBody();
             Object info = map.get("additional_info");
-            Assert.assertTrue(info instanceof Map);
+            assertTrue(info instanceof Map);
             Map<String, Object> infoMap = (Map<String, Object>) info;
             Object tt = infoMap.get("topics");
-            Assert.assertTrue(tt instanceof List);
+            assertTrue(tt instanceof List);
             List<String> topicList = (List<String>) tt;
-            Assert.assertEquals(2, topicList.size());
+            assertEquals(2, topicList.size());
             Object vt = infoMap.get("virtual_topics");
-            Assert.assertTrue(vt instanceof List);
+            assertTrue(vt instanceof List);
             List<String> vtList = (List<String>) vt;
             if (vtList.isEmpty()) {
                 log.info("Waiting for first active member... {}", n);
@@ -143,7 +143,7 @@ public class ConnectorTest extends TestBase {
                     // ok to ignore
                 }
             } else {
-                Assert.assertTrue(vtList.get(0).startsWith("multiplex.0001-000 (user.topic.one) ->"));
+                assertTrue(vtList.get(0).startsWith("multiplex.0001-000 (user.topic.one) ->"));
                 po.send(ServiceDiscovery.SERVICE_REGISTRY,
                         new Kv(TYPE, ALIVE), new Kv(TOPIC, "multiplex.0001-000"),
                         new Kv(ORIGIN, Platform.getInstance().getOrigin()));
@@ -166,22 +166,22 @@ public class ConnectorTest extends TestBase {
         po.asyncRequest(req, 5000).onSuccess(bench::offer);
         bench.poll(10, TimeUnit.SECONDS);
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> map = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("UP", map.get("status"));
+        assertEquals("UP", map.get("status"));
         response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         map = (Map<String, Object>) response.getBody();
         Object info = map.get("additional_info");
-        Assert.assertTrue(info instanceof Map);
+        assertTrue(info instanceof Map);
         Map<String, Object> infoMap = (Map<String, Object>) info;
         Object monitorList = infoMap.get("monitors");
-        Assert.assertTrue(monitorList instanceof List);
+        assertTrue(monitorList instanceof List);
         String monitors = monitorList.toString();
-        Assert.assertTrue(monitors.contains("test-monitor"));
-        Assert.assertTrue(monitors.contains(Platform.getInstance().getOrigin()));
+        assertTrue(monitors.contains("test-monitor"));
+        assertTrue(monitors.contains(Platform.getInstance().getOrigin()));
         Map<String, WsMetadata> sessions = MonitorService.getSessions();
-        Assert.assertEquals(1, sessions.size());
+        assertEquals(1, sessions.size());
     }
 
 }

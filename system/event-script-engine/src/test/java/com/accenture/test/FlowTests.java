@@ -3,7 +3,6 @@ package com.accenture.test;
 import com.accenture.models.PoJo;
 import com.accenture.setup.TestBase;
 import com.accenture.tasks.ParallelTask;
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -24,8 +23,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
@@ -604,14 +602,14 @@ public class FlowTests extends TestBase {
         assert res != null;
         assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        Assert.assertFalse(result.isEmpty());
+        assertFalse(result.isEmpty());
         assertEquals(2, ParallelTask.bench.size());
         // At the end of parallel execution of 2 tasks, the bench should have received 2 key-values
         Map<String, Object> map1 = ParallelTask.bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(map1);
+        assertNotNull(map1);
         Map<String, Object> consolidated = new HashMap<>(map1);
         Map<String, Object> map2 = ParallelTask.bench.poll(5, TimeUnit.SECONDS);
-        Assert.assertNotNull(map2);
+        assertNotNull(map2);
         consolidated.putAll(map2);
         assertEquals(2, consolidated.size());
         assertTrue(consolidated.containsKey("key1"));

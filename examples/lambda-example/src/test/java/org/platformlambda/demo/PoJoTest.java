@@ -18,7 +18,7 @@
 
 package org.platformlambda.demo;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -44,11 +44,11 @@ public class PoJoTest extends TestBase {
         po.asyncRequest(request, 800).onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        Assert.assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(HashMap.class, response.getBody().getClass());
         SamplePoJo pojo = response.getBody(SamplePoJo.class);
-        Assert.assertEquals(ID, pojo.getId());
-        Assert.assertEquals(NAME, pojo.getName());
-        Assert.assertEquals(ADDRESS, pojo.getAddress());
+        assertEquals(ID, pojo.getId());
+        assertEquals(NAME, pojo.getName());
+        assertEquals(ADDRESS, pojo.getAddress());
     }
 
 }

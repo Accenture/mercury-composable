@@ -18,7 +18,7 @@
 
 package org.platformlambda.cloud;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.platformlambda.cloud.reporter.PresenceConnector;
@@ -101,9 +101,9 @@ public class ConnectorTest extends TestBase {
         String url = ConnectorConfig.getDisplayUrl();
         String name = ConnectorConfig.getServiceName();
         Map<String, String> topicSubstitution = ConnectorConfig.getTopicSubstitution();
-        Assert.assertEquals(URL, url);
-        Assert.assertEquals(SERVICE_NAME, name);
-        Assert.assertEquals("user.topic.one", topicSubstitution.get("multiplex.0001.0"));
+        assertEquals(URL, url);
+        assertEquals(SERVICE_NAME, name);
+        assertEquals("user.topic.one", topicSubstitution.get("multiplex.0001.0"));
         EventEnvelope req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                                     .setHeader("type", "join").setHeader("origin", origin)
                                     .setHeader("topic", "multiplex.0001-001");
@@ -142,42 +142,42 @@ public class ConnectorTest extends TestBase {
         po.asyncRequest(req, 5000).onSuccess(bench::offer);
         EventEnvelope queryResult = bench.poll(10, TimeUnit.SECONDS);
         assert queryResult != null;
-        Assert.assertTrue(queryResult.getBody() instanceof List);
+        assertTrue(queryResult.getBody() instanceof List);
         List<String> list = (List<String>) queryResult.getBody();
-        Assert.assertFalse(list.isEmpty());
+        assertFalse(list.isEmpty());
         List<String> instances = (List<String>) queryResult.getBody();
-        Assert.assertTrue(instances.contains("unit-test"));
-        Assert.assertTrue(instances.contains(platform.getOrigin()));
+        assertTrue(instances.contains("unit-test"));
+        assertTrue(instances.contains(platform.getOrigin()));
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
         Map<String, Object> info = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(info);
         Object nodes = multi.getElement("routing.nodes");
-        Assert.assertTrue(nodes instanceof List);
+        assertTrue(nodes instanceof List);
         String nodeList = nodes.toString();
-        Assert.assertTrue(nodeList.contains("unit-test"));
-        Assert.assertTrue(po.exists("hello.demo"));
+        assertTrue(nodeList.contains("unit-test"));
+        assertTrue(po.exists("hello.demo"));
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
                 .setBody(Collections.singletonList("hello.world")).setHeader("type", "find")
                 .setHeader("route", "*");
         po.asyncRequest(req, 5000).onSuccess(bench::offer);
         queryResult = bench.poll(10, TimeUnit.SECONDS);
         assert queryResult != null;
-        Assert.assertEquals(true, queryResult.getBody());
+        assertEquals(true, queryResult.getBody());
         headers.put("X-App-Instance", Platform.getInstance().getOrigin());
         response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(200, result.get("status"));
-        Assert.assertEquals("suspend", result.get("type"));
-        Assert.assertEquals("/suspend/now", result.get("path"));
+        assertEquals(200, result.get("status"));
+        assertEquals("suspend", result.get("type"));
+        assertEquals("/suspend/now", result.get("path"));
         response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals(200, result.get("status"));
-        Assert.assertEquals("resume", result.get("type"));
-        Assert.assertEquals("/resume/now", result.get("path"));
+        assertEquals(200, result.get("status"));
+        assertEquals("resume", result.get("type"));
+        assertEquals("/resume/now", result.get("path"));
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv("type", "leave"), new Kv("origin", origin));
     }
 
@@ -186,31 +186,31 @@ public class ConnectorTest extends TestBase {
         String name = "hello.world";
         ConnectorConfig.validateTopicName(name);
         String invalid = "helloworld";
-        IOException ex = Assert.assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(invalid));
-        Assert.assertEquals("Invalid route helloworld because it is missing dot separator(s). e.g. hello.world",
+        IOException ex = assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(invalid));
+        assertEquals("Invalid route helloworld because it is missing dot separator(s). e.g. hello.world",
                 ex.getMessage());
     }
 
     @Test
     public void checkEmptyTopic() {
-        IOException ex = Assert.assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(""));
-        Assert.assertEquals("Invalid route name - use 0-9, a-z, A-Z, period, hyphen or underscore characters",
+        IOException ex = assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(""));
+        assertEquals("Invalid route name - use 0-9, a-z, A-Z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
     @Test
     public void reservedExtension() {
-        IOException ex = Assert.assertThrows(IOException.class, () ->
+        IOException ex = assertThrows(IOException.class, () ->
                 ConnectorConfig.validateTopicName("hello.com"));
-        Assert.assertEquals("Invalid route hello.com which is a reserved extension",
+        assertEquals("Invalid route hello.com which is a reserved extension",
                 ex.getMessage());
     }
 
     @Test
     public void reservedName() {
-        IOException ex = Assert.assertThrows(IOException.class, () ->
+        IOException ex = assertThrows(IOException.class, () ->
                 ConnectorConfig.validateTopicName("Thumbs.db"));
-        Assert.assertEquals("Invalid route Thumbs.db which is a reserved Windows filename",
+        assertEquals("Invalid route Thumbs.db which is a reserved Windows filename",
                 ex.getMessage());
     }
 
@@ -220,11 +220,11 @@ public class ConnectorTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        Assert.assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) response.getBody();
-        Assert.assertEquals("UP", result.get("status"));
-        Assert.assertEquals("cloud-connector", result.get("name"));
+        assertEquals("UP", result.get("status"));
+        assertEquals("cloud-connector", result.get("name"));
         MultiLevelMap multi = new MultiLevelMap(result);
-        Assert.assertEquals(200, multi.getElement("dependency[0].status_code"));
+        assertEquals(200, multi.getElement("dependency[0].status_code"));
     }
 }

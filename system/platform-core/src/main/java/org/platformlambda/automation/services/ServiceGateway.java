@@ -85,7 +85,8 @@ public class ServiceGateway {
     private static final String IF_NONE_MATCH = "If-None-Match";
     private static final int BUFFER_SIZE = 4 * 1024;
     private static final long FILTER_TIMEOUT = 10000;
-    private static final File SIGNATURE_FOLDER = new File(Utility.getInstance().getUuid());
+    private static final String SIGNATURE = "/" + Utility.getInstance().getUuid();
+    private static final File SIGNATURE_FOLDER = new File(SIGNATURE);
     private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
@@ -157,7 +158,7 @@ public class ServiceGateway {
     }
 
     public static String getDefaultTraceIdLabel() {
-        return traceIdLabels.get(0);
+        return traceIdLabels.getFirst();
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {
@@ -282,7 +283,7 @@ public class ServiceGateway {
         for (String key: params.names()) {
             List<String> values = params.getAll(key);
             if (values.size() == 1) {
-                req.setQueryParameter(key, values.get(0));
+                req.setQueryParameter(key, values.getFirst());
             }
             if (values.size() > 1) {
                 req.setQueryParameter(key, values);
@@ -368,36 +369,33 @@ public class ServiceGateway {
     }
 
     private EtagFile getStaticFile(String path) {
-        // For security, convert backslash into forward slash
-        String normalizedPath = path.replace("\\", "/");
         // for security, test for "path traversal" attack
-        Path testPath = new File(SIGNATURE_FOLDER, normalizedPath).toPath().normalize();
+        Path testPath = new File(SIGNATURE_FOLDER, path.replace("\\", "/")).toPath().normalize();
         if (!testPath.startsWith(SIGNATURE_FOLDER_PATH)) {
-            log.debug("Reject path traversal attack - {}", normalizedPath);
+            log.error("Reject path traversal attack - {}", path);
             // reject path traversal attempt
             return null;
         }
-        List<String> parts = Utility.getInstance().split(normalizedPath, "/");
-        if (parts.contains("..")) {
-            // reject harmless path traversal
-            log.error("Reject harmless path traversal - {}", normalizedPath);
-            return null;
+        String safePath = testPath.toString().substring(SIGNATURE.length());
+        if (!safePath.startsWith("/")) {
+            safePath = "/" + safePath;
         }
+        List<String> parts = Utility.getInstance().split(safePath, "/");
         // assume ".html" if filename does not have a file extension
         String filename = parts.isEmpty()? INDEX_HTML : parts.getLast();
-        if (normalizedPath.endsWith("/")) {
-            normalizedPath += INDEX_HTML;
+        if (safePath.endsWith("/")) {
+            safePath += INDEX_HTML;
             filename = INDEX_HTML;
         } else if (!filename.contains(".")) {
-            normalizedPath += HTML_EXT;
+            safePath += HTML_EXT;
             filename += HTML_EXT;
         }
         EtagFile result = null;
         if (resourceFolder != null) {
-            result = getResourceFile(normalizedPath);
+            result = getResourceFile(safePath);
         }
         if (staticFolder != null) {
-            result = getLocalFile(normalizedPath);
+            result = getLocalFile(safePath);
         }
         if (result != null) {
             result.name = filename;
@@ -418,7 +416,7 @@ public class ServiceGateway {
     private EtagFile getLocalFile(String path) {
         Utility util = Utility.getInstance();
         File f = new File(staticFolder, path);
-        if (f.exists()) {
+        if (f.exists() && !f.isDirectory()) {
             byte[] b = Utility.getInstance().file2bytes(f);
             return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
         }
@@ -519,7 +517,7 @@ public class ServiceGateway {
         for (String key: params.names()) {
             List<String> values = params.getAll(key);
             if (values.size() == 1) {
-                req.setQueryParameter(key, values.get(0));
+                req.setQueryParameter(key, values.getFirst());
             }
             if (values.size() > 1) {
                 req.setQueryParameter(key, values);

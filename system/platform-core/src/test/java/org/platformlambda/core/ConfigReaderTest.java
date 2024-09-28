@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.platformlambda.core.util.AppConfigReader;
@@ -32,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ConfigReaderTest {
 
@@ -100,14 +99,14 @@ public class ConfigReaderTest {
         Object o = reader.get("hello.world");
         assertEquals("some value", o);
         o = reader.get("hello.multiline");
-        Assert.assertTrue(o instanceof String);
-        Assert.assertTrue(o.toString().contains("\n"));
+        assertTrue(o instanceof String);
+        assertTrue(o.toString().contains("\n"));
         List<String> lines = Utility.getInstance().split(o.toString(), "\n");
         assertEquals(2, lines.size());
         assertEquals("line one", lines.get(0));
         assertEquals("line two", lines.get(1));
         o = reader.get("hello.array");
-        Assert.assertTrue(o instanceof ArrayList);
+        assertTrue(o instanceof ArrayList);
         List<String> elements = (List<String>) o;
         assertEquals(2, elements.size());
         assertEquals("hi", elements.get(0));
@@ -131,7 +130,7 @@ public class ConfigReaderTest {
          * YAML and JSON preserve original objects.
          */
         Object o = map.get("hello.number");
-        Assert.assertTrue(o instanceof Integer);
+        assertTrue(o instanceof Integer);
         assertEquals(12345, o);
     }
 
@@ -179,19 +178,19 @@ public class ConfigReaderTest {
         assertEquals(input, o);
         // confirm added only one key at the top level
         assertEquals(size+1, formatter.getMap().size());
-        Assert.assertNull(formatter.getElement(goodArray+"[0]"));
+        assertNull(formatter.getElement(goodArray+"[0]"));
         assertEquals(message, formatter.getElement(goodArray+"[1]"));
         o = formatter.getElement(uuid);
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         Map<String, Object> submap = (Map<String, Object>) o;
         assertEquals(2, submap.size());
-        Assert.assertTrue(submap.containsKey("great"));
-        Assert.assertTrue(submap.containsKey("array"));
+        assertTrue(submap.containsKey("great"));
+        assertTrue(submap.containsKey("array"));
     }
 
     @Test
     public void resourceNotFound() {
-        IOException ex = Assert.assertThrows(IOException.class, () -> {
+        IOException ex = assertThrows(IOException.class, () -> {
             ConfigReader reader = new ConfigReader();
             reader.load("classpath:/notfound.yaml");
         });
@@ -200,7 +199,7 @@ public class ConfigReaderTest {
 
     @Test
     public void fileNotFound() {
-        IOException ex = Assert.assertThrows(IOException.class, () -> {
+        IOException ex = assertThrows(IOException.class, () -> {
             ConfigReader reader = new ConfigReader();
             reader.load("file:/notfound.yaml");
         });
@@ -239,7 +238,7 @@ public class ConfigReaderTest {
         reader.load("classpath:/test.properties");
         String value = reader.getProperty("recursive.key");
         // In case of config loop, the system will not resolve a parameter value.
-        Assert.assertNull(value);
+        assertNull(value);
     }
 
     @Test
@@ -281,7 +280,7 @@ public class ConfigReaderTest {
         MultiLevelMap multi = new MultiLevelMap(raw);
         assertEquals("${recursive.key}", multi.getElement("recursive.key"));
         // prove that config.get() method resolves value substitution
-        Assert.assertNull(config.get("recursive.key"));
+        assertNull(config.get("recursive.key"));
         // prove that compositeKeyValues return the same value as config.get() method
         Map<String, Object> map = config.getCompositeKeyValues();
         assertEquals(config.get("application.feature.route.substitution"),

@@ -27,7 +27,7 @@ import org.platformlambda.core.util.models.PoJo;
 import java.io.IOException;
 import java.util.*;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 
 public class MsgPackTest {
 
@@ -43,12 +43,12 @@ public class MsgPackTest {
         input.put(PayloadMapper.NOTHING, null);
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         Map<String, Object> result = (Map<String, Object>) o;
         // MsgPack does not transport null elements in a map
-        Assert.assertFalse(result.containsKey(PayloadMapper.NOTHING));
+        assertFalse(result.containsKey(PayloadMapper.NOTHING));
         result.remove(PayloadMapper.NOTHING);
-        Assert.assertEquals(o, result);
+        assertEquals(o, result);
     }
 
     @Test
@@ -56,7 +56,7 @@ public class MsgPackTest {
         int input = 10;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -64,7 +64,7 @@ public class MsgPackTest {
         Object input = null;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -72,7 +72,7 @@ public class MsgPackTest {
         boolean input = true;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class MsgPackTest {
         Float input = 3.2f;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // date object is serialized as UTC string
-        Assert.assertEquals(Utility.getInstance().date2str(input), o);
+        assertEquals(Utility.getInstance().date2str(input), o);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class MsgPackTest {
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
         // MsgPack transports null elements in an array list so that absolute sequencing can be preserved
-        Assert.assertEquals(input, o);
+        assertEquals(input, o);
     }
 
     @Test
@@ -113,12 +113,12 @@ public class MsgPackTest {
         input.setAddress("123 Planet Earth");
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
-        Assert.assertTrue(o instanceof Map);
+        assertTrue(o instanceof Map);
         // successfully restored to PoJo
         PoJo result = SimpleMapper.getInstance().getMapper().readValue(o, PoJo.class);
-        Assert.assertEquals(input.getNumber(), result.getNumber());
-        Assert.assertEquals(input.getName(), result.getName());
-        Assert.assertEquals(input.getAddress(), result.getAddress());
+        assertEquals(input.getNumber(), result.getNumber());
+        assertEquals(input.getName(), result.getName());
+        assertEquals(input.getAddress(), result.getAddress());
     }
 
 }

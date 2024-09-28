@@ -19,7 +19,7 @@
 package com.accenture.tasks;
 
 import com.accenture.support.TestBase;
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -52,25 +52,25 @@ public class CryptoTests extends TestBase {
         // send event to encryption function
         EventEnvelope encRequest = new EventEnvelope().setTo("v1.encrypt.fields").setBody(input);
         EventEnvelope encResult = po.request(encRequest, 5000).get();
-        Assert.assertTrue(encResult.getBody() instanceof Map);
+        assertTrue(encResult.getBody() instanceof Map);
         Map<String, Object> encrypted = (Map<String, Object>) encResult.getBody();
-        Assert.assertEquals(2, encrypted.size());
-        Assert.assertTrue(encrypted.containsKey(KEY1));
-        Assert.assertTrue(encrypted.containsKey(KEY2));
-        Assert.assertNotEquals(KEY1_DATA, encrypted.get(KEY1));
-        Assert.assertNotEquals(KEY2_DATA, encrypted.get(KEY2));
+        assertEquals(2, encrypted.size());
+        assertTrue(encrypted.containsKey(KEY1));
+        assertTrue(encrypted.containsKey(KEY2));
+        assertNotEquals(KEY1_DATA, encrypted.get(KEY1));
+        assertNotEquals(KEY2_DATA, encrypted.get(KEY2));
         // update encrypted dataset
         input.put("dataset", encrypted);
         // send event to decryption function
         EventEnvelope decRequest = new EventEnvelope().setTo("v1.decrypt.fields").setBody(input);
         EventEnvelope decResult = po.request(decRequest, 5000).get();
-        Assert.assertTrue(decResult.getBody() instanceof Map);
+        assertTrue(decResult.getBody() instanceof Map);
         Map<String, Object> decrypted = (Map<String, Object>) decResult.getBody();
-        Assert.assertEquals(2, decrypted.size());
-        Assert.assertTrue(decrypted.containsKey(KEY1));
-        Assert.assertTrue(decrypted.containsKey(KEY2));
-        Assert.assertEquals(KEY1_DATA, decrypted.get(KEY1));
-        Assert.assertEquals(KEY2_DATA, decrypted.get(KEY2));
+        assertEquals(2, decrypted.size());
+        assertTrue(decrypted.containsKey(KEY1));
+        assertTrue(decrypted.containsKey(KEY2));
+        assertEquals(KEY1_DATA, decrypted.get(KEY1));
+        assertEquals(KEY2_DATA, decrypted.get(KEY2));
     }
 
 }

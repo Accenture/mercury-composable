@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.platformlambda.core.util.CryptoApi;
@@ -90,7 +89,7 @@ public class CryptoTest {
 
     @Test
     public void invalidRsaKeyLength() {
-        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                             () -> crypto.generateRsaKey(1000));
         assertEquals("Key size must be one of [2048, 3072, 4096]", ex.getMessage());
     }
@@ -146,7 +145,7 @@ public class CryptoTest {
         byte[] data = "hello world".getBytes();
         byte[] signature = crypto.rsaSign(data, pri);
         boolean result = crypto.rsaVerify(data, signature, pub);
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test

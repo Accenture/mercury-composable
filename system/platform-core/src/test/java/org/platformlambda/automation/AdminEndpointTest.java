@@ -18,7 +18,6 @@
 
 package org.platformlambda.automation;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.exception.AppException;
@@ -34,8 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AdminEndpointTest extends TestBase {
 
@@ -378,7 +376,7 @@ public class AdminEndpointTest extends TestBase {
         EventEnvelope response = httpGet(localHost, "/index.html", null);
         assert response != null;
         assertEquals("text/html", response.getHeader("content-type"));
-        Assert.assertNull(response.getHeader("ETag"));
+        assertNull(response.getHeader("ETag"));
         assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/index.html");
@@ -391,7 +389,7 @@ public class AdminEndpointTest extends TestBase {
         EventEnvelope response = httpGet(localHost, "/sample.css", null);
         assert response != null;
         assertEquals("text/css", response.getHeader("content-type"));
-        Assert.assertNotNull(response.getHeader("ETag"));
+        assertNotNull(response.getHeader("ETag"));
         assertTrue(response.getBody() instanceof String);
         String text = (String) response.getBody();
         InputStream in = this.getClass().getResourceAsStream("/public/sample.css");
