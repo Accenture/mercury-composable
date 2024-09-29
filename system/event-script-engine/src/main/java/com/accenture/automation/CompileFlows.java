@@ -398,7 +398,8 @@ public class CompileFlows implements EntryPoint {
                     }
 
                 } else {
-                    log.error("Unable to parse {} - please check syntax", name);
+                    log.error("Unable to parse {} - " +
+                            "a task must contain input, process, output, description and execution", name);
                 }
             }
             if (endTaskFound) {

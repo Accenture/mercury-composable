@@ -19,6 +19,7 @@ flows:
   - 'for-loop-continue.yml'
   - 'for-loop-if-then-else.yml'
   - 'for-loop-if-then-else-parallel.yml'
+  - 'parser-test-0.yml'
   - 'parser-test-1.yml'
   - 'parser-test-2.yml'
   - 'parser-test-3.yml'
