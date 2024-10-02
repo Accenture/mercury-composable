@@ -14,6 +14,7 @@ the system unintentionally.
 | http.auth.handler            | REST automation authentication router | platform-core    |
 | event.api.service            | Event API service                     | platform-core    |
 | stream.to.bytes              | Event API helper function             | platform-core    |
+| no.op                        | no-operation placeholder function     | event-script     |
 | system.service.registry      | Distributed routing registry          | Connector        |
 | system.service.query         | Distributed routing query             | Connector        |
 | cloud.connector.health       | Cloud connector health service        | Connector        |
@@ -44,6 +45,11 @@ will be merged into the "/info" response.
 
 For `distributed.trace.forwarder` and `transaction.journal.recorder`, please refer to [Chapter-5](CHAPTER-5.md)
 for details.
+
+## No-op function
+
+The "no.op" function is used as a placeholder for building skeleton or demo app for an event flow use case.
+You may use the "preload-override.yaml" configuration to add alias route names to the "no.op" function.
 
 ## Reserved event header names
 

@@ -160,11 +160,6 @@ public class WorkerHandler {
         long begin = System.nanoTime();
         try {
             /*
-             * Interceptor can read any input (i.e. including case for empty headers and null body).
-             * The system therefore disables ping when the target function is an interceptor.
-             */
-            boolean ping = !interceptor && !event.isOptional() && event.getRawBody() == null && eventHeaders.isEmpty();
-            /*
              * If the service is an interceptor or the input argument is EventEnvelope,
              * we will pass the original event envelope instead of the message body.
              */
@@ -197,8 +192,8 @@ public class WorkerHandler {
             if (event.getTracePath() != null) {
                 parameters.put(MY_TRACE_PATH, event.getTracePath());
             }
-            Object result = ping? null : f.handleEvent(parameters, inputBody, instance);
-            float delta = ping? 0 : (float) (System.nanoTime() - begin) / EventEmitter.ONE_MILLISECOND;
+            Object result = f.handleEvent(parameters, inputBody, instance);
+            float delta = (float) (System.nanoTime() - begin) / EventEmitter.ONE_MILLISECOND;
             // adjust precision to 3 decimal points
             float diff = Float.parseFloat(String.format("%.3f", Math.max(0.0f, delta)));
             Map<String, Object> output = new HashMap<>();
@@ -265,26 +260,10 @@ public class WorkerHandler {
                 output.put(STATUS, response.getStatus());
                 inputOutput.put(OUTPUT, output);
                 try {
-                    if (ping) {
-                        String parent = route.contains(HASH) ? route.substring(0, route.lastIndexOf(HASH)) : route;
-                        Platform platform = Platform.getInstance();
-                        // execution time is not set because there is no need to execute the lambda function
-                        Map<String, Object> pong = new HashMap<>();
-                        pong.put(TYPE, PONG);
-                        pong.put(TIME, new Date());
-                        pong.put(APP, platform.getName());
-                        pong.put(ORIGIN, platform.getOrigin());
-                        pong.put(SERVICE, parent);
-                        pong.put(REASON, "This response is generated when you send an event without headers and body");
-                        pong.put(MESSAGE, "you have reached " + parent);
-                        response.setBody(pong);
+                    if (!interceptor && !serviceTimeout) {
+                        response.setExecutionTime(diff);
+                        encodeTraceAnnotations(response);
                         po.send(response);
-                    } else {
-                        if (!interceptor && !serviceTimeout) {
-                            response.setExecutionTime(diff);
-                            encodeTraceAnnotations(response);
-                            po.send(response);
-                        }
                     }
                 } catch (Exception e2) {
                     ps.setUnDelivery(e2.getMessage());

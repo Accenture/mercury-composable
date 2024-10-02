@@ -5,7 +5,7 @@ info:
   description: You may browse available API specs or select one from the Apps link
 
 servers:
-  - url: /api
+  - url: http://127.0.0.1:8222/api
 paths:
   /specs:
     get:
