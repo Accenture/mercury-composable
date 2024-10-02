@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.7, 10/1/2024
+
+### Added
+
+A generic "no-op" function for use in event scripts.
+
+### Removed
+
+Feature to ping a function without payload and headers.
+
+### Changed
+
+Simplified api-playground application
+
+---
 ## Version 4.0.6, 9/27/2024
 
 ### Added

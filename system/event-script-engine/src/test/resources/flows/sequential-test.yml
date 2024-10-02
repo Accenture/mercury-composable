@@ -16,6 +16,15 @@ tasks:
     description: 'Pass a pojo to another task'
     execution: sequential
     next:
+      - 'no.op'
+
+  - input:
+      - 'input.header -> *'
+    process: 'no.op'
+    output: []
+    description: 'Demonstrate a no-op placeholder'
+    execution: sequential
+    next:
       - 'sequential.two'
 
   - input:

@@ -875,31 +875,6 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void pingTest() throws IOException, InterruptedException {
-        BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        Platform platform = Platform.getInstance();
-        EventEmitter po = EventEmitter.getInstance();
-        Future<EventEnvelope> asyncResponse = po.ping(HELLO_WORLD, 5000);
-        asyncResponse.onSuccess(bench::offer);
-        EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        assertNotNull(result);
-        // ping does not execute the target function so execution time should be zero
-        assertEquals(0, result.getExecutionTime(), 0.0);
-        assertTrue(result.getRoundTrip() >= 0);
-        assertTrue(result.getBody() instanceof Map);
-        Map<String, Object> response = (Map<String, Object>) result.getBody();
-        assertTrue(response.containsKey("time"));
-        assertTrue(response.containsKey("service"));
-        assertEquals("pong", response.get("type"));
-        assertEquals(platform.getName(), response.get("app"));
-        assertEquals(platform.getOrigin(), response.get("origin"));
-        assertEquals("This response is generated when you send an event without headers and body",
-                response.get("reason"));
-        log.info("Ping successfully - {}", response.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
     public void broadcastTest() throws IOException, InterruptedException {
         BlockingQueue<String> bench = new ArrayBlockingQueue<>(1);
         String CALLBACK = "my.callback";
