@@ -100,7 +100,7 @@ first:
 tasks:
   - input:
       - 'input.method -> method'
-      - 'input.header -> headers'
+      - 'input.header -> header'
       - 'input.header.content-type -> content-type'
       - 'input.path_parameter.profile_id -> header.profile_id'
       - 'input.body -> body'

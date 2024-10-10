@@ -45,6 +45,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Utility util = Utility.getInstance();
     public static final String SERVICE_NAME = "task.executor";
     private static final String FIRST_TASK = "first_task";
+    private static final String FLOW_ID = "flow_id";
+    private static final String FLOW_PROTOCOL = "flow://";
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String STATUS = "status";
@@ -586,7 +588,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 500, SERVICE_AT +routeName+" not defined");
             return;
         }
-        PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME, flowInstance.getTraceId(), flowInstance.getTracePath());
+
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -695,18 +697,52 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         final Platform platform = Platform.getInstance();
         final String compositeCid = seq > 0? flowInstance.id + "#" + seq : flowInstance.id;
-        EventEnvelope event = new EventEnvelope().setTo(task.service)
-                .setCorrelationId(compositeCid)
-                .setReplyTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
-                .setTrace(flowInstance.getTraceId(), flowInstance.getTracePath())
-                .setBody(target.getMap());
-        optionalHeaders.forEach(event::setHeader);
-        // execute task by sending event
-        if (deferred > 0) {
-            po.sendLater(event, new Date(System.currentTimeMillis() + deferred));
+        if (task.service.startsWith(FLOW_PROTOCOL)) {
+            String flowId = task.service.substring(FLOW_PROTOCOL.length());
+            Flow subordinateFlow = Flows.getFlow(flowId);
+            if (subordinateFlow == null) {
+                log.error("Unable to process flow {}:{} - missing subordinate {}",
+                        flowInstance.getFlow().id, flowInstance.id, task.service);
+                abortFlow(flowInstance, 500, task.service+" not defined");
+                return;
+            }
+            if (!optionalHeaders.isEmpty()) {
+                target.setElement(HEADER, optionalHeaders);
+            }
+            EventEnvelope forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
+                    .setHeader(FLOW_ID, flowId).setBody(target.getMap()).setCorrelationId(util.getUuid());
+            PostOffice po = new PostOffice(task.service,
+                                            flowInstance.getTraceId(), flowInstance.getTracePath());
+            po.asyncRequest(forward, subordinateFlow.ttl, false).onSuccess(response -> {
+                EventEnvelope event = new EventEnvelope()
+                        .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
+                        .setCorrelationId(compositeCid).setStatus(response.getStatus())
+                        .setHeaders(response.getHeaders())
+                        .setBody(response.getBody());
+                try {
+                    po.send(event);
+                } catch (IOException e) {
+                    // this should not occur
+                    throw new RuntimeException(e);
+                }
+            });
+
         } else {
-            po.send(event);
+            PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
+                                            flowInstance.getTraceId(), flowInstance.getTracePath());
+            EventEnvelope event = new EventEnvelope().setTo(task.service)
+                    .setCorrelationId(compositeCid)
+                    .setReplyTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
+                    .setBody(target.getMap());
+            optionalHeaders.forEach(event::setHeader);
+            // execute task by sending event
+            if (deferred > 0) {
+                po.sendLater(event, new Date(System.currentTimeMillis() + deferred));
+            } else {
+                po.send(event);
+            }
         }
+
     }
 
     private Object getConstantValue(String lhs, String rhs) {

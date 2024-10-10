@@ -69,7 +69,7 @@ in "target/dokka/index.html"
 Please follow the step-by-step learning guide in [Chapter-1](CHAPTER-1.md) to write your own functions. You can then
 configure new REST endpoints to use your new functions.
 
-In [Chapter-1](CHAPTER-2.md), we have discussed the three function execution strategies to optimize your application
+In [Chapter-2](CHAPTER-2.md), we have discussed the three function execution strategies to optimize your application
 to the full potential of stability, performance and throughput.
 
 ## HTTP forwarding
