@@ -38,6 +38,6 @@ flows:
   - 'parser-test-14.yml'
   - 'parser-test-15.yml'
   - 'parser-test-16.yml'
-  - 'missing-subordinate-flow.yml'
+  - 'missing-sub-flow.yml'
 
 location: 'classpath:/flows/'

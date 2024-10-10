@@ -67,7 +67,7 @@ rest:
   - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/missing-flow/{user}?ex=_"
-    flow: 'missing-subordinate-greetings'
+    flow: 'missing-sub-greetings'
     timeout: 10s
     cors: cors_1
     headers: header_1

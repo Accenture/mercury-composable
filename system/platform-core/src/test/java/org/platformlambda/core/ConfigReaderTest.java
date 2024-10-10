@@ -79,8 +79,8 @@ public class ConfigReaderTest {
         String parentValue = parent.getProperty("cloud.connector");
         ConfigReader reader = new ConfigReader();
         reader.load("classpath:/test.properties");
-        String subordinateValue = reader.getProperty("my.cloud.connector");
-        assertEquals(parentValue, subordinateValue);
+        String subValue = reader.getProperty("my.cloud.connector");
+        assertEquals(parentValue, subValue);
     }
 
     @Test

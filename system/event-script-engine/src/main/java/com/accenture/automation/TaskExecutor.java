@@ -699,9 +699,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         final String compositeCid = seq > 0? flowInstance.id + "#" + seq : flowInstance.id;
         if (task.service.startsWith(FLOW_PROTOCOL)) {
             String flowId = task.service.substring(FLOW_PROTOCOL.length());
-            Flow subordinateFlow = Flows.getFlow(flowId);
-            if (subordinateFlow == null) {
-                log.error("Unable to process flow {}:{} - missing subordinate {}",
+            Flow subFlow = Flows.getFlow(flowId);
+            if (subFlow == null) {
+                log.error("Unable to process flow {}:{} - missing sub-flow {}",
                         flowInstance.getFlow().id, flowInstance.id, task.service);
                 abortFlow(flowInstance, 500, task.service+" not defined");
                 return;
@@ -713,7 +713,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     .setHeader(FLOW_ID, flowId).setBody(target.getMap()).setCorrelationId(util.getUuid());
             PostOffice po = new PostOffice(task.service,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
-            po.asyncRequest(forward, subordinateFlow.ttl, false).onSuccess(response -> {
+            po.asyncRequest(forward, subFlow.ttl, false).onSuccess(response -> {
                 EventEnvelope event = new EventEnvelope()
                         .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
                         .setCorrelationId(compositeCid).setStatus(response.getStatus())
