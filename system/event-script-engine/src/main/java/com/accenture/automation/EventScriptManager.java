@@ -27,6 +27,8 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -34,6 +36,7 @@ import java.util.Map;
 @EventInterceptor
 @PreLoad(route = "event.script.manager", envInstances = "flow.manager.instances", instances = 200)
 public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Void> {
+    private static final Logger log = LoggerFactory.getLogger(EventScriptManager.class);
     public static final String SERVICE_NAME = "event.script.manager";
     private static final String FIRST_TASK = "first_task";
     private static final String INPUT = "input";
@@ -48,11 +51,14 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
             }
             processRequest(event, headers.get(FLOW_ID));
         } catch (AppException | IOException e) {
+            int rc = e instanceof AppException appEx? appEx.getStatus() : 500;
             if (event.getReplyTo() != null && event.getCorrelationId() != null) {
                 EventEnvelope error = new EventEnvelope()
                         .setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
-                        .setStatus(e instanceof AppException appEx? appEx.getStatus() : 500).setBody(e.getMessage());
+                        .setStatus(rc).setBody(e.getMessage());
                 po.send(error);
+            } else {
+                log.error("Unhandled exception. status={}, error={}", rc, e.getMessage());
             }
         }
         return null;
@@ -61,9 +67,12 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     private void processRequest(EventEnvelope event, String flowId) throws AppException, IOException {
         Flow template = Flows.getFlow(flowId);
         if (template == null) {
-            throw new AppException(500, "Cannot process this flow - configuration "+flowId+" not found");
+            throw new AppException(500, "Flow "+flowId+" not found");
         }
         String cid = event.getCorrelationId();
+        if (cid == null) {
+            throw new AppException(500, "Missing correlation ID for "+flowId);
+        }
         String replyTo = event.getReplyTo();
         FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template);
         // optional distributed trace

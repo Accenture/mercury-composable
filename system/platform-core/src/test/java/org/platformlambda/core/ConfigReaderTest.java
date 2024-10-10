@@ -294,4 +294,13 @@ public class ConfigReaderTest {
         assertEquals("Server port is "+port, kv.get("hello.location[4]"));
     }
 
+    @Test
+    public void activeProfileTest() {
+        AppConfigReader config = AppConfigReader.getInstance();
+        String testPara = config.getProperty("test.parameter");
+        Object testYaml = config.get("test.yaml");
+        assertEquals("hello world", testPara);
+        assertEquals(100, testYaml);
+    }
+
 }

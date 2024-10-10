@@ -1,3 +1,21 @@
+/*
+
+    Copyright 2018-2024 Accenture Technology
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+ */
+
 package com.accenture.test;
 
 import com.accenture.models.PoJo;
@@ -196,6 +214,57 @@ public class FlowTests extends TestBase {
         assertEquals(USER, result.get("demo2"));
         // input mapping 'input.header -> header' relays all HTTP headers
         assertEquals("greetings", result.get("demo3"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void parentGreetingTest() throws IOException, InterruptedException, ExecutionException {
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/parent-greeting/"+USER);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, TIMEOUT).get();
+        assert res != null;
+        assertTrue(res.getBody() instanceof Map);
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(USER, result.get("user"));
+        assertEquals(getAppName(), result.get("name"));
+        assertEquals("hello world", result.get("greeting"));
+        assertTrue(result.containsKey("original"));
+        Map<String, Object> original = (Map<String, Object>) result.get("original");
+        assertEquals(201, res.getStatus());
+        assertEquals("test-header", res.getHeader("demo"));
+        assertEquals("test-header", res.getHeader("x-demo"));
+        assertEquals(12345, original.get("long_number"));
+        assertEquals(12.345, original.get("float_number"));
+        assertEquals(12.345, original.get("double_number"));
+        assertEquals(true, original.get("boolean_value"));
+        // the "demo" key-value is collected from the input headers to the test function
+        assertEquals("ok", result.get("demo1"));
+        assertEquals(USER, result.get("demo2"));
+        // input mapping 'input.header -> header' relays all HTTP headers
+        assertEquals("parent-greetings", result.get("demo3"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void missingSubordinateFlow() throws IOException, InterruptedException, ExecutionException {
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/missing-flow/"+USER);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, TIMEOUT).get();
+        assert res != null;
+        assertTrue(res.getBody() instanceof Map);
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(500, res.getStatus());
+        assertEquals("Flow missing-subordinate-greetings not found", result.get("message"));
     }
 
     private String getAppName() {

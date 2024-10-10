@@ -52,6 +52,7 @@ public class CompileFlows implements EntryPoint {
     private static final String DELAY = "delay";
     private static final String EXCEPTION = "exception";
     private static final String LOOP = "loop";
+    private static final String FLOW_PROTOCOL = "flow://";
     private static final String HTTP_INPUT_NAMESPACE = "http.input.";
     private static final String HTTP_OUTPUT_NAMESPACE = "http.output.";
     private static final String INPUT_NAMESPACE = "input.";
@@ -185,11 +186,16 @@ public class CompileFlows implements EntryPoint {
                 Object taskException = flow.get(TASKS+"["+i+"]."+EXCEPTION);
                 Object taskLoop = flow.get(TASKS+"["+i+"]."+LOOP);
                 if (input instanceof List && output instanceof List &&
-                        process instanceof String &&
-                        taskDesc instanceof String &&
-                        execution instanceof String && validExecutionType((String) execution)) {
+                        process instanceof String processName &&
+                        taskDesc instanceof String taskDescription &&
+                        execution instanceof String taskExecution && validExecutionType((String) execution)) {
                     boolean validTask = true;
-                    Task task = new Task((String) process, (String) taskDesc, (String) execution);
+                    if (processName.contains("://") && !processName.startsWith(FLOW_PROTOCOL) &&
+                            processName.length() <= FLOW_PROTOCOL.length()) {
+                        log.error("{} {} in {}. check syntax for flow://{flow-name}", SKIP_INVALID_TASK, process, name);
+                        return;
+                    }
+                    Task task = new Task(processName, taskDescription, taskExecution);
                     if (delay instanceof Integer) {
                         long n = util.str2long(delay.toString());
                         if (n < entry.ttl) {

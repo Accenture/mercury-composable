@@ -4,6 +4,8 @@ flows:
   - 'file-vault-test.yml'
   - 'circuit-breaker-example.yml'
   - 'greetings.yml'
+  - 'parent-greetings.yml'
+  - 'children/daughter-greetings.yml'
   - 'timeout-test.yml'
   - 'decision-test.yml'
   - 'numeric-decision-test.yml'
@@ -36,5 +38,6 @@ flows:
   - 'parser-test-14.yml'
   - 'parser-test-15.yml'
   - 'parser-test-16.yml'
+  - 'missing-subordinate-flow.yml'
 
 location: 'classpath:/flows/'

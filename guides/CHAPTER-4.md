@@ -627,7 +627,38 @@ tasks:
       - 'echo.three'
 ```
 
-### Advanced features
+### Hierarchy of flows
+
+Inside a flow, you can run one or more subordinate flows.
+
+To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
+
+For example, when running the following task, the subordinate flow "my-subordinate-flow" will be executed.
+
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> header.user'
+      - 'input.body -> body'
+    process: 'flow://my-subordinate-flow'
+    output:
+      - 'result -> model.pojo'
+    description: 'Execute a subordinate flow'
+    execution: sequential
+    next:
+      - 'my.next.function'
+```
+
+If the subordinate flow is not available, the system will throw an error stating that the flow is not found.
+
+Hierarchy of flows would reduce the complexity of a single flow configuration file. The "time-to-live (TTL)"
+value of the parent flow should be set to a value that covers the complete flow including the time used in
+the subordinate flows. To avoid the additional routing overheads, use this feature only when necessary.
+
+IMPORTANT: for simplicity, the input data mapping for a subordinate flow should contain only the "header"
+and "body" arguments.
+
+### Advanced pipeline features
 
 Some special uses of pipelines include "if-then-else" and "for/while loops". This is like running a mini-flow
 inside a pipeline.
