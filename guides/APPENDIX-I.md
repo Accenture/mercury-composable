@@ -129,14 +129,6 @@ To specify more than one condition, use a comma separated list as the value like
 OptionalService("web.socket.enabled, rest.automation") - this tells the system to load the class when 
 either web.socket.enabled or rest.automation is true.
 
-
-## Compatibility with Spring Boot
-
-Depending on your use cases, you may point the system to use the same Spring's application files
-or use a different set of configuration files.
-
-Note that the system does not support more than one Spring configuration "profile".
-
 # Static HTML contents
 
 You can place static HTML files (e.g. the HTML bundle for a UI program) in the "resources/public" folder or
