@@ -1,6 +1,6 @@
 flow:
   id: 'daughter-greetings'
-  description: 'Simplest flow of one task'
+  description: 'This is a subordinate flow'
   ttl: 10s
 
 first:

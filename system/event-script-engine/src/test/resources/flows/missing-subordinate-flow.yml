@@ -1,6 +1,6 @@
 flow:
   id: 'missing-subordinate-flow'
-  description: 'Simplest flow of one task'
+  description: 'Demonstrate broken flow'
   ttl: 10s
 
 first:
@@ -23,7 +23,7 @@ tasks:
       - 'result -> output.body'
       - 'header -> output.header'
       - 'status -> output.status'
-    description: 'Hello World'
+    description: 'The subordinate flow is intentionally not found'
     execution: end
     exception: 'v1.hello.exception'
 
