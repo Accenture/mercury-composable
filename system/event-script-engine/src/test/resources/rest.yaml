@@ -57,6 +57,24 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/parent-greeting/{user}?ex=_"
+    flow: 'parent-greetings'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/missing-flow/{user}?ex=_"
+    flow: 'missing-subordinate-greetings'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/timeout/{user}?ex=_"
     flow: 'timeout-test'
     timeout: 5s
