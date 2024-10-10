@@ -284,14 +284,44 @@ you should add the following parameter in application.properties to activate thi
 yaml.preload.override=classpath:/preload-override.yaml
 ```
 
+## Hierarchy of flows
+
+Inside a flow, you can run one or more sub-flows.
+
+To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
+
+For example, when running the following task, the sub-flow "my-sub-flow" will be executed.
+
+```yaml
+tasks:
+  - input:
+      - 'input.path_parameter.user -> header.user'
+      - 'input.body -> body'
+    process: 'flow://my-sub-flow'
+    output:
+      - 'result -> model.pojo'
+    description: 'Execute a sub-flow'
+    execution: sequential
+    next:
+      - 'my.next.function'
+```
+
+If the sub-flow is not available, the system will throw an error stating that it is not found.
+
+Hierarchy of flows would reduce the complexity of a single flow configuration file. The "time-to-live (TTL)"
+value of the parent flow should be set to a value that covers the complete flow including the time used in
+the sub-flows. To avoid the additional routing overheads, use this feature only when necessary.
+
+For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
+
 ## Task list
 
 All tasks for a flow are defined in the "tasks" section.
 
 ### Input/Output data mapping
 
-A function is self-contained. This modularity reduces application complexity because the developer only needs interface
-contract details for a specific function.
+A function is self-contained. This modularity reduces application complexity because the developer only needs
+interface contract details for a specific function.
 
 To handle this level of modularity, the system provides configurable input/output data mapping.
 
@@ -626,37 +656,6 @@ tasks:
     next:
       - 'echo.three'
 ```
-
-### Hierarchy of flows
-
-Inside a flow, you can run one or more sub-flows.
-
-To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
-
-For example, when running the following task, the sub-flow "my-sub-flow" will be executed.
-
-```yaml
-tasks:
-  - input:
-      - 'input.path_parameter.user -> header.user'
-      - 'input.body -> body'
-    process: 'flow://my-sub-flow'
-    output:
-      - 'result -> model.pojo'
-    description: 'Execute a sub-flow'
-    execution: sequential
-    next:
-      - 'my.next.function'
-```
-
-If the sub-flow is not available, the system will throw an error stating that the flow is not found.
-
-Hierarchy of flows would reduce the complexity of a single flow configuration file. The "time-to-live (TTL)"
-value of the parent flow should be set to a value that covers the complete flow including the time used in
-the sub-flows. To avoid the additional routing overheads, use this feature only when necessary.
-
-IMPORTANT: for simplicity, the input data mapping for a sub-flow should contain only the "header"
-and "body" arguments.
 
 ### Advanced pipeline features
 
