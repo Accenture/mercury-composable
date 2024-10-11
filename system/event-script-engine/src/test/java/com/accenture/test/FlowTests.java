@@ -264,7 +264,7 @@ public class FlowTests extends TestBase {
         assertTrue(res.getBody() instanceof Map);
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(500, res.getStatus());
-        assertEquals("Flow missing-sub-greetings not found", result.get("message"));
+        assertEquals("flow://flow-not-found not defined", result.get("message"));
     }
 
     private String getAppName() {
