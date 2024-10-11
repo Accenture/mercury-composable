@@ -369,8 +369,10 @@ public class ServiceGateway {
     }
 
     private EtagFile getStaticFile(String path) {
-        // for security, test for "path traversal" attack
-        Path testPath = new File(SIGNATURE_FOLDER, path.replace("\\", "/")).toPath().normalize();
+        // 1. for security, test for "path traversal" attack
+        // 2. trim trailing white space because the normalize() function does not allow that in Windows OS
+        Path testPath = new File(SIGNATURE_FOLDER, path.trim().replace("\\", "/"))
+                            .toPath().normalize();
         if (!testPath.startsWith(SIGNATURE_FOLDER_PATH)) {
             log.error("Reject path traversal attack - {}", path);
             // reject path traversal attempt
