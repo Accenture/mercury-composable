@@ -24,7 +24,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -32,18 +31,12 @@ import java.util.concurrent.TimeoutException;
 public class WorkerHandler {
     private static final Logger log = LoggerFactory.getLogger(WorkerHandler.class);
     private static final Utility util = Utility.getInstance();
-    private static final String TYPE = "type";
     private static final String ID = "id";
     private static final String PATH = "path";
     private static final String SUCCESS = "success";
     private static final String FROM = "from";
     private static final String UNKNOWN = "unknown";
     private static final String EXEC_TIME = "exec_time";
-    private static final String TIME = "time";
-    private static final String APP = "app";
-    private static final String PONG = "pong";
-    private static final String REASON = "reason";
-    private static final String MESSAGE = "message";
     private static final String ORIGIN = "origin";
     private static final String SERVICE = "service";
     private static final String START = "start";
@@ -64,7 +57,6 @@ public class WorkerHandler {
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
     private static final String READY = "ready:";
-    private static final String HASH = "#";
     private final boolean tracing;
     private final ServiceDef def;
     private final String route;

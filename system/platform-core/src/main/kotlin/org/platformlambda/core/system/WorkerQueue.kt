@@ -15,6 +15,7 @@
     limitations under the License.
 
  */
+
 package org.platformlambda.core.system
 
 import io.vertx.core.Handler
@@ -387,7 +388,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
 
     companion object {
         private val log = LoggerFactory.getLogger(WorkerQueue::class.java)
-        private const val TYPE = "type"
         private const val ID = "id"
         private const val PATH = "path"
         private const val START = "start"
@@ -396,11 +396,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
         private const val SUCCESS = "success"
         private const val FROM = "from"
         private const val EXEC_TIME = "exec_time"
-        private const val TIME = "time"
-        private const val APP = "app"
-        private const val PONG = "pong"
-        private const val REASON = "reason"
-        private const val MESSAGE = "message"
         private const val ORIGIN = "origin"
         private const val SERVICE = "service"
         private const val INPUT = "input"
