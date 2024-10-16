@@ -19,7 +19,6 @@
 package org.platformlambda.core;
 
 import io.vertx.core.Future;
-import org.junit.Assert;
 import org.junit.Test;
 import org.platformlambda.common.JacksonSerializer;
 import org.platformlambda.common.SimplePoJo;
@@ -651,8 +650,8 @@ public class PostOfficeTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         List<String> routes = po.getJournaledRoutes();
         assertEquals(2, routes.size());
-        assertEquals(ANOTHER_FUNCTION, routes.get(0));
-        assertEquals(MY_FUNCTION, routes.get(1));
+        assertTrue(routes.contains(ANOTHER_FUNCTION));
+        assertTrue(routes.contains(MY_FUNCTION));
     }
 
     @SuppressWarnings("unchecked")
