@@ -38,7 +38,7 @@ The two endpoints are served by their corresponding functions in the package und
 
 To run this application:
 ```
-java -jar api-playground-4.0.7.jar
+java -jar api-playground-4.0.9.jar
 ```
 
 You will see it starting a Reactive HTTP server at port 8222.

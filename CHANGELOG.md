@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.9, 10/18/2024
+
+### Added
+
+Added Kafka Raft for the Kafka-standalone app.
+
+### Removed
+
+Removed zookeeper from Kafka-standalone app.
+
+### Changed
+
+N/A
+
+---
 ## Version 4.0.8, 10/9/2024
 
 ### Added

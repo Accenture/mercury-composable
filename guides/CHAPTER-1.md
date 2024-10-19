@@ -176,7 +176,7 @@ To run it from the command line, you may do this:
 
 ```shell
 cd sandbox/mercury-composable/examples/composable-example
-java -jar target/composable-example-4.0.0.jar
+java -jar target/composable-example-4.0.9.jar
 ```
 
 If you run the application from the IDE, you may execute the "main" method in the `MainApp` class under the
