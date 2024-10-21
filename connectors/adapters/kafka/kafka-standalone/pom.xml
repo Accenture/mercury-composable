@@ -18,6 +18,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring-framework.version>6.1.14</spring-framework.version>
         <kafka.version>3.8.0</kafka.version>
         <gson.version>2.11.0</gson.version>
         <kotlin.version>2.0.20</kotlin.version>

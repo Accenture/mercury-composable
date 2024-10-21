@@ -22,7 +22,7 @@ Removed zookeeper from Kafka-standalone app.
 
 ### Changed
 
-N/A
+Update spring framework verison 6.1.14 to avoid vulnerability in project reactor
 
 ---
 ## Version 4.0.8, 10/9/2024
