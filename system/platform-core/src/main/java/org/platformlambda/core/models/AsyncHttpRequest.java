@@ -254,11 +254,12 @@ public class AsyncHttpRequest {
 
     public String getCookie(String key) {
         String value = caseInsensitiveGet(cookies, key);
-        return value.replace('\r', ' ').replace('\n', ' ');
+        return value.replace("\r", "").replace("\n", "");
     }
 
     public AsyncHttpRequest setCookie(String key, String value) {
-        setNonNullValue(cookies, key, value);
+        // avoid CR/LF attack
+        setNonNullValue(cookies, key, value.replace("\r", "").replace("\n", ""));
         return this;
     }
 

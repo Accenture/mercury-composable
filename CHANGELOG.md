@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.10, 10/24/2024
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. OSS update - Spring Boot 3.3.5
+2. Security patch for CR/LF exploit for HTTP cookie
+
+---
 ## Version 4.0.9, 10/18/2024
 
 ### Added

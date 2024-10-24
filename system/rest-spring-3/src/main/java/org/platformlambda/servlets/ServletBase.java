@@ -64,7 +64,13 @@ public abstract class ServletBase extends HttpServlet {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
         String accept = request.getHeader(ACCEPT);
-        event.setHeader(ACCEPT_CONTENT, accept != null? accept : MediaType.APPLICATION_JSON_VALUE);
+        if (accept == null) {
+            accept = MediaType.APPLICATION_JSON_VALUE;
+        } else {
+            // avoid CR/LF attack
+            accept = accept.replace("\r", "").replace("\n", "");
+        }
+        event.setHeader(ACCEPT_CONTENT, accept);
         if (origin.equals(myOrigin)) {
             event.setTo(EventEmitter.ACTUATOR_SERVICES);
         } else {
