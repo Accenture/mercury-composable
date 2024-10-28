@@ -1,0 +1,6 @@
+preload:
+  - original: 'v1.dummy.two'
+    instances: 30
+    routes:
+      - 'v1.dummy.two.3'
+      - 'v1.dummy.two.4'

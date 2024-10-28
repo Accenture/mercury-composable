@@ -92,7 +92,6 @@ public class CompileFlows implements EntryPoint {
     private static final String CONDITION_STATEMENTS = "condition.statements";
     private static final String CONDITION_TASK_MODE = "condition.mode";
     private static final String SKIP_INVALID_TASK = "Skip invalid task";
-
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
 
@@ -108,43 +107,48 @@ public class CompileFlows implements EntryPoint {
     @SuppressWarnings("rawtypes")
     @Override
     public void start(String[] args) throws IOException {
+        Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
-        String path = config.getProperty("yaml.flow.automation", "classpath:/flows.yaml");
-        if (path.contains(",")) {
-            throw new IOException("yaml.flow.automation must be a single entry with classpath:/ or file:/");
-        }
-        ConfigReader reader = new ConfigReader();
-        try {
-            reader.load(path);
-        } catch(IOException e) {
-            throw new IOException("Event Script engine not activated - "+e.getMessage());
-        }
-        log.info("Loading event scripts from {}", path);
-        String prefix = reader.getProperty("location", "classpath:/flows/");
-        Object flowConfig = reader.get("flows");
-        if (flowConfig instanceof List flows) {
-            for (int i=0; i < flows.size(); i++) {
-                String f = reader.getProperty("flows["+i+"]");
-                if (f.endsWith(".yml") || f.endsWith(".yaml")) {
-                    ConfigReader flow = new ConfigReader();
-                    try {
-                        flow.load(prefix + f);
-                        log.info("Parsing {}{}", prefix, f);
-                        createFlow(f, flow);
-                    } catch (IOException e) {
-                        log.error("Ignored {} - {}", f, e.getMessage());
+        String locations = config.getProperty("yaml.flow.automation", "classpath:/flows.yaml");
+        List<String> paths = util.split(locations, ", ");
+        int n = 0;
+        for (String p: paths) {
+            ConfigReader reader = new ConfigReader();
+            try {
+                reader.load(p);
+            } catch (IOException e) {
+                log.error("Skipping some event scripts - {}", e.getMessage());
+                continue;
+            }
+            log.info("Loading event scripts from {}", p);
+            String prefix = reader.getProperty("location", "classpath:/flows/");
+            Object flowConfig = reader.get("flows");
+            if (flowConfig instanceof List flows) {
+                for (int i = 0; i < flows.size(); i++) {
+                    String f = reader.getProperty("flows[" + i + "]");
+                    if (f.endsWith(".yml") || f.endsWith(".yaml")) {
+                        ConfigReader flow = new ConfigReader();
+                        try {
+                            flow.load(prefix + f);
+                            log.info("Parsing {}{}", prefix, f);
+                            createFlow(f, flow);
+                        } catch (IOException e) {
+                            log.error("Ignored {} - {}", f, e.getMessage());
+                        }
+                    } else {
+                        log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
                     }
-                } else {
-                    log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
                 }
             }
+            n += Flows.getAllFlows().size();
+
         }
         List<String> flows = Flows.getAllFlows();
         Collections.sort(flows);
-        for (String f: flows) {
+        for (String f : flows) {
             log.info("Loaded {}", f);
         }
-        log.info("Event scripts deployed: {}", flows.size());
+        log.info("Event scripts deployed: {}", n);
     }
 
     @SuppressWarnings("unchecked")

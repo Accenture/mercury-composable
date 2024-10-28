@@ -3,7 +3,7 @@
 Event Script uses YAML to represent an end-to-end transaction flow. A transaction is a business use case, and
 the flow can be an API service, a batch job or a real-time transaction.
 
-## flows.yml
+## Flow list (default name is flows.yml)
 
 This configuration file sits in the project "resources" project and contains a list of filenames.
 
@@ -19,6 +19,19 @@ location: 'classpath:/flows/'
 
 The "location" tag is optional. If present, you can tell the system to load the flow config files from
 another folder location.
+
+## Multiple flow lists
+
+You can provide more than one flow list to your application and it can become very handy under different
+situations. For instance, to achieve better modularity in complex application, flows can be grouped to
+multiple categories based on development team's choice and these flows can be managed in multiple flow
+lists. Another great place to use multiple flow list is to include external libraries which contain
+pre-defined flow lists. The following example demonstrates that an application loads a list of flows
+defined in "flows.yaml" and additional flows defined in "more-flows.yaml" file of a composable library.
+
+```properties
+yaml.flow.automation=classpath:/flows.yaml, classpath:/more-flows.yaml
+```
 
 ## Writing new REST endpoint and function
 
@@ -52,7 +65,7 @@ tasks:
 
 In the application.properties, you can specify the following parameter:
 
-```
+```properties
 yaml.flow.automation=classpath:/flows.yaml
 ```
 
@@ -283,6 +296,24 @@ you should add the following parameter in application.properties to activate thi
 ```properties
 yaml.preload.override=classpath:/preload-override.yaml
 ```
+
+## Multiple preload override config files
+
+When you publish a composable function as a library, you may want to ensure the route names of the functions are
+overridden correctly. In this case, you can bundle a library specific preload override config file.
+
+For example, your library contains a "preload-kafka.yaml" to override some route names, you can add it to the
+yaml.preload.override parameter like this:
+
+```properties
+yaml.preload.override=classpath:/preload-override.yaml, classpath:/preload-kafka.yaml
+```
+
+The system will then merge the two preload override config files.
+
+The currency value of a function is overwritten using the "instances" parameter in the first preload override file.
+Additional override of the "instances" parameter is ignored. This allows the preload override file in the user
+application to take precedence over the value in the library's preload override file.
 
 ## Hierarchy of flows
 

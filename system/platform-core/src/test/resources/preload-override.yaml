@@ -1,5 +1,6 @@
 preload:
   - original: 'v1.dummy.one'
+    keep_original: true
     routes:
       - 'v1.dummy.one.1'
       - 'v1.dummy.one.2'

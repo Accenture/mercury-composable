@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
 
 ---
+## Version 4.0.11, 10/28/2024
+
+### Added
+
+New features to support:
+1. multiple preload override config file
+2. multiple flow list config files
+
+### Removed
+
+1. unused class "UnauthorizedObj" in platform-core
+2. commons-io dependency in Kafka-Standalone subproject
+
+### Changed
+
+1. Unit test for the preload override feature
+2. JavaDoc for the MainApplicatioin
+
+---
 ## Version 4.0.10, 10/24/2024
 
 ### Added
