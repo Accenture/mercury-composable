@@ -58,12 +58,9 @@ java -jar target/kafka-standalone-3.1.2.jar
 The standalone Kafka server will start at port 9092. You may adjust the "server.properties" in the standalone-kafka
 project when necessary.
 
-When the kafka server is started, it will create two temporary directories in the "/tmp" folder:
+When the kafka server is started, it will create a temporary directory "/tmp/kafka-logs".
 
-1. "/tmp/zookeeper"
-2. "/tmp/kafka-logs"
-
-> The kafka server is designed for development purpose only. The kafka and zookeeper data stores
+> The kafka server is designed for development purpose only. The kafka message log store
   will be cleared when the server is restarted.
 
 ## Prepare the kafka-presence application

@@ -77,7 +77,8 @@ instances to clear routing entries for the failed application instance.
 
 # Kafka-standalone
 
-This is a convenient application to run Kafka as a standalone server. It will start zookeeper and kafka orderly.
+This is a convenient application to run Kafka as a standalone server.
+
 It uses the "/tmp" directory to store working files. This Kafka standalone server is designed to simplify software
 development and testing and should not be used for production purpose.
 
