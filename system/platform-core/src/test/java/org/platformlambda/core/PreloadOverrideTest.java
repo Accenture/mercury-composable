@@ -30,17 +30,20 @@ public class PreloadOverrideTest extends TestBase {
     public void validateOverrideResult() {
         // check the route names after the preloading process at start-up
         Platform platform = Platform.getInstance();
-        // v1.dummy.one is changed to v1.dummy.one.1 and v1.dummy.one.2
-        assertFalse(platform.hasRoute("v1.dummy.one"));
+        // v1.dummy.one is kept in addition to v1.dummy.one.1 and v1.dummy.one.2
+        assertTrue(platform.hasRoute("v1.dummy.one"));
         assertTrue(platform.hasRoute("v1.dummy.one.1"));
         assertTrue(platform.hasRoute("v1.dummy.one.2"));
         // v1.dummy.two is changed to v1.dummy.two.1 and v1.dummy.two.2
+        // preload-more.yaml add v1.dummy.two.3 and v1.dummy.two.4
         assertFalse(platform.hasRoute("v1.dummy.two"));
         assertTrue(platform.hasRoute("v1.dummy.two.1"));
         assertTrue(platform.hasRoute("v1.dummy.two.2"));
+        assertTrue(platform.hasRoute("v1.dummy.two.3"));
+        assertTrue(platform.hasRoute("v1.dummy.two.4"));
         // v1.dummy.one.1's concurrency is changed to 20 by preload-override.yaml
         assertEquals(20, platform.getConcurrency("v1.dummy.one.1"));
-        // v1.dummy.two.1 remains unchanged based on preload-override.yaml
-        assertEquals(100, platform.getConcurrency("v1.dummy.two.1"));
+        // v1.dummy.two.1's concurrency is changed to 30 by preload-more.yaml
+        assertEquals(30, platform.getConcurrency("v1.dummy.two.1"));
     }
 }

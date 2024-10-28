@@ -3,7 +3,7 @@
 Event Script uses YAML to represent an end-to-end transaction flow. A transaction is a business use case, and
 the flow can be an API service, a batch job or a real-time transaction.
 
-## flows.yml
+## Flow list (default name is flows.yml)
 
 This configuration file sits in the project "resources" project and contains a list of filenames.
 
@@ -19,6 +19,17 @@ location: 'classpath:/flows/'
 
 The "location" tag is optional. If present, you can tell the system to load the flow config files from
 another folder location.
+
+## Multiple flow lists
+
+You can tell the system to load more than one flow list. For example, a composable function
+in a library may have its own flow list. You can update the "yaml.flow.automation" parameter
+to point to multiple flow lists. In the following example, it assumes the user application has
+a flow list in "flows.yaml" and a composable library has its list in "more-flows.yaml".
+
+```properties
+yaml.flow.automation=classpath:/flows.yaml, classpath:/more-flows.yaml
+```
 
 ## Writing new REST endpoint and function
 
@@ -52,7 +63,7 @@ tasks:
 
 In the application.properties, you can specify the following parameter:
 
-```
+```properties
 yaml.flow.automation=classpath:/flows.yaml
 ```
 
@@ -283,6 +294,24 @@ you should add the following parameter in application.properties to activate thi
 ```properties
 yaml.preload.override=classpath:/preload-override.yaml
 ```
+
+## Multiple preload override config files
+
+When you publish a composable function as a library, you may want to ensure the route names of the functions are
+overridden correctly. In this case, you can bundle a library specific preload override config file.
+
+For example, your library contains a "preload-kafka.yaml" to override some route names, you can add it to the
+yaml.preload.override parameter like this:
+
+```properties
+yaml.preload.override=classpath:/preload-override.yaml, classpath:/preload-kafka.yaml
+```
+
+The system will then merge the two preload override config files.
+
+The currency value of a function is overwritten using the "instances" parameter in the first preload override file.
+Additional override of the "instances" parameter is ignored. This allows the preload override file in the user
+application to take precedence over the value in the library's preload override file.
 
 ## Hierarchy of flows
 

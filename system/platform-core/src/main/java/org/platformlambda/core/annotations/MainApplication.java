@@ -25,9 +25,11 @@ import java.lang.annotation.*;
  * <p>
  * You should also implement the EntryPoint interface for your MainApplication module(s).
  * <p>
- * Smaller sequence will be executed first
+ * Smaller sequence will be executed first.
  * <p>
- * sequence must be between 1 and 999
+ * For user application, sequence number must be between 10 and 999.
+ * <p>
+ * sequence numbers 1 to 9 are reserved for system use.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

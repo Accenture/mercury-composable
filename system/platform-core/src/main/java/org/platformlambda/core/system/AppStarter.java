@@ -59,6 +59,7 @@ public class AppStarter {
     private static final String JAVA_VM_VERSION = "java.vm.version";
     private static final String JAVA_RUNTIME_VERSION = "java.runtime.version";
 
+    private static final String DEFAULT_INSTANCES = "-1";
     private static final int MAX_SEQ = 999;
     private static boolean loaded = false;
     private static boolean mainAppLoaded = false;
@@ -186,7 +187,7 @@ public class AppStarter {
                 }
             } catch (Exception e) {
                 error++;
-                log.error("Unable to start - " + cls.getName(), e);
+                log.error("Unable to start - {}", cls.getName(), e);
             }
         }
         if (main && error == 0 && n == 0) {
@@ -196,55 +197,84 @@ public class AppStarter {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private static Map<String, Object> getPreloadOverride() {
-        Map<String, Object> result = new HashMap<>();
+    private static Map<String, PreLoadInfo> getPreloadOverride() {
         Utility util = Utility.getInstance();
+        Map<String, PreLoadInfo> result = new HashMap<>();
         AppConfigReader config = AppConfigReader.getInstance();
-        ConfigReader overrideConfig = new ConfigReader();
-        String overridePath = config.getProperty("yaml.preload.override");
-        if (overridePath != null) {
+        String path = config.getProperty("yaml.preload.override");
+        if (path != null) {
             try {
-                overrideConfig.load(overridePath);
-                Object o = overrideConfig.get("preload");
-                if (o instanceof List oList) {
-                    for (int i=0; i < oList.size(); i++) {
-                        Object m = overrideConfig.get("preload["+i+"]");
-                        if (m instanceof Map oMap) {
-                            String original = overrideConfig.getProperty("preload["+i+"].original");
-                            Object routeList = overrideConfig.get("preload["+i+"].routes");
-                            int instances = util.str2int(overrideConfig.getProperty("preload["+i+"].instances"));
-                            if (original == null || original.isEmpty()) {
-                                throw new IllegalArgumentException("preload["+i+"] does not contain 'original'");
-                            }
-                            if (routeList instanceof List rList) {
-                                List<String> routes = new ArrayList<>();
-                                for (int j=0; j < rList.size(); j++) {
-                                    routes.add(overrideConfig.getProperty("preload["+i+"].routes["+j+"]"));
+                List<String> paths = util.split(path, ", ");
+                for (String p: paths) {
+                    ConfigReader overrideConfig = new ConfigReader();
+                    overrideConfig.load(p);
+                    Map<String, PreLoadInfo> tasks = parsePreloadOverride(overrideConfig);
+                    if (result.isEmpty()) {
+                        result.putAll(tasks);
+                    } else {
+                        for (String route: tasks.keySet()) {
+                            if (result.containsKey(route)) {
+                                PreLoadInfo info = tasks.get(route);
+                                PreLoadInfo prior = result.get(route);
+                                prior.routes.addAll(info.routes);
+                                if (prior.instances == -1) {
+                                    prior.instances = info.instances;
                                 }
-                                result.put(original, routes);
-                                result.put("_"+original, instances);
                             } else {
-                                throw new IllegalArgumentException("preload["+i+"].routes must be a list");
+                                result.put(route, tasks.get(route));
                             }
-                        } else {
-                            throw new IllegalArgumentException("preload["+i+"] is not a map of original and routes");
                         }
                     }
-                } else {
-                    throw new IllegalArgumentException("preload must be a list of key-values for original and routes");
                 }
             } catch (IOException | IllegalArgumentException e) {
-                log.error("Skipping preload override config - {}", e.getMessage());
+                log.error("Skipping some preload config - {}", e.getMessage());
             }
         }
         return result;
     }
 
-    private static String getMatchedPreload(Map<String, Object> preloadOverride, List<String> routes) {
+    @SuppressWarnings("rawtypes")
+    private static Map<String, PreLoadInfo> parsePreloadOverride(ConfigReader overrideConfig) {
+        Map<String, PreLoadInfo> result = new HashMap<>();
+        Utility util = Utility.getInstance();
+        Object o = overrideConfig.get("preload");
+        if (o instanceof List oList) {
+            for (int i=0; i < oList.size(); i++) {
+                Object m = overrideConfig.get("preload["+i+"]");
+                if (m instanceof Map) {
+                    String original = overrideConfig.getProperty("preload["+i+"].original");
+                    Object routeList = overrideConfig.get("preload["+i+"].routes");
+                    int instances = util.str2int(overrideConfig.getProperty("preload["+i+"].instances",
+                                                    DEFAULT_INSTANCES));
+                    if (original == null || original.isEmpty()) {
+                        throw new IllegalArgumentException("preload["+i+"] does not contain 'original'");
+                    }
+                    if (routeList instanceof List rList) {
+                        Set<String> routes = new HashSet<>();
+                        for (int j=0; j < rList.size(); j++) {
+                            routes.add(overrideConfig.getProperty("preload["+i+"].routes["+j+"]"));
+                        }
+                        if ("true".equals(overrideConfig.getProperty("preload["+i+"].keep_original"))) {
+                            routes.add(original);
+                        }
+                        result.put(original, new PreLoadInfo(original, instances, routes));
+                    } else {
+                        throw new IllegalArgumentException("preload["+i+"].routes must be a list");
+                    }
+                } else {
+                    throw new IllegalArgumentException("preload["+i+"] is not a map of original and routes");
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("preload must be a list of key-values for original and routes");
+        }
+        return result;
+    }
+
+    private static PreLoadInfo getMatchedPreload(Map<String, PreLoadInfo> preloadOverride, List<String> routes) {
         for (String r: routes) {
             if (preloadOverride.containsKey(r)) {
-                return r;
+                return preloadOverride.get(r);
             }
         }
         return null;
@@ -256,7 +286,7 @@ public class AppStarter {
         log.info("Preloading started - {}", po.getId());
         Utility util = Utility.getInstance();
         Platform platform = Platform.getInstance();
-        Map<String, Object> preloadOverride = getPreloadOverride();
+        Map<String, PreLoadInfo> preloadOverride = getPreloadOverride();
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
         Set<String> packages = scanner.getPackages(true);
         for (String p : packages) {
@@ -273,16 +303,19 @@ public class AppStarter {
                             log.error("Unable to preload {} - missing service route(s)", serviceName);
                         } else {
                             int instances = getInstancesFromEnv(svc.envInstances(), svc.instances());
-                            String original = getMatchedPreload(preloadOverride, routes);
-                            if (original != null) {
-                                routes = (List<String>) preloadOverride.get(original);
-                                int updatedInstances = (Integer) preloadOverride.get("_" + original);
+                            PreLoadInfo preLoadInfo = getMatchedPreload(preloadOverride, routes);
+                            if (preLoadInfo != null) {
+                                routes = new ArrayList<>(preLoadInfo.routes);
+                                if (routes.size() > 1) {
+                                    Collections.sort(routes);
+                                }
+                                int updatedInstances = preLoadInfo.instances;
                                 if (updatedInstances > 0) {
-                                    log.info("Preload override [{}] to {}, instances {} to {}",
+                                    log.info("Preload [{}] as {}, instances {} to {}",
                                             svc.route(), routes, instances, updatedInstances);
                                     instances = updatedInstances;
                                 } else {
-                                    log.info("Preload override [{}] to {}", svc.route(), routes);
+                                    log.info("Preload [{}] as {}", svc.route(), routes);
                                 }
                             }
                             boolean isPrivate = svc.isPrivate();
@@ -485,10 +518,23 @@ public class AppStarter {
                 log.info("Loading config from {}", p);
                 return config;
             } catch (IOException e) {
-                log.warn("Skipping {} - {}", p, e.getMessage());
+                log.warn("Skipping some REST endpoints - {}", e.getMessage());
             }
         }
         throw new IOException("Endpoint configuration not found in "+paths);
+    }
+
+    private static class PreLoadInfo {
+
+        public String original;
+        public int instances;
+        public Set<String> routes;
+
+        public PreLoadInfo(String original, int instances, Set<String> routes) {
+            this.original = original;
+            this.instances = instances;
+            this.routes = routes;
+        }
     }
 
     private record Housekeeper(ConcurrentMap<String, AsyncContextHolder> contexts) {
