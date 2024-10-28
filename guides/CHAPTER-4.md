@@ -22,10 +22,12 @@ another folder location.
 
 ## Multiple flow lists
 
-You can tell the system to load more than one flow list. For example, a composable function
-in a library may have its own flow list. You can update the "yaml.flow.automation" parameter
-to point to multiple flow lists. In the following example, it assumes the user application has
-a flow list in "flows.yaml" and a composable library has its list in "more-flows.yaml".
+You can provide more than one flow list to your application and it can become very handy under different
+situations. For instance, to achieve better modularity in complex application, flows can be grouped to
+multiple categories based on development team's choice and these flows can be managed in multiple flow
+lists. Another great place to use multiple flow list is to include external libraries which contain
+pre-defined flow lists. The following example demonstrates that an application loads a list of flows
+defined in "flows.yaml" and additional flows defined in "more-flows.yaml" file of a composable library.
 
 ```properties
 yaml.flow.automation=classpath:/flows.yaml, classpath:/more-flows.yaml
