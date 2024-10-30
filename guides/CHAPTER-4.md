@@ -314,8 +314,7 @@ yaml.preload.override=classpath:/preload-override.yaml, classpath:/preload-kafka
 The system will then merge the two preload override config files.
 
 The concurrency value of a function is overwritten using the "instances" parameter in the first preload override file.
-Additional override of the "instances" parameter is ignored. This allows the preload override file in the user
-application to take precedence over the value in the library's preload override file.
+Subsequent override of the "instances" parameter is ignored. i.e. the first preload override file will take precedence.
 
 ## Hierarchy of flows
 
