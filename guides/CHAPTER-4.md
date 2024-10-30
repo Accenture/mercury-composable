@@ -288,7 +288,7 @@ preload:
 In the above example, the function associated with "greeting.demo" will be preloaded as "greeting.case.1"
 and "greeting.case.2". The number of maximum concurrent instances is also changed from 10 to 20.
 
-Note that the second example "v1.another.reusable.function" is overridden as "v1.reusable.1" and "v1.reusable.2"
+Note that the second example "v1.another.reusable.function" is updated as "v1.reusable.1" and "v1.reusable.2"
 and the number of concurrent instances is not changed. The original route "v1.another.reusable.function" is
 preserved when the "keep_original" parameter is set to true.
 
@@ -302,7 +302,7 @@ yaml.preload.override=classpath:/preload-override.yaml
 ## Multiple preload override config files
 
 When you publish a composable function as a library, you may want to ensure the route names of the functions are
-overridden correctly. In this case, you can bundle a library specific preload override config file.
+merged properly. In this case, you can bundle a library specific preload override config file.
 
 For example, your library contains a "preload-kafka.yaml" to override some route names, you can add it to the
 yaml.preload.override parameter like this:
@@ -313,7 +313,7 @@ yaml.preload.override=classpath:/preload-override.yaml, classpath:/preload-kafka
 
 The system will then merge the two preload override config files.
 
-The currency value of a function is overwritten using the "instances" parameter in the first preload override file.
+The concurrency value of a function is overwritten using the "instances" parameter in the first preload override file.
 Additional override of the "instances" parameter is ignored. This allows the preload override file in the user
 application to take precedence over the value in the library's preload override file.
 
