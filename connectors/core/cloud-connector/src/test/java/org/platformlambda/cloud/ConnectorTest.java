@@ -18,9 +18,9 @@
 
 package org.platformlambda.cloud;
 
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.cloud.reporter.PresenceConnector;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
@@ -42,6 +42,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class ConnectorTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(ConnectorTest.class);
 
@@ -49,7 +51,7 @@ public class ConnectorTest extends TestBase {
 
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
-    @Before
+    @BeforeEach
     public void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
@@ -142,7 +144,7 @@ public class ConnectorTest extends TestBase {
         po.asyncRequest(req, 5000).onSuccess(bench::offer);
         EventEnvelope queryResult = bench.poll(10, TimeUnit.SECONDS);
         assert queryResult != null;
-        assertTrue(queryResult.getBody() instanceof List);
+        assertInstanceOf(List.class, queryResult.getBody());
         List<String> list = (List<String>) queryResult.getBody();
         assertFalse(list.isEmpty());
         List<String> instances = (List<String>) queryResult.getBody();
@@ -154,7 +156,7 @@ public class ConnectorTest extends TestBase {
         Map<String, Object> info = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(info);
         Object nodes = multi.getElement("routing.nodes");
-        assertTrue(nodes instanceof List);
+        assertInstanceOf(List.class, nodes);
         String nodeList = nodes.toString();
         assertTrue(nodeList.contains("unit-test"));
         assertTrue(po.exists("hello.demo"));
@@ -167,13 +169,13 @@ public class ConnectorTest extends TestBase {
         assertEquals(true, queryResult.getBody());
         headers.put("X-App-Instance", Platform.getInstance().getOrigin());
         response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(200, result.get("status"));
         assertEquals("suspend", result.get("type"));
         assertEquals("/suspend/now", result.get("path"));
         response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         result = (Map<String, Object>) response.getBody();
         assertEquals(200, result.get("status"));
         assertEquals("resume", result.get("type"));
@@ -220,7 +222,7 @@ public class ConnectorTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals("UP", result.get("status"));
         assertEquals("cloud-connector", result.get("name"));

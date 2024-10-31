@@ -19,7 +19,7 @@
 package org.platformlambda.core;
 
 import io.vertx.core.Future;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -37,7 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EventHttpTest extends TestBase {
 
@@ -108,7 +108,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(401, result.getStatus());
-        assertTrue(result.getBody() instanceof String);
+        assertInstanceOf(String.class, result.getBody());
         assertEquals("Unauthorized", result.getBody());
     }
 
@@ -131,7 +131,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = bench.poll(TIMEOUT + 500, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(200, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("world", map.getElement("headers.hello"));
         assertEquals(PAYLOAD, map.getElement("body"));
@@ -156,7 +156,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = bench.poll(TIMEOUT + 500, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(200, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("world", map.getElement("headers.hello"));
         assertEquals(PAYLOAD, map.getElement("body"));
@@ -180,7 +180,7 @@ public class EventHttpTest extends TestBase {
         assertNotNull(result);
         // status code 202 indicates that a drop-n-forget event has been sent asynchronously
         assertEquals(202, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> map = (Map<String, Object>) result.getBody();
         assertTrue(map.containsKey("time"));
         assertEquals("async", map.get("type"));
@@ -206,7 +206,7 @@ public class EventHttpTest extends TestBase {
         assertNotNull(result);
         // status code 202 indicates that a drop-n-forget event has been sent asynchronously
         assertEquals(202, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> map = (Map<String, Object>) result.getBody();
         assertTrue(map.containsKey("time"));
         assertEquals("async", map.get("type"));
@@ -231,7 +231,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(200, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("world", map.getElement("headers.hello"));
         assertEquals(NUMBER_THREE, map.getElement("body"));
@@ -254,7 +254,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(401, result.getStatus());
-        assertTrue(result.getBody() instanceof String);
+        assertInstanceOf(String.class, result.getBody());
         assertEquals("Unauthorized", result.getBody());
     }
 
@@ -363,7 +363,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = future.get();
         assertNotNull(result);
         assertEquals(200, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("world", map.getElement("headers.hello"));
         // validate that session information is passed by the demo authentication service "event.api.auth"
@@ -388,7 +388,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(200, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("world", map.getElement("headers.hello"));
         // validate that session information is passed by the demo authentication service "event.api.auth"

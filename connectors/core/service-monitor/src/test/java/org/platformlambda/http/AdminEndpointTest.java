@@ -18,9 +18,8 @@
 
 package org.platformlambda.http;
 
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.cloud.reporter.PresenceConnector;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.Platform;
@@ -38,6 +37,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class AdminEndpointTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(AdminEndpointTest.class);
 
@@ -45,7 +46,7 @@ public class AdminEndpointTest extends TestBase {
 
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
-    @Before
+    @BeforeEach
     public void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
@@ -89,7 +90,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
@@ -105,7 +106,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -117,7 +118,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/lib", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
@@ -131,7 +132,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/lib", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -143,7 +144,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
@@ -159,7 +160,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -171,7 +172,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals("UP", result.get("status"));
         MultiLevelMap map = new MultiLevelMap(result);
@@ -186,7 +187,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -197,7 +198,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "text/plain");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/livenessprobe", headers);
-        assertTrue(response.getBody() instanceof String);
+        assertInstanceOf(String.class, response.getBody());
         assertEquals("OK", response.getBody());
     }
 
@@ -208,7 +209,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/livenessprobe", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -220,11 +221,11 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/env", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
-        assertTrue(result.get("env") instanceof Map);
+        assertInstanceOf(Map.class, result.get("env"));
     }
 
     @SuppressWarnings("unchecked")
@@ -234,7 +235,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/env", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -246,7 +247,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/shutdown/now", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("Resource not found", result.get("message"));
@@ -258,7 +259,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/suspend/now", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("Resource not found", result.get("message"));
@@ -270,7 +271,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/resume/now", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("Resource not found", result.get("message"));
@@ -282,7 +283,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/shutdown", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(400, result.get("status"));
         assertEquals("Missing X-App-Instance in request header", result.get("message"));
@@ -295,7 +296,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/shutdown", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -307,7 +308,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(400, result.get("status"));
         assertEquals("Missing X-App-Instance in request header", result.get("message"));
@@ -320,7 +321,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -332,7 +333,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(400, result.get("status"));
         assertEquals("Missing X-App-Instance in request header", result.get("message"));
@@ -345,7 +346,7 @@ public class AdminEndpointTest extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-app-instance", "does-not-exist");
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, result.get("status"));
         assertEquals("does-not-exist is not reachable", result.get("message"));
@@ -357,7 +358,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("X-App-Instance", Platform.getInstance().getOrigin());
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(200, result.get("status"));
         assertEquals("suspend", result.get("type"));
@@ -370,7 +371,7 @@ public class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("X-App-Instance", Platform.getInstance().getOrigin());
         EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(200, result.get("status"));
         assertEquals("resume", result.get("type"));

@@ -18,8 +18,8 @@
 
 package org.platformlambda.core;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.MockPubSub;
@@ -32,7 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UtilityTests {
 
@@ -42,8 +42,8 @@ public class UtilityTests {
     private static final long ONE_HOUR = 60 * ONE_MINUTE;
     private static final long ONE_DAY = 24 * ONE_HOUR;
 
-    @Before
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         // temp directory should be available from the OS without access right restriction
         File temp = new File("/tmp");
         if (!temp.exists()) {

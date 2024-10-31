@@ -7,7 +7,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-For release notes before version 3.1, please refer to https://github.com/Accenture/mercury
+---
+## Version 4.0.12, 10/31/2024
+
+### Added
+
+New feature to support resolution of more than one environment variable for a parameter
+using the ConfigReader
+
+### Removed
+
+N/A
+
+### Changed
+
+Update OSS modules
+1. classgraph version 4.8.177
+2. kotlin version 2.0.21
+3. guava version 33.3.1-jre
+4. jUnit version 5 jupiter
+
+Adjusted all unit tests to use jUnit 5
 
 ---
 ## Version 4.0.11, 10/28/2024
@@ -26,7 +46,7 @@ New features to support:
 ### Changed
 
 1. Unit test for the preload override feature
-2. JavaDoc for the MainApplicatioin
+2. JavaDoc for the MainApplication
 
 ---
 ## Version 4.0.10, 10/24/2024

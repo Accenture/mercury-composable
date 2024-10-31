@@ -21,7 +21,7 @@ package com.accenture.test;
 import com.accenture.models.PoJo;
 import com.accenture.setup.TestBase;
 import com.accenture.tasks.ParallelTask;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -41,7 +41,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
@@ -72,7 +72,7 @@ public class FlowTests extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
         // Take return value as PoJo
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         PoJo restored = result.getBody(PoJo.class);
         assertEquals(HELLO, restored.user);
         assertEquals(SEQ, restored.sequence);
@@ -96,7 +96,7 @@ public class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> body = (Map<String, Object>) result.getBody();
         // verify that input headers are mapped to the function's input body
         assertEquals("header-test", body.get("x-flow-id"));
@@ -152,7 +152,7 @@ public class FlowTests extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
         assertEquals(200, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> output = (Map<String, Object>) result.getBody();
         assertEquals(2, output.get("attempt"));
     }
@@ -169,7 +169,7 @@ public class FlowTests extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
         assertEquals(400, result.getStatus());
-        assertTrue(result.getBody() instanceof Map);
+        assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> output = (Map<String, Object>) result.getBody();
         assertEquals("Just a demo exception for circuit breaker to handle", output.get("message"));
     }
@@ -188,7 +188,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(USER, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
@@ -228,7 +228,7 @@ public class FlowTests extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope res = po.request(req, TIMEOUT).get();
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(USER, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
@@ -261,7 +261,7 @@ public class FlowTests extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope res = po.request(req, TIMEOUT).get();
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(500, res.getStatus());
         assertEquals("flow://flow-not-found not defined", result.get("message"));
@@ -286,7 +286,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(400, result.get("status"));
         assertEquals("just a test", result.get("message"));
@@ -306,7 +306,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(408, result.get("status"));
         assertEquals("Flow timeout for 1000 ms", result.get("message"));
@@ -327,7 +327,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(false, result.get("decision"));
         assertEquals("two", result.get("from"));
@@ -337,7 +337,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         result = (Map<String, Object>) res.getBody();
         assertEquals(true, result.get("decision"));
         assertEquals("one", result.get("from"));
@@ -358,7 +358,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(2, result.get("decision"));
         assertEquals("two", result.get("from"));
@@ -368,7 +368,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         result = (Map<String, Object>) res.getBody();
         assertEquals(1, result.get("decision"));
         assertEquals("one", result.get("from"));
@@ -389,7 +389,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(500, result.get("status"));
         assertTrue(result.get("message").toString().contains("invalid decision"));
@@ -410,7 +410,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         MultiLevelMap result = new MultiLevelMap((Map<String, Object>) res.getBody());
         assertEquals(SEQ, result.getElement("pojo.sequence"));
         assertEquals(USER, result.getElement("pojo.user"));
@@ -439,7 +439,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(SEQ, result.get("sequence"));
         assertEquals(USER, result.get("user"));
@@ -462,7 +462,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(SEQ, result.get("sequence"));
         assertEquals(USER, result.get("user"));
@@ -483,7 +483,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
         assertEquals(SEQ, pw.sequence);
@@ -507,7 +507,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
@@ -530,7 +530,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
@@ -554,7 +554,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
@@ -578,7 +578,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
@@ -602,7 +602,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
@@ -626,7 +626,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
@@ -650,7 +650,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(400, result.get("status"));
         assertEquals("just a test", result.get("message"));
@@ -669,7 +669,7 @@ public class FlowTests extends TestBase {
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
-        assertTrue(res.getBody() instanceof Map);
+        assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertFalse(result.isEmpty());
         assertEquals(2, ParallelTask.bench.size());

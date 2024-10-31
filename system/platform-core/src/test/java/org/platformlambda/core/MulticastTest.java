@@ -18,8 +18,8 @@
 
 package org.platformlambda.core;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -31,13 +31,15 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MulticastTest {
     private static final Logger log = LoggerFactory.getLogger(MulticastTest.class);
     private static final String MY_ROUTE = "my_route";
     private static final int WAIT_INTERVAL = 300;
-    @BeforeClass
+
+    @BeforeAll
     public static void setup() throws InterruptedException {
         // The multicast.yaml configuration will be loaded when the EventEmitter singleton initializes
         EventEmitter po = EventEmitter.getInstance();

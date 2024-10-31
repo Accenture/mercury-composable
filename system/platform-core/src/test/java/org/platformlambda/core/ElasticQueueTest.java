@@ -18,7 +18,7 @@
 
 package org.platformlambda.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.util.ElasticQueue;
@@ -26,7 +26,7 @@ import org.platformlambda.core.util.ElasticQueue;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ElasticQueueTest {
 
@@ -73,12 +73,7 @@ public class ElasticQueueTest {
     private void readWrite(String path, int size) throws IOException {
         String target = "hello.world";
         // create input
-        StringBuilder sb = new StringBuilder();
-        for (int i=0; i < size; i++) {
-            sb.append("0123456789");
-        }
-        sb.append(": ");
-        String baseText = sb.toString();
+        String baseText = "0123456789".repeat(Math.max(0, size)) + ": ";
         ElasticQueue spooler = new ElasticQueue(path);
         // immediate read after write
         for (int i = 0; i < ElasticQueue.MEMORY_BUFFER * 3; i++) {
@@ -113,7 +108,7 @@ public class ElasticQueueTest {
             EventEnvelope data = new EventEnvelope();
             data.load(b);
             assertNotNull(data);
-            assertTrue(data.getBody() instanceof Map);
+            assertInstanceOf(Map.class, data.getBody());
             PoJo o = data.getBody(PoJo.class);
             assertEquals(input, o.getName());
         }

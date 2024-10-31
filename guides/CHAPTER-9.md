@@ -520,18 +520,19 @@ Your function can access the main application configuration from the platform li
 ```java
 AppConfigReader config = AppConfigReader.getInstance();
 // the value can be string or a primitive
-Object value = config.get('my.parameter');
+Object value = config.get("my.parameter");
 // the return value will be converted to a string
-String text = config.getProperty('my.parameter');
+String text = config.getProperty("my.parameter");
 ```
 
-The system uses the standard dot-bracket format for a parameter name.
+The system uses the standard dot-bracket format for a parameter name. e.g.
 
-> e.g. "hello.world", "some.key[2]"
+> hello.world
+  some.key[2]
 
-You can override the main application configuration at run-time using the Java argument "-D".
+You can override the main application configuration at run-time using the Java argument "-D". e.g.
 
-> e.g. "java -Dserver.port=8080 -jar myApp.jar"
+> java -Dserver.port=8080 -jar myApp.jar
 
 Additional configuration files can be added with the `ConfigReader` API like this:
 
@@ -542,9 +543,15 @@ reader.load(filePath);
 ```
 
 The configuration system supports environment variable or reference to the main application configuration
-using the dollar-bracket syntax `${reference:default_value}`.
+using the dollar-bracket syntax `${reference:default_value}`. e.g.
 
-> e.g. "some.key=${MY_ENV_VARIABLE}", "some.key=${my.key}"
+> some.key=${MY_ENV_VARIABLE}
+  another.key=${my.key:12345}
+  complex.key=first ${FIRST_ENV_VAR}, second ${SECOND_ENV_VAR}
+
+In the above example, a parameter may contain references to more than one environment variable.
+
+Default value, if not given, will be assumed to be an empty string.
 
 ## Custom serializer
 

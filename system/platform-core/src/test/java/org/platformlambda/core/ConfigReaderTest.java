@@ -18,8 +18,8 @@
 
 package org.platformlambda.core;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ConfigReaderTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         ConfigReader.setBaseConfig(AppConfigReader.getInstance());
     }
@@ -45,7 +45,7 @@ public class ConfigReaderTest {
         ConfigReader reader = new ConfigReader();
         reader.load("classpath:/test.properties");
         String path = System.getenv("PATH");
-        assertEquals(path, reader.getProperty("hello.world"));
+        assertEquals("path is "+path, reader.getProperty("hello.world"));
     }
 
     @Test
@@ -99,14 +99,14 @@ public class ConfigReaderTest {
         Object o = reader.get("hello.world");
         assertEquals("some value", o);
         o = reader.get("hello.multiline");
-        assertTrue(o instanceof String);
+        assertInstanceOf(String.class, o);
         assertTrue(o.toString().contains("\n"));
         List<String> lines = Utility.getInstance().split(o.toString(), "\n");
         assertEquals(2, lines.size());
         assertEquals("line one", lines.get(0));
         assertEquals("line two", lines.get(1));
         o = reader.get("hello.array");
-        assertTrue(o instanceof ArrayList);
+        assertInstanceOf(ArrayList.class, o);
         List<String> elements = (List<String>) o;
         assertEquals(2, elements.size());
         assertEquals("hi", elements.get(0));
@@ -130,7 +130,7 @@ public class ConfigReaderTest {
          * YAML and JSON preserve original objects.
          */
         Object o = map.get("hello.number");
-        assertTrue(o instanceof Integer);
+        assertInstanceOf(Integer.class, o);
         assertEquals(12345, o);
     }
 
@@ -181,7 +181,7 @@ public class ConfigReaderTest {
         assertNull(formatter.getElement(goodArray+"[0]"));
         assertEquals(message, formatter.getElement(goodArray+"[1]"));
         o = formatter.getElement(uuid);
-        assertTrue(o instanceof Map);
+        assertInstanceOf(Map.class, o);
         Map<String, Object> submap = (Map<String, Object>) o;
         assertEquals(2, submap.size());
         assertTrue(submap.containsKey("great"));
@@ -238,14 +238,17 @@ public class ConfigReaderTest {
         reader.load("classpath:/test.properties");
         String value = reader.getProperty("recursive.key");
         // In case of config loop, the system will not resolve a parameter value.
-        assertNull(value);
+        assertEquals("", value);
     }
 
     @Test
     public void multiLevelLoopErrorTest() {
         AppConfigReader config = AppConfigReader.getInstance();
-        Object value = config.get("looping.test.1");
-        assertEquals("1000", value);
+        Object value1 = config.get("looping.test.1");
+        assertEquals("", value1);
+        // test recursion
+        Object value2 = config.get("looping.test.3");
+        assertEquals("hello hello ", value2);
     }
 
     @Test
@@ -280,7 +283,7 @@ public class ConfigReaderTest {
         MultiLevelMap multi = new MultiLevelMap(raw);
         assertEquals("${recursive.key}", multi.getElement("recursive.key"));
         // prove that config.get() method resolves value substitution
-        assertNull(config.get("recursive.key"));
+        assertEquals("", config.get("recursive.key"));
         // prove that compositeKeyValues return the same value as config.get() method
         Map<String, Object> map = config.getCompositeKeyValues();
         assertEquals(config.get("application.feature.route.substitution"),
@@ -301,6 +304,20 @@ public class ConfigReaderTest {
         Object testYaml = config.get("test.yaml");
         assertEquals("hello world", testPara);
         assertEquals(100, testYaml);
+    }
+
+    @Test
+    public void multiEnvVarTest() throws IOException {
+        AppConfigReader config = AppConfigReader.getInstance();
+        String cloudConnector = config.getProperty("cloud.connector");
+        String serverPort = config.getProperty("server.port");
+        String componentScan = config.getProperty("web.component.scan");
+        final String expected = "1 " + cloudConnector + ", 2 " +
+                                serverPort + ", 3 " + componentScan + ", 4 12345, 5";
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.properties");
+        Object value = reader.getProperty("multiple.env.vars");
+        assertEquals(expected, value);
     }
 
 }

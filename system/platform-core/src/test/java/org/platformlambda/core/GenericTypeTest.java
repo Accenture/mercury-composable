@@ -18,7 +18,7 @@
 
 package org.platformlambda.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -27,7 +27,7 @@ import org.platformlambda.core.util.Utility;
 import java.io.IOException;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GenericTypeTest {
 
@@ -63,7 +63,6 @@ public class GenericTypeTest {
         assertEquals(NUMBER_2, restored2.getNumber());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testArrayOfPoJo() throws IOException {
         int NUMBER_1 = 100;
@@ -85,7 +84,7 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        assertTrue(result.getBody() instanceof List);
+        assertInstanceOf(List.class, result.getBody());
         List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(3, pojoList.size());
         PoJo restored1 = (PoJo) pojoList.getFirst();
@@ -133,7 +132,7 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        assertTrue(result.getBody() instanceof List);
+        assertInstanceOf(List.class, result.getBody());
         assertEquals(list, result.getBody());
     }
 
@@ -148,7 +147,7 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        assertTrue(result.getBody() instanceof List);
+        assertInstanceOf(List.class, result.getBody());
         assertEquals(Arrays.asList(array), result.getBody());
     }
 
@@ -229,7 +228,7 @@ public class GenericTypeTest {
         assertEquals(NAME, o.getContent().getName());
         assertEquals(ID, o.getContent().getNumber());
         assertEquals(ID, o.getId());
-        assertTrue(restored.getRawBody() instanceof Map);
+        assertInstanceOf(Map.class, restored.getRawBody());
     }
 
     @Test
@@ -246,7 +245,7 @@ public class GenericTypeTest {
         PoJoVariance o = restored.getBody(PoJoVariance.class);
         assertEquals(NAME, o.getName());
         assertEquals(ID, o.getNumber());
-        assertTrue(restored.getRawBody() instanceof Map);
+        assertInstanceOf(Map.class, restored.getRawBody());
     }
 
     @Test

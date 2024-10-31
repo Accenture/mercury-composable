@@ -19,7 +19,7 @@
 package org.platformlambda.core;
 
 import io.vertx.core.Future;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.system.AsyncObjectStreamReader;
 import org.platformlambda.core.system.ObjectStreamIO;
 import org.platformlambda.core.system.ObjectStreamWriter;
@@ -33,7 +33,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ObjectStreamTest {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamTest.class);

@@ -18,7 +18,7 @@
 
 package org.platformlambda.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 
@@ -29,10 +29,11 @@ import java.util.Map;
 
 import org.platformlambda.core.util.Utility;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GsonTest {
 
+    @SuppressWarnings("rawtypes")
     @Test
     public void objectToMap() {
         // test custom map serializer

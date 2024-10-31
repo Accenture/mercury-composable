@@ -83,10 +83,13 @@ public class ConfigReader implements ConfigBase {
 
     /**
      * Retrieve a parameter value by key, given a default value
-     * (Note that a parameter may be substituted by a system property,
+     * <p>
+     * 1. a parameter may be substituted by a system property,
      * an environment variable or another configuration parameter key-value
-     * using the standard dot-bracket syntax)
-     *
+     * using the standard dot-bracket syntax
+     * <p>
+     * 2. the optional "loop" parameter should have zero or one element.
+     * <p>
      * @param key of a configuration parameter
      * @param defaultValue if key does not exist
      * @param loop reserved for internal use to detect configuration loops
@@ -106,48 +109,80 @@ public class ConfigReader implements ConfigBase {
             value = defaultValue;
         }
         if (value instanceof String result) {
-            int bracketStart = result.indexOf("${");
-            int bracketEnd = result.lastIndexOf('}');
-            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart && baseConfig != null) {
-                String middle = result.substring(bracketStart + 2, bracketEnd).trim();
-                String middleDefault = null;
-                if (!middle.isEmpty()) {
-                    String loopId = loop.length == 1 && !loop[0].isEmpty() ? loop[0] : Utility.getInstance().getUuid();
-                    int colon = middle.indexOf(':');
-                    if (colon > 0) {
-                        middleDefault = middle.substring(colon+1);
-                        middle = middle.substring(0, colon);
-                    }
-                    String property = System.getenv(middle);
-                    if (property != null) {
-                        middle = property;
+            List<String> intermediateResult = resolveEnvVar(key, result, defaultValue, loop);
+            // scan for additional environment variables or system property
+            return resolveEnvVar(intermediateResult, key, defaultValue, loop);
+        }
+        return value;
+    }
+
+    private String resolveEnvVar(List<String> intermediateResult,
+                                       String key, Object defaultValue, String... loop) {
+        if (intermediateResult.size() == 2) {
+            String text = intermediateResult.get(1);
+            while (hasEnvVar(text)) {
+                List<String> nextStage = resolveEnvVar(key, text, defaultValue, loop);
+                if (nextStage.size() == 2) {
+                    text = nextStage.get(1);
+                } else {
+                    break;
+                }
+            }
+            return text;
+        }
+        return intermediateResult.getFirst();
+    }
+
+    private boolean hasEnvVar(String text) {
+        int bracketStart = text.indexOf("${");
+        int bracketEnd = bracketStart != -1? text.indexOf('}', bracketStart) : -1;
+        return bracketStart != -1 && bracketEnd != -1;
+    }
+
+    private List<String> resolveEnvVar(String key, String original, Object defaultValue, String... loop) {
+        List<String> result = new ArrayList<>();
+        result.add(original);
+        int bracketStart = original.indexOf("${");
+        int bracketEnd = bracketStart != -1? original.indexOf('}', bracketStart) : -1;
+        if (bracketStart != -1 && bracketEnd != -1 && baseConfig != null) {
+            String middle = original.substring(bracketStart + 2, bracketEnd).trim();
+            String middleDefault = null;
+            if (!middle.isEmpty()) {
+                String loopId = loop.length == 1 && !loop[0].isEmpty() ? loop[0] : Utility.getInstance().getUuid();
+                int colon = middle.indexOf(':');
+                if (colon > 0) {
+                    middleDefault = middle.substring(colon+1);
+                    middle = middle.substring(0, colon);
+                }
+                String property = System.getenv(middle);
+                if (property != null) {
+                    middle = property;
+                } else {
+                    List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
+                    if (refs.contains(middle)) {
+                        log.warn("Config loop for '{}' detected", key);
+                        middle = "";
                     } else {
-                        List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
-                        if (refs.contains(middle)) {
-                            log.warn("Config loop for '{}' detected", key);
-                            middle = null;
-                        } else {
-                            refs.add(middle);
-                            loopDetection.put(loopId, refs);
-                            Object mid = baseConfig.get(middle, defaultValue, loopId);
-                            middle = mid != null? String.valueOf(mid) : null;
-                        }
+                        refs.add(middle);
+                        loopDetection.put(loopId, refs);
+                        Object mid = baseConfig.get(middle, defaultValue, loopId);
+                        middle = mid != null? String.valueOf(mid) : null;
                     }
-                    loopDetection.remove(loopId);
-                    String first = result.substring(0, bracketStart);
-                    String last = result.substring(bracketEnd+1);
-                    if (first.isEmpty() && last.isEmpty()) {
-                        return middle != null? middle : middleDefault;
-                    } else {
-                        if (middleDefault == null) {
-                            middleDefault = "";
-                        }
-                        return first + (middle != null ? middle : middleDefault) + last;
+                }
+                loopDetection.remove(loopId);
+                String first = original.substring(0, bracketStart);
+                String last = original.substring(bracketEnd+1);
+                if (first.isEmpty() && last.isEmpty()) {
+                    result.add(middle != null? middle : middleDefault);
+                } else {
+                    if (middleDefault == null) {
+                        middleDefault = "";
                     }
+                    result.add(first + (middle != null ? middle : middleDefault) + last);
                 }
             }
         }
-        return value;
+        return result;
     }
 
     /**
@@ -335,5 +370,4 @@ public class ConfigReader implements ConfigBase {
             }
         }
     }
-
 }

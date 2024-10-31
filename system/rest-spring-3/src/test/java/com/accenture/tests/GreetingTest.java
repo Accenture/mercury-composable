@@ -1,7 +1,7 @@
 package com.accenture.tests;
 
 import com.accenture.common.TestBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -11,8 +11,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GreetingTest extends TestBase {
 
@@ -28,7 +27,7 @@ public class GreetingTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Hello, World", map.getElement("content.greeting"));
     }
@@ -46,7 +45,7 @@ public class GreetingTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Hello, user", map.getElement("content.greeting"));
     }

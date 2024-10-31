@@ -18,8 +18,8 @@
 
 package org.platformlambda.core;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CryptoTest {
     private static final Logger log = LoggerFactory.getLogger(CryptoTest.class);
@@ -41,7 +41,7 @@ public class CryptoTest {
     private static final CryptoApi crypto = new CryptoApi();
     private static boolean strongCrypto;
 
-    @BeforeClass
+    @BeforeAll
     public static void checkCrypto() {
         strongCrypto = crypto.strongCryptoSupported();
         if (!strongCrypto) {

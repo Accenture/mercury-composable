@@ -19,8 +19,7 @@
 package org.platformlambda.core;
 
 import com.google.gson.JsonPrimitive;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
@@ -31,6 +30,8 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleMapperTest {
 
