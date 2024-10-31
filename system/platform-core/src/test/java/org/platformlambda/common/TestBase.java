@@ -22,7 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.automation.service.MockHelloWorld;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -61,7 +61,7 @@ public class TestBase {
 
     private static final AtomicInteger startCounter = new AtomicInteger(0);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws IOException, InterruptedException {
         if (startCounter.incrementAndGet() == 1) {
             Platform.setAppId(APP_ID);

@@ -18,8 +18,7 @@
 
 package org.platformlambda.demo;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -33,6 +32,8 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HelloWorldTest extends TestBase {
 
@@ -58,7 +59,7 @@ public class HelloWorldTest extends TestBase {
         assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
     }
 
-    private class DemoPoJo {
+    private static class DemoPoJo {
         String name;
         String address;
         String telephone;

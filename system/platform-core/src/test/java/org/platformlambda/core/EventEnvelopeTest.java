@@ -1,6 +1,6 @@
 package org.platformlambda.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EventEnvelopeTest {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelopeTest.class);
@@ -118,7 +118,7 @@ public class EventEnvelopeTest {
         source.setBody(pojo);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        assertTrue(target.getRawBody() instanceof Map);
+        assertInstanceOf(Map.class, target.getRawBody());
         Map<String, Object> map = (Map<String, Object>) target.getRawBody();
         assertEquals(HELLO, map.get("name"));
         PoJo restored = target.getBody(PoJo.class);
@@ -136,13 +136,13 @@ public class EventEnvelopeTest {
         source.setBody(list);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        assertTrue(target.getBody() instanceof List);
+        assertInstanceOf(List.class, target.getBody());
         List<Object> restored = (List<Object>) target.getBody();
         Map<String, Object> map = new HashMap<>();
         map.put("list", restored);
         MultiLevelMap multi = new MultiLevelMap(map);
         assertEquals(HELLO, multi.getElement("list[0].name"));
-        assertTrue(target.getBody() instanceof List);
+        assertInstanceOf(List.class, target.getBody());
         List<Object> output = target.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(1, output.size());
         PoJo restoredPoJo = (PoJo) output.getFirst();
@@ -171,7 +171,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void mapSerializationTest() throws IOException {
+    public void mapSerializationTest() {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -215,7 +215,7 @@ public class EventEnvelopeTest {
         assertEquals(HELLO, output.getName());
         assertEquals(HELLO, target.getException().getMessage());
         assertEquals(IllegalArgumentException.class, target.getException().getClass());
-        assertTrue(map.getElement("exception") instanceof byte[]);
+        assertInstanceOf(byte[].class, map.getElement("exception"));
         byte[] b = (byte[]) map.getElement("exception");
         log.info("Stacktrace binary payload size = {}", b.length);
     }

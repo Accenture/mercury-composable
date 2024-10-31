@@ -19,8 +19,7 @@
 package com.accenture.tasks;
 
 import com.accenture.support.TestBase;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
@@ -29,6 +28,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CryptoTests extends TestBase {
     private static final Utility util = Utility.getInstance();
@@ -52,7 +53,7 @@ public class CryptoTests extends TestBase {
         // send event to encryption function
         EventEnvelope encRequest = new EventEnvelope().setTo("v1.encrypt.fields").setBody(input);
         EventEnvelope encResult = po.request(encRequest, 5000).get();
-        assertTrue(encResult.getBody() instanceof Map);
+        assertInstanceOf(Map.class, encResult.getBody());
         Map<String, Object> encrypted = (Map<String, Object>) encResult.getBody();
         assertEquals(2, encrypted.size());
         assertTrue(encrypted.containsKey(KEY1));
@@ -64,7 +65,7 @@ public class CryptoTests extends TestBase {
         // send event to decryption function
         EventEnvelope decRequest = new EventEnvelope().setTo("v1.decrypt.fields").setBody(input);
         EventEnvelope decResult = po.request(decRequest, 5000).get();
-        assertTrue(decResult.getBody() instanceof Map);
+        assertInstanceOf(Map.class, decResult.getBody());
         Map<String, Object> decrypted = (Map<String, Object>) decResult.getBody();
         assertEquals(2, decrypted.size());
         assertTrue(decrypted.containsKey(KEY1));

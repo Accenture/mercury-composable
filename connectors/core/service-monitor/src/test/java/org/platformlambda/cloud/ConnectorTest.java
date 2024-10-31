@@ -18,9 +18,8 @@
 
 package org.platformlambda.cloud;
 
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.MainApp;
 import org.platformlambda.cloud.reporter.PresenceConnector;
 import org.platformlambda.core.models.EventEnvelope;
@@ -45,6 +44,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class ConnectorTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(ConnectorTest.class);
 
@@ -58,7 +59,7 @@ public class ConnectorTest extends TestBase {
     private static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
-    @Before
+    @BeforeEach
     public void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
@@ -123,17 +124,17 @@ public class ConnectorTest extends TestBase {
         n = 0;
         while (n++ < 30) {
             EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-            assertTrue(response.getBody() instanceof Map);
+            assertInstanceOf(Map.class, response.getBody());
             Map<String, Object> map = (Map<String, Object>) response.getBody();
             Object info = map.get("additional_info");
-            assertTrue(info instanceof Map);
+            assertInstanceOf(Map.class, info);
             Map<String, Object> infoMap = (Map<String, Object>) info;
             Object tt = infoMap.get("topics");
-            assertTrue(tt instanceof List);
+            assertInstanceOf(List.class, tt);
             List<String> topicList = (List<String>) tt;
             assertEquals(2, topicList.size());
             Object vt = infoMap.get("virtual_topics");
-            assertTrue(vt instanceof List);
+            assertInstanceOf(List.class, vt);
             List<String> vtList = (List<String>) vt;
             if (vtList.isEmpty()) {
                 log.info("Waiting for first active member... {}", n);
@@ -143,7 +144,7 @@ public class ConnectorTest extends TestBase {
                     // ok to ignore
                 }
             } else {
-                assertTrue(vtList.get(0).startsWith("multiplex.0001-000 (user.topic.one) ->"));
+                assertTrue(vtList.getFirst().startsWith("multiplex.0001-000 (user.topic.one) ->"));
                 po.send(ServiceDiscovery.SERVICE_REGISTRY,
                         new Kv(TYPE, ALIVE), new Kv(TOPIC, "multiplex.0001-000"),
                         new Kv(ORIGIN, Platform.getInstance().getOrigin()));
@@ -166,17 +167,17 @@ public class ConnectorTest extends TestBase {
         po.asyncRequest(req, 5000).onSuccess(bench::offer);
         bench.poll(10, TimeUnit.SECONDS);
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         assertEquals("UP", map.get("status"));
         response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-        assertTrue(response.getBody() instanceof Map);
+        assertInstanceOf(Map.class, response.getBody());
         map = (Map<String, Object>) response.getBody();
         Object info = map.get("additional_info");
-        assertTrue(info instanceof Map);
+        assertInstanceOf(Map.class, info);
         Map<String, Object> infoMap = (Map<String, Object>) info;
         Object monitorList = infoMap.get("monitors");
-        assertTrue(monitorList instanceof List);
+        assertInstanceOf(List.class, monitorList);
         String monitors = monitorList.toString();
         assertTrue(monitors.contains("test-monitor"));
         assertTrue(monitors.contains(Platform.getInstance().getOrigin()));

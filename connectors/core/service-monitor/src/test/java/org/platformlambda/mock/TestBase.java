@@ -19,7 +19,7 @@
 package org.platformlambda.mock;
 
 import io.vertx.core.Future;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.AutoStart;
@@ -40,7 +40,7 @@ public class TestBase {
 
     private static final AtomicInteger startCounter = new AtomicInteger(0);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         if (startCounter.incrementAndGet() == 1) {
             Utility util = Utility.getInstance();

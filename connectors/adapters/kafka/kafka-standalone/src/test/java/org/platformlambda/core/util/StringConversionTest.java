@@ -18,11 +18,11 @@
 
 package org.platformlambda.core.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StringConversionTest {
     private static final Utility util = Utility.getInstance();

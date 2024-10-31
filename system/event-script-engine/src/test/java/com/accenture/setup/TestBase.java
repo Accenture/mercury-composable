@@ -1,6 +1,6 @@
 package com.accenture.setup;
 
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.core.system.AppStarter;
 import org.platformlambda.core.util.AppConfigReader;
 
@@ -12,7 +12,7 @@ public class TestBase {
 
     protected static String HOST;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         if (startCounter.incrementAndGet() == 1) {
             AppConfigReader config = AppConfigReader.getInstance();

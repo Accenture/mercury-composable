@@ -18,13 +18,12 @@
 
 package com.accenture.support;
 
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.util.CryptoApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.Security;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestBase {
@@ -34,7 +33,7 @@ public class TestBase {
     protected static final CryptoApi crypto = new CryptoApi();
     protected static boolean strongCrypto;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         // execute only once
         if (startCounter.incrementAndGet() == 1) {

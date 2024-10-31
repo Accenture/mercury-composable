@@ -1,7 +1,7 @@
 package org.platformlambda.core;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -14,7 +14,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExceptionTransportTest {
 
@@ -23,7 +23,7 @@ public class ExceptionTransportTest {
     private static final String DEMO = "demo";
     private static final BlockingQueue<EventEnvelope> callbackBench = new ArrayBlockingQueue<>(1);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws IOException {
         Platform platform = Platform.getInstance();
         LambdaFunction f = (headers, input, instance) -> {
@@ -58,7 +58,7 @@ public class ExceptionTransportTest {
         EventEnvelope result = callbackBench.poll(10, TimeUnit.SECONDS);
         assertNotNull(result);
         assertNotNull(result.getException());
-        assertTrue(result.getException() instanceof IllegalArgumentException);
+        assertInstanceOf(IllegalArgumentException.class, result.getException());
         assertEquals(DEMO, result.getException().getMessage());
     }
 

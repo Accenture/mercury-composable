@@ -18,7 +18,7 @@
 
 package org.platformlambda.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
@@ -31,8 +31,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PayloadSegmentationTest {
     private static final String TEST_STRING = "123456789.";
@@ -54,8 +54,7 @@ public class PayloadSegmentationTest {
         Platform platform = Platform.getInstance();
         // create function to receive large payload
         LambdaFunction f = (headers, input, instance) -> {
-            if (input instanceof byte[]) {
-                byte[] b = (byte[]) input;
+            if (input instanceof byte[] b) {
                 if (headers.containsKey("to")) {
                     EventEnvelope e = new EventEnvelope();
                     e.load(b);

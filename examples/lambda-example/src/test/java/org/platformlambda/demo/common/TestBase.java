@@ -18,7 +18,7 @@
 
 package org.platformlambda.demo.common;
 
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.core.system.AutoStart;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +27,7 @@ public class TestBase {
 
     private static final AtomicInteger seq = new AtomicInteger(0);
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         if (seq.incrementAndGet() == 1) {
             AutoStart.main(new String[0]);
