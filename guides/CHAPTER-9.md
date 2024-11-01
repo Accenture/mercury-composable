@@ -527,8 +527,10 @@ String text = config.getProperty("my.parameter");
 
 The system uses the standard dot-bracket format for a parameter name. e.g.
 
-> hello.world
-  some.key[2]
+```properties
+hello.world
+some.key[2]
+```
 
 You can override the main application configuration at run-time using the Java argument "-D". e.g.
 
@@ -545,9 +547,11 @@ reader.load(filePath);
 The configuration system supports environment variable or reference to the main application configuration
 using the dollar-bracket syntax `${reference:default_value}`. e.g.
 
-> some.key=${MY_ENV_VARIABLE}
-  another.key=${my.key:12345}
-  complex.key=first ${FIRST_ENV_VAR}, second ${SECOND_ENV_VAR}
+```properties
+some.key=${MY_ENV_VARIABLE}
+another.key=${my.key:12345}
+complex.key=first ${FIRST_ENV_VAR}, second ${SECOND_ENV_VAR}
+```
 
 In the above example, a parameter may contain references to more than one environment variable.
 
