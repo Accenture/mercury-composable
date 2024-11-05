@@ -16,5 +16,8 @@ flows:
   - 'parser-test-14.yml'
   - 'parser-test-15.yml'
   - 'parser-test-16.yml'
+  - 'parser-test-17.yml'
+  # duplicated filename is intentional for unit test
+  - 'parser-test-17.yml'
 
 location: 'classpath:/parser-flows/'

@@ -18,6 +18,7 @@
 
 package com.accenture.test;
 
+import com.accenture.adapters.StartFlow;
 import com.accenture.models.PoJo;
 import com.accenture.setup.TestBase;
 import com.accenture.tasks.ParallelTask;
@@ -26,6 +27,7 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
@@ -36,10 +38,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -683,6 +682,52 @@ public class FlowTests extends TestBase {
         assertEquals(2, consolidated.size());
         assertTrue(consolidated.containsKey("key1"));
         assertTrue(consolidated.containsKey("key2"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void internalFlowTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        String traceId = Utility.getInstance().getUuid();
+        PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
+        String flowId = "header-test";
+        Map<String, Object> headers = new HashMap<>();
+        Map<String, Object> dataset = new HashMap<>();
+        dataset.put("header", headers);
+        dataset.put("body", Map.of("hello", "world"));
+        headers.put("user-agent", "internal-flow");
+        headers.put("accept", "application/json");
+        headers.put("x-flow-id", flowId);
+        StartFlow startFlow = StartFlow.getInstance();
+        EventEnvelope result = startFlow.request(po, flowId, dataset, traceId, TIMEOUT).get();
+        assertInstanceOf(Map.class, result.getBody());
+        Map<String, Object> body = (Map<String, Object>) result.getBody();
+        // verify that input headers are mapped to the function's input body
+        assertEquals("header-test", body.get("x-flow-id"));
+        assertEquals("internal-flow", body.get("user-agent"));
+        assertEquals("application/json", body.get("accept"));
+    }
+
+    @Test
+    public void internalFlowWithoutFlowIdTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        String traceId = Utility.getInstance().getUuid();
+        PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
+        Map<String, Object> headers = new HashMap<>();
+        Map<String, Object> dataset = new HashMap<>();
+        dataset.put("header", headers);
+        dataset.put("body", Map.of("hello", "world"));
+        headers.put("user-agent", "internal-flow");
+        StartFlow startFlow = StartFlow.getInstance();
+        // missing flowId
+        assertThrows(IllegalArgumentException.class, () ->
+                startFlow.request(po, null, dataset, traceId, TIMEOUT).get());
+        // missing correlation ID
+        assertThrows(IllegalArgumentException.class, () ->
+                startFlow.request(po, "dummy-flow", dataset, null, TIMEOUT).get());
+        // missing body
+        assertThrows(IllegalArgumentException.class, () ->
+                startFlow.request(po, "dummy-flow", new HashMap<>(), null, TIMEOUT).get());
     }
 
 }

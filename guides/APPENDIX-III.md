@@ -1,4 +1,4 @@
-# Actuators and HTTP client
+# Actuators, HTTP client and More
 
 ## Actuator endpoints
 
@@ -272,6 +272,73 @@ of the payload.
 
 IMPORTANT: Do not set the "content-length" HTTP header because the system will automatically compute the
 correct content-length for small payload. For large payload, it will use the chunking method.
+
+## Starting a flow programmatically
+
+To start an "event" flow from a unit test, you may use the helper class "StartFlow" under the "Event Script" module.
+There are two methods, one to start a flow asynchronously and the other returning the response from a flow using
+Java Future.
+
+The signatures of the two methods are shown below.
+
+```java
+public void send(PostOffice po, String flowId, Map<String, Object> dataset,
+                 String replyTo, String correlationId) throws IOException;
+public Future<EventEnvelope> request(PostOffice po, String flowId, Map<String, Object> dataset,
+                                     String correlationId, long timeout) throws IOException;
+```
+
+The following unit test emulates a HTTP request to the flow named "header-test".
+
+```java
+@Test
+public void internalFlowTest() throws IOException, ExecutionException, InterruptedException {
+    final long TIMEOUT = 8000;
+    String traceId = Utility.getInstance().getUuid();
+    PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
+    String flowId = "header-test";
+    Map<String, Object> headers = new HashMap<>();
+    Map<String, Object> dataset = new HashMap<>();
+    dataset.put("header", headers);
+    dataset.put("body", Map.of("hello", "world"));
+    headers.put("user-agent", "internal-flow");
+    headers.put("accept", "application/json");
+    headers.put("x-flow-id", flowId);
+    StartFlow startFlow = StartFlow.getInstance();
+    EventEnvelope result = startFlow.request(po, flowId, dataset, traceId, TIMEOUT).get();
+    assertInstanceOf(Map.class, result.getBody());
+    Map<String, Object> body = (Map<String, Object>) result.getBody();
+    // verify that input headers are mapped to the function's input body
+    assertEquals("header-test", body.get("x-flow-id"));
+    assertEquals("internal-flow", body.get("user-agent"));
+    assertEquals("application/json", body.get("accept"));
+}
+```
+
+The dataset must contain at least the "body" key-value so that input data mapping is possible in a flow.
+
+For the built-in HTTP flow adapter, the dataset would contain the following:
+
+```java
+// convert HTTP context to flow "input" dataset
+Map<String, Object> dataset = new HashMap<>();
+dataset.put("header", request.getHeaders());
+dataset.put("body", request.getBody());
+dataset.put("cookie", request.getCookies());
+dataset.put("path_parameter", request.getPathParameters());
+dataset.put("method", request.getMethod());
+dataset.put("uri", request.getUrl());
+dataset.put("query", request.getQueryParameters());
+dataset.put("stream", request.getStreamRoute());
+dataset.put("ip", request.getRemoteIp());
+dataset.put("filename", request.getFileName());
+dataset.put("session", request.getSessionInfo());
+```
+
+If you write your own Kafka flow adapter, the dataset should contain headers and body mapped with a Kafka event.
+
+For other flow adapters, you may use different set of key-values.
+
 <br/>
 
 |              Appendix-II               |                   Home                    | 
