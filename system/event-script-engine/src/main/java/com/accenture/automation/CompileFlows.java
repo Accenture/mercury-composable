@@ -32,10 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @BeforeApplication(sequence=3)
 public class CompileFlows implements EntryPoint {
@@ -124,8 +121,18 @@ public class CompileFlows implements EntryPoint {
             String prefix = reader.getProperty("location", "classpath:/flows/");
             Object flowConfig = reader.get("flows");
             if (flowConfig instanceof List flows) {
+                Set<String> uniqueFlows = new HashSet<>();
                 for (int i = 0; i < flows.size(); i++) {
                     String f = reader.getProperty("flows[" + i + "]");
+                    if (f.endsWith(".yml") || f.endsWith(".yaml")) {
+                        uniqueFlows.add(f);
+                    } else {
+                        log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
+                    }
+                }
+                List<String> ordered = new ArrayList<>(uniqueFlows);
+                Collections.sort(ordered);
+                for (String f: ordered) {
                     if (f.endsWith(".yml") || f.endsWith(".yaml")) {
                         ConfigReader flow = new ConfigReader();
                         try {
@@ -135,13 +142,10 @@ public class CompileFlows implements EntryPoint {
                         } catch (IOException e) {
                             log.error("Ignored {} - {}", f, e.getMessage());
                         }
-                    } else {
-                        log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
                     }
                 }
             }
             n += Flows.getAllFlows().size();
-
         }
         List<String> flows = Flows.getAllFlows();
         Collections.sort(flows);

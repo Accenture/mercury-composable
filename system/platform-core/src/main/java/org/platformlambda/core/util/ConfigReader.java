@@ -311,12 +311,10 @@ public class ConfigReader implements ConfigBase {
                 Yaml yaml = new Yaml();
                 String data = util.getUTF(util.stream2bytes(in, false));
                 Map<String, Object> m = yaml.load(data.contains("\t")? data.replace("\t", "  ") : data);
-                enforceKeysAsText(m);
-                config = new MultiLevelMap(normalizeMap(m));
+                config = getMultiLevelMap(m);
             } else if (path.endsWith(JSON)) {
                 Map<String, Object> m = SimpleMapper.getInstance().getMapper().readValue(in, Map.class);
-                enforceKeysAsText(m);
-                config = new MultiLevelMap(normalizeMap(m));
+                config = getMultiLevelMap(m);
             } else if (path.endsWith(DOT_PROPERTIES)) {
                 config = new MultiLevelMap();
                 Properties p = new Properties();
@@ -333,6 +331,21 @@ public class ConfigReader implements ConfigBase {
             } catch (IOException e) {
                 //
             }
+        }
+    }
+
+    /**
+     * Normalized a raw map where the input map may be null
+     *
+     * @param raw input map
+     * @return multi level map
+     */
+    private MultiLevelMap getMultiLevelMap(Map<String, Object> raw) {
+        if (raw == null) {
+            return new MultiLevelMap();
+        } else {
+            enforceKeysAsText(raw);
+            return new MultiLevelMap(normalizeMap(raw));
         }
     }
 

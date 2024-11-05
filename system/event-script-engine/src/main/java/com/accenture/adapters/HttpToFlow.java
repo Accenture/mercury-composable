@@ -18,7 +18,6 @@
 
  package com.accenture.adapters;
 
-import com.accenture.automation.EventScriptManager;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
@@ -62,18 +61,12 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void processRequest(PostOffice po, EventEnvelope event) throws AppException, IOException {
-        if (event.getCorrelationId() == null) {
-            throw new AppException(400, "Missing correlation ID in incoming event");
-        }
-        if (event.getReplyTo() == null) {
-            throw new AppException(400, "Missing replyTo address in incoming event");
-        }
         AsyncHttpRequest request = new AsyncHttpRequest(event.getBody());
         String flowId = request.getHeader("x-flow-id");
         if (flowId == null) {
-            throw new AppException(400, "Missing flowId in incoming event");
+            throw new AppException(400, "Missing x-flow-id in HTTP request headers");
         }
-        // convert HTTP context to flow input dataset
+        // convert HTTP context to flow "input" dataset
         Map<String, Object> dataset = new HashMap<>();
         dataset.put("header", request.getHeaders());
         dataset.put("body", request.getBody());
@@ -86,11 +79,7 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
         dataset.put("ip", request.getRemoteIp());
         dataset.put("filename", request.getFileName());
         dataset.put("session", request.getSessionInfo());
-
-        EventEnvelope forward = new EventEnvelope();
-        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId).setReplyTo(event.getReplyTo());
-        forward.setCorrelationId(event.getCorrelationId()).setBody(dataset);
-        po.send(forward);
+        StartFlow.getInstance().send(po, flowId, dataset, event.getReplyTo(), event.getCorrelationId());
     }
 
 }
