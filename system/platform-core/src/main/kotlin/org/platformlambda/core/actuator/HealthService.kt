@@ -108,12 +108,13 @@ class HealthService : KotlinLambdaFunction<EventEnvelope, Any> {
                 }
                 val req = EventEnvelope().setTo(route).setHeader(TYPE, HEALTH)
                 val res = fastRPC.awaitRequest(req, 10000)
-                if (res.body is String) {
-                    m[STATUS_CODE] = res.status
+                m[STATUS_CODE] = res.status
+                if (res.status != 200) {
+                    up = false
+                }
+                // only accept text or Map
+                if (res.body is String || res.body is Map<*, *>) {
                     m[MESSAGE] = res.body
-                    if (res.status != 200) {
-                        up = false
-                    }
                 }
             } catch (e: IOException) {
                 up = false
