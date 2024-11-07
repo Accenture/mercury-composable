@@ -40,10 +40,10 @@ optional.health.dependencies=other.service.health
 Your custom health service must respond to the following requests:
 
 1. Info request (type=info) - it should return a map that includes service name and href (protocol, hostname and port)
-2. Health check (type=health) - it should return a text string of the health check. e.g. read/write test result. 
-   It can throw AppException with status code and error message if health check fails.
+2. Health check (type=health) - it should return a text string or a Map of the health check. e.g. read/write test result. 
+   If health check fails, you can throw AppException with status code and error message.
 
-A sample health service is available in the `DemoHealth` class of the `lambda-example` project as follows:
+A sample health service is available in the `DemoHealth` class of the `composable-example` project as follows:
 
 ```java
 @PreLoad(route="demo.health", instances=5)
@@ -56,29 +56,30 @@ public class DemoHealth implements LambdaFunction {
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         /*
-         * The interface contract for a health check service includes both INFO and HEALTH responses
+         * The interface contract for a health check service includes both INFO and HEALTH responses.
+         * It must return a Map.
          */
         if (INFO.equals(headers.get(TYPE))) {
-            Map<String, Object> result = new HashMap<>();
-            result.put("service", "demo.service");
-            result.put("href", "http://127.0.0.1");
-            return result;
+            Map<String, Object> about = new HashMap<>();
+            about.put("service", "demo.service");
+            about.put("href", "http://127.0.0.1");
+            return about;
         }
         if (HEALTH.equals(headers.get(TYPE))) {
             /*
              * This is a place-holder for checking a downstream service.
              *
-             * You may implement your own logic to test if a downstream service is running fine.
-             * If running, just return a health status message.
+             * Please implement your own logic to test if a downstream service is running fine.
+             * If running, just return health status as a String or a Map.
+             *
              * Otherwise,
              *      throw new AppException(status, message)
              */
-            return "demo.service is running fine";
+            return Map.of("demo", "I am running fine");
         }
         throw new IllegalArgumentException("type must be info or health");
     }
 }
-
 ```
 
 ## AsyncHttpClient service

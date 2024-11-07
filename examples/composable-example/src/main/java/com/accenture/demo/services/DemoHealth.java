@@ -34,24 +34,26 @@ public class DemoHealth implements LambdaFunction {
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         /*
-         * The interface contract for a health check service includes both INFO and HEALTH responses
+         * The interface contract for a health check service includes both INFO and HEALTH responses.
+         * It must return a Map.
          */
         if (INFO.equals(headers.get(TYPE))) {
-            Map<String, Object> result = new HashMap<>();
-            result.put("service", "demo.service");
-            result.put("href", "http://127.0.0.1");
-            return result;
+            Map<String, Object> about = new HashMap<>();
+            about.put("service", "demo.service");
+            about.put("href", "http://127.0.0.1");
+            return about;
         }
         if (HEALTH.equals(headers.get(TYPE))) {
             /*
              * This is a place-holder for checking a downstream service.
              *
-             * You may implement your own logic to test if a downstream service is running fine.
-             * If running, just return a health status message.
+             * Please implement your own logic to test if a downstream service is running fine.
+             * If running, just return health status as a String or a Map.
+             *
              * Otherwise,
              *      throw new AppException(status, message)
              */
-            return "demo.service is running fine";
+            return Map.of("demo", "I am running fine");
         }
         throw new IllegalArgumentException("type must be info or health");
     }

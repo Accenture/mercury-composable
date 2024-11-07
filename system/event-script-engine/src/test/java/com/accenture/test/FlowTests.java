@@ -25,8 +25,10 @@ import com.accenture.tasks.ParallelTask;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -684,12 +686,14 @@ public class FlowTests extends TestBase {
         assertTrue(consolidated.containsKey("key2"));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void internalFlowTest() throws IOException, ExecutionException, InterruptedException {
+        final String ORIGINATOR = "unit.test";
         final long TIMEOUT = 8000;
-        String traceId = Utility.getInstance().getUuid();
-        PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
+        Utility util = Utility.getInstance();
+        String traceId = util.getUuid();
+        // the "header-test" flow maps the input.header to function input body, thus the input.body is ignored
         String flowId = "header-test";
         Map<String, Object> headers = new HashMap<>();
         Map<String, Object> dataset = new HashMap<>();
@@ -699,17 +703,47 @@ public class FlowTests extends TestBase {
         headers.put("accept", "application/json");
         headers.put("x-flow-id", flowId);
         StartFlow startFlow = StartFlow.getInstance();
-        EventEnvelope result = startFlow.request(po, flowId, dataset, traceId, TIMEOUT).get();
-        assertInstanceOf(Map.class, result.getBody());
-        Map<String, Object> body = (Map<String, Object>) result.getBody();
+        EventEnvelope result1 = startFlow.request(ORIGINATOR, traceId, "INTERNAL /flow/test",
+                flowId, dataset, util.getUuid(), TIMEOUT).get();
+        assertInstanceOf(Map.class, result1.getBody());
+        Map<String, Object> body1 = (Map<String, Object>) result1.getBody();
         // verify that input headers are mapped to the function's input body
-        assertEquals("header-test", body.get("x-flow-id"));
-        assertEquals("internal-flow", body.get("user-agent"));
-        assertEquals("application/json", body.get("accept"));
+        assertEquals("header-test", body1.get("x-flow-id"));
+        assertEquals("internal-flow", body1.get("user-agent"));
+        assertEquals("application/json", body1.get("accept"));
+        EventEnvelope result2 = startFlow.request(ORIGINATOR, flowId, dataset, util.getUuid(), TIMEOUT).get();
+        assertInstanceOf(Map.class, result2.getBody());
+        Map<String, Object> body2 = (Map<String, Object>) result2.getBody();
+        // verify that input headers are mapped to the function's input body
+        assertEquals("header-test", body2.get("x-flow-id"));
+        assertEquals("internal-flow", body2.get("user-agent"));
+        assertEquals("application/json", body2.get("accept"));
+        // do it again asynchronously
+        startFlow.send(ORIGINATOR, flowId, dataset, util.getUuid());
+        startFlow.send(ORIGINATOR, traceId, "INTERNAL /flow/test/async", flowId, dataset, util.getUuid());
+        // and with a callback
+        startFlow.send(ORIGINATOR, flowId, dataset, "no.op", util.getUuid());
+        final String CALLBACK = "internal.flow.callback";
+        final BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
+        LambdaFunction f = (eventHeaders, body, instance) -> {
+            if (body instanceof Map m) {
+                bench.offer(m);
+            }
+            return null;
+        };
+        Platform platform = Platform.getInstance();
+        platform.registerPrivate(CALLBACK, f, 1);
+        startFlow.send(ORIGINATOR, traceId, "INTERNAL /flow/test/callback", flowId, CALLBACK,
+                        dataset, util.getUuid());
+        Map<String, Object> response = bench.poll(5, TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals("header-test", response.get("x-flow-id"));
+        assertEquals("internal-flow", response.get("user-agent"));
+        assertEquals("application/json", response.get("accept"));
     }
 
     @Test
-    public void internalFlowWithoutFlowIdTest() throws IOException, ExecutionException, InterruptedException {
+    public void internalFlowWithoutFlowIdTest() {
         final long TIMEOUT = 8000;
         String traceId = Utility.getInstance().getUuid();
         PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
