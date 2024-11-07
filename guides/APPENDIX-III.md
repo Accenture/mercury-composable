@@ -277,14 +277,22 @@ correct content-length for small payload. For large payload, it will use the chu
 ## Starting a flow programmatically
 
 To start an "event" flow from a unit test, you may use the helper class "StartFlow" under the "Event Script" module.
-There are two methods, one to start a flow asynchronously and the other returning the response from a flow using
-Java Future.
 
-The signatures of the two methods are shown below.
+Examples of some APIs are as follows:
 
 ```java
-public void send(PostOffice po, String flowId, Map<String, Object> dataset,
-                 String replyTo, String correlationId) throws IOException;
+// launch a flow asychronously
+public void launch(String originator, String flowId, Map<String, Object> dataset,
+                       String correlationId) throws IOException;
+// launch a flow asychronously with tracing
+public void launch(String originator, String traceId, String tracePath, String flowId,
+                       Map<String, Object> dataset, String correlationId) throws IOException
+// launch a flow asychronously and tracing
+public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
+                        String correlationId) throws IOException;
+// launch a flow with callback and tracing
+public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
+                        String replyTo, String correlationId) throws IOException;
 public Future<EventEnvelope> request(PostOffice po, String flowId, Map<String, Object> dataset,
                                      String correlationId, long timeout) throws IOException;
 ```

@@ -49,12 +49,12 @@ public class StartFlow {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @throws IOException in case of routing error
      */
-    public void send(String originator, String flowId, Map<String, Object> dataset,
-                     String correlationId) throws IOException {
+    public void launch(String originator, String flowId, Map<String, Object> dataset,
+                       String correlationId) throws IOException {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
-        send(new PostOffice(originator, null, null), flowId, dataset, correlationId);
+        launch(new PostOffice(originator, null, null), flowId, dataset, correlationId);
     }
 
     /**
@@ -68,12 +68,12 @@ public class StartFlow {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @throws IOException in case of routing error
      */
-    public void send(String originator, String traceId, String tracePath, String flowId,
-                     Map<String, Object> dataset, String correlationId) throws IOException {
+    public void launch(String originator, String traceId, String tracePath, String flowId,
+                       Map<String, Object> dataset, String correlationId) throws IOException {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
-        send(new PostOffice(originator, traceId, tracePath), flowId, dataset, correlationId);
+        launch(new PostOffice(originator, traceId, tracePath), flowId, dataset, correlationId);
     }
 
     /**
@@ -86,12 +86,12 @@ public class StartFlow {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @throws IOException in case of routing error
      */
-    public void send(String originator, String flowId, Map<String, Object> dataset,
-                     String callback, String correlationId) throws IOException {
+    public void launch(String originator, String flowId, Map<String, Object> dataset,
+                       String callback, String correlationId) throws IOException {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
-        send(new PostOffice(originator, null, null), flowId, dataset, callback, correlationId);
+        launch(new PostOffice(originator, null, null), flowId, dataset, callback, correlationId);
     }
 
     /**
@@ -106,12 +106,12 @@ public class StartFlow {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @throws IOException in case of routing error
      */
-    public void send(String originator, String traceId, String tracePath, String flowId,
-                     String callback, Map<String, Object> dataset, String correlationId) throws IOException {
+    public void launch(String originator, String traceId, String tracePath, String flowId,
+                       String callback, Map<String, Object> dataset, String correlationId) throws IOException {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
-        send(new PostOffice(originator, traceId, tracePath), flowId, dataset, callback, correlationId);
+        launch(new PostOffice(originator, traceId, tracePath), flowId, dataset, callback, correlationId);
     }
 
     /**
@@ -126,9 +126,9 @@ public class StartFlow {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @throws IOException in case of routing error
      */
-    public void send(PostOffice po, String flowId, Map<String, Object> dataset,
-                     String correlationId) throws IOException {
-        send(po, flowId, dataset, null, correlationId);
+    public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
+                       String correlationId) throws IOException {
+        launch(po, flowId, dataset, null, correlationId);
     }
 
     /**
@@ -144,8 +144,8 @@ public class StartFlow {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @throws IOException in case of routing error
      */
-    public void send(PostOffice po, String flowId, Map<String, Object> dataset,
-                      String callback, String correlationId) throws IOException {
+    public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
+                       String callback, String correlationId) throws IOException {
         if (flowId == null) {
             throw new IllegalArgumentException("Missing flowId");
         }

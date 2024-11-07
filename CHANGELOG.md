@@ -20,7 +20,8 @@ N/A
 
 ### Changed
 
-Health check function can return either a text string or a Map
+1. Health check function can return either a text string or a Map
+2. StartFlow API updates
 
 ---
 ## Version 4.0.13, 11/5/2024
