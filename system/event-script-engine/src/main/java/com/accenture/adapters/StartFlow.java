@@ -42,6 +42,80 @@ public class StartFlow {
 
     /**
      * Start a flow asynchronously
+     *
+     * @param originator is the route name of the sender function
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @throws IOException in case of routing error
+     */
+    public void send(String originator, String flowId, Map<String, Object> dataset,
+                     String correlationId) throws IOException {
+        if (originator == null) {
+            throw new IllegalArgumentException("Missing originator's route name");
+        }
+        send(new PostOffice(originator, null, null), flowId, dataset, correlationId);
+    }
+
+    /**
+     * Start a flow asynchronously with traceability
+     *
+     * @param originator is the route name of the sender function
+     * @param traceId must be a unique ID
+     * @param tracePath to indicate a path for the request (e.g. PUT /api/some/service)
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @throws IOException in case of routing error
+     */
+    public void send(String originator, String traceId, String tracePath, String flowId,
+                     Map<String, Object> dataset, String correlationId) throws IOException {
+        if (originator == null) {
+            throw new IllegalArgumentException("Missing originator's route name");
+        }
+        send(new PostOffice(originator, traceId, tracePath), flowId, dataset, correlationId);
+    }
+
+    /**
+     * Start a flow with a callback route
+     *
+     * @param originator is the route name of the sender function
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param callback is the route of a composable function
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @throws IOException in case of routing error
+     */
+    public void send(String originator, String flowId, Map<String, Object> dataset,
+                     String callback, String correlationId) throws IOException {
+        if (originator == null) {
+            throw new IllegalArgumentException("Missing originator's route name");
+        }
+        send(new PostOffice(originator, null, null), flowId, dataset, callback, correlationId);
+    }
+
+    /**
+     * Start a flow with a callback route and traceability
+     *
+     * @param originator is the route name of the sender function
+     * @param traceId must be a unique ID
+     * @param tracePath to indicate a path for the request (e.g. PUT /api/some/service)
+     * @param flowId of the event flow configuration script
+     * @param callback is the route of a composable function
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @throws IOException in case of routing error
+     */
+    public void send(String originator, String traceId, String tracePath, String flowId,
+                     String callback, Map<String, Object> dataset, String correlationId) throws IOException {
+        if (originator == null) {
+            throw new IllegalArgumentException("Missing originator's route name");
+        }
+        send(new PostOffice(originator, traceId, tracePath), flowId, dataset, callback, correlationId);
+    }
+
+    /**
+     * Start a flow asynchronously
      * <p>
      * To enable tracing, your PostOffice instance must have traceId and tracePath.
      * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.
@@ -87,6 +161,49 @@ public class StartFlow {
             }
             po.send(forward);
         }
+    }
+
+    /**
+     * Start a flow and obtain a future response
+     *
+     * @param originator is the route name of the sender function
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @param timeout in milliseconds for the response to come back
+     * @return future response
+     * @throws IOException in case of routing error
+     */
+    public Future<EventEnvelope> request(String originator, String flowId, Map<String, Object> dataset,
+                                         String correlationId, long timeout) throws IOException {
+        if (originator == null) {
+            throw new IllegalArgumentException("Missing originator's route name");
+        }
+        return request(new PostOffice(originator, null, null),
+                flowId, dataset, correlationId, timeout);
+    }
+
+    /**
+     * Start a flow and obtain a future response
+     *
+     * @param originator is the route name of the sender function
+     * @param traceId must be a unique ID
+     * @param tracePath to indicate a path for the request (e.g. PUT /api/some/service)
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @param timeout in milliseconds for the response to come back
+     * @return future response
+     * @throws IOException in case of routing error
+     */
+    public Future<EventEnvelope> request(String originator, String traceId, String tracePath,
+                                         String flowId, Map<String, Object> dataset,
+                                         String correlationId, long timeout) throws IOException {
+        if (originator == null) {
+            throw new IllegalArgumentException("Missing originator's route name");
+        }
+        return request(new PostOffice(originator, traceId, tracePath),
+                flowId, dataset, correlationId, timeout);
     }
 
     /**
