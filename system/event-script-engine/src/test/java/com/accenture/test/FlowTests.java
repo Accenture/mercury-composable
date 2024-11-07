@@ -706,10 +706,14 @@ public class FlowTests extends TestBase {
         assertEquals("header-test", body.get("x-flow-id"));
         assertEquals("internal-flow", body.get("user-agent"));
         assertEquals("application/json", body.get("accept"));
+        // do it again asynchronously
+        startFlow.send(po, flowId, dataset, traceId);
+        // and with a callback
+        startFlow.send(po, flowId, dataset, "no.op", traceId);
     }
 
     @Test
-    public void internalFlowWithoutFlowIdTest() throws IOException, ExecutionException, InterruptedException {
+    public void internalFlowWithoutFlowIdTest() {
         final long TIMEOUT = 8000;
         String traceId = Utility.getInstance().getUuid();
         PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");

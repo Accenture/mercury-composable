@@ -40,8 +40,38 @@ public class StartFlow {
         return INSTANCE;
     }
 
+    /**
+     * Start a flow asynchronously
+     * <p>
+     * To enable tracing, your PostOffice instance must have traceId and tracePath.
+     * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.
+     * <p>
+     * @param po PostOffice
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @throws IOException in case of routing error
+     */
     public void send(PostOffice po, String flowId, Map<String, Object> dataset,
-                      String replyTo, String correlationId) throws IOException {
+                     String correlationId) throws IOException {
+        send(po, flowId, dataset, null, correlationId);
+    }
+
+    /**
+     * Start a flow with a callback route
+     * <p>
+     * To enable tracing, your PostOffice instance must have traceId and tracePath.
+     * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.
+     * <p>
+     * @param po PostOffice
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param callback is the route of a composable function
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @throws IOException in case of routing error
+     */
+    public void send(PostOffice po, String flowId, Map<String, Object> dataset,
+                      String callback, String correlationId) throws IOException {
         if (flowId == null) {
             throw new IllegalArgumentException("Missing flowId");
         }
@@ -52,13 +82,24 @@ public class StartFlow {
             EventEnvelope forward = new EventEnvelope();
             forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId);
             forward.setCorrelationId(correlationId).setBody(dataset);
-            if (replyTo != null) {
-                forward.setReplyTo(replyTo);
+            if (callback != null) {
+                forward.setReplyTo(callback);
             }
             po.send(forward);
         }
     }
 
+    /**
+     * Start a flow and obtain a future response
+     *
+     * @param po PostOffice
+     * @param flowId of the event flow configuration script
+     * @param dataset is a Map containing at least headers and body
+     * @param correlationId must be a unique ID (e.g. UUID)
+     * @param timeout in milliseconds for the response to come back
+     * @return future response
+     * @throws IOException in case of routing error
+     */
     public Future<EventEnvelope> request(PostOffice po, String flowId, Map<String, Object> dataset,
                                          String correlationId, long timeout) throws IOException {
         if (flowId == null) {
