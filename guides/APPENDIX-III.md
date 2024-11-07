@@ -293,6 +293,7 @@ public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
 // launch a flow with callback and tracing
 public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
                         String replyTo, String correlationId) throws IOException;
+// launch a flow and expect a future response
 public Future<EventEnvelope> request(PostOffice po, String flowId, Map<String, Object> dataset,
                                      String correlationId, long timeout) throws IOException;
 ```
@@ -304,6 +305,7 @@ The following unit test emulates a HTTP request to the flow named "header-test".
 public void internalFlowTest() throws IOException, ExecutionException, InterruptedException {
     final long TIMEOUT = 8000;
     String traceId = Utility.getInstance().getUuid();
+    String cid = Utility.getInstance().getUuid();
     PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
     String flowId = "header-test";
     Map<String, Object> headers = new HashMap<>();
@@ -314,7 +316,7 @@ public void internalFlowTest() throws IOException, ExecutionException, Interrupt
     headers.put("accept", "application/json");
     headers.put("x-flow-id", flowId);
     StartFlow startFlow = StartFlow.getInstance();
-    EventEnvelope result = startFlow.request(po, flowId, dataset, traceId, TIMEOUT).get();
+    EventEnvelope result = startFlow.request(po, flowId, dataset, cid, TIMEOUT).get();
     assertInstanceOf(Map.class, result.getBody());
     Map<String, Object> body = (Map<String, Object>) result.getBody();
     // verify that input headers are mapped to the function's input body
