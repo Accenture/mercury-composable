@@ -18,7 +18,7 @@
 
 package com.accenture.test;
 
-import com.accenture.adapters.StartFlow;
+import com.accenture.adapters.FlowExecutor;
 import com.accenture.models.PoJo;
 import com.accenture.setup.TestBase;
 import com.accenture.tasks.ParallelTask;
@@ -702,8 +702,8 @@ public class FlowTests extends TestBase {
         headers.put("user-agent", "internal-flow");
         headers.put("accept", "application/json");
         headers.put("x-flow-id", flowId);
-        StartFlow startFlow = StartFlow.getInstance();
-        EventEnvelope result1 = startFlow.request(ORIGINATOR, traceId, "INTERNAL /flow/test",
+        FlowExecutor flowExecutor = FlowExecutor.getInstance();
+        EventEnvelope result1 = flowExecutor.request(ORIGINATOR, traceId, "INTERNAL /flow/test",
                 flowId, dataset, util.getUuid(), TIMEOUT).get();
         assertInstanceOf(Map.class, result1.getBody());
         Map<String, Object> body1 = (Map<String, Object>) result1.getBody();
@@ -711,7 +711,7 @@ public class FlowTests extends TestBase {
         assertEquals("header-test", body1.get("x-flow-id"));
         assertEquals("internal-flow", body1.get("user-agent"));
         assertEquals("application/json", body1.get("accept"));
-        EventEnvelope result2 = startFlow.request(ORIGINATOR, flowId, dataset, util.getUuid(), TIMEOUT).get();
+        EventEnvelope result2 = flowExecutor.request(ORIGINATOR, flowId, dataset, util.getUuid(), TIMEOUT).get();
         assertInstanceOf(Map.class, result2.getBody());
         Map<String, Object> body2 = (Map<String, Object>) result2.getBody();
         // verify that input headers are mapped to the function's input body
@@ -719,10 +719,10 @@ public class FlowTests extends TestBase {
         assertEquals("internal-flow", body2.get("user-agent"));
         assertEquals("application/json", body2.get("accept"));
         // do it again asynchronously
-        startFlow.launch(ORIGINATOR, flowId, dataset, util.getUuid());
-        startFlow.launch(ORIGINATOR, traceId, "INTERNAL /flow/test/async", flowId, dataset, util.getUuid());
+        flowExecutor.launch(ORIGINATOR, flowId, dataset, util.getUuid());
+        flowExecutor.launch(ORIGINATOR, traceId, "INTERNAL /flow/test/async", flowId, dataset, util.getUuid());
         // and with a callback
-        startFlow.launch(ORIGINATOR, flowId, dataset, "no.op", util.getUuid());
+        flowExecutor.launch(ORIGINATOR, flowId, dataset, "no.op", util.getUuid());
         final String CALLBACK = "internal.flow.callback";
         final BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         LambdaFunction f = (eventHeaders, body, instance) -> {
@@ -733,7 +733,7 @@ public class FlowTests extends TestBase {
         };
         Platform platform = Platform.getInstance();
         platform.registerPrivate(CALLBACK, f, 1);
-        startFlow.launch(ORIGINATOR, traceId, "INTERNAL /flow/test/callback", flowId, CALLBACK,
+        flowExecutor.launch(ORIGINATOR, traceId, "INTERNAL /flow/test/callback", flowId, CALLBACK,
                         dataset, util.getUuid());
         Map<String, Object> response = bench.poll(5, TimeUnit.SECONDS);
         assertNotNull(response);
@@ -752,18 +752,18 @@ public class FlowTests extends TestBase {
         dataset.put("header", headers);
         dataset.put("body", Map.of("hello", "world"));
         headers.put("user-agent", "internal-flow");
-        StartFlow startFlow = StartFlow.getInstance();
+        FlowExecutor flowExecutor = FlowExecutor.getInstance();
         // missing flowId
         assertThrows(IllegalArgumentException.class, () ->
-                startFlow.request("unit.test", traceId, "INTERNAL /flow/test", null,
+                flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", null,
                         dataset, traceId, TIMEOUT).get());
         // missing correlation ID
         assertThrows(IllegalArgumentException.class, () ->
-                startFlow.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
+                flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
                         dataset, null, TIMEOUT).get());
         // missing body
         assertThrows(IllegalArgumentException.class, () ->
-                startFlow.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
+                flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
                         new HashMap<>(), null, TIMEOUT).get());
     }
 

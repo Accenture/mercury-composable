@@ -276,7 +276,7 @@ correct content-length for small payload. For large payload, it will use the chu
 
 ## Starting a flow programmatically
 
-To start an "event" flow from a unit test, you may use the helper class "StartFlow" under the "Event Script" module.
+To start an "event" flow from a unit test, you may use the helper class "FlowExecutor" under the "Event Script" module.
 
 Examples of some APIs are as follows:
 
@@ -315,8 +315,8 @@ public void internalFlowTest() throws IOException, ExecutionException, Interrupt
     headers.put("user-agent", "internal-flow");
     headers.put("accept", "application/json");
     headers.put("x-flow-id", flowId);
-    StartFlow startFlow = StartFlow.getInstance();
-    EventEnvelope result = startFlow.request(po, flowId, dataset, cid, TIMEOUT).get();
+    FlowExecutor flowExecutor = FlowExecutor.getInstance();
+    EventEnvelope result = flowExecutor.request(po, flowId, dataset, cid, TIMEOUT).get();
     assertInstanceOf(Map.class, result.getBody());
     Map<String, Object> body = (Map<String, Object>) result.getBody();
     // verify that input headers are mapped to the function's input body
