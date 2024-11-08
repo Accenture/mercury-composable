@@ -79,7 +79,7 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
         dataset.put("ip", request.getRemoteIp());
         dataset.put("filename", request.getFileName());
         dataset.put("session", request.getSessionInfo());
-        StartFlow.getInstance().launch(po, flowId, dataset, event.getReplyTo(), event.getCorrelationId());
+        FlowExecutor.getInstance().launch(po, flowId, dataset, event.getReplyTo(), event.getCorrelationId());
     }
 
 }

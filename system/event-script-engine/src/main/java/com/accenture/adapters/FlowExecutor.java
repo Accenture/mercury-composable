@@ -26,22 +26,23 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-public class StartFlow {
+public class FlowExecutor {
 
     private static final String FLOW_ID = "flow_id";
     private static final String BODY = "body";
-    private static final StartFlow INSTANCE = new StartFlow();
+    private static final FlowExecutor INSTANCE = new FlowExecutor();
 
-    private StartFlow() {
+    private FlowExecutor() {
         // singleton
     }
 
-    public static StartFlow getInstance() {
+    public static FlowExecutor getInstance() {
         return INSTANCE;
     }
 
     /**
-     * Start a flow asynchronously
+     * A convenient method to start an asynchronous flow execution with no need for post office.
+     * This is a convenience method for {@link #launch(PostOffice, String, Map, String)}.
      *
      * @param originator is the route name of the sender function
      * @param flowId of the event flow configuration script
@@ -58,7 +59,9 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow asynchronously with traceability
+     * A convenient method to start an asynchronous flow execution with no need for post office.
+     * Tracing information may be provided through method parameters.
+     * This is a convenience method for {@link #launch(PostOffice, String, Map, String)}.
      *
      * @param originator is the route name of the sender function
      * @param traceId must be a unique ID
@@ -77,7 +80,9 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow with a callback route
+     * A convenient method to start an asynchronous flow execution with no need for post office.
+     * Callback function route name may be provided through method parameters.
+     * This is a convenience method for {@link #launch(PostOffice, String, Map, String, String)}.
      *
      * @param originator is the route name of the sender function
      * @param flowId of the event flow configuration script
@@ -95,7 +100,9 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow with a callback route and traceability
+     * A convenient method to start an asynchronous flow execution with no need for post office.
+     * Tracing information and callback function route name may be provided through method parameters.
+     * This is a convenience method for {@link #launch(PostOffice, String, Map, String, String)}.
      *
      * @param originator is the route name of the sender function
      * @param traceId must be a unique ID
@@ -115,7 +122,9 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow asynchronously
+     * A convenient method to start an asynchronous flow execution by providing a custom constructed post office.
+     * This is a convenience method for {@link #launch(PostOffice, String, Map, String, String)}.
+     *
      * <p>
      * To enable tracing, your PostOffice instance must have traceId and tracePath.
      * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.
@@ -132,10 +141,13 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow with a callback route
+     * A convenient method to start an asynchronous flow execution by providing a custom constructed post office
+     * and a callback function.
+     *
      * <p>
      * To enable tracing, your PostOffice instance must have traceId and tracePath.
      * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.
+     * To invoke a callback function, you can set the route name of the function.
      * <p>
      * @param po PostOffice
      * @param flowId of the event flow configuration script
@@ -164,7 +176,9 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow and obtain a future response
+     * A convenient method to start an asynchronous flow execution no need for post office.
+     * This method returns a future that represents the result of an asynchronous flow execution.
+     * This is a convenience method for {@link #request(PostOffice, String, Map, String, long)}.
      *
      * @param originator is the route name of the sender function
      * @param flowId of the event flow configuration script
@@ -184,7 +198,10 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow and obtain a future response
+     * A convenient method to start an asynchronous flow execution no need for post office.
+     * This method returns a future that represents the result of an asynchronous flow execution.
+     * Tracing information may be provided through method parameters.
+     * This is a convenience method for {@link #request(PostOffice, String, Map, String, long)}.
      *
      * @param originator is the route name of the sender function
      * @param traceId must be a unique ID
@@ -207,7 +224,8 @@ public class StartFlow {
     }
 
     /**
-     * Start a flow and obtain a future response
+     * A convenient method to start an asynchronous flow execution by providing a custom constructed post office.
+     * This method returns a future that represents the result of an asynchronous flow execution.
      *
      * @param po PostOffice
      * @param flowId of the event flow configuration script
@@ -234,5 +252,4 @@ public class StartFlow {
             throw new IllegalArgumentException("Missing body in dataset");
         }
     }
-
 }
