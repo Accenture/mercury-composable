@@ -47,49 +47,55 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         EventEmitter po = EventEmitter.getInstance();
         try {
             if (!headers.containsKey(FLOW_ID)) {
-                throw new AppException(400, "Missing "+FLOW_ID);
+                throw new IllegalArgumentException("Missing "+FLOW_ID);
             }
             processRequest(event, headers.get(FLOW_ID));
-        } catch (AppException | IOException e) {
-            int rc = e instanceof AppException appEx? appEx.getStatus() : 500;
+        } catch (IOException e) {
             if (event.getReplyTo() != null && event.getCorrelationId() != null) {
                 EventEnvelope error = new EventEnvelope()
                         .setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
-                        .setStatus(rc).setBody(e.getMessage());
+                        .setStatus(500).setBody(e.getMessage());
                 po.send(error);
             } else {
-                log.error("Unhandled exception. status={}, error={}", rc, e.getMessage());
+                log.error("Unhandled exception. error={}", e.getMessage());
             }
         }
         return null;
     }
 
-    private void processRequest(EventEnvelope event, String flowId) throws AppException, IOException {
+    private void processRequest(EventEnvelope event, String flowId) throws IOException {
         Flow template = Flows.getFlow(flowId);
+        FlowInstance flowInstance = getFlowInstance(event, flowId, template);
+        Flows.addFlowInstance(flowInstance);
+        // Set the input event body into the flow dataset
+        flowInstance.dataset.put(INPUT, event.getBody());
+        // Execute the first task and use the unique flow instance as correlation ID during flow execution
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope firstTask = new EventEnvelope()
+                .setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(flowInstance.id)
+                .setHeader(FIRST_TASK, flowInstance.getFlow().firstTask);
+        po.send(firstTask);
+    }
+
+    private static FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template) {
         if (template == null) {
-            throw new AppException(500, "Flow "+flowId+" not found");
+            throw new IllegalArgumentException("Flow "+ flowId +" not found");
         }
         String cid = event.getCorrelationId();
         if (cid == null) {
-            throw new AppException(500, "Missing correlation ID for "+flowId);
+            throw new IllegalArgumentException("Missing correlation ID for "+ flowId);
         }
         String replyTo = event.getReplyTo();
+        // Save the original correlation-ID ("cid") from the calling party in a flow instance and
+        // return this value to the calling party at the end of flow execution
         FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template);
-        // optional distributed trace
+        // Optional distributed trace
         String traceId = event.getTraceId();
         String tracePath = event.getTracePath();
         if (traceId != null && tracePath != null) {
             flowInstance.setTrace(traceId, tracePath);
         }
-        Flows.addFlowInstance(flowInstance);
-        // set the input event body into the flow dataset
-        flowInstance.dataset.put(INPUT, event.getBody());
-        // execute the first task
-        EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope firstTask = new EventEnvelope()
-                .setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(cid)
-                .setHeader(FIRST_TASK, flowInstance.getFlow().firstTask);
-        po.send(firstTask);
+        return flowInstance;
     }
 
 }

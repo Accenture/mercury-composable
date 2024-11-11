@@ -192,7 +192,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             result.put(MESSAGE, message);
             result.put(TYPE, ERROR);
             EventEnvelope error = new EventEnvelope();
-            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.id);
+            // restore the original correlation-ID to the calling party
+            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid);
             error.setStatus(status).setBody(result);
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
@@ -545,7 +546,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             // is a response event required when the flow is completed?
             if (flowInstance.replyTo != null) {
                 EventEnvelope result = new EventEnvelope();
-                result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.id);
+                // restore the original correlation-ID to the calling party
+                result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid);
                 Object headers = map.getElement("output.header");
                 Object body = map.getElement("output.body");
                 Object status = map.getElement("output.status");

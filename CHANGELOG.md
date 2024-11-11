@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.16, 11/10/2024
+
+### Added
+
+Generate unique flow instance ID as reference during flow execution.
+
+### Removed
+
+N/A
+
+### Changed
+
+Save the original correlation-ID from the calling party in a flow instance and
+return this value to the calling party at the end of flow execution.
+
+---
 ## Version 4.0.15, 11/7/2024
 
 ### Added

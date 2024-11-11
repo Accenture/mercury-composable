@@ -21,6 +21,7 @@ package com.accenture.models;
 import com.accenture.automation.TaskExecutor;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.util.Utility;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,19 +30,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class FlowInstance {
     private static final String MODEL = "model";
-    private static final String FLOW_ID = "flow";
+    private static final String FLOW = "flow";
     private static final String TIMEOUT = "timeout";
     private static final String INSTANCE = "instance";
+    private static final String CID = "cid";
 
     // dataset is the state machine that holds the original input and the latest model
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
     public final AtomicInteger pipeCounter = new AtomicInteger(0);
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
-    private final Flow flow;
-    public final String id;
+    public final String id = Utility.getInstance().getUuid();
+    public final String cid;
     public final String replyTo;
     public final String timeoutWatcher;
+    private final Flow flow;
     private String traceId;
     private String tracePath;
     private boolean responded = false;
@@ -49,16 +52,17 @@ public class FlowInstance {
 
     public FlowInstance(String flowId, String cid, String replyTo, Flow flow) {
         this.flow = flow;
-        this.id = cid;
+        this.cid = cid;
         this.replyTo = replyTo;
         // initialize the state machine
         ConcurrentMap<String, Object> model = new ConcurrentHashMap<>();
-        model.put(INSTANCE, cid);
-        model.put(FLOW_ID, flowId);
+        model.put(INSTANCE, id);
+        model.put(CID, cid);
+        model.put(FLOW, flowId);
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope();
-        timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(cid).setHeader(TIMEOUT, true);
+        timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
         timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
     }
 
