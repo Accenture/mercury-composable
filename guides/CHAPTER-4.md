@@ -123,7 +123,7 @@ For the flow-engine to find your new function, please update the key-value for "
 application.properties:
 
 ```properties
-web.component.scan=com.accenture,my.organization
+web.component.scan=my.organization
 ```
 
 To test your new REST endpoint, flow configuration and function, please point your browser to

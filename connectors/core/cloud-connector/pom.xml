@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>cloud-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.16</version>
+    <version>4.0.17</version>
     <name>Cloud connector module</name>
 
     <parent>
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.0.16</version>
+            <version>4.0.17</version>
         </dependency>
 
         <dependency>
