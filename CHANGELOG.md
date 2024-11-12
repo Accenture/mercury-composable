@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.17, 11/12/2024
+
+### Added
+
+For ease of configuration, added "com.accenture" to the base packages so that user applications
+do not need to include it to use the event-script-engine module.
+
+### Removed
+
+N/A
+
+### Changed
+
+Simplify web.component.scan in the SimpleClassScanner class.
+
+---
 ## Version 4.0.16, 11/10/2024
 
 ### Added

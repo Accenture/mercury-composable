@@ -23,17 +23,16 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class SimpleClassScanner {
 
-    private static final String[] COMPONENT_SCAN = {"web.component.scan"};
-    private static final String PLATFORM_LAMBDA = "org.platformlambda";
+    private static final String WEB_COMPONENT_SCAN = "web.component.scan";
+    private static final String PLATFORM_LAMBDA = "org.platformlambda.";
+    private static final String ACCENTURE_COM = "com.accenture.";
+    private static final String[] BASE_PACKAGE = {PLATFORM_LAMBDA, ACCENTURE_COM};
     private static final String EX_START = "Invalid package path (";
-    private static final String EX_END = "). A proper package should have at least one dot character.";
+    private static final String EX_END = ")";
     private static final SimpleClassScanner INSTANCE = new SimpleClassScanner();
 
     private SimpleClassScanner() {
@@ -65,23 +64,21 @@ public class SimpleClassScanner {
     public Set<String> getPackages(boolean includeBasePackage) {
         Set<String> result = new HashSet<>();
         if (includeBasePackage) {
-            result.add(PLATFORM_LAMBDA);
+            result.addAll(Arrays.asList(BASE_PACKAGE));
         }
-        // consolidate list from web.component.scan
-        for (String pc: COMPONENT_SCAN) {
-            result.addAll(getScanComponents(pc));
-        }
+        // add user packages from web.component.scan
+        result.addAll(getScanComponents());
         return result;
     }
 
-    private Set<String> getScanComponents(String components) {
+    private Set<String> getScanComponents() {
         Set<String> result = new HashSet<>();
         AppConfigReader reader = AppConfigReader.getInstance();
-        String list = reader.getProperty(components);
+        String list = reader.getProperty(WEB_COMPONENT_SCAN);
         if (list != null) {
             List<String> packages = Utility.getInstance().split(list, ", []");
             for (String p : packages) {
-                if (!p.startsWith(PLATFORM_LAMBDA)) {
+                if (!isBasePackage(p)) {
                     if (!p.contains(".")) {
                         throw new IllegalArgumentException(EX_START + p + EX_END);
                     } else {
@@ -93,4 +90,12 @@ public class SimpleClassScanner {
         return result;
     }
 
+    private boolean isBasePackage(String namespace) {
+        for (String p: BASE_PACKAGE) {
+            if (namespace.startsWith(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
