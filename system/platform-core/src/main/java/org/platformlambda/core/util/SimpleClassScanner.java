@@ -74,16 +74,13 @@ public class SimpleClassScanner {
     private Set<String> getScanComponents() {
         Set<String> result = new HashSet<>();
         AppConfigReader reader = AppConfigReader.getInstance();
-        String list = reader.getProperty(WEB_COMPONENT_SCAN);
-        if (list != null) {
-            List<String> packages = Utility.getInstance().split(list, ", []");
-            for (String p : packages) {
-                if (!isBasePackage(p)) {
-                    if (!p.contains(".")) {
-                        throw new IllegalArgumentException(EX_START + p + EX_END);
-                    } else {
-                        result.add(p);
-                    }
+        List<String> packages = Utility.getInstance().split(reader.getProperty(WEB_COMPONENT_SCAN), ", []");
+        for (String p : packages) {
+            if (!isBasePackage(p)) {
+                if (!p.contains(".")) {
+                    throw new IllegalArgumentException(EX_START + p + EX_END);
+                } else {
+                    result.add(p);
                 }
             }
         }
