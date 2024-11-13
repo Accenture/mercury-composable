@@ -107,7 +107,6 @@ public class CompileFlows implements EntryPoint {
         AppConfigReader config = AppConfigReader.getInstance();
         String locations = config.getProperty("yaml.flow.automation", "classpath:/flows.yaml");
         List<String> paths = util.split(locations, ", ");
-        int n = 0;
         for (String p: paths) {
             ConfigReader reader = new ConfigReader();
             try {
@@ -144,14 +143,13 @@ public class CompileFlows implements EntryPoint {
                     }
                 }
             }
-            n += Flows.getAllFlows().size();
         }
         List<String> flows = Flows.getAllFlows();
         Collections.sort(flows);
         for (String f : flows) {
             log.info("Loaded {}", f);
         }
-        log.info("Event scripts deployed: {}", n);
+        log.info("Event scripts deployed: {}", flows.size());
     }
 
     @SuppressWarnings("unchecked")
