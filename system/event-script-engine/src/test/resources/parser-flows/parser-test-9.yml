@@ -20,12 +20,12 @@ tasks:
     # 'loop' feature is optional
     #
     # 1. loop.statement is evaluated before the loop
-    # 2. loop.conditions are evaluated after each function returns from the pipeline
+    # 2. loop.condition are evaluated after each function returns from the pipeline
     # 3. each condition is a 'if' statement to evaluate a model value to decide to break or continue
     #
     loop:
       statement: 'unknown (model.n = 0; model.n < 4; model.n++)'
-      conditions:
+      condition:
         - 'if (model.jump) continue'
     pipeline:
       - 'echo.one'

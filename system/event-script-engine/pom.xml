@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>event-script-engine</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.18</version>
+    <version>4.0.19</version>
     <name>Event Script engine</name>
 
     <parent>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.0.18</version>
+            <version>4.0.19</version>
         </dependency>
 
         <dependency>

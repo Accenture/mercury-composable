@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Version 4.0.18, 11/12/2024
+## Version 4.0.19, 11/13/2024
 
 ### Added
 
@@ -21,7 +21,7 @@ if-then-else pipeline feature in event-script
 
 ### Changed
 
-N/A
+update Event Script syntax for consistency
 
 ---
 ## Version 4.0.16, 11/10/2024

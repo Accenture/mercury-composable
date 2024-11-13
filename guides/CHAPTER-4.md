@@ -751,7 +751,7 @@ tasks:
     execution: pipeline
     loop:
       statement: 'for (model.n = 0; model.n < 3; model.n++)'
-      conditions:
+      condition:
         - 'if (model.quit) break'
     pipeline:
       - 'echo.one'

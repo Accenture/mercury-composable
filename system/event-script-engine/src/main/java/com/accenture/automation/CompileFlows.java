@@ -86,7 +86,7 @@ public class CompileFlows implements EntryPoint {
     private static final String BREAK = "break";
     private static final String INCREMENT = "++";
     private static final String DECREMENT = "--";
-    private static final String CONDITIONS = "conditions";
+    private static final String CONDITION = "condition";
     private static final String SKIP_INVALID_TASK = "Skip invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
@@ -271,7 +271,7 @@ public class CompileFlows implements EntryPoint {
                                 if (taskLoop instanceof Map) {
                                     MultiLevelMap loopMap = new MultiLevelMap((Map<String, Object>) taskLoop);
                                     Object statement = loopMap.getElement(STATEMENT);
-                                    Object conditions = loopMap.getElement(CONDITIONS);
+                                    Object conditions = loopMap.getElement(CONDITION);
                                     if (statement instanceof String s) {
                                         int bracket = s.indexOf('(');
                                         if (bracket == -1) {
@@ -347,14 +347,14 @@ public class CompileFlows implements EntryPoint {
                                         if (conditions instanceof List) {
                                             List<List<String>> conditionList = getConditionList((List<String>) conditions);
                                             if (conditionList.isEmpty()) {
-                                                log.error("{} {} in {}. please check loop.conditions",
+                                                log.error("{} {} in {}. please check loop.condition",
                                                         SKIP_INVALID_TASK, process, name);
                                                 return;
                                             }
                                             task.conditions.addAll(conditionList);
 
                                         } else {
-                                            log.error("{} {} in {}. loop.conditions should be " +
+                                            log.error("{} {} in {}. loop.condition should be " +
                                                     "a list of 'if' statements", SKIP_INVALID_TASK, process, name);
                                             return;
                                         }
