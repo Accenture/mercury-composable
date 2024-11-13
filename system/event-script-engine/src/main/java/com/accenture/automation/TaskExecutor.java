@@ -317,8 +317,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     pipelineCompletion(flowInstance, pipeline, consolidated, seq);
                     return;
                 }
-                int prevStep = pipeline.getCurrentStep();
-                boolean prevCompletion = pipeline.isCompleted();
                 int n = pipeline.nextStep();
                 if (pipeline.isLastStep(n)) {
                     pipeline.setCompleted();
@@ -333,19 +331,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 } else {
                     /*
                      * The first element of a condition is the model key.
-                     * The second element is positive path (continue, break or route name).
-                     * The third element is optional negative path (continue, break or route name).
+                     * The second element is "continue" or "break".
                      */
                     boolean conditionMet = false;
                     for (List<String> condition: pipelineTask.conditions) {
-                        String action = null;
-                        Object o = consolidated.getElement(condition.get(0));
-                        if (o instanceof Boolean) {
-                            if (Boolean.TRUE.equals(o)) {
-                                action = condition.get(1);
-                            } else if (condition.size() == 3) {
-                                action = condition.get(2);
-                            }
+                        Object o = consolidated.getElement(condition.getFirst());
+                        if (Boolean.TRUE.equals(o)) {
+                            String action = condition.get(1);
                             conditionMet = action != null;
                             if (BREAK.equals(action)) {
                                 flowInstance.pipeMap.remove(seq);
@@ -353,14 +345,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                             } else if (CONTINUE.equals(action)) {
                                 pipeline.setCompleted();
                                 pipelineCompletion(flowInstance, pipeline, consolidated, seq);
-                            } else if (action != null) {
-                                if (pipelineTask.isParallelCondition()) {
-                                    conditionMet = false;
-                                    executeTask(flowInstance, action);
-                                } else {
-                                    pipeline.restorePrev(prevStep, prevCompletion);
-                                    executeTask(flowInstance, action, seq);
-                                }
                             }
                             consolidated.removeElement(condition.getFirst());
                             break;
@@ -408,7 +392,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             iterate = Boolean.TRUE.equals(o);
         } else if (FOR.equals(pipelineTask.getLoopType())) {
             // execute sequencer in the for-statement
-            Object modelValue = consolidated.getElement(pipelineTask.sequencer.get(0));
+            Object modelValue = consolidated.getElement(pipelineTask.sequencer.getFirst());
             int v = modelValue instanceof Integer? (int) modelValue : util.str2int(modelValue.toString());
             String command = pipelineTask.sequencer.get(1);
             if (INCREMENT.equals(command)) {
@@ -418,7 +402,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 consolidated.setElement(pipelineTask.sequencer.getFirst(), v - 1);
             }
             // evaluate for-condition
-            iterate = evaluateForCondition(consolidated.getElement(pipelineTask.comparator.get(0)),
+            iterate = evaluateForCondition(consolidated.getElement(pipelineTask.comparator.getFirst()),
                     pipelineTask.comparator.get(1), util.str2int(pipelineTask.comparator.get(2)));
         }
         if (iterate) {
@@ -517,11 +501,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 // execute initializer if any
                 if (task.init.size() == 2) {
                     int n = util.str2int(task.init.get(1));
-                    if (task.init.get(0).startsWith(MODEL_NAMESPACE)) {
+                    if (task.init.getFirst().startsWith(MODEL_NAMESPACE)) {
                         map.setElement(task.init.getFirst(), n);
                     }
                 }
-                valid = evaluateForCondition(map.getElement(task.comparator.get(0)),
+                valid = evaluateForCondition(map.getElement(task.comparator.getFirst()),
                                                         task.comparator.get(1), util.str2int(task.comparator.get(2)));
             }
             if (valid) {

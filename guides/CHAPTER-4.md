@@ -691,8 +691,7 @@ tasks:
 
 ### Advanced pipeline features
 
-Some special uses of pipelines include "if-then-else" and "for/while loops". This is like running a mini-flow
-inside a pipeline.
+Some special uses of pipelines include "for/while-loop" and "continue/break" features.
 
 ### Simple for-loop
 
@@ -734,7 +733,7 @@ output "data mapping" to the `model.running` variable.
 
 ### For loop with break/continue decision
 
-In the following example, the system will evaluate if the `model.quit` variable exists.
+In the following example, the system will evaluate if the `model.quit` variable is true.
 If yes, the `break` or `continue` condition will be executed.
 
 The state variable is obtained after output data mapping and any task in the pipeline can set a key-value for
@@ -752,47 +751,8 @@ tasks:
     execution: pipeline
     loop:
       statement: 'for (model.n = 0; model.n < 3; model.n++)'
-      condition:
-        mode: sequential
-        statements:
-          - 'if (model.quit) break'
-    pipeline:
-      - 'echo.one'
-      - 'echo.two'
-      - 'echo.three'
-    next:
-      - 'echo.four'
-```
-
-### For loop with if-then-else statement
-
-The condition statement may use a "if-then-else" statement. Instead of break or continue, the statement will evaluate
-if another task will be executed.
-
-The `condition.mode` may be sequential or parallel. When it is set to sequential, the selected task will be executed,
-and the pipeline will resume.
-
-When it is set to parallel, the pipeline will resume immediately without waiting for the selected task to finish.
-The selected task will therefore run in parallel by itself. This allows a pipeline to spin up another parallel
-task for some asynchronous processing. e.g. sending a notification message to the user in the middle of
-a transaction.
-
-```yaml
-tasks:
-  - input:
-      - 'input.path_parameter.user -> user'
-      - 'input.query.seq -> sequence'
-    process: 'sequential.one'
-    output:
-      - 'result -> model.pojo'
-    description: 'Pass a pojo to another task'
-    execution: pipeline
-    loop:
-      statement: 'for (model.n = 0; model.n < 4; model.n++)'
-      condition:
-        mode: parallel
-        statements:
-          - 'if (model.jump) echo.ext1 else echo.ext2'
+      conditions:
+        - 'if (model.quit) break'
     pipeline:
       - 'echo.one'
       - 'echo.two'

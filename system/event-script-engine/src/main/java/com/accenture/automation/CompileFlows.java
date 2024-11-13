@@ -86,8 +86,7 @@ public class CompileFlows implements EntryPoint {
     private static final String BREAK = "break";
     private static final String INCREMENT = "++";
     private static final String DECREMENT = "--";
-    private static final String CONDITION_STATEMENTS = "condition.statements";
-    private static final String CONDITION_TASK_MODE = "condition.mode";
+    private static final String CONDITIONS = "conditions";
     private static final String SKIP_INVALID_TASK = "Skip invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
@@ -103,7 +102,7 @@ public class CompileFlows implements EntryPoint {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void start(String[] args) throws IOException {
+    public void start(String[] args) {
         Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
         String locations = config.getProperty("yaml.flow.automation", "classpath:/flows.yaml");
@@ -196,7 +195,7 @@ public class CompileFlows implements EntryPoint {
                 if (input instanceof List && output instanceof List &&
                         process instanceof String processName &&
                         taskDesc instanceof String taskDescription &&
-                        execution instanceof String taskExecution && validExecutionType((String) execution)) {
+                        execution instanceof String taskExecution && validExecutionType(taskExecution)) {
                     boolean validTask = true;
                     if (processName.contains("://") && !processName.startsWith(FLOW_PROTOCOL) &&
                             processName.length() <= FLOW_PROTOCOL.length()) {
@@ -272,17 +271,7 @@ public class CompileFlows implements EntryPoint {
                                 if (taskLoop instanceof Map) {
                                     MultiLevelMap loopMap = new MultiLevelMap((Map<String, Object>) taskLoop);
                                     Object statement = loopMap.getElement(STATEMENT);
-                                    Object conditions = loopMap.getElement(CONDITION_STATEMENTS);
-                                    Object taskMode = loopMap.getElement(CONDITION_TASK_MODE);
-                                    if (taskMode instanceof String) {
-                                        if (taskMode.equals(PARALLEL) || taskMode.equals(SEQUENTIAL)) {
-                                            task.setParallelCondition(PARALLEL.equals(taskMode));
-                                        } else {
-                                            log.error("{} {} in {}. loop.condition.mode must be 'sequential' or 'parallel'",
-                                                    SKIP_INVALID_TASK, process, name);
-                                            return;
-                                        }
-                                    }
+                                    Object conditions = loopMap.getElement(CONDITIONS);
                                     if (statement instanceof String s) {
                                         int bracket = s.indexOf('(');
                                         if (bracket == -1) {
@@ -305,7 +294,7 @@ public class CompileFlows implements EntryPoint {
                                                 return;
                                             }
                                             if (parts.size() == 2) {
-                                                task.comparator.addAll(getForPart2(parts.get(0)));
+                                                task.comparator.addAll(getForPart2(parts.getFirst()));
                                                 task.sequencer.addAll(getForPart3(parts.get(1)));
                                             }
                                             if (parts.size() == 3) {
@@ -356,8 +345,7 @@ public class CompileFlows implements EntryPoint {
                                     }
                                     if (conditions != null) {
                                         if (conditions instanceof List) {
-                                            List<List<String>> conditionList = getConditionList(
-                                                                            (List<String>) conditions, pipelineSteps);
+                                            List<List<String>> conditionList = getConditionList((List<String>) conditions);
                                             if (conditionList.isEmpty()) {
                                                 log.error("{} {} in {}. please check loop.conditions",
                                                         SKIP_INVALID_TASK, process, name);
@@ -367,7 +355,7 @@ public class CompileFlows implements EntryPoint {
 
                                         } else {
                                             log.error("{} {} in {}. loop.conditions should be " +
-                                                    "a list of if-then-else statements", SKIP_INVALID_TASK, process, name);
+                                                    "a list of 'if' statements", SKIP_INVALID_TASK, process, name);
                                             return;
                                         }
                                     }
@@ -428,10 +416,10 @@ public class CompileFlows implements EntryPoint {
         }
     }
 
-    private List<List<String>> getConditionList(List<String> rawList, List<String> pipelineSteps) {
+    private List<List<String>> getConditionList(List<String> rawList) {
         List<List<String>> result = new ArrayList<>();
         for (String item: rawList) {
-            List<String> condition = getCondition(item, pipelineSteps);
+            List<String> condition = getCondition(item);
             if (condition.isEmpty()) {
                 return Collections.emptyList();
             } else {
@@ -451,31 +439,18 @@ public class CompileFlows implements EntryPoint {
         return result;
     }
 
-    private List<String> getCondition(String ifThenElse, List<String> pipelineSteps) {
+    private List<String> getCondition(String statement) {
         Utility util = Utility.getInstance();
-        List<String> parts = util.split(ifThenElse, " ()");
-        if (parts.size() == 3 || parts.size() == 5) {
-            if (!parts.get(0).equals("if") || !parts.get(1).startsWith(MODEL_NAMESPACE) ||
-                    !validCondition(parts.get(2), pipelineSteps)) {
-                return Collections.emptyList();
-            }
+        List<String> parts = util.split(statement, " ()");
+        if (parts.size() == 3 && parts.getFirst().equals("if") && parts.get(1).startsWith(MODEL_NAMESPACE) &&
+                    (parts.get(2).equals(CONTINUE) || parts.get(2).equals(BREAK)) ) {
             List<String> result = new ArrayList<>();
             result.add(parts.get(1));
             result.add(parts.get(2));
-            if (parts.size() == 5) {
-                if (parts.get(3).equals("else") && validCondition(parts.get(4), pipelineSteps)) {
-                    result.add(parts.get(4));
-                } else {
-                    return Collections.emptyList();
-                }
-            }
             return result;
+        } else {
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
-    }
-
-    private boolean validCondition(String component, List<String> pipelineSteps) {
-        return component.equals(CONTINUE) || component.equals(BREAK) || !pipelineSteps.contains(component);
     }
 
     private List<String> getForPart1(String text) {
@@ -483,9 +458,9 @@ public class CompileFlows implements EntryPoint {
         // add spaces for easy parsing
         List<String> parts = util.split(text.replace("=", " = "), " ");
         List<String> result = new ArrayList<>();
-        if (parts.size() == 3 && parts.get(0).startsWith(MODEL_NAMESPACE) && util.isNumeric(parts.get(2)) &&
+        if (parts.size() == 3 && parts.getFirst().startsWith(MODEL_NAMESPACE) && util.isNumeric(parts.get(2)) &&
                 parts.get(1).equals("=")) {
-            result.add(parts.get(0));
+            result.add(parts.getFirst());
             result.add(parts.get(2));
         }
         return result;
@@ -507,11 +482,11 @@ public class CompileFlows implements EntryPoint {
         List<String> parts = util.split(s, " ");
         List<String> result = new ArrayList<>();
         if (parts.size() == 3 &&
-                (parts.get(0).startsWith(MODEL_NAMESPACE) || util.isNumeric(parts.get(0))) &&
+                (parts.getFirst().startsWith(MODEL_NAMESPACE) || util.isNumeric(parts.getFirst())) &&
                 (parts.get(2).startsWith(MODEL_NAMESPACE) || util.isNumeric(parts.get(2))) &&
                 (parts.get(1).equals(">=") || parts.get(1).equals("<=") ||
                         parts.get(1).equals(">") || parts.get(1).equals("<"))) {
-            result.add(parts.get(0));
+            result.add(parts.getFirst());
             result.add(parts.get(1));
             result.add(parts.get(2));
         }
@@ -550,7 +525,7 @@ public class CompileFlows implements EntryPoint {
         if (keys.isEmpty()) {
             return false;
         }
-        if (keys.size() == 2 && keys.get(0).equals(keys.get(1))) {
+        if (keys.size() == 2 && keys.getFirst().equals(keys.get(1))) {
             return false;
         }
         boolean found = false;

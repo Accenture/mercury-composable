@@ -20,19 +20,13 @@ tasks:
     # 'loop' feature is optional
     #
     # 1. loop.statement is evaluated before the loop
-    # 2. loop.condition.statements are evaluated after each function returns from the pipeline
-    #    (The if-then-else can use 'break', 'continue' or a task name.
-    #     The task name in an if-then-else statement must be a different task from the pipeline steps.)
-    # 3. loop.condition.task can be sequential or parallel if the if-then-else uses a task name
-    #    (If sequential, the pipeline will wait for the completion of the task.
-    #     If parallel, the conditional task will run in parallel and the pipeline will resume)
+    # 2. loop.conditions are evaluated after each function returns from the pipeline
+    # 3. each condition is a 'if' statement to evaluate a model value to decide to break or continue
     #
     loop:
       statement: 'for (model.n < 4)'
-      condition:
-        mode: parallel
-        statements:
-          - 'if (model.jump) echo.ext1 else echo.ext2'
+      conditions:
+        - 'if (model.jump) break'
     pipeline:
       - 'echo.one'
       - 'echo.two'

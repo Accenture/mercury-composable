@@ -19,8 +19,6 @@ flows:
   - 'for-loop-test.yml'
   - 'for-loop-break.yml'
   - 'for-loop-continue.yml'
-  - 'for-loop-if-then-else.yml'
-  - 'for-loop-if-then-else-parallel.yml'
   - 'missing-sub-flow.yml'
 
 location: 'classpath:/flows/'

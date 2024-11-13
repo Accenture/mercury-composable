@@ -80,11 +80,21 @@ public class SimpleClassScanner {
                 if (!p.contains(".")) {
                     throw new IllegalArgumentException(EX_START + p + EX_END);
                 } else {
-                    result.add(p);
+                    result.add(normalizePackage(p));
                 }
             }
         }
         return result;
+    }
+
+    private String normalizePackage(String text) {
+        List<String> parts = Utility.getInstance().split(text, ".");
+        StringBuilder sb = new StringBuilder();
+        for (String p: parts) {
+            sb.append(p);
+            sb.append('.');
+        }
+        return sb.toString();
     }
 
     private boolean isBasePackage(String namespace) {

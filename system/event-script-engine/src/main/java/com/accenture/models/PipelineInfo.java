@@ -30,10 +30,6 @@ public class PipelineInfo extends PipeInfo {
         this.task = task;
     }
 
-    public int getCurrentStep() {
-        return ptr.get();
-    }
-
     public int nextStep() {
         int n = ptr.get();
         if (n < task.pipelineSteps.size()) {

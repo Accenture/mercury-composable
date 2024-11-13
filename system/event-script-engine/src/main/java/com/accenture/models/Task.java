@@ -42,7 +42,6 @@ public class Task {
     private String joinTask = null;
     private String exceptionTask = null;
     private String loopType = "none";
-    private boolean parallelCondition = false;
     private String whileModelKey = null;
 
     public Task(String service, String description, String execution) {
@@ -93,14 +92,6 @@ public class Task {
 
     public void setLoopType(String loopType) {
         this.loopType = loopType;
-    }
-
-    public boolean isParallelCondition() {
-        return parallelCondition;
-    }
-
-    public void setParallelCondition(boolean parallelCondition) {
-        this.parallelCondition = parallelCondition;
     }
 
     public String getWhileModelKey() {

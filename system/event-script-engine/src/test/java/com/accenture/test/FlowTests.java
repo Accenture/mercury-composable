@@ -590,54 +590,6 @@ public class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void pipelineForLoopIfThenElseTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
-        AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop-if-then-else/"+USER).setQueryParameter("seq", SEQ);
-        EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
-        assert res != null;
-        assertInstanceOf(Map.class, res.getBody());
-        Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertTrue(result.containsKey("data"));
-        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
-        assertEquals(4, result.get("n"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void pipelineForLoopIfThenElseParallelTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
-        AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop-if-then-else-parallel/"+USER).setQueryParameter("seq", SEQ);
-        EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
-        assert res != null;
-        assertInstanceOf(Map.class, res.getBody());
-        Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertTrue(result.containsKey("data"));
-        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
-        assertEquals(4, result.get("n"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
     public void pipelineExceptionTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;

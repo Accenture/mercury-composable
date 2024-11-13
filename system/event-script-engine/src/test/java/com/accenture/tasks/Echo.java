@@ -24,7 +24,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.Map;
 
-@PreLoad(route="decision.case.one, decision.case.two, echo.one, echo.two, echo.three, echo.four, echo.ext1, echo.ext2", instances=10)
+@PreLoad(route="decision.case.one, decision.case.two, echo.one, echo.two, echo.three, echo.four", instances=10)
 public class Echo implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     private static final String EXCEPTION = "exception";
