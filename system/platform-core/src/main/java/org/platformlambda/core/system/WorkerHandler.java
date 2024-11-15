@@ -220,7 +220,7 @@ public class WorkerHandler {
                     long rpcTimeout = util.str2long(rpc);
                     final AtomicLong timer = new AtomicLong(-1);
                     // Subscribe to the Mono reactive object for a future response.
-                    // For non-blocking operation, use a new virtual thread for the Mono subscribe.
+                    // For non-blocking operation, use a new virtual thread for the subscription.
                     final Disposable disposable = mono.doFinally(done -> {
                         long t1 = timer.get();
                         if (rpcTimeout > 0 && t1 > 0) {
