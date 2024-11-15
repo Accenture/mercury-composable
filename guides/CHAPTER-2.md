@@ -38,7 +38,7 @@ this in Chapter 3 "Event Script syntax".
 ## Non-blocking design
 
 While you can apply sequential, object oriented or reactive programming styles in your functions, you should pay
-attention to make your function non-blocking and fast.
+attention to making your function non-blocking and fast.
 
 In a virtual thread, if you use Java Future, the ".get()" method is synchronous but it is non-blocking behind the
 curtain. This is like using the "await" keyword in other programming language.
@@ -50,6 +50,9 @@ or reactive styles.
 
 When you are using a reactive libaries in your function, your function can return a "Mono" reactive response object
 using the Spring Reactor Core library. This feature is available only in Java.
+
+For simplicity, we support only the Mono reactive response object. If you use other types of reactive APIs, please
+convert them into a Mono in the return value.
 
 For example, a reactive user function may look like this:
 
