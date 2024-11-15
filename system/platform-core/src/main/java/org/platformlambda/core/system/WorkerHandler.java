@@ -245,7 +245,7 @@ public class WorkerHandler {
                                 log.error("Unable to deliver exception for {} - {}", route, e2.getMessage());
                             }
                         }
-                    }, () -> log.info("Reactive processing completed for route {}", route));
+                    }, () -> log.debug("Reactive processing completed for route {}", route));
                     // dispose a pending Mono if timeout
                     if (rpcTimeout > 0) {
                         timer.set(platform.getVertx().setTimer(rpcTimeout, t -> {
