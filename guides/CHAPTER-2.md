@@ -74,6 +74,19 @@ public class ReactiveUserFunction implements TypedLambdaFunction<Map<String, Obj
 }
 ```
 
+When you use reactive API in your function to connect to external resources such as a database, please ensure that the
+reactive API is non-blocking. For example, when subscribing to a Mono publisher, you may need to add a "Scheduler"
+before your subscribe statement. It may look something like this:
+
+```java
+// obtain a virtual thread executor from the platform and apply it with the Mono's scheduler
+mono.subscribeOn(Schedulers.fromExecutor(Platform.getInstance().getVirtualThreadExecutor()))
+    .subscribe(responseConsumer, errorConsumer);
+```
+
+Without the scheduler, the subscribe statement will be blocked. Your next statement will not be reachable until
+the mono has completed with data or exception.
+
 ## Extensible authentication function
 
 You can add authentication function using the optional `authentication` tag in a service. In "rest.yaml", a service

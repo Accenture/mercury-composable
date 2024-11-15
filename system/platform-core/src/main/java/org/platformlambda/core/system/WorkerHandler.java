@@ -248,7 +248,7 @@ public class WorkerHandler {
                     });
                     // dispose a pending Mono if timeout
                     if (rpcTimeout > 0) {
-                        timer.set(platform.getVertx().setTimer(1000, t -> {
+                        timer.set(platform.getVertx().setTimer(rpcTimeout, t -> {
                             timer.set(-1);
                             if (!disposable.isDisposed()) {
                                 log.warn("Async response from {} timeout in {} ms", route, rpcTimeout);
