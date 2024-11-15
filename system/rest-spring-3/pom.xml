@@ -5,7 +5,7 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>rest-spring-3</artifactId>
-    <version>4.0.20</version>
+    <version>4.0.21</version>
     <packaging>jar</packaging>
 
     <name>Pre-configured Spring Boot 3 module</name>
@@ -20,6 +20,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <netty.version>4.1.115.Final</netty.version>
         <spring-framework.version>6.1.14</spring-framework.version>
         <kafka.version>3.8.1</kafka.version>
         <gson.version>2.11.0</gson.version>
@@ -39,7 +40,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.0.20</version>
+            <version>4.0.21</version>
         </dependency>
 
         <dependency>
@@ -91,11 +92,6 @@
                     <artifactId>log4j-to-slf4j</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <dependency>

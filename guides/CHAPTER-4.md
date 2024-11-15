@@ -661,11 +661,11 @@ This task has the tag `execution=sink`.
     execution: sink
 ```
 
-# Pipeline Feature
+## Pipeline Feature
 
 Pipeline is an advanced feature of Event Script.
 
-## Pipeline task
+### Pipeline task
 
 A pipeline is a list of tasks that will be executed orderly within the current task.
 
@@ -689,7 +689,7 @@ tasks:
       - 'echo.three'
 ```
 
-### Advanced pipeline features
+## Advanced pipeline features
 
 Some special uses of pipelines include "for/while-loop" and "continue/break" features.
 
@@ -761,11 +761,9 @@ tasks:
       - 'echo.four'
 ```
 
-# Handling Exception
+## Handling Exception
 
 You can define exception handler at the top level or at the task level.
-
-## What is an exception?
 
 Exception is said to occur when a user function throws exception or returns an EventEnvelope object with
 a status code equals to or larger than 400.
@@ -773,7 +771,7 @@ a status code equals to or larger than 400.
 The event status uses the same numbering scheme as HTTP exception status code.
 Therefore, status code less than 400 is not considered an exception.
 
-## Top-level exception handler
+### Top-level exception handler
 
 Top-level exception handler is a "catch-all" handler. You can define it like this:
 
@@ -798,7 +796,7 @@ The following input arguments will be delivered to your function when exception 
 The exception handler function can be an "end" task to abort the transaction or a decision task
 to take care of the exception. For example, the exception handler can be a "circuit-breaker" to retry a request.
 
-## Task-level exception handler
+### Task-level exception handler
 
 You can attach an exception handler to a task. One typical use is the "circuit breaker" pattern.
 In the following example, the user function "breakable.function" may throw an exception for some error condition.
@@ -869,9 +867,9 @@ An example of task-level exception handler is shown in the "HelloException.class
 the event script engine where it set the status code in the result set so that the system can map the status code
 from the result set to the next task or to the HTTP output status code.
 
-# Other Features
+## Other Features
 
-## Future task scheduling
+### Future task scheduling
 
 You may add a “delay” tag in a task so that it will be executed later.
 This feature is usually used for unit tests or "future task scheduling".

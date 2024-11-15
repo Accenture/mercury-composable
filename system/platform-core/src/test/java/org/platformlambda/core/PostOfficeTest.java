@@ -57,6 +57,30 @@ public class PostOfficeTest extends TestBase {
     private static final String HELLO_ALIAS = "hello.alias";
 
     @Test
+    public void testReactiveFunction() throws IOException, ExecutionException, InterruptedException {
+        final var data = Map.of("hello", "world");
+        EventEnvelope request = new EventEnvelope().setTo("v1.reactive.function").setBody(data);
+        PostOffice po = new PostOffice("unit.test", "101", "TEST /api/reactive");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertEquals(data, response.getBody());
+    }
+
+    @Test
+    public void testReactiveFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+        final var data = Map.of("hello", "test");
+        final var MESSAGE = "hello test";
+        EventEnvelope request = new EventEnvelope().setTo("v1.reactive.function")
+                                                    .setBody(data).setHeader("exception", MESSAGE);
+        PostOffice po = new PostOffice("unit.test", "102", "TEST /error/reactive");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(400, response.getStatus());
+        assertEquals(MESSAGE, response.getError());
+        assertInstanceOf(AppException.class, response.getException());
+        assertEquals(MESSAGE, response.getException().getMessage());
+    }
+
+    @Test
     public void httpClientRenderSmallPayloadAsBytes() throws IOException, ExecutionException, InterruptedException {
         final String HELLO = "hello world 0123456789";
         final AppConfigReader config = AppConfigReader.getInstance();
