@@ -35,6 +35,45 @@ to map subset of a PoJo from one function to another if needed.
 When the input is used for a PoJo, you may also pass parameters to the user function as headers. We will discuss
 this in Chapter 3 "Event Script syntax".
 
+## Non-blocking design
+
+While you can apply sequential, object oriented or reactive programming styles in your functions, you should pay
+attention to make your function non-blocking and fast.
+
+In a virtual thread, if you use Java Future, the ".get()" method is synchronous but it is non-blocking behind the
+curtain. This is like using the "await" keyword in other programming language.
+
+Virtual thread execution promotes high performance and high concurrency. However, it would be suboptimal
+if you mix blocking code in a user function. It will block the whole event loop, resulting in substantial
+degradation of application performance. We therefore recommend your user function to be implemented in non-blocking
+or reactive styles.
+
+When you are using a reactive libaries in your function, your function can return a "Mono" reactive response object
+using the Spring Reactor Core library. This feature is available only in Java.
+
+For example, a reactive user function may look like this:
+
+```java
+@PreLoad(route = "v1.reactive.function")
+public class ReactiveUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
+    private static final Logger log = LoggerFactory.getLogger(ReactiveUserFunction.class);
+
+    private static final String EXCEPTION = "exception";
+
+    @Override
+    public Mono<Map<String, Object>> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        log.info("GOT {} {}", headers, input);
+        return Mono.create(callback -> {
+            if (headers.containsKey(EXCEPTION)) {
+                callback.error(new AppException(400, headers.get(EXCEPTION)));
+            } else {
+                callback.success(input);
+            }
+        });
+    }
+}
+```
+
 ## Extensible authentication function
 
 You can add authentication function using the optional `authentication` tag in a service. In "rest.yaml", a service
