@@ -23,12 +23,16 @@ import org.platformlambda.core.models.*;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class WorkerHandler {
     private static final Logger log = LoggerFactory.getLogger(WorkerHandler.class);
@@ -53,7 +57,6 @@ public class WorkerHandler {
     private static final String ANNOTATIONS = "annotations";
     private static final String REMARK = "remark";
     private static final String JOURNAL = "journal";
-    private static final String RPC = "rpc";
     private static final String DELIVERED = "delivered";
     private static final String MY_ROUTE = "my_route";
     private static final String MY_TRACE_ID = "my_trace_id";
@@ -84,7 +87,7 @@ public class WorkerHandler {
         String rpc = event.getTag(EventEmitter.RPC);
         EventEmitter po = EventEmitter.getInstance();
         String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), instance) : "?";
-        ProcessStatus ps = processEvent(event);
+        ProcessStatus ps = processEvent(event, rpc);
         TraceInfo trace = po.stopTracing(ref);
         if (tracing && trace != null && trace.id != null && trace.path != null) {
             try {
@@ -116,7 +119,7 @@ public class WorkerHandler {
                     }
                     payload.put(TRACE, metrics);
                     dt.setHeader(DELIVERED, ps.isDelivered());
-                    dt.setHeader(RPC, rpc != null);
+                    dt.setHeader(EventEmitter.RPC, rpc != null);
                     dt.setHeader(JOURNAL, journaled);
                     po.send(dt.setBody(payload));
                 }
@@ -140,7 +143,7 @@ public class WorkerHandler {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private ProcessStatus processEvent(EventEnvelope event) {
+    private ProcessStatus processEvent(EventEnvelope event, String rpc) {
         Map<String, String> eventHeaders = event.getHeaders();
         ProcessStatus ps = new ProcessStatus();
         EventEmitter po = EventEmitter.getInstance();
@@ -213,8 +216,17 @@ public class WorkerHandler {
                 boolean reactive = false;
                 if (result instanceof Mono mono) {
                     reactive = true;
+                    Platform platform = Platform.getInstance();
+                    long rpcTimeout = util.str2long(rpc);
+                    final AtomicLong timer = new AtomicLong(-1);
                     // let's subscribe to the Mono reactive object for a future response
-                    mono.subscribe(data -> {
+                    final Disposable disposable = mono.doFinally(done -> {
+                        long t1 = timer.get();
+                        if (rpcTimeout > 0 && t1 > 0) {
+                            platform.getVertx().cancelTimer(t1);
+                        }
+                    }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
+                      .subscribe(data -> {
                         updateResponse(response, data);
                         try {
                             po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
@@ -233,6 +245,16 @@ public class WorkerHandler {
                             }
                         }
                     });
+                    // dispose a pending Mono if timeout
+                    if (rpcTimeout > 0) {
+                        timer.set(platform.getVertx().setTimer(1000, t -> {
+                            timer.set(-1);
+                            if (!disposable.isDisposed()) {
+                                log.warn("Async response from {} timeout in {} ms", route, rpcTimeout);
+                                disposable.dispose();
+                            }
+                        }));
+                    }
                 }
                 boolean simulatedStreamTimeout = !reactive && updateResponse(response, result);
                 if (!response.getHeaders().isEmpty()) {

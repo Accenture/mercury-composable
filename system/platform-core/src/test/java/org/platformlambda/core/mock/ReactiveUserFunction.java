@@ -32,7 +32,7 @@ import java.util.Map;
 public class ReactiveUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
     private static final Logger log = LoggerFactory.getLogger(ReactiveUserFunction.class);
 
-    private static final String DO_EXCEPTION = "exception";
+    private static final String EXCEPTION = "exception";
 
     @Override
     public Mono<Map<String, Object>> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
@@ -40,8 +40,8 @@ public class ReactiveUserFunction implements TypedLambdaFunction<Map<String, Obj
         po.annotateTrace("reactive", "test");
         log.info("GOT {} {}", headers, input);
         return Mono.create(callback -> {
-            if (headers.containsKey(DO_EXCEPTION)) {
-                callback.error(new AppException(400, headers.get(DO_EXCEPTION)));
+            if (headers.containsKey(EXCEPTION)) {
+                callback.error(new AppException(400, headers.get(EXCEPTION)));
             } else {
                 callback.success(input);
             }
