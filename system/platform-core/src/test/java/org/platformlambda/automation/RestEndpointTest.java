@@ -248,9 +248,6 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        System.out.println(response.getHeaders());
-        System.out.println(response.getBody());
-
         assertNull(response.getBody());
         // async.http.request returns a stream
         String streamId = response.getHeader("stream");
