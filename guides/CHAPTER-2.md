@@ -139,7 +139,7 @@ In the calling function, you can create a `FluxConsumer` to handle the incoming 
 
 ```java
 String streamId = headers.get("x-stream-id");
-long ttl = Utility.getInstance().str2long("x-ttl");
+long ttl = Utility.getInstance().str2long(headers.get("x-ttl"));
 FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
 fc.consume(
     data -> {
