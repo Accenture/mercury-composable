@@ -525,7 +525,6 @@ public class AppStarter {
     }
 
     private static class PreLoadInfo {
-
         public String original;
         public int instances;
         public Set<String> routes;
@@ -540,34 +539,33 @@ public class AppStarter {
     private record Housekeeper(ConcurrentMap<String, AsyncContextHolder> contexts) {
 
         private void removeExpiredConnections() {
-                if (housekeeperNotRunning.compareAndSet(true, false)) {
-                    Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                        try {
-                            checkAsyncTimeout();
-                        } finally {
-                            housekeeperNotRunning.set(true);
-                        }
-                    });
-                }
+            if (housekeeperNotRunning.compareAndSet(true, false)) {
+                Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
+                    try {
+                        checkAsyncTimeout();
+                    } finally {
+                        housekeeperNotRunning.set(true);
+                    }
+                });
             }
+        }
 
-            private void checkAsyncTimeout() {
-                // check async context timeout
-                if (!contexts.isEmpty()) {
-                    List<String> list = new ArrayList<>(contexts.keySet());
-                    long now = System.currentTimeMillis();
-                    for (String id : list) {
-                        AsyncContextHolder holder = contexts.get(id);
-                        long t1 = holder.lastAccess;
-                        if (now - t1 > holder.timeout) {
-                            log.warn("Async HTTP Context {} timeout for {} ms", id, now - t1);
-                            SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
-                            httpUtil.sendError(id, holder.request, 408,
-                                    "Timeout for " + (holder.timeout / 1000) + " seconds");
-                        }
+        private void checkAsyncTimeout() {
+            // check async context timeout
+            if (!contexts.isEmpty()) {
+                List<String> list = new ArrayList<>(contexts.keySet());
+                long now = System.currentTimeMillis();
+                for (String id : list) {
+                    AsyncContextHolder holder = contexts.get(id);
+                    long t1 = holder.lastAccess;
+                    if (now - t1 > holder.timeout) {
+                        log.warn("Async HTTP Context {} timeout for {} ms", id, now - t1);
+                        SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
+                        httpUtil.sendError(id, holder.request, 408,
+                                "Timeout for " + (holder.timeout / 1000) + " seconds");
                     }
                 }
             }
         }
-
+    }
 }

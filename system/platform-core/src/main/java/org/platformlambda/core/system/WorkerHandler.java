@@ -24,13 +24,14 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -61,7 +62,10 @@ public class WorkerHandler {
     private static final String MY_ROUTE = "my_route";
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
+    private static final String X_STREAM_ID = "x-stream-id";
+    private static final String X_TTL = "x-ttl";
     private static final String READY = "ready:";
+    private static final long DEFAULT_TIMEOUT = 30 * 60 * 1000L; // 30 minutes
     private final boolean tracing;
     private final ServiceDef def;
     private final String route;
@@ -194,6 +198,9 @@ public class WorkerHandler {
             Map<String, Object> output = new HashMap<>();
             String replyTo = event.getReplyTo();
             if (replyTo != null) {
+                long rpcTimeout = util.str2long(rpc);
+                // if it is a callback instead of a RPC call, use default timeout of 30 minutes
+                final long expiry = rpcTimeout < 0? DEFAULT_TIMEOUT : rpcTimeout;
                 final EventEnvelope response = new EventEnvelope();
                 response.setTo(replyTo);
                 response.setFrom(def.getRoute());
@@ -213,17 +220,16 @@ public class WorkerHandler {
                 if (event.getTraceId() != null) {
                     response.setTrace(event.getTraceId(), event.getTracePath());
                 }
-                boolean reactive = false;
+                boolean skipResponse = false;
+                // if response is a Mono, subscribe to it for a future response
                 if (result instanceof Mono mono) {
-                    reactive = true;
+                    skipResponse = true;
                     Platform platform = Platform.getInstance();
-                    long rpcTimeout = util.str2long(rpc);
                     final AtomicLong timer = new AtomicLong(-1);
-                    // Subscribe to the Mono reactive object for a future response.
-                    // For non-blocking operation, use a new virtual thread for the subscription.
+                    // For non-blocking operation, use a new virtual thread for the subscription
                     final Disposable disposable = mono.doFinally(done -> {
                         long t1 = timer.get();
-                        if (rpcTimeout > 0 && t1 > 0) {
+                        if (t1 > 0) {
                             platform.getVertx().cancelTimer(t1);
                         }
                     }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
@@ -232,7 +238,7 @@ public class WorkerHandler {
                         try {
                             po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
                         } catch (IOException e1) {
-                            log.error("Unable to deliver async response for {} - {}", route, e1.getMessage());
+                            log.error("Unable to deliver async response from {} - {}", route, e1.getMessage());
                         }
                     }, e -> {
                         if (e instanceof Throwable ex) {
@@ -242,22 +248,34 @@ public class WorkerHandler {
                             try {
                                 po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
                             } catch (IOException e2) {
-                                log.error("Unable to deliver exception for {} - {}", route, e2.getMessage());
+                                log.error("Unable to deliver exception from {} - {}", route, e2.getMessage());
                             }
                         }
                     }, () -> log.debug("Reactive processing completed for route {}", route));
                     // dispose a pending Mono if timeout
-                    if (rpcTimeout > 0) {
-                        timer.set(platform.getVertx().setTimer(rpcTimeout, t -> {
-                            timer.set(-1);
-                            if (!disposable.isDisposed()) {
-                                log.warn("Async response from {} timeout in {} ms", route, rpcTimeout);
-                                disposable.dispose();
-                            }
-                        }));
-                    }
+                    timer.set(platform.getVertx().setTimer(expiry, t -> {
+                        timer.set(-1);
+                        if (!disposable.isDisposed()) {
+                            log.warn("Async response timeout after {} for {}", util.elapsedTime(expiry), route);
+                            disposable.dispose();
+                        }
+                    }));
                 }
-                boolean simulatedStreamTimeout = !reactive && updateResponse(response, result);
+                var resultSet = result;
+                /*
+                 * if response is a Flux, subscribe to it for a future response and immediately
+                 * return x-stream-id and x-ttl so the caller can use a FluxConsumer to read the stream.
+                 *
+                 * The response contract is two headers containing x-stream-id and x-ttl.
+                 * The response body is an empty map.
+                 */
+                if (result instanceof Flux flux) {
+                    resultSet = Collections.EMPTY_MAP;
+                    FluxPublisher<Object> fluxRelay = new FluxPublisher<>(flux, expiry);
+                    response.setHeader(X_TTL, expiry);
+                    response.setHeader(X_STREAM_ID, fluxRelay.publish());
+                }
+                boolean simulatedStreamTimeout = !skipResponse && updateResponse(response, resultSet);
                 if (!response.getHeaders().isEmpty()) {
                     output.put(HEADERS, response.getHeaders());
                 }
@@ -265,7 +283,7 @@ public class WorkerHandler {
                 output.put(STATUS, response.getStatus());
                 inputOutput.put(OUTPUT, output);
                 try {
-                    if (!interceptor && !reactive && !simulatedStreamTimeout) {
+                    if (!interceptor && !skipResponse && !simulatedStreamTimeout) {
                         po.send(encodeTraceAnnotations(response).setExecutionTime(diff));
                     }
                 } catch (Exception e2) {

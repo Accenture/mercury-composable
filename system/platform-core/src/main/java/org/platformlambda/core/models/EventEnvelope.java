@@ -48,8 +48,6 @@ public class EventEnvelope {
     private static final String EXECUTION_FIELD = "exec_time";
     private static final String ROUND_TRIP_FIELD = "round_trip";
     private static final String JSON_FIELD = "json";
-    private static final String STREAM = "stream";
-    private static final String X_CONTENT_LENGTH = "x-content-length";
     // message-ID
     private static final String ID_FLAG = "0";
     // metrics
@@ -73,7 +71,6 @@ public class EventEnvelope {
     private static final String CID_FLAG = "X";
     // object type for automatic serialization
     private static final String OBJ_TYPE_FLAG = "O";
-    private static final String PARA_TYPES_FLAG = "P";
     // final destination
     private static final String END_ROUTE_FLAG = "E";
     // broadcast
@@ -108,7 +105,6 @@ public class EventEnvelope {
     private boolean binary = true;
     private boolean optional = false;
     private boolean exRestored = false;
-    private boolean checkStream = true;
     private int broadcastLevel = 0;
 
     public EventEnvelope() {
@@ -216,7 +212,6 @@ public class EventEnvelope {
      * @return body in map or primitive form
      */
     public Object getRawBody() {
-        showStreamWarning();
         return body;
     }
 
@@ -235,23 +230,10 @@ public class EventEnvelope {
      * @return original or restored event body
      */
     public Object getBody() {
-        showStreamWarning();
         if (body != null && originalObject == null) {
             originalObject = body;
         }
         return optional? Optional.ofNullable(originalObject) : originalObject;
-    }
-
-    private void showStreamWarning() {
-        if (body == null && checkStream) {
-            // check the signature of streaming HTTP content from AsyncHttpClient
-            checkStream = false;
-            String streamId = getHeader(STREAM);
-            if (streamId != null && streamId.startsWith("stream.") && getHeader(X_CONTENT_LENGTH) != null) {
-                String sid = streamId.contains("@") ? streamId.substring(0, streamId.indexOf('@')) : streamId;
-                log.info("Event contains streaming content - {}", sid);
-            }
-        }
     }
 
     /**
@@ -282,13 +264,11 @@ public class EventEnvelope {
      * @return converted body
      */
     public <T> T getBody(Class<T> toValueType) {
-        showStreamWarning();
         return SimpleMapper.getInstance().getMapper().readValue(body, toValueType);
     }
 
     @SuppressWarnings("rawtypes")
     public List<Object> getBodyAsListOfPoJo(Class<?> toValueType) {
-        showStreamWarning();
         List pojoList = null;
         List<Object> result = new ArrayList<>();
         // for compatibility with previous version
@@ -323,7 +303,6 @@ public class EventEnvelope {
      * @return converted body
      */
     public <T> T getBody(Class<T> toValueType, Class<?>... parameterClass) {
-        showStreamWarning();
         if (parameterClass.length == 0) {
             throw new IllegalArgumentException("Missing parameter class");
         }
@@ -551,17 +530,13 @@ public class EventEnvelope {
      */
     public EventEnvelope setHeader(String key, Object value) {
         if (key != null) {
-            String v;
+            String v = switch (value) {
+                case null -> "";
+                case String str -> str;
+                case Date d -> Utility.getInstance().date2str(d);
+                default -> value.toString();
+            };
             // null value is transported as an empty string
-            if (value == null) {
-                v = "";
-            } else if (value instanceof String str) {
-                v = str;
-            } else if (value instanceof Date d) {
-                v = Utility.getInstance().date2str(d);
-            } else {
-                v = value.toString();
-            }
             if (SET_COOKIE.equalsIgnoreCase(key)) {
                 if (this.headers.containsKey(key)) {
                     String composite = this.headers.get(key) + "|" + v;
@@ -591,20 +566,23 @@ public class EventEnvelope {
      * @param body Usually a PoJo, a Map or Java primitive
      * @return event envelope
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public EventEnvelope setBody(Object body) {
         final Object payload;
-        if (body instanceof Optional) {
-            this.optional = true;
-            Optional<Object> o = (Optional<Object>) body;
-            payload = o.orElse(null);
-        } else if (body instanceof EventEnvelope nested) {
-            log.warn("Setting body from nested EventEnvelope is discouraged - system will remove the outer envelope");
-            return setBody(nested.getBody());
-        } else if (body instanceof AsyncHttpRequest request) {
-            return setBody(request.toMap());
-        } else {
-            payload = body;
+        switch (body) {
+            case Optional ignored -> {
+                this.optional = true;
+                Optional<Object> o = (Optional<Object>) body;
+                payload = o.orElse(null);
+            }
+            case EventEnvelope nested -> {
+                log.warn("Setting body from nested EventEnvelope is discouraged - system will remove the outer envelope");
+                return setBody(nested.getBody());
+            }
+            case AsyncHttpRequest request -> {
+                return setBody(request.toMap());
+            }
+            case null, default -> payload = body;
         }
         // encode body and save object type
         this.originalObject = payload instanceof Date d? Utility.getInstance().date2str(d) : payload;
@@ -712,21 +690,21 @@ public class EventEnvelope {
         EventEnvelope event = new EventEnvelope();
         event.originalObject = this.originalObject;
         event.body = this.body;
-        event.setTo(this.getTo());
-        event.setHeaders(this.getHeaders());
-        event.setType(this.getType());
-        event.setBroadcastLevel(this.getBroadcastLevel());
-        event.setFrom(this.getFrom());
-        event.setBinary(this.isBinary());
-        event.setCorrelationId(this.getCorrelationId());
+        event.setTo(this.getTo())
+            .setHeaders(this.getHeaders())
+            .setType(this.getType())
+            .setBroadcastLevel(this.getBroadcastLevel())
+            .setFrom(this.getFrom())
+            .setBinary(this.isBinary())
+            .setCorrelationId(this.getCorrelationId());
         if (this.isEndOfRoute()) {
             event.setEndOfRoute();
         }
-        event.setExtra(this.getExtra());
-        event.setStatus(this.getStatus());
-        event.setReplyTo(this.getReplyTo());
-        event.setTraceId(this.getTraceId());
-        event.setTracePath(this.getTracePath());
+        event.setExtra(this.getExtra())
+            .setStatus(this.getStatus())
+            .setReplyTo(this.getReplyTo())
+            .setTraceId(this.getTraceId())
+            .setTracePath(this.getTracePath());
         return event;
     }
 
@@ -811,19 +789,6 @@ public class EventEnvelope {
             if (message.containsKey(JSON_FLAG)) {
                 binary = false;
             }
-        }
-    }
-
-    private String simpleError(String message) {
-        if (message == null) {
-            return "null";
-        }
-        int sep = message.indexOf(": ");
-        if (sep > 3) {
-            String cls = message.substring(0, sep);
-            return cls.contains(".")? message.substring(sep+2) : message;
-        } else {
-            return message;
         }
     }
 

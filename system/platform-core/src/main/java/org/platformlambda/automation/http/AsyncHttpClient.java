@@ -475,7 +475,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private void fetchNextBlock(Promise<File> promise, File temp, AsyncObjectStreamReader in, FileOutputStream out) {
-        Future<Object> block = in.get();
+        Future<Object> block = in.getNext();
         block.onSuccess(data -> {
             try {
                 if (data != null) {
@@ -637,29 +637,25 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 } else {
                     Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
                         int len = 0;
-                        ObjectStreamIO stream = null;
-                        ObjectStreamWriter out = null;
+                        EventPublisher publisher = null;
                         try {
                             while (true) {
                                 byte[] b = queue.read();
                                 if (b == null) {
                                     break;
                                 } else {
-                                    if (out == null) {
-                                        stream = new ObjectStreamIO(timeoutSeconds);
-                                        out = new ObjectStreamWriter(stream.getOutputStreamId());
+                                    if (publisher == null) {
+                                        publisher = new EventPublisher(timeoutSeconds * 1000L);
                                     }
                                     len += b.length;
-                                    out.write(b);
+                                    publisher.publish(b);
                                 }
                             }
-                            if (out != null) {
-                                response.setHeader(STREAM, stream.getInputStreamId())
+                            if (publisher != null) {
+                                response.setHeader(STREAM, publisher.getStreamId())
                                         .setHeader(TIMEOUT, timeoutSeconds * 1000)
                                         .setHeader(X_CONTENT_LENGTH, len);
-                                out.close();
-                            } else {
-                                response.setBody("");
+                                publisher.publishCompletion();
                             }
                             sendResponse(input, response);
                         } catch (IOException e) {

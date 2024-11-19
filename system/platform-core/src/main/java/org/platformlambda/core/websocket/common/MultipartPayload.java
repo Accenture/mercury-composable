@@ -110,17 +110,16 @@ public class MultipartPayload {
         return control.size() == n;
     }
 
-    public void outgoing(String dest, EventEnvelope event) throws IOException {
+    public void outgoing(String target, EventEnvelope event) throws IOException {
         Platform platform = Platform.getInstance();
-        if (platform.hasRoute(dest)) {
-            outgoing(platform.getManager(dest), event);
+        if (platform.hasRoute(target)) {
+            outgoing(platform.getManager(target), event);
         }
     }
 
-    public void outgoing(ServiceQueue dest, EventEnvelope event) throws IOException {
-        if (dest != null && event != null) {
-            event.setEndOfRoute();
-            byte[] payload = event.toBytes();
+    public void outgoing(ServiceQueue target, EventEnvelope event) throws IOException {
+        if (target != null && event != null) {
+            byte[] payload = event.setEndOfRoute().toBytes();
             EventBus system = Platform.getInstance().getEventSystem();
             if (payload.length > maxPayload) {
                 int total = (payload.length / maxPayload) + (payload.length % maxPayload == 0 ? 0 : 1);
@@ -150,7 +149,7 @@ public class MultipartPayload {
                         // tell a cloud connector that this event should be broadcast
                         out.setHeader(BROADCAST, "1");
                     }
-                    system.send(dest.getRoute(), out.toBytes());
+                    system.send(target.getRoute(), out.toBytes());
                     log.debug("Sending block {} of {} to {} as {} - {} bytes", i + 1, total, event.getTo(),
                             event.getId(), size);
                 }
@@ -161,7 +160,7 @@ public class MultipartPayload {
                     // tell a cloud connector that this event should be broadcast
                     out.setHeader(BROADCAST, "1");
                 }
-                system.send(dest.getRoute(), out.toBytes());
+                system.send(target.getRoute(), out.toBytes());
             }
         }
     }

@@ -5,7 +5,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-presence</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.21</version>
+    <version>4.0.22</version>
     <name>Presence monitor for Kafka</name>
 
     <parent>
@@ -33,17 +33,29 @@
         <!-- add your corporate artifactory here -->
     </repositories>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-bom</artifactId>
+                <version>2024.0.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>service-monitor</artifactId>
-            <version>4.0.21</version>
+            <version>4.0.22</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.0.21</version>
+            <version>4.0.22</version>
         </dependency>
 
         <dependency>

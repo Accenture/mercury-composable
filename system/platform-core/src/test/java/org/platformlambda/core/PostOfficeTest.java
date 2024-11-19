@@ -55,29 +55,83 @@ public class PostOfficeTest extends TestBase {
     private static final CryptoApi crypto = new CryptoApi();
     private static final BlockingQueue<String> interceptorBench = new ArrayBlockingQueue<>(1);
     private static final String HELLO_ALIAS = "hello.alias";
+    private static final String REACTIVE_MONO = "v1.reactive.mono.function";
+    private static final String REACTIVE_FLUX = "v1.reactive.flux.function";
+    private static final String X_STREAM_ID = "x-stream-id";
+    private static final String X_TTL = "x-ttl";
 
     @Test
-    public void testReactiveFunction() throws IOException, ExecutionException, InterruptedException {
+    public void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
         final var data = Map.of("hello", "world");
-        EventEnvelope request = new EventEnvelope().setTo("v1.reactive.function").setBody(data);
-        PostOffice po = new PostOffice("unit.test", "101", "TEST /api/reactive");
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data);
+        PostOffice po = new PostOffice("unit.test", "101", "TEST /api/mono");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertEquals(data, response.getBody());
     }
 
     @Test
-    public void testReactiveFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+    public void testMonoFunctionWithException() throws IOException, ExecutionException, InterruptedException {
         final var data = Map.of("hello", "test");
         final var MESSAGE = "hello test";
-        EventEnvelope request = new EventEnvelope().setTo("v1.reactive.function")
-                                                    .setBody(data).setHeader("exception", MESSAGE);
-        PostOffice po = new PostOffice("unit.test", "102", "TEST /error/reactive");
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data).setHeader("exception", MESSAGE);
+        PostOffice po = new PostOffice("unit.test", "102", "TEST /error/mono");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(400, response.getStatus());
         assertEquals(MESSAGE, response.getError());
         assertInstanceOf(AppException.class, response.getException());
         assertEquals(MESSAGE, response.getException().getMessage());
+    }
+
+    @Test
+    public void testFluxFunction() throws IOException, ExecutionException, InterruptedException {
+        final var first = Map.of("first", "message");
+        final var data = Map.of("hello", "world");
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data);
+        PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getHeader(X_STREAM_ID));
+        assertNotNull(response.getHeader(X_TTL));
+        long ttl = Utility.getInstance().str2long(response.getHeader(X_TTL));
+        String streamId = response.getHeader(X_STREAM_ID);
+        final List<Map<String, Object>> messages = new ArrayList<>();
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
+        fc.consume(messages::add, null, () -> bench.offer(true));
+        Object done = bench.poll(5, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertEquals(2, messages.size());
+        assertEquals(first, messages.getFirst());
+        assertEquals(data, messages.get(1));
+    }
+
+    @Test
+    public void testFluxFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+        final var data = Map.of("hello", "test");
+        final var MESSAGE = "hello test";
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data).setHeader("exception", MESSAGE);
+        PostOffice po = new PostOffice("unit.test", "104", "TEST /error/flux");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getHeader(X_STREAM_ID));
+        assertNotNull(response.getHeader(X_TTL));
+        long ttl = Utility.getInstance().str2long(response.getHeader(X_TTL));
+        String streamId = response.getHeader(X_STREAM_ID);
+        Map<String, Object> store = new HashMap<>();
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
+        fc.consume(null, e -> {
+            store.put("e", e);
+            bench.offer(false);
+        }, () -> bench.offer(true));
+        Object signal = bench.poll(5, TimeUnit.SECONDS);
+        assertEquals(false, signal);
+        assertEquals(1, store.size());
+        assertInstanceOf(AppException.class, store.get("e"));
+        AppException ex = (AppException) store.get("e");
+        assertEquals(400, ex.getStatus());
+        assertEquals(MESSAGE, ex.getMessage());
     }
 
     @Test
@@ -754,7 +808,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope event = new EventEnvelope().setTo(MY_FUNCTION).setBody(HELLO);
         po.asyncRequest(event, 8000)
             .onSuccess(response -> {
-                assertEquals(response.getBody(), RETURN_VALUE);
+                assertEquals(RETURN_VALUE, response.getBody());
                 log.info("RPC response verified");
             });
         // wait for function completion
@@ -845,7 +899,7 @@ public class PostOfficeTest extends TestBase {
         PostOffice po = new PostOffice(FROM, traceId, "GET /api/hello/telemetry");
         po.asyncRequest(new EventEnvelope().setTo(SIMPLE_FUNCTION).setBody(HELLO), 8000)
             .onSuccess(response -> {
-               assertEquals(response.getBody(), RETURN_VALUE);
+               assertEquals(RETURN_VALUE, response.getBody());
                log.info("RPC response verified");
             });
         // wait for function completion
@@ -1606,15 +1660,8 @@ public class PostOfficeTest extends TestBase {
         assertEquals(pojo.telephone, responsePoJo2.telephone);
     }
 
-    private static class SimpleCallback implements TypedLambdaFunction<PoJo, Void>, MappingExceptionHandler {
-
-        private final BlockingQueue<Object> bench;
-        private final String traceId;
-
-        public SimpleCallback(BlockingQueue<Object> bench, String traceId) {
-            this.bench = bench;
-            this.traceId = traceId;
-        }
+    private record SimpleCallback(BlockingQueue<Object> bench, String traceId)
+                                    implements TypedLambdaFunction<PoJo, Void>, MappingExceptionHandler {
 
         @Override
         public void onError(String route, AppException e, EventEnvelope event, int instance) {
@@ -1636,7 +1683,6 @@ public class PostOfficeTest extends TestBase {
             }
             return null;
         }
-
     }
 
     @EventInterceptor

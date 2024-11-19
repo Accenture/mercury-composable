@@ -28,9 +28,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
-@PreLoad(route = "v1.reactive.function")
-public class ReactiveUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
-    private static final Logger log = LoggerFactory.getLogger(ReactiveUserFunction.class);
+@PreLoad(route = "v1.reactive.mono.function")
+public class MonoUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
+    private static final Logger log = LoggerFactory.getLogger(MonoUserFunction.class);
 
     private static final String EXCEPTION = "exception";
 

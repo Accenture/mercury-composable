@@ -23,6 +23,9 @@ import org.platformlambda.core.models.Kv;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * Simple writer to send messages to an event stream
+ */
 public class ObjectStreamWriter implements AutoCloseable {
     private static final String TYPE = "type";
     private static final String DATA = "data";
