@@ -631,6 +631,11 @@ public class Utility {
         return new String(b, StandardCharsets.UTF_8);
     }
 
+    public String getSimpleRoute(String route) {
+        int at = route.indexOf('@');
+        return at == -1? route : route.substring(0, at);
+    }
+
     /**
      * Valid service name (routing path and project ID)
      * must contain only 0-9, a-z, period, underscore and hyphen.

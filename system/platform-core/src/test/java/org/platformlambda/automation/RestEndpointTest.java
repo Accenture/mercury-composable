@@ -91,8 +91,8 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench::offer);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        // response is an empty string
-        assertEquals("", response.getBody());
+        // response body is null
+        assertNull(response.getBody());
         // CORS headers are inserted - retrieve it with a case-insensitive key
         assertEquals("*", response.getHeader("access-control-Allow-Origin"));
     }
@@ -267,7 +267,7 @@ public class RestEndpointTest extends TestBase {
     private void fetchNextBlock(Promise<Boolean> promise,
                                 AsyncObjectStreamReader in, ByteArrayOutputStream out) {
         Utility util = Utility.getInstance();
-        Future<Object> block = in.get();
+        Future<Object> block = in.getNext();
         block.onSuccess(data -> {
             try {
                 if (data != null) {

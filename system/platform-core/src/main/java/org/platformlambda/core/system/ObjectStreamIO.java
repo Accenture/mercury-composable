@@ -33,6 +33,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Foundation module for event Streaming to support the following classes
+ * <p>
+ *     FluxPublisher,
+ *     FluxConsumer,
+ *     EventPublisher,
+ *     ObjectStreamWriter,
+ *     AsyncObjectStreamReader
+ */
 public class ObjectStreamIO {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamIO.class);
 
@@ -45,6 +54,7 @@ public class ObjectStreamIO {
     private static final String READ = "read";
     private static final String CLOSE = "close";
     private static final String DATA = "data";
+    private static final String EXCEPTION = "exception";
     private static final String END_OF_STREAM = "eof";
     private static final String STREAM_PREFIX = "stream.";
     private static final String IN = ".in";
@@ -56,16 +66,32 @@ public class ObjectStreamIO {
     private final AtomicBoolean eof = new AtomicBoolean(false);
     private final ConcurrentLinkedQueue<String> callbacks = new ConcurrentLinkedQueue<>();
 
+    /**
+     * Create an object stream with default timeout of 30 minutes
+     *
+     * @throws IOException in case of stream creation error
+     */
     public ObjectStreamIO() throws IOException {
         this.expirySeconds = DEFAULT_TIMEOUT;
         this.createStream();
     }
 
+    /**
+     * Create an object stream with given expiry timer in seconds
+     *
+     * @param expirySeconds - the expiry timer
+     * @throws IOException in case of stream creation error
+     */
     public ObjectStreamIO(int expirySeconds) throws IOException {
         this.expirySeconds = Math.max(1, expirySeconds);
         this.createStream();
     }
 
+    /**
+     * Get expiry timer
+     *
+     * @return expiry timer in seconds
+     */
     public int getExpirySeconds() {
         return expirySeconds;
     }
@@ -94,18 +120,39 @@ public class ObjectStreamIO {
         log.info("Stream {} created, idle expiry {}", id, timer);
     }
 
+    /**
+     * Get input stream ID
+     *
+     * @return stream ID
+     */
     public String getInputStreamId() {
         return inputStreamId;
     }
 
+    /**
+     * Get output stream ID
+     *
+     * @return stream ID
+     */
     public String getOutputStreamId() {
         return outputStreamId;
     }
 
+    /**
+     * Get number of running streams
+     *
+     * @return stream count
+     */
     public static int getStreamCount() {
         return streams.size();
     }
 
+    /**
+     * Get information for all streams
+     * (This function is reserved for unit test. Do not use it in production)
+     *
+     * @return stream info
+     */
     public static Map<String, Object> getStreamInfo() {
         Utility util = Utility.getInstance();
         Map<String, Object> result = new HashMap<>();
@@ -121,6 +168,11 @@ public class ObjectStreamIO {
         return result;
     }
 
+    /**
+     * Tell the system that the stream is active
+     *
+     * @param id of the stream
+     */
     public static void touch(String id) {
         StreamInfo info = streams.get(id);
         if (info != null) {
@@ -128,12 +180,18 @@ public class ObjectStreamIO {
         }
     }
 
+    /**
+     * Remote expired streams
+     */
     public static void removeExpiredStreams() {
         if (housekeeperNotRunning.compareAndSet(true, false)) {
             Platform.getInstance().getVirtualThreadExecutor().submit(ObjectStreamIO::checkExpiredStreams);
         }
     }
 
+    /**
+     * Close expired streams if any
+     */
     public static void checkExpiredStreams() {
         EventEmitter po = EventEmitter.getInstance();
         Utility util = Utility.getInstance();
@@ -171,15 +229,16 @@ public class ObjectStreamIO {
         }
 
         @Override
-        public void handleEvent(Map<String, String> headers, Object input) throws Exception {
-            if (DATA.equals(headers.get(TYPE))) {
+        public void handleEvent(Map<String, String> headers, Object input) {
+            String type = headers.get(TYPE);
+            if (DATA.equals(type) || EXCEPTION.equals(type)) {
                 if (!eof.get()) {
                     String cb = callbacks.poll();
                     if (cb != null) {
-                        sendReply(cb, input, DATA);
+                        sendReply(cb, input, type);
                     }
                 }
-            } else if (END_OF_STREAM.equals(headers.get(TYPE)) && !eof.get()) {
+            } else if (END_OF_STREAM.equals(type) && !eof.get()) {
                 eof.set(true);
                 String cb = callbacks.poll();
                 if (cb != null) {
@@ -188,17 +247,21 @@ public class ObjectStreamIO {
             }
         }
 
-        private void sendReply(String cb, Object input, String type) throws IOException {
-            EventEmitter po = EventEmitter.getInstance();
-            if (cb.contains("|")) {
-                int sep = cb.indexOf('|');
-                String callback = cb.substring(0, sep);
-                String extra = cb.substring(sep+1);
-                EventEnvelope eventExtra = new EventEnvelope();
-                eventExtra.setTo(callback).setExtra(extra).setHeader(TYPE, type).setBody(input);
-                po.send(eventExtra);
-            } else {
-                po.send(cb, input, new Kv(TYPE, type));
+        private void sendReply(String cb, Object input, String type) {
+            try {
+                EventEmitter po = EventEmitter.getInstance();
+                if (cb.contains("|")) {
+                    int sep = cb.indexOf('|');
+                    String callback = cb.substring(0, sep);
+                    String extra = cb.substring(sep + 1);
+                    EventEnvelope eventExtra = new EventEnvelope();
+                    eventExtra.setTo(callback).setExtra(extra).setHeader(TYPE, type).setBody(input);
+                    po.send(eventExtra);
+                } else {
+                    po.send(cb, input, new Kv(TYPE, type));
+                }
+            } catch(IOException e) {
+                log.error("Unable to callback - {}", e.getMessage());
             }
         }
     }

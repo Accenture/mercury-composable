@@ -26,6 +26,9 @@ import org.platformlambda.core.models.Kv;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Simple reader for an event stream
+ */
 public class AsyncObjectStreamReader implements AutoCloseable {
 
     private static final String TYPE = "type";
@@ -48,7 +51,7 @@ public class AsyncObjectStreamReader implements AutoCloseable {
         return streamId;
     }
 
-    public Future<Object> get() {
+    public Future<Object> getNext() {
         final EventEmitter po = EventEmitter.getInstance();
         return Future.future(promise -> {
             Platform platform = Platform.getInstance();

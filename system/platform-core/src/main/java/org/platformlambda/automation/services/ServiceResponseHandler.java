@@ -242,7 +242,7 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
     }
 
     private void fetchNextBlock(String requestId, AsyncObjectStreamReader in, HttpServerResponse response) {
-        Future<Object> block = in.get();
+        Future<Object> block = in.getNext();
         block.onSuccess(data -> {
             if (data != null) {
                 if (data instanceof byte[] b) {

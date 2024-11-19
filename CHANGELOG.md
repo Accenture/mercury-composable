@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.22, 11/18/2024
+
+### Added
+
+FluxPublisher and FluxConsumer for integration with Flux reactive response object
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Unit tests in event streaming and post office to support Flux integration
+2. Select reactor-core version 3.7.0 using dependency management (reactor-bom version 2024.0.0)
+
+---
 ## Version 4.0.21, 11/14/2024
 
 ### Added

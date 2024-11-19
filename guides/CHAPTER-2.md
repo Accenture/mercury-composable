@@ -48,18 +48,20 @@ if you mix blocking code in a user function. It will block the whole event loop,
 degradation of application performance. We therefore recommend your user function to be implemented in non-blocking
 or reactive styles.
 
-When you are using a reactive libaries in your function, your function can return a "Mono" reactive response object
-using the Spring Reactor Core library. This feature is available only in Java.
+When you are using a reactive libaries in your function, your function can return a "Mono" or "Flux" reactive
+response object using the Project-Reactor Core library. This feature is available in Java.
 
-For simplicity, we support only the Mono reactive response object. If you use other types of reactive APIs, please
-convert them into a Mono in the return value.
+For simplicity, we support only the Mono and Flux reactive response objects. If you use other types of reactive APIs,
+please convert them into a Mono or Flux in the return value.
 
-For example, a reactive user function may look like this:
+## User function that returns a Mono object
+
+For Mono return value, a reactive user function may look like this:
 
 ```java
-@PreLoad(route = "v1.reactive.function")
-public class ReactiveUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
-    private static final Logger log = LoggerFactory.getLogger(ReactiveUserFunction.class);
+@PreLoad(route = "v1.reactive.mono.function")
+public class MonoUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
+    private static final Logger log = LoggerFactory.getLogger(MonoUserFunction.class);
 
     private static final String EXCEPTION = "exception";
 
@@ -89,6 +91,98 @@ mono.subscribeOn(Schedulers.fromExecutor(Platform.getInstance().getVirtualThread
 
 Without the scheduler, the subscribe statement will be blocked. Your next statement will not be reachable until
 the mono has completed with data or exception.
+
+## User function that returns a Flux object
+
+For Flux return value, it may look like this:
+
+```java
+@PreLoad(route = "v1.reactive.flux.function")
+public class FluxUserFunction implements TypedLambdaFunction<Map<String, Object>, Flux<Map<String, Object>>> {
+    private static final Logger log = LoggerFactory.getLogger(FluxUserFunction.class);
+
+    private static final String EXCEPTION = "exception";
+    @Override
+    public Flux<Map<String, Object>> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        log.info("GOT {} {}", headers, input);
+        return Flux.create(emitter -> {
+            if (headers.containsKey(EXCEPTION)) {
+                emitter.error(new AppException(400, headers.get(EXCEPTION)));
+            } else {
+                // just generate two messages
+                emitter.next(Map.of("first", "message"));
+                emitter.next(input);
+                emitter.complete();
+            }
+        });
+    }
+}
+
+```
+
+## Handling a Flux stream
+
+When your function returns a Flux stream object, the system will pass the stream ID of the underlying event stream
+to the calling function.
+
+The input arguments for the event stream ID and time-to-live parameters are provided in the event headers
+to your function that implements the TypedLambdaFunction or LambdaFunction.
+
+The following event headers will be provided to the calling function:
+
+```yaml
+x-stream-id: streamId
+x-ttl: ttl
+```
+
+In the calling function, you can create a `FluxConsumer` to handle the incoming event stream like this:
+
+```java
+String streamId = headers.get("x-stream-id");
+long ttl = Utility.getInstance().str2long(headers.get("x-ttl"));
+FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
+fc.consume(
+    data -> {
+        // handle incoming message
+    },
+    e -> {
+        // handle exception where e is a Throwable
+    },
+    () -> {
+        // handle stream completion
+    }
+);
+```
+
+## Object serialization consideration
+
+The system is designed to deliver Java primitive and HashMap through an event stream. If you pass Java
+primitive such as String or byte[], you do not need to do any serialization.
+
+If the objects that your function streams over a Mono or Flux channel are not supported, you must perform
+custom serialization.
+
+This can be achieved using the "map" method of the Mono or Flux class.
+
+For example, your function obtains a stream of Flux result objects from a database call. You can serialize
+the objects using a custom serializer like this:
+
+```java
+// "source" is the original Flux object
+Flux<Map<String, Object> serializedStream = source.map(specialPoJo -> {
+    return myCustomSerializer.toMap(specialPoJo);
+});
+return serializedStream;
+```
+
+Your customSerializer should implement the org.platformlambda.core.models.CustomSerializer interface.
+
+```java
+public interface CustomSerializer {
+    public Map<String, Object> toMap(Object obj);
+    public <T> T toPoJo(Object obj, Class<T> toValueType);
+}
+```
 
 ## Extensible authentication function
 
