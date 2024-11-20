@@ -463,42 +463,35 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
     private Future<File> objectStream2file(String streamId, int timeoutSeconds) {
         return Future.future(promise -> {
+            Utility util = Utility.getInstance();
             File temp = getTempFile(streamId);
-            long timeout = Math.max(5000, timeoutSeconds * 1000L);
-            AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, timeout);
             try {
-                fetchNextBlock(promise, temp, in, new FileOutputStream(temp));
-            } catch (FileNotFoundException e) {
-               promise.fail(e);
-            }
-        });
-    }
-
-    private void fetchNextBlock(Promise<File> promise, File temp, AsyncObjectStreamReader in, FileOutputStream out) {
-        Future<Object> block = in.getNext();
-        block.onSuccess(data -> {
-            try {
-                if (data != null) {
-                    if (data instanceof byte[] b) {
-                        if (b.length > 0) {
+                FileOutputStream out = new FileOutputStream(temp);
+                long timeout = Math.max(5000, timeoutSeconds * 1000L);
+                FluxConsumer<Object> flux = new FluxConsumer<>(streamId, timeout);
+                flux.consume(data -> {
+                    try {
+                        if (data instanceof byte[] b && b.length > 0) {
                             out.write(b);
                         }
-                    }
-                    if (data instanceof String text) {
-                        if (!text.isEmpty()) {
-                            out.write(Utility.getInstance().getUTF((String) data));
+                        if (data instanceof String text && !text.isEmpty()) {
+                            out.write(util.getUTF(text));
                         }
+                    } catch (IOException e) {
+                        // ok to ignore
                     }
-                    fetchNextBlock(promise, temp, in, out);
-                } else {
-                    in.close();
-                    out.close();
+                }, promise::fail, () -> {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        // ok to ignore
+                    }
                     promise.complete(temp);
-                }
+                });
             } catch (IOException e) {
                 promise.fail(e);
             }
-        }).onFailure(promise::fail);
+        });
     }
 
     private void removeExpiredFiles() {
@@ -658,8 +651,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                                 publisher.publishCompletion();
                             }
                             sendResponse(input, response);
-                        } catch (IOException e) {
-                            // ok to ignore
                         } finally {
                             queue.close();
                         }

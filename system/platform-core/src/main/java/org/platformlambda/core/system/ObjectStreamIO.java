@@ -38,9 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  *     FluxPublisher,
  *     FluxConsumer,
- *     EventPublisher,
- *     ObjectStreamWriter,
- *     AsyncObjectStreamReader
+ *     EventPublisher
  */
 public class ObjectStreamIO {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamIO.class);
@@ -49,7 +47,6 @@ public class ObjectStreamIO {
     private static final AtomicInteger initCounter = new AtomicInteger(0);
     private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
-    public static final int DEFAULT_TIMEOUT = 30 * 60;              // 30 minutes
     private static final String TYPE = "type";
     private static final String READ = "read";
     private static final String CLOSE = "close";
@@ -67,22 +64,11 @@ public class ObjectStreamIO {
     private final ConcurrentLinkedQueue<String> callbacks = new ConcurrentLinkedQueue<>();
 
     /**
-     * Create an object stream with default timeout of 30 minutes
-     *
-     * @throws IOException in case of stream creation error
-     */
-    public ObjectStreamIO() throws IOException {
-        this.expirySeconds = DEFAULT_TIMEOUT;
-        this.createStream();
-    }
-
-    /**
      * Create an object stream with given expiry timer in seconds
      *
      * @param expirySeconds - the expiry timer
-     * @throws IOException in case of stream creation error
      */
-    public ObjectStreamIO(int expirySeconds) throws IOException {
+    public ObjectStreamIO(int expirySeconds) {
         this.expirySeconds = Math.max(1, expirySeconds);
         this.createStream();
     }
@@ -96,7 +82,7 @@ public class ObjectStreamIO {
         return expirySeconds;
     }
 
-    private void createStream() throws IOException {
+    private void createStream() {
         Platform platform = Platform.getInstance();
         if (initCounter.incrementAndGet() == 1) {
             platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredStreams());
@@ -113,11 +99,16 @@ public class ObjectStreamIO {
         this.outputStreamId = out + "@" + platform.getOrigin();
         StreamPublisher publisher = new StreamPublisher();
         StreamConsumer consumer = new StreamConsumer(publisher, in, out);
-        platform.registerPrivateStream(out, publisher);
-        platform.registerPrivate(in, consumer, 1);
-        streams.put(in, new StreamInfo(expirySeconds));
-        String timer = util.elapsedTime(expirySeconds * 1000L);
-        log.info("Stream {} created, idle expiry {}", id, timer);
+        try {
+            platform.registerPrivate(in, consumer, 1);
+            streams.put(in, new StreamInfo(expirySeconds));
+            platform.registerPrivateStream(out, publisher);
+            String timer = util.elapsedTime(expirySeconds * 1000L);
+            log.info("Stream {} created, idle expiry {}", id, timer);
+        } catch (IOException e) {
+            // this should not happen
+            log.error("Unable to create stream {} - {}", id, e.getMessage());
+        }
     }
 
     /**

@@ -18,7 +18,6 @@
 
 package org.platformlambda.core;
 
-import io.vertx.core.Future;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.system.*;
@@ -203,8 +202,9 @@ public class ObjectStreamTest {
     }
 
     @Test
-    public void expiryTest() throws IOException, InterruptedException {
-        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+    public void expiryTest() throws InterruptedException, IOException {
+        final BlockingQueue<String> dataBench = new ArrayBlockingQueue<>(1);
+        final BlockingQueue<Throwable> exceptionBench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         String TEXT = "hello world";
         // The minimum timeout is one second if you set it to a smaller value
@@ -212,23 +212,25 @@ public class ObjectStreamTest {
         assertEquals(1, unused.getExpirySeconds());
         String unusedStream = unused.getInputStreamId().substring(0, unused.getInputStreamId().indexOf('@'));
         // create a stream with 5 second expiry
-        ObjectStreamIO stream = new ObjectStreamIO(5);
-        ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
-        out.write(TEXT);
+        EventPublisher publisher = new EventPublisher(5000);
+        publisher.publish(TEXT);
         Map<String, Object> info = ObjectStreamIO.getStreamInfo();
         assertNotNull(info.get("count"));
         int count = util.str2int(info.get("count").toString());
         assertTrue(count > 0);
-        String id = stream.getInputStreamId().substring(0, stream.getInputStreamId().indexOf('@'));
+        String id = publisher.getStreamId().substring(0, publisher.getStreamId().indexOf('@'));
         assertTrue(info.containsKey(id));
-        AsyncObjectStreamReader in = new AsyncObjectStreamReader(stream.getInputStreamId(), 3000);
-        in.getNext().onSuccess(data -> {
-            assertEquals(TEXT, data);
-            bench.offer(true);
-        });
-        bench.poll(10, TimeUnit.SECONDS);
+        FluxConsumer<String> flux = new FluxConsumer<>(publisher.getStreamId(), 3000);
+        flux.consume(dataBench::offer, exceptionBench::offer, null);
+        String result = dataBench.poll(10, TimeUnit.SECONDS);
+        assertEquals(TEXT, result);
         // The stream is intentionally left open
         Thread.sleep(1100);
+        Throwable e = exceptionBench.poll(5, TimeUnit.SECONDS);
+        assertInstanceOf(AppException.class, e);
+        var exception = (AppException) e;
+        assertEquals(408, exception.getStatus());
+        assertEquals("Consumer expired", exception.getMessage());
         /*
          * The system will check expired streams every 30 seconds
          * To avoid waiting it in a unit test, we force it to remove expired streams
@@ -250,49 +252,24 @@ public class ObjectStreamTest {
     }
 
     @Test
-    public void asyncReadWrite() throws IOException, InterruptedException {
+    public void asyncReadWrite() throws InterruptedException, IOException {
         int CYCLES = 10;
         String TEXT = "hello world";
-        /*
-         * Producer creates a new stream with 60 seconds inactivity expiry
-         */
-        ObjectStreamIO stream = new ObjectStreamIO(1);
-        log.info("Using {}", stream.getInputStreamId());
-        // Closing an output stream will send an EOF signal. The try auto-close will do this.
-        try (ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId())) {
-            for (int i = 0; i < CYCLES; i++) {
-                out.write(TEXT + " " + i);
-            }
+        EventPublisher publisher = new EventPublisher(10000);
+        log.info("Using {}", publisher.getStreamId());
+        for (int i = 0; i < CYCLES; i++) {
+            publisher.publish(TEXT + " " + i);
         }
-        BlockingQueue<Integer> bench = new ArrayBlockingQueue<>(1);
-        AsyncObjectStreamReader in = new AsyncObjectStreamReader(stream.getInputStreamId(), 8000);
-        // AsyncObjectStreamReader is non-blocking. Therefore, we must use a blocking queue in a unit test.
-        log.info("Beginning of Stream");
-        fetchNextBlock(in, 0, bench);
-        Integer count = bench.poll(10, TimeUnit.SECONDS);
-        assertNotNull(count);
-        assertEquals(CYCLES, count.intValue());
-        assertTrue(in.isStreamEnd());
-        assertTrue(in.isClosed());
+        publisher.publishCompletion();
+        List<String> result = new ArrayList<>();
+        BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        FluxConsumer<String> flux = new FluxConsumer<>(publisher.getStreamId(), 8000);
+        flux.consume(result::add, null, () -> bench.offer(true));
+        Boolean done = bench.poll(10, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertEquals(CYCLES, result.size());
+        for (String s: result) {
+            assertTrue(s.startsWith(TEXT));
+        }
     }
-
-    private void fetchNextBlock(AsyncObjectStreamReader in, int count, BlockingQueue<Integer> bench) {
-        Future<Object> block = in.getNext();
-        block.onSuccess(b -> {
-            if (b != null) {
-                log.info("{}", b);
-                fetchNextBlock(in, count+1, bench);
-            } else {
-                try {
-                    in.close();
-                    log.info("End of Stream");
-                } catch (IOException e) {
-                    log.error("Unable to close stream - {}", e.getMessage());
-                } finally {
-                    bench.offer(count);
-                }
-            }
-        });
-    }
-
 }

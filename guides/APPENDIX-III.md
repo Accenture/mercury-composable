@@ -177,15 +177,14 @@ For larger payload, you may use the streaming method. See sample code below:
 int len;
 byte[] buffer = new byte[4096];
 FileInputStream in = new FileInputStream(myFile);
-ObjectStreamIO stream = new ObjectStreamIO(timeoutInSeconds);
-ObjectStreamWriter out = stream.getOutputStream();
+EventPublisher publisher = new EventPublisher(timeoutInMIlls);
 while ((len = in.read(buffer, 0, buffer.length)) != -1) {
-    out.write(buffer, 0, len);
+    publisher.publish(buffer, 0, len);
 }
 // closing the output stream would send a EOF signal to the stream
-out.close();
+publisher.publishCompletion();
 // tell the HTTP client to read the input stream by setting the streamId in the AsyncHttpRequest object
-req.setStreamRoute(stream.getInputStreamId());
+req.setStreamRoute(publisher.getStreamId());
 ```
 
 ## Read HTTP response body stream

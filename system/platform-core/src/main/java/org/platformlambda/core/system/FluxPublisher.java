@@ -56,9 +56,8 @@ public class FluxPublisher<T> {
      *
      * @param flux object
      * @param ttl time-to-live
-     * @throws IOException in case of routing error
      */
-    public FluxPublisher(Flux<T> flux, long ttl) throws IOException {
+    public FluxPublisher(Flux<T> flux, long ttl) {
         this.flux = flux;
         this.stream = new ObjectStreamIO((int) ttl / 1000);
         long expiry = this.stream.getExpirySeconds() * 1000L;

@@ -22,8 +22,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.ObjectStreamIO;
-import org.platformlambda.core.system.ObjectStreamWriter;
+import org.platformlambda.core.system.EventPublisher;
 import org.platformlambda.core.util.Utility;
 
 import java.util.Map;
@@ -33,12 +32,11 @@ public class HelloBytes implements TypedLambdaFunction<AsyncHttpRequest, EventEn
     private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 
     @Override
-    public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws Exception {
-        ObjectStreamIO stream = new ObjectStreamIO(10);
-        ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
-        out.write(Utility.getInstance().getUTF("hello world 0123456789"));
-        out.close();
-        return new EventEnvelope().setHeader("stream", stream.getInputStreamId())
+    public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+        EventPublisher publisher = new EventPublisher(10000);
+        publisher.publish(Utility.getInstance().getUTF("hello world 0123456789"));
+        publisher.publishCompletion();
+        return new EventEnvelope().setHeader("stream", publisher.getStreamId())
                 .setHeader("content-type", APPLICATION_OCTET_STREAM);
     }
 }

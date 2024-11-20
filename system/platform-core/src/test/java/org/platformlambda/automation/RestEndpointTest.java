@@ -223,15 +223,14 @@ public class RestEndpointTest extends TestBase {
         final EventEmitter po = EventEmitter.getInstance();
         int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        ObjectStreamIO stream = new ObjectStreamIO();
-        ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
+        EventPublisher publisher = new EventPublisher(10000);
         for (int i=0; i < 100; i++) {
             byte[] line = util.getUTF("hello world "+i+"\n");
-            out.write(line);
+            publisher.publish(line);
             bytes.write(line);
             len += line.length;
         }
-        out.close();
+        publisher.publishCompletion();
         byte[] b = bytes.toByteArray();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("PUT");
@@ -241,7 +240,7 @@ public class RestEndpointTest extends TestBase {
          */
         req.setUrl("/api/v1/hello/world");
         req.setTargetHost("http://127.0.0.1:"+port);
-        req.setStreamRoute(stream.getInputStreamId());
+        req.setStreamRoute(publisher.getStreamId());
         req.setContentLength(len);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
@@ -253,47 +252,17 @@ public class RestEndpointTest extends TestBase {
         String streamId = response.getHeader("stream");
         assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
-        AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
-        stream2bytes(in, result).onSuccess(bench2::offer);
-        Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(Boolean.TRUE, done);
-        assertArrayEquals(b, result.toByteArray());
-    }
-
-    private Future<Boolean> stream2bytes(AsyncObjectStreamReader in, ByteArrayOutputStream out) {
-        return Future.future(promise -> fetchNextBlock(promise, in, out));
-    }
-
-    private void fetchNextBlock(Promise<Boolean> promise,
-                                AsyncObjectStreamReader in, ByteArrayOutputStream out) {
-        Utility util = Utility.getInstance();
-        Future<Object> block = in.getNext();
-        block.onSuccess(data -> {
+        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
+        flux.consume(data -> {
             try {
-                if (data != null) {
-                    if (data instanceof byte[] b) {
-                        if (b.length > 0) {
-                            out.write(b);
-                        }
-                    }
-                    if (data instanceof String text) {
-                        if (!text.isEmpty()) {
-                            out.write(util.getUTF((String) data));
-                        }
-                    }
-                    fetchNextBlock(promise, in, out);
-                } else {
-                    try {
-                        in.close();
-                        promise.complete(true);
-                    } catch (IOException e) {
-                        promise.fail(e);
-                    }
-                }
+                result.write(data);
             } catch (IOException e) {
-                promise.fail(e);
+                throw new RuntimeException(e);
             }
-        });
+        }, null, () -> bench2.offer(true));
+        Boolean done = bench2.poll(10, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertArrayEquals(b, result.toByteArray());
     }
 
     @Test
@@ -358,10 +327,16 @@ public class RestEndpointTest extends TestBase {
         String streamId = response.getHeader("stream");
         assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
-        AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
-        stream2bytes(in, result).onSuccess(bench2::offer);
+        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
+        flux.consume(data -> {
+            try {
+                result.write(data);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, null, () -> bench2.offer(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(Boolean.TRUE, done);
+        assertEquals(true, done);
         assertArrayEquals(b, result.toByteArray());
     }
 
@@ -373,16 +348,15 @@ public class RestEndpointTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        ObjectStreamIO stream = new ObjectStreamIO();
-        ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
+        EventPublisher publisher = new EventPublisher(10000);
         for (int i=0; i < 600; i++) {
             String line = "hello world "+i+"\n";
             byte[] d = util.getUTF(line);
-            out.write(d);
+            publisher.publish(d);
             bytes.write(d);
             len += d.length;
         }
-        out.close();
+        publisher.publishCompletion();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("PUT");
         req.setUrl("/api/hello/world");
@@ -390,7 +364,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/octet-stream");
         req.setHeader("content-type", "application/octet-stream");
         req.setContentLength(len);
-        req.setStreamRoute(stream.getInputStreamId());
+        req.setStreamRoute(publisher.getStreamId());
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::offer);
@@ -399,10 +373,16 @@ public class RestEndpointTest extends TestBase {
         assertNotNull(response.getHeader("stream"));
         String streamId = response.getHeader("stream");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
-        AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
-        stream2bytes(in, result).onSuccess(bench2::offer);
+        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
+        flux.consume(data -> {
+            try {
+                result.write(data);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, null, () -> bench2.offer(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(Boolean.TRUE, done);
+        assertEquals(true, done);
         assertArrayEquals(bytes.toByteArray(), result.toByteArray());
     }
 
@@ -414,16 +394,15 @@ public class RestEndpointTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        ObjectStreamIO stream = new ObjectStreamIO();
-        ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
+        EventPublisher publisher = new EventPublisher(10000);
         for (int i=0; i < 600; i++) {
             String line = "hello world "+i+"\n";
             byte[] d = util.getUTF(line);
-            out.write(d);
+            publisher.publish(d);
             bytes.write(d);
             len += d.length;
         }
-        out.close();
+        publisher.publishCompletion();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("POST");
         req.setUrl("/api/upload/demo");
@@ -432,7 +411,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("content-type", MULTIPART_FORM_DATA);
         req.setContentLength(len);
         req.setFileName("hello-world.txt");
-        req.setStreamRoute(stream.getInputStreamId());
+        req.setStreamRoute(publisher.getStreamId());
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::offer);
@@ -441,10 +420,16 @@ public class RestEndpointTest extends TestBase {
         assertNotNull(response.getHeader("stream"));
         String streamId = response.getHeader("stream");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
-        AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId, RPC_TIMEOUT);
-        stream2bytes(in, result).onSuccess(bench2::offer);
+        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
+        flux.consume(data -> {
+            try {
+                result.write(data);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, null, () -> bench2.offer(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(Boolean.TRUE, done);
+        assertEquals(true, done);
         assertArrayEquals(bytes.toByteArray(), result.toByteArray());
     }
 

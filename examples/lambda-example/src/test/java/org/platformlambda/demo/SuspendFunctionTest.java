@@ -21,8 +21,7 @@ package org.platformlambda.demo;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.system.ObjectStreamIO;
-import org.platformlambda.core.system.ObjectStreamWriter;
+import org.platformlambda.core.system.EventPublisher;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.demo.common.TestBase;
@@ -50,17 +49,16 @@ public class SuspendFunctionTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", traceId, "/stream/upload/test");
         int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        ObjectStreamIO stream = new ObjectStreamIO();
-        ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
+        EventPublisher publisher = new EventPublisher(10000);
         for (int i=0; i < 10; i++) {
             String line = "hello world "+i+"\n";
             byte[] d = util.getUTF(line);
-            out.write(d);
+            publisher.publish(d);
             bytes.write(d);
             len += d.length;
         }
-        out.close();
-        // emulate a multi-part file upload
+        publisher.publishCompletion();
+        // emulate a multipart file upload
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("POST");
         req.setUrl("/api/upload/demo");
@@ -69,7 +67,7 @@ public class SuspendFunctionTest extends TestBase {
         req.setHeader("content-type", "multipart/form-data");
         req.setContentLength(len);
         req.setFileName(FILENAME);
-        req.setStreamRoute(stream.getInputStreamId());
+        req.setStreamRoute(publisher.getStreamId());
         // send the HTTP request event to the "hello.upload" function
         EventEnvelope request = new EventEnvelope().setTo("hello.upload")
                 .setBody(req).setTrace("12345", "/api/upload/demo").setFrom("unit.test");

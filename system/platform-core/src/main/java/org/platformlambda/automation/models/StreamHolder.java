@@ -18,48 +18,29 @@
 
 package org.platformlambda.automation.models;
 
-import org.platformlambda.core.system.ObjectStreamIO;
-import org.platformlambda.core.system.ObjectStreamWriter;
+import org.platformlambda.core.system.EventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class StreamHolder {
     private static final Logger log = LoggerFactory.getLogger(StreamHolder.class);
 
-    private ObjectStreamIO stream = null;
-    private ObjectStreamWriter out = null;
-    private final int timeoutSeconds;
+    private final EventPublisher publisher;
 
     public StreamHolder(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
+        this.publisher = new EventPublisher(timeoutSeconds * 1000L);
     }
 
-    public ObjectStreamWriter getOutputStream() {
-        if (out == null) {
-            try {
-                stream = new ObjectStreamIO(timeoutSeconds);
-                out = new ObjectStreamWriter(stream.getOutputStreamId());
-            } catch (IOException e) {
-                log.error("Unable to create stream - {}", e.getMessage());
-            }
-        }
-        return out;
+    public EventPublisher getPublisher() {
+        return publisher;
     }
 
     public String getInputStreamId() {
-        return stream == null? null : stream.getInputStreamId();
+        return publisher.getStreamId();
     }
 
     public void close() {
-        if (out != null) {
-            try {
-                out.close();
-            } catch (IOException e) {
-                log.error("Unable to close stream - {}", e.getMessage());
-            }
-        }
+        publisher.publishCompletion();
     }
 
 }

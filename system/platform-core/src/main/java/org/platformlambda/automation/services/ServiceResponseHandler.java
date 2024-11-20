@@ -18,7 +18,6 @@
 
 package org.platformlambda.automation.services;
 
-import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerResponse;
 import org.platformlambda.automation.config.RoutingEntry;
@@ -30,7 +29,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
-import org.platformlambda.core.system.AsyncObjectStreamReader;
+import org.platformlambda.core.system.FluxConsumer;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +81,7 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
     }
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
         Utility util = Utility.getInstance();
         SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
         String requestId = event.getCorrelationId();
@@ -177,9 +176,23 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
                     if (responseBody == null && streamId != null) {
                         // output is a stream?
                         response.setChunked(true);
-                        AsyncObjectStreamReader in = new AsyncObjectStreamReader(streamId,
-                                                         getReadTimeout(streamTimeout, holder.timeout));
-                        fetchNextBlock(requestId, in, response);
+                        FluxConsumer<Object> flux = new FluxConsumer<>(streamId,
+                                                        getReadTimeout(streamTimeout, holder.timeout));
+                        flux.consume(data -> {
+                            if (data instanceof byte[] b && b.length > 0) {
+                                response.write(Buffer.buffer(b));
+                            }
+                            if (data instanceof String text && !text.isEmpty()) {
+                                response.write(text);
+                            }
+                        }, e -> {
+                            log.error("Closing stream {} - {}", util.getSimpleRoute(flux.getStreamId()), e.getMessage());
+                            ServiceGateway.closeContext(requestId);
+                            response.end();
+                        }, () ->{
+                            ServiceGateway.closeContext(requestId);
+                            response.end();
+                        });
                         return null;
 
                     } else if (responseBody instanceof Map) {
@@ -240,32 +253,4 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
         }
         return null;
     }
-
-    private void fetchNextBlock(String requestId, AsyncObjectStreamReader in, HttpServerResponse response) {
-        Future<Object> block = in.getNext();
-        block.onSuccess(data -> {
-            if (data != null) {
-                if (data instanceof byte[] b) {
-                    if (b.length > 0) {
-                        response.write(Buffer.buffer(b));
-                    }
-                }
-                if (data instanceof String text) {
-                    if (!text.isEmpty()) {
-                        response.write((String) data);
-                    }
-                }
-                fetchNextBlock(requestId, in, response);
-            } else {
-                ServiceGateway.closeContext(requestId);
-                response.end();
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    log.error("Unable to close stream {} - {}", in.getId(), e.getMessage());
-                }
-            }
-        });
-    }
-
 }

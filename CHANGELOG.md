@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.23, 11/19/2024
+
+### Added
+
+N/A
+
+### Removed
+
+ObjectStreamWriter and AsyncObjectStreamReader are removed
+
+### Changed
+
+1. Replace ObjectStreamWriter with FluxPublisher
+2. Replace AsyncObjectStreamReader with FluxConsumer
+3. Bugfix for FluxConsumer expiry - change type from "data" to "exception".
+
+---
 ## Version 4.0.22, 11/18/2024
 
 ### Added

@@ -32,10 +32,7 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
-import org.platformlambda.core.system.AppStarter;
-import org.platformlambda.core.system.EventEmitter;
-import org.platformlambda.core.system.ObjectStreamWriter;
-import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.CryptoApi;
@@ -169,6 +166,7 @@ public class ServiceGateway {
         contexts.remove(requestId);
     }
 
+    @SuppressWarnings("rawtypes")
     public void handleEvent(AssignedRoute route, String requestId, int status, String error) {
         AsyncContextHolder holder = contexts.get(requestId);
         if (holder != null) {
@@ -202,17 +200,14 @@ public class ServiceGateway {
                                                 response.setStatusCode(filtered.getStatus());
                                                 final byte[] content;
                                                 Object body = filtered.getRawBody();
-                                                if (body == null) {
-                                                    content = null;
-                                                } else if (body instanceof String) {
-                                                    content = util.getUTF((String) body);
-                                                } else if (body instanceof byte[]) {
-                                                    content = (byte[]) body;
-                                                } else if (body instanceof Map) {
-                                                    content = SimpleMapper.getInstance().getMapper().writeValueAsBytes(body);
-                                                } else {
-                                                    content = util.getUTF(body.toString());
-                                                }
+                                                content = switch (body) {
+                                                    case null -> null;
+                                                    case String s -> util.getUTF(s);
+                                                    case byte[] bytes -> bytes;
+                                                    case Map ignore ->
+                                                            SimpleMapper.getInstance().getMapper().writeValueAsBytes(body);
+                                                    default -> util.getUTF(body.toString());
+                                                };
                                                 if (content != null) {
                                                     response.write(Buffer.buffer(content));
                                                 }
@@ -240,6 +235,8 @@ public class ServiceGateway {
                     routeRequest(requestId, route, holder);
                 } catch (AppException e) {
                     httpUtil.sendError(requestId, request, e.getStatus(), e.getMessage());
+                } catch (IOException e) {
+                    httpUtil.sendError(requestId, request, 500, e.getMessage());
                 }
             }
         }
@@ -425,7 +422,8 @@ public class ServiceGateway {
         return null;
     }
 
-    private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder) throws AppException {
+    private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder)
+            throws AppException, IOException {
         Utility util = Utility.getInstance();
         HttpServerRequest request = holder.request;
         String uri = util.getUrlDecodedPath(request.path());
@@ -594,7 +592,7 @@ public class ServiceGateway {
                         int len = block.length();
                         if (len > 0) {
                             total.addAndGet(len);
-                            pipeHttpInputToStream(stream.getOutputStream(), block, len);
+                            pipeHttpInputToStream(stream.getPublisher(), block, len);
                         }
                     }).endHandler(end -> {
                         int size = total.get();
@@ -692,7 +690,7 @@ public class ServiceGateway {
                         int len = block.length();
                         if (len > 0) {
                             total.addAndGet(len);
-                            pipeHttpInputToStream(stream.getOutputStream(), block, len);
+                            pipeHttpInputToStream(stream.getPublisher(), block, len);
                         }
                         if (inputComplete.get()) {
                             int size = total.get();
@@ -758,8 +756,8 @@ public class ServiceGateway {
         }
     }
 
-    private void pipeHttpInputToStream(ObjectStreamWriter out, Buffer block, int len) {
-        if (out != null && block != null && len > 0) {
+    private void pipeHttpInputToStream(EventPublisher publisher, Buffer block, int len) {
+        if (block != null && len > 0) {
             try {
                 byte[] data = block.getBytes(0, len);
                 if (data.length > BUFFER_SIZE) {
@@ -769,10 +767,10 @@ public class ServiceGateway {
                     while (bytesRead < data.length) {
                         int n = in.read(buffer);
                         bytesRead += n;
-                        out.write(buffer, 0, n);
+                        publisher.publish(buffer, 0, n);
                     }
                 } else {
-                    out.write(data);
+                    publisher.publish(data);
                 }
             } catch (IOException e) {
                 log.error("Unexpected error while reading HTTP input stream", e);

@@ -52,6 +52,10 @@ public class FluxConsumer<T> {
         this.ttl = ttl;
     }
 
+    public String getStreamId() {
+        return inStream;
+    }
+
     /**
      * Begin reading the event stream
      *
@@ -78,7 +82,7 @@ public class FluxConsumer<T> {
                             AppException e = new AppException(408, "Consumer expired");
                             EventEnvelope error = new EventEnvelope().setException(e);
                             po.send(new EventEnvelope().setTo(callback)
-                                    .setHeader(TYPE, DATA).setBody(error.toBytes()));
+                                    .setHeader(TYPE, EXCEPTION).setBody(error.toBytes()));
                         } catch (IOException e) {
                             // ok to ignore
                         }

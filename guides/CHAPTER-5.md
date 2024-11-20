@@ -150,13 +150,13 @@ public void rpcTest() throws IOException, InterruptedException {
     po.asyncRequest(request, 800).onSuccess(bench::offer);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
-    Assert.assertEquals(HashMap.class, response.getBody().getClass());
+    assertEquals(HashMap.class, response.getBody().getClass());
     MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-    Assert.assertEquals("b", map.getElement("headers.a"));
-    Assert.assertEquals(name, map.getElement("body.name"));
-    Assert.assertEquals(address, map.getElement("body.address"));
-    Assert.assertEquals(telephone, map.getElement("body.telephone"));
-    Assert.assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
+    assertEquals("b", map.getElement("headers.a"));
+    assertEquals(name, map.getElement("body.name"));
+    assertEquals(address, map.getElement("body.address"));
+    assertEquals(telephone, map.getElement("body.telephone"));
+    assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
 }
 ```
 
@@ -221,11 +221,11 @@ public void pojoTest() throws IOException, InterruptedException {
     po.asyncRequest(request, 800).onSuccess(bench::offer);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
-    Assert.assertEquals(SamplePoJo.class, response.getBody().getClass());
+    assertEquals(SamplePoJo.class, response.getBody().getClass());
     SamplePoJo pojo = response.getBody(SamplePoJo.class);
-    Assert.assertEquals(ID, pojo.getId());
-    Assert.assertEquals(NAME, pojo.getName());
-    Assert.assertEquals(ADDRESS, pojo.getAddress());
+    assertEquals(ID, pojo.getId());
+    assertEquals(NAME, pojo.getName());
+    assertEquals(ADDRESS, pojo.getAddress());
 }
 ```
 
@@ -251,20 +251,20 @@ public void uploadTest() throws IOException, InterruptedException {
     String FILENAME = "unit-test-data.txt";
     BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
     Utility util = Utility.getInstance();
-    PostOffice po = PostOffice.getInstance();
+    String traceId = Utility.getInstance().getUuid();
+    PostOffice po = new PostOffice("unit.test", traceId, "/stream/upload/test");
     int len = 0;
     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-    ObjectStreamIO stream = new ObjectStreamIO();
-    ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId());
+    EventPublisher publisher = new EventPublisher(10000);
     for (int i=0; i < 10; i++) {
         String line = "hello world "+i+"\n";
         byte[] d = util.getUTF(line);
-        out.write(d);
+        publisher.publish(d);
         bytes.write(d);
         len += d.length;
     }
-    out.close();
-    // emulate a multi-part file upload
+    publisher.publishCompletion();
+    // emulate a multipart file upload
     AsyncHttpRequest req = new AsyncHttpRequest();
     req.setMethod("POST");
     req.setUrl("/api/upload/demo");
@@ -273,27 +273,28 @@ public void uploadTest() throws IOException, InterruptedException {
     req.setHeader("content-type", "multipart/form-data");
     req.setContentLength(len);
     req.setFileName(FILENAME);
-    req.setStreamRoute(stream.getInputStreamId());
+    req.setStreamRoute(publisher.getStreamId());
     // send the HTTP request event to the "hello.upload" function
-    EventEnvelope request = new EventEnvelope().setTo("hello.upload").setBody(req);
+    EventEnvelope request = new EventEnvelope().setTo("hello.upload")
+            .setBody(req).setTrace("12345", "/api/upload/demo").setFrom("unit.test");
     po.asyncRequest(request, 8000).onSuccess(bench::offer);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
-    Assert.assertEquals(HashMap.class, response.getBody().getClass());
+    assertEquals(HashMap.class, response.getBody().getClass());
     Map<String, Object> map = (Map<String, Object>) response.getBody();
     System.out.println(response.getBody());
-    Assert.assertEquals(len, map.get("expected_size"));
-    Assert.assertEquals(len, map.get("actual_size"));
-    Assert.assertEquals(FILENAME, map.get("filename"));
-    Assert.assertEquals("Upload completed", map.get("message"));
+    assertEquals(len, map.get("expected_size"));
+    assertEquals(len, map.get("actual_size"));
+    assertEquals(FILENAME, map.get("filename"));
+    assertEquals("Upload completed", map.get("message"));
     // finally check that "hello.upload" has saved the test file
     File dir = new File("/tmp/upload-download-demo");
     File file = new File(dir, FILENAME);
-    Assert.assertTrue(file.exists());
-    Assert.assertEquals(len, file.length());
+    assertTrue(file.exists());
+    assertEquals(len, file.length());
     // compare file content
     byte[] b = Utility.getInstance().file2bytes(file);
-    Assert.assertArrayEquals(bytes.toByteArray(), b);
+    assertArrayEquals(bytes.toByteArray(), b);
 }
 ```
 

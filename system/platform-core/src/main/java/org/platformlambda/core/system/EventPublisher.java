@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -46,7 +47,7 @@ public class EventPublisher {
     private final AtomicBoolean eof = new AtomicBoolean(false);
     private final AtomicBoolean expired = new AtomicBoolean(false);
 
-    public EventPublisher(long ttl) throws IOException {
+    public EventPublisher(long ttl) {
         this.stream = new ObjectStreamIO((int) ttl / 1000);
         this.outStream = this.stream.getOutputStreamId();
         long expiry = this.stream.getExpirySeconds() * 1000L;
@@ -73,6 +74,18 @@ public class EventPublisher {
         } catch (IOException e) {
             log.error("Unable to publish data to {} - {}",
                     Utility.getInstance().getSimpleRoute(outStream), e.getMessage());
+        }
+    }
+
+    public void publish(byte[] payload, int start, int end) throws IOException {
+        if (start > end) {
+            publishException(new IOException("Invalid byte range. Actual: start/end=" + start + "/" + end));
+        } else if (end > payload.length) {
+            publishException(new IOException("end pointer must not be larger than payload buffer size"));
+        } else {
+            // always create a new byte array
+            byte[] b = start == end ? new byte[0] : Arrays.copyOfRange(payload, start, end);
+            EventEmitter.getInstance().send(outStream, b, new Kv(TYPE, DATA));
         }
     }
 

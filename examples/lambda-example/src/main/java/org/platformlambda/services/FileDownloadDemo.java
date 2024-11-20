@@ -22,8 +22,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.ObjectStreamIO;
-import org.platformlambda.core.system.ObjectStreamWriter;
+import org.platformlambda.core.system.EventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,17 +89,16 @@ public class FileDownloadDemo implements TypedLambdaFunction<AsyncHttpRequest, E
         try {
             int len;
             int total = 0;
-            ObjectStreamIO stream = new ObjectStreamIO(60);
-            try (ObjectStreamWriter out = new ObjectStreamWriter(stream.getOutputStreamId())) {
-                // send file as an event stream
-                byte[] buffer = new byte[1024];
-                while ((len = in.read(buffer, 0, buffer.length)) != -1) {
-                    total += len;
-                    out.write(buffer, 0, len);
-                }
+            EventPublisher publisher = new EventPublisher(60 * 1000L);
+            // send file as an event stream
+            byte[] buffer = new byte[1024];
+            while ((len = in.read(buffer, 0, buffer.length)) != -1) {
+                total += len;
+                publisher.publish(buffer, 0, len);
             }
-            log.info("Sending {} with {} bytes to {}", filePath, total, stream.getOutputStreamId());
-            return new EventEnvelope().setHeader("stream", stream.getInputStreamId())
+            publisher.publishCompletion();
+            log.info("Sending {} with {} bytes to {}", filePath, total, publisher.getStreamId());
+            return new EventEnvelope().setHeader("stream", publisher.getStreamId())
                     .setHeader("Content-Type", "application/octet-stream")
                     .setHeader("Content-Disposition", "attachment; filename="+filename);
         } finally {
