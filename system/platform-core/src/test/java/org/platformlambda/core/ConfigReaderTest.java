@@ -91,6 +91,26 @@ public class ConfigReaderTest {
         assertEquals("12345", value);
     }
 
+    @Test
+    public void getNonExistEnvVariable() throws IOException {
+        String TEXT = "hello";
+        String ONE_HUNDRED = "100";
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.properties");
+        // property.one=${no.property} where no.property does not exist
+        String value1 = reader.getProperty("property.one", TEXT);
+        assertEquals(TEXT, value1);
+        // without default value
+        String value2 = reader.getProperty("property.one");
+        assertNull(value2);
+        // property.two=${no.property}100 will return "100"
+        String value3 = reader.getProperty("property.two", TEXT);
+        assertEquals(ONE_HUNDRED, value3);
+        // without default value
+        String value4 = reader.getProperty("property.two");
+        assertEquals(ONE_HUNDRED, value4);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void dotFormatterTest() throws IOException {

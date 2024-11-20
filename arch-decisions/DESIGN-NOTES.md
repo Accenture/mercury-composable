@@ -76,3 +76,10 @@ Spring Boot. The `rest-spring-3` library is designed to turn your code to be a S
 
 You may also use the `platform-core` library with a regular Spring Boot application without the
 `rest-spring-3` library if you prefer.
+
+## Support of Mono and Flux results
+
+A user function may return a regular result that can be a PoJo, HashMap or Java primitive.
+
+It can also return a Mono or Flux reactive response object for a future result or a future series of
+results. Other reactive response objects must be converted to a Mono or Flux object.

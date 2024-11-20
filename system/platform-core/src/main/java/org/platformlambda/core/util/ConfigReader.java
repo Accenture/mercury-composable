@@ -120,6 +120,9 @@ public class ConfigReader implements ConfigBase {
                                        String key, Object defaultValue, String... loop) {
         if (intermediateResult.size() == 2) {
             String text = intermediateResult.get(1);
+            if (text == null) {
+                return null;
+            }
             while (hasEnvVar(text)) {
                 List<String> nextStage = resolveEnvVar(key, text, defaultValue, loop);
                 if (nextStage.size() == 2) {
