@@ -106,86 +106,106 @@ public class ConfigReader implements ConfigBase {
         }
         Object value = config.getElement(key);
         if (value == null) {
-            value = defaultValue;
+            return defaultValue;
         }
-        if (value instanceof String result) {
-            List<String> intermediateResult = resolveEnvVar(key, result, defaultValue, loop);
-            // scan for additional environment variables or system property
-            return resolveEnvVar(intermediateResult, key, defaultValue, loop);
+        // perform environment variable substitution using base configuration
+        if (value instanceof String result && baseConfig != null) {
+            int bracketStart = result.lastIndexOf("${");
+            int bracketEnd = result.lastIndexOf("}");
+            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart) {
+                List<EnvVarSegment> segments = extractSegments(result);
+                // restore to original order since the text parsing is in reverse order
+                Collections.reverse(segments);
+                int start = 0;
+                StringBuilder sb = new StringBuilder();
+                for (EnvVarSegment s: segments) {
+                    String middle = result.substring(s.start+2, s.end-1).trim();
+                    String evaluated = performEnvVarSubstitution(key, middle, defaultValue, loop);
+                    String heading = result.substring(start, s.start);
+                    if (!heading.isEmpty()) {
+                        sb.append(heading);
+                    }
+                    if (evaluated != null) {
+                        sb.append(evaluated);
+                    }
+                    start = s.end;
+                }
+                String lastSegment = result.substring(start);
+                if (!lastSegment.isEmpty()) {
+                    sb.append(lastSegment);
+                }
+                if (sb.isEmpty() && segments.size() == 1) {
+                    return null;
+                } else {
+                    return sb.toString();
+                }
+            }
         }
         return value;
     }
 
-    private String resolveEnvVar(List<String> intermediateResult,
-                                       String key, Object defaultValue, String... loop) {
-        if (intermediateResult.size() == 2) {
-            String text = intermediateResult.get(1);
-            if (text == null) {
-                return null;
-            }
-            while (hasEnvVar(text)) {
-                List<String> nextStage = resolveEnvVar(key, text, defaultValue, loop);
-                if (nextStage.size() == 2) {
-                    text = nextStage.get(1);
-                } else {
-                    break;
-                }
-            }
-            return text;
-        }
-        return intermediateResult.getFirst();
-    }
-
-    private boolean hasEnvVar(String text) {
-        int bracketStart = text.indexOf("${");
-        int bracketEnd = bracketStart != -1? text.indexOf('}', bracketStart) : -1;
-        return bracketStart != -1 && bracketEnd != -1;
-    }
-
-    private List<String> resolveEnvVar(String key, String original, Object defaultValue, String... loop) {
-        List<String> result = new ArrayList<>();
-        result.add(original);
-        int bracketStart = original.indexOf("${");
-        int bracketEnd = bracketStart != -1? original.indexOf('}', bracketStart) : -1;
-        if (bracketStart != -1 && bracketEnd != -1 && baseConfig != null) {
-            String middle = original.substring(bracketStart + 2, bracketEnd).trim();
-            String middleDefault = null;
-            if (!middle.isEmpty()) {
-                String loopId = loop.length == 1 && !loop[0].isEmpty() ? loop[0] : Utility.getInstance().getUuid();
-                int colon = middle.indexOf(':');
-                if (colon > 0) {
-                    middleDefault = middle.substring(colon+1);
-                    middle = middle.substring(0, colon);
-                }
-                String property = System.getenv(middle);
-                if (property != null) {
-                    middle = property;
-                } else {
-                    List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
-                    if (refs.contains(middle)) {
-                        log.warn("Config loop for '{}' detected", key);
-                        middle = "";
-                    } else {
-                        refs.add(middle);
-                        loopDetection.put(loopId, refs);
-                        Object mid = baseConfig.get(middle, defaultValue, loopId);
-                        middle = mid != null? String.valueOf(mid) : null;
-                    }
-                }
-                loopDetection.remove(loopId);
-                String first = original.substring(0, bracketStart);
-                String last = original.substring(bracketEnd+1);
-                if (first.isEmpty() && last.isEmpty()) {
-                    result.add(middle != null? middle : middleDefault);
-                } else {
-                    if (middleDefault == null) {
-                        middleDefault = "";
-                    }
-                    result.add(first + (middle != null ? middle : middleDefault) + last);
-                }
+    /**
+     * Extract all the segments that contain environment variable references
+     * @param original text of the key-value
+     * @return list of segment pointers in reversed order
+     */
+    private List<EnvVarSegment> extractSegments(String original) {
+        List<EnvVarSegment> result = new ArrayList<>();
+        String text = original;
+        while (true) {
+            int bracketStart = text.lastIndexOf("${");
+            int bracketEnd = text.lastIndexOf("}");
+            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart) {
+                result.add(new EnvVarSegment(bracketStart, bracketEnd+1));
+                text = original.substring(0, bracketStart);
+            } else if (bracketStart != -1) {
+                text = original.substring(0, bracketStart);
+            } else {
+                break;
             }
         }
         return result;
+    }
+
+    /**
+     * Resolve environment variable for a key-value
+     *
+     * @param key of the property
+     * @param text containing environment variable reference
+     * @param defaultValue when property is not found
+     * @param loop contains 0 or 1 elements
+     * @return value with environment variable substitution
+     */
+    private String performEnvVarSubstitution(String key, String text, Object defaultValue, String... loop) {
+        if (!text.isEmpty()) {
+            String middleDefault = null;
+            String loopId = loop.length == 1 && !loop[0].isEmpty() ? loop[0] : Utility.getInstance().getUuid();
+            int colon = text.indexOf(':');
+            if (colon > 0) {
+                middleDefault = text.substring(colon+1);
+                text = text.substring(0, colon);
+            }
+            String property = System.getenv(text);
+            if (property != null) {
+                text = property;
+            } else {
+                List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
+                if (refs.contains(text)) {
+                    log.warn("Config loop for '{}' detected", key);
+                    text = "";
+                } else {
+                    refs.add(text);
+                    loopDetection.put(loopId, refs);
+                    Object mid = baseConfig.get(text, defaultValue, loopId);
+                    text = mid != null? String.valueOf(mid) : null;
+                }
+            }
+            // this guarantees cleaning up temporary loop detection reference to avoid memory leak
+            loopDetection.remove(loopId);
+            return text != null ? text : middleDefault;
+        } else {
+            return defaultValue != null? String.valueOf(defaultValue) : null;
+        }
     }
 
     /**
@@ -386,4 +406,6 @@ public class ConfigReader implements ConfigBase {
             }
         }
     }
+
+    private record EnvVarSegment(int start, int end) { }
 }

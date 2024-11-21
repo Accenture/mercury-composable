@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>composable-example</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.23</version>
+    <version>4.0.24</version>
     <name>Composable example using Event Script</name>
 
     <parent>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.0.23</version>
+            <version>4.0.24</version>
         </dependency>
 
         <dependency>

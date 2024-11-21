@@ -111,6 +111,14 @@ public class ConfigReaderTest {
         assertEquals(ONE_HUNDRED, value4);
     }
 
+    @Test
+    public void getDefaultValueWithControlCharacters() throws IOException {
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.properties");
+        String value = reader.getProperty("property.three");
+        assertEquals("someDefaultValue/{test1}/{test2}", value);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void dotFormatterTest() throws IOException {
@@ -258,14 +266,14 @@ public class ConfigReaderTest {
         reader.load("classpath:/test.properties");
         String value = reader.getProperty("recursive.key");
         // In case of config loop, the system will not resolve a parameter value.
-        assertEquals("", value);
+        assertNull(value);
     }
 
     @Test
     public void multiLevelLoopErrorTest() {
         AppConfigReader config = AppConfigReader.getInstance();
         Object value1 = config.get("looping.test.1");
-        assertEquals("", value1);
+        assertEquals("1000", value1);
         // test recursion
         Object value2 = config.get("looping.test.3");
         assertEquals("hello hello ", value2);
@@ -303,7 +311,7 @@ public class ConfigReaderTest {
         MultiLevelMap multi = new MultiLevelMap(raw);
         assertEquals("${recursive.key}", multi.getElement("recursive.key"));
         // prove that config.get() method resolves value substitution
-        assertEquals("", config.get("recursive.key"));
+        assertEquals(null, config.get("recursive.key"));
         // prove that compositeKeyValues return the same value as config.get() method
         Map<String, Object> map = config.getCompositeKeyValues();
         assertEquals(config.get("application.feature.route.substitution"),
@@ -333,10 +341,23 @@ public class ConfigReaderTest {
         String serverPort = config.getProperty("server.port");
         String componentScan = config.getProperty("web.component.scan");
         final String expected = "1 " + cloudConnector + ", 2 " +
-                                serverPort + ", 3 " + componentScan + ", 4 12345, 5";
+                                serverPort + ", 3 " + componentScan + ", 4 12345, 5 .";
         ConfigReader reader = new ConfigReader();
         reader.load("classpath:/test.properties");
         Object value = reader.getProperty("multiple.env.vars");
+        assertEquals(expected, value);
+    }
+
+    @Test
+    public void multiEnvVarWithErrorTest() throws IOException {
+        AppConfigReader config = AppConfigReader.getInstance();
+        String cloudConnector = config.getProperty("cloud.connector");
+        String componentScan = config.getProperty("web.component.scan");
+        // server.port is not resolved due to config error
+        final String expected = "1 " + cloudConnector + ", 2 ${server.port, 3 " + componentScan + ", 4 12345, 5";
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.properties");
+        Object value = reader.getProperty("error.multiple.env.vars");
         assertEquals(expected, value);
     }
 
