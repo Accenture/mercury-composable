@@ -1,0 +1,45 @@
+#
+# This duplicated entry will abort REST endpoint rendering
+#
+rest:
+  - service: ["hello.mock"]
+    methods: ['PUT', 'GET']
+    url: "/api/hello/world"
+    flow: "hello-world"
+    timeout: 10s
+#
+# For the following duplicated entries in static-content, cors and headers,
+# the system will just print a warning message.
+#
+# The subsequent one will override the prior one.
+#
+static-content:
+  no-cache-pages: ["/", "/index.html"]
+  filter:
+    path: ["/", "/assets/*", "*.html", "*.js"]
+    exclusion: ["*.css"]
+    service: "http.request.filter"
+cors:
+  - id: cors_1
+    options:
+      - "Access-Control-Allow-Origin: ${api.origin:*}"
+      - "Access-Control-Allow-Methods: GET, DELETE, PUT, POST, PATCH, OPTIONS"
+      - "Access-Control-Allow-Headers: Origin, Authorization, X-Session-Id, X-Correlation-Id, Accept, Content-Type, X-Requested-With"
+      - "Access-Control-Max-Age: 86400"
+    headers:
+      - "Access-Control-Allow-Origin: ${api.origin:*}"
+      - "Access-Control-Allow-Methods: GET, DELETE, PUT, POST, PATCH, OPTIONS"
+      - "Access-Control-Allow-Headers: Origin, Authorization, X-Session-Id, X-Correlation-Id, Accept, Content-Type, X-Requested-With"
+      - "Access-Control-Allow-Credentials: true"
+
+headers:
+  - id: header_1
+    request:
+      drop: ['Upgrade-Insecure-Requests', 'cache-control', 'accept-encoding', 'connection']
+
+    response:
+      add:
+        - "Strict-Transport-Security: max-age=31536000"
+        - "Cache-Control: no-cache, no-store"
+        - "Pragma: no-cache"
+        - "Expires: Thu, 01 Jan 1970 00:00:00 GMT"

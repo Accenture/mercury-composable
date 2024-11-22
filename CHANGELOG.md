@@ -12,8 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Feature to add more than one rest.yaml configuration files so that we can merge default
-REST endpoints from a composable library.
+Support more than one REST configuration files.
+
+When a duplicated REST entry is detected, the system will abort REST endpoint rendering
+and print out an error message in application log.
+
+If you have unit tests to cover the REST endpoints, the unit tests will fail accordingly.
 
 ### Removed
 

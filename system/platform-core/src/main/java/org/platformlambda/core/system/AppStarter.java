@@ -45,11 +45,13 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AppStarter {
     private static final Logger log = LoggerFactory.getLogger(AppStarter.class);
     private static final ConcurrentMap<String, LambdaFunction> wsLambdas = new ConcurrentHashMap<>();
     private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
+    private static final AtomicInteger compileCycle = new AtomicInteger(0);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 1000L;    // 10 seconds
     public static final String ASYNC_HTTP_REQUEST = "async.http.request";
     public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
@@ -59,6 +61,9 @@ public class AppStarter {
     private static final String JAVA_VM_VERSION = "java.vm.version";
     private static final String JAVA_RUNTIME_VERSION = "java.runtime.version";
     private static final String STATIC_CONTENT = "static-content";
+    private static final String BEFORE_APP_PHASE = " during BeforeApplication phase";
+    private static final String PRELOAD_PHASE = " during PreLoad phase";
+    private static final String SERVER_STARTUP = " during HTTP server startup";
 
     private static final String DEFAULT_INSTANCES = "-1";
     private static final int MAX_SEQ = 999;
@@ -66,10 +71,8 @@ public class AppStarter {
     private static boolean mainAppLoaded = false;
     private static boolean springBoot = false;
     private static String[] args = new String[0];
-
-    private static AppStarter instance;
-
     private final long startTime = System.currentTimeMillis();
+    private static AppStarter instance;
 
     public static void main(String[] args) {
         if (!loaded) {
@@ -124,10 +127,6 @@ public class AppStarter {
         }
     }
 
-    public static String[] getArgs() {
-        return args;
-    }
-
     private void doApps(String[] args, boolean main) {
         // find and execute optional preparation modules
         Utility util = Utility.getInstance();
@@ -146,10 +145,10 @@ public class AppStarter {
                         String key = util.zeroFill(seq, MAX_SEQ) + "." + util.zeroFill(++n, MAX_SEQ);
                         steps.put(key, cls);
                     } else {
-                        log.info(SKIP_OPTIONAL, cls);
+                        log.info(SKIP_OPTIONAL + BEFORE_APP_PHASE, cls);
                     }
                 } catch (ClassNotFoundException e) {
-                    log.error(CLASS_NOT_FOUND, info.getName());
+                    log.error(CLASS_NOT_FOUND + BEFORE_APP_PHASE, info.getName());
                 }
             }
         }
@@ -281,7 +280,7 @@ public class AppStarter {
         return null;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({"rawtypes"})
     private static void preload() {
         EventEmitter po = EventEmitter.getInstance();
         log.info("Preloading started - {}", po.getId());
@@ -366,7 +365,7 @@ public class AppStarter {
                             }
                         }
                     } else {
-                        log.info(SKIP_OPTIONAL, cls);
+                        log.info(SKIP_OPTIONAL + PRELOAD_PHASE, cls);
                     }
 
                 } catch (ClassNotFoundException | InvocationTargetException | InstantiationException |
@@ -408,10 +407,10 @@ public class AppStarter {
                             loadWebsocketServices(cls, annotation.namespace(), annotation.value());
                         }
                     } else {
-                        log.info(SKIP_OPTIONAL, cls);
+                        log.info(SKIP_OPTIONAL + SERVER_STARTUP, cls);
                     }
                 } catch (ClassNotFoundException e) {
-                    log.error(CLASS_NOT_FOUND, info.getName());
+                    log.error(CLASS_NOT_FOUND + SERVER_STARTUP, info.getName());
                 }
             }
         }
@@ -430,10 +429,8 @@ public class AppStarter {
                 final Vertx vertx = Vertx.vertx();
                 final HttpServer server = vertx.createHttpServer(new HttpServerOptions().setTcpKeepAlive(true));
                 if (enableRest) {
-                    // start REST automation system
-                    ConfigReader restConfig = getRestConfig();
-                    RoutingEntry restRouting = RoutingEntry.getInstance();
-                    restRouting.load(restConfig);
+                    // Compile endpoints to be used by the REST automation system
+                    renderRestEndpoints();
                     // Start HTTP request and response handlers
                     ServiceGateway gateway = new ServiceGateway();
                     contexts = gateway.getContexts();
@@ -482,6 +479,23 @@ public class AppStarter {
         }
     }
 
+    /**
+     * This function renders REST endpoints
+     */
+    public static void renderRestEndpoints() {
+        if (instance != null) {
+            int cycle = compileCycle.incrementAndGet();
+            if (cycle == 1) {
+                log.info("Compiling REST endpoints");
+            } else {
+                log.info("Recompiling REST endpoints - Pass {}", cycle);
+            }
+            ConfigReader restConfig = instance.getRestConfig();
+            RoutingEntry restRouting = RoutingEntry.getInstance();
+            restRouting.load(restConfig);
+        }
+    }
+
     private void loadWebsocketServices(Class<?> cls, String namespace, String value) {
         Utility util = Utility.getInstance();
         List<String> parts = util.split(namespace + "/" + value, "/");
@@ -508,10 +522,12 @@ public class AppStarter {
         }
     }
 
-    private ConfigReader getRestConfig() throws IOException {
+    private ConfigReader getRestConfig() {
+        Utility util = Utility.getInstance();
         AppConfigReader reader = AppConfigReader.getInstance();
-        List<String> paths = Utility.getInstance().split(reader.getProperty("yaml.rest.automation",
+        List<String> paths = util.split(reader.getProperty("yaml.rest.automation",
                 "file:/tmp/config/rest.yaml, classpath:/rest.yaml"), ", ");
+        Map<String, Boolean> uniqueKeys = new HashMap<>();
         Map<String, Map<String, Object>> allRestEntries = new HashMap<>();
         Map<String, Object> staticContentFilter = new HashMap<>();
         Map<String, Map<String, Object>> allCorsEntries = new HashMap<>();
@@ -521,17 +537,51 @@ public class AppStarter {
             try {
                 config.load(p);
                 log.info("Loading config from {}", p);
-                // load REST entries
-                allRestEntries.putAll(getUniqueRestEntries(config, p));
-                // load static content filters
+                // load configuration for static content filters, cors and headers
                 Object sc = config.get(STATIC_CONTENT);
                 if (sc instanceof Map) {
+                    if (staticContentFilter.containsKey(STATIC_CONTENT)) {
+                        log.warn("Duplicated '{}' in {} will override a prior one", STATIC_CONTENT, p);
+                    }
                     staticContentFilter.put(STATIC_CONTENT, sc);
                 }
-                allCorsEntries.putAll(getUniqueEntries(config, p, true));
-                allHeaderEntries.putAll(getUniqueEntries(config, p, false));
+                Map<String, Map<String, Object>> cors = getUniqueEntries(config, p, true);
+                Map<String, Map<String, Object>> headers = getUniqueEntries(config, p, false);
+                for (String k: cors.keySet()) {
+                    if (uniqueKeys.containsKey(k)) {
+                        log.warn("Duplicated 'cors' in {} will override a prior one '{}'", p, k);
+                    } else {
+                        uniqueKeys.put(k, true);
+                    }
+                }
+                for (String k: headers.keySet()) {
+                    if (uniqueKeys.containsKey(k)) {
+                        log.warn("Duplicated 'headers' in {} will override a prior one '{}'", p, k);
+                    } else {
+                        uniqueKeys.put(k, true);
+                    }
+                }
+                allCorsEntries.putAll(cors);
+                allHeaderEntries.putAll(headers);
+                // load REST entries
+                Map<String, Map<String, Object>> compositeEndpoints = getUniqueRestEntries(config, p);
+                for (String composite: compositeEndpoints.keySet()) {
+                    int sep = composite.lastIndexOf('[');
+                    String ep = composite.substring(0, sep).trim();
+                    List<String> methods = util.split(composite.substring(sep), "[, ]");
+                    for (String m: methods) {
+                        String ref = m + " " + ep;
+                        if (uniqueKeys.containsKey(ref)) {
+                            log.error("REST endpoint rendering aborted due to duplicated entry '{}' in {}", ref, p);
+                            return new ConfigReader();
+                        } else {
+                            uniqueKeys.put(ref, true);
+                        }
+                    }
+                }
+                allRestEntries.putAll(getUniqueRestEntries(config, p));
             } catch (IOException e) {
-                log.warn("Skipping some REST endpoints - {}", e.getMessage());
+                log.warn("Skipping some REST config - {}", e.getMessage());
             }
         }
         // merge configuration files
@@ -574,7 +624,7 @@ public class AppStarter {
                     Object uri = map.getElement("rest["+i+"].url");
                     Object methods = map.getElement("rest["+i+"].methods");
                     if (uri instanceof String && methods instanceof List) {
-                        result.put(String.valueOf(uri)+methods, (Map<String, Object>) m);
+                        result.put(String.valueOf(uri)+' '+methods, (Map<String, Object>) m);
                     } else {
                         log.error("REST entry-{} in {} is invalid", path, i+1);
                     }

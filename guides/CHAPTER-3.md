@@ -33,12 +33,39 @@ REST automation can co-exist with Spring Boot. Please use `rest.server.port` for
 
 The `yaml.rest.automation` tells the system the location of the rest.yaml configuration file.
 
+## Support of multiple configuration files
+
 You can configure more than one location and the system will search and merge them sequentially.
 The following example tells the system to merge the rest.yaml config files in the /tmp/config folder
 and the project's resources folder.
 
 ```properties
 yaml.rest.automation=file:/tmp/config/rest.yaml, classpath:/rest.yaml
+```
+
+## Duplicated REST endpoints
+
+The system will detect duplicated REST endpoint configuation. If there is a duplicated entry, it will
+abort the REST endpoint rendering. Your unit tests will fail because REST endpoints are not enabled.
+
+The application log may look like this:
+```
+INFO - Loading config from classpath:/rest.yaml
+INFO - Loading config from classpath:/event-api.yaml
+ERROR - REST endpoint rendering aborted due to duplicated entry 'POST /api/event' in classpath:/event-api.yaml
+```
+
+Please correct the rest.yaml configuration files and rebuild your application again.
+
+## Duplicated static content, cors and headers sections
+
+When duplicated entry is detected, the subsequent one will replace the prior one. A warning will be
+shown in the application log like this:
+
+```
+WARN - Duplicated 'static-content' in classpath:/duplicated-endpoint.yaml will override a prior one
+WARN - Duplicated 'cors' in classpath:/duplicated-endpoint.yaml will override a prior one 'cors_1'
+WARN - Duplicated 'headers' in classpath:/duplicated-endpoint.yaml will override a prior one 'header_1'
 ```
 
 ## Defining a REST endpoint

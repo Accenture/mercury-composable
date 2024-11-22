@@ -145,6 +145,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope httpResponse = new EventEnvelope().setTo("async.http.request").setBody(req);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope response = po.request(httpResponse, 5000).get();
+        assertEquals(200, response.getStatus());
         assertInstanceOf(byte[].class, response.getBody());
         if (response.getBody() instanceof byte[] b) {
             assertEquals(HELLO, Utility.getInstance().getUTF(b));
@@ -170,6 +171,7 @@ public class PostOfficeTest extends TestBase {
          * It would look like this:
          * EventEnvelope:285 - Event contains streaming content - stream.869af6eb40f043cfb855b8795df63fde.in
          */
+        assertEquals(200, response.getStatus());
         assertNull(response.getBody());
         String streamId = response.getHeader("stream");
         assertNotNull(streamId);

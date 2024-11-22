@@ -123,6 +123,11 @@ public class TestBase {
             n++;
             log.info("Waiting for Event over HTTP config to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
         }
+        // render REST endpoint again with correct config file because the first pass is intentionally to have errors
+        System.setProperty("yaml.rest.automation", "classpath:/rest.yaml, classpath:/event-api.yaml");
+        AppStarter.renderRestEndpoints();
+        System.setProperty("yaml.rest.automation", "classpath:/rest.yaml");
+        AppStarter.renderRestEndpoints();
     }
 
     private static boolean blockingWait(String provider, int seconds) throws InterruptedException {
