@@ -4,9 +4,13 @@
 # for the original URL and path parameters
 #
 rest:
-  # "event.api.service" accepts an external application making event call to a function in this app instance.
-  # It handles both RPC and drop-n-forget async requests
-  # Optionally, you can add "authentication" service to validate incoming request from the external application.
+  #
+  # this entry will override the event-api.yaml in yaml.rest.automation
+  # to add the "authentication" tag
+  #
+  # In the test/resources/application.properties, it tells the system to merge two config files
+  # yaml.rest.automation=classpath:/event-api.yaml, classpath:/rest.yaml
+  #
   - service: ["event.api.service"]
     methods: ['POST']
     url: "/api/event"
@@ -101,7 +105,7 @@ rest:
     methods: ['GET', 'PUT', 'POST']
     url: "/api/v1/*"
     url_rewrite: ['/api/v1', '/api']
-    timeout: 20
+    timeout: 20s
     cors: cors_1
     headers: header_1
     tracing: true
@@ -109,7 +113,7 @@ rest:
   - service: "hello.download"
     methods: ['GET']
     url: "/api/hello/download"
-    timeout: 20
+    timeout: 20s
     cors: cors_1
     headers: header_1
 
@@ -185,10 +189,10 @@ headers:
       # drop: ['Upgrade-Insecure-Requests', 'cache-control', 'accept-encoding', 'connection']
       #
       drop: ['Upgrade-Insecure-Requests', 'cache-control', 'accept-encoding', 'connection']
-      
+
     response:
       #
-      # the system can filter the response headers set by a target service,
+      # the system can filter the response headers set by a target service
       # but it cannot remove any response headers set by the underlying servlet container.
       # However, you may override non-essential headers using the "add" directive. e.g. the "server" header.
       # i.e. don't touch essential headers such as content-length.

@@ -58,6 +58,7 @@ public class AppStarter {
     private static final String JAVA_VERSION = "java.version";
     private static final String JAVA_VM_VERSION = "java.vm.version";
     private static final String JAVA_RUNTIME_VERSION = "java.runtime.version";
+    private static final String STATIC_CONTENT = "static-content";
 
     private static final String DEFAULT_INSTANCES = "-1";
     private static final int MAX_SEQ = 999;
@@ -511,17 +512,98 @@ public class AppStarter {
         AppConfigReader reader = AppConfigReader.getInstance();
         List<String> paths = Utility.getInstance().split(reader.getProperty("yaml.rest.automation",
                 "file:/tmp/config/rest.yaml, classpath:/rest.yaml"), ", ");
+        Map<String, Map<String, Object>> allRestEntries = new HashMap<>();
+        Map<String, Object> staticContentFilter = new HashMap<>();
+        Map<String, Map<String, Object>> allCorsEntries = new HashMap<>();
+        Map<String, Map<String, Object>> allHeaderEntries = new HashMap<>();
         for (String p: paths) {
             ConfigReader config = new ConfigReader();
             try {
                 config.load(p);
                 log.info("Loading config from {}", p);
-                return config;
+                // load REST entries
+                allRestEntries.putAll(getUniqueRestEntries(config, p));
+                // load static content filters
+                Object sc = config.get(STATIC_CONTENT);
+                if (sc instanceof Map) {
+                    staticContentFilter.put(STATIC_CONTENT, sc);
+                }
+                allCorsEntries.putAll(getUniqueEntries(config, p, true));
+                allHeaderEntries.putAll(getUniqueEntries(config, p, false));
             } catch (IOException e) {
                 log.warn("Skipping some REST endpoints - {}", e.getMessage());
             }
         }
-        throw new IOException("Endpoint configuration not found in "+paths);
+        // merge configuration files
+        List<String> rList = new ArrayList<>(allRestEntries.keySet());
+        Collections.sort(rList);
+        List<String> cList = new ArrayList<>(allCorsEntries.keySet());
+        Collections.sort(cList);
+        List<String> hList = new ArrayList<>(allHeaderEntries.keySet());
+        Collections.sort(hList);
+        MultiLevelMap mm = new MultiLevelMap();
+        for (int i=0; i < rList.size(); i++) {
+            mm.setElement("rest["+i+"]", allRestEntries.get(rList.get(i)));
+        }
+        for (int i=0; i < cList.size(); i++) {
+            mm.setElement("cors["+i+"]", allCorsEntries.get(cList.get(i)));
+        }
+        for (int i=0; i < hList.size(); i++) {
+            mm.setElement("headers["+i+"]", allHeaderEntries.get(hList.get(i)));
+        }
+        if (staticContentFilter.containsKey(STATIC_CONTENT)) {
+            mm.setElement(STATIC_CONTENT, staticContentFilter.get(STATIC_CONTENT));
+        }
+        if (mm.isEmpty()) {
+            log.error("There are no REST endpoints found in {}", paths);
+        }
+        ConfigReader combined = new ConfigReader();
+        combined.load(mm.getMap());
+        return combined;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Map<String, Map<String, Object>> getUniqueRestEntries(ConfigReader config, String path) {
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        MultiLevelMap map = new MultiLevelMap(config.getMap());
+        Object entries = map.getElement("rest");
+        if (entries instanceof List rList) {
+            for (int i=0; i < rList.size(); i++) {
+                Object m = map.getElement("rest["+i+"]");
+                if (m instanceof Map) {
+                    Object uri = map.getElement("rest["+i+"].url");
+                    Object methods = map.getElement("rest["+i+"].methods");
+                    if (uri instanceof String && methods instanceof List) {
+                        result.put(String.valueOf(uri)+methods, (Map<String, Object>) m);
+                    } else {
+                        log.error("REST entry-{} in {} is invalid", path, i+1);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Map<String, Map<String, Object>> getUniqueEntries(ConfigReader config, String path, boolean cors) {
+        String type = cors? "cors" : "headers";
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        MultiLevelMap map = new MultiLevelMap(config.getMap());
+        Object entries = map.getElement(type);
+        if (entries instanceof List rList) {
+            for (int i=0; i < rList.size(); i++) {
+                Object m = map.getElement(type+"["+i+"]");
+                if (m instanceof Map) {
+                    Object id = map.getElement(type+"["+i+"].id");
+                    if (id instanceof String corId) {
+                        result.put(corId, (Map<String, Object>) m);
+                    } else {
+                        log.error("{} entry-{} in {} is invalid", type.toUpperCase(), path, i+1);
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private static class PreLoadInfo {

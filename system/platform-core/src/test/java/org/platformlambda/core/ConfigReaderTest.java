@@ -353,8 +353,8 @@ public class ConfigReaderTest {
         AppConfigReader config = AppConfigReader.getInstance();
         String cloudConnector = config.getProperty("cloud.connector");
         String componentScan = config.getProperty("web.component.scan");
-        // server.port is not resolved due to config error
-        final String expected = "1 " + cloudConnector + ", 2 ${server.port, 3 " + componentScan + ", 4 12345, 5";
+        // server.port is not resolved due to config error and the last environment variable signature is incomplete
+        final String expected = "1 " + cloudConnector + ", 2 ${server.port, 3 " + componentScan + ", 4 12345, 5${none";
         ConfigReader reader = new ConfigReader();
         reader.load("classpath:/test.properties");
         Object value = reader.getProperty("error.multiple.env.vars");

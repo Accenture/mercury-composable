@@ -33,9 +33,9 @@ REST automation can co-exist with Spring Boot. Please use `rest.server.port` for
 
 The `yaml.rest.automation` tells the system the location of the rest.yaml configuration file.
 
-You can configure more than one location and the system will search them sequentially. The following example
-tells the system to load rest.yaml from "/tmp/config/rest.yaml". If the file is not available, it will use
-the rest.yaml in the project's resources folder.
+You can configure more than one location and the system will search and merge them sequentially.
+The following example tells the system to merge the rest.yaml config files in the /tmp/config folder
+and the project's resources folder.
 
 ```properties
 yaml.rest.automation=file:/tmp/config/rest.yaml, classpath:/rest.yaml

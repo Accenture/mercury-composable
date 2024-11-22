@@ -108,11 +108,9 @@ public class ConfigReader implements ConfigBase {
         if (value == null) {
             return defaultValue;
         }
-        // perform environment variable substitution using base configuration
         if (value instanceof String result && baseConfig != null) {
-            int bracketStart = result.lastIndexOf("${");
-            int bracketEnd = result.lastIndexOf("}");
-            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart) {
+            // start parsing environment variables if it has the signature
+            if (result.lastIndexOf("${") != -1) {
                 List<EnvVarSegment> segments = extractSegments(result);
                 // restore to original order since the text parsing is in reverse order
                 Collections.reverse(segments);
@@ -134,11 +132,7 @@ public class ConfigReader implements ConfigBase {
                 if (!lastSegment.isEmpty()) {
                     sb.append(lastSegment);
                 }
-                if (sb.isEmpty() && segments.size() == 1) {
-                    return null;
-                } else {
-                    return sb.toString();
-                }
+                return sb.isEmpty()? null : sb.toString();
             }
         }
         return value;

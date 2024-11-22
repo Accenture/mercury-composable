@@ -13,24 +13,6 @@ rest:
     timeout: 60s
     tracing: true
 
-  - service: "http.flow.adapter"
-    methods: ['GET']
-    url: "/api/profile/{profile_id}"
-    flow: 'hello-world'
-    timeout: 10s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
-  - service: "http.flow.adapter"
-    methods: ['POST']
-    url: "/api/profile"
-    flow: 'hello-world'
-    timeout: 10s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

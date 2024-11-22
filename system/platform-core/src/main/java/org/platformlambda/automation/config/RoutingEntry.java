@@ -403,7 +403,7 @@ public class RoutingEntry {
             log.error("Skipping entry {} - {}", config.get(REST+"["+idx+"]"), e.getMessage());
             return;
         }
-        info.primary = info.services.get(0);
+        info.primary = info.services.getFirst();
         String upload = config.getProperty(REST+"["+idx+"]."+UPLOAD);
         if (upload != null) {
             info.upload = "true".equalsIgnoreCase(upload);
@@ -594,8 +594,7 @@ public class RoutingEntry {
     @SuppressWarnings("unchecked")
     private List<String> validateServiceList(Object svcList) {
         Utility util = Utility.getInstance();
-        List<String> list = svcList instanceof String?
-                Collections.singletonList((String) svcList) : (List<String>) svcList;
+        List<String> list = svcList instanceof String slist? Collections.singletonList(slist) : (List<String>) svcList;
         List<String> result = new ArrayList<>();
         for (String item: list) {
             String service = item.trim().toLowerCase();
@@ -606,7 +605,7 @@ public class RoutingEntry {
         if (result.isEmpty()) {
             throw new IllegalArgumentException("Missing service");
         }
-        String firstItem = result.get(0);
+        String firstItem = result.getFirst();
         if (firstItem.startsWith(HTTP) || firstItem.startsWith(HTTPS)) {
             if (result.size() > 1) {
                 throw new IllegalArgumentException("HTTP relay supports a single URL only");

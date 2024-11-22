@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.25, 11/21/2024
+
+### Added
+
+Feature to add more than one rest.yaml configuration files so that we can merge default
+REST endpoints from a composable library.
+
+### Removed
+
+N/A
+
+### Changed
+
+Improved environment variable parsing in config reader. System will skip entries with
+invalid environment variable reference syntax.
+
+---
 ## Version 4.0.24, 11/20/2024
 
 ### Added
