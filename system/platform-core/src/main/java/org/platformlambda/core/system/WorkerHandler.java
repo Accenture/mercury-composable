@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class WorkerHandler {
@@ -226,6 +227,7 @@ public class WorkerHandler {
                     skipResponse = true;
                     Platform platform = Platform.getInstance();
                     final AtomicLong timer = new AtomicLong(-1);
+                    final AtomicBoolean completed = new AtomicBoolean(false);
                     // For non-blocking operation, use a new virtual thread for the subscription
                     final Disposable disposable = mono.doFinally(done -> {
                         long t1 = timer.get();
@@ -234,14 +236,11 @@ public class WorkerHandler {
                         }
                     }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
                       .subscribe(data -> {
-                        updateResponse(response, data);
-                        try {
-                            po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
-                        } catch (IOException e1) {
-                            log.error("Unable to deliver async response from {} - {}", route, e1.getMessage());
-                        }
+                        completed.set(true);
+                        sendMonoResponse(response, data, begin);
                     }, e -> {
                         if (e instanceof Throwable ex) {
+                            completed.set(true);
                             final int status = getStatusFromException(ex);
                             String error = simplifyCastError(util.getRootCause(ex));
                             final EventEnvelope errorResponse = prepareErrorResponse(event, ex, status, error);
@@ -251,7 +250,13 @@ public class WorkerHandler {
                                 log.error("Unable to deliver exception from {} - {}", route, e2.getMessage());
                             }
                         }
-                    }, () -> log.debug("Reactive processing completed for route {}", route));
+                    }, () -> {
+                          // When the Mono emitter sends a null payload, Mono will not return any result.
+                          // Therefore, the system must return a null body for this normal use case.
+                          if (!completed.get()) {
+                              sendMonoResponse(response, null, begin);
+                          }
+                      });
                     // dispose a pending Mono if timeout
                     timer.set(platform.getVertx().setTimer(expiry, t -> {
                         timer.set(-1);
@@ -345,6 +350,16 @@ public class WorkerHandler {
             case IllegalArgumentException ignored -> 400;
             case null, default -> 500;
         };
+    }
+
+    private void sendMonoResponse(EventEnvelope response, Object data, long begin) {
+        EventEmitter po = EventEmitter.getInstance();
+        updateResponse(response, data);
+        try {
+            po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
+        } catch (IOException e1) {
+            log.error("Unable to deliver async response from {} - {}", route, e1.getMessage());
+        }
     }
 
     private EventEnvelope prepareErrorResponse(EventEnvelope event, Throwable e, int status, String error) {

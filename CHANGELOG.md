@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.26, 11/26/2024
+
+### Added
+
+N/A
+
+### Removed
+
+Remove pom.xml version override for netty and spring framework because
+Spring Boot 3.4.0 fetches the correct versions of netty and spring framework.
+
+Earlier override was done to avoid security vulnerabilities of older versions
+of netty and spring framework.
+
+### Changed
+
+1. Handle the case that Mono will not return payload if the payload is null
+2. OSS update: Classgraph 4.8.179, Vertx 4.5.11, Spring Boot 3.4.0, Kafka Client 3.9.0
+
+---
 ## Version 4.0.25, 11/21/2024
 
 ### Added

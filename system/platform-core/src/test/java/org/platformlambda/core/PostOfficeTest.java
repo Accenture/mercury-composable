@@ -64,10 +64,19 @@ public class PostOfficeTest extends TestBase {
     public void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
         final var data = Map.of("hello", "world");
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data);
-        PostOffice po = new PostOffice("unit.test", "101", "TEST /api/mono");
+        PostOffice po = new PostOffice("unit.test", "100", "TEST /api/mono");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertEquals(data, response.getBody());
+    }
+
+    @Test
+    public void testMonoFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO);
+        PostOffice po = new PostOffice("unit.test", "101", "TEST /api/mono");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertNull(response.getBody());
     }
 
     @Test
