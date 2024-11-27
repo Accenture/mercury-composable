@@ -31,9 +31,16 @@ import org.platformlambda.core.models.MappingExceptionHandler
 import org.platformlambda.core.models.ProcessStatus
 import org.platformlambda.core.util.Utility
 import org.slf4j.LoggerFactory
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.function.Consumer
+import kotlin.math.max
 
 class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : WorkerQueues(def, route) {
     private val myOrigin: String
@@ -92,7 +99,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             val rpc = event.getTag(EventEmitter.RPC)
             val po = EventEmitter.getInstance()
             val ref = if (tracing) po.startTracing(parentRoute, event.traceId, event.tracePath, instance) else "?"
-            val ps = processEvent(event)
+            val ps = processEvent(event, rpc)
             val trace = po.stopTracing(ref)
             if (tracing && trace != null && trace.id != null && trace.path != null) {
                 try {
@@ -150,8 +157,9 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             Platform.getInstance().eventSystem.send(def.route, READY + route)
         }
 
-        private suspend fun processEvent(event: EventEnvelope): ProcessStatus {
-            val f: Any = if (def.isKotlin) def.suspendFunction else def.function
+        @Suppress("UNCHECKED_CAST")
+        private suspend fun processEvent(event: EventEnvelope, rpc: String?): ProcessStatus {
+            val f: Any = def.suspendFunction
             val ps = ProcessStatus()
             val po = EventEmitter.getInstance()
             val inputOutput: MutableMap<String, Any> = HashMap()
@@ -197,83 +205,116 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                 if (event.tracePath != null) {
                     parameters[MY_TRACE_PATH] = event.tracePath
                 }
-                val result: Any? = if (def.isKotlin) {
-                    def.suspendFunction.handleEvent(parameters, inputBody, instance)
-                } else {
-                    def.function.handleEvent(parameters, inputBody, instance)
-                }
+                val result: Any? = def.suspendFunction.handleEvent(parameters, inputBody, instance)
                 val delta: Float = (System.nanoTime() - begin).toFloat() / EventEmitter.ONE_MILLISECOND
                 // adjust precision to 3 decimal points
                 val diff = String.format("%.3f", 0.0f.coerceAtLeast(delta)).toFloat()
                 val output: MutableMap<String, Any> = HashMap()
                 val replyTo = event.replyTo
                 if (replyTo != null) {
-                    var serviceTimeout = false
+                    val rpcTimeout = util.str2long(rpc)
+                    // if it is a callback instead of a RPC call, use default timeout of 30 minutes
+                    val expiry = if (rpcTimeout < 0) DEFAULT_TIMEOUT else rpcTimeout
                     val response = EventEnvelope()
-                    response.to = replyTo
-                    response.from = def.route
+                    response.setTo(replyTo)
+                    response.setFrom(def.route)
                     /*
-                     * Preserve correlation ID and notes
+                     * Preserve correlation ID and extra information
                      *
-                     * "Notes" is usually used by event interceptors. The system does not restrict the content of the notes.
+                     * "Extra" is usually used by event interceptors.
                      * For example, to save some metadata from the original sender.
-                     */if (event.correlationId != null) {
-                        response.correlationId = event.correlationId
+                     */
+                    if (event.correlationId != null) {
+                        response.setCorrelationId(event.correlationId)
                     }
                     if (event.extra != null) {
-                        response.extra = event.extra
+                        response.setExtra(event.extra)
                     }
                     // propagate the trace to the next service if any
                     if (event.traceId != null) {
                         response.setTrace(event.traceId, event.tracePath)
                     }
-                    if (result is EventEnvelope) {
-                        val headers = result.headers
-                        if (headers.isEmpty() && result.status == 408 && result.rawBody == null) {
-                            /*
-                             * An empty event envelope with timeout status
-                             * is used by the ObjectStreamService to simulate a READ timeout.
-                             */
-                            serviceTimeout = true
-                        } else {
-                            /*
-                             * When EventEnvelope is used as a return type, the system will transport
-                             * 1. payload
-                             * 2. key-values (as headers)
-                             * 3. optional parametric types for Java class that uses generic types
-                             */
-                            response.body = result.rawBody
-                            if (customSerializer == null) {
-                                response.type = result.type;
+                    var skipResponse = false
+                    // if response is a Mono, subscribe to it for a future response
+                    if (result is Mono<*>) {
+                        skipResponse = true
+                        val platform = Platform.getInstance()
+                        val timer = AtomicLong(-1)
+                        val completed = AtomicBoolean(false)
+                        // For non-blocking operation, use a new virtual thread for the subscription
+                        val disposable = result.doFinally(Consumer { done: Any? ->
+                            val t1 = timer.get()
+                            if (t1 > 0) {
+                                platform.vertx.cancelTimer(t1)
                             }
-                            for ((key, value) in headers) {
-                                if (key != MY_ROUTE && key != MY_TRACE_ID && key != MY_TRACE_PATH) {
-                                    response.setHeader(key, value)
+                        }).subscribeOn(Schedulers.fromExecutor(platform.virtualThreadExecutor))
+                            .subscribe({ data: Any? ->
+                                completed.set(true)
+                                sendMonoResponse(response, data!!, begin)
+                            }, { e: Any? ->
+                                if (e is Throwable) {
+                                    completed.set(true)
+                                    val status = getStatusFromException(e)
+                                    val error = simplifyCastError(util.getRootCause(e)
+                                    )
+                                    val errorResponse = prepareErrorResponse(event, e, status, error!!)
+                                    try {
+                                        po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)))
+                                    } catch (e2: IOException) {
+                                        log.error(
+                                            "Unable to deliver exception from {} - {}",
+                                            route,
+                                            e2.message
+                                        )
+                                    }
                                 }
+                            }, {
+                                // When the Mono emitter sends a null payload, Mono will not return any result.
+                                // Therefore, the system must return a null body for this normal use case.
+                                if (!completed.get()) {
+                                    sendMonoResponse(response, null, begin)
+                                }
+                            })
+                        // dispose a pending Mono if timeout
+                        timer.set(platform.vertx.setTimer(expiry) { t: Long? ->
+                            timer.set(-1)
+                            if (!disposable.isDisposed) {
+                                log.warn(
+                                    "Async response timeout after {} for {}",
+                                    util.elapsedTime(expiry),
+                                    route
+                                )
+                                disposable.dispose()
                             }
-                            response.status = result.status
-                        }
-                        if (response.headers.isNotEmpty()) {
-                            output[HEADERS] = response.headers
-                        }
-                    } else {
-                        // when using custom serializer, the result will be converted to a Map
-                        if (customSerializer != null && Utility.getInstance().isPoJo(result)) {
-                            response.body = customSerializer.toMap(result)
-                        } else {
-                            response.body = result
-                        }
+                        })
                     }
-                    output[BODY] = if (response.rawBody == null) "null" else response.rawBody
+                    var resultSet = result
+                    /*
+                 * if response is a Flux, subscribe to it for a future response and immediately
+                 * return x-stream-id and x-ttl so the caller can use a FluxConsumer to read the stream.
+                 *
+                 * The response contract is two headers containing x-stream-id and x-ttl.
+                 * The response body is an empty map.
+                 */
+                    if (result is Flux<*>) {
+                        resultSet = Collections.EMPTY_MAP
+                        val fluxRelay = FluxPublisher<Any?>(result as Flux<Any?>, expiry)
+                        response.setHeader(X_TTL, expiry)
+                        response.setHeader(X_STREAM_ID, fluxRelay.publish())
+                    }
+                    val simulatedStreamTimeout = !skipResponse && updateResponse(response, resultSet!!)
+                    if (!response.headers.isEmpty()) {
+                        output[HEADERS] = response.headers
+                    }
+                    output[BODY] =
+                        if (response.rawBody == null) "null" else response.rawBody
                     output[STATUS] = response.status
                     inputOutput[OUTPUT] = output
                     try {
-                        if (!interceptor && !serviceTimeout) {
-                            response.executionTime = diff
-                            encodeTraceAnnotations(response)
-                            po.send(response)
+                        if (!interceptor && !skipResponse && !simulatedStreamTimeout) {
+                            po.send(encodeTraceAnnotations(response).setExecutionTime(diff))
                         }
-                    } catch (e2: Exception) {
+                    } catch (e2: java.lang.Exception) {
                         ps.setUnDelivery(e2.message)
                     }
                 } else {
@@ -356,6 +397,95 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             }
         }
 
+        private fun getStatusFromException(e: Throwable): Int {
+            if (e is AppException) {
+                return e.status
+            } else if (e is TimeoutException) {
+                return 408
+            } else if (e is IllegalArgumentException) {
+                return 400
+            } else {
+                return 500
+            }
+        }
+
+        private fun sendMonoResponse(response: EventEnvelope, data: Any?, begin: Long) {
+            val po = EventEmitter.getInstance()
+            updateResponse(response, data)
+            try {
+                po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)))
+            } catch (e1: IOException) {
+                log.error(
+                    "Unable to deliver async response from {} - {}",
+                    route,
+                    e1.message
+                )
+            }
+        }
+
+        private fun prepareErrorResponse(
+            event: EventEnvelope,
+            e: Throwable,
+            status: Int,
+            error: String
+        ): EventEnvelope {
+            val response = EventEnvelope()
+            response.setTo(event.replyTo).setStatus(status).setBody(error)
+            response.setException(e).setFrom(def.route)
+            if (event.correlationId != null) {
+                response.setCorrelationId(event.correlationId)
+            }
+            if (event.extra != null) {
+                response.setExtra(event.extra)
+            }
+            // propagate the trace to the next service if any
+            if (event.traceId != null) {
+                response.setTrace(event.traceId, event.tracePath)
+            }
+            return response
+        }
+
+        private fun updateResponse(response: EventEnvelope, result: Any?): Boolean {
+            val customSerializer = def.customSerializer
+            if (result is EventEnvelope) {
+                val headers = result.headers
+                if (headers.isEmpty() && result.status == 408 && result.rawBody == null) {
+                    // simulate a READ timeout for ObjectStreamService
+                    return true
+                } else {
+                    /*
+                 * When EventEnvelope is used as a return type, the system will transport
+                 * 1. payload
+                 * 2. key-values (as headers)
+                 */
+                    response.setBody(result.rawBody)
+                    if (customSerializer == null) {
+                        response.setType(result.type)
+                    }
+                    for ((k, value) in headers) {
+                        if (MY_ROUTE != k && MY_TRACE_ID != k && MY_TRACE_PATH != k) {
+                            response.setHeader(k, value)
+                        }
+                    }
+                    response.setStatus(result.status)
+                }
+            } else {
+                // when using custom serializer, the result will be converted to a Map
+                if (customSerializer != null && util.isPoJo(result)) {
+                    response.setBody(customSerializer.toMap(result))
+                } else {
+                    response.setBody(result)
+                }
+            }
+            return false
+        }
+
+        private fun getExecTime(begin: Long): Float {
+            val delta = (System.nanoTime() - begin).toFloat() / EventEmitter.ONE_MILLISECOND
+            // adjust precision to 3 decimal points
+            return String.format("%.3f", max(0.0, delta.toDouble())).toFloat()
+        }
+
         private fun simplifyCastError(ex: Throwable): String? {
             val error = ex.message
             if (error == null) {
@@ -368,13 +498,13 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             }
         }
 
-        private fun encodeTraceAnnotations(response: EventEnvelope) {
+        private fun encodeTraceAnnotations(response: EventEnvelope): EventEnvelope {
             val po = EventEmitter.getInstance()
             val headers = response.headers
             val trace = po.getTrace(parentRoute, instance)
             if (trace != null) {
                 val annotations = trace.annotations
-                if (annotations.isNotEmpty()) {
+                if (!annotations.isEmpty()) {
                     var n = 0
                     for ((key, value) in annotations) {
                         n++
@@ -383,11 +513,13 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     headers["_"] = n.toString()
                 }
             }
+            return response
         }
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(WorkerQueue::class.java)
+        private val util: Utility = Utility.getInstance()
         private const val ID = "id"
         private const val PATH = "path"
         private const val START = "start"
@@ -413,5 +545,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
         private const val MY_ROUTE = "my_route"
         private const val MY_TRACE_ID = "my_trace_id"
         private const val MY_TRACE_PATH = "my_trace_path"
+        private const val X_STREAM_ID: String = "x-stream-id"
+        private const val X_TTL: String = "x-ttl"
+        private const val DEFAULT_TIMEOUT: Long = 30 * 60 * 1000L // 30 minutes
     }
 }

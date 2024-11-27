@@ -228,7 +228,5 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
             }
             return null;
         }
-
     }
-
 }

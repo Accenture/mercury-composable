@@ -44,7 +44,9 @@ public class FluxUserFunction implements TypedLambdaFunction<Map<String, Object>
             } else {
                 // just generate two messages
                 emitter.next(Map.of("first", "message"));
-                emitter.next(input);
+                if (input != null) {
+                    emitter.next(input);
+                }
                 emitter.complete();
             }
         });

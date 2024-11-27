@@ -57,13 +57,24 @@ public class PostOfficeTest extends TestBase {
     private static final String HELLO_ALIAS = "hello.alias";
     private static final String REACTIVE_MONO = "v1.reactive.mono.function";
     private static final String REACTIVE_FLUX = "v1.reactive.flux.function";
+    private static final String REACTIVE_MONO_KOTLIN = "v1.reactive.mono.kotlin";
+    private static final String REACTIVE_FLUX_KOTLIN = "v1.reactive.flux.kotlin";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
 
     @Test
     public void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
+        testMonoFunction(REACTIVE_MONO);
+    }
+
+    @Test
+    public void testMonoKotlinFunction() throws IOException, ExecutionException, InterruptedException {
+        testMonoFunction(REACTIVE_MONO_KOTLIN);
+    }
+
+    private void testMonoFunction(String target) throws IOException, ExecutionException, InterruptedException {
         final var data = Map.of("hello", "world");
-        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data);
+        EventEnvelope request = new EventEnvelope().setTo(target).setBody(data);
         PostOffice po = new PostOffice("unit.test", "100", "TEST /api/mono");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());
@@ -72,7 +83,16 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testMonoFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
-        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO);
+        testMonoFunctionWithNullPayload(REACTIVE_MONO);
+    }
+
+    @Test
+    public void testMonoKotlinFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
+        testMonoFunctionWithNullPayload(REACTIVE_MONO_KOTLIN);
+    }
+
+    private void testMonoFunctionWithNullPayload(String target) throws IOException, ExecutionException, InterruptedException {
+        EventEnvelope request = new EventEnvelope().setTo(target);
         PostOffice po = new PostOffice("unit.test", "101", "TEST /api/mono");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());
@@ -81,9 +101,18 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testMonoFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+        testMonoFunctionWithException(REACTIVE_MONO);
+    }
+
+    @Test
+    public void testMonoKotlinFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+        testMonoFunctionWithException(REACTIVE_MONO_KOTLIN);
+    }
+
+    private void testMonoFunctionWithException(String target) throws IOException, ExecutionException, InterruptedException {
         final var data = Map.of("hello", "test");
         final var MESSAGE = "hello test";
-        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data).setHeader("exception", MESSAGE);
+        EventEnvelope request = new EventEnvelope().setTo(target).setBody(data).setHeader("exception", MESSAGE);
         PostOffice po = new PostOffice("unit.test", "102", "TEST /error/mono");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(400, response.getStatus());
@@ -94,9 +123,18 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testFluxFunction() throws IOException, ExecutionException, InterruptedException {
+        testFluxFunction(REACTIVE_FLUX);
+    }
+
+    @Test
+    public void testFluxKotlinFunction() throws IOException, ExecutionException, InterruptedException {
+        testFluxFunction(REACTIVE_FLUX_KOTLIN);
+    }
+
+    private void testFluxFunction(String target) throws IOException, ExecutionException, InterruptedException {
         final var first = Map.of("first", "message");
         final var data = Map.of("hello", "world");
-        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data);
+        EventEnvelope request = new EventEnvelope().setTo(target).setBody(data);
         PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());
@@ -117,9 +155,18 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testFluxFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+        testFluxFunctionWithException(REACTIVE_FLUX);
+    }
+
+    @Test
+    public void testFluxKotlinFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+        testFluxFunctionWithException(REACTIVE_FLUX_KOTLIN);
+    }
+
+    private void testFluxFunctionWithException(String target) throws IOException, ExecutionException, InterruptedException {
         final var data = Map.of("hello", "test");
         final var MESSAGE = "hello test";
-        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data).setHeader("exception", MESSAGE);
+        EventEnvelope request = new EventEnvelope().setTo(target).setBody(data).setHeader("exception", MESSAGE);
         PostOffice po = new PostOffice("unit.test", "104", "TEST /error/flux");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());

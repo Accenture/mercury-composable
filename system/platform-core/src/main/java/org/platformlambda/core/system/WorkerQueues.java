@@ -30,7 +30,6 @@ public abstract class WorkerQueues {
     protected static final ExecutorService kernelExecutor = Platform.getInstance().getKernelThreadExecutor();
     protected static final ExecutorService vThreadExecutor = Platform.getInstance().getVirtualThreadExecutor();
     protected static final String READY = "ready:";
-    protected static final String HASH = "#";
     protected final ServiceDef def;
     protected final String route;
     protected final String parentRoute;
