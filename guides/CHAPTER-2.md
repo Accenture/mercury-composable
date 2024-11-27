@@ -49,7 +49,7 @@ degradation of application performance. We therefore recommend your user functio
 or reactive styles.
 
 When you are using a reactive libaries in your function, your function can return a "Mono" or "Flux" reactive
-response object using the Project-Reactor Core library. This feature is available in Java.
+response object using the Project-Reactor Core library. This feature is supported in Java and Kotlin.
 
 For simplicity, we support only the Mono and Flux reactive response objects. If you use other types of reactive APIs,
 please convert them into a Mono or Flux in the return value.
