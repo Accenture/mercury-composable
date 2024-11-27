@@ -57,14 +57,11 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
     private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
 
     private final ConcurrentMap<String, LambdaFunction> lambdas;
-    private final List<String> urls = new ArrayList<>();
+    private final List<String> wsPaths;
 
-    public WsRequestHandler(ConcurrentMap<String, LambdaFunction> lambdas) {
+    public WsRequestHandler(ConcurrentMap<String, LambdaFunction> lambdas, List<String> wsPaths) {
         this.lambdas = lambdas;
-        urls.addAll(lambdas.keySet());
-        if (urls.size() > 1) {
-            urls.sort(Comparator.reverseOrder());
-        }
+        this.wsPaths = new ArrayList<>(wsPaths);
         Platform platform = Platform.getInstance();
         IdleCheck idle = new IdleCheck();
         platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> idle.removeExpiredConnections());
@@ -80,10 +77,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
     public void handle(ServerWebSocket ws) {
         String uri = ws.path().trim();
         String path = findPath(uri);
-        if (path == null) {
-            ws.reject();
-        } else {
-            ws.accept();
+        if (path != null) {
             final Platform platform = Platform.getInstance();
             final EventEmitter po = EventEmitter.getInstance();
             final String ip = ws.remoteAddress().hostAddress();
@@ -157,11 +151,10 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                 }
             });
         }
-
     }
 
     private String findPath(String path) {
-        for (String u: urls) {
+        for (String u: wsPaths) {
             String prefix = u + "/";
             if (path.startsWith(prefix) && !path.equals(prefix)) {
                 return u;
