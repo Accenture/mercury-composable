@@ -216,8 +216,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     // if it is a callback instead of a RPC call, use default timeout of 30 minutes
                     val expiry = if (rpcTimeout < 0) DEFAULT_TIMEOUT else rpcTimeout
                     val response = EventEnvelope()
-                    response.setTo(replyTo)
-                    response.setFrom(def.route)
+                    response.to = replyTo
+                    response.from = def.route
                     /*
                      * Preserve correlation ID and extra information
                      *
@@ -228,7 +228,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         response.setCorrelationId(event.correlationId)
                     }
                     if (event.extra != null) {
-                        response.setExtra(event.extra)
+                        response.extra = event.extra
                     }
                     // propagate the trace to the next service if any
                     if (event.traceId != null) {
@@ -314,7 +314,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         if (!interceptor && !skipResponse && !simulatedStreamTimeout) {
                             po.send(encodeTraceAnnotations(response).setExecutionTime(diff))
                         }
-                    } catch (e2: java.lang.Exception) {
+                    } catch (e2: Exception) {
                         ps.setUnDelivery(e2.message)
                     }
                 } else {
@@ -504,7 +504,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             val trace = po.getTrace(parentRoute, instance)
             if (trace != null) {
                 val annotations = trace.annotations
-                if (!annotations.isEmpty()) {
+                if (annotations.isNotEmpty()) {
                     var n = 0
                     for ((key, value) in annotations) {
                         n++
