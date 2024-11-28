@@ -1,0 +1,46 @@
+flow:
+  id: 'type-matching'
+  description: 'Test type matching feature'
+  ttl: 10s
+
+first.task: 'type.matching.evaluator'
+
+#
+# input and output data mappings are processed sequentially
+#
+tasks:
+  - input:
+      - 'text(hello world) -> model.text'
+      - 'model.text:binary -> model.binary'
+      - 'model.binary:binary -> model.same-binary'
+      - 'model.text:text -> model.same-text'
+      - 'model.binary:text -> model.text-again'
+      - 'model.binary:b64 -> model.b64'
+      - 'model.b64:b64 -> model.bytes'
+      - 'model.text -> text'
+      - 'model.binary -> binary'
+      - 'model.b64 -> b64'
+      - 'model.bytes -> bytes'
+      - 'model.text:substring(0, 5) -> substring'
+      - 'model.text:unknown -> no-change'
+      - 'model.text:substring(0, 1000) -> out-of-bound'
+      - 'model.text:substring(0, 2, 3) -> invalid-substring'
+      - 'model.text:substring(0, 10 -> keep-as-text'
+      - 'model.text:substring(6) -> substring-2'
+      - 'model.binary:substring(2) -> keep-as-binary'
+    process: 'type.matching.evaluator'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body.source'
+      - 'model.text -> model.binary-2:binary'
+      - 'model.binary-2 -> output.body.binary'
+      - 'model.binary -> model.b64-2:b64'
+      - 'model.b64-2 -> output.body.b64'
+      - 'model.text -> model.substring-2:substring(0, 5)'
+      - 'model.substring-2 -> output.body.substring'
+      - 'model.text -> model.map.text'
+      - 'model.b64 -> model.map.b64'
+      - 'model.map:text -> output.body.json'
+      - 'model.map:binary -> output.body.bson'
+    description: 'Hello World'
+    execution: end

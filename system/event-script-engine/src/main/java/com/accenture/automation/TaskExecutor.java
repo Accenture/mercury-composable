@@ -24,6 +24,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -95,6 +96,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String BREAK = "break";
     private static final String INCREMENT = "++";
     private static final String DECREMENT = "--";
+    private static final String TEXT_SUFFIX = "text";
+    private static final String BINARY_SUFFIX = "binary";
+    private static final String B64_SUFFIX = "b64";
+    private static final String SUBSTRING_SUFFIX = "substring(";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
@@ -212,6 +217,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         Flows.closeFlowInstance(flowInstance.id);
     }
 
+    @SuppressWarnings("rawtypes")
     private void handleCallback(String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq)
                                 throws IOException {
         Map<String, Object> combined = new HashMap<>();
@@ -231,13 +237,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
                 final Object value;
                 String rhs = entry.substring(sep+2).trim();
+                int colon = rhs.lastIndexOf(':');
+                String rhsSelector = colon == -1? rhs : rhs.substring(0, colon);
                 if (isInput || lhs.startsWith(MODEL_NAMESPACE)
                         || lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)
                         || lhs.equals(STATUS)
                         || lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE)) {
-                    value = consolidated.getElement(lhs);
+                    value = getLhsElement(lhs, consolidated);
                     if (value == null) {
-                        consolidated.removeElement(rhs);
+                        removeModelElement(rhsSelector, consolidated);
                     }
                 } else {
                     value = getConstantValue(lhs, rhs);
@@ -263,12 +271,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                             }
                         }
                         if (!f.exists() || (!f.isDirectory() && f.canWrite())) {
-                            if (value instanceof byte[] b) {
-                                util.bytes2file(f, b);
-                            } else if (value instanceof String str) {
-                                util.str2file(f, str);
-                            } else {
-                                util.str2file(f, value.toString());
+                            switch (value) {
+                                case byte[] b -> util.bytes2file(f, b);
+                                case String str -> util.str2file(f, str);
+                                case Map map ->
+                                    // best effort to save as a JSON string
+                                    util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map));
+                                default -> util.str2file(f, value.toString());
                             }
                         } else {
                             log.warn("Failed data mapping {} -> {} - Cannot write {}", lhs, rhs, fd.fileName);
@@ -289,7 +298,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                     }
                     if (required) {
-                        consolidated.setElement(rhs, value);
+                        setRhsElement(value, rhs, consolidated);
                     }
                 }
             }
@@ -601,24 +610,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
                     MultiLevelMap model = new MultiLevelMap(modelOnly);
                     if (isInput || lhs.startsWith(MODEL_NAMESPACE)) {
-                        Object value = source.getElement(lhs);
+                        Object value = getLhsElement(lhs, source);
                         if (value == null) {
-                            model.removeElement(rhs);
+                            removeModelElement(rhs, model);
                         } else {
-                            model.setElement(rhs, value);
+                            setRhsElement(value, rhs, model);
                         }
                     } else {
                         setConstantValue(lhs, rhs, model);
                     }
                 } else if (isInput || lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     // normal case to input argument
-                    Object value = source.getElement(lhs);
-                    if (value == null) {
-                        // if null value, clear model's data
-                        if (rhs.startsWith(MODEL_NAMESPACE)) {
-                            target.removeElement(rhs);
-                        }
-                    } else {
+                    Object value = getLhsElement(lhs, source);
+                    if (value != null) {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {
                             if (value instanceof Map) {
@@ -647,7 +651,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                     }
                 } else {
-                    // Assume left hand side is be a constant
+                    // Assume left hand side is a constant
                     if (rhs.startsWith(HEADER_NAMESPACE)) {
                         String k = rhs.substring(HEADER_NAMESPACE.length());
                         Object v = getConstantValue(lhs, rhs);
@@ -728,7 +732,100 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 po.send(event);
             }
         }
+    }
 
+    private void removeModelElement(String rhs, MultiLevelMap model) {
+        int colon = rhs.lastIndexOf(':');
+        model.removeElement(colon == -1? rhs : rhs.substring(0, colon));
+    }
+
+
+    private Object getLhsElement(String lhs, MultiLevelMap source) {
+        int colon = lhs.lastIndexOf(':');
+        String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
+        Object value = source.getElement(selector);
+        if (colon != -1 && lhs.startsWith(MODEL_NAMESPACE)) {
+            String type = lhs.substring(colon+1).trim();
+            if (value != null) {
+                return getValueByType(type, value, "LHS '"+lhs+"'");
+            }
+        }
+        return value;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Object getValueByType(String type, Object value, String path) {
+        if (type.startsWith(SUBSTRING_SUFFIX)) {
+            if (value instanceof String str) {
+                String error = "missing close bracket";
+                if (type.endsWith(CLOSE_BRACKET)) {
+                    // substring(0, 3) becomes [substring, 0, 3]
+                    List<String> parts = util.split(type, "(, )");
+                    if (parts.size() > 1 && parts.size() < 4) {
+                        int start = util.str2int(parts.get(1));
+                        int end = parts.size() == 2? str.length() : util.str2int(parts.get(2));
+                        if (end > start && start != -1 && end <= str.length()) {
+                            return str.substring(start, end);
+                        } else {
+                            error = "index out of bound";
+                        }
+                    } else {
+                        error = "invalid substring format";
+                    }
+                }
+                log.error("Unable to do {} of {} - {}", type, path, error);
+            } else {
+                log.error("Unable to do {} of {} - value is not a string", type, path);
+            }
+        } else {
+            switch (type) {
+                case TEXT_SUFFIX -> {
+                    return switch (value) {
+                        case String str -> str;
+                        case byte[] b -> util.getUTF(b);
+                        case Map map -> SimpleMapper.getInstance().getMapper().writeValueAsString(map);
+                        default -> String.valueOf(value);
+                    };
+                }
+                case BINARY_SUFFIX -> {
+                    return switch (value) {
+                        case byte[] b -> b;
+                        case String str -> util.getUTF(str);
+                        case Map map -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
+                        default -> util.getUTF(String.valueOf(value));
+                    };
+                }
+                case B64_SUFFIX -> {
+                    if (value instanceof byte[] b) {
+                        return util.bytesToBase64(b);
+                    } else if (value instanceof String str) {
+                        try {
+                            return util.base64ToBytes(str);
+                        } catch (IllegalArgumentException e) {
+                            log.error("Unable to decode {} from text into B64 - {}", path, e.getMessage());
+                        }
+                    }
+                }
+                default -> log.error("Unable to do {} of {} - " +
+                                "matching type must be substring(start, end), text, binary or b64", type, path);
+            }
+        }
+        return value;
+    }
+
+    private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
+        boolean updated = false;
+        int colon = rhs.lastIndexOf(':');
+        String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
+        if (colon != -1 && rhs.startsWith(MODEL_NAMESPACE)) {
+            String type = rhs.substring(colon+1).trim();
+            Object matched = getValueByType(type, value, "RHS '"+rhs+"'");
+            target.setElement(selector, matched);
+            updated = true;
+        }
+        if (!updated) {
+            target.setElement(selector, value);
+        }
     }
 
     private Object getConstantValue(String lhs, String rhs) {
@@ -785,7 +882,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private void setConstantValue(String lhs, String rhs, MultiLevelMap target) {
         Object value = getConstantValue(lhs, rhs);
         if (value != null) {
-            target.setElement(rhs, value);
+            setRhsElement(value, rhs, target);
         }
     }
 

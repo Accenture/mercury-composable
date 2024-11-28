@@ -623,5 +623,4 @@ public class CompileFlows implements EntryPoint {
         return (rhs.equals(DECISION) && isDecision) || rhs.startsWith(FILE_TYPE) ||
                 rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE);
     }
-
 }

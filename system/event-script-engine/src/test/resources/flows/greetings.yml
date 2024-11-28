@@ -24,8 +24,10 @@ tasks:
       output:
         - 'text(application/json) -> output.header.content-type'
         - 'result -> output.body'
+        # invalid HTTP status will be rejected
         - 'text(20000) -> output.status'
         - 'status -> output.status'
+        # mapping rejected because "output header" expects a map instead of text
         - 'text(invalid) -> output.header'
         - 'header -> output.header'
         - 'header.demo -> output.header.x-demo'

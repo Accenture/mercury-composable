@@ -454,10 +454,10 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     return true
                 } else {
                     /*
-                 * When EventEnvelope is used as a return type, the system will transport
-                 * 1. payload
-                 * 2. key-values (as headers)
-                 */
+                     * When EventEnvelope is used as a return type, the system will transport
+                     * 1. payload
+                     * 2. key-values (as headers)
+                     */
                     response.setBody(result.rawBody)
                     if (customSerializer == null) {
                         response.setType(result.type)

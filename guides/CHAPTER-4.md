@@ -855,7 +855,7 @@ task list.
 Exception handlers may be used in both queries and transactions. For a complex transaction, the exception handler
 may implement some data rollback logic or recovery mechanism.
 
-## IMPORTANT
+### Best practice
 
 When a task-level exception handler throws exception, it will be caught by the top-level exception handler, if any.
 
@@ -868,6 +868,43 @@ the event script engine where it set the status code in the result set so that t
 from the result set to the next task or to the HTTP output status code.
 
 ## Other Features
+
+### Simple type matching and conversion
+
+Event script's state machine supports simple type matching and conversion. This "impedance matching" feature
+allows us to accommodate minor interface contract changes without refactoring business logic of a user function.
+
+This is supported in both the left-hand-side and right-hand-side of both input and output data mappings.
+
+For the left-hand-side, the state machine's model value is matched or converted to the target data type before
+setting the value of the right-hand-side. The state machine values are unchanged.
+
+For the right-hand-side, the matched or converted value is applied to the state machine's model value.
+
+The syntax is `model.somekey:type` where "type" is one of the following:
+
+```properties
+text
+binary
+substring(start, end)
+b64
+```
+
+When type is `text`, the system will do a best effort matching of the value as a text string.
+
+When type is `binary`, it will match the value as a byte array.
+
+When type is `substring`, it will do a substring processing if the value is a text string.
+
+When type is `b64` and the value is a text string, the system will assume the value to be Base64 encoded
+and decode the value into a byte array.
+
+When type is `b64` and the value is a byte array, the system will convert it into a Base64 encoded text string.
+
+Please refer to the "type-matching.yml" event script example in the unit test's resources folder of the
+"event-script-engine" subproject to see some examples.
+
+Note: this feature is only supported for the "model" namespace.
 
 ### Future task scheduling
 

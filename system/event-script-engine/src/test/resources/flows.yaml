@@ -20,5 +20,6 @@ flows:
   - 'for-loop-break.yml'
   - 'for-loop-continue.yml'
   - 'missing-sub-flow.yml'
+  - 'type-matching.yml'
 
 location: 'classpath:/flows/'

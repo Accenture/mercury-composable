@@ -208,6 +208,14 @@ rest:
     headers: header_1
     tracing: true
 
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/type/matching"
+    flow: 'type-matching'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

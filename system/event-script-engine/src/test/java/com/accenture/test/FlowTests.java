@@ -34,11 +34,13 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -46,6 +48,66 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void typeMatchingTest() throws IOException, ExecutionException, InterruptedException {
+        Utility util = Utility.getInstance();
+        final String HELLO_WORLD = "hello world";
+        final String HELLO = "hello";
+        final String WORLD = "world";
+        final String B64_TEXT = util.bytesToBase64(util.getUTF(HELLO_WORLD));
+        final byte[] HELLO_WORLD_BYTES = util.getUTF(HELLO_WORLD);
+        final long TIMEOUT = 8000;
+        final String USERNAME = "test user";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json")
+                .setBody(Map.of("user", USERNAME))
+                .setUrl("/api/type/matching");
+        PostOffice po = new PostOffice("unit.test", "2000", "TEST /type/matching");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        assertInstanceOf(Map.class, result.getBody());
+        MultiLevelMap mm = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals(B64_TEXT, mm.getElement("b64"));
+        assertArrayEquals(HELLO_WORLD_BYTES, getBytesFromIntegerList((List<Integer>) mm.getElement("binary")));
+        Map<String, Object> m1 = Map.of("b64", B64_TEXT, "text", HELLO_WORLD);
+        Map<String, Object> m2 = SimpleMapper.getInstance().getMapper().readValue(mm.getElement("json"), Map.class);
+        equalsMap(m1, m2);
+        assertEquals(HELLO, mm.getElement("substring"));
+        byte[] bson = getBytesFromIntegerList((List<Integer>) mm.getElement("bson"));
+        Map<String, Object> m3 = SimpleMapper.getInstance().getMapper().readValue(bson, Map.class);
+        equalsMap(m1, m3);
+        assertEquals(HELLO, mm.getElement("source.substring"));
+        assertEquals(WORLD, mm.getElement("source.substring-2"));
+        assertArrayEquals(HELLO_WORLD_BYTES,
+                getBytesFromIntegerList((List<Integer>) mm.getElement("source.keep-as-binary")));
+        assertEquals(HELLO_WORLD, mm.getElement("source.no-change"));
+        assertArrayEquals(HELLO_WORLD_BYTES,
+                getBytesFromIntegerList((List<Integer>) mm.getElement("source.binary")));
+        assertArrayEquals(HELLO_WORLD_BYTES,
+                getBytesFromIntegerList((List<Integer>) mm.getElement("source.bytes")));
+        assertEquals(HELLO_WORLD, mm.getElement("source.out-of-bound"));
+        assertEquals(HELLO_WORLD, mm.getElement("source.invalid-substring"));
+        assertEquals(HELLO_WORLD, mm.getElement("source.text"));
+    }
+
+    private void equalsMap(Map<String, Object> a, Map<String, Object> b) {
+        assertEquals(a.size(), b.size());
+        for (String k : a.keySet()) {
+            assertEquals(a.get(k), b.get(k));
+        }
+    }
+
+    private byte[] getBytesFromIntegerList(List<Integer> items) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (Integer i: items) {
+            out.write(i);
+        }
+        return out.toByteArray();
+    }
 
     @Test
     public void bodyTest() throws IOException, ExecutionException, InterruptedException {
