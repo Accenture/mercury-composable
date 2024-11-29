@@ -21,5 +21,7 @@ flows:
   - 'for-loop-continue.yml'
   - 'missing-sub-flow.yml'
   - 'type-matching.yml'
+  - 'externalize-put-key-value.yml'
+  - 'externalize-get-key-value.yml'
 
 location: 'classpath:/flows/'

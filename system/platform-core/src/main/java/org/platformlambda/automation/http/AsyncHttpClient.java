@@ -237,6 +237,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         return null;
     }
 
+    @SuppressWarnings("rawtypes")
     private void processRequest(Map<String, String> headers, EventEnvelope input, int instance)
             throws AppException, URISyntaxException {
         PostOffice po = new PostOffice(headers, instance);
@@ -357,33 +358,37 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         // get request body if any
         String contentType = request.getHeader(CONTENT_TYPE);
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
-            Object reqBody = request.getBody();
-            if (reqBody instanceof byte[] b) {
-                httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-            }
-            if (reqBody instanceof String text) {
-                byte[] b = util.getUTF(text);
-                httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-            }
-            if (reqBody instanceof Map) {
-                boolean xml = contentType != null && contentType.startsWith(APPLICATION_XML);
-                byte[] b = xml? util.getUTF(xmlWriter.write(reqBody)) :
-                            SimpleMapper.getInstance().getMapper().writeValueAsBytes(reqBody);
-                httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-            }
-            if (reqBody instanceof List) {
-                byte[] b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(reqBody);
-                httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-            }
             final String streamId = request.getStreamRoute();
-            if (reqBody == null && streamId != null && streamId.startsWith(STREAM_PREFIX)
+            if (streamId != null && streamId.startsWith(STREAM_PREFIX)
                     && streamId.contains(INPUT_STREAM_SUFFIX)) {
                 Platform.getInstance().getVirtualThreadExecutor().submit(() ->
                         handleUpload(input, queue, request, httpRequest));
+            } else {
+                Object reqBody = request.getBody() == null? new byte[0] : request.getBody();
+                switch (reqBody) {
+                    case byte[] b -> {
+                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
+                    }
+                    case String text -> {
+                        byte[] b = util.getUTF(text);
+                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
+                    }
+                    case Map map -> {
+                        boolean xml = contentType != null && contentType.startsWith(APPLICATION_XML);
+                        byte[] b = xml ? util.getUTF(xmlWriter.write(reqBody)) :
+                                SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
+                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
+                    }
+                    case List list -> {
+                        byte[] b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(list);
+                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
+                    }
+                    default -> throw new IllegalArgumentException("Invalid HTTP request body");
+                }
             }
         } else {
             httpResponse = httpRequest.send();
@@ -466,6 +471,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             Utility util = Utility.getInstance();
             File temp = getTempFile(streamId);
             try {
+                // FluxConsumer is reactive and the file output stream will be closed at completion,
+                // thus no need to do "auto-close".
                 FileOutputStream out = new FileOutputStream(temp);
                 long timeout = Math.max(5000, timeoutSeconds * 1000L);
                 FluxConsumer<Object> flux = new FluxConsumer<>(streamId, timeout);

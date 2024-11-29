@@ -359,16 +359,20 @@ To handle this level of modularity, the system provides configurable input/outpu
 
 Namespaces for I/O data mapping
 
-| Type                              | Keyword and/or namespace     |
-|:----------------------------------|:-----------------------------|
-| Flow input dataset                | `input.` or `http.input.`    |
-| Flow output dataset               | `output.` or `http.output.`  |
-| Function input body               | no namespace required        |
-| Function input or output headers  | `header` or `header.`        |
-| Function output result set        | `result.`                    |
-| Function output status code       | `status`                     |
-| State machine dataset             | `model.`                     |
-| Decision value from a task        | `decision`                   |
+| Type                              | Keyword and/or namespace     | LHS / RHS  | Mappings |
+|:----------------------------------|:-----------------------------|------------|----------|
+| Flow input dataset                | `input.` or `http.input.`    | left       | input    |
+| Flow output dataset               | `output.` or `http.output.`  | right      | output   |
+| Function input body               | no namespace required        | right      | input    |
+| Function input or output headers  | `header` or `header.`        | right      | I/O      |
+| Function output result set        | `result.`                    | left       | output   |
+| Function output status code       | `status`                     | left       | output   |
+| Decision value from a task        | `decision`                   | left       | output   |
+| State machine dataset             | `model.`                     | left/right | I/O      |
+| External state machine key-value  | `ext:`                       | right      | I/O      |
+
+Note that external state machine namespace uses ":" to indicate that the key-value is external.
+Please refer to the section "Other features" near the end of this chapter for more details.
 
 Constants for input data mapping (Left-hand-side argument)
 
@@ -426,7 +430,7 @@ and "numbers[1]" will retrieve the value `200` below:
 { "numbers":  [100, 200] }
 ```
 
-The assignment is done using the "->" syntax.
+The assignment is done using the `->` syntax.
 
 In the following example, the HTTP input query parameter 'amount' is passed as input body argument 'amount'
 to the task 'simple.decision'. The result (function "return value") from the task will be mapped to the
@@ -886,7 +890,7 @@ The syntax is `model.somekey:type` where "type" is one of the following:
 ```properties
 text
 binary
-substring(start, end)
+substring(start, end) or substring(start)
 b64
 ```
 
@@ -899,12 +903,159 @@ When type is `substring`, it will do a substring processing if the value is a te
 When type is `b64` and the value is a text string, the system will assume the value to be Base64 encoded
 and decode the value into a byte array.
 
-When type is `b64` and the value is a byte array, the system will convert it into a Base64 encoded text string.
+When type is `b64` and the value is a byte array, the system will convert it into a Base64 encoded text
+string.
 
 Please refer to the "type-matching.yml" event script example in the unit test's resources folder of the
 "event-script-engine" subproject to see some examples.
 
-Note: this feature is only supported for the "model" namespace.
+This feature is only available for the "model" namespace.
+
+When defined in the left-hand-side, the model key-value is converted to the target type before passing to
+the right-hand-side.
+
+When defined in the right-hand-side, the model key-value in the right-hand-side is saved with the target
+type.
+
+In the following example, the "model.text" is matched to binary and saved to "someBytes" as input
+argument to a user function. The original "model.text" is unchanged.
+
+The "result.text" is matched to binary and the converted value is saved to "model.converted".
+
+```yaml
+- input:
+    - 'model.text:binary -> someBytes'
+
+  ...
+
+  output:
+    - 'result.text -> model.converted:binary'
+```
+
+### External state machine
+
+The in-memory state machine is created for each query or transaction flow and it is temporal.
+
+For complex transactions or long running work flow, you would typically want to externalize some transaction
+states to a persistent store such as a distributed cache system or a high performance key-value data store.
+
+In these use cases, you can implement an external state machine function and configure it in a flow.
+
+Below is an example from a unit test. When you externalize a key-value to an external state machine,
+you must configure the route name (aka level-3 functional topic) of the external state machine.
+
+Note that when passing a `null` value to a key of an external state machine means "removal".
+
+```yaml
+external.state.machine: 'v1.ext.state.machine'
+
+tasks:
+  - input:
+      # A function can call an external state machine using input or output mapping.
+      # In this example, it calls external state machine from input data mapping.
+      - 'input.path_parameter.user -> ext:/${app.id}/user'
+      - 'input.body -> model.body'
+      # demonstrate saving constant to state machine and remove it using model.none
+      - 'text(world) -> ext:hello'
+      - 'model.none -> ext:hello'
+    process: 'no.op'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      # It calls external state machine again from output data mapping
+      - 'input.body -> ext:/${app.id}/body'
+      - 'input.body -> output.body'
+      - 'text(message) -> ext:test'
+      - 'model.none -> ext:test'
+    description: 'Hello World'
+    execution: end
+```
+
+The "external.state.machine" parameter is optional.
+
+When present, the system will send a key-value from the current flow instance's state machine
+to the function implementing the external state machine. The system uses the "ext:" namespace
+to externalize a state machine's key-value.
+
+Note that the delivery of key-values to the external state machine is asynchronous.
+Therefore, please assume eventual consistency.
+
+You should implement a user function as the external state machine.
+
+The input interface contract to the external state machine for saving a key-value is:
+
+```
+header.type = 'put'
+header.key = key
+body = value
+```
+
+Your function should save the input key-value to a persistent store.
+
+In another flow that requires the key-value, you can add an initial task
+to retrieve from the persistent store and do "output data mapping" to
+save to the in-memory state machine so that your transaction flow can
+use the persisted key-values to continue processing.
+
+In the unit tests of the event-script-engine subproject, these two flows work together:
+
+```
+externalize-put-key-value
+externalize-get-key-value
+```
+
+IMPORTANT: Events to an external state machine are delivered asynchronously. If you want to guarantee
+message sequencing, please do not set the "instances" parameter in the PreLoad annotation.
+
+To illustrate a minimalist implementation, below is an example of an external state machine in the
+event-script-engine's unit test section.
+
+```java
+@PreLoad(route = "v1.ext.state.machine")
+public class ExternalStateMachine implements LambdaFunction {
+    private static final Logger log = LoggerFactory.getLogger(ExternalStateMachine.class);
+
+    private static final ManagedCache store = ManagedCache.createCache("state.machine", 5000);
+    private static final String TYPE = "type";
+    private static final String PUT = "put";
+    private static final String GET = "get";
+    private static final String REMOVE = "remove";
+    private static final String KEY = "key";
+
+    @Override
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
+        if (!headers.containsKey(KEY)) {
+            throw new IllegalArgumentException("Missing key in headers");
+        }
+        String type = headers.get(TYPE);
+        String key = headers.get(KEY);
+        if (PUT.equals(type) && input != null) {
+            log.info("Saving {} to store", key);
+            store.put(key, input);
+            return true;
+        }
+        if (GET.equals(type)) {
+            Object v = store.get(key);
+            if (v != null) {
+                log.info("Retrieve {} from store", key);
+                return v;
+            } else {
+                return null;
+            }
+        }
+        if (REMOVE.equals(type)) {
+            if (store.exists(key)) {
+                store.remove(key);
+                log.info("Removed {} from store", key);
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+}
+```
+
 
 ### Future task scheduling
 

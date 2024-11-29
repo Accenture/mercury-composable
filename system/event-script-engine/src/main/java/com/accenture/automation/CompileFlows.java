@@ -59,6 +59,7 @@ public class CompileFlows implements EntryPoint {
     private static final String HEADER_NAMESPACE = "header.";
     private static final String HEADER = "header";
     private static final String ERROR_NAMESPACE = "error.";
+    private static final String EXT_NAMESPACE = "ext:";
     private static final String TEXT_TYPE = "text(";
     private static final String INTEGER_TYPE = "int(";
     private static final String LONG_TYPE = "long(";
@@ -160,6 +161,7 @@ public class CompileFlows implements EntryPoint {
         Object timeToLive = flow.get("flow.ttl");
         Object exceptionTask = flow.get("flow.exception");
         Object firstTask = flow.get("first.task");
+        Object ext = flow.get("external.state.machine");
         if (id instanceof String flowId && description instanceof String desc
                 && timeToLive instanceof String ttl && firstTask instanceof String task1) {
             if (Flows.flowExists(flowId)) {
@@ -169,7 +171,8 @@ public class CompileFlows implements EntryPoint {
             String unhandledException = exceptionTask instanceof String et? et : null;
             // minimum 1 second for TTL
             long ttlSeconds = Math.max(1, util.getDurationInSeconds(ttl));
-            Flow entry = new Flow(flowId, desc, task1, ttlSeconds * 1000L, unhandledException);
+            String extState = ext instanceof String es? es : null;
+            Flow entry = new Flow(flowId, desc, task1, extState, ttlSeconds * 1000L, unhandledException);
             int taskCount = 0;
             Object taskList = flow.get(TASKS);
             if (taskList instanceof List) {
@@ -403,15 +406,65 @@ public class CompileFlows implements EntryPoint {
                 }
             }
             if (endTaskFound) {
-                Flows.addFlow(entry);
-
+                // final validation pass to check if the flow is missing external.state.machine
+                boolean extFound = false;
+                boolean incomplete = false;
+                for (String t: entry.tasks.keySet()) {
+                    Task task = entry.tasks.get(t);
+                    if (hasExternalState(task.input) || hasExternalState(task.output)) {
+                        extFound = true;
+                        break;
+                    }
+                }
+                for (String t: entry.tasks.keySet()) {
+                    Task task = entry.tasks.get(t);
+                    if (hasIncompleteMapping(task.input) || hasIncompleteMapping(task.output)) {
+                        incomplete = true;
+                        break;
+                    }
+                }
+                if (extFound && entry.externalStateMachine == null) {
+                    log.error("Unable to parse {} - flow is missing external.state.machine", name);
+                } else if (incomplete) {
+                    log.error("Unable to parse {} - flow has incomplete data mappings", name);
+                } else {
+                    Flows.addFlow(entry);
+                }
             } else {
                 log.error("Unable to parse {} - flow must have at least one end task", name);
             }
-
         } else {
             log.error("Unable to parse {} - check flow.id, flow.description, flow.ttl, first.task", name);
         }
+    }
+
+    private boolean hasExternalState(List<String> mapping) {
+        for (String m: mapping) {
+            int sep = m.indexOf(MAP_TO);
+            if (sep != -1) {
+                String rhs = m.substring(sep+2).trim();
+                if (rhs.startsWith(EXT_NAMESPACE) && !EXT_NAMESPACE.equals(rhs)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasIncompleteMapping(List<String> mapping) {
+        for (String m: mapping) {
+            int sep = m.indexOf(MAP_TO);
+            if (sep != -1) {
+                String lhs = m.substring(0, sep).trim();
+                String rhs = m.substring(sep+2).trim();
+                if (lhs.endsWith(".") || rhs.endsWith(".")) {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<List<String>> getConditionList(List<String> rawList) {
@@ -621,6 +674,7 @@ public class CompileFlows implements EntryPoint {
 
     private boolean validOutputRhs(String rhs, boolean isDecision) {
         return (rhs.equals(DECISION) && isDecision) || rhs.startsWith(FILE_TYPE) ||
-                rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE);
+                rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE) ||
+                rhs.startsWith(EXT_NAMESPACE);
     }
 }

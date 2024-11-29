@@ -51,6 +51,39 @@ public class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void externalStateMachineTest() throws IOException, InterruptedException, ExecutionException {
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        var PAYLOAD = Map.of("hello", "world");
+        AsyncHttpRequest request1 = new AsyncHttpRequest();
+        request1.setTargetHost(HOST).setMethod("PUT").setHeader("accept", "application/json")
+                        .setHeader("content-type", "application/json").setBody(PAYLOAD);
+        request1.setUrl("/api/ext/state/"+USER);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
+        EventEnvelope res1 = po.request(req1, TIMEOUT).get();
+        assert res1 != null;
+        assertInstanceOf(Map.class, res1.getBody());
+        Map<String, Object> result1 = (Map<String, Object>) res1.getBody();
+        assertEquals("world", result1.get("hello"));
+        // We must assume that external state machine is eventual consistent.
+        // Therefore, result may not be immediately available.
+        // However, for unit test, we set the external state machine function to have a single worker instance
+        // so that the GET request will wait until the PUT request is done, thus returning result correctly.
+        AsyncHttpRequest request2 = new AsyncHttpRequest();
+        request2.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request2.setUrl("/api/ext/state/"+USER);
+        EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
+        EventEnvelope res2 = po.request(req2, TIMEOUT).get();
+        assert res2 != null;
+        assertInstanceOf(Map.class, res2.getBody());
+        Map<String, Object> result2 = (Map<String, Object>) res2.getBody();
+        assertEquals(USER, result2.get("user"));
+        assertEquals(PAYLOAD, result2.get("payload"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void typeMatchingTest() throws IOException, ExecutionException, InterruptedException {
         Utility util = Utility.getInstance();
         final String HELLO_WORLD = "hello world";
@@ -760,7 +793,6 @@ public class FlowTests extends TestBase {
     public void internalFlowWithoutFlowIdTest() {
         final long TIMEOUT = 8000;
         String traceId = Utility.getInstance().getUuid();
-        PostOffice po = new PostOffice("unit.test", traceId, "INTERNAL /flow/test");
         Map<String, Object> headers = new HashMap<>();
         Map<String, Object> dataset = new HashMap<>();
         dataset.put("header", headers);

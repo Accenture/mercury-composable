@@ -30,12 +30,15 @@ public class Flow {
     public final long ttl;
 
     public final String firstTask;
+    public final String externalStateMachine;
     public final String exception;
 
-    public Flow(String id, String description, String firstTask, long duration, String exception) {
+    public Flow(String id, String description, String firstTask, String externalStateMachine,
+                long duration, String exception) {
         this.id = id;
         this.description = description;
         this.firstTask = firstTask;
+        this.externalStateMachine = externalStateMachine;
         this.exception = exception;
         this.ttl = duration;
     }

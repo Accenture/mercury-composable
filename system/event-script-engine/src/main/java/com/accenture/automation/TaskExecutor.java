@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.Platform;
@@ -49,6 +50,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FLOW_ID = "flow_id";
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String TYPE = "type";
+    private static final String PUT = "put";
+    private static final String KEY = "key";
+    private static final String REMOVE = "remove";
     private static final String ERROR = "error";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
@@ -65,6 +69,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String MODEL_NAMESPACE = "model.";
     private static final String RESULT_NAMESPACE = "result.";
     private static final String ERROR_NAMESPACE = "error.";
+    private static final String EXT_NAMESPACE = "ext:";
     private static final String INPUT_HEADER_NAMESPACE = "input.header.";
     private static final String HEADER_NAMESPACE = "header.";
     private static final String TEXT_TYPE = "text(";
@@ -290,15 +295,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                     entry, value);
                             required = false;
                         }
-                    } else if (rhs.equals(OUTPUT_HEADER)) {
+                    }
+                    if (rhs.equals(OUTPUT_HEADER)) {
                         if (!(value instanceof Map)) {
                             log.error("Invalid output mapping '{}' - expect: Map, actual: {}",
                                     entry, value.getClass().getSimpleName());
                             required = false;
                         }
                     }
+                    if (rhs.startsWith(EXT_NAMESPACE)) {
+                        required = false;
+                        callExternalStateMachine(flowInstance, task, rhs, value);
+                    }
                     if (required) {
                         setRhsElement(value, rhs, consolidated);
+                    }
+                } else {
+                    if (rhs.startsWith(EXT_NAMESPACE)) {
+                        callExternalStateMachine(flowInstance, task, rhs, null);
                     }
                 }
             }
@@ -604,7 +618,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 if (lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
                     lhs = lhs.toLowerCase();
                 }
-                if (rhs.startsWith(MODEL_NAMESPACE)) {
+                if (rhs.startsWith(EXT_NAMESPACE)) {
+                    final Object value;
+                    if (isInput || lhs.startsWith(MODEL_NAMESPACE)) {
+                        value = getLhsElement(lhs, source);
+                    } else {
+                        value = getConstantValue(lhs, rhs);
+                    }
+                    callExternalStateMachine(flowInstance, task, rhs, value);
+                } else if (rhs.startsWith(MODEL_NAMESPACE)) {
                     // special case to set model variables
                     Map<String, Object> modelOnly = new HashMap<>();
                     modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -731,6 +753,21 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             } else {
                 po.send(event);
             }
+        }
+    }
+
+    private void callExternalStateMachine(FlowInstance flowInstance, Task task, String rhs, Object value)
+            throws IOException {
+        String key = rhs.substring(EXT_NAMESPACE.length()).trim();
+        String externalStateMachine = flowInstance.getFlow().externalStateMachine;
+        PostOffice po = new PostOffice(task.service,
+                flowInstance.getTraceId(), flowInstance.getTracePath());
+        if (value == null) {
+            // tell external state machine to remove key-value
+            po.send(externalStateMachine, new Kv(TYPE, REMOVE), new Kv(KEY, key));
+        } else {
+            // tell external state machine to save key-value
+            po.send(externalStateMachine, value, new Kv(TYPE, PUT), new Kv(KEY, key));
         }
     }
 

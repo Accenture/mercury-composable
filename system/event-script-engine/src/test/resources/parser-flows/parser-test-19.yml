@@ -3,27 +3,24 @@
 #
 
 flow:
-  id: 'parser-test-no-description'
-  description: 'Test no description'
+  id: 'parser-test-missing-external-state-machine'
+  description: 'Test missing external state machine'
   ttl: 10s
 
-first:
-  task: 'greeting.test'
+first.task: 'greeting.test'
 
+#
+# Missing "external.state.machine" parameter here
+#
 tasks:
   - input:
-      - 'input.path_parameter.user -> user'
-      - 'input.query.ex -> exception'
-      - 'text(hello world) -> greeting'
-      - 'text(${PATH}) -> path'
-      - 'long(12345) -> long_number'
-      - 'float(12.345) -> float_number'
-      - 'double(12.345) -> double_number'
-      - 'boolean(true) -> boolean_value'
+      # "ext.user" would require an external state machine
+      - 'input.path_parameter.user -> ext.user'
     process: 'greeting.test'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
+    description: 'Greeting test'
     execution: end
     exception: 'v1.hello.exception'
 
