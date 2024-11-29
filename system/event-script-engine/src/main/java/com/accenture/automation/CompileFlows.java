@@ -370,7 +370,7 @@ public class CompileFlows implements EntryPoint {
                     List<Object> inputList = (List<Object>) input;
                     for (int j=0; j < inputList.size(); j++) {
                         String line = flow.getProperty(TASKS+"["+i+"]."+INPUT+"["+j+"]");
-                        String filtered = filterInputAlias(line);
+                        String filtered = filterMapping(line);
                         if (validInput(filtered)) {
                             task.input.add(filtered);
                         } else {
@@ -382,7 +382,7 @@ public class CompileFlows implements EntryPoint {
                     List<Object> outputList = (List<Object>) output;
                     for (int j=0; j < outputList.size(); j++) {
                         String line = flow.getProperty(TASKS+"["+i+"]."+OUTPUT+"["+j+"]");
-                        String filtered = filterOutputAlias(line);
+                        String filtered = filterMapping(line);
                         if (validOutput(filtered, isDecisionTask)) {
                             task.output.add(filtered);
                         } else {
@@ -595,18 +595,7 @@ public class CompileFlows implements EntryPoint {
         return false;
     }
 
-    private String filterInputAlias(String mapping) {
-        String text = mapping.trim();
-        int sep = text.indexOf(MAP_TO);
-        if (sep == -1) {
-            return mapping;
-        }
-        String lhs = text.substring(0, sep).trim();
-        String rhs = text.substring(sep+2).trim();
-        return lhs + " " + MAP_TO + " " + rhs;
-    }
-
-    private String filterOutputAlias(String mapping) {
+    private String filterMapping(String mapping) {
         String text = mapping.trim();
         int sep = text.indexOf(MAP_TO);
         if (sep == -1) {
