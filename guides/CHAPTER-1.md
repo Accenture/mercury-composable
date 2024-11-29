@@ -355,16 +355,13 @@ For maintainability, we do recommend to reduce library dependencies as much as y
 push JDBC or JPA dependency to a small number of user functions (for `CRUD` operation) so that the rest of the
 user functions do not need any DB dependencies.
 
-## Component Scan
+## Component scan
 
 Please update the following in the application.properties (or application.yml) to include packages of your own functions:
 
 ```properties
-web.component.scan=com.accenture, your.package.name
+web.component.scan=your.package.name
 ```
-
-Since Event Script (i.e. Event choreography by configuration) is an enterprise extension, the package "com.accenture"
-is required.
 
 > You should replace "your.package.name" with the real package name(s) that you use in your application.
   Usually this is your organization software ID or "namespace".
