@@ -934,7 +934,7 @@ The "result.text" is matched to binary and the converted value is saved to "mode
 
 The in-memory state machine is created for each query or transaction flow and it is temporal.
 
-For complex transactions or long running work flow, you would typically want to externalize some transaction
+For complex transactions or long running work flows, you would typically want to externalize some transaction
 states to a persistent store such as a distributed cache system or a high performance key-value data store.
 
 In these use cases, you can implement an external state machine function and configure it in a flow.
