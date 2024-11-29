@@ -3,11 +3,12 @@
 Event Script uses YAML to represent an end-to-end transaction flow. A transaction is a business use case, and
 the flow can be an API service, a batch job or a real-time transaction.
 
-## Flow list (default name is flows.yml)
+## Flow list
 
 This configuration file sits in the project "resources" project and contains a list of filenames.
 
-It may look like this.
+The default flow list is "flows.yaml" under the "resources" folder. It may look like this.
+
 ```yaml
 flows:
   - 'get-profile.yml'
@@ -346,7 +347,7 @@ the sub-flows. To avoid the additional routing overheads, use this feature only 
 
 For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
 
-## Task list
+## Tasks and data mapping
 
 All tasks for a flow are defined in the "tasks" section.
 
@@ -478,7 +479,7 @@ Your function can implement the `TypedLambdaFunction` interface to configure inp
 Since a data structure is passed to your function's input argument as key-values, you may create a PoJo class
 to deserialize the data structure.
 
-To tell the system that your function is expecting input as a PoJo, you can use the special notation "*" in
+To tell the system that your function is expecting input as a PoJo, you can use the special notation `*` in
 the right hand side.
 
 For example, the following entry tells the system to set the value in "model.dataset" as a PoJo input.
@@ -663,7 +664,7 @@ This task has the tag `execution=sink`.
     execution: sink
 ```
 
-## Pipeline Feature
+## Pipeline feature
 
 Pipeline is an advanced feature of Event Script.
 
@@ -763,7 +764,7 @@ tasks:
       - 'echo.four'
 ```
 
-## Handling Exception
+## Handling exception
 
 You can define exception handler at the top level or at the task level.
 
@@ -869,7 +870,7 @@ An example of task-level exception handler is shown in the "HelloException.class
 the event script engine where it set the status code in the result set so that the system can map the status code
 from the result set to the next task or to the HTTP output status code.
 
-## Other Features
+## Other features
 
 ### Simple type matching and conversion
 
