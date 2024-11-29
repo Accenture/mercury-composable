@@ -361,8 +361,8 @@ Namespaces for I/O data mapping
 
 | Type                              | Keyword and/or namespace     | LHS / RHS  | Mappings |
 |:----------------------------------|:-----------------------------|------------|----------|
-| Flow input dataset                | `input.` or `http.input.`    | left       | input    |
-| Flow output dataset               | `output.` or `http.output.`  | right      | output   |
+| Flow input dataset                | `input.`                     | left       | input    |
+| Flow output dataset               | `output.`                    | right      | output   |
 | Function input body               | no namespace required        | right      | input    |
 | Function input or output headers  | `header` or `header.`        | right      | I/O      |
 | Function output result set        | `result.`                    | left       | output   |
@@ -399,8 +399,6 @@ Special content type for output data mapping (Right-hand-side argument)
 
 For output data mapping, the "file" content type is used to save some data from the output of a user function
 to a file in the local file system.
-
-For HTTP Flow Adapter, "http.input." and "http.output." namespaces are aliases of "input." and "output." respectively.
 
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
 (See "Decision" in the task section).

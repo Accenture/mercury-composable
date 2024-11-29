@@ -8,8 +8,8 @@ first:
 
 tasks:
     - input:
-        - 'http.input.path_parameter.user -> user'
-        - 'http.input.query.ex -> exception'
+        - 'input.path_parameter.user -> user'
+        - 'input.query.ex -> exception'
         - 'text(hello world) -> greeting'
         - 'text(${PATH}) -> path'
         - 'long(12345) -> long_number'
@@ -31,7 +31,7 @@ tasks:
         - 'text(invalid) -> output.header'
         - 'header -> output.header'
         - 'header.demo -> output.header.x-demo'
-        - 'text(${application.name}) -> http.output.body.name'
+        - 'text(${application.name}) -> output.body.name'
       description: 'Hello World'
       execution: end
       exception: 'v1.hello.exception'

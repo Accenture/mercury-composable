@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-N/A
+Removed "http.input." and "http.output." aliases from event script. Instead, use the
+generic "input." and "output." namespaces.
 
 ### Changed
 

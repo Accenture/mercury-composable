@@ -50,8 +50,6 @@ public class CompileFlows implements EntryPoint {
     private static final String EXCEPTION = "exception";
     private static final String LOOP = "loop";
     private static final String FLOW_PROTOCOL = "flow://";
-    private static final String HTTP_INPUT_NAMESPACE = "http.input.";
-    private static final String HTTP_OUTPUT_NAMESPACE = "http.output.";
     private static final String INPUT_NAMESPACE = "input.";
     private static final String OUTPUT_NAMESPACE = "output.";
     private static final String MODEL_NAMESPACE = "model.";
@@ -605,9 +603,6 @@ public class CompileFlows implements EntryPoint {
         }
         String lhs = text.substring(0, sep).trim();
         String rhs = text.substring(sep+2).trim();
-        if (lhs.startsWith(HTTP_INPUT_NAMESPACE)) {
-            lhs = INPUT_NAMESPACE + lhs.substring(HTTP_INPUT_NAMESPACE.length());
-        }
         return lhs + " " + MAP_TO + " " + rhs;
     }
 
@@ -619,9 +614,6 @@ public class CompileFlows implements EntryPoint {
         }
         String lhs = text.substring(0, sep).trim();
         String rhs = text.substring(sep+2).trim();
-        if (rhs.startsWith(HTTP_OUTPUT_NAMESPACE)) {
-            rhs = OUTPUT_NAMESPACE + rhs.substring(HTTP_OUTPUT_NAMESPACE.length());
-        }
         return lhs + " " + MAP_TO + " " + rhs;
     }
 
