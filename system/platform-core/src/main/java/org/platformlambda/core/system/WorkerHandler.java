@@ -129,7 +129,7 @@ public class WorkerHandler {
                     po.send(dt.setBody(payload));
                 }
             } catch (Exception e) {
-                log.error("Unable to send to " + EventEmitter.DISTRIBUTED_TRACING, e);
+                log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e);
             }
         } else {
             if (!ps.isDelivered()) {

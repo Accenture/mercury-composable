@@ -136,7 +136,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         po.send(dt.setBody(payload))
                     }
                 } catch (e: Exception) {
-                    log.error("Unable to send to " + EventEmitter.DISTRIBUTED_TRACING, e)
+                    log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e)
                 }
             } else {
                 // print delivery warning if tracing is not enabled

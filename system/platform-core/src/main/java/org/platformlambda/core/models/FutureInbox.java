@@ -165,7 +165,7 @@ public class FutureInbox extends InboxBase {
                         EventEnvelope dt = new EventEnvelope().setTo(EventEmitter.DISTRIBUTED_TRACING);
                         EventEmitter.getInstance().send(dt.setBody(payload));
                     } catch (Exception e) {
-                        log.error("Unable to send to " + EventEmitter.DISTRIBUTED_TRACING, e);
+                        log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e);
                     }
                 }
             }
