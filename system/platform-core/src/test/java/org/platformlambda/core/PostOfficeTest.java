@@ -64,12 +64,18 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
-        testMonoFunction(REACTIVE_MONO);
+        // test multiple times to validate worker flow control
+        for (int i=0; i < 12; i++) {
+            testMonoFunction(REACTIVE_MONO);
+        }
     }
 
     @Test
     public void testMonoKotlinFunction() throws IOException, ExecutionException, InterruptedException {
-        testMonoFunction(REACTIVE_MONO_KOTLIN);
+        // test multiple times to validate worker flow control
+        for (int i=0; i < 8; i++) {
+            testMonoFunction(REACTIVE_MONO_KOTLIN);
+        }
     }
 
     private void testMonoFunction(String target) throws IOException, ExecutionException, InterruptedException {

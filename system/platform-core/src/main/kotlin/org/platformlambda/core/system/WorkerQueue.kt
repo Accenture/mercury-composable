@@ -150,11 +150,16 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     )
                 }
             }
+
             /*
-             * Send a ready signal to inform the system this worker is ready for next event.
-             * This guarantees that incoming events are processed orderly by available workers.
-             */
-            Platform.getInstance().eventSystem.send(def.route, READY + route)
+         * If this response is not a Mono reactive object, send a ready signal to inform the system this worker
+         * is ready for next event. Otherwise, defer it until the Mono result is realized.
+         *
+         * This guarantee that this future task is executed orderly.
+         */
+            if (!ps.isReactive) {
+                Platform.getInstance().eventSystem.send(def.route, READY + route)
+            }
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -238,6 +243,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     // if response is a Mono, subscribe to it for a future response
                     if (result is Mono<*>) {
                         skipResponse = true
+                        // set reactive to defer service acknowledgement until Mono is complete
+                        ps.setReactive()
                         val platform = Platform.getInstance()
                         val timer = AtomicLong(-1)
                         val completed = AtomicBoolean(false)
@@ -247,6 +254,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                             if (t1 > 0) {
                                 platform.vertx.cancelTimer(t1)
                             }
+                            // finally, send service acknowledgement
+                            platform.eventSystem.send(def.route, READY + route)
                         }).subscribeOn(Schedulers.fromExecutor(platform.virtualThreadExecutor))
                             .subscribe({ data: Any? ->
                                 completed.set(true)

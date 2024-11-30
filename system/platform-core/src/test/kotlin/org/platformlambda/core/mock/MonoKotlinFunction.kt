@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoSink
 
-@PreLoad(route = "v1.reactive.mono.kotlin")
+@PreLoad(route = "v1.reactive.mono.kotlin", instances=3)
 class MonoKotlinFunction : KotlinLambdaFunction<Map<String, Any>?, Mono<Map<String, Any>>> {
     private val log: Logger = LoggerFactory.getLogger(MonoKotlinFunction::class.java)
     private val exception: String = "exception"
@@ -39,7 +39,7 @@ class MonoKotlinFunction : KotlinLambdaFunction<Map<String, Any>?, Mono<Map<Stri
     ): Mono<Map<String, Any>> {
         val po = PostOffice(headers, instance)
         po.annotateTrace("reactive", "test")
-        log.info("GOT {} {}", headers, input)
+        log.info("Instance-{} receives {} {}", instance, headers, input)
         return Mono.create({ callback: MonoSink<Map<String, Any>> ->
             if (headers.containsKey(exception)) {
                 callback.error(AppException(400, headers[exception]))

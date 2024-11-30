@@ -141,10 +141,14 @@ public class WorkerHandler {
             }
         }
         /*
-         * Send a ready signal to inform the system this worker is ready for next event.
-         * This guarantee that this future task is executed orderly
+         * If this response is not a Mono reactive object, send a ready signal to inform the system this worker
+         * is ready for next event. Otherwise, defer it until the Mono result is realized.
+         *
+         * This guarantee that this future task is executed orderly.
          */
-        Platform.getInstance().getEventSystem().send(def.getRoute(), READY+route);
+        if (!ps.isReactive()) {
+            Platform.getInstance().getEventSystem().send(def.getRoute(), READY + route);
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -225,6 +229,8 @@ public class WorkerHandler {
                 // if response is a Mono, subscribe to it for a future response
                 if (result instanceof Mono mono) {
                     skipResponse = true;
+                    // set reactive to defer service acknowledgement until Mono is complete
+                    ps.setReactive();
                     Platform platform = Platform.getInstance();
                     final AtomicLong timer = new AtomicLong(-1);
                     final AtomicBoolean completed = new AtomicBoolean(false);
@@ -234,6 +240,8 @@ public class WorkerHandler {
                         if (t1 > 0) {
                             platform.getVertx().cancelTimer(t1);
                         }
+                        // finally, send service acknowledgement
+                        platform.getEventSystem().send(def.getRoute(), READY + route);
                     }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
                       .subscribe(data -> {
                         completed.set(true);

@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
-@PreLoad(route = "v1.reactive.mono.function")
+@PreLoad(route = "v1.reactive.mono.function", instances=5)
 public class MonoUserFunction implements TypedLambdaFunction<Map<String, Object>, Mono<Map<String, Object>>> {
     private static final Logger log = LoggerFactory.getLogger(MonoUserFunction.class);
 
@@ -38,7 +38,7 @@ public class MonoUserFunction implements TypedLambdaFunction<Map<String, Object>
     public Mono<Map<String, Object>> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         PostOffice po = new PostOffice(headers, instance);
         po.annotateTrace("reactive", "test");
-        log.info("GOT {} {}", headers, input);
+        log.info("Instance-{} receives {} {}", instance, headers, input);
         return Mono.create(callback -> {
             if (headers.containsKey(EXCEPTION)) {
                 callback.error(new AppException(400, headers.get(EXCEPTION)));

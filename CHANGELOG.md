@@ -22,7 +22,8 @@ generic "input." and "output." namespaces.
 
 ### Changed
 
-Bugfix for AsyncHttpClient to allow missing HTTP request body in POST, PUT or PATCH request
+1. Bugfix for AsyncHttpClient to allow missing HTTP request body in POST, PUT or PATCH request
+2. Mono reactive flow control
 
 ---
 ## Version 4.0.27, 11/27/2024

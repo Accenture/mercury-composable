@@ -25,6 +25,7 @@ public class ProcessStatus {
 
     private boolean success = true;
     private boolean delivered = true;
+    private boolean reactive = false;
     private float executionTime;
     private int status = 0;
     private String exception;
@@ -73,6 +74,15 @@ public class ProcessStatus {
         this.exception = exception;
         this.success = false;
         return this;
+    }
+
+    public ProcessStatus setReactive() {
+        reactive = true;
+        return this;
+    }
+
+    public boolean isReactive() {
+        return reactive;
     }
 
     public int getStatus() {
