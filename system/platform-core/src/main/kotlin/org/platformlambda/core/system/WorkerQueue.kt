@@ -249,7 +249,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         val timer = AtomicLong(-1)
                         val completed = AtomicBoolean(false)
                         // For non-blocking operation, use a new virtual thread for the subscription
-                        val disposable = result.doFinally(Consumer { done: Any? ->
+                        val disposable = result.doFinally(Consumer { _: Any? ->
                             val t1 = timer.get()
                             if (t1 > 0) {
                                 platform.vertx.cancelTimer(t1)
