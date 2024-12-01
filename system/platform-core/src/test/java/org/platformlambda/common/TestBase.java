@@ -68,7 +68,7 @@ public class TestBase {
             Utility util = Utility.getInstance();
             AppConfigReader config = AppConfigReader.getInstance();
             port = util.str2int(config.getProperty("server.port", "8100"));
-            localHost = "http://127.0.0.1:"+port;
+            localHost = "http://127.0.0.1:" + port;
             AppStarter.runAsSpringBootApp();
             AutoStart.main(new String[0]);
             AppStarter.runMainApp();
@@ -86,7 +86,7 @@ public class TestBase {
             platform.registerKotlin(LONG_RUNNING_RPC_ALIAS, new LongRunningRpcSimulator(), 10);
             // hello.list is a special function to test returning result set as a list
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->
-                                                    Collections.singletonList(input), 5);
+                    Collections.singletonList(input), 5);
             platform.makePublic(HELLO_MOCK);
             // load minimalist HTTP server
             Vertx vertx = Vertx.vertx();
@@ -105,29 +105,28 @@ public class TestBase {
                         log.error("Unable to start - {}", ex.getMessage());
                         System.exit(-1);
                     });
-
             blockingWait(SERVICE_LOADED, 20);
+            EventEmitter po = EventEmitter.getInstance();
+            log.info("Journal ready? {}", po.isJournalEnabled());
+            int n = 0;
+            while (!po.isJournalEnabled()) {
+                Thread.sleep(WAIT_INTERVAL);
+                n++;
+                log.info("Waiting for journal engine to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
+            }
+            log.info("Event over HTTP config ready? {}", po.isEventHttpConfigEnabled());
+            n = 0;
+            while (!po.isEventHttpConfigEnabled()) {
+                Thread.sleep(WAIT_INTERVAL);
+                n++;
+                log.info("Waiting for Event over HTTP config to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
+            }
+            // render REST endpoint again with correct config file because the first pass is intentionally to have errors
+            System.setProperty("yaml.rest.automation", "classpath:/rest.yaml, classpath:/event-api.yaml");
+            AppStarter.renderRestEndpoints();
+            System.setProperty("yaml.rest.automation", "classpath:/rest.yaml");
+            AppStarter.renderRestEndpoints();
         }
-        EventEmitter po = EventEmitter.getInstance();
-        log.info("Journal ready? {}", po.isJournalEnabled());
-        int n = 0;
-        while (!po.isJournalEnabled()) {
-            Thread.sleep(WAIT_INTERVAL);
-            n++;
-            log.info("Waiting for journal engine to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
-        }
-        log.info("Event over HTTP config ready? {}", po.isEventHttpConfigEnabled());
-        n = 0;
-        while (!po.isEventHttpConfigEnabled()) {
-            Thread.sleep(WAIT_INTERVAL);
-            n++;
-            log.info("Waiting for Event over HTTP config to get ready. Elapsed {} ms", n * WAIT_INTERVAL);
-        }
-        // render REST endpoint again with correct config file because the first pass is intentionally to have errors
-        System.setProperty("yaml.rest.automation", "classpath:/rest.yaml, classpath:/event-api.yaml");
-        AppStarter.renderRestEndpoints();
-        System.setProperty("yaml.rest.automation", "classpath:/rest.yaml");
-        AppStarter.renderRestEndpoints();
     }
 
     private static boolean blockingWait(String provider, int seconds) throws InterruptedException {
