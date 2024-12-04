@@ -455,7 +455,7 @@ public class CompileFlows implements EntryPoint {
             if (sep != -1) {
                 String lhs = m.substring(0, sep).trim();
                 String rhs = m.substring(sep+2).trim();
-                if (lhs.endsWith(".") || rhs.endsWith(".")) {
+                if (lhs.endsWith(".") || rhs.endsWith(".") || rhs.endsWith(":")) {
                     return true;
                 }
             } else {

@@ -33,7 +33,6 @@ import java.util.Map;
 @EventInterceptor
 @PreLoad(route = "http.flow.adapter", envInstances = "http.flow.adapter.instances", instances = 200)
 public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
-    private static final String FLOW_ID = "flow_id";
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String STATUS = "status";

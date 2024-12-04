@@ -34,10 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @ZeroTracing
 @EventInterceptor
@@ -104,7 +101,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String TEXT_SUFFIX = "text";
     private static final String BINARY_SUFFIX = "binary";
     private static final String B64_SUFFIX = "b64";
-    private static final String SUBSTRING_SUFFIX = "substring(";
+    private static final String INTEGER_SUFFIX = "int";
+    private static final String LONG_SUFFIX = "long";
+    private static final String FLOAT_SUFFIX = "float";
+    private static final String DOUBLE_SUFFIX = "double";
+    private static final String BOOLEAN_SUFFIX = "boolean";
+    private static final String SUBSTRING_TYPE = "substring(";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
@@ -242,15 +244,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
                 final Object value;
                 String rhs = entry.substring(sep+2).trim();
-                int colon = rhs.lastIndexOf(':');
-                String rhsSelector = colon == -1? rhs : rhs.substring(0, colon);
                 if (isInput || lhs.startsWith(MODEL_NAMESPACE)
                         || lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)
                         || lhs.equals(STATUS)
                         || lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE)) {
                     value = getLhsElement(lhs, consolidated);
                     if (value == null) {
-                        removeModelElement(rhsSelector, consolidated);
+                        removeModelElement(rhs, consolidated);
                     }
                 } else {
                     value = getConstantValue(lhs, rhs);
@@ -772,16 +772,26 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void removeModelElement(String rhs, MultiLevelMap model) {
-        int colon = rhs.lastIndexOf(':');
-        model.removeElement(colon == -1? rhs : rhs.substring(0, colon));
+        int colon = getModelTypeIndex(rhs);
+        if (colon != -1) {
+            String key = rhs.substring(0, colon);
+            String type = rhs.substring(colon+1);
+            Object value = getValueByType(type, null, "?");
+            if (value != null) {
+                setRhsElement(value, key, model);
+            } else {
+                model.removeElement(key);
+            }
+        } else {
+            model.removeElement(rhs);
+        }
     }
 
-
     private Object getLhsElement(String lhs, MultiLevelMap source) {
-        int colon = lhs.lastIndexOf(':');
+        int colon = getModelTypeIndex(lhs);
         String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
         Object value = source.getElement(selector);
-        if (colon != -1 && lhs.startsWith(MODEL_NAMESPACE)) {
+        if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
             if (value != null) {
                 return getValueByType(type, value, "LHS '"+lhs+"'");
@@ -790,30 +800,70 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return value;
     }
 
+    private int getModelTypeIndex(String text) {
+        if (text.startsWith(MODEL_NAMESPACE)) {
+            return text.indexOf(':');
+        } else {
+            return -1;
+        }
+    }
+
     @SuppressWarnings("rawtypes")
     private Object getValueByType(String type, Object value, String path) {
-        if (type.startsWith(SUBSTRING_SUFFIX)) {
-            if (value instanceof String str) {
-                String error = "missing close bracket";
-                if (type.endsWith(CLOSE_BRACKET)) {
-                    // substring(0, 3) becomes [substring, 0, 3]
-                    List<String> parts = util.split(type, "(, )");
+        boolean substringType = type.startsWith(SUBSTRING_TYPE);
+        if (substringType || type.startsWith(BOOLEAN_TYPE)) {
+            String error = "missing close bracket";
+            if (type.endsWith(CLOSE_BRACKET)) {
+                /*
+                 * The last parameter is optional for both substring and boolean:
+                 *
+                 * substring(0, 3) becomes [substring, 0, 3]
+                 * substring(1) becomes [substring, 1]
+                 * boolean(a=true) becomes [boolean, a, true]
+                 * boolean(a) becomes [boolean, a]
+                 */
+                if (substringType) {
+                    List<String> parts = util.split(type, "(), ");
                     if (parts.size() > 1 && parts.size() < 4) {
-                        int start = util.str2int(parts.get(1));
-                        int end = parts.size() == 2? str.length() : util.str2int(parts.get(2));
-                        if (end > start && start != -1 && end <= str.length()) {
-                            return str.substring(start, end);
+                        if (value instanceof String str) {
+                            int start = util.str2int(parts.get(1));
+                            int end = parts.size() == 2 ? str.length() : util.str2int(parts.get(2));
+                            if (end > start && start >= 0 && end <= str.length()) {
+                                return str.substring(start, end);
+                            } else {
+                                error = "index out of bound";
+                            }
                         } else {
-                            error = "index out of bound";
+                            error = "value is not a string";
                         }
                     } else {
-                        error = "invalid substring format";
+                        error = "invalid syntax";
+                    }
+                } else {
+                    List<String> parts = util.split(type, "(),=");
+                    List<String> filtered = new ArrayList<>();
+                    parts.forEach(d -> {
+                        var txt = d.trim();
+                        if (!txt.isEmpty()) {
+                            filtered.add(txt);
+                        }
+                    });
+                    if (filtered.size() > 1 && filtered.size() < 4) {
+                        // enforce value to a text string where null value will become "null"
+                        String str = String.valueOf(value);
+                        boolean condition = filtered.size() == 2 || "true".equalsIgnoreCase(filtered.get(2));
+                        String target = filtered.get(1);
+                        if (str.equals(target)) {
+                            return condition;
+                        } else {
+                            return !condition;
+                        }
+                    } else {
+                        error = "invalid syntax";
                     }
                 }
-                log.error("Unable to do {} of {} - {}", type, path, error);
-            } else {
-                log.error("Unable to do {} of {} - value is not a string", type, path);
             }
+            log.error("Unable to do {} of {} - {}", type, path, error);
         } else {
             switch (type) {
                 case TEXT_SUFFIX -> {
@@ -831,6 +881,21 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         case Map map -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
                         default -> util.getUTF(String.valueOf(value));
                     };
+                }
+                case BOOLEAN_SUFFIX -> {
+                    return "true".equalsIgnoreCase(String.valueOf(value));
+                }
+                case INTEGER_SUFFIX -> {
+                    return util.str2int(String.valueOf(value));
+                }
+                case LONG_SUFFIX -> {
+                    return util.str2long(String.valueOf(value));
+                }
+                case FLOAT_SUFFIX -> {
+                    return util.str2float(String.valueOf(value));
+                }
+                case DOUBLE_SUFFIX -> {
+                    return util.str2double(String.valueOf(value));
                 }
                 case B64_SUFFIX -> {
                     if (value instanceof byte[] b) {
@@ -852,9 +917,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
         boolean updated = false;
-        int colon = rhs.lastIndexOf(':');
+        int colon = getModelTypeIndex(rhs);
         String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
-        if (colon != -1 && rhs.startsWith(MODEL_NAMESPACE)) {
+        if (colon != -1) {
             String type = rhs.substring(colon+1).trim();
             Object matched = getValueByType(type, value, "RHS '"+rhs+"'");
             target.setElement(selector, matched);
@@ -920,6 +985,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         Object value = getConstantValue(lhs, rhs);
         if (value != null) {
             setRhsElement(value, rhs, target);
+        } else {
+            removeModelElement(rhs, target);
         }
     }
 

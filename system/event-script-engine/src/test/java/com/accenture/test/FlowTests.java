@@ -51,6 +51,23 @@ public class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void noSuchFlowTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/no-such-flow");
+        PostOffice po = new PostOffice("unit.test", "2000", "TEST /no/such/flow");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        assertInstanceOf(Map.class, result.getBody());
+        assertEquals(500, result.getStatus());
+        Map<String, Object> data = (Map<String, Object>) result.getBody();
+        assertEquals("Flow no-such-flow not found", data.get("message"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void externalStateMachineTest() throws IOException, InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -97,7 +114,6 @@ public class FlowTests extends TestBase {
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json")
-                .setBody(Map.of("user", USERNAME))
                 .setUrl("/api/type/matching");
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /type/matching");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -125,6 +141,26 @@ public class FlowTests extends TestBase {
         assertEquals(HELLO_WORLD, mm.getElement("source.out-of-bound"));
         assertEquals(HELLO_WORLD, mm.getElement("source.invalid-substring"));
         assertEquals(HELLO_WORLD, mm.getElement("source.text"));
+        assertEquals(true, mm.getElement("positive"));
+        assertEquals(true, mm.getElement("positive"));
+        assertEquals(false, mm.getElement("boolean-text"));
+        assertEquals(true, mm.getElement("boolean-text-true"));
+        assertEquals(true, mm.getElement("is-null"));
+        assertEquals(true, mm.getElement("null"));
+        assertEquals(false, mm.getElement("has-file"));
+        assertEquals(100, mm.getElement("integer"));
+        assertEquals(101, mm.getElement("long"));
+        assertEquals(100.01, mm.getElement("float"));
+        assertEquals(101.01, mm.getElement("double"));
+        /*
+         * after passing through a HTTP endpoint, JSON string serialization is applied.
+         * GSON turns numbers into integer as much as possible
+         * and floating point numbers into double.
+         */
+        assertInstanceOf(Integer.class, mm.getElement("integer"));
+        assertInstanceOf(Integer.class, mm.getElement("long"));
+        assertInstanceOf(Double.class, mm.getElement("float"));
+        assertInstanceOf(Double.class, mm.getElement("double"));
     }
 
     private void equalsMap(Map<String, Object> a, Map<String, Object> b) {
@@ -429,6 +465,38 @@ public class FlowTests extends TestBase {
         assertEquals("two", result.get("from"));
         // setting decision to true will trigger decision.case.one
         request.setQueryParameter("decision", "true");
+        req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        result = (Map<String, Object>) res.getBody();
+        assertEquals(true, result.get("decision"));
+        assertEquals("one", result.get("from"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void noOpDecisionTest() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/noop/decision");
+        // setting decision to false will trigger decision.case.two
+        request.setQueryParameter("decision", "something-else");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(false, result.get("decision"));
+        assertEquals("two", result.get("from"));
+        // setting decision to true will trigger decision.case.one
+        // "hello" is mapped to true in decision-with-no-op.yml
+        request.setQueryParameter("decision", "hello");
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);

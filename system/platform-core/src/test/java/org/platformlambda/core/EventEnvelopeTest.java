@@ -3,6 +3,7 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class EventEnvelopeTest {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelopeTest.class);
@@ -218,6 +220,21 @@ public class EventEnvelopeTest {
         assertInstanceOf(byte[].class, map.getElement("exception"));
         byte[] b = (byte[]) map.getElement("exception");
         log.info("Stacktrace binary payload size = {}", b.length);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Test
+    public void numberInMapTest() throws IOException {
+        Map<String, Object> map = new HashMap<>();
+        map.put("float", 12.345f);
+        map.put("double", 10.101d);
+        EventEnvelope source = new EventEnvelope().setBody(map);
+        EventEnvelope target = new EventEnvelope(source.toBytes());
+        assertInstanceOf(Map.class, target.getBody());
+        if (target.getBody() instanceof Map m) {
+            assertInstanceOf(Float.class, m.get("float"));
+            assertInstanceOf(Double.class, m.get("double"));
+        }
     }
 
     @Test

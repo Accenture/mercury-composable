@@ -75,6 +75,15 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/no-such-flow"
+    flow: 'no-such-flow'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/timeout/{user}?ex=_"
     flow: 'timeout-test'
     timeout: 5s
@@ -86,6 +95,15 @@ rest:
     methods: ['GET']
     url: "/api/decision?decision=_"
     flow: 'decision-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/noop/decision?decision=_"
+    flow: 'decision-with-no-op-test'
     timeout: 10s
     cors: cors_1
     headers: header_1

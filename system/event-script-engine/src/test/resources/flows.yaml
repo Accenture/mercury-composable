@@ -8,6 +8,7 @@ flows:
   - 'children/daughter-greetings.yml'
   - 'timeout-test.yml'
   - 'decision-test.yml'
+  - 'decision-with-no-op.yml'
   - 'numeric-decision-test.yml'
   - 'sequential-test.yml'
   - 'response-test.yml'

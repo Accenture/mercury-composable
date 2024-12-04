@@ -228,7 +228,7 @@ public class MsgPack {
         switch (o) {
             case null ->
                 // preserving null element in an array list
-                    packer.packNil();
+                packer.packNil();
             case Map mapObject -> {
                 // In json, the key may not be a string
                 Map<Object, Object> map = (Map<Object, Object>) mapObject;

@@ -889,32 +889,40 @@ The syntax is `model.somekey:type` where "type" is one of the following:
 ```properties
 text
 binary
+int
+long
+float
+double
+boolean or boolean(value=true|false)
 substring(start, end) or substring(start)
 b64
 ```
 
-When type is `text`, the system will do a best effort matching of the value as a text string.
+| Type                  | Matched value as             | Example                               |
+|:----------------------|:-----------------------------|:--------------------------------------|
+| text                  | a text string                | model.someKey:text                    |
+| binary                | a byte array                 | model.someKey:binary                  |
+| int                   | integer or -1 if not numeric | model.someKey:int                     |
+| long                  | long or -1 if not numeric    | model.someKey:long                    |
+| float                 | float or -1 if not numeric   | model.someKey:float                   |
+| double                | double or -1 if not numeric  | model.someKey:double                  |
+| boolean               | true or false                | model.someKey:boolean                 |
+| boolean(value)        | true if value matches        | model.someKey:boolean(positive)       |
+| boolean(value=true)   | true if value matches        | model.someKey:boolean(positive=true)  |
+| boolean(value=false)  | false if value matches       | model.someKey:boolean(negative=false) |
+| substring(start, end) | extract a substring          | model.someKey:substring(0, 5)         |
+| substring(start)      | extract a substring          | model.someKey:substring(5)            |
+| b64                   | byte-array to Base64 text    | model.someKey:b64                     |
+| b64                   | Base64 text to byte-array    | model.someKey:b64                     |
 
-When type is `binary`, it will match the value as a byte array.
+For boolean with value matching, the value can be null. This allows your app to test if the
+key-value in the left-hand-side if a null value.
 
-When type is `substring`, it will do a substring processing if the value is a text string.
+For base-64 type matching, if the key-value is a text string, the system will assume it is a
+Base64 text string and convert it to a byte-array. If the key-value is a byte-array, the system
+will encode it into a Base64 text string.
 
-When type is `b64` and the value is a text string, the system will assume the value to be Base64 encoded
-and decode the value into a byte array.
-
-When type is `b64` and the value is a byte array, the system will convert it into a Base64 encoded text
-string.
-
-Please refer to the "type-matching.yml" event script example in the unit test's resources folder of the
-"event-script-engine" subproject to see some examples.
-
-This feature is only available for the "model" namespace.
-
-When defined in the left-hand-side, the model key-value is converted to the target type before passing to
-the right-hand-side.
-
-When defined in the right-hand-side, the model key-value in the right-hand-side is saved with the target
-type.
+For data mapping, the left-hand-side value is used to set to the right-hand-side key.
 
 In the following example, the "model.text" is matched to binary and saved to "someBytes" as input
 argument to a user function. The original "model.text" is unchanged.

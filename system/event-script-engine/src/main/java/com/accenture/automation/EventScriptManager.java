@@ -23,7 +23,6 @@ import com.accenture.models.FlowInstance;
 import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
@@ -50,22 +49,20 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
                 throw new IllegalArgumentException("Missing "+FLOW_ID);
             }
             processRequest(event, headers.get(FLOW_ID));
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log.error("Unable to process request - {}", e.getMessage());
             if (event.getReplyTo() != null && event.getCorrelationId() != null) {
                 EventEnvelope error = new EventEnvelope()
                         .setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
                         .setStatus(500).setBody(e.getMessage());
                 po.send(error);
-            } else {
-                log.error("Unhandled exception. error={}", e.getMessage());
             }
         }
         return null;
     }
 
     private void processRequest(EventEnvelope event, String flowId) throws IOException {
-        Flow template = Flows.getFlow(flowId);
-        FlowInstance flowInstance = getFlowInstance(event, flowId, template);
+        FlowInstance flowInstance = getFlowInstance(event, flowId, Flows.getFlow(flowId));
         Flows.addFlowInstance(flowInstance);
         // Set the input event body into the flow dataset
         flowInstance.dataset.put(INPUT, event.getBody());
