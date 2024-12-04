@@ -910,19 +910,25 @@ For Base64 type matching, if the key-value is a text string, the system will ass
 Base64 text string and convert it to a byte-array. If the key-value is a byte-array, the system
 will encode it into a Base64 text string.
 
-For data mapping, the left-hand-side value is used to set to the right-hand-side key.
+An interesting use case of type matching is a simple decision task using the built-in no-op function.
+For example, when a control file for the application is not available, your application will switch
+to run in dev mode.
 
-In the following example, the "model.text" is matched to binary and saved to "someBytes" as input
-argument to a user function. The original "model.text" is unchanged.
-
-The "result.text" is matched to binary and the converted value is saved to "model.converted".
+A sample task may look like this:
 
 ```yaml
+first.task: 'no.op'
+
+tasks:
 - input:
-    - 'model.text:binary -> someBytes'
-  process: 'my.function'
+    - 'file(binary:/tmp/interesting-config-file) -> model.is-local:boolean(null=true)'
+  process: 'no.op'
   output:
-    - 'result.text -> model.converted:binary'
+    - 'model.is-local -> decision'
+  execution: decision
+  next:
+    - 'start.in.dev.mode'
+    - 'start.in.cloud'
 ```
 
 ### External state machine
