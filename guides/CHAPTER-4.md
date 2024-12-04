@@ -886,22 +886,10 @@ For the right-hand-side, the matched or converted value is applied to the state 
 
 The syntax is `model.somekey:type` where "type" is one of the following:
 
-```properties
-text
-binary
-int
-long
-float
-double
-boolean or boolean(value=true|false)
-substring(start, end) or substring(start)
-b64
-```
-
-| Type                  | Matched value as             | Example                               |
+| Type                  | Match value as               | Example                               |
 |:----------------------|:-----------------------------|:--------------------------------------|
-| text                  | a text string                | model.someKey:text                    |
-| binary                | a byte array                 | model.someKey:binary                  |
+| text                  | text string                  | model.someKey:text                    |
+| binary                | byte array                   | model.someKey:binary                  |
 | int                   | integer or -1 if not numeric | model.someKey:int                     |
 | long                  | long or -1 if not numeric    | model.someKey:long                    |
 | float                 | float or -1 if not numeric   | model.someKey:float                   |
@@ -918,7 +906,7 @@ b64
 For boolean with value matching, the value can be null. This allows your app to test if the
 key-value in the left-hand-side if a null value.
 
-For base-64 type matching, if the key-value is a text string, the system will assume it is a
+For Base64 type matching, if the key-value is a text string, the system will assume it is a
 Base64 text string and convert it to a byte-array. If the key-value is a byte-array, the system
 will encode it into a Base64 text string.
 
@@ -932,9 +920,7 @@ The "result.text" is matched to binary and the converted value is saved to "mode
 ```yaml
 - input:
     - 'model.text:binary -> someBytes'
-
-  ...
-
+  process: 'my.function'
   output:
     - 'result.text -> model.converted:binary'
 ```
