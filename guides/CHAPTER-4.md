@@ -904,7 +904,7 @@ The syntax is `model.somekey:type` where "type" is one of the following:
 | b64                   | Base64 text to byte-array    | model.someKey:b64                     |
 
 For boolean with value matching, the value can be null. This allows your app to test if the
-key-value in the left-hand-side if a null value.
+key-value in the left-hand-side is a null value.
 
 For Base64 type matching, if the key-value is a text string, the system will assume it is a
 Base64 text string and convert it to a byte-array. If the key-value is a byte-array, the system
