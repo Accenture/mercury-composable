@@ -47,6 +47,7 @@ public class FlowInstance {
     private final Flow flow;
     private String traceId;
     private String tracePath;
+
     private boolean responded = false;
     private boolean running = true;
 
@@ -63,7 +64,7 @@ public class FlowInstance {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope();
         timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
-        timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
+        this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
     }
 
     public void setTrace(String traceId, String tracePath) {

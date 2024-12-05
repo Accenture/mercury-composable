@@ -4,25 +4,27 @@ flow:
   ttl: 1s
 
 first:
-  task: 'sequential.one'
+  task: 'my.first.task'
 
 tasks:
   - input:
       - 'input.path_parameter.user -> user'
       - 'input.query.seq -> sequence'
-    process: 'sequential.one'
+    process: 'my.first.task'
+    function: 'sequential.one'
     output:
       - 'result -> model.pojo'
     description: 'Pass a pojo to another task'
     execution: fork
     next:
-      - 'echo.one'
+      - 'my.echo.function'
       - 'echo.two'
     join: 'join.task'
 
   - input:
       - 'text(hello-world-one) -> key1'
-    process: 'echo.one'
+    process: 'my.echo.function'
+    function: 'echo.one'
     output:
       - 'result.key1 -> model.key1'
     description: 'Hello world'

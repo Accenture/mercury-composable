@@ -317,6 +317,43 @@ The system will then merge the two preload override config files.
 The concurrency value of a function is overwritten using the "instances" parameter in the first preload override file.
 Subsequent override of the "instances" parameter is ignored. i.e. the first preload override file will take precedence.
 
+## Task aliases
+
+Creating more than one route name for a function with the PreLoad annotation or the preload override method tells the
+system to register multiple route names for the same function. The unique routes names are tracked by the built-In
+distributed tracing system.
+
+If tracking of the multiple route names is not required, a better alternative is to create "task aliases" for the same
+function. This is done by replacing the task name in the "process" tag with an alias and add a "function" tag with the
+actual route name of the function.
+
+For example, the following event flow configuration uses "my.first.task" as an alias for "greeting.demo". The built-in
+distributed tracing system will track the function "greeting.demo" instead of "my.first.task".
+
+```yaml
+flow:
+  id: 'greetings'
+  description: 'Simplest flow'
+  ttl: 10s
+
+first:.task: 'my.first.task'
+
+tasks:
+    - input:
+        - 'input.path_parameter.user -> user'
+      process: 'my.first.task'
+      function: 'greeting.demo'
+      output:
+        - 'text(application/json) -> output.header.content-type'
+        - 'result -> output.body'
+      description: 'Hello World'
+      execution: sequential
+      next:
+        - 'another.task'
+```
+
+Note that this solution is more memory efficient than the preload override approach.
+
 ## Hierarchy of flows
 
 Inside a flow, you can run one or more sub-flows.

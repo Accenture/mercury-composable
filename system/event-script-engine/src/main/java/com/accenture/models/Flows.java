@@ -37,7 +37,7 @@ public class Flows {
     }
 
     public static FlowInstance getFlowInstance(String id) {
-        return flowInstances.get(id);
+        return id == null? null : flowInstances.get(id);
     }
 
     public static boolean flowExists(String id) {

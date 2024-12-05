@@ -44,7 +44,7 @@ public class Flow {
     }
 
     public void addTask(Task entry) {
-        tasks.put(entry.service , entry);
+        tasks.put(entry.service, entry);
     }
 
 }

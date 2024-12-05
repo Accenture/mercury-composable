@@ -35,6 +35,7 @@ tasks:
   - input:
       - 'model.pojo -> pojo'
     process: 'sequential.three'
+    function: 'sequential.two'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body.pojo'

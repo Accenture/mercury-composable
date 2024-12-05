@@ -4,7 +4,7 @@ flow:
   ttl: 10s
 
 first:
-  task: 'greeting.test'
+  task: 'greeting.test.alias'
 
 tasks:
     - input:
@@ -20,7 +20,8 @@ tasks:
         - 'input.header -> header'
         - 'input.path_parameter.user -> header.user'
         - 'text(ok) -> header.demo'
-      process: 'greeting.test'
+      process: 'greeting.test.alias'
+      function: 'greeting.test'
       output:
         - 'text(application/json) -> output.header.content-type'
         - 'result -> output.body'

@@ -1,5 +1,5 @@
 flow:
-  id: 'parent-greetings'
+  id: 'parser-test-21'
   description: 'hierarchy of flows'
   ttl: 10s
 
@@ -13,7 +13,7 @@ tasks:
     description: 'Just a dummy step'
     execution: sequential
     next:
-    - 'another.flow'
+      - 'http://daughter-greetings'
 
   - input:
       - 'input.path_parameter.user -> body.user'
@@ -25,8 +25,8 @@ tasks:
       - 'input.header -> header'
       - 'input.path_parameter.user -> header.user'
       - 'text(ok) -> header.demo'
-    process: 'another.flow'
-    function: 'flow://daughter-greetings'
+    process: 'http://daughter-greetings'
+    function: 'http://daughter-greetings'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

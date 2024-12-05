@@ -35,12 +35,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @ZeroTracing
 @EventInterceptor
 @PreLoad(route = "task.executor", envInstances = "task.executor.instances", instances = 200)
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
+    private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, ConcurrentMap<String, Boolean>> pendingTasks = new ConcurrentHashMap<>();
     private static final Utility util = Utility.getInstance();
     public static final String SERVICE_NAME = "task.executor";
     private static final String FIRST_TASK = "first_task";
@@ -112,7 +116,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
         String compositeCid = event.getCorrelationId();
         if (compositeCid == null) {
-            log.error("Event {} dropped because there is no correlation ID", event.getId());
+            log.error("Event {} dropped - missing correlation ID", event.getId());
             return null;
         }
         int sep = compositeCid.indexOf('#');
@@ -125,9 +129,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             cid = compositeCid;
             seq = -1;
         }
-        FlowInstance flowInstance = Flows.getFlowInstance(cid);
+        // resolve flowInstance
+        var ref = taskRefs.get(cid);
+        String refId = ref == null? cid : ref.flowInstanceId();
+        FlowInstance flowInstance = Flows.getFlowInstance(refId);
         if (flowInstance == null) {
-            log.warn("Flow instance {} is invalid or expired", cid);
+            log.warn("Flow instance {} is invalid or expired", refId);
             return null;
         }
         String flowName = flowInstance.getFlow().id;
@@ -138,18 +145,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         String firstTask = headers.get(FIRST_TASK);
         if (firstTask != null) {
+            pendingTasks.put(cid, new ConcurrentHashMap<>());
             executeTask(flowInstance, firstTask);
         } else {
             // handle callback from a task
-            String from = event.getFrom();
+            String from = ref != null? ref.processId() : event.getFrom();
             if (from == null) {
-                log.error("Unable to process callback {}:{} - task does not provide 'from' address", flowName, cid);
+                log.error("Unable to process callback {}:{} - task does not provide 'from' address", flowName, refId);
                 return null;
             }
             String caller = from.contains("@")? from.substring(0, from.indexOf('@')) : from;
             Task task = flowInstance.getFlow().tasks.get(caller);
             if (task == null) {
-                log.error("Unable to process callback {}:{} - missing task in {}", flowName, cid, caller);
+                log.error("Unable to process callback {}:{} - missing task in {}", flowName, refId, caller);
                 return null;
             }
             int statusCode = event.getStatus();
@@ -215,13 +223,22 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void endFlow(FlowInstance flowInstance, boolean normal) {
+        flowInstance.close();
+        Flows.closeFlowInstance(flowInstance.id);
+        // clean up task references and release memory
+        var pending = pendingTasks.get(flowInstance.id);
+        int totalExecutions = pending.size();
+        for (String k: pending.keySet()) {
+            taskRefs.remove(k);
+        }
+        pendingTasks.remove(flowInstance.id);
         String traceId = flowInstance.getTraceId();
         String logId = traceId != null? traceId : flowInstance.id;
         long diff = Math.max(0, System.currentTimeMillis() - flowInstance.getStartMillis());
         String formatted = Utility.getInstance().elapsedTime(diff);
-        log.info("Flow {} ({}) {} in {}", flowInstance.getFlow().id, logId, normal? "completed" : "aborted", formatted);
-        flowInstance.close();
-        Flows.closeFlowInstance(flowInstance.id);
+        log.info("Flow {} ({}) {}. Run {} task{} in {}",
+                flowInstance.getFlow().id, logId, normal? "completed" : "aborted",
+                totalExecutions, totalExecutions == 1? "" : "s", formatted);
     }
 
     @SuppressWarnings("rawtypes")
@@ -579,25 +596,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void executeTask(FlowInstance flowInstance, String routeName) throws IOException {
-        executeTask(flowInstance, routeName, -1, null);
+    private void executeTask(FlowInstance flowInstance, String processName) throws IOException {
+        executeTask(flowInstance, processName, -1, null);
     }
 
-    private void executeTask(FlowInstance flowInstance, String routeName, int seq) throws IOException {
-        executeTask(flowInstance, routeName, seq, null);
+    private void executeTask(FlowInstance flowInstance, String processName, int seq) throws IOException {
+        executeTask(flowInstance, processName, seq, null);
     }
 
     @SuppressWarnings("unchecked")
-    private void executeTask(FlowInstance flowInstance, String routeName, int seq, Map<String, Object> error)
+    private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error)
             throws IOException {
-        Task task = flowInstance.getFlow().tasks.get(routeName);
+        Task task = flowInstance.getFlow().tasks.get(processName);
         if (task == null) {
             log.error("Unable to process flow {}:{} - missing task '{}'",
-                    flowInstance.getFlow().id, flowInstance.id, routeName);
-            abortFlow(flowInstance, 500, SERVICE_AT +routeName+" not defined");
+                    flowInstance.getFlow().id, flowInstance.id, processName);
+            abortFlow(flowInstance, 500, SERVICE_AT +processName+" not defined");
             return;
         }
-
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -708,14 +724,21 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
         }
         final Platform platform = Platform.getInstance();
-        final String compositeCid = seq > 0? flowInstance.id + "#" + seq : flowInstance.id;
-        if (task.service.startsWith(FLOW_PROTOCOL)) {
-            String flowId = task.service.substring(FLOW_PROTOCOL.length());
+        final String uuid = util.getDateUuid();
+        final TaskReference ref = new TaskReference(flowInstance.id, task.service);
+        taskRefs.put(uuid, ref);
+        var pending = pendingTasks.get(flowInstance.id);
+        if (pending != null) {
+            pending.put(uuid, true);
+        }
+        final String compositeCid = seq > 0? uuid + "#" + seq : uuid;
+        if (task.functionRoute.startsWith(FLOW_PROTOCOL)) {
+            String flowId = task.functionRoute.substring(FLOW_PROTOCOL.length());
             Flow subFlow = Flows.getFlow(flowId);
             if (subFlow == null) {
                 log.error("Unable to process flow {}:{} - missing sub-flow {}",
-                        flowInstance.getFlow().id, flowInstance.id, task.service);
-                abortFlow(flowInstance, 500, task.service+" not defined");
+                        flowInstance.getFlow().id, flowInstance.id, task.functionRoute);
+                abortFlow(flowInstance, 500, task.functionRoute+" not defined");
                 return;
             }
             if (!optionalHeaders.isEmpty()) {
@@ -723,7 +746,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
             EventEnvelope forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
                     .setHeader(FLOW_ID, flowId).setBody(target.getMap()).setCorrelationId(util.getUuid());
-            PostOffice po = new PostOffice(task.service,
+            PostOffice po = new PostOffice(task.functionRoute,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
             po.asyncRequest(forward, subFlow.ttl, false).onSuccess(response -> {
                 EventEnvelope event = new EventEnvelope()
@@ -742,7 +765,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else {
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
-            EventEnvelope event = new EventEnvelope().setTo(task.service)
+            EventEnvelope event = new EventEnvelope().setTo(task.functionRoute)
                     .setCorrelationId(compositeCid)
                     .setReplyTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
                     .setBody(target.getMap());
@@ -1020,4 +1043,5 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    private record TaskReference(String flowInstanceId, String processId) { }
 }

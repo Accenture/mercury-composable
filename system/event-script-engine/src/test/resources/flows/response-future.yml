@@ -22,6 +22,8 @@ tasks:
   # model.delay does not exist at this point, and it will be ignored
   - input:
       - 'model.pojo -> *'
+      # intentionally not setting model.delay to create an error condition for delay processing
+      # 'int(10) -> model.delay'
     process: 'sequential.two'
     output: []
     description: 'Return result'
@@ -35,9 +37,9 @@ tasks:
       - 'model.pojo -> *'
       - 'input.query.delay -> model.delay'
     process: 'sequential.three'
+    function: 'sequential.two'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Return result'
-    delay: model.delay
     execution: end

@@ -16,15 +16,16 @@ tasks:
     description: 'Pass a pojo to another task'
     execution: pipeline
     pipeline:
-      - 'echo.one'
-      - 'echo.two'
+      - 'my.echo.one'
+      - 'my.echo.two'
     next:
       - 'echo.three'
 
   # you can remove a model key-value by passing a non-exist model. e.g. "model.none"
   - input:
       - 'model.pojo -> data'
-    process: 'echo.one'
+    process: 'my.echo.one'
+    function: 'echo.one'
     output:
       - 'result.data -> model.pojo2'
       - 'model.none -> model.pojo'
@@ -33,7 +34,8 @@ tasks:
 
   - input:
       - 'model.pojo2 -> data'
-    process: 'echo.two'
+    process: 'my.echo.two'
+    function: 'echo.two'
     output:
       - 'result.data -> model.pojo3'
       - 'model.none -> model.pojo2'

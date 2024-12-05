@@ -40,6 +40,7 @@ public class CompileFlows implements EntryPoint {
 
     private static final String INPUT = "input";
     private static final String PROCESS = "process";
+    private static final String FUNCTION_ROUTE = "function";
     private static final String OUTPUT = "output";
     private static final String DESCRIPTION = "description";
     private static final String EXECUTION = "execution";
@@ -186,6 +187,7 @@ public class CompileFlows implements EntryPoint {
                 Object input = flow.get(TASKS+"["+i+"]."+INPUT, new ArrayList<>());
                 Object output = flow.get(TASKS+"["+i+"]."+OUTPUT, new ArrayList<>());
                 Object process = flow.get(TASKS+"["+i+"]."+PROCESS);
+                String functionRoute = flow.getProperty(TASKS+"["+i+"]."+FUNCTION_ROUTE);
                 Object taskDesc = flow.get(TASKS+"["+i+"]."+DESCRIPTION);
                 Object execution = flow.get(TASKS+"["+i+"]."+EXECUTION);
                 Object delay = flow.get(TASKS+"["+i+"]."+DELAY);
@@ -196,12 +198,22 @@ public class CompileFlows implements EntryPoint {
                         taskDesc instanceof String taskDescription &&
                         execution instanceof String taskExecution && validExecutionType(taskExecution)) {
                     boolean validTask = true;
-                    if (processName.contains("://") && !processName.startsWith(FLOW_PROTOCOL) &&
-                            processName.length() <= FLOW_PROTOCOL.length()) {
-                        log.error("{} {} in {}. check syntax for flow://{flow-name}", SKIP_INVALID_TASK, process, name);
+                    if (processName.contains("://") && !processName.startsWith(FLOW_PROTOCOL)) {
+                        log.error("{} {} in {}. Syntax is flow://{flow-name}", SKIP_INVALID_TASK, process, name);
                         return;
                     }
-                    Task task = new Task(processName, taskDescription, taskExecution);
+                    if (functionRoute != null && functionRoute.contains("://") &&
+                            !functionRoute.startsWith(FLOW_PROTOCOL)) {
+                        log.error("{} function={} in {}. Syntax is flow://{flow-name}",
+                                SKIP_INVALID_TASK, functionRoute, name);
+                        return;
+                    }
+                    if (processName.startsWith(FLOW_PROTOCOL) && functionRoute != null) {
+                        log.error("{} process={} in {}. function tag not allowed when process is a sub-flow",
+                                    SKIP_INVALID_TASK, process, name);
+                        return;
+                    }
+                    Task task = new Task(processName, functionRoute, taskDescription, taskExecution);
                     if (delay instanceof Integer) {
                         long n = util.str2long(delay.toString());
                         if (n < entry.ttl) {
