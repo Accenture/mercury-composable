@@ -129,8 +129,17 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             cid = compositeCid;
             seq = -1;
         }
-        // resolve flowInstance
+        /*
+         * Resolve unique task reference and release it to reduce memory use
+         *
+         * Two cases when task reference is not found:
+         * 1. first task
+         * 2. flow timeout
+         */
         var ref = taskRefs.get(cid);
+        if (ref != null) {
+            taskRefs.remove(cid);
+        }
         String refId = ref == null? cid : ref.flowInstanceId();
         FlowInstance flowInstance = Flows.getFlowInstance(refId);
         if (flowInstance == null) {
@@ -228,9 +237,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         // clean up task references and release memory
         var pending = pendingTasks.get(flowInstance.id);
         int totalExecutions = pending.size();
-        for (String k: pending.keySet()) {
-            taskRefs.remove(k);
-        }
+        pending.keySet().forEach(taskRefs::remove);
         pendingTasks.remove(flowInstance.id);
         String traceId = flowInstance.getTraceId();
         String logId = traceId != null? traceId : flowInstance.id;

@@ -37,6 +37,7 @@ rest:
     url: "/api/circuit/breaker/{accept}"
     flow: 'circuit-breaker-example'
     timeout: 10s
+    tracing: true
 
   - service: "http.flow.adapter"
     methods: ['GET']

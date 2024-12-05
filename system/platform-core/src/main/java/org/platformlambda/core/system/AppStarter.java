@@ -255,7 +255,7 @@ public class AppStarter {
                         for (int j=0; j < rList.size(); j++) {
                             routes.add(overrideConfig.getProperty("preload["+i+"].routes["+j+"]"));
                         }
-                        if ("true".equals(overrideConfig.getProperty("preload["+i+"].keep_original"))) {
+                        if ("true".equals(overrideConfig.getProperty("preload["+i+"].keep.original"))) {
                             routes.add(original);
                         }
                         result.put(original, new PreLoadInfo(original, instances, routes));

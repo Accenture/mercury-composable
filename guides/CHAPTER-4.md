@@ -253,82 +253,24 @@ and CPU resources until an event arrives.
 You may also define concurrency using environment variable. You can replace the "instances" with `envInstances` using
 standard environment variable syntax like `${SOME_ENV_VARIABLE:default_value}`.
 
-## Assigning multiple route names to a single function
+## Using the same task multiple times in a flow
 
-When the same function is reused in a single event flow configuration script, you would need multiple route names for
-the same function. It is because a unique route name is required to define a "task" that is associated with a function.
+Composable functions are designed to be reusable. By changing some input data mapping to feed different parameters and
+payload, your function can behave differently.
 
-You can use a comma separated list as the route name like this:
+Therefore, it is quite common to use the same function more than once in a single event flow.
 
-```java
-@PreLoad(route="greeting.case.1, greeting.case.2", instances=10)
-public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>>
-```
+Since each task must have a unique name for event routing, we cannot use the same task name more than once in an event
+flow. To handle this use case, you can create aliases for the same task like this:
 
-## Overriding the route name of a reusable composable library
+The following event flow configuration uses "my.first.task" as an alias for "greeting.demo" by adding the "function"
+tag with the actual route name (i.e. level-3 topic for each function) to the composable function.
 
-However, if you want to publish your function as a reusable library in the artifactory, you should use a single
-route name and use a "preload-override.yaml" file to override the default route name to a list of route names
-that are used in your event flow configuration.
+The "function" tag is optional. If not provided, the function name will be the same as the "process" or task name.
 
-```yaml
-preload:
-  - original: 'greeting.demo'
-    routes:
-      - 'greeting.case.1'
-      - 'greeting.case.2'
-    # "instances" tag is optional
-    instances: 20
-  - original: 'v1.another.reusable.function'
-    keep_original: true
-    routes:
-      - 'v1.reusable.1'
-      - 'v1.reusable.2'
-```
-
-In the above example, the function associated with "greeting.demo" will be preloaded as "greeting.case.1"
-and "greeting.case.2". The number of maximum concurrent instances is also changed from 10 to 20.
-
-Note that the second example "v1.another.reusable.function" is updated as "v1.reusable.1" and "v1.reusable.2"
-and the number of concurrent instances is not changed. The original route "v1.another.reusable.function" is
-preserved when the "keep_original" parameter is set to true.
-
-Assuming the above file is "preload-override.yaml" in the "resources" folder of the application source code project, 
-you should add the following parameter in application.properties to activate this preload override feature.
-
-```properties
-yaml.preload.override=classpath:/preload-override.yaml
-```
-
-## Multiple preload override config files
-
-When you publish a composable function as a library, you may want to ensure the route names of the functions are
-merged properly. In this case, you can bundle a library specific preload override config file.
-
-For example, your library contains a "preload-kafka.yaml" to override some route names, you can add it to the
-yaml.preload.override parameter like this:
-
-```properties
-yaml.preload.override=classpath:/preload-override.yaml, classpath:/preload-kafka.yaml
-```
-
-The system will then merge the two preload override config files.
-
-The concurrency value of a function is overwritten using the "instances" parameter in the first preload override file.
-Subsequent override of the "instances" parameter is ignored. i.e. the first preload override file will take precedence.
-
-## Task aliases
-
-Creating more than one route name for a function with the PreLoad annotation or the preload override method tells the
-system to register multiple route names for the same function. The unique routes names are tracked by the built-In
-distributed tracing system.
-
-If tracking of the multiple route names is not required, a better alternative is to create "task aliases" for the same
-function. This is done by replacing the task name in the "process" tag with an alias and add a "function" tag with the
-actual route name of the function.
-
-For example, the following event flow configuration uses "my.first.task" as an alias for "greeting.demo". The built-in
-distributed tracing system will track the function "greeting.demo" instead of "my.first.task".
+> Important: The Event Manager performs event choreography using the unique "process" name. The "function"
+  reference is only used for finding the original composable function to execute. i.e. the "function" names
+  are not routable. Please make sure you use the "process" names accordingly in your event flow configuration.
 
 ```yaml
 flow:
@@ -352,7 +294,77 @@ tasks:
         - 'another.task'
 ```
 
-Note that this solution is more memory efficient than the preload override approach.
+## Assigning multiple route names to a single function
+
+The built-in distributed tracing system tracks the actual component functions and not the task aliases.
+
+If there is a need to track the task names in distributed trace, you can tell the system to create
+additional instances of the same function with different route names.
+
+You can use a comma separated list as the route name like this:
+
+```java
+@PreLoad(route="greeting.case.1, greeting.case.2", instances=10)
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>>
+```
+
+> Note: The task alias method is more memory efficient than creating additional route names
+  because the additional routes will be registered in the routing table in the event loop.
+
+## Preload overrides
+
+Once a composable function is published as a reusable library in the artifactory, its route name and
+number of instances are fixed using the "PreLoad" annotation in the function class.
+
+Without refactoring your libary, you can override its route name and instances using a preload override
+file like this:
+
+```yaml
+preload:
+  - original: 'greeting.demo'
+    routes:
+      - 'greeting.case.1'
+      - 'greeting.case.2'
+    # the "instances" tag is optional
+    instances: 20
+  - original: 'v1.another.reusable.function'
+    keep.original: true
+    routes:
+      - 'v1.reusable.1'
+      - 'v1.reusable.2'
+```
+
+In the above example, the function associated with "greeting.demo" will be preloaded as "greeting.case.1"
+and "greeting.case.2". The number of maximum concurrent instances is also changed from 10 to 20.
+
+In the second example, "v1.another.reusable.function" is updated as "v1.reusable.1" and "v1.reusable.2"
+and the number of concurrent instances is not changed. The original route "v1.another.reusable.function" is
+preserved when the "keep.original" parameter is set to true.
+
+Assuming the above file is "preload-override.yaml" in the "resources" folder of the application source code
+project, you should add the following parameter in application.properties to activate this preload override
+feature.
+
+```properties
+yaml.preload.override=classpath:/preload-override.yaml
+```
+
+## Multiple preload override config files
+
+When you publish a composable function as a library, you may want to ensure the route names of the functions are
+merged properly. In this case, you can bundle a library specific preload override config file.
+
+For example, your library contains a "preload-kafka.yaml" to override some route names, you can add it to the
+yaml.preload.override parameter like this:
+
+```properties
+yaml.preload.override=classpath:/preload-override.yaml, classpath:/preload-kafka.yaml
+```
+
+The system will then merge the two preload override config files.
+
+The concurrency value of a function is overwritten using the "instances" parameter in the first preload override file.
+Subsequent override of the "instances" parameter is ignored. i.e. the first preload override file will take precedence.
 
 ## Hierarchy of flows
 

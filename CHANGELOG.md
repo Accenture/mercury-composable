@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Version 4.0.30, 12/4/2024
+## Version 4.0.30, 12/5/2024
 
 ### Added
 
@@ -20,7 +20,10 @@ N/A
 
 ### Changed
 
-N/A
+The "keep_original" key is renamed as "keep.original" in the preload override
+configuration design.
+
+Chapter-4 of developer guide updated with the new task alias feature.
 
 ---
 ## Version 4.0.29, 12/3/2024

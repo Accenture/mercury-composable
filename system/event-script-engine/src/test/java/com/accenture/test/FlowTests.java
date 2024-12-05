@@ -280,7 +280,7 @@ public class FlowTests extends TestBase {
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json").setUrl("/api/circuit/breaker/2");
-        EventEmitter po = EventEmitter.getInstance();
+        PostOffice po = new PostOffice("unit.test", "100100", "TEST /circuit/breaker/retry");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
         assertEquals(200, result.getStatus());
@@ -297,7 +297,7 @@ public class FlowTests extends TestBase {
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         // the max_attempt is 2 for the circuit breaker and thus this will break
         request.setUrl("/api/circuit/breaker/3");
-        EventEmitter po = EventEmitter.getInstance();
+        PostOffice po = new PostOffice("unit.test", "100101", "TEST /circuit/breaker/abort");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
         assertEquals(400, result.getStatus());
@@ -315,7 +315,7 @@ public class FlowTests extends TestBase {
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greeting/"+USER);
-        EventEmitter po = EventEmitter.getInstance();
+        PostOffice po = new PostOffice("unit.test", "1001", "TEST /greeting");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);

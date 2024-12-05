@@ -4,13 +4,14 @@ flow:
   ttl: 10s
 
 first:
-  task: 'breakable.function'
+  task: 'my.task'
 
 tasks:
   - input:
       - 'input.path_parameter.accept -> accept'
       - 'model.attempt -> attempt'
-    process: 'breakable.function'
+    process: 'my.task'
+    function: 'breakable.function'
     output:
       - 'int(0) -> model.attempt'
       - 'text(application/json) -> output.header.content-type'
@@ -34,7 +35,7 @@ tasks:
     description: 'Just a demo circuit breaker'
     execution: decision
     next:
-      - 'breakable.function'
+      - 'my.task'
       - 'abort.request'
 
   - input:
