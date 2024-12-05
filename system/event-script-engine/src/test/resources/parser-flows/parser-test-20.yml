@@ -3,8 +3,7 @@ flow:
   description: 'hierarchy of flows'
   ttl: 10s
 
-first:
-  task: 'no.op'
+first.task: 'no.op'
 
 tasks:
   - input: []
@@ -15,7 +14,8 @@ tasks:
     next:
       - 'flow://daughter-greetings'
 
-  - input:
+  - name: 'flow://daughter-greetings'
+    input:
       - 'input.path_parameter.user -> body.user'
       - 'text(hello world) -> body.greeting'
       - 'long(12345) -> body.long_number'
@@ -25,9 +25,8 @@ tasks:
       - 'input.header -> header'
       - 'input.path_parameter.user -> header.user'
       - 'text(ok) -> header.demo'
-    process: 'flow://daughter-greetings'
     # when process is a flow URL, function route is not allowed
-    function: 'sub.flow'
+    process: 'sub.flow'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

@@ -94,8 +94,7 @@ flow:
   ttl: 10s
   exception: 'v1.hello.exception'
 
-first:
-  task: 'v1.validate.request'
+first.task: 'v1.validate.request'
 
 tasks:
   - input:

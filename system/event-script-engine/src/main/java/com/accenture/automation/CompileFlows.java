@@ -40,7 +40,7 @@ public class CompileFlows implements EntryPoint {
 
     private static final String INPUT = "input";
     private static final String PROCESS = "process";
-    private static final String FUNCTION_ROUTE = "function";
+    private static final String NAME = "name";
     private static final String OUTPUT = "output";
     private static final String DESCRIPTION = "description";
     private static final String EXECUTION = "execution";
@@ -186,40 +186,48 @@ public class CompileFlows implements EntryPoint {
                 // input or output are optional
                 Object input = flow.get(TASKS+"["+i+"]."+INPUT, new ArrayList<>());
                 Object output = flow.get(TASKS+"["+i+"]."+OUTPUT, new ArrayList<>());
-                Object process = flow.get(TASKS+"["+i+"]."+PROCESS);
-                String functionRoute = flow.getProperty(TASKS+"["+i+"]."+FUNCTION_ROUTE);
+                /*
+                 * When "name" is given, it is used for event routing and the "process" can be used
+                 * to point to the original composable function.
+                 *
+                 * When "name" is not provided, the "process" value will be used instead.
+                 */
+                String taskName = flow.getProperty(TASKS+"["+i+"]."+NAME);
+                String functionRoute = flow.getProperty(TASKS+"["+i+"]."+PROCESS);
                 Object taskDesc = flow.get(TASKS+"["+i+"]."+DESCRIPTION);
                 Object execution = flow.get(TASKS+"["+i+"]."+EXECUTION);
                 Object delay = flow.get(TASKS+"["+i+"]."+DELAY);
                 Object taskException = flow.get(TASKS+"["+i+"]."+EXCEPTION);
                 Object taskLoop = flow.get(TASKS+"["+i+"]."+LOOP);
-                if (input instanceof List && output instanceof List &&
-                        process instanceof String processName &&
+                String uniqueTaskName = taskName == null? functionRoute : taskName;
+                if (input instanceof List && output instanceof List && uniqueTaskName != null &&
                         taskDesc instanceof String taskDescription &&
                         execution instanceof String taskExecution && validExecutionType(taskExecution)) {
                     boolean validTask = true;
-                    if (processName.contains("://") && !processName.startsWith(FLOW_PROTOCOL)) {
-                        log.error("{} {} in {}. Syntax is flow://{flow-name}", SKIP_INVALID_TASK, process, name);
+                    if (uniqueTaskName.contains("://") && !uniqueTaskName.startsWith(FLOW_PROTOCOL)) {
+                        log.error("{} {} in {}. Syntax is flow://{flow-name}", SKIP_INVALID_TASK, uniqueTaskName, name);
                         return;
                     }
                     if (functionRoute != null && functionRoute.contains("://") &&
                             !functionRoute.startsWith(FLOW_PROTOCOL)) {
-                        log.error("{} function={} in {}. Syntax is flow://{flow-name}",
+                        log.error("{} process={} in {}. Syntax is flow://{flow-name}",
                                 SKIP_INVALID_TASK, functionRoute, name);
                         return;
                     }
-                    if (processName.startsWith(FLOW_PROTOCOL) && functionRoute != null) {
-                        log.error("{} process={} in {}. function tag not allowed when process is a sub-flow",
-                                    SKIP_INVALID_TASK, process, name);
+                    if (uniqueTaskName.startsWith(FLOW_PROTOCOL) && functionRoute != null &&
+                            !functionRoute.startsWith(FLOW_PROTOCOL)) {
+                        log.error("{} process={} in {}. process tag not allowed when name is a sub-flow",
+                                    SKIP_INVALID_TASK, uniqueTaskName, name);
                         return;
                     }
-                    Task task = new Task(processName, functionRoute, taskDescription, taskExecution);
+                    Task task = new Task(uniqueTaskName, functionRoute, taskDescription, taskExecution);
                     if (delay instanceof Integer) {
                         long n = util.str2long(delay.toString());
                         if (n < entry.ttl) {
                             task.setDelay(n);
                         } else {
-                            log.error("{} {} in {}. delay must be less than TTL", SKIP_INVALID_TASK, process, name);
+                            log.error("{} {} in {}. delay must be less than TTL",
+                                    SKIP_INVALID_TASK, uniqueTaskName, name);
                             return;
                         }
                     } else if (delay instanceof String d) {
@@ -228,7 +236,7 @@ public class CompileFlows implements EntryPoint {
                             task.setDelayVar(d);
                         } else {
                             log.error("{} {} in {}. delay variable must starts with 'model.'",
-                                    SKIP_INVALID_TASK, process, name);
+                                    SKIP_INVALID_TASK, uniqueTaskName, name);
                             return;
                         }
                     }
@@ -243,7 +251,7 @@ public class CompileFlows implements EntryPoint {
                             if (join instanceof String jt) {
                                 task.setJoinTask(jt);
                             } else {
-                                log.error("{} {} in {}. Missing a join task", SKIP_INVALID_TASK, process, name);
+                                log.error("{} {} in {}. Missing a join task", SKIP_INVALID_TASK, uniqueTaskName, name);
                                 return;
                             }
                         }
@@ -257,12 +265,12 @@ public class CompileFlows implements EntryPoint {
                             List<String> nextTasks = (List<String>) flow.get(TASKS+"["+i+"]."+NEXT, new ArrayList<>());
                             if (nextTasks.isEmpty()) {
                                 log.error("{} {} in {}. Missing a list of next tasks",
-                                        SKIP_INVALID_TASK, process, name);
+                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                 return;
                             }
                             if (nextTasks.size() > 1 && (SEQUENTIAL.equals(execution) || PIPELINE.equals(execution))) {
                                 log.error("Invalid {} task {} in {}. Expected one next task, Actual: {}",
-                                            execution, process, name, nextTasks.size());
+                                            execution, uniqueTaskName, name, nextTasks.size());
                                 return;
                             }
                             task.nextSteps.addAll(nextTasks);
@@ -274,7 +282,7 @@ public class CompileFlows implements EntryPoint {
                             List<String> pipelineSteps = (List<String>) flow.get(TASKS+"["+i+"]."+PIPELINE, new ArrayList<>());
                             if (pipelineSteps.isEmpty()) {
                                 log.error("{} {} in {}. Missing a list of pipeline steps",
-                                        SKIP_INVALID_TASK, process, name);
+                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                 return;
                             }
                             task.pipelineSteps.addAll(pipelineSteps);
@@ -287,13 +295,13 @@ public class CompileFlows implements EntryPoint {
                                         int bracket = s.indexOf('(');
                                         if (bracket == -1) {
                                             log.error("{} {} in {}. Please check loop.statement",
-                                                    SKIP_INVALID_TASK, process, name);
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
                                             return;
                                         }
                                         String type = s.substring(0, bracket).trim();
                                         if (!type.equals(FOR) && !type.equals(WHILE)) {
                                             log.error("{} {} in {}. loop.statement must be 'for' or 'while'",
-                                                    SKIP_INVALID_TASK, process, name);
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
                                             return;
                                         }
                                         task.setLoopType(type);
@@ -301,7 +309,7 @@ public class CompileFlows implements EntryPoint {
                                         if (type.equals(FOR)) {
                                             if (parts.size() < 2 || parts.size() > 3) {
                                                 log.error("{} {} in {}. 'for' loop should have 2 or 3 segments",
-                                                        SKIP_INVALID_TASK, process, name);
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
                                             if (parts.size() == 2) {
@@ -313,7 +321,7 @@ public class CompileFlows implements EntryPoint {
                                                 if (initializer.isEmpty()) {
                                                     log.error("{} {} in {}. Please check for-loop initializer. e.g. " +
                                                                     "'for (model.n = 0; model.n < 3; model.n++)'",
-                                                            SKIP_INVALID_TASK, process, name);
+                                                            SKIP_INVALID_TASK, uniqueTaskName, name);
                                                     return;
                                                 }
                                                 task.init.addAll(initializer);
@@ -324,26 +332,26 @@ public class CompileFlows implements EntryPoint {
                                             if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
                                                 log.error("{} {} in {}. Please check for-loop syntax. e.g. " +
                                                                 "'for (model.n = 0; model.n < 3; model.n++)'",
-                                                        SKIP_INVALID_TASK, process, name);
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
                                             if (!validForStatement(task.comparator, task.sequencer)) {
                                                 log.error("{} {} in {}. 'for' loop has invalid comparator or sequencer",
-                                                        SKIP_INVALID_TASK, process, name);
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
 
                                         } else {
                                             if (parts.size() != 1) {
                                                 log.error("{} {} in {}. 'while' loop should have only one value",
-                                                        SKIP_INVALID_TASK, process, name);
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
                                             String modelKey = parts.getFirst().trim();
                                             if (!modelKey.startsWith(MODEL_NAMESPACE) ||
                                                     modelKey.contains("=") || modelKey.contains(" ")) {
                                                 log.error("{} {} in {}. 'while' should use a model key",
-                                                        SKIP_INVALID_TASK, process, name);
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
                                             task.setWhileModelKey(modelKey);
@@ -351,7 +359,7 @@ public class CompileFlows implements EntryPoint {
 
                                     } else {
                                         log.error("{} {} in {}. {} loop.statement", SKIP_INVALID_TASK,
-                                                process, name, statement == null? "Missing" : "Please check");
+                                                uniqueTaskName, name, statement == null? "Missing" : "Please check");
                                         return;
                                     }
                                     if (conditions != null) {
@@ -359,21 +367,21 @@ public class CompileFlows implements EntryPoint {
                                             List<List<String>> conditionList = getConditionList((List<String>) conditions);
                                             if (conditionList.isEmpty()) {
                                                 log.error("{} {} in {}. please check loop.condition",
-                                                        SKIP_INVALID_TASK, process, name);
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
                                             task.conditions.addAll(conditionList);
 
                                         } else {
-                                            log.error("{} {} in {}. loop.condition should be " +
-                                                    "a list of 'if' statements", SKIP_INVALID_TASK, process, name);
+                                            log.error("{} {} in {}. loop.condition should be a list of 'if' statements",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
                                             return;
                                         }
                                     }
 
                                 } else {
                                     log.error("{} {} in {}. 'loop' must be a map of for/while statement and conditions",
-                                            SKIP_INVALID_TASK, process, name);
+                                            SKIP_INVALID_TASK, uniqueTaskName, name);
                                     return;
                                 }
                             }
@@ -386,7 +394,7 @@ public class CompileFlows implements EntryPoint {
                         if (validInput(filtered)) {
                             task.input.add(filtered);
                         } else {
-                            log.error("Skip invalid task {} in {} has invalid input {}", process, name, line);
+                            log.error("Skip invalid task {} in {} has invalid input {}", uniqueTaskName, name, line);
                             validTask = false;
                         }
                     }
@@ -398,12 +406,12 @@ public class CompileFlows implements EntryPoint {
                         if (validOutput(filtered, isDecisionTask)) {
                             task.output.add(filtered);
                         } else {
-                            log.error("Skip invalid task {} in {} has invalid output {}", process, name, line);
+                            log.error("Skip invalid task {} in {} has invalid output {}", uniqueTaskName, name, line);
                             validTask = false;
                         }
                     }
                     if (isDecisionTask && task.nextSteps.size() < 2) {
-                        log.error("Decision task {} in {} must have at least 2 next tasks", process, name);
+                        log.error("Decision task {} in {} must have at least 2 next tasks", uniqueTaskName, name);
                         validTask = false;
                     }
                     if (validTask) {

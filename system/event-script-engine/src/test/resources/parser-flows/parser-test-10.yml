@@ -3,8 +3,7 @@ flow:
   description: 'Test the flow of a pipeline task'
   ttl: 20s
 
-first:
-  task: 'sequential.one'
+first.task: 'sequential.one'
 
 tasks:
   - input:

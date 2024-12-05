@@ -3,8 +3,7 @@ flow:
   description: 'Test a flow with immediate response'
   ttl: 10s
 
-first:
-  task: 'sequential.one'
+first.task: 'sequential.one'
 
 tasks:
   - input:
@@ -33,11 +32,11 @@ tasks:
       - 'sequential.three'
 
   # model.delay is captured from the HTTP input query parameter 'query'
-  - input:
+  - name: 'sequential.three'
+    input:
       - 'model.pojo -> *'
       - 'input.query.delay -> model.delay'
-    process: 'sequential.three'
-    function: 'sequential.two'
+    process: 'sequential.two'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

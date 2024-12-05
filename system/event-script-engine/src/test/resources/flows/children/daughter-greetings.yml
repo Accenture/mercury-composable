@@ -3,8 +3,7 @@ flow:
   description: 'This is a sub-flow'
   ttl: 10s
 
-first:
-  task: 'greeting.test'
+first.task: 'greeting.test'
 
 tasks:
   - input:

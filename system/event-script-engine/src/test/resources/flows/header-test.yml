@@ -3,8 +3,7 @@ flow:
   description: 'Test input data mapping of headers'
   ttl: 10s
 
-first:
-  task: 'header.parser'
+first.task: 'header.parser'
 
 tasks:
   - input:

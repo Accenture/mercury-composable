@@ -62,8 +62,7 @@ flow:
   ttl: 10s
   exception: 'v1.hello.exception'
 
-first:
-  task: 'v1.get.profile'
+first.task: 'v1.get.profile'
 
 tasks:
   - input:

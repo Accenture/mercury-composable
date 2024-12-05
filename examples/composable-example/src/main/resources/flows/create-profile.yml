@@ -4,8 +4,7 @@ flow:
   ttl: 10s
   exception: 'v1.hello.exception'
 
-first:
-  task: 'v1.create.profile'
+first.task: 'v1.create.profile'
 
 tasks:
   - input:

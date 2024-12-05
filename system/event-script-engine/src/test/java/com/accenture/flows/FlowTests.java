@@ -16,7 +16,7 @@
 
  */
 
-package com.accenture.test;
+package com.accenture.flows;
 
 import com.accenture.adapters.FlowExecutor;
 import com.accenture.models.PoJo;

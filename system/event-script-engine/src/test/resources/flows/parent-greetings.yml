@@ -3,8 +3,7 @@ flow:
   description: 'hierarchy of flows'
   ttl: 10s
 
-first:
-  task: 'no.op'
+first.task: 'no.op'
 
 tasks:
   - input: []
@@ -15,7 +14,8 @@ tasks:
     next:
     - 'another.flow'
 
-  - input:
+  - name: 'another.flow'
+    input:
       - 'input.path_parameter.user -> body.user'
       - 'text(hello world) -> body.greeting'
       - 'long(12345) -> body.long_number'
@@ -25,8 +25,7 @@ tasks:
       - 'input.header -> header'
       - 'input.path_parameter.user -> header.user'
       - 'text(ok) -> header.demo'
-    process: 'another.flow'
-    function: 'flow://daughter-greetings'
+    process: 'flow://daughter-greetings'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

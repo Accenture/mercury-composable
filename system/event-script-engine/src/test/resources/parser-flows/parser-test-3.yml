@@ -3,8 +3,7 @@ flow:
   description: 'Test missing join task'
   ttl: 1s
 
-first:
-  task: 'sequential.one'
+first.task: 'sequential.one'
 
 tasks:
   - input:

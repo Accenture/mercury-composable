@@ -4,8 +4,7 @@ flow:
   ttl: 1s
 
 
-first:
-  task: 'greeting.test'
+first.task: 'greeting.test'
 
 tasks:
   - input:

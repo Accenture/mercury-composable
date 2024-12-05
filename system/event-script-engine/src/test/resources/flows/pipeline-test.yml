@@ -3,8 +3,7 @@ flow:
   description: 'Test the flow of a pipeline task'
   ttl: 10s
 
-first:
-  task: 'sequential.one'
+first.task: 'sequential.one'
 
 tasks:
   - input:
@@ -22,20 +21,20 @@ tasks:
       - 'echo.three'
 
   # you can remove a model key-value by passing a non-exist model. e.g. "model.none"
-  - input:
+  - name: 'my.echo.one'
+    input:
       - 'model.pojo -> data'
-    process: 'my.echo.one'
-    function: 'echo.one'
+    process: 'echo.one'
     output:
       - 'result.data -> model.pojo2'
       - 'model.none -> model.pojo'
     description: 'first step of a pipeline'
     execution: sink
 
-  - input:
+  - name: 'my.echo.two'
+    input:
       - 'model.pojo2 -> data'
-    process: 'my.echo.two'
-    function: 'echo.two'
+    process: 'echo.two'
     output:
       - 'result.data -> model.pojo3'
       - 'model.none -> model.pojo2'

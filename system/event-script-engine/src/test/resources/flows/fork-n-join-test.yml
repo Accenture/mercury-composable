@@ -3,15 +3,14 @@ flow:
   description: 'Test fork-n-join flow'
   ttl: 1s
 
-first:
-  task: 'my.first.task'
+first.task: 'my.first.task'
 
 tasks:
-  - input:
+  - name: 'my.first.task'
+    input:
       - 'input.path_parameter.user -> user'
       - 'input.query.seq -> sequence'
-    process: 'my.first.task'
-    function: 'sequential.one'
+    process: 'sequential.one'
     output:
       - 'result -> model.pojo'
     description: 'Pass a pojo to another task'
@@ -21,10 +20,10 @@ tasks:
       - 'echo.two'
     join: 'join.task'
 
-  - input:
+  - name: 'my.echo.function'
+    input:
       - 'text(hello-world-one) -> key1'
-    process: 'my.echo.function'
-    function: 'echo.one'
+    process: 'echo.one'
     output:
       - 'result.key1 -> model.key1'
     description: 'Hello world'

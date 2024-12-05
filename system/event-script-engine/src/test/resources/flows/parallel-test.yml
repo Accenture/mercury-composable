@@ -3,8 +3,7 @@ flow:
   description: 'Test parallel processing'
   ttl: 1s
 
-first:
-  task: 'begin.parallel.test'
+first.task: 'begin.parallel.test'
 
 tasks:
   - input:

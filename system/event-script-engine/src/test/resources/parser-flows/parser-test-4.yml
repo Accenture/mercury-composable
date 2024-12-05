@@ -3,8 +3,7 @@ flow:
   description: 'Sequential task must have one next task'
   ttl: 10s
 
-first:
-  task: 'sequential.one'
+first.task: 'sequential.one'
 
 tasks:
   - input:
@@ -32,10 +31,10 @@ tasks:
     description: 'Return result'
     execution: end
 
-  - input:
+  - name: 'sequential.three'
+    input:
       - 'model.pojo -> pojo'
-    process: 'sequential.three'
-    function: 'sequential.two'
+    process: 'sequential.two'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body.pojo'

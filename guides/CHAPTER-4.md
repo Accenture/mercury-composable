@@ -50,8 +50,7 @@ flow:
   description: 'Simplest flow'
   ttl: 10s
 
-first:
-  task: 'greeting.demo'
+first.task: 'greeting.demo'
 
 tasks:
     - input:
@@ -253,15 +252,17 @@ and CPU resources until an event arrives.
 You may also define concurrency using environment variable. You can replace the "instances" with `envInstances` using
 standard environment variable syntax like `${SOME_ENV_VARIABLE:default_value}`.
 
-## Using the same task multiple times in a flow
+## Unique task naming
 
 Composable functions are designed to be reusable. By changing some input data mapping to feed different parameters and
 payload, your function can behave differently.
 
-Therefore, it is quite common to use the same function more than once in a single event flow.
+Therefore, it is quite common to use the same function ("process") more than once in a single event flow.
 
-Since each task must have a unique name for event routing, we cannot use the same task name more than once in an event
-flow. To handle this use case, you can create aliases for the same task like this:
+When a task is not named, the "process" tag is used to name the task.
+
+Since each task must have a unique name for event routing, we cannot use the same "process" name more than once in an
+event flow. To handle this use case, you can create unique names for the same task like this:
 
 ```yaml
 flow:
@@ -269,36 +270,38 @@ flow:
   description: 'Simplest flow'
   ttl: 10s
 
-first:.task: 'my.first.task'
+first.task: 'my.first.task'
 
 tasks:
-    - input:
-        - 'input.path_parameter.user -> user'
-      process: 'my.first.task'
-      function: 'greeting.demo'
-      output:
-        - 'text(application/json) -> output.header.content-type'
-        - 'result -> output.body'
-      description: 'Hello World'
-      execution: sequential
-      next:
-        - 'another.task'
+  - name: 'my.first.task'
+    input:
+      - 'input.path_parameter.user -> user'
+    process: 'greeting.demo'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Hello World'
+    execution: sequential
+    next:
+      - 'another.task'
 ```
 
-The above event flow configuration uses "my.first.task" as an alias for "greeting.demo" by adding the "function"
-tag with the actual route name (i.e. level-3 topic for each function) to the composable function.
+The above event flow configuration uses "my.first.task" as a named route for "greeting.demo" by adding the
+"name" tag to the composable function.
 
-The "function" tag is optional. If not provided, the function name will be the same as the "process" or task name.
+For configuration simplicity, the "name" tag is optional. If not provided, the process name is assumed to be
+the unique "task" name.
 
-> Important: The Event Manager performs event choreography using the unique "process" name. The "function"
-  reference is only used for finding the original composable function to execute. i.e. the "function" names
-  are not routable. Please make sure you use the "process" names accordingly in your event flow configuration.
+> Important: The Event Manager performs event choreography using the unique task name.
+  Therefore, when the "process" name for the function is not unique, you must create unique task "names"
+  for the same function to ensure correct routing.
 
 ## Assigning multiple route names to a single function
 
-The built-in distributed tracing system tracks the actual component functions and not the task aliases.
+The built-in distributed tracing system tracks the actual component functions using the "process" name
+and not the task names.
 
-If there is a need to track the task names in distributed trace, you can tell the system to create
+When there is a need to track the task names in distributed trace, you can tell the system to create
 additional instances of the same function with different route names.
 
 You can use a comma separated list as the route name like this:
@@ -308,8 +311,7 @@ You can use a comma separated list as the route name like this:
 public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>>
 ```
 
-> Note: The task alias method is more memory efficient than creating additional route names
-  because the additional routes will be registered in the event loop.
+> Note: The "unique task naming" method is more memory efficient than creating additional route names
 
 ## Preload overrides
 

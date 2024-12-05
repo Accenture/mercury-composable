@@ -3,8 +3,7 @@ flow:
   description: 'Simple Decision using type matching'
   ttl: 10s
 
-first:
-  task: 'no.op'
+first.task: 'no.op'
 
 tasks:
   - input:

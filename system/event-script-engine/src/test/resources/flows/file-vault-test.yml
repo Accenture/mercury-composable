@@ -3,8 +3,7 @@ flow:
   description: 'Read from and Write to a file vault'
   ttl: 10s
 
-first:
-  task: 'file.vault'
+first.task: 'file.vault'
 
 tasks:
   - input:

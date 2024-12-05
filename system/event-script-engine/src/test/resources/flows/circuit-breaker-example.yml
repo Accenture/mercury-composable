@@ -3,15 +3,14 @@ flow:
   description: 'Demonstrate simple circuit breaker logic'
   ttl: 10s
 
-first:
-  task: 'my.task'
+first.task: 'my.task'
 
 tasks:
-  - input:
+  - name: 'my.task'
+    input:
       - 'input.path_parameter.accept -> accept'
       - 'model.attempt -> attempt'
-    process: 'my.task'
-    function: 'breakable.function'
+    process: 'breakable.function'
     output:
       - 'int(0) -> model.attempt'
       - 'text(application/json) -> output.header.content-type'
