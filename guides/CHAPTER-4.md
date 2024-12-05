@@ -263,15 +263,6 @@ Therefore, it is quite common to use the same function more than once in a singl
 Since each task must have a unique name for event routing, we cannot use the same task name more than once in an event
 flow. To handle this use case, you can create aliases for the same task like this:
 
-The following event flow configuration uses "my.first.task" as an alias for "greeting.demo" by adding the "function"
-tag with the actual route name (i.e. level-3 topic for each function) to the composable function.
-
-The "function" tag is optional. If not provided, the function name will be the same as the "process" or task name.
-
-> Important: The Event Manager performs event choreography using the unique "process" name. The "function"
-  reference is only used for finding the original composable function to execute. i.e. the "function" names
-  are not routable. Please make sure you use the "process" names accordingly in your event flow configuration.
-
 ```yaml
 flow:
   id: 'greetings'
@@ -293,6 +284,15 @@ tasks:
       next:
         - 'another.task'
 ```
+
+The above event flow configuration uses "my.first.task" as an alias for "greeting.demo" by adding the "function"
+tag with the actual route name (i.e. level-3 topic for each function) to the composable function.
+
+The "function" tag is optional. If not provided, the function name will be the same as the "process" or task name.
+
+> Important: The Event Manager performs event choreography using the unique "process" name. The "function"
+  reference is only used for finding the original composable function to execute. i.e. the "function" names
+  are not routable. Please make sure you use the "process" names accordingly in your event flow configuration.
 
 ## Assigning multiple route names to a single function
 
@@ -372,7 +372,7 @@ Inside a flow, you can run one or more sub-flows.
 
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
 
-For example, when running the following task, the sub-flow "my-sub-flow" will be executed.
+For example, when running the following task, "flow://my-sub-flow" will be executed like a regular task.
 
 ```yaml
 tasks:
@@ -392,7 +392,7 @@ If the sub-flow is not available, the system will throw an error stating that it
 
 Hierarchy of flows would reduce the complexity of a single flow configuration file. The "time-to-live (TTL)"
 value of the parent flow should be set to a value that covers the complete flow including the time used in
-the sub-flows. To avoid the additional routing overheads, use this feature only when necessary.
+the sub-flows.
 
 For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
 
