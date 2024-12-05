@@ -309,7 +309,7 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<S
 ```
 
 > Note: The task alias method is more memory efficient than creating additional route names
-  because the additional routes will be registered in the routing table in the event loop.
+  because the additional routes will be registered in the event loop.
 
 ## Preload overrides
 
