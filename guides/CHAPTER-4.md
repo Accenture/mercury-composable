@@ -262,7 +262,7 @@ Therefore, it is quite common to use the same function ("process") more than onc
 When a task is not named, the "process" tag is used to name the task.
 
 Since each task must have a unique name for event routing, we cannot use the same "process" name more than once in an
-event flow. To handle this use case, you can create unique names for the same task like this:
+event flow. To handle this use case, you can create unique names for the same function (i.e. "process") like this:
 
 ```yaml
 flow:
