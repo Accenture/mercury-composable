@@ -330,7 +330,7 @@ preload:
     # the "instances" tag is optional
     instances: 20
   - original: 'v1.another.reusable.function'
-    keep.original: true
+    keep-original: true
     routes:
       - 'v1.reusable.1'
       - 'v1.reusable.2'
@@ -341,7 +341,7 @@ and "greeting.case.2". The number of maximum concurrent instances is also change
 
 In the second example, "v1.another.reusable.function" is updated as "v1.reusable.1" and "v1.reusable.2"
 and the number of concurrent instances is not changed. The original route "v1.another.reusable.function" is
-preserved when the "keep.original" parameter is set to true.
+preserved when the "keep-original" parameter is set to true.
 
 Assuming the above file is "preload-override.yaml" in the "resources" folder of the application source code
 project, you should add the following parameter in application.properties to activate this preload override

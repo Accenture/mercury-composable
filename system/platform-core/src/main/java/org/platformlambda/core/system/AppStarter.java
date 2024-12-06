@@ -204,16 +204,16 @@ public class AppStarter {
         AppConfigReader config = AppConfigReader.getInstance();
         String path = config.getProperty("yaml.preload.override");
         if (path != null) {
-            try {
-                List<String> paths = util.split(path, ", ");
-                for (String p: paths) {
+            List<String> paths = util.split(path, ", ");
+            for (String p: paths) {
+                try {
                     ConfigReader overrideConfig = new ConfigReader();
                     overrideConfig.load(p);
                     Map<String, PreLoadInfo> tasks = parsePreloadOverride(overrideConfig);
                     if (result.isEmpty()) {
                         result.putAll(tasks);
                     } else {
-                        for (String route: tasks.keySet()) {
+                        for (String route : tasks.keySet()) {
                             if (result.containsKey(route)) {
                                 PreLoadInfo info = tasks.get(route);
                                 PreLoadInfo prior = result.get(route);
@@ -226,9 +226,9 @@ public class AppStarter {
                             }
                         }
                     }
+                } catch (IOException | IllegalArgumentException e) {
+                    log.error("Unable to load PreLoad entries from {} - {}", p, e.getMessage());
                 }
-            } catch (IOException | IllegalArgumentException e) {
-                log.error("Skipping some preload config - {}", e.getMessage());
             }
         }
         return result;
@@ -255,7 +255,7 @@ public class AppStarter {
                         for (int j=0; j < rList.size(); j++) {
                             routes.add(overrideConfig.getProperty("preload["+i+"].routes["+j+"]"));
                         }
-                        if ("true".equals(overrideConfig.getProperty("preload["+i+"].keep.original"))) {
+                        if ("true".equals(overrideConfig.getProperty("preload["+i+"].keep-original"))) {
                             routes.add(original);
                         }
                         result.put(original, new PreLoadInfo(original, instances, routes));
@@ -530,7 +530,7 @@ public class AppStarter {
         Utility util = Utility.getInstance();
         AppConfigReader reader = AppConfigReader.getInstance();
         List<String> paths = util.split(reader.getProperty("yaml.rest.automation",
-                "file:/tmp/config/rest.yaml, classpath:/rest.yaml"), ", ");
+                "classpath:/rest.yaml"), ", ");
         Map<String, Boolean> uniqueKeys = new HashMap<>();
         Map<String, Map<String, Object>> allRestEntries = new HashMap<>();
         Map<String, Object> staticContentFilter = new HashMap<>();
@@ -540,53 +540,54 @@ public class AppStarter {
             ConfigReader config = new ConfigReader();
             try {
                 config.load(p);
-                log.info("Loading config from {}", p);
-                // load configuration for static content filters, cors and headers
-                Object sc = config.get(STATIC_CONTENT);
-                if (sc instanceof Map) {
-                    if (staticContentFilter.containsKey(STATIC_CONTENT)) {
-                        log.warn("Duplicated '{}' in {} will override a prior one", STATIC_CONTENT, p);
-                    }
-                    staticContentFilter.put(STATIC_CONTENT, sc);
-                }
-                Map<String, Map<String, Object>> cors = getUniqueEntries(config, p, true);
-                Map<String, Map<String, Object>> headers = getUniqueEntries(config, p, false);
-                for (String k: cors.keySet()) {
-                    if (uniqueKeys.containsKey(k)) {
-                        log.warn("Duplicated 'cors' in {} will override a prior one '{}'", p, k);
-                    } else {
-                        uniqueKeys.put(k, true);
-                    }
-                }
-                for (String k: headers.keySet()) {
-                    if (uniqueKeys.containsKey(k)) {
-                        log.warn("Duplicated 'headers' in {} will override a prior one '{}'", p, k);
-                    } else {
-                        uniqueKeys.put(k, true);
-                    }
-                }
-                allCorsEntries.putAll(cors);
-                allHeaderEntries.putAll(headers);
-                // load REST entries
-                Map<String, Map<String, Object>> compositeEndpoints = getUniqueRestEntries(config, p);
-                for (String composite: compositeEndpoints.keySet()) {
-                    int sep = composite.lastIndexOf('[');
-                    String ep = composite.substring(0, sep).trim();
-                    List<String> methods = util.split(composite.substring(sep), "[, ]");
-                    for (String m: methods) {
-                        String ref = m + " " + ep;
-                        if (uniqueKeys.containsKey(ref)) {
-                            log.error("REST endpoint rendering aborted due to duplicated entry '{}' in {}", ref, p);
-                            return new ConfigReader();
-                        } else {
-                            uniqueKeys.put(ref, true);
-                        }
-                    }
-                }
-                allRestEntries.putAll(getUniqueRestEntries(config, p));
             } catch (IOException e) {
-                log.warn("Skipping some REST config - {}", e.getMessage());
+                log.error("Unable to load REST entries from {} - {}", p, e.getMessage());
+                continue;
             }
+            log.info("Loading config from {}", p);
+            // load configuration for static content filters, cors and headers
+            Object sc = config.get(STATIC_CONTENT);
+            if (sc instanceof Map) {
+                if (staticContentFilter.containsKey(STATIC_CONTENT)) {
+                    log.warn("Duplicated '{}' in {} will override a prior one", STATIC_CONTENT, p);
+                }
+                staticContentFilter.put(STATIC_CONTENT, sc);
+            }
+            Map<String, Map<String, Object>> cors = getUniqueEntries(config, p, true);
+            Map<String, Map<String, Object>> headers = getUniqueEntries(config, p, false);
+            for (String k: cors.keySet()) {
+                if (uniqueKeys.containsKey(k)) {
+                    log.warn("Duplicated 'cors' in {} will override a prior one '{}'", p, k);
+                } else {
+                    uniqueKeys.put(k, true);
+                }
+            }
+            for (String k: headers.keySet()) {
+                if (uniqueKeys.containsKey(k)) {
+                    log.warn("Duplicated 'headers' in {} will override a prior one '{}'", p, k);
+                } else {
+                    uniqueKeys.put(k, true);
+                }
+            }
+            allCorsEntries.putAll(cors);
+            allHeaderEntries.putAll(headers);
+            // load REST entries
+            Map<String, Map<String, Object>> compositeEndpoints = getUniqueRestEntries(config, p);
+            for (String composite: compositeEndpoints.keySet()) {
+                int sep = composite.lastIndexOf('[');
+                String ep = composite.substring(0, sep).trim();
+                List<String> methods = util.split(composite.substring(sep), "[, ]");
+                for (String m: methods) {
+                    String ref = m + " " + ep;
+                    if (uniqueKeys.containsKey(ref)) {
+                        log.error("REST endpoint rendering aborted due to duplicated entry '{}' in {}", ref, p);
+                        return new ConfigReader();
+                    } else {
+                        uniqueKeys.put(ref, true);
+                    }
+                }
+            }
+            allRestEntries.putAll(getUniqueRestEntries(config, p));
         }
         // merge configuration files
         List<String> rList = new ArrayList<>(allRestEntries.keySet());

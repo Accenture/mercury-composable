@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.31, 12/5/2024
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. The "keep.original" key is renamed as "keep-original" to comply with convention.
+2. Continue processing if some preload override config files are missing.
+
+---
 ## Version 4.0.30, 12/5/2024
 
 ### Added
@@ -41,7 +57,6 @@ N/A
 N/A
 
 ---
-
 ## Version 4.0.28, 11/29/2024
 
 ### Added

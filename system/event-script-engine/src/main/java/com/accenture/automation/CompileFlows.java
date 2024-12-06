@@ -112,7 +112,7 @@ public class CompileFlows implements EntryPoint {
             try {
                 reader.load(p);
             } catch (IOException e) {
-                log.error("Skipping some event scripts - {}", e.getMessage());
+                log.error("Unable to load Event Scripts from {} - {}", p, e.getMessage());
                 continue;
             }
             log.info("Loading event scripts from {}", p);
