@@ -96,7 +96,7 @@ input arguments (headers and body) in your function. Now you can write your new 
 "greeting.demo". Please copy-n-paste the following into a Java class called "Greetings" and save in the package
 under "my.organization.tasks" in the source project.
 
-> "my.organization" package name is an example. Please replace it with your actual organization package path.
+> "my.organization" package name is an example. Please replace it with your organization package path.
 
 ```java
 @PreLoad(route="greeting.demo", instances=10, isPrivate = false)
@@ -298,7 +298,7 @@ the unique "task" name.
 
 ## Assigning multiple route names to a single function
 
-The built-in distributed tracing system tracks the actual component functions using the "process" name
+The built-in distributed tracing system tracks the actual composable functions using the "process" name
 and not the task names.
 
 When there is a need to track the task names in distributed trace, you can tell the system to create
