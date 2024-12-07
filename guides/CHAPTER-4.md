@@ -431,7 +431,6 @@ To handle this level of modularity, the system provides configurable input/outpu
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
 Note that external state machine namespace uses ":" to indicate that the key-value is external.
-Please refer to the section "Other features" near the end of this chapter for more details.
 
 *Constants for input data mapping*
 
@@ -761,8 +760,6 @@ tasks:
     next:
       - 'echo.three'
 ```
-
-## Advanced pipeline features
 
 Some special uses of pipelines include "for/while-loop" and "continue/break" features.
 
