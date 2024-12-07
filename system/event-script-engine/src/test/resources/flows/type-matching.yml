@@ -69,5 +69,9 @@ tasks:
       - 'model.null -> output.body.null'
       - 'model.is-null -> output.body.is-null'
       - 'model.has-file -> output.body.has-file'
+      # test "and/or" feature
+      - 'model.positive:and(model.negative) -> output.body.and'
+      - 'model.positive:or(model.negative) -> output.body.or'
+      - 'model.positive:and(nothing) -> output.body.nothing'
     description: 'Hello World'
     execution: end

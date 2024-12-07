@@ -111,6 +111,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
     private static final String SUBSTRING_TYPE = "substring(";
+    private static final String AND_TYPE = "and(";
+    private static final String OR_TYPE = "or(";
+
+    private enum OPERATION {
+        SIMPLE_COMMAND,
+        SUBSTRING_COMMAND,
+        AND_COMMAND,
+        OR_COMMAND,
+        BOOLEAN_COMMAND
+    }
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
@@ -806,7 +816,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (colon != -1) {
             String key = rhs.substring(0, colon);
             String type = rhs.substring(colon+1);
-            Object value = getValueByType(type, null, "?");
+            Object value = getValueByType(type, null, "?", model);
             if (value != null) {
                 setRhsElement(value, key, model);
             } else {
@@ -824,7 +834,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
             if (value != null) {
-                return getValueByType(type, value, "LHS '"+lhs+"'");
+                return getValueByType(type, value, "LHS '"+lhs+"'", source);
             }
         }
         return value;
@@ -838,63 +848,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private Object getValueByType(String type, Object value, String path) {
-        boolean substringType = type.startsWith(SUBSTRING_TYPE);
-        if (substringType || type.startsWith(BOOLEAN_TYPE)) {
-            String error = "missing close bracket";
-            if (type.endsWith(CLOSE_BRACKET)) {
-                /*
-                 * The last parameter is optional for both substring and boolean:
-                 *
-                 * substring(0, 3) becomes [substring, 0, 3]
-                 * substring(1) becomes [substring, 1]
-                 * boolean(a=true) becomes [boolean, a, true]
-                 * boolean(a) becomes [boolean, a]
-                 */
-                if (substringType) {
-                    List<String> parts = util.split(type, "(), ");
-                    if (parts.size() > 1 && parts.size() < 4) {
-                        if (value instanceof String str) {
-                            int start = util.str2int(parts.get(1));
-                            int end = parts.size() == 2 ? str.length() : util.str2int(parts.get(2));
-                            if (end > start && start >= 0 && end <= str.length()) {
-                                return str.substring(start, end);
-                            } else {
-                                error = "index out of bound";
-                            }
-                        } else {
-                            error = "value is not a string";
-                        }
-                    } else {
-                        error = "invalid syntax";
-                    }
-                } else {
-                    List<String> parts = util.split(type, "(),=");
-                    List<String> filtered = new ArrayList<>();
-                    parts.forEach(d -> {
-                        var txt = d.trim();
-                        if (!txt.isEmpty()) {
-                            filtered.add(txt);
-                        }
-                    });
-                    if (filtered.size() > 1 && filtered.size() < 4) {
-                        // enforce value to a text string where null value will become "null"
-                        String str = String.valueOf(value);
-                        boolean condition = filtered.size() == 2 || "true".equalsIgnoreCase(filtered.get(2));
-                        String target = filtered.get(1);
-                        if (str.equals(target)) {
-                            return condition;
-                        } else {
-                            return !condition;
-                        }
-                    } else {
-                        error = "invalid syntax";
-                    }
-                }
-            }
-            log.error("Unable to do {} of {} - {}", type, path, error);
+    private OPERATION getMappingType(String type) {
+        if (type.startsWith(SUBSTRING_TYPE)) {
+            return OPERATION.SUBSTRING_COMMAND;
+        } else if (type.startsWith(AND_TYPE)) {
+            return OPERATION.AND_COMMAND;
+        } else if (type.startsWith(OR_TYPE)) {
+            return OPERATION.OR_COMMAND;
+        } else if (type.startsWith(BOOLEAN_TYPE)) {
+            return OPERATION.BOOLEAN_COMMAND;
         } else {
+            return OPERATION.SIMPLE_COMMAND;
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Object getValueByType(String type, Object value, String path, MultiLevelMap data) {
+        var selection = getMappingType(type);
+        if (selection == OPERATION.SIMPLE_COMMAND) {
             switch (type) {
                 case TEXT_SUFFIX -> {
                     return switch (value) {
@@ -939,8 +910,70 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     }
                 }
                 default -> log.error("Unable to do {} of {} - " +
-                                "matching type must be substring(start, end), text, binary or b64", type, path);
+                        "matching type must be substring(start, end), boolean, and, or, text, binary or b64", type, path);
             }
+        } else {
+            String error = "missing close bracket";
+            if (type.endsWith(CLOSE_BRACKET)) {
+                String command = type.substring(type.indexOf('(') + 1, type.length() - 1).trim();
+                /*
+                 * substring(start, end)]
+                 * substring(start)
+                 * boolean(value=true)
+                 * boolean(value) is same as boolean(value=true)
+                 * and(model.anotherKey)
+                 * or(model.anotherKey)
+                 */
+                if (selection == OPERATION.SUBSTRING_COMMAND) {
+                    List<String> parts = util.split(command, ", ");
+                    if (!parts.isEmpty() && parts.size() < 3) {
+                        if (value instanceof String str) {
+                            int start = util.str2int(parts.getFirst());
+                            int end = parts.size() == 1 ? str.length() : util.str2int(parts.get(1));
+                            if (end > start && start >= 0 && end <= str.length()) {
+                                return str.substring(start, end);
+                            } else {
+                                error = "index out of bound";
+                            }
+                        } else {
+                            error = "value is not a string";
+                        }
+                    } else {
+                        error = "invalid syntax";
+                    }
+                } else if (selection == OPERATION.AND_COMMAND || selection == OPERATION.OR_COMMAND) {
+                    if (command.startsWith(MODEL_NAMESPACE)) {
+                        boolean v1 = "true".equals(String.valueOf(value));
+                        boolean v2 = "true".equals(String.valueOf(data.getElement(command)));
+                        return selection == OPERATION.AND_COMMAND ? v1 && v2 : v1 || v2;
+                    } else {
+                        error = "'" + command + "' is not a model variable";
+                    }
+                } else if (selection == OPERATION.BOOLEAN_COMMAND) {
+                    List<String> parts = util.split(command, ",=");
+                    List<String> filtered = new ArrayList<>();
+                    parts.forEach(d -> {
+                        var txt = d.trim();
+                        if (!txt.isEmpty()) {
+                            filtered.add(txt);
+                        }
+                    });
+                    if (!filtered.isEmpty() && filtered.size() < 3) {
+                        // enforce value to a text string where null value will become "null"
+                        String str = String.valueOf(value);
+                        boolean condition = filtered.size() == 1 || "true".equalsIgnoreCase(filtered.get(1));
+                        String target = filtered.getFirst();
+                        if (str.equals(target)) {
+                            return condition;
+                        } else {
+                            return !condition;
+                        }
+                    } else {
+                        error = "invalid syntax";
+                    }
+                }
+            }
+            log.error("Unable to do {} of {} - {}", type, path, error);
         }
         return value;
     }
@@ -951,7 +984,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
         if (colon != -1) {
             String type = rhs.substring(colon+1).trim();
-            Object matched = getValueByType(type, value, "RHS '"+rhs+"'");
+            Object matched = getValueByType(type, value, "RHS '"+rhs+"'", target);
             target.setElement(selector, matched);
             updated = true;
         }

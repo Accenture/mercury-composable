@@ -34,6 +34,7 @@ public class FlowInstance {
     private static final String TIMEOUT = "timeout";
     private static final String INSTANCE = "instance";
     private static final String CID = "cid";
+    private static final String TRACE = "trace";
 
     // dataset is the state machine that holds the original input and the latest model
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
@@ -67,9 +68,14 @@ public class FlowInstance {
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
     }
 
+    @SuppressWarnings("unchecked")
     public void setTrace(String traceId, String tracePath) {
         this.setTraceId(traceId);
         this.setTracePath(tracePath);
+        if (traceId != null) {
+            ConcurrentMap<String, Object> model = (ConcurrentMap<String, Object>) dataset.get(MODEL);
+            model.put(TRACE, traceId);
+        }
     }
 
     public long getStartMillis() {

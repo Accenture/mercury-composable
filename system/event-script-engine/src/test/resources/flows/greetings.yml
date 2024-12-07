@@ -20,6 +20,8 @@ tasks:
       - 'input.header -> header'
       - 'input.path_parameter.user -> header.user'
       - 'text(ok) -> header.demo'
+      - 'model.trace -> trace_id'
+      - 'model.flow -> flow_id'
     process: 'greeting.test'
     output:
       - 'text(application/json) -> output.header.content-type'

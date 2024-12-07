@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.32, 12/6/2024
+
+### Added
+
+1. For completeness, added Boolean AND and OR operations for simple type mapping.
+2. Added traceId as metadata for a flow instance
+
+### Removed
+
+N/A
+
+### Changed
+
+Update Chapter-4 for the new AND/OR type mapping feature and the additional metadata
+in the state machine of a flow instance.
+
+---
 ## Version 4.0.31, 12/5/2024
 
 ### Added
@@ -28,7 +45,7 @@ N/A
 
 ### Added
 
-Implemented task alias feature for event flow configuration.
+Implemented unique task naming feature for event flow configuration.
 
 ### Removed
 
@@ -36,10 +53,8 @@ N/A
 
 ### Changed
 
-The "keep_original" key is renamed as "keep.original" in the preload override
-configuration design.
-
-Chapter-4 of developer guide updated with the new task alias feature.
+1. The "keep_original" key is renamed as "keep.original" in preload override
+2. Chapter-4 of developer guide updated with the new task alias feature
 
 ---
 ## Version 4.0.29, 12/3/2024

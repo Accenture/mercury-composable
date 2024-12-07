@@ -41,7 +41,7 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
-    url: "/api/greeting/{user}?ex=_"
+    url: "/api/greetings/{user}?ex=_"
     flow: 'greetings'
     timeout: 10s
     # optional authentication service which should return result as an EventEnvelope

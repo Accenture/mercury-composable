@@ -161,6 +161,15 @@ public class FlowTests extends TestBase {
         assertInstanceOf(Integer.class, mm.getElement("long"));
         assertInstanceOf(Double.class, mm.getElement("float"));
         assertInstanceOf(Double.class, mm.getElement("double"));
+        // test boolean and/or feature
+        // true and false = false
+        // true or false = true
+        assertEquals(false, mm.getElement("and"));
+        assertEquals(true, mm.getElement("or"));
+        // test failed boolean mapping
+        // the following will return true because the mapping command "and(nothing)" is not operational
+        // 'model.positive:and(nothing) -> output.body.nothing'
+        assertEquals(true, mm.getElement("nothing"));
     }
 
     private void equalsMap(Map<String, Object> a, Map<String, Object> b) {
@@ -311,11 +320,13 @@ public class FlowTests extends TestBase {
     public void greetingTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
+        final String TRACE_ID = "1001";
+        final String GREETINGS = "greetings";
         String USER = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greeting/"+USER);
-        PostOffice po = new PostOffice("unit.test", "1001", "TEST /greeting");
+        request.setUrl("/api/greetings/"+USER);
+        PostOffice po = new PostOffice("unit.test", TRACE_ID, "TEST /greeting");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
@@ -341,6 +352,9 @@ public class FlowTests extends TestBase {
         assertEquals(12.345, original.get("double_number"));
         assertEquals(true, original.get("boolean_value"));
         assertEquals(System.getenv("PATH"), original.get("path"));
+        // check metadata for a flow
+        assertEquals(TRACE_ID, original.get("trace_id"));
+        assertEquals(GREETINGS, original.get("flow_id"));
         // the "demo" key-value is collected from the input headers to the test function
         assertEquals("ok", result.get("demo1"));
         assertEquals(USER, result.get("demo2"));
@@ -412,7 +426,7 @@ public class FlowTests extends TestBase {
         String USER = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greeting/"+USER).setQueryParameter("ex", true);
+        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", true);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);

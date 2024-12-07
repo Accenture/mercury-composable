@@ -308,7 +308,14 @@ You can use a comma separated list as the route name like this:
 
 ```java
 @PreLoad(route="greeting.case.1, greeting.case.2", instances=10)
-public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>>
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    
+  @Override
+  public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+      // business logic here
+      return someResult;
+  }
+}
 ```
 
 > Note: The "unique task naming" method is more memory efficient than creating additional route names
@@ -409,7 +416,7 @@ interface contract details for a specific function.
 
 To handle this level of modularity, the system provides configurable input/output data mapping.
 
-Namespaces for I/O data mapping
+*Namespaces for I/O data mapping*
 
 | Type                              | Keyword and/or namespace     | LHS / RHS  | Mappings |
 |:----------------------------------|:-----------------------------|------------|----------|
@@ -419,16 +426,16 @@ Namespaces for I/O data mapping
 | Function input or output headers  | `header` or `header.`        | right      | I/O      |
 | Function output result set        | `result.`                    | left       | output   |
 | Function output status code       | `status`                     | left       | output   |
-| Decision value from a task        | `decision`                   | left       | output   |
+| Decision value                    | `decision`                   | right      | output   |
 | State machine dataset             | `model.`                     | left/right | I/O      |
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
 Note that external state machine namespace uses ":" to indicate that the key-value is external.
 Please refer to the section "Other features" near the end of this chapter for more details.
 
-Constants for input data mapping (Left-hand-side argument)
+*Constants for input data mapping*
 
-| Type      | Keyword and/or namespace                                     |
+| Type      | Keyword for the left-hand-side argument                      |
 |:----------|:-------------------------------------------------------------|
 | String    | `text(example_value)`                                        |
 | Integer   | `int(number)`                                                |
@@ -443,11 +450,11 @@ For input data mapping, the "file" constant type is used to load some file conte
 You can tell the system to render the file as "text" or "binary". Similarly, the "classpath" constant type refers
 to static file in the application source code's "resources" folder.
 
-Special content type for output data mapping (Right-hand-side argument)
+*Special content type for output data mapping*
 
-| Type   | Keyword            |
-|:-------|:-------------------|
-| File   | `file(file_path)`  |
+| Type   | Keyword for the right-hand-side argument |
+|:-------|:-----------------------------------------|
+| File   | `file(file_path)`                        |
 
 For output data mapping, the "file" content type is used to save some data from the output of a user function
 to a file in the local file system.
@@ -455,7 +462,7 @@ to a file in the local file system.
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
 (See "Decision" in the task section).
 
-Each flow has its end-to-end input and output.
+*Each flow has its end-to-end input and output.*
 
 Each function has its input headers, input body and output result set.
 Optionally, a function can return an EventEnvelope object to hold its result set in the "body", a "status" code
@@ -497,6 +504,18 @@ The "decision" value is also saved to the state machine (`model`) for subsequent
       - 'result -> decision'
       - 'result -> model.decision'
 ```
+
+### Metadata for each flow instance
+
+For each flow instance, the state machine in the "model" namespace provides the following metadata that
+you can use in the input/output data mapping. For example, you can set this for an exceptional handler to
+log additional information.
+
+| Type             | Keyword          | Comment                                    |
+|:-----------------|:-----------------|:-------------------------------------------|
+| Flow ID          | `model.flow`     | The ID of the event flow config            |
+| Trace ID         | `model.trace`    | Optional traceId when tracing is turned on |
+| Correlation ID   | `model.cid`      | Correlation ID of the inbound request      |
 
 ### Special handling for header
 
@@ -582,8 +601,8 @@ tasks:
       - 'input.query.decision -> decision'
     process: 'simple.decision'
     output:
-      - 'result.data -> model.decision'
-      - 'result.data -> decision'
+      - 'result -> model.decision'
+      - 'result -> decision'
     description: 'Simple decision test'
     execution: decision
     next:
@@ -921,7 +940,7 @@ An example of task-level exception handler is shown in the "HelloException.class
 the event script engine where it set the status code in the result set so that the system can map the status code
 from the result set to the next task or to the HTTP output status code.
 
-## Other features
+## Advanced features
 
 ### Simple type matching and conversion
 
@@ -949,12 +968,14 @@ The syntax is `model.somekey:type` where "type" is one of the following:
 | boolean(value)        | true if value matches        | model.someKey:boolean(positive)       |
 | boolean(value=true)   | true if value matches        | model.someKey:boolean(positive=true)  |
 | boolean(value=false)  | false if value matches       | model.someKey:boolean(negative=false) |
+| and(model.key)        | boolean AND of 2 model keys  | model.someKey:and(model.another)      |
+| or(model.key)         | boolean OR of 2 model keys   | model.someKey:or(model.another)       |
 | substring(start, end) | extract a substring          | model.someKey:substring(0, 5)         |
 | substring(start)      | extract a substring          | model.someKey:substring(5)            |
 | b64                   | byte-array to Base64 text    | model.someKey:b64                     |
 | b64                   | Base64 text to byte-array    | model.someKey:b64                     |
 
-For boolean with value matching, the value can be null. This allows your app to test if the
+For boolean with value matching, the value can be null. This allows your function to test if the
 key-value in the left-hand-side is a null value.
 
 For Base64 type matching, if the key-value is a text string, the system will assume it is a
@@ -1106,7 +1127,6 @@ public class ExternalStateMachine implements LambdaFunction {
 }
 ```
 
-
 ### Future task scheduling
 
 You may add a “delay” tag in a task so that it will be executed later.
@@ -1140,6 +1160,6 @@ tasks:
 ```
 <br/>
 
-|            Chapter-3            |                   Home                    |               Chapter-5                |
-|:-------------------------------:|:-----------------------------------------:|:--------------------------------------:|
-| [REST Automation](CHAPTER-3.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Build, Test and Deploy](CHAPTER-5.md) |
+|             Chapter-3             |                    Home                     |                Chapter-5                 |
+|:---------------------------------:|:-------------------------------------------:|:----------------------------------------:|
+|  [REST Automation](CHAPTER-3.md)  |  [Table of Contents](TABLE-OF-CONTENTS.md)  |  [Build, Test and Deploy](CHAPTER-5.md)  |
