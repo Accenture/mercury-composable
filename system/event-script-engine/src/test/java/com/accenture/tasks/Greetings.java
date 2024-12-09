@@ -19,15 +19,17 @@
 package com.accenture.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import reactor.core.publisher.Mono;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 @PreLoad(route="greeting.test", instances=10, isPrivate = false)
-public class Greetings implements TypedLambdaFunction<Map<String, Object>, EventEnvelope> {
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Object> {
 
     private static final String USER = "user";
     private static final String GREETING = "greeting";
@@ -40,14 +42,15 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Event
     private static final String X_FLOW_ID = "x-flow-id";
 
     @Override
-    public EventEnvelope handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
+    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws InterruptedException {
         String optionalException = (String) input.get(EXCEPTION);
         if (optionalException != null) {
             if (TIMEOUT.equals(optionalException)) {
                 Thread.sleep(2000);
             } else {
-                throw new IllegalArgumentException("just a test");
+                // just testing throwing an exception through a Mono reactive response
+                return Mono.create(emitter -> emitter.error(new AppException(403, "just a test")));
             }
         }
         if (input.containsKey(USER) && input.containsKey(GREETING)) {
@@ -71,6 +74,7 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Event
             return new EventEnvelope().setBody(result).setHeader(DEMO, "test-header").setStatus(201);
 
         } else {
+            // the easiest way for error handling is just throwing an exception
             throw new IllegalArgumentException("Missing user or greeting");
         }
     }

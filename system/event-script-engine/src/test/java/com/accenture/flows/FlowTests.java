@@ -434,7 +434,7 @@ public class FlowTests extends TestBase {
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertEquals(400, result.get("status"));
+        assertEquals(403, result.get("status"));
         assertEquals("just a test", result.get("message"));
     }
 
