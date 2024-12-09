@@ -43,16 +43,13 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
     private static final Logger log = LoggerFactory.getLogger(EventApiService.class);
 
     private static final String EVENT_API_SERVICE = "event.api.service";
-    private static final String STREAM_TO_BYTES = "stream.to.bytes";
     private static final String TYPE = "type";
     private static final String ASYNC = "async";
     private static final String DELIVERED = "delivered";
     private static final String TIME = "time";
-    private static final String STREAM = "stream";
-    private static final String TIMEOUT = "timeout";
     private static final String CONTENT_TYPE = "content-type";
     private static final String OCTET_STREAM = "application/octet-stream";
-    private static final String X_TIMEOUT = "X-Timeout";
+    private static final String X_TTL = "x-ttl";
     private static final String X_ASYNC = "X-Async";
     private static final String MISSING_ROUTING_PATH = "Missing routing path";
     private static final String PRIVATE_FUNCTION = " is private";
@@ -63,36 +60,18 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws IOException {
         if (input.getRawBody() instanceof Map && input.getReplyTo() != null) {
             Utility util = Utility.getInstance();
-            AsyncHttpRequest httpRequest = new AsyncHttpRequest(input.getRawBody());
-            Map<String, String> sessionInfo = httpRequest.getSessionInfo();
-            long timeout = Math.max(100, util.str2long(httpRequest.getHeader(X_TIMEOUT)));
-            boolean async = "true".equals(httpRequest.getHeader(X_ASYNC));
-            String streamId = httpRequest.getStreamRoute();
-            if (streamId != null) {
-                // read the input stream into a byte array using the "stream.to.bytes" function
-                EventEmitter po = EventEmitter.getInstance();
-                EventEnvelope req = new EventEnvelope().setTo(STREAM_TO_BYTES)
-                                                        .setHeader(STREAM, streamId).setHeader(TIMEOUT, timeout);
-                po.asyncRequest(req, timeout)
-                    .onSuccess(result -> {
-                        if (result.getRawBody() instanceof byte[] b) {
-                            try {
-                                handleRequest(sessionInfo, headers, instance, b, input, timeout, async);
-                            } catch (Exception e) {
-                                sendError(input, 400, e.getMessage());
-                            }
-                        } else {
-                            sendError(input, 500, "Corrupted input stream");
-                        }
-                    })
-                    .onFailure(e -> sendError(input, 408, e.getMessage()));
-
-            } else if (httpRequest.getBody() instanceof byte[] b) {
+            AsyncHttpRequest request = new AsyncHttpRequest(input.getRawBody());
+            Map<String, String> sessionInfo = request.getSessionInfo();
+            long timeout = Math.max(1000, util.str2long(request.getHeader(X_TTL)));
+            boolean async = "true".equals(request.getHeader(X_ASYNC));
+            if (request.getBody() instanceof byte[] b) {
                 try {
                     handleRequest(sessionInfo, headers, instance, b, input, timeout, async);
                 } catch (Exception e) {
                     sendError(input, 400, e.getMessage());
                 }
+            } else {
+                sendError(input, 500, "Invalid event-over-http data format");
             }
         }
         return null;

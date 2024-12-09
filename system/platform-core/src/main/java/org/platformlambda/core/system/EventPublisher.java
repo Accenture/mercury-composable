@@ -44,10 +44,12 @@ public class EventPublisher {
     private final ObjectStreamIO stream;
     private final String outStream;
     private final long timer;
+    private final long ttl;
     private final AtomicBoolean eof = new AtomicBoolean(false);
     private final AtomicBoolean expired = new AtomicBoolean(false);
 
     public EventPublisher(long ttl) {
+        this.ttl = ttl;
         this.stream = new ObjectStreamIO((int) ttl / 1000);
         this.outStream = this.stream.getOutputStreamId();
         long expiry = this.stream.getExpirySeconds() * 1000L;
@@ -66,6 +68,10 @@ public class EventPublisher {
 
     public String getStreamId() {
         return stream.getInputStreamId();
+    }
+
+    public long getTimeToLive() {
+        return ttl;
     }
 
     public void publish(Object data) {

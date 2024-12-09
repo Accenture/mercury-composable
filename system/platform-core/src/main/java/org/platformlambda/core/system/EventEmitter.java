@@ -53,14 +53,17 @@ public class EventEmitter {
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String MESSAGE = "message";
+    private static final String X_EVENT_API = "x-event-api";
     private static final String HTTP_REQUEST = "async.http.request";
+    private static final String X_NO_STREAM = "x-small-payload-as-bytes";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
     private static final String HTTP_OR_HTTPS = "Protocol must be http or https";
     private static final String POST = "POST";
     private static final String CONTENT_TYPE = "content-type";
+    private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private static final String ACCEPT = "accept";
-    private static final String X_TIMEOUT = "x-timeout";
+    private static final String X_TTL = "x-ttl";
     private static final String X_ASYNC = "x-async";
     private static final String X_TRACE_ID = "x-trace-id";
     private static final String ROUTE_SUBSTITUTION = "route.substitution";
@@ -674,11 +677,11 @@ public class EventEmitter {
         }
         String to = substituteRouteIfAny(destination);
         event.setTo(to);
-        var targetHttp = event.getHeader("_") == null? getEventHttpTarget(to) : null;
+        var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
             String callback = event.getReplyTo();
             event.setReplyTo(null);
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader("_", "async");
+            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "async");
             Future<EventEnvelope> response = asyncRequest(forwardEvent, ASYNC_EVENT_HTTP_TIMEOUT,
                                                             getEventHttpHeaders(to), targetHttp, callback != null);
             response.onSuccess(evt -> {
@@ -808,9 +811,10 @@ public class EventEmitter {
         }
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod(POST);
-        req.setHeader(CONTENT_TYPE, "application/octet-stream");
+        req.setHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+        req.setHeader(X_NO_STREAM, "true");
         req.setHeader(ACCEPT, "*/*");
-        req.setHeader(X_TIMEOUT, String.valueOf(Math.max(100L, timeout)));
+        req.setHeader(X_TTL, String.valueOf(Math.max(100L, timeout)));
         if (!rpc) {
             req.setHeader(X_ASYNC, "true");
         }
@@ -918,9 +922,10 @@ public class EventEmitter {
         }
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod(POST);
-        req.setHeader(CONTENT_TYPE, "application/octet-stream");
+        req.setHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+        req.setHeader(X_NO_STREAM, "true");
         req.setHeader(ACCEPT, "*/*");
-        req.setHeader(X_TIMEOUT, String.valueOf(Math.max(100L, timeout)));
+        req.setHeader(X_TTL, String.valueOf(Math.max(100L, timeout)));
         if (!rpc) {
             req.setHeader(X_ASYNC, "true");
         }
@@ -1057,9 +1062,9 @@ public class EventEmitter {
         }
         String to = substituteRouteIfAny(destination);
         event.setTo(to);
-        var targetHttp = event.getHeader("_") == null? getEventHttpTarget(to) : null;
+        var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader("_", "async_request");
+            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "asyncRequest");
             return asyncRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();
@@ -1115,9 +1120,9 @@ public class EventEmitter {
         }
         String to = substituteRouteIfAny(destination);
         event.setTo(to);
-        var targetHttp = event.getHeader("_") == null? getEventHttpTarget(to) : null;
+        var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader("_", "request");
+            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "request");
             return request(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();

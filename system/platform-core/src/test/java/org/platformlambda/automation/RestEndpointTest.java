@@ -19,7 +19,6 @@
 package org.platformlambda.automation;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
@@ -100,6 +99,7 @@ public class RestEndpointTest extends TestBase {
     @SuppressWarnings(value = "unchecked")
     @Test
     public void serviceTest() throws IOException, InterruptedException {
+        final int TTL_SECONDS = 7;
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -112,6 +112,7 @@ public class RestEndpointTest extends TestBase {
         list.add("b");
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
+        req.setTimeoutSeconds(TTL_SECONDS);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -124,7 +125,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("GET", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(10, map.getElement("timeout"));
+        assertEquals(String.valueOf(TTL_SECONDS * 1000), map.getElement("headers.x-ttl"));
         assertEquals("y", map.getElement("parameters.query.x1"));
         assertEquals(list, map.getElement("parameters.query.x2"));
         // the HTTP request filter will not execute because the request is not a static content request
@@ -216,56 +217,6 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uploadSmallBlockWithPut() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
-        final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
-        final Utility util = Utility.getInstance();
-        final EventEmitter po = EventEmitter.getInstance();
-        int len = 0;
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        EventPublisher publisher = new EventPublisher(10000);
-        for (int i=0; i < 100; i++) {
-            byte[] line = util.getUTF("hello world "+i+"\n");
-            publisher.publish(line);
-            bytes.write(line);
-            len += line.length;
-        }
-        publisher.publishCompletion();
-        byte[] b = bytes.toByteArray();
-        AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("PUT");
-        /*
-         * The "/api/v1/hello/world" prefix tests the REST automation system HTTP relay feature.
-         * It will rewrite the URI to "/api/hello/world" based on the rest.yaml configuration.
-         */
-        req.setUrl("/api/v1/hello/world");
-        req.setTargetHost("http://127.0.0.1:"+port);
-        req.setStreamRoute(publisher.getStreamId());
-        req.setContentLength(len);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::offer);
-        EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
-        assert response != null;
-        assertNull(response.getBody());
-        // async.http.request returns a stream
-        String streamId = response.getHeader("stream");
-        assertNotNull(streamId);
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
-        flux.consume(data -> {
-            try {
-                result.write(data);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, null, () -> bench2.offer(true));
-        Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(true, done);
-        assertArrayEquals(b, result.toByteArray());
-    }
-
-    @Test
     public void uploadBytesWithPut() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
@@ -291,6 +242,59 @@ public class RestEndpointTest extends TestBase {
         assert response != null;
         assertInstanceOf(byte[].class, response.getBody());
         assertArrayEquals(b, (byte[]) response.getBody());
+    }
+
+    @Test
+    public void uploadSmallBlockWithPut() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
+        final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
+        final Utility util = Utility.getInstance();
+        final EventEmitter po = EventEmitter.getInstance();
+        int TTL = 9;
+        int len = 0;
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        EventPublisher publisher = new EventPublisher(10000);
+        for (int i=0; i < 100; i++) {
+            byte[] line = util.getUTF("hello world "+i+"\n");
+            publisher.publish(line);
+            bytes.write(line);
+            len += line.length;
+        }
+        publisher.publishCompletion();
+        byte[] b = bytes.toByteArray();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("PUT");
+        /*
+         * The "/api/v1/hello/world" prefix tests the REST automation system HTTP relay feature.
+         * It will rewrite the URI to "/api/hello/world" based on the rest.yaml configuration.
+         */
+        req.setUrl("/api/v1/hello/world");
+        req.setTargetHost("http://127.0.0.1:"+port);
+        req.setStreamRoute(publisher.getStreamId());
+        req.setTimeoutSeconds(TTL);
+        req.setContentLength(len);
+        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench1::offer);
+        EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertNull(response.getBody());
+        // async.http.request returns a stream
+        String streamId = response.getHeader("X-Stream-Id");
+        assertEquals(String.valueOf(TTL * 1000), response.getHeader("x-ttl"));
+        assertNotNull(streamId);
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
+        flux.consume(data -> {
+            try {
+                result.write(data);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, null, () -> bench2.offer(true));
+        Boolean done = bench2.poll(10, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertArrayEquals(b, result.toByteArray());
     }
 
     @Test
@@ -324,7 +328,7 @@ public class RestEndpointTest extends TestBase {
         assert response != null;
         assertNull(response.getBody());
         // async.http.request returns a stream
-        String streamId = response.getHeader("stream");
+        String streamId = response.getHeader("x-stream-id");
         assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
@@ -365,15 +369,18 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("content-type", "application/octet-stream");
         req.setContentLength(len);
         req.setStreamRoute(publisher.getStreamId());
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        assertNotNull(response.getHeader("stream"));
-        String streamId = response.getHeader("stream");
+        assertNotNull(response.getHeader("x-stream-id"));
+        String streamId = response.getHeader("x-stream-id");
+        long ttl = util.str2long(response.getHeader("x-ttl"));
+        assertEquals(RPC_TIMEOUT, ttl);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
-        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
+        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, ttl);
         flux.consume(data -> {
             try {
                 result.write(data);
@@ -417,8 +424,8 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench1::offer);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        assertNotNull(response.getHeader("stream"));
-        String streamId = response.getHeader("stream");
+        assertNotNull(response.getHeader("x-stream-id"));
+        String streamId = response.getHeader("x-stream-id");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
         flux.consume(data -> {
@@ -449,6 +456,7 @@ public class RestEndpointTest extends TestBase {
         req.setBody(json);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -462,7 +470,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(10, map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(Map.class, map.getElement("body"));
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
@@ -483,6 +491,7 @@ public class RestEndpointTest extends TestBase {
         data.put("test", "message");
         String xml = xmlWriter.write(data);
         req.setBody(xml);
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
@@ -498,7 +507,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals("10", map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(Map.class, map.getElement("body"));
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
@@ -516,6 +525,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
         req.setHeader("x-raw-xml", "true");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -532,7 +542,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals("10", map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(String.class, map.getElement("body"));
         assertEquals("hello world", map.getElement("body"));
     }
@@ -552,6 +562,7 @@ public class RestEndpointTest extends TestBase {
         req.setBody(data);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -565,7 +576,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(10, map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(Map.class, map.getElement("body"));
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
@@ -586,6 +597,7 @@ public class RestEndpointTest extends TestBase {
         req.setBody(data);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -602,7 +614,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/list", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(15, map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(Map.class, map.getElement("body"));
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
@@ -622,7 +634,7 @@ public class RestEndpointTest extends TestBase {
         data.put("hello", "world");
         data.put("test", "message");
         String xml = xmlWriter.write(data);
-        req.setBody(xml);
+        req.setTimeoutSeconds((int) (RPC_TIMEOUT / 1000)).setBody(xml);
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
@@ -639,7 +651,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/list", map.getElement("result.url"));
         assertEquals("POST", map.getElement("result.method"));
         assertEquals("127.0.0.1", map.getElement("result.ip"));
-        assertEquals("15", map.getElement("result.timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("result.headers.x-ttl"));
         assertInstanceOf(Map.class, map.getElement("result.body"));
         Map<String, Object> received = (Map<String, Object>) map.getElement("result.body");
         assertEquals(data, received);
@@ -655,6 +667,7 @@ public class RestEndpointTest extends TestBase {
         req.setUrl("/api/hello/world");
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -667,7 +680,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("DELETE", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(10, map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertNull(map.getElement("body"));
     }
 
@@ -735,6 +748,7 @@ public class RestEndpointTest extends TestBase {
         req.setBody(data);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/xml");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -748,12 +762,11 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(10, map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(Map.class, map.getElement("body"));
         Map<String, Object> received = (Map<String, Object>) map.getElement("body");
         assertEquals(data, received);
     }
-
 
     @SuppressWarnings("unchecked")
     @Test
@@ -770,6 +783,7 @@ public class RestEndpointTest extends TestBase {
         req.setBody(Collections.singletonList(data));
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
+        req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::offer);
@@ -783,7 +797,7 @@ public class RestEndpointTest extends TestBase {
         assertEquals("/api/hello/world", map.getElement("url"));
         assertEquals("POST", map.getElement("method"));
         assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(10, map.getElement("timeout"));
+        assertEquals(String.valueOf(RPC_TIMEOUT), map.getElement("headers.x-ttl"));
         assertInstanceOf(List.class, map.getElement("body"));
         List<Map<String, Object>> received = (List<Map<String, Object>>) map.getElement("body");
         assertEquals(1, received.size());

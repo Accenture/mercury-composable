@@ -130,6 +130,7 @@ public Future<EventEnvelope> request(final EventEnvelope event, long timeout,
 suspend fun awaitRequest(request: EventEnvelope?, timeout: Long, 
                           headers: Map<String, String>,
                           eventEndpoint: String, rpc: Boolean): EventEnvelope
+}
 ```
 
 Optionally, you may add security headers in the "headers" argument. e.g. the "Authorization" header.
@@ -248,6 +249,6 @@ before passing to the Event API service. You can plug in your own authentication
 Please refer to [Chapter-3 - REST automation](CHAPTER-3.md) for details.
 <br/>
 
-|          Chapter-6          |                   Home                    |          Chapter-8           |
-|:---------------------------:|:-----------------------------------------:|:----------------------------:|
-| [Spring Boot](CHAPTER-6.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Service Mesh](CHAPTER-8.md) |
+|          Chapter-6          |                   Home                    |                Chapter-8                |
+|:---------------------------:|:-----------------------------------------:|:---------------------------------------:|
+| [Spring Boot](CHAPTER-6.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Minimalist Service Mesh](CHAPTER-8.md) |

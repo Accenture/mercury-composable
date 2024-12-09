@@ -16,12 +16,12 @@ Mercury Composable is a software development toolkit for writing composable appl
 
 [Chapter 7 - Event over HTTP](CHAPTER-7.md)
 
-[Chapter 8 - Service Mesh](CHAPTER-8.md)
+[Chapter 8 - Minimalist Service Mesh](CHAPTER-8.md)
 
 [Chapter 9 - API Overview](CHAPTER-9.md)
 
 [Appendix I - application.properties](APPENDIX-I.md)
 
-[Appendix II - Reserved route names](APPENDIX-II.md)
+[Appendix II - Reserved names and headers](APPENDIX-II.md)
 
-[Appendix III - Actuators and HTTP client](APPENDIX-III.md)
+[Appendix III - Actuators, HTTP client and More](APPENDIX-III.md)

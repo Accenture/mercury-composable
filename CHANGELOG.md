@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Version 4.0.32, 12/6/2024
+## Version 4.0.32, 12/9/2024
 
 ### Added
 
@@ -21,8 +21,8 @@ N/A
 
 ### Changed
 
-Update Chapter-4 for the new AND/OR type mapping feature and the additional metadata
-in the state machine of a flow instance.
+1. Update Chapter-4 for the new AND/OR type mapping feature
+2. Consistent custom HTTP headers for event over http protocol and streaming content
 
 ---
 ## Version 4.0.31, 12/5/2024

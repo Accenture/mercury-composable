@@ -56,9 +56,9 @@ class FastRPC(headers: Map<String, String>) {
         val dest = request.to ?: throw IllegalArgumentException(EventEmitter.MISSING_ROUTING_PATH)
         val to = po.substituteRouteIfAny(dest)
         request.to = to
-        val targetHttp: String? = if (request.getHeader("_") == null) po.getEventHttpTarget(to) else null
+        val targetHttp: String? = if (request.getHeader(X_EVENT_API) == null) po.getEventHttpTarget(to) else null
         if (targetHttp != null) {
-            val forwardEvent = EventEnvelope(request.toMap()).setHeader("_", "await_request")
+            val forwardEvent = EventEnvelope(request.toMap()).setHeader(X_EVENT_API, "awaitRequest")
             return awaitRequest(forwardEvent, timeout, po.getEventHttpHeaders(to), targetHttp, true)
         }
         propagateTrace(request)
@@ -131,7 +131,7 @@ class FastRPC(headers: Map<String, String>) {
         req.setMethod(POST)
         req.setHeader(CONTENT_TYPE, "application/octet-stream")
         req.setHeader(ACCEPT, "*/*")
-        req.setHeader(X_TIMEOUT, 100L.coerceAtLeast(timeout).toString())
+        req.setHeader(X_TTL, 100L.coerceAtLeast(timeout).toString())
         if (!rpc) {
             req.setHeader(X_ASYNC, "true")
         }
@@ -149,6 +149,7 @@ class FastRPC(headers: Map<String, String>) {
         val b: ByteArray = request.toBytes()
         req.setBody(b)
         req.setContentLength(b.size)
+        req.setHeader(X_NO_STREAM, "true")
         val remoteRequest = EventEnvelope().setTo(HTTP_REQUEST).setBody(req)
         // add 100 ms to make sure it does not time out earlier than the target service
         val response = awaitRequest(remoteRequest, 100L.coerceAtLeast(timeout) + 100L)
@@ -358,7 +359,7 @@ class FastRPC(headers: Map<String, String>) {
         private const val POST = "POST"
         private const val CONTENT_TYPE = "content-type"
         private const val ACCEPT = "accept"
-        private const val X_TIMEOUT = "x-timeout"
+        private const val X_TTL = "x-ttl"
         private const val X_ASYNC = "x-async"
         private const val X_TRACE_ID = "x-trace-id"
         private const val HTTP = "http"
@@ -368,5 +369,7 @@ class FastRPC(headers: Map<String, String>) {
         private const val TYPE = "type"
         private const val ERROR = "error"
         private const val MESSAGE = "message"
+        private const val X_NO_STREAM = "x-small-payload-as-bytes"
+        private const val X_EVENT_API = "x-event-api"
     }
 }

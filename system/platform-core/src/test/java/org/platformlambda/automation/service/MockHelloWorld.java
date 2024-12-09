@@ -27,17 +27,18 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * KernelThreadRunner is added for unit test purpose.
+ * KernelThreadRunner is added for demonstration purpose only.
  * <p>
  * Normally KernelThread should be reserved for computational intensive functions
- * without RPC calls
+ * or legacy code that cannot be refactored into non-blocking operation.
  */
 @KernelThreadRunner
 public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+    private static final String X_STREAM_ID = "x-stream-id";
+    private static final String X_TTL = "x-ttl";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest body, int instance) throws IOException {
-        AsyncHttpRequest input = new AsyncHttpRequest(body); // test AsyncHttpRequest clone feature
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws IOException {
         if ("HEAD".equals(input.getMethod())) {
             EventEnvelope result = new EventEnvelope().setHeader("X-Response", "HEAD request received")
                                         .setHeader("Content-Length", 100);
@@ -47,14 +48,20 @@ public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Obj
             return result;
         }
         if (input.getStreamRoute() != null) {
-            return new EventEnvelope().setBody(input.getBody()).setHeader("stream", input.getStreamRoute())
-                    .setHeader("content-type", "application/octet-stream");
+            var result = new EventEnvelope().setBody(input.getBody())
+                                .setHeader("content-type", "application/octet-stream");
+
+            String streamId = input.getHeader(X_STREAM_ID);
+            String ttl = input.getHeader(X_TTL);
+            if (streamId != null && ttl != null) {
+                result.setHeader(X_STREAM_ID, streamId).setHeader(X_TTL, ttl);
+            }
+            return result;
         } else if (input.getBody() instanceof byte[]) {
             return new EventEnvelope().setBody(input.getBody())
                     .setHeader("content-type", "application/octet-stream");
         } else {
-            // returning AsyncHttpRequest is an edge case
-            return body;
+            return input.toMap();
         }
     }
 }

@@ -19,12 +19,8 @@
 package org.platformlambda.automation.models;
 
 import org.platformlambda.core.system.EventPublisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class StreamHolder {
-    private static final Logger log = LoggerFactory.getLogger(StreamHolder.class);
-
     private final EventPublisher publisher;
 
     public StreamHolder(int timeoutSeconds) {
@@ -42,5 +38,4 @@ public class StreamHolder {
     public void close() {
         publisher.publishCompletion();
     }
-
 }

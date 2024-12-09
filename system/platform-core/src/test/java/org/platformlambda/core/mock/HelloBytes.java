@@ -31,12 +31,17 @@ import java.util.Map;
 public class HelloBytes implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
     private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 
+    private static final String CONTENT_TYPE = "content-type";
+    private static final String X_STREAM_ID = "x-stream-id";
+    private static final String X_TTL = "x-ttl";
+    private static final long EXPIRY = 10000;
+
     @Override
     public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        EventPublisher publisher = new EventPublisher(10000);
+        EventPublisher publisher = new EventPublisher(EXPIRY);
         publisher.publish(Utility.getInstance().getUTF("hello world 0123456789"));
         publisher.publishCompletion();
-        return new EventEnvelope().setHeader("stream", publisher.getStreamId())
-                .setHeader("content-type", APPLICATION_OCTET_STREAM);
+        return new EventEnvelope().setHeader(X_STREAM_ID, publisher.getStreamId())
+                .setHeader(X_TTL, EXPIRY).setHeader(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
 }

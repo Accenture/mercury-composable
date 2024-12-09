@@ -1,4 +1,4 @@
-# Service Mesh
+# Minimalist Service Mesh
 
 Service mesh is a dedicated infrastructure layer to facilitate inter-container communication using "sidecar" and
 "control plane".
@@ -7,7 +7,7 @@ Service mesh systems require additional administrative containers (PODs) for "co
 
 The additional infrastructure requirements vary among products.
 
-# Using kafka as a service mesh
+# Using kafka as a minimalist service mesh
 
 We will discuss using Kafka as a minimalist service mesh.
 

@@ -53,14 +53,14 @@ flow:
 first.task: 'greeting.demo'
 
 tasks:
-    - input:
-        - 'input.path_parameter.user -> user'
-      process: 'greeting.demo'
-      output:
-        - 'text(application/json) -> output.header.content-type'
-        - 'result -> output.body'
-      description: 'Hello World'
-      execution: end
+  - input:
+      - 'input.path_parameter.user -> user'
+    process: 'greeting.demo'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Hello World'
+    execution: end
 ```
 
 In the application.properties, you can specify the following parameter:
@@ -84,7 +84,7 @@ Then, you can add a new REST endpoint in the "rest.yaml" configuration file like
 ```yaml
   - service: "http.flow.adapter"
     methods: ['GET']
-    url: "/api/greeting/{user}"
+    url: "/api/greetings/{user}"
     flow: 'greetings'
     timeout: 10s
     cors: cors_1
@@ -96,7 +96,7 @@ input arguments (headers and body) in your function. Now you can write your new 
 "greeting.demo". Please copy-n-paste the following into a Java class called "Greetings" and save in the package
 under "my.organization.tasks" in the source project.
 
-> "my.organization" package name is an example. Please replace it with your organization package path.
+> Note: "my.organization" package name is an example. Please replace it with your organization package path.
 
 ```java
 @PreLoad(route="greeting.demo", instances=10, isPrivate = false)
@@ -129,7 +129,7 @@ web.component.scan=my.organization
 To test your new REST endpoint, flow configuration and function, please point your browser to
 
 ```text
-http://127.0.0.1:8100/api/greeting/my_name
+http://127.0.0.1:8100/api/greetings/my_name
 ```
 
 You can replace "my_name" with your first name to see the response to the browser.
@@ -156,7 +156,7 @@ the incoming event.
 
 The configuration file contains a list of task entries where each task is defined by "input", "process", "output"
 and "execution" type. In the above example, the execution type is "end", meaning that it is the end of a transaction
-and its result set can be sent to the user.
+and its result set will be delivered to the user.
 
 ## Underlying Event System
 
@@ -171,7 +171,8 @@ to make any API calls to the underlying event system.
 The most common transaction entry point is a REST endpoint. The event flow may look like this:
 
 ```text
-Request -> "http.request" -> "task.executor" -> user defined tasks -> "async.http.response" -> Response
+Request -> "http.request" -> "task.executor" -> user defined tasks
+        -> "async.http.response" -> Response
 ```
 
 REST automation is part of the Mercury platform-core library. It contains a non-blocking HTTP server that converts
@@ -223,11 +224,11 @@ For easy matching, keys of headers, cookies, query and path parameters are case-
 Regular API uses JSON and XML and they will be converted to a hashmap in the event's body.
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
-the binary payload. Please refer to the following mercury 3.0 guide for details.
+the binary payload. Please refer to the following sections for details.
 
-> https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#send-http-request-body-as-a-stream
+https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#send-http-request-body-as-a-stream
 
-> https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#read-http-response-body-stream
+https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#read-http-response-body-stream
 
 ## Task and its corresponding function
 
@@ -507,7 +508,7 @@ The "decision" value is also saved to the state machine (`model`) for subsequent
 ### Metadata for each flow instance
 
 For each flow instance, the state machine in the "model" namespace provides the following metadata that
-you can use in the input/output data mapping. For example, you can set this for an exceptional handler to
+you can use in the input/output data mapping. For example, you can set this for an exception handler to
 log additional information.
 
 | Type             | Keyword          | Comment                                    |

@@ -58,6 +58,8 @@ public class ServiceGateway {
     private static final String AUTH_HANDLER = "http.auth.handler";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String CONTENT_LEN = "Content-Length";
+    private static final String X_NO_STREAM = "x-small-payload-as-bytes";
+    private static final String X_TTL = "x-ttl";
     private static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
     private static final String APPLICATION_JSON = "application/json";
@@ -674,7 +676,8 @@ public class ServiceGateway {
                  * For large payload, it is better to deliver as a stream.
                  */
                 int contentLen = util.str2int(request.getHeader(CONTENT_LEN));
-                if (contentLen > 0 && contentLen <= route.info.threshold) {
+                boolean noStream = "true".equals(request.getHeader(X_NO_STREAM));
+                if (noStream || (contentLen > 0 && contentLen <= route.info.threshold)) {
                     request.bodyHandler(block -> {
                         byte[] b = block.getBytes(0, block.length());
                         requestBody.write(b, 0, b.length);
@@ -696,7 +699,8 @@ public class ServiceGateway {
                             int size = total.get();
                             req.setContentLength(size);
                             if (size > 0) {
-                                req.setStreamRoute(stream.getInputStreamId());
+                                req.setStreamRoute(stream.getInputStreamId())
+                                    .setHeader(X_TTL, String.valueOf(stream.getPublisher().getTimeToLive()));
                                 stream.close();
                             }
                             sendRequestToService(request, requestEvent.setHttpRequest(req));

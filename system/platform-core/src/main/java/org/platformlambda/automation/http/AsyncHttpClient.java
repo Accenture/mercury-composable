@@ -21,7 +21,6 @@ package org.platformlambda.automation.http;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
@@ -92,14 +91,15 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String DELETE = "DELETE";
     private static final String OPTIONS = "OPTIONS";
     private static final String HEAD = "HEAD";
-    private static final String STREAM = "stream";
+    private static final String X_STREAM_ID = "x-stream-id";
+    private static final String X_TTL = "x-ttl";
     private static final String STREAM_PREFIX = "stream.";
     private static final String INPUT_STREAM_SUFFIX = ".in";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
     private static final String X_CONTENT_LENGTH = "X-Content-Length";
-    private static final String TIMEOUT = "timeout";
     private static final String USER_AGENT_NAME = "async-http-client";
+    private static final int DEFAULT_TTL_SECONDS = 30;  // 30 seconds
     /*
      * Some headers must be dropped because they are not relevant for HTTP relay
      * e.g. "content-encoding" and "transfer-encoding" will break HTTP response rendering.
@@ -415,7 +415,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         String streamId = request.getStreamRoute();
         String contentType = request.getHeader(CONTENT_TYPE);
         String method = request.getMethod();
-        objectStream2file(streamId, request.getTimeoutSeconds())
+        int timeout = request.getTimeoutSeconds();
+        objectStream2file(streamId, timeout > 0? timeout : DEFAULT_TTL_SECONDS)
             .onSuccess(temp -> {
                 final Future<HttpResponse<Void>> future;
                 int contentLen = request.getContentLength();
@@ -471,11 +472,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             Utility util = Utility.getInstance();
             File temp = getTempFile(streamId);
             try {
-                // FluxConsumer is reactive and the file output stream will be closed at completion,
-                // thus no need to do "auto-close".
+                // No auto-close because FluxConsumer is reactive and the file output stream will close at completion
                 FileOutputStream out = new FileOutputStream(temp);
-                long timeout = Math.max(5000, timeoutSeconds * 1000L);
-                FluxConsumer<Object> flux = new FluxConsumer<>(streamId, timeout);
+                FluxConsumer<Object> flux = new FluxConsumer<>(streamId, Math.max(5000L, timeoutSeconds * 1000L));
                 flux.consume(data -> {
                     try {
                         if (data instanceof byte[] b && b.length > 0) {
@@ -551,7 +550,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             this.input = input;
             this.request = request;
             this.queue = queue;
-            this.timeoutSeconds = Math.max(8, request.getTimeoutSeconds());
+            int timeout = request.getTimeoutSeconds();
+            this.timeoutSeconds = timeout > 0? timeout : DEFAULT_TTL_SECONDS;
         }
 
         @Override
@@ -652,8 +652,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                                 }
                             }
                             if (publisher != null) {
-                                response.setHeader(STREAM, publisher.getStreamId())
-                                        .setHeader(TIMEOUT, timeoutSeconds * 1000)
+                                response.setHeader(X_STREAM_ID, publisher.getStreamId())
+                                        .setHeader(X_TTL, timeoutSeconds * 1000)
                                         .setHeader(X_CONTENT_LENGTH, len);
                                 publisher.publishCompletion();
                             }

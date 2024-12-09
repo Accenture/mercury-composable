@@ -218,6 +218,7 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void httpClientDetectStreamingContent() throws IOException, ExecutionException, InterruptedException {
+        Utility util = Utility.getInstance();
         final String HELLO = "hello world 0123456789";
         final AppConfigReader config = AppConfigReader.getInstance();
         String port = config.getProperty("server.port");
@@ -235,28 +236,29 @@ public class PostOfficeTest extends TestBase {
          */
         assertEquals(200, response.getStatus());
         assertNull(response.getBody());
-        String streamId = response.getHeader("stream");
+        String streamId = response.getHeader("x-stream-id");
+        int ttl = util.str2int(response.getHeader("x-ttl"));
         assertNotNull(streamId);
         assertTrue(streamId.startsWith("stream."));
         // HTTP response header "x-content-length" is provided by AsyncHttpClient when rendering small payload as bytes
         assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
         // Read stream content
-        EventEnvelope streamRequest = new EventEnvelope().setTo(streamId).setHeader("type", "read");
+        BlockingQueue<Boolean> completion = new LinkedBlockingQueue<>();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        while (true) {
-            EventEnvelope event = po.request(streamRequest, 5000).get();
-            if ("eof".equals(event.getHeader("type"))) {
-                log.info("Closing {}", streamId);
-                po.send(streamId, new Kv("type", "close"));
-                break;
+        FluxConsumer<byte[]> consumer = new FluxConsumer<>(streamId, ttl);
+        consumer.consume(b -> {
+            try {
+                out.write(b);
+            } catch (IOException e) {
+                // ok to ignore
             }
-            if ("data".equals(event.getHeader("type"))) {
-                Object block = event.getBody();
-                if (block instanceof byte[] b) {
-                    out.write(b);
-                }
-            }
-        }
+        }, e -> {
+            log.error("unexpected error", e);
+        }, () -> {
+            completion.add(true);
+        });
+        Boolean done = completion.take();
+        assertEquals(true, done);
         String content = Utility.getInstance().getUTF(out.toByteArray());
         assertEquals(HELLO, content);
     }

@@ -1,4 +1,8 @@
-# Reserved route names
+# Reserved names
+
+The system reserves some route names and headers for routing purpose.
+
+## System route names
 
 The Mercury foundation code is written using the same core API and each function has a route name.
 
@@ -72,6 +76,30 @@ PostOffice po = new PostOffice(headers, instance);
 // Kotlin
 val fastRPC = FastRPC(headers);
 ```
+
+## Reserved HTTP header names
+
+| Header                   | Purpose                                                                     | 
+|:-------------------------|:----------------------------------------------------------------------------|
+| X-Stream-Id              | Temporal route name for streaming content                                   |
+| X-TTL                    | Time to live in milliseconds for a streaming content                        |
+| X-Small-Payload-As-Bytes | This header, if set to true, tells system to render stream content as bytes |
+| X-Event-Api              | The system uses this header to indicate that the request is sent over HTTP  |
+| X-Async                  | This header, if set to true, indicates it is a drop-n-forget request        |
+| X-Trace-Id               | This allows the system to propagate trace ID                                |
+| X-Correlation-Id         | Alternative to X-Trace-Id                                                   |
+| X-Content-Length         | If present, it is the expected length of a streaming content                |
+| X-Raw-Xml                | This header, if set to true, tells to system to skip XML rendering          |
+| X-Flow-Id                | This tells the event manager to select a flow configuration by ID           |
+| X-App-Instance           | This header is used by some protected actuator REST endpoints               |
+
+To support traceId that is stored in X-Correlation-Id HTTP header, set this in application.properties.
+
+```properties
+# list of supported traceId headers where the first one is the default label
+trace.http.header=X-Correlation-Id, X-Trace-Id
+```
+
 <br/>
 
 |                 Appendix-I                 |                   Home                    |                    Appendix-III                    |

@@ -193,30 +193,23 @@ If content length is not given, the response body would arrive as a stream.
 
 Your application should check if the HTTP response header "stream" exists. Its value is the input "streamId".
 
-For simplicity and readability, we recommend using the PostOffice's "request" API to read the input byte-array stream.
-
-It looks like this:
+You can process the input stream using the FluxConsumer class like this:
 
 ```java
-PostOffice po = PostOffice(headers, instance);
-EventEnvelope req = new EventEnvelope().setTo(streamId).setHeader("type", "read");
-while (true) {
-    EventEnvelope event = po.request(req, 5000).get();
-    if (event.getStatus() == 400) {
-        // handle input stream timeout
-     }
-     if ("eof".equals(event.getHeader("type"))) {
-         log.info("Closing {}", streamId);
-         po.send(streamId, new Kv("type", "close"));
-         break;
-     }
-     if ("data".equals(event.getHeader("type"))) {
-         Object block = event.getBody();
-         if (block instanceof byte[] b) {
-            // handle the byte array "b"
-         }
-     }
-}
+String streamId = headers.get("stream");
+long ttl = 10000; // anticipated time in milliseconds to stream the content
+FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
+fc.consume(
+    data -> {
+        // handle incoming message
+    },
+    e -> {
+        // handle exception where e is a Throwable
+    },
+    () -> {
+        // handle stream completion
+    }
+);
 ```
 
 By default, a user function is executed in a virtual thread which effectively is an "async" function and
@@ -351,6 +344,6 @@ For other flow adapters, you may use different set of key-values.
 
 <br/>
 
-|              Appendix-II               |                   Home                    | 
-|:--------------------------------------:|:-----------------------------------------:|
-| [Reserved route names](APPENDIX-II.md) | [Table of Contents](TABLE-OF-CONTENTS.md) |
+|                 Appendix-II                  |                   Home                    | 
+|:--------------------------------------------:|:-----------------------------------------:|
+| [Reserved names and headers](APPENDIX-II.md) | [Table of Contents](TABLE-OF-CONTENTS.md) |

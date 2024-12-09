@@ -28,7 +28,7 @@ rest:
     methods: ['GET', 'PUT', 'POST', 'HEAD', 'PATCH', 'DELETE']
     url: "/api/hello/world"
     flow: "hello-world"
-    timeout: 10s
+    timeout: 15s
     #
     # Optional authentication service which should return a true or false result
     # The authentication service can also add session info in headers using EventEnvelope as a response

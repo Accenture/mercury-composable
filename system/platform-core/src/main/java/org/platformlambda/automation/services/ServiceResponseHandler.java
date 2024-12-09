@@ -50,10 +50,10 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
     private static final String TEXT_HTML = "text/html";
     private static final String TEXT_PLAIN = "text/plain";
     private static final String HEAD = "HEAD";
-    private static final String STREAM = "stream";
+    private static final String X_STREAM_ID = "x-stream-id";
+    private static final String X_TTL = "x-ttl";
     private static final String STREAM_PREFIX = "stream.";
     private static final String INPUT_STREAM_SUFFIX = ".in";
-    private static final String TIMEOUT = "timeout";
     private static final String SET_COOKIE = "Set-Cookie";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String CONTENT_LEN = "Content-Length";
@@ -74,10 +74,7 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
         }
         // convert to milliseconds
         long timeout = Utility.getInstance().str2long(timeoutOverride) * 1000;
-        if (timeout < 1) {
-            return contextTimeout;
-        }
-        return Math.min(timeout, contextTimeout);
+        return timeout > 0? timeout : contextTimeout;
     }
 
     @Override
@@ -108,10 +105,10 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
                          * 1. "stream" and "timeout" are reserved as stream ID and read timeout in seconds
                          * 2. "trace_id" and "trace_path" should be dropped from HTTP response headers
                          */
-                        if (STREAM.equals(key) && value.startsWith(STREAM_PREFIX) &&
+                        if (X_STREAM_ID.equals(key) && value.startsWith(STREAM_PREFIX) &&
                                 value.contains(INPUT_STREAM_SUFFIX)) {
                             streamId = value;
-                        } else if (TIMEOUT.equalsIgnoreCase(key)) {
+                        } else if (X_TTL.equalsIgnoreCase(key)) {
                             streamTimeout = value;
                         } else if (CONTENT_TYPE.equalsIgnoreCase(key)) {
                             if (!httpHead) {
