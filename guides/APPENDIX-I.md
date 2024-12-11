@@ -129,7 +129,7 @@ To specify more than one condition, use a comma separated list as the value like
 OptionalService("web.socket.enabled, rest.automation") - this tells the system to load the class when 
 either web.socket.enabled or rest.automation is true.
 
-# Static HTML contents
+## Static HTML contents
 
 You can place static HTML files (e.g. the HTML bundle for a UI program) in the "resources/public" folder or
 in the local file system using the "static.html.folder" parameter.
@@ -147,7 +147,7 @@ mime.types:
 Note that application.properties file cannot be used for the "mime.types" section because it only supports text
 key-values.
 
-# HTTP and websocket port assignment
+## HTTP and websocket port assignment
 
 If `rest.automation=true` and `rest.server.port or server.port` are configured, the system will start
 a lightweight non-blocking HTTP server. If `rest.server.port` is not available, it will fall back to `server.port`.
@@ -163,14 +163,14 @@ The built-in lightweight non-blocking HTTP server and Spring Boot can co-exist w
 
 Note that the `websocket.server.port` parameter is an alias of `rest.server.port`.
 
-# Transient data store
+## Transient data store
 
 The system handles back-pressure automatically by overflowing events from memory to a transient data store. 
 As a cloud native best practice, the folder must be under "/tmp". The default is "/tmp/reactive". 
 The "running.in.cloud" parameter must be set to false when your apps are running in IDE or in your laptop. 
 When running in kubernetes, it can be set to true.
 
-# The snake.case.serialization parameter
+## Snake or Camel case serializers
 
 Serialization and de-serialization of events are performed automatically.
 
@@ -188,7 +188,7 @@ SimpleObjectMapper snakeCaseMapper = SimpleMapper.getInstance().getSnakeCaseMapp
 SimpleObjectMapper camelCaseMapper = SimpleMapper.getInstance().getCamelCaseMapper();
 ```
 
-# The trace.http.header parameter
+## The trace.http.header parameter
 
 The `trace.http.header` parameter sets the HTTP header for trace ID. When configured with more than one label,
 the system will retrieve trace ID from the corresponding HTTP header and propagate it through the transaction
@@ -196,13 +196,13 @@ that may be served by multiple services.
 
 If trace ID is presented in an HTTP request, the system will use the same label to set HTTP response traceId header.
 
-```text
+```yaml
 X-Trace-Id: a9a4e1ec-1663-4c52-b4c3-7b34b3e33697
 or
 X-Correlation-Id: a9a4e1ec-1663-4c52-b4c3-7b34b3e33697
 ```
 
-# Kafka specific configuration
+## Kafka specific configuration
 
 If you use the kafka-connector (cloud connector) and kafka-presence (presence monitor), you may want to 
 externalize kafka.properties like this:
@@ -217,27 +217,49 @@ refers to an external config file.
 You want also use the embedded config file as a backup like this:
 
 ```properties
-cloud.client.properties=file:/tmp/config/kafka.properties,classpath:/kafka.properties
+cloud.client.properties=file:/tmp/config/kafka.properties, classpath:/kafka.properties
 ```
 
-# Distributed trace
+## Distributed trace
 
 To enable distributed trace logging, please set this in log4j2.xml:
 
-```
+```text
 <logger name="org.platformlambda.core.services.DistributedTrace" level="INFO" />
 ```
 
-# Built-in XML serializer
+## Built-in XML serializer
 
 The platform-core includes built-in serializers for JSON and XML in the AsyncHttpClient and
 Spring RestController. The XML serializer is designed for simple use cases. If you need to handle more
-complex XML data structure, you can disable the XML serializer by adding the following HTTP request
-header.
+complex XML data structure, you can disable the built-in XML serializer by adding the following HTTP
+request header.
 
-```
+```properties
 X-Raw-Xml=true
 ```
+
+## Custom content types
+
+If you use custom content types in your application, you may add the following section in the application.yml
+configuration file:
+
+```yaml
+custom.content.types:
+  - 'application/vnd.my.org-v2.0+json -> application/json'
+```
+
+In the "custom.content.types" section, you can configure a list of content-type mappings.
+The left-hand-side is the custom content-type and the right-hand-side is a standard content-type.
+
+The content-type mapping tells the system to treat the custom content type as if it is the standard content
+type.
+
+In the above example, the HTTP payload with the custom content type is treated as a regular JSON content.
+
+If you want to put the custom content types in a separate configuration file, please put them in a file named
+"custom-content-type.yml" under the "resources" folder.
+
 <br/>
 
 |          Chapter-9           |                   Home                    |                 Appendix-II                  |

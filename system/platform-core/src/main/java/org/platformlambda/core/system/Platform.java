@@ -606,15 +606,14 @@ public class Platform {
         Utility util = Utility.getInstance();
         if (!util.validServiceName(route)) {
             throw new IllegalArgumentException(INVALID_ROUTE +
-                    "name - use 0-9, a-z, period, hyphen or underscore characters");
+                        "- use 0-9, a-z, period, hyphen or underscore characters");
         }
         String path = util.filteredServiceName(route);
         if (path.isEmpty()) {
-            throw new IllegalArgumentException(INVALID_ROUTE + "name");
+            throw new IllegalArgumentException(INVALID_ROUTE);
         }
         if (!path.contains(".")) {
-            throw new IllegalArgumentException(INVALID_ROUTE + route +
-                    " because it is missing dot separator(s). e.g. hello.world");
+            throw new IllegalArgumentException(INVALID_ROUTE + route + " - missing dot separator. e.g. hello.world");
         }
         if (util.reservedExtension(path)) {
             throw new IllegalArgumentException(INVALID_ROUTE + route + " which is use a reserved extension");

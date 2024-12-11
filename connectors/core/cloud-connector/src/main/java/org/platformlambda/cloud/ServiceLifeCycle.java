@@ -1,3 +1,21 @@
+/*
+
+    Copyright 2018-2024 Accenture Technology
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+ */
+
 package org.platformlambda.cloud;
 
 import org.platformlambda.core.models.EventEnvelope;
@@ -11,8 +29,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ServiceLifeCycle {
+public class ServiceLifeCycle extends Thread {
     private static final Logger log = LoggerFactory.getLogger(ServiceLifeCycle.class);
 
     public static final String TYPE = "type";
@@ -41,6 +60,7 @@ public class ServiceLifeCycle {
         this.token = token;
     }
 
+    @Override
     public void start() {
         final Platform platform = Platform.getInstance();
         final EventEmitter po = EventEmitter.getInstance();
@@ -48,29 +68,33 @@ public class ServiceLifeCycle {
         final PubSub ps = PubSub.getInstance();
         final String INIT_HANDLER = INIT + "." + (partition < 0? topic : topic + "." + partition);
         final List<String> task = new ArrayList<>();
+        final AtomicBoolean done = new AtomicBoolean(false);
         LambdaFunction f = (headers, input, instance) -> {
-            if (INIT.equals(input)) {
-                int n = util.str2int(headers.get(SEQUENCE));
-                try {
-                    Map<String, String> event = new HashMap<>();
-                    event.put(TYPE, INIT);
-                    event.put(TOKEN, token);
-                    event.put(SEQUENCE, String.valueOf(n));
-                    log.info("Contacting {}, partition {}, sequence {}", topic, partition, n);
-                    ps.publish(topic, partition, event, INIT);
-                    task.clear();
-                    String handle = po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT)
-                                    .setHeader(SEQUENCE, n+1), new Date(System.currentTimeMillis() + INTERVAL));
-                    task.add(handle);
-                } catch (IOException e) {
-                    log.error("Unable to send initToken to consumer - {}", e.getMessage());
+            if (!done.get()) {
+                if (INIT.equals(input)) {
+                    int n = util.str2int(headers.get(SEQUENCE));
+                    try {
+                        Map<String, String> event = new HashMap<>();
+                        event.put(TYPE, INIT);
+                        event.put(TOKEN, token);
+                        event.put(SEQUENCE, String.valueOf(n));
+                        log.info("Contacting {}, partition {}, sequence {}", topic, partition, n);
+                        ps.publish(topic, partition, event, INIT);
+                        task.clear();
+                        String handle = po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT)
+                                .setHeader(SEQUENCE, n + 1), new Date(System.currentTimeMillis() + INTERVAL));
+                        task.add(handle);
+                    } catch (IOException e) {
+                        log.error("Unable to send initToken to consumer - {}", e.getMessage());
+                    }
+                } else {
+                    done.set(true);
+                    if (!task.isEmpty()) {
+                        po.cancelFutureEvent(task.getFirst());
+                    }
+                    log.info("{}, partition {} ready", topic, partition);
+                    platform.getVertx().setTimer(1000, t -> platform.release(INIT_HANDLER));
                 }
-            } else {
-                if (!task.isEmpty()) {
-                    po.cancelFutureEvent(task.get(0));
-                }
-                platform.release(INIT_HANDLER);
-                log.info("{}, partition {} ready", topic, partition);
             }
             return true;
         };
@@ -82,5 +106,4 @@ public class ServiceLifeCycle {
             log.error("Unable to register {} - {}", INIT_HANDLER, e.getMessage());
         }
     }
-
 }

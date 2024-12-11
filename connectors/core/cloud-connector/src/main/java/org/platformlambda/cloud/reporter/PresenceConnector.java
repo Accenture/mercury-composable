@@ -249,9 +249,8 @@ public class PresenceConnector implements LambdaFunction {
                             new Kv(VERSION, util.getVersion()),
                             new Kv(ORIGIN, platform.getOrigin()));
                 }
-
             } catch (IOException e) {
-                log.error("Unable to send application info to presence monitor - {}", e.getMessage());
+                log.debug("Unable to send application info to presence monitor - {}", e.getMessage());
             }
         }
     }
@@ -337,5 +336,4 @@ public class PresenceConnector implements LambdaFunction {
             });
         }
     }
-
 }

@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.0.33, 12/11/2024
+
+### Added
+
+Support of custom content types in application.yml
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Improved websocket housekeeping logic
+2. Use bench.add to replace bench.offer API
+
+---
 ## Version 4.0.32, 12/9/2024
 
 ### Added

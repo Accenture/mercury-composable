@@ -36,6 +36,9 @@ import java.util.Map;
 public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Object> {
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
+    private static final String CONTENT_TYPE = "content-type";
+    private static final String CUSTOM_JSON = "application/vnd.my.org+json; charset=utf-8";
+    private static final String APPLICATION_XML = "application/xml";
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws IOException {
@@ -61,7 +64,11 @@ public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Obj
             return new EventEnvelope().setBody(input.getBody())
                     .setHeader("content-type", "application/octet-stream");
         } else {
-            return input.toMap();
+            if (APPLICATION_XML.equals(input.getHeader(CONTENT_TYPE))) {
+                return input.toMap();
+            } else {
+                return new EventEnvelope().setHeader(CONTENT_TYPE, CUSTOM_JSON).setBody(input.toMap());
+            }
         }
     }
 }

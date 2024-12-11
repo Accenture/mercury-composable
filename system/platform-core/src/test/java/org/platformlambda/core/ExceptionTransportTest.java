@@ -66,7 +66,7 @@ public class ExceptionTransportTest {
 
         @Override
         public Object handleEvent(Map<String, String> headers, EventEnvelope body, int instance) {
-            callbackBench.offer(body);
+            callbackBench.add(body);
             return true;
         }
     }

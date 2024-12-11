@@ -45,7 +45,7 @@ public class ParallelTask implements TypedLambdaFunction<Map<String, Object>, Ma
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         int remaining = counter.decrementAndGet();
-        bench.offer(input);
+        bench.add(input);
         log.info("Remaining parallel tasks = {}, input = {}", remaining, input);
         Map<String, Object> result = new HashMap<>();
         result.put(DECISION, remaining <= 0);

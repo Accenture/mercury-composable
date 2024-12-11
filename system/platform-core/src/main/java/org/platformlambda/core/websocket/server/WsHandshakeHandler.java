@@ -39,7 +39,7 @@ public class WsHandshakeHandler implements Handler<ServerWebSocketHandshake> {
         if (path != null) {
             ws.accept();
         } else {
-            ws.reject(1000);
+            ws.reject();
         }
     }
 

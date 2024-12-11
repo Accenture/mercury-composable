@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -87,7 +88,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // response body is null
@@ -100,7 +101,7 @@ public class RestEndpointTest extends TestBase {
     @Test
     public void serviceTest() throws IOException, InterruptedException {
         final int TTL_SECONDS = 7;
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -115,10 +116,12 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds(TTL_SECONDS);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
+        // validate custom content type
+        assertEquals("application/vnd.my.org+json; charset=utf-8", response.getHeader("content-type"));
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.accept"));
         assertEquals(false, map.getElement("https"));
@@ -160,7 +163,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(404, response.getStatus());
@@ -185,7 +188,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(503, response.getStatus());
@@ -207,7 +210,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(401, response.getStatus());
@@ -237,7 +240,7 @@ public class RestEndpointTest extends TestBase {
         req.setContentLength(len);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(byte[].class, response.getBody());
@@ -275,7 +278,7 @@ public class RestEndpointTest extends TestBase {
         req.setContentLength(len);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::offer);
+        res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertNull(response.getBody());
@@ -291,7 +294,7 @@ public class RestEndpointTest extends TestBase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, null, () -> bench2.offer(true));
+        }, null, () -> bench2.add(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertArrayEquals(b, result.toByteArray());
@@ -323,7 +326,7 @@ public class RestEndpointTest extends TestBase {
         req.setContentLength(len);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::offer);
+        res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertNull(response.getBody());
@@ -338,7 +341,7 @@ public class RestEndpointTest extends TestBase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, null, () -> bench2.offer(true));
+        }, null, () -> bench2.add(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertArrayEquals(b, result.toByteArray());
@@ -372,7 +375,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::offer);
+        res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertNotNull(response.getHeader("x-stream-id"));
@@ -387,7 +390,7 @@ public class RestEndpointTest extends TestBase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, null, () -> bench2.offer(true));
+        }, null, () -> bench2.add(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertArrayEquals(bytes.toByteArray(), result.toByteArray());
@@ -421,7 +424,7 @@ public class RestEndpointTest extends TestBase {
         req.setStreamRoute(publisher.getStreamId());
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::offer);
+        res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertNotNull(response.getHeader("x-stream-id"));
@@ -434,7 +437,7 @@ public class RestEndpointTest extends TestBase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, null, () -> bench2.offer(true));
+        }, null, () -> bench2.add(true));
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertArrayEquals(bytes.toByteArray(), result.toByteArray());
@@ -459,7 +462,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -496,7 +499,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("content-type", "application/xml");
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -528,7 +531,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // when x-raw-xml header is true, the response is rendered as a string
@@ -565,7 +568,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -600,14 +603,14 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(List.class, response.getBody());
         List<Map<String, Object>> list = (List<Map<String, Object>>) response.getBody();
         assertEquals(1, list.size());
-        assertEquals(HashMap.class, list.get(0).getClass());
-        MultiLevelMap map = new MultiLevelMap(list.get(0));
+        assertEquals(HashMap.class, list.getFirst().getClass());
+        MultiLevelMap map = new MultiLevelMap(list.getFirst());
         assertEquals("application/json", map.getElement("headers.content-type"));
         assertEquals("application/json", map.getElement("headers.accept"));
         assertEquals(false, map.getElement("https"));
@@ -639,7 +642,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("content-type", "application/xml");
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -670,7 +673,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -697,7 +700,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("x-correlation-id", traceId);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // HTTP head response may include custom headers and content-length
@@ -722,7 +725,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("x-trace-id", traceId);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         Map<String, String> headers = response.getHeaders();
@@ -751,7 +754,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -786,7 +789,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -815,7 +818,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/html", response.getHeader("Content-Type"));
@@ -843,7 +846,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/html", response.getHeader("Content-Type"));
@@ -871,7 +874,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/assets");
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("application/json", response.getHeader("Content-Type"));
@@ -888,7 +891,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/test/%2e%2e/%2e%2e/index.html");
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("application/json", response.getHeader("Content-Type"));
@@ -907,7 +910,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/css", response.getHeader("Content-Type"));
@@ -933,7 +936,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/javascript", response.getHeader("Content-Type"));
@@ -957,7 +960,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("application/xml", response.getHeader("Content-Type"));
@@ -979,7 +982,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("text/plain", response.getHeader("Content-Type"));
@@ -990,6 +993,30 @@ public class RestEndpointTest extends TestBase {
         assertEquals(content, text);
         // the HTTP request filter will add a test header
         assertEquals("demo", response.getHeader("x-filter"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void getAssetJSON() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>();
+        Utility util = Utility.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET");
+        req.setUrl("/assets/hello.json");
+        req.setTargetHost("http://127.0.0.1:"+port);
+        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertEquals("application/json", response.getHeader("Content-Type"));
+        assertInstanceOf(Map.class, response.getBody());
+        Map<String, Object> data = (Map<String, Object>) response.getBody();
+        InputStream in = this.getClass().getResourceAsStream("/public/assets/hello.json");
+        String content = util.stream2str(in);
+        Map<String, Object> source = SimpleMapper.getInstance().getMapper().readValue(content, Map.class);
+        assertEquals(source, data);
     }
 
 }

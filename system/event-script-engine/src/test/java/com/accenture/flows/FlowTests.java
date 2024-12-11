@@ -856,7 +856,7 @@ public class FlowTests extends TestBase {
         final BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         LambdaFunction f = (eventHeaders, body, instance) -> {
             if (body instanceof Map m) {
-                bench.offer(m);
+                bench.add(m);
             }
             return null;
         };

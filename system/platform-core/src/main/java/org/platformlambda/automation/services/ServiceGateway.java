@@ -26,6 +26,8 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import org.platformlambda.automation.config.RoutingEntry;
 import org.platformlambda.automation.models.*;
+import org.platformlambda.automation.util.CustomContentTypeResolver;
+import org.platformlambda.automation.util.MimeTypeResolver;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -34,7 +36,6 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ public class ServiceGateway {
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "application/xml";
+    private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private static final String X_RAW_XML = "x-raw-xml";
     private static final String TEXT_HTML = "text/html";
     private static final String TEXT_PLAIN = "text/plain";
@@ -89,7 +91,6 @@ public class ServiceGateway {
     private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
-    private static final Map<String, String> mimeTypes = new HashMap<>();
     private static List<String> traceIdLabels;
     private static String staticFolder;
     private static String resourceFolder;
@@ -98,7 +99,6 @@ public class ServiceGateway {
         initialize();
     }
 
-    @SuppressWarnings("unchecked")
     public static void initialize() {
         if (initCounter.incrementAndGet() == 1) {
             Platform platform = Platform.getInstance();
@@ -124,29 +124,9 @@ public class ServiceGateway {
             } else {
                 log.warn("Static content folder must start with {} or {}", CLASSPATH, FILEPATH);
             }
-            ConfigReader mimeReader = new ConfigReader();
-            try {
-                mimeReader.load("classpath:/mime-types.yml");
-                Object mimeDefault = mimeReader.get("mime.types");
-                if (mimeDefault instanceof Map) {
-                    Map<String, Object> map = (Map<String, Object>) mimeDefault;
-                    for (Map.Entry<String, Object> kv: map.entrySet()) {
-                        mimeTypes.put(kv.getKey(), kv.getValue().toString());
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Unable to load mime-types.yml - {}", e.getMessage());
-            }
-            Object mime = config.get("mime.types");
-            if (mime instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) mime;
-                for (Map.Entry<String, Object> kv: map.entrySet()) {
-                    mimeTypes.put(kv.getKey().toLowerCase(), kv.getValue().toString().toLowerCase());
-                }
-            }
-            if (!mimeTypes.isEmpty()) {
-                log.info("Loaded {} mime types", mimeTypes.size());
-            }
+            // initialize mime-type and custom content-type resolvers
+            MimeTypeResolver.getInstance().init();
+            CustomContentTypeResolver.getInstance().init();
             // register authentication handler
             try {
                 platform.registerPrivate(AUTH_HANDLER, new AuthInterceptor(), 200);
@@ -347,24 +327,14 @@ public class ServiceGateway {
      * @return content type
      */
     private String getFileContentType(String filename) {
-        if (filename.endsWith(HTML_EXT) || filename.endsWith(".htm")) {
-            return TEXT_HTML;
-        } else if (filename.endsWith(".txt")) {
-            return TEXT_PLAIN;
-        } else if (filename.endsWith(".css")) {
-            return "text/css";
-        } else if (filename.endsWith(".js")) {
-            return "text/javascript";
-        } else {
-            if (filename.contains(".") && !filename.endsWith(".")) {
-                String ext = filename.substring(filename.lastIndexOf('.')+1).toLowerCase();
-                String contentType = mimeTypes.get(ext);
-                if (contentType != null) {
-                    return contentType;
-                }
+        if (filename.contains(".") && !filename.endsWith(".")) {
+            String ext = filename.substring(filename.lastIndexOf('.')+1).toLowerCase();
+            String contentType = MimeTypeResolver.getInstance().getMimeType(ext);
+            if (contentType != null) {
+                return contentType;
             }
-            return "application/octet-stream";
         }
+        return APPLICATION_OCTET_STREAM;
     }
 
     private EtagFile getStaticFile(String path) {
@@ -422,6 +392,17 @@ public class ServiceGateway {
             return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
         }
         return null;
+    }
+
+    private String getContentType(HttpServerRequest request) {
+        String type = request.getHeader(CONTENT_TYPE);
+        if (type != null) {
+            String customType = CustomContentTypeResolver.getInstance().getContentType(type);
+            if (customType != null) {
+                return customType;
+            }
+        }
+        return type;
     }
 
     private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder)
@@ -581,7 +562,7 @@ public class ServiceGateway {
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             final AtomicBoolean inputComplete = new AtomicBoolean(false);
             final ByteArrayOutputStream requestBody = new ByteArrayOutputStream();
-            String contentType = request.getHeader(CONTENT_TYPE);
+            String contentType = getContentType(request);
             if (contentType == null) {
                 contentType = "?";
             }

@@ -451,7 +451,7 @@ public class AppStarter {
                             .webSocketHandler(new WsRequestHandler(wsLambdas, wsPaths));
                 }
                 server.listen(port).onSuccess(service -> {
-                    serverStatus.offer(true);
+                    serverStatus.add(true);
                     if (contexts != null) {
                         Platform platform = Platform.getInstance();
                         try {

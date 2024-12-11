@@ -281,7 +281,7 @@ public class ElasticQueue implements AutoCloseable {
     public void write(byte[] event) {
         if (writeCounter < MEMORY_BUFFER) {
             // for highest performance, save to memory for the first few blocks
-            memory.offer(event);
+            memory.add(event);
         } else {
             // otherwise, save to disk
             String key = id + SLASH + currentVersion + SLASH + util.zeroFill(writeCounter, MAX_EVENTS);

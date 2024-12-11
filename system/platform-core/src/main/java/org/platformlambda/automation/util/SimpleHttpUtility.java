@@ -28,7 +28,6 @@ import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.util.Utility;
 
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SimpleHttpUtility {
-
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final String SET_COOKIE = "set-cookie";
     private static final String COOKIE_SEPARATOR = "|";
@@ -48,7 +46,6 @@ public class SimpleHttpUtility {
     private static final String TEXT_HTML = "text/html";
     private static final String ERROR_PAGE_HTML = "/errorPage.html";
     private static final String ERROR = "error";
-    private static final String UTF_8 = "UTF-8";
     private static final String HTTP_UNKNOWN_WARNING = "There may be a problem in processing your request";
     private static final String HTTP_400_WARNING = "The system is unable to process your request";
     private static final String HTTP_500_WARNING = "Something may be broken";

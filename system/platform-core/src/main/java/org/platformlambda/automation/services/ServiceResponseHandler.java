@@ -68,15 +68,6 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
         this.contexts = contexts;
     }
 
-    private long getReadTimeout(String timeoutOverride, long contextTimeout) {
-        if (timeoutOverride == null) {
-            return contextTimeout;
-        }
-        // convert to milliseconds
-        long timeout = Utility.getInstance().str2long(timeoutOverride) * 1000;
-        return timeout > 0? timeout : contextTimeout;
-    }
-
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
         Utility util = Utility.getInstance();
@@ -250,4 +241,14 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
         }
         return null;
     }
+
+    private long getReadTimeout(String timeoutOverride, long contextTimeout) {
+        if (timeoutOverride == null) {
+            return contextTimeout;
+        }
+        // convert to milliseconds
+        long timeout = Utility.getInstance().str2long(timeoutOverride) * 1000;
+        return timeout > 0? timeout : contextTimeout;
+    }
+
 }

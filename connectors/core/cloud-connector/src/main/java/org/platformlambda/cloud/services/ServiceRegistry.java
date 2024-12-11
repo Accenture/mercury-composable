@@ -269,7 +269,11 @@ public class ServiceRegistry implements LambdaFunction {
                     List<String> all = new ArrayList<>(cloudOrigins.keySet());
                     for (String o : all) {
                         if (!o.equals(origin)) {
-                            log.info("{} disconnected ({})", o, appVersion);
+                            if (appVersion == null) {
+                                log.info("{} disconnected", o);
+                            } else {
+                                log.info("{} disconnected ({})", o, appVersion);
+                            }
                             removeRoutesFromOrigin(o);
                             notifyLifeCycleSubscribers(new Kv(TYPE, LEAVE), new Kv(ORIGIN, o));
                         }
@@ -277,7 +281,11 @@ public class ServiceRegistry implements LambdaFunction {
                     notifyLifeCycleSubscribers(new Kv(TYPE, DISCONNECTED));
                     notifyPmSubscribers(new Kv(TYPE, DISCONNECTED));
                 } else {
-                    log.info("Peer {} left ({})", origin, appVersion);
+                    if (appVersion == null) {
+                        log.info("Peer {} left", origin);
+                    } else {
+                        log.info("Peer {} left ({})", origin, appVersion);
+                    }
                     removeRoutesFromOrigin(origin);
                     notifyLifeCycleSubscribers(new Kv(TYPE, LEAVE), new Kv(ORIGIN, origin));
                     cache.remove(origin);

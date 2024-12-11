@@ -64,7 +64,7 @@ public class MulticastTest {
             String myRoute = headers.get(MY_ROUTE);
             result.put(myRoute, input);
             if (counter.incrementAndGet() == 2) {
-                completion.offer(true);
+                completion.add(true);
             }
             return true;
         };

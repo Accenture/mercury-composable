@@ -151,7 +151,7 @@ public class PostOfficeTest extends TestBase {
         final List<Map<String, Object>> messages = new ArrayList<>();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
-        fc.consume(messages::add, null, () -> bench.offer(true));
+        fc.consume(messages::add, null, () -> bench.add(true));
         Object done = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertEquals(2, messages.size());
@@ -185,8 +185,8 @@ public class PostOfficeTest extends TestBase {
         FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
         fc.consume(null, e -> {
             store.put("e", e);
-            bench.offer(false);
-        }, () -> bench.offer(true));
+            bench.add(false);
+        }, () -> bench.add(true));
         Object signal = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(1, store.size());
@@ -299,7 +299,7 @@ public class PostOfficeTest extends TestBase {
                         passes.incrementAndGet();
                     }
                     if (passes.get() >= CYCLES) {
-                        wait.offer(true);
+                        wait.add(true);
                     }
                 } catch (Exception e) {
                     log.error("Exception - {}", e.getMessage());
@@ -491,7 +491,7 @@ public class PostOfficeTest extends TestBase {
                 assertInstanceOf(String.class, input);
                 String text = (String) input;
                 assertEquals(MESSAGE, text);
-                bench.offer(true);
+                bench.add(true);
             }
             if ("bytes".equals(headers.get("type"))) {
                 assertInstanceOf(byte[].class, input);
@@ -646,7 +646,7 @@ public class PostOfficeTest extends TestBase {
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("invalidFormat", noOp, 1));
-        assertEquals("Invalid route name - use 0-9, a-z, period, hyphen or underscore characters",
+        assertEquals("Invalid route - use 0-9, a-z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
@@ -717,7 +717,7 @@ public class PostOfficeTest extends TestBase {
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("", noOp, 1));
-        assertEquals("Invalid route name - use 0-9, a-z, period, hyphen or underscore characters",
+        assertEquals("Invalid route - use 0-9, a-z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
@@ -815,7 +815,7 @@ public class PostOfficeTest extends TestBase {
             Map<String, Object> trace = (Map<String, Object>) input;
             MultiLevelMap map = new MultiLevelMap(trace);
             if (traceId.equals(map.getElement("trace.id"))) {
-                bench.offer(trace);
+                bench.add(trace);
             }
             return null;
         };
@@ -859,7 +859,7 @@ public class PostOfficeTest extends TestBase {
             Map<String, Object> trace = (Map<String, Object>) input;
             MultiLevelMap map = new MultiLevelMap(trace);
             if (traceId.equals(map.getElement("trace.id"))) {
-                bench.offer(trace);
+                bench.add(trace);
             }
             return null;
         };
@@ -909,7 +909,7 @@ public class PostOfficeTest extends TestBase {
             Map<String, Object> trace = (Map<String, Object>) input;
             MultiLevelMap map = new MultiLevelMap(trace);
             if (traceId.equals(map.getElement("trace.id"))) {
-                bench.offer(trace);
+                bench.add(trace);
             }
             return null;
         };
@@ -951,7 +951,7 @@ public class PostOfficeTest extends TestBase {
             Map<String, Object> trace = (Map<String, Object>) input;
             MultiLevelMap map = new MultiLevelMap(trace);
             if (traceId.equals(map.getElement("trace.id"))) {
-                bench.offer(trace);
+                bench.add(trace);
             }
             return null;
         };
@@ -1027,7 +1027,7 @@ public class PostOfficeTest extends TestBase {
         LambdaFunction callback = (headers, input, instance) -> {
             if (input instanceof Map) {
                 if (MESSAGE.equals(((Map<String, Object>) input).get("body"))) {
-                    bench.offer(DONE);
+                    bench.add(DONE);
                 }
             }
             return null;
@@ -1126,7 +1126,7 @@ public class PostOfficeTest extends TestBase {
         Future<EventEnvelope> future = po.asyncRequest(request, 1500);
         future.onSuccess(event -> {
             platform.release(SERVICE);
-            success.offer(event);
+            success.add(event);
         });
         EventEnvelope result = success.poll(5, TimeUnit.SECONDS);
         assertNotNull(result);
@@ -1150,7 +1150,7 @@ public class PostOfficeTest extends TestBase {
         Future<EventEnvelope> future = po.asyncRequest(new EventEnvelope().setTo(SERVICE).setBody(TEXT), 5000);
         future.onSuccess(event -> {
             platform.release(SERVICE);
-            completion.offer(event);
+            completion.add(event);
         });
         EventEnvelope result = completion.poll(5, TimeUnit.SECONDS);
         assertNotNull(result);
@@ -1180,7 +1180,7 @@ public class PostOfficeTest extends TestBase {
         Future<List<EventEnvelope>> future = po.asyncRequest(requests, 1500);
         future.onSuccess(event -> {
             platform.release(SERVICE);
-            success.offer(event);
+            success.add(event);
         });
         List<EventEnvelope> result = success.poll(5, TimeUnit.SECONDS);
         assertNotNull(result);
@@ -1557,7 +1557,7 @@ public class PostOfficeTest extends TestBase {
             threads.put(id, true);
             if (n == CYCLES) {
                 last.set(System.currentTimeMillis());
-                bench.offer(true);
+                bench.add(true);
             }
             return true;
         };
@@ -1736,7 +1736,7 @@ public class PostOfficeTest extends TestBase {
             if (trace != null && traceId.equals(trace.id)) {
                 log.info("Found trace path '{}'", trace.path);
                 log.info("Caught casting exception, status={}, message={}", e.getStatus(), e.getMessage());
-                bench.offer(e);
+                bench.add(e);
             }
         }
 
@@ -1745,7 +1745,7 @@ public class PostOfficeTest extends TestBase {
             PostOffice po = new PostOffice(headers, instance);
             if (traceId.equals(po.getTraceId())) {
                 log.info("Found trace path '{}'", po.getTrace().path);
-                bench.offer(body);
+                bench.add(body);
             }
             return null;
         }
@@ -1757,7 +1757,7 @@ public class PostOfficeTest extends TestBase {
         @Override
         public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
             log.info("{} received event from {}", headers, event.getFrom());
-            interceptorBench.offer(event.getFrom());
+            interceptorBench.add(event.getFrom());
             return null;
         }
     }

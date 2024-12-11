@@ -34,6 +34,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.multipart.MultipartForm;
 import org.platformlambda.automation.models.OutputStreamQueue;
 import org.platformlambda.automation.services.ServiceGateway;
+import org.platformlambda.automation.util.CustomContentTypeResolver;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -562,7 +563,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             MultiMap headers = res.headers();
             headers.forEach(kv -> response.setHeader(kv.getKey(), kv.getValue()));
             if (input.getReplyTo() != null) {
-                String resContentType = res.getHeader(CONTENT_TYPE);
+                String resContentType = getContentType(res.getHeader(CONTENT_TYPE));
                 String contentLen = res.getHeader(CONTENT_LENGTH);
                 boolean renderAsBytes = "true".equals(request.getHeader(X_NO_STREAM));
                 if (renderAsBytes || contentLen != null || isTextResponse(resContentType)) {
@@ -597,6 +598,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                                 sendResponse(input, response.setBody(new HashMap<>()));
                             } else {
                                 if (text.startsWith("{") && text.endsWith("}")) {
+
                                     sendResponse(input, response.setBody(
                                             SimpleMapper.getInstance().getMapper().readValue(text, Map.class)));
                                 } else if (text.startsWith("[") && text.endsWith("]")) {
@@ -664,6 +666,16 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     });
                 }
             }
+        }
+
+        private String getContentType(String type) {
+            if (type != null) {
+                String customType = CustomContentTypeResolver.getInstance().getContentType(type);
+                if (customType != null) {
+                    return customType;
+                }
+            }
+            return type;
         }
 
         private boolean isTextResponse(String contentType) {

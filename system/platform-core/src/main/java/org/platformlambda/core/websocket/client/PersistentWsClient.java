@@ -192,7 +192,7 @@ public class PersistentWsClient extends Thread {
                     po.send(session, text, new Kv(TYPE, STRING),
                             new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
                 } catch (IOException e) {
-                    log.warn("Unable to send incoming message to {} - {}", session, e.getMessage());
+                    log.warn("Unable to send text message to {} - {}", session, e.getMessage());
                 }
             });
             ws.binaryMessageHandler(b -> {
@@ -200,7 +200,7 @@ public class PersistentWsClient extends Thread {
                     po.send(session, b.getBytes(), new Kv(TYPE, BYTES),
                             new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
                 } catch (IOException e) {
-                    log.warn("Unable to send incoming message to {} - {}", session, e.getMessage());
+                    log.warn("Unable to send binary message to {} - {}", session, e.getMessage());
                 }
             });
             ws.closeHandler(empty -> {

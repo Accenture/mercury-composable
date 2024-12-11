@@ -65,7 +65,7 @@ public class EventHttpTest extends TestBase {
         final BlockingQueue<Object> wait1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Object> wait2 = new ArrayBlockingQueue<>(1);
         LambdaFunction f = (headers, body, instance) -> {
-            wait1.offer(body);
+            wait1.add(body);
             platform.release(BLOCKING_EVENT_WAIT);
             return null;
         };
@@ -82,7 +82,7 @@ public class EventHttpTest extends TestBase {
         EventEnvelope response = po.request(get, 10000).get();
         assertEquals(HELLO, response.getBody());
         Future<EventEnvelope> asyncResponse = po.asyncRequest(get, 10000);
-        asyncResponse.onSuccess(evt -> wait2.offer(evt.getBody()));
+        asyncResponse.onSuccess(evt -> wait2.add(evt.getBody()));
         Object result = wait2.poll(5, TimeUnit.SECONDS);
         assertEquals(HELLO, result);
         // test kotlin FastRPC

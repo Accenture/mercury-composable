@@ -106,7 +106,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                         new Kv(WsEnvelope.QUERY, query),
                         new Kv(WsEnvelope.TOKEN, token));
             } catch (IOException e) {
-                log.error("Unable to send 'open' signal to {} - {}", rxPath, e.getMessage());
+                log.error("Unable to send open signal to {} - {}", rxPath, e.getMessage());
             }
             ws.binaryMessageHandler(b -> {
                 md.touch();
@@ -114,7 +114,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                     po.send(rxPath, b.getBytes(), new Kv(WsEnvelope.TYPE, WsEnvelope.BYTES),
                             new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
                 } catch (IOException e) {
-                    log.error("Unable to send binary message to {} - {}", rxPath, e.getMessage());
+                    log.warn("Unable to send binary message to {} - {}", rxPath, e.getMessage());
                 }
             });
             ws.textMessageHandler(text -> {
@@ -123,25 +123,27 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                     po.send(rxPath, text, new Kv(WsEnvelope.TYPE, WsEnvelope.STRING),
                             new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
                 } catch (IOException e) {
-                    log.error("Unable to send text message to {} - {}", rxPath, e.getMessage());
+                    log.warn("Unable to send text message to {} - {}", rxPath, e.getMessage());
                 }
             });
             ws.closeHandler(close -> {
-                connections.remove(session);
                 String reason = ws.closeReason() == null? "ok" : ws.closeReason();
                 log.info("Session {} closed ({}, {})", session, ws.closeStatusCode(), reason);
-                try {
-                    EventEnvelope closing = new EventEnvelope().setTo(rxPath);
-                    // send the close signal to the websocket listener function before closing it
-                    closing.setHeader(WsEnvelope.ROUTE, rxPath)
+                connections.remove(session);
+                // send the close signal to the websocket listener function and then tell housekeeper to clean up
+                EventEnvelope closeSignal = new EventEnvelope().setTo(rxPath);
+                closeSignal.setHeader(WsEnvelope.ROUTE, rxPath)
                             .setHeader(WsEnvelope.TOKEN, token)
                             .setHeader(WsEnvelope.CLOSE_CODE, ws.closeStatusCode())
                             .setHeader(WsEnvelope.CLOSE_REASON, reason)
                             .setHeader(WsEnvelope.TYPE, WsEnvelope.CLOSE)
                             .setReplyTo(HOUSEKEEPER).setCorrelationId(session);
-                    po.send(closing);
+                try {
+                    po.send(closeSignal);
                 } catch (IOException e) {
-                    log.error("Unable to send 'close' signal to {} - {}", rxPath, e.getMessage());
+                    platform.release(rxPath);
+                    platform.release(txPath);
+                    log.error("Unable to send close signal to {} - {}", rxPath, e.getMessage());
                 }
             });
             ws.exceptionHandler(e -> {

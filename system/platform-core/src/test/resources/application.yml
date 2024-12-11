@@ -20,3 +20,6 @@ instances.hello.world: 15
 mime.types:
   ico: 'image/vnd.microsoft.icon'
   json: 'application/json'
+
+custom.content.types:
+  - 'application/vnd.my.org+json -> application/json'

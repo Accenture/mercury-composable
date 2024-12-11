@@ -65,8 +65,8 @@ public class ObjectStreamTest {
         FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, TIME_TO_LIVE);
         fc.consume(messages::add, e -> {
                     messages.add(e);
-                    bench.offer(false);
-                }, () -> bench.offer(true));
+                    bench.add(false);
+                }, () -> bench.add(true));
         Object signal = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(true, signal);
         assertEquals(2, messages.size());
@@ -105,8 +105,8 @@ public class ObjectStreamTest {
         FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, TIME_TO_LIVE);
         fc.consume(messages::add, e -> {
             messages.add(e);
-            bench.offer(false);
-        }, () -> bench.offer(true));
+            bench.add(false);
+        }, () -> bench.add(true));
         Object signal = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(3, messages.size());
@@ -139,8 +139,8 @@ public class ObjectStreamTest {
         FluxConsumer<String> fc = new FluxConsumer<>(publisher.getStreamId(), TIME_TO_LIVE);
         fc.consume(messages::add, e -> {
             messages.add(e);
-            bench.offer(false);
-        }, () -> bench.offer(true));
+            bench.add(false);
+        }, () -> bench.add(true));
         Object signal = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(3, messages.size());
@@ -164,8 +164,8 @@ public class ObjectStreamTest {
         FluxConsumer<String> fc = new FluxConsumer<>(publisher.getStreamId(), TIME_TO_LIVE);
         fc.consume(messages::add, e -> {
             messages.add(e);
-            bench.offer(false);
-        }, () -> bench.offer(true));
+            bench.add(false);
+        }, () -> bench.add(true));
         Object signal = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(1, messages.size());
@@ -190,8 +190,8 @@ public class ObjectStreamTest {
         FluxConsumer<String> fc = new FluxConsumer<>(streamId, TIME_TO_LIVE);
         fc.consume(messages::add, e -> {
             messages.add(e);
-            bench.offer(false);
-        }, () -> bench.offer(true));
+            bench.add(false);
+        }, () -> bench.add(true));
         Object signal = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(false, signal);
         assertEquals(1, messages.size());
@@ -264,7 +264,7 @@ public class ObjectStreamTest {
         List<String> result = new ArrayList<>();
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         FluxConsumer<String> flux = new FluxConsumer<>(publisher.getStreamId(), 8000);
-        flux.consume(result::add, null, () -> bench.offer(true));
+        flux.consume(result::add, null, () -> bench.add(true));
         Boolean done = bench.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertEquals(CYCLES, result.size());

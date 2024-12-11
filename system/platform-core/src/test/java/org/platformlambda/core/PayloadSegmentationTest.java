@@ -66,7 +66,7 @@ public class PayloadSegmentationTest {
                         multipart.incoming(e);
                     }
                 } else {
-                    bench.offer(b.length);
+                    bench.add(b.length);
                     assertEquals(b.length, sb.length());
                 }
             }

@@ -280,9 +280,9 @@ public class ObjectStreamIO {
             String extra = event.getExtra();
             if (READ.equals(type) && cb != null) {
                 if (extra != null) {
-                    callbacks.offer(cb + "|" + extra);
+                    callbacks.add(cb + "|" + extra);
                 } else {
-                    callbacks.offer(cb);
+                    callbacks.add(cb);
                 }
                 publisher.get();
                 touch(in);

@@ -176,23 +176,23 @@ public class EventConsumer extends Thread {
                                 long latest = getLatest(tp);
                                 if (offset < 0) {
                                     consumer.seek(tp, latest);
-                                    log.info("Setting '{}' READ offset, partition-{} to latest ({} - {})",
+                                    log.info("Seek '{}' READ offset, partition-{} to latest ({} - {})",
                                             realTopic, tp.partition(), earliest, latest);
                                 } else if (offset < earliest) {
                                     consumer.seek(tp, earliest);
-                                    log.warn("Setting '{}' READ offset, partition-{} to earliest instead of " +
+                                    log.warn("Set '{}' READ offset, partition-{} to earliest instead of " +
                                              "{} ({} - {})", realTopic, tp.partition(), offset, earliest, latest);
                                 } else if (offset < latest) {
                                     consumer.seek(tp, offset);
-                                    log.info("Setting '{}' READ offset, partition-{} to {} ({} - {})",
+                                    log.info("Set '{}' READ offset, partition-{} to {} ({} - {})",
                                             realTopic, tp.partition(), offset, earliest, latest);
                                 } else {
                                     consumer.seek(tp, latest);
                                     if (latest == offset) {
-                                        log.info("Setting '{}' READ offset, partition-{} to latest ({} - {})",
+                                        log.info("Set '{}' READ offset, partition-{} to latest ({} - {})",
                                                 realTopic, tp.partition(), earliest, latest);
                                     } else {
-                                        log.warn("Setting '{}' READ offset, partition-{} to latest instead of " +
+                                        log.warn("Set '{}' READ offset, partition-{} to latest instead of " +
                                                  "{} ({} - {})", realTopic, tp.partition(), offset, earliest, latest);
                                     }
                                 }

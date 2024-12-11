@@ -1,0 +1,2 @@
+custom.content.types:
+  - 'application/vnd.my.org-v2.0+json -> application/json'

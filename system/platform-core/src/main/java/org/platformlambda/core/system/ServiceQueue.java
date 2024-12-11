@@ -138,7 +138,7 @@ public class ServiceQueue {
                     if (worker != null) {
                         // Just for the safe side, this guarantees that a unique worker is inserted
                         idx.computeIfAbsent(worker, d -> {
-                            fifo.offer(worker);
+                            fifo.add(worker);
                             return true;
                         });
                         if (buffering) {
