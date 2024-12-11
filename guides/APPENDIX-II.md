@@ -17,7 +17,6 @@ the system unintentionally.
 | system.ws.server.cleanup     | Websocket server cleanup service      | platform-core    |
 | http.auth.handler            | REST automation authentication router | platform-core    |
 | event.api.service            | Event API service                     | platform-core    |
-| stream.to.bytes              | Event API helper function             | platform-core    |
 | no.op                        | no-operation placeholder function     | event-script     |
 | system.service.registry      | Distributed routing registry          | Connector        |
 | system.service.query         | Distributed routing query             | Connector        |
@@ -52,8 +51,8 @@ for details.
 
 ## No-op function
 
-The "no.op" function is used as a placeholder for building skeleton or demo app for an event flow use case.
-You may use the "preload-override.yaml" configuration to add alias route names to the "no.op" function.
+The "no.op" function is used as a placeholder for building skeleton or simple decision function for
+an event flow use case.
 
 ## Reserved event header names
 
