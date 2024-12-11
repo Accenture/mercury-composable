@@ -54,6 +54,9 @@ public class PostOfficeTest extends TestBase {
 
     private static final CryptoApi crypto = new CryptoApi();
     private static final BlockingQueue<String> interceptorBench = new ArrayBlockingQueue<>(1);
+    private static final String TASK_EXECUTOR = "task.executor";
+    private static final String EVENT_MANAGER = "event.script.manager";
+    private static final String REGULAR_FUNCTION = "regular.function";
     private static final String HELLO_ALIAS = "hello.alias";
     private static final String REACTIVE_MONO = "v1.reactive.mono.function";
     private static final String REACTIVE_FLUX = "v1.reactive.flux.function";
@@ -61,6 +64,69 @@ public class PostOfficeTest extends TestBase {
     private static final String REACTIVE_FLUX_KOTLIN = "v1.reactive.flux.kotlin";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
+
+    @Test
+    public void testEventManagementOptimization() throws IOException, InterruptedException {
+        Platform platform = Platform.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        final String UNKNOWN = "unknown";
+        BlockingQueue<String> routeBench = new LinkedBlockingQueue<>();
+        BlockingQueue<Object> inputBench = new LinkedBlockingQueue<>();
+        BlockingQueue<Integer> freeWorkerBench = new LinkedBlockingQueue<>();
+        LambdaFunction f = (headers, input, instance) -> {
+            String myRoute = headers.getOrDefault("my_route", UNKNOWN);
+            routeBench.add(myRoute);
+            inputBench.add(input);
+            if (input instanceof String functionName) {
+                Map<String, ServiceDef> routingTable = platform.getLocalRoutingTable();
+                var service = routingTable.get(functionName);
+                freeWorkerBench.add(service.getManager().getFreeWorkers());
+            } else if (input instanceof EventEnvelope event) {
+                Map<String, ServiceDef> routingTable = platform.getLocalRoutingTable();
+                var service = routingTable.get(event.getTo());
+                freeWorkerBench.add(service.getManager().getFreeWorkers());
+            } else {
+                freeWorkerBench.add(-1);
+            }
+            return null;
+        };
+        /*
+         * In this unit test, we want to prove that the regular function is executed through
+         * the event loop and the event script functions are served by virtual threads directly.
+         *
+         * This optimization permits ideal event choreography in the event-script-engine module.
+         */
+        platform.registerPrivate(TASK_EXECUTOR, f, 1);
+        platform.registerPrivate(EVENT_MANAGER, f, 1);
+        platform.registerPrivate(REGULAR_FUNCTION, f, 1);
+        // metadata is inserted by the event system when routing to regular functions
+        po.send(REGULAR_FUNCTION, REGULAR_FUNCTION);
+        String regularResult = routeBench.poll(10, TimeUnit.SECONDS);
+        assertEquals(REGULAR_FUNCTION, regularResult);
+        assertInstanceOf(String.class, inputBench.take());
+        // since this is a regular event routing, the number of worker is decremented by one
+        assertEquals(0, freeWorkerBench.take());
+        // metadata is not set when routing to the event script manager function
+        po.send(TASK_EXECUTOR, TASK_EXECUTOR);
+        String taskExecutorResult = routeBench.poll(10, TimeUnit.SECONDS);
+        assertEquals(UNKNOWN, taskExecutorResult);
+        Object taskExecutorInput = inputBench.take();
+        assertInstanceOf(EventEnvelope.class, taskExecutorInput);
+        var taskExecutorEvent = (EventEnvelope) taskExecutorInput;
+        assertEquals(TASK_EXECUTOR, taskExecutorEvent.getTo());
+        // since this is a direct execution, the number of worker is not changed
+        assertEquals(1, freeWorkerBench.take());
+        // metadata is not set when routing to the task executor function
+        po.send(EVENT_MANAGER, EVENT_MANAGER);
+        String eventManagerResult = routeBench.poll(10, TimeUnit.SECONDS);
+        assertEquals(UNKNOWN, eventManagerResult);
+        Object eventManagerInput = inputBench.take();
+        assertInstanceOf(EventEnvelope.class, eventManagerInput);
+        var eventManagerEvent = (EventEnvelope) eventManagerInput;
+        assertEquals(EVENT_MANAGER, eventManagerEvent.getTo());
+        // since this is a direct execution, the number of worker is not changed
+        assertEquals(1, freeWorkerBench.take());
+    }
 
     @Test
     public void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
@@ -252,11 +318,7 @@ public class PostOfficeTest extends TestBase {
             } catch (IOException e) {
                 // ok to ignore
             }
-        }, e -> {
-            log.error("unexpected error", e);
-        }, () -> {
-            completion.add(true);
-        });
+        }, e -> log.error("unexpected error", e), () -> completion.add(true));
         Boolean done = completion.take();
         assertEquals(true, done);
         String content = Utility.getInstance().getUTF(out.toByteArray());
@@ -292,7 +354,7 @@ public class PostOfficeTest extends TestBase {
                     String message = "hello world "+count;
                     EventEnvelope request = new EventEnvelope().setTo(RPC_FORWARDER)
                             .setHeader("target", SLOW_SERVICE).setHeader("timeout", TIMEOUT).setBody(message);
-                    po.asyncRequest(request, TIMEOUT, true).onSuccess(bench::offer);
+                    po.asyncRequest(request, TIMEOUT, true).onSuccess(bench::add);
                     EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
                     assert response != null;
                     if (message.equals(response.getBody())) {
@@ -321,7 +383,7 @@ public class PostOfficeTest extends TestBase {
         final long TIMEOUT = 5000;
         EventEmitter po = EventEmitter.getInstance();
         final String MESSAGE = "test message";
-        po.asyncRequest(new EventEnvelope().setTo(HELLO_ALIAS).setBody(MESSAGE), TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(new EventEnvelope().setTo(HELLO_ALIAS).setBody(MESSAGE), TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -360,7 +422,7 @@ public class PostOfficeTest extends TestBase {
         final int BODY = 100;
         final String RPC_TIMEOUT_CHECK = "rpc.timeout.check";
         EventEnvelope request = new EventEnvelope().setTo(RPC_TIMEOUT_CHECK).setBody(BODY);
-        po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(request, TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -398,7 +460,7 @@ public class PostOfficeTest extends TestBase {
         for (int i=0; i < CYCLE; i++) {
             requests.add(new EventEnvelope().setTo(RPC_TIMEOUT_CHECK).setBody(i+1));
         }
-        po.asyncRequest(requests, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(requests, TIMEOUT).onSuccess(bench::add);
         List<EventEnvelope> responses = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert responses != null;
         assertEquals(CYCLE, responses.size());
@@ -524,7 +586,7 @@ public class PostOfficeTest extends TestBase {
         String MESSAGE = "just a test";
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody("demo").setHeader(EXCEPTION, true);
-        po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(request, TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
         assertEquals(400, response.getStatus());
@@ -549,7 +611,7 @@ public class PostOfficeTest extends TestBase {
         String SQL_ERROR = "sql error";
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody("hi").setHeader(NEST_EXCEPTION, true);
-        po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(request, TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert response != null;
         assertEquals(400, response.getStatus());
@@ -574,7 +636,7 @@ public class PostOfficeTest extends TestBase {
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         Future<Boolean> status = platform.waitForProvider("cloud.connector", 10);
-        status.onSuccess(bench::offer);
+        status.onSuccess(bench::add);
         Boolean result = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, result);
     }
@@ -584,7 +646,7 @@ public class PostOfficeTest extends TestBase {
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         Future<Boolean> status = platform.waitForProvider("no.such.service", 1);
-        status.onSuccess(bench::offer);
+        status.onSuccess(bench::add);
         Boolean result = bench.poll(12, TimeUnit.SECONDS);
         assertNotEquals(Boolean.TRUE, result);
     }
@@ -607,11 +669,11 @@ public class PostOfficeTest extends TestBase {
         po.sendLater(new EventEnvelope().setTo(PENDING_SERVICE).setBody("hi"),
                 new Date(System.currentTimeMillis()+2100));
         Future<Boolean> status = platform.waitForProvider(NO_OP, 5);
-        status.onSuccess(bench1::offer);
+        status.onSuccess(bench1::add);
         Boolean result = bench1.poll(12, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, result);
         EventEnvelope request = new EventEnvelope().setTo(NO_OP).setBody("ok");
-        po.asyncRequest(request, 5000).onSuccess(bench2::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench2::add);
         EventEnvelope response = bench2.poll(12, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(true, response.getBody());
@@ -696,13 +758,13 @@ public class PostOfficeTest extends TestBase {
         LambdaFunction FALSE_FUNCTION = (headers, input, instance) -> false;
         platform.register(SERVICE, TRUE_FUNCTION, 1);
         EventEnvelope request = new EventEnvelope().setTo(SERVICE).setBody("HELLO");
-        po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(request, TIMEOUT).onSuccess(bench::add);
         EventEnvelope result = bench.poll(10, TimeUnit.SECONDS);
         assert result != null;
         assertEquals(true, result.getBody());
         // reload as private
         platform.registerPrivate(SERVICE, FALSE_FUNCTION, 1);
-        po.asyncRequest(request, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(request, TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(false, response.getBody());
@@ -738,12 +800,12 @@ public class PostOfficeTest extends TestBase {
         assertFalse(po.exists(HELLO_WORLD, "unknown.service"));
         assertFalse(po.exists(HELLO_WORLD, "unknown.1", "unknown.2"));
         Future<List<String>> asyncResponse1 = po.search(HELLO_WORLD);
-        asyncResponse1.onSuccess(bench::offer);
+        asyncResponse1.onSuccess(bench::add);
         List<String> origins = bench.poll(5, TimeUnit.SECONDS);
         assert origins != null;
         assertTrue(origins.contains(platform.getOrigin()));
         Future<List<String>> asyncResponse2 = po.search(HELLO_WORLD, true);
-        asyncResponse2.onSuccess(bench::offer);
+        asyncResponse2.onSuccess(bench::add);
         List<String> remoteOrigins = bench.poll(5, TimeUnit.SECONDS);
         assert remoteOrigins != null;
         assertTrue(remoteOrigins.isEmpty());
@@ -875,7 +937,7 @@ public class PostOfficeTest extends TestBase {
         po.asyncRequest(event, 8000)
             .onSuccess(response -> {
                 assertEquals(RETURN_VALUE, response.getBody());
-                log.info("RPC response verified");
+                log.info("RPC response for journal verified");
             });
         // wait for function completion
         Map<String, Object> result = bench.poll(10, TimeUnit.SECONDS);
@@ -1075,7 +1137,7 @@ public class PostOfficeTest extends TestBase {
         BlockingQueue<Throwable> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(2);
-        po.asyncRequest(request, 800).onFailure(bench::offer);
+        po.asyncRequest(request, 800).onFailure(bench::add);
         Throwable ex = bench.poll(10, TimeUnit.SECONDS);
         assert ex != null;
         assertEquals("Timeout for 800 ms", ex.getMessage());
@@ -1089,7 +1151,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setFrom("unit.test")
                                     .setTrace("100", "TEST /timeout/exception")
                                     .setHeader("exception", true).setBody(1);
-        po.asyncRequest(request, 800).onSuccess(bench::offer);
+        po.asyncRequest(request, 800).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(400, response.getStatus());
@@ -1104,7 +1166,7 @@ public class PostOfficeTest extends TestBase {
         int input = 111;
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setHeader("a", "b").setBody(input);
-        po.asyncRequest(request, 800).onSuccess(bench::offer);
+        po.asyncRequest(request, 800).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
@@ -1203,7 +1265,7 @@ public class PostOfficeTest extends TestBase {
         final Platform platform = Platform.getInstance();
         final EventEmitter po = EventEmitter.getInstance();
         final LambdaFunction f1 = (headers, input, instance) -> {
-            log.info("Received event {}, {}", headers, input);
+            log.info("Received fork-n-join event {}, {}", headers, input);
             return input;
         };
         platform.registerPrivate(SERVICE, f1, PARALLEL_INSTANCES);
@@ -1215,7 +1277,7 @@ public class PostOfficeTest extends TestBase {
         }
         requests.add(new EventEnvelope().setTo("hello.world").setBody(2));
         Future<List<EventEnvelope>> future = po.asyncRequest(requests, TIMEOUT, true);
-        future.onFailure(exception::offer);
+        future.onFailure(exception::add);
         Throwable e = exception.poll(5, TimeUnit.SECONDS);
         assertNotNull(e);
         assertEquals(TimeoutException.class, e.getClass());
@@ -1246,7 +1308,7 @@ public class PostOfficeTest extends TestBase {
         // hello.world will make an artificial delay of one second so that it will not be included in the result set.
         requests.add(new EventEnvelope().setTo("hello.world").setBody(2));
         Future<List<EventEnvelope>> future = po.asyncRequest(requests, TIMEOUT, false);
-        future.onSuccess(result::offer);
+        future.onSuccess(result::add);
         List<EventEnvelope> responses = result.poll(10, TimeUnit.SECONDS);
         assert responses != null;
         assertEquals(PARALLEL_INSTANCES, responses.size());
@@ -1265,7 +1327,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("long.running.rpc.alias").setBody(HELLO_WORLD)
                         .setHeader("timeout", 2000)
                         .setTrace("10000", "/api/non-blocking/rpc").setFrom("unit.test");
-        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
+        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1285,7 +1347,7 @@ public class PostOfficeTest extends TestBase {
          * Since it is the nested service that throws TimeoutException,
          * the exception is transported as a regular response event.
          */
-        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
+        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(408, response.getStatus());
@@ -1303,7 +1365,7 @@ public class PostOfficeTest extends TestBase {
                 .setHeader(FORK_N_JOIN, true)
                 .setHeader("timeout", 2000)
                 .setTrace("20000", "/api/non-blocking/fork-n-join");
-        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
+        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1334,7 +1396,7 @@ public class PostOfficeTest extends TestBase {
                 .setHeader(FORK_N_JOIN, true)
                 .setHeader("timeout", 500)
                 .setTrace("20000", "/api/non-blocking/fork-n-join");
-        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::offer);
+        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1373,7 +1435,7 @@ public class PostOfficeTest extends TestBase {
         event.setTo(ROUTE_ONE).setHeader("hello", "world").setBody(testMessage);
         event.setTrace(TRACE_ID, TRACE_PATH).setFrom("unit.test");
         EventEmitter po = EventEmitter.getInstance();
-        po.asyncRequest(event, 5000).onSuccess(bench::offer);
+        po.asyncRequest(event, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
@@ -1393,7 +1455,7 @@ public class PostOfficeTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         // with route substitution in the application.properties, hello.test will route to hello.world
         EventEnvelope request = new EventEnvelope().setTo("hello.test").setBody(input);
-        po.asyncRequest(request, 800).onSuccess(bench::offer);
+        po.asyncRequest(request, 800).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
@@ -1410,7 +1472,7 @@ public class PostOfficeTest extends TestBase {
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"health");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1435,7 +1497,7 @@ public class PostOfficeTest extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"info");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1454,7 +1516,7 @@ public class PostOfficeTest extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"lib");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1471,7 +1533,7 @@ public class PostOfficeTest extends TestBase {
         String ANOTHER_FUNCTION = "another.function";
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"routes");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1489,7 +1551,7 @@ public class PostOfficeTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope()
                                     .setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"livenessprobe");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals("OK", response.getBody());
@@ -1502,7 +1564,7 @@ public class PostOfficeTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope()
                 .setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"env");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -1521,7 +1583,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope()
                 .setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"resume")
                 .setHeader(USER, "someone").setHeader(WHEN, "now");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(false, response.getBody());
@@ -1535,7 +1597,7 @@ public class PostOfficeTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         Platform.getInstance().register(TARGET, new EventEnvelopeReader(), 1);
         EventEnvelope request = new EventEnvelope().setTo(TARGET).setBody(MESSAGE);
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(MESSAGE, response.getBody());
@@ -1640,7 +1702,7 @@ public class PostOfficeTest extends TestBase {
         minimalData.setTime(time);
         EventEnvelope request = new EventEnvelope().setTo(AUTO_MAPPING).setBody(minimalData)
                                 .setTrace(TRACE_ID,TRACE_PATH).setFrom("unit.test");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // for security, automatic PoJo class restore is disabled
@@ -1677,14 +1739,14 @@ public class PostOfficeTest extends TestBase {
         int number = 101;
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(HELLO_WORLD).setBody(number);
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         assertEquals(number, map.get("body"));
         Date now = new Date();
         request = new EventEnvelope().setTo(HELLO_WORLD).setBody(now);
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         map = (Map<String, Object>) response.getBody();
@@ -1734,7 +1796,7 @@ public class PostOfficeTest extends TestBase {
             EventEmitter po = EventEmitter.getInstance();
             TraceInfo trace = po.getTrace(route, instance);
             if (trace != null && traceId.equals(trace.id)) {
-                log.info("Found trace path '{}'", trace.path);
+                log.info("onError found trace path '{}'", trace.path);
                 log.info("Caught casting exception, status={}, message={}", e.getStatus(), e.getMessage());
                 bench.add(e);
             }
@@ -1744,7 +1806,7 @@ public class PostOfficeTest extends TestBase {
         public Void handleEvent(Map<String, String> headers, PoJo body, int instance) {
             PostOffice po = new PostOffice(headers, instance);
             if (traceId.equals(po.getTraceId())) {
-                log.info("Found trace path '{}'", po.getTrace().path);
+                log.info("onEvent found trace path '{}'", po.getTrace().path);
                 bench.add(body);
             }
             return null;

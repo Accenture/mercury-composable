@@ -58,7 +58,7 @@ public class ConnectorTest extends TestBase {
             final int WAIT = 20;
             final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
             Platform platform = Platform.getInstance();
-            platform.waitForProvider(CLOUD_CONNECTOR_HEALTH, WAIT).onSuccess(bench::offer);
+            platform.waitForProvider(CLOUD_CONNECTOR_HEALTH, WAIT).onSuccess(bench::add);
             Boolean success = bench.poll(WAIT, TimeUnit.SECONDS);
             if (Boolean.TRUE.equals(success)) {
                 log.info("Mock cloud ready");
@@ -109,18 +109,18 @@ public class ConnectorTest extends TestBase {
         EventEnvelope req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                                     .setHeader("type", "join").setHeader("origin", origin)
                                     .setHeader("topic", "multiplex.0001-001");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         bench.poll(10, TimeUnit.SECONDS);
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                 .setHeader("type", "join").setHeader("origin", platform.getOrigin())
                 .setHeader("topic", "multiplex.0001-000");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         bench.poll(10, TimeUnit.SECONDS);
         req.setHeader("type", "add").setHeader("topic", "multiplex.0001-001");
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                     .setHeader("type", "add").setHeader("origin", origin).setHeader("route", "hello.world")
                     .setHeader("personality", "WEB");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         bench.poll(10, TimeUnit.SECONDS);
         Map<String, Object> routes = new HashMap<>();
         routes.put("hello.test", "WEB");
@@ -129,19 +129,19 @@ public class ConnectorTest extends TestBase {
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY).setBody(routes)
                     .setHeader("type", "add").setHeader("origin", origin)
                     .setHeader("personality", "WEB");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         bench.poll(10, TimeUnit.SECONDS);
         po.broadcast("hello.world", "something");
         po.send("hello.demo@"+origin, "something else");
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY).setBody(routes)
                 .setHeader("type", "unregister").setHeader("origin", origin)
                 .setHeader("route", "to.be.removed");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         bench.poll(10, TimeUnit.SECONDS);
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
                 .setHeader("type", "search")
                 .setHeader("origin", origin).setHeader("route", "hello.world");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         EventEnvelope queryResult = bench.poll(10, TimeUnit.SECONDS);
         assert queryResult != null;
         assertInstanceOf(List.class, queryResult.getBody());
@@ -163,7 +163,7 @@ public class ConnectorTest extends TestBase {
         req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
                 .setBody(Collections.singletonList("hello.world")).setHeader("type", "find")
                 .setHeader("route", "*");
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         queryResult = bench.poll(10, TimeUnit.SECONDS);
         assert queryResult != null;
         assertEquals(true, queryResult.getBody());

@@ -21,7 +21,6 @@ package com.accenture.automation;
 import com.accenture.models.*;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -38,9 +37,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@ZeroTracing
 @EventInterceptor
-@PreLoad(route = "task.executor", envInstances = "task.executor.instances", instances = 200)
+@PreLoad(route = "task.executor")
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
     private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();

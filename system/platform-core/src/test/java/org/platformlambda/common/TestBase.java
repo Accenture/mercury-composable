@@ -132,7 +132,7 @@ public class TestBase {
     private static boolean blockingWait(String provider, int seconds) throws InterruptedException {
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         Future<Boolean> status = Platform.getInstance().waitForProvider(provider, seconds);
-        status.onSuccess(bench::offer);
+        status.onSuccess(bench::add);
         return Boolean.TRUE.equals(bench.poll(12, TimeUnit.SECONDS));
     }
 
@@ -149,7 +149,7 @@ public class TestBase {
         }
         EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(event, 10000);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         return bench.poll(10, TimeUnit.SECONDS);
     }
 
@@ -168,7 +168,7 @@ public class TestBase {
         }
         EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(event, 10000);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         return bench.poll(10, TimeUnit.SECONDS);
     }
 }

@@ -71,7 +71,7 @@ public class SuspendFunctionTest extends TestBase {
         // send the HTTP request event to the "hello.upload" function
         EventEnvelope request = new EventEnvelope().setTo("hello.upload")
                 .setBody(req).setTrace("12345", "/api/upload/demo").setFrom("unit.test");
-        po.asyncRequest(request, 8000).onSuccess(bench::offer);
+        po.asyncRequest(request, 8000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());

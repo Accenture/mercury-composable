@@ -63,7 +63,7 @@ public class TestBase {
         }
         EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(event, 10000);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         return bench.poll(10, TimeUnit.SECONDS);
     }
 
@@ -82,7 +82,7 @@ public class TestBase {
         }
         EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(event, 10000);
-        res.onSuccess(bench::offer);
+        res.onSuccess(bench::add);
         return bench.poll(10, TimeUnit.SECONDS);
     }
 }

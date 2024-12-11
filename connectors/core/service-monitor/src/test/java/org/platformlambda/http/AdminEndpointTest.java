@@ -53,7 +53,7 @@ public class AdminEndpointTest extends TestBase {
             final int WAIT = 20;
             final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
             Platform platform = Platform.getInstance();
-            platform.waitForProvider(CLOUD_CONNECTOR_HEALTH, WAIT).onSuccess(bench::offer);
+            platform.waitForProvider(CLOUD_CONNECTOR_HEALTH, WAIT).onSuccess(bench::add);
             Boolean success = bench.poll(WAIT, TimeUnit.SECONDS);
             assert success != null;
             if (success) {

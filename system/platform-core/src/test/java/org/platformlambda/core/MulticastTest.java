@@ -70,7 +70,7 @@ public class MulticastTest {
         };
         Platform platform = Platform.getInstance();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
-        platform.waitForProvider("v1.hello.world", 5).onSuccess(bench::offer);
+        platform.waitForProvider("v1.hello.world", 5).onSuccess(bench::add);
         boolean available = Boolean.TRUE.equals(bench.poll(5, TimeUnit.SECONDS));
         assertTrue(available);
         for (String t: targets) {

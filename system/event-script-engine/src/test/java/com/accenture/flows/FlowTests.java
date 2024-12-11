@@ -328,7 +328,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/greetings/"+USER);
         PostOffice po = new PostOffice("unit.test", TRACE_ID, "TEST /greeting");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -429,7 +429,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", true);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -449,7 +449,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/timeout/"+USER).setQueryParameter("ex", "timeout");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -470,7 +470,7 @@ public class FlowTests extends TestBase {
         request.setQueryParameter("decision", "false");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -480,7 +480,7 @@ public class FlowTests extends TestBase {
         // setting decision to true will trigger decision.case.one
         request.setQueryParameter("decision", "true");
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -501,7 +501,7 @@ public class FlowTests extends TestBase {
         request.setQueryParameter("decision", "something-else");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -512,7 +512,7 @@ public class FlowTests extends TestBase {
         // "hello" is mapped to true in decision-with-no-op.yml
         request.setQueryParameter("decision", "hello");
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -533,7 +533,7 @@ public class FlowTests extends TestBase {
         request.setQueryParameter("decision", 2);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -543,7 +543,7 @@ public class FlowTests extends TestBase {
         // setting decision to 1 will trigger decision.case.one
         request.setQueryParameter("decision", 1);
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -564,7 +564,7 @@ public class FlowTests extends TestBase {
         request.setQueryParameter("decision", 100);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -585,7 +585,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/sequential/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -614,7 +614,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/response/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -637,7 +637,7 @@ public class FlowTests extends TestBase {
                 .setQueryParameter("delay", DELAY);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -658,7 +658,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/fork-n-join/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -682,7 +682,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/pipeline/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -705,7 +705,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/for-loop/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -729,7 +729,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/for-loop-break/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -753,7 +753,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/for-loop-continue/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -777,7 +777,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/pipeline-exception/"+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
@@ -796,7 +796,7 @@ public class FlowTests extends TestBase {
         request.setUrl("/api/parallel");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::offer);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
         EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());

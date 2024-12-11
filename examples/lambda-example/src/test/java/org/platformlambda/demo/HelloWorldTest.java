@@ -48,7 +48,7 @@ public class HelloWorldTest extends TestBase {
         DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
         PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
-        po.asyncRequest(request, 800).onSuccess(bench::offer);
+        po.asyncRequest(request, 800).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());

@@ -50,6 +50,8 @@ public class EventEmitter {
     public static final String MISSING_EVENT = "Missing outgoing event";
     public static final String RPC = "rpc";
     private static final long ASYNC_EVENT_HTTP_TIMEOUT = 60 * 1000L; // assume 60 seconds
+    private static final String TASK_EXECUTOR = "task.executor";
+    private static final String EVENT_MANAGER = "event.script.manager";
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String MESSAGE = "message";
@@ -737,38 +739,49 @@ public class EventEmitter {
                 TargetRoute cloud = getCloudRoute();
                 if (cloud != null) {
                     if (cloud.isCloud()) {
-                        /*
-                         * If broadcast, set broadcast level to 3 because the event will be sent
-                         * to the target by the cloud connector directly
-                         */
                         MultipartPayload.getInstance().outgoing(cloud.getManager(), event.setBroadcastLevel(3));
                     }
                 } else {
-                    // set broadcast level to 3 for language pack clients if any
                     system.send(target.getManager().getRoute(), event.setBroadcastLevel(3).toBytes());
                 }
             } else {
-                // set broadcast level to 3 for language pack clients if any
+                // also set broadcast-level to 3 to propagate broadcast in event-over-http use case
                 EventEnvelope out = event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event;
-                system.send(target.getManager().getRoute(), out.toBytes());
+                String route = target.getManager().getRoute();
+                /*
+                 * The "event.script.manager" and "task.executor" are reserved function route names for Event Script.
+                 * The system will run them directly using virtual threads for performance optimization.
+                 *
+                 * Since these two functions routes events to the user functions for execution,
+                 * the system already guarantees serialization and I/O immutability.
+                 *
+                 * Therefor, it is safe to eliminate additional serialization overheads and event relays.
+                 */
+                if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
+                    Platform.getInstance().getVirtualThreadExecutor().submit(() ->
+                            runTaskExecutor(out, target.getManager().getService().getFunction()));
+                } else {
+                    system.send(target.getManager().getRoute(), out.toBytes());
+                }
             }
         }
     }
 
-    /**
-     * Ping a target service to check for availability and network latency
-     * <p>
-     *     The onSuccess(event -> handler) returns the result set.
-     * <p>
-     *     The onFailure(e -> handler) returns timeout exception if any.
-     *
-     * @param to target route
-     * @param timeout in milliseconds
-     * @return response in a future of EventEnvelope
-     * @throws IOException in case of routing error
-     */
-    public Future<EventEnvelope> ping(String to, long timeout) throws IOException {
-        return asyncRequest(new EventEnvelope().setTo(to), timeout);
+    @SuppressWarnings("unchecked")
+    private void runTaskExecutor(EventEnvelope event, Object f) {
+        Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
+            try {
+                if (f instanceof TypedLambdaFunction<?, ?>) {
+                    TypedLambdaFunction<EventEnvelope, Void> task = (TypedLambdaFunction<EventEnvelope, Void>) f;
+                    task.handleEvent(event.getHeaders(), event, 1);
+                } else {
+                    throw new IllegalArgumentException("Not a TypedLambdaFunction");
+                }
+            } catch (Exception e) {
+                // this should never happen unless the protected event script functions are overloaded mistakenly
+                log.error("Unable to execute event script - did you overload the system functions?", e);
+            }
+        });
     }
 
     /**

@@ -221,7 +221,7 @@ public class ObjectStreamTest {
         String id = publisher.getStreamId().substring(0, publisher.getStreamId().indexOf('@'));
         assertTrue(info.containsKey(id));
         FluxConsumer<String> flux = new FluxConsumer<>(publisher.getStreamId(), 3000);
-        flux.consume(dataBench::offer, exceptionBench::offer, null);
+        flux.consume(dataBench::add, exceptionBench::add, null);
         String result = dataBench.poll(10, TimeUnit.SECONDS);
         assertEquals(TEXT, result);
         // The stream is intentionally left open

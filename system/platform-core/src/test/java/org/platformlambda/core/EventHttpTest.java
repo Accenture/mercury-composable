@@ -104,7 +104,7 @@ public class EventHttpTest extends TestBase {
                 .setBody(NUMBER_THREE).setHeader("hello", "world");
         Future<EventEnvelope> response = po.asyncRequest(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(401, result.getStatus());
@@ -126,7 +126,7 @@ public class EventHttpTest extends TestBase {
         securityHeaders.put("Authorization", "demo");
         Future<EventEnvelope> response = po.asyncRequest(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         // add 500 ms to the bench to capture HTTP-408 response if any
         EventEnvelope result = bench.poll(TIMEOUT + 500, TimeUnit.MILLISECONDS);
         assertNotNull(result);
@@ -151,7 +151,7 @@ public class EventHttpTest extends TestBase {
                 .setHeader("endpoint", "http://127.0.0.1:"+port+"/api/event")
                 .setHeader("authorization", "demo");
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         // add 500 ms to the bench to capture HTTP-408 response if any
         EventEnvelope result = bench.poll(TIMEOUT + 500, TimeUnit.MILLISECONDS);
         assertNotNull(result);
@@ -175,7 +175,7 @@ public class EventHttpTest extends TestBase {
         securityHeaders.put("Authorization", "demo");
         Future<EventEnvelope> response = po.asyncRequest(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", false);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assertNotNull(result);
         // status code 202 indicates that a drop-n-forget event has been sent asynchronously
@@ -201,7 +201,7 @@ public class EventHttpTest extends TestBase {
                 .setHeader("endpoint", "http://127.0.0.1:"+port+"/api/event")
                 .setHeader("authorization", "demo");
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assertNotNull(result);
         // status code 202 indicates that a drop-n-forget event has been sent asynchronously
@@ -227,7 +227,7 @@ public class EventHttpTest extends TestBase {
                 .setHeader("endpoint", "http://127.0.0.1:"+port+"/api/event")
                 .setHeader("authorization", "demo");
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(200, result.getStatus());
@@ -250,7 +250,7 @@ public class EventHttpTest extends TestBase {
                 .setHeader("endpoint", "http://127.0.0.1:"+port+"/api/event")
                 .setHeader("authorization", "anyone");
         Future<EventEnvelope> response = po.asyncRequest(forward, TIMEOUT);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(401, result.getStatus());
@@ -299,7 +299,7 @@ public class EventHttpTest extends TestBase {
                 .setBody(NUMBER_THREE).setHeader("hello", "world");
         Future<EventEnvelope> response = po.asyncRequest(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assert result != null;
         assertEquals(404, result.getStatus());
@@ -321,7 +321,7 @@ public class EventHttpTest extends TestBase {
         securityHeaders.put("Authorization", "demo");
         Future<EventEnvelope> response = po.asyncRequest(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assert result != null;
         assertEquals(403, result.getStatus());
@@ -384,7 +384,7 @@ public class EventHttpTest extends TestBase {
                 .setBody(NUMBER_THREE).setHeader("hello", "world");
         Future<EventEnvelope> response = po.asyncRequest(event, TIMEOUT, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
-        response.onSuccess(bench::offer);
+        response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
         assertNotNull(result);
         assertEquals(200, result.getStatus());

@@ -6,8 +6,8 @@ The system reserves some route names and headers for routing purpose.
 
 The Mercury foundation code is written using the same core API and each function has a route name.
 
-The following route names are reserved. Please DO NOT use them in your application functions to avoid breaking
-the system unintentionally.
+The following route names are reserved. Please DO NOT overload them in your application functions
+to avoid breaking the system unintentionally.
 
 | Route                        | Purpose                               | Modules          |
 |:-----------------------------|:--------------------------------------|:-----------------|
@@ -17,6 +17,9 @@ the system unintentionally.
 | system.ws.server.cleanup     | Websocket server cleanup service      | platform-core    |
 | http.auth.handler            | REST automation authentication router | platform-core    |
 | event.api.service            | Event API service                     | platform-core    |
+| event.script.manager         | Instantiate new event flow instance   | event-script     |
+| task.executor                | Perform event choreography            | event-script     |
+| http.flow.adapter            | Built-in flow adapter                 | event-script     |
 | no.op                        | no-operation placeholder function     | event-script     |
 | system.service.registry      | Distributed routing registry          | Connector        |
 | system.service.query         | Distributed routing query             | Connector        |

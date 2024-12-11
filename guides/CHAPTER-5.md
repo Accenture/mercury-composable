@@ -147,7 +147,7 @@ public void rpcTest() throws IOException, InterruptedException {
     PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
     EventEnvelope request = new EventEnvelope().setTo("hello.world")
                                 .setHeader("a", "b").setBody(pojo.toMap());
-    po.asyncRequest(request, 800).onSuccess(bench::offer);
+    po.asyncRequest(request, 800).onSuccess(bench::add);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
     assertEquals(HashMap.class, response.getBody().getClass());
@@ -218,7 +218,7 @@ public void pojoTest() throws IOException, InterruptedException {
     BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
     PostOffice po = new PostOffice("unit.test", "20001", "GET /api/hello/pojo");
     EventEnvelope request = new EventEnvelope().setTo("hello.pojo").setHeader("id", "1");
-    po.asyncRequest(request, 800).onSuccess(bench::offer);
+    po.asyncRequest(request, 800).onSuccess(bench::add);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
     assertEquals(SamplePoJo.class, response.getBody().getClass());
@@ -277,7 +277,7 @@ public void uploadTest() throws IOException, InterruptedException {
     // send the HTTP request event to the "hello.upload" function
     EventEnvelope request = new EventEnvelope().setTo("hello.upload")
             .setBody(req).setTrace("12345", "/api/upload/demo").setFrom("unit.test");
-    po.asyncRequest(request, 8000).onSuccess(bench::offer);
+    po.asyncRequest(request, 8000).onSuccess(bench::add);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
     assertEquals(HashMap.class, response.getBody().getClass());

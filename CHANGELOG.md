@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.1.0, 12/11/2024
+
+This milestone version achieves ideal event choreography by removing additional event routing
+to and from the Event Manager. This would boost internal event routing performance by 50 percent.
+
+### Added
+
+Performance optimization for Event Script
+
+### Removed
+
+N/A
+
+### Changed
+
+The platform-core module uses virtual threads to execute event.script.manager and task.executor
+directly to eliminate additional serialization overheads since the two functions are event routers
+themselves.
+
+---
 ## Version 4.0.33, 12/11/2024
 
 ### Added

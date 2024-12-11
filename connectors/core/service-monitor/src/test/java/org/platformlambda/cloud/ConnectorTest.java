@@ -70,7 +70,7 @@ public class ConnectorTest extends TestBase {
             List<String> providers = new ArrayList<>();
             providers.add(CLOUD_CONNECTOR_HEALTH);
             providers.add(ServiceDiscovery.SERVICE_REGISTRY);
-            platform.waitForProviders(providers, WAIT).onSuccess(bench::offer);
+            platform.waitForProviders(providers, WAIT).onSuccess(bench::add);
             Boolean success = bench.poll(WAIT, TimeUnit.SECONDS);
             if (Boolean.TRUE.equals(success)) {
                 log.info("Mock cloud ready");
@@ -164,7 +164,7 @@ public class ConnectorTest extends TestBase {
         // use RPC to wait for completion
         EventEnvelope req = new EventEnvelope().setTo(MainApp.PRESENCE_HOUSEKEEPER)
                 .setHeader(TYPE, MainApp.MONITOR_ALIVE).setHeader(ORIGIN, origin);
-        po.asyncRequest(req, 5000).onSuccess(bench::offer);
+        po.asyncRequest(req, 5000).onSuccess(bench::add);
         bench.poll(10, TimeUnit.SECONDS);
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
         assertInstanceOf(Map.class, response.getBody());

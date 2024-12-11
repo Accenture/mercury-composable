@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.0.33</version>
+    <version>4.1.0</version>
     <name>Mercury platform-core module</name>
 
     <!-- Use Spring Boot as a parent to fetch OSS modules -->
@@ -218,6 +218,7 @@
                             <compilerArgs>
                                 <arg>-proc:full</arg>
                                 <arg>-Xlint:deprecation</arg>
+                                <arg>-Xlint:unchecked</arg>
                             </compilerArgs>
                         </configuration>
                     </execution>

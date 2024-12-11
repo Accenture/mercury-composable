@@ -227,6 +227,7 @@ public class AdminEndpointTest extends TestBase {
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
+        System.out.println(result);
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("platform-core", multi.getElement("app.name"));
         assertInstanceOf(Map.class, multi.getElement("env"));

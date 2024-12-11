@@ -39,7 +39,7 @@ public class ServiceQueue {
     private static final String PUBLIC = "PUBLIC";
     private static final String PRIVATE = "PRIVATE";
     private final ElasticQueue elasticQueue;
-    private final String route;
+    private final ServiceDef service;
     private final String readyPrefix;
     private final String streamRoute;
     private final EventBus system;
@@ -51,12 +51,13 @@ public class ServiceQueue {
     private boolean stopped = false;
 
     public ServiceQueue(ServiceDef service) {
-        this.route = service.getRoute();
-        this.readyPrefix = READY+":" + service.getRoute() + HASH;
+        this.service = service;
+        String route = service.getRoute();
+        this.readyPrefix = READY+":" + route + HASH;
         this.elasticQueue = new ElasticQueue(route);
         // create consumer
         system = Platform.getInstance().getEventSystem();
-        consumer = system.localConsumer(service.getRoute(), new ServiceHandler());
+        consumer = system.localConsumer(route, new ServiceHandler());
         if (service.isStream()) {
             streamRoute = route + HASH + 1;
             StreamQueue worker = new StreamQueue(service, streamRoute);
@@ -96,7 +97,11 @@ public class ServiceQueue {
     }
 
     public String getRoute() {
-        return route;
+        return service.getRoute();
+    }
+
+    public ServiceDef getService() {
+        return service;
     }
 
     public int getFreeWorkers() {
@@ -123,7 +128,7 @@ public class ServiceQueue {
             elasticQueue.destroy();
             consumer = null;
             stopped = true;
-            log.info("{} stopped", route);
+            log.info("{} stopped", service.getRoute());
         }
     }
 
@@ -180,7 +185,6 @@ public class ServiceQueue {
                     }
                 }
             }
-
         }
 
         private String getWorker(String input) {
@@ -192,5 +196,4 @@ public class ServiceQueue {
             return null;
         }
     }
-
 }

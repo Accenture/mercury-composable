@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @EventInterceptor
-@PreLoad(route = "event.script.manager", envInstances = "flow.manager.instances", instances = 200)
+@PreLoad(route = "event.script.manager")
 public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(EventScriptManager.class);
     public static final String SERVICE_NAME = "event.script.manager";
@@ -68,7 +68,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         flowInstance.dataset.put(INPUT, event.getBody());
         // Execute the first task and use the unique flow instance as correlation ID during flow execution
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope firstTask = new EventEnvelope()
+        EventEnvelope firstTask = new EventEnvelope().setFrom(SERVICE_NAME)
                 .setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(flowInstance.id)
                 .setHeader(FIRST_TASK, flowInstance.getFlow().firstTask);
         po.send(firstTask);

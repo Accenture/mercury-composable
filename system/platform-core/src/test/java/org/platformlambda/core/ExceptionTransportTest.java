@@ -37,7 +37,7 @@ public class ExceptionTransportTest {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(ROUTE).setBody("demo");
-        po.asyncRequest(request, 5000).onSuccess(bench::offer);
+        po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(400, response.getStatus());
