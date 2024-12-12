@@ -749,13 +749,14 @@ public class EventEmitter {
                 EventEnvelope out = event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event;
                 String route = target.getManager().getRoute();
                 /*
-                 * The "event.script.manager" and "task.executor" are reserved function route names for Event Script.
-                 * The system will run them directly using virtual threads for performance optimization.
+                 * The "event.script.manager" and "task.executor" are reserved function route names
+                 * for Event Script. The system will run them directly using virtual threads for
+                 * performance optimization.
                  *
-                 * Since these two functions routes events to the user functions for execution,
-                 * the system already guarantees serialization and I/O immutability.
+                 * Since these two functions are event routers themselves, functional isolation,
+                 * serialization and I/O immutability are guaranteed.
                  *
-                 * Therefor, it is safe to eliminate additional serialization overheads and event relays.
+                 * Therefore, it is safe to eliminate additional processing overheads.
                  */
                 if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
                     Platform.getInstance().getVirtualThreadExecutor().submit(() ->
