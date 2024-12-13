@@ -762,7 +762,7 @@ public class EventEmitter {
                     Platform.getInstance().getVirtualThreadExecutor().submit(() ->
                             runTaskExecutor(out, target.getManager().getService().getFunction()));
                 } else {
-                    system.send(target.getManager().getRoute(), out.toBytes());
+                    system.send(route, out.toBytes());
                 }
             }
         }
