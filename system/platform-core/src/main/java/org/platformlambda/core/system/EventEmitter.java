@@ -682,8 +682,9 @@ public class EventEmitter {
         var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
             String callback = event.getReplyTo();
+            String eventApiType = callback == null? "async" : "callback";
             event.setReplyTo(null);
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "async");
+            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, eventApiType);
             Future<EventEnvelope> response = asyncRequest(forwardEvent, ASYNC_EVENT_HTTP_TIMEOUT,
                                                             getEventHttpHeaders(to), targetHttp, callback != null);
             response.onSuccess(evt -> {
