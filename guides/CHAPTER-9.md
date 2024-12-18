@@ -31,7 +31,12 @@ application's start method.
 
 In some case, your application may have more than one main application module. You can decide the sequence of
 execution using the "sequence" parameter in the `MainApplication` annotation. The module with the smallest sequence
-number will run first.
+number will run first.  Normal startup sequence must be between 6 and 999.  Sequence 5 is reserved by the AsyncHttpClientLoader. 
+If your startup code must run before this system module, you can use sequence from 1 to 4.
+
+Note: It is the "start" method of each EntryPoint implementation that follows the execution sequence of the `MainApplication` annotation.
+The "main" method is used only to kick off the application bootstrap.  Therefore, even though the default sequence of the
+`MainApplication` annotation is 10, the "main" method of `MainApp` class still executes first.
 
 ## Optional environment setup before MainApplication
 
