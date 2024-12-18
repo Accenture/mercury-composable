@@ -1,15 +1,17 @@
 # API Overview
 
-## Main application
+## Main Application
 
 Each application has an entry point. You may implement an entry point in a main application like this:
 
 ```java
 @MainApplication
 public class MainApp implements EntryPoint {
+
    public static void main(String[] args) {
       AutoStart.main(args);
    }
+
    @Override
    public void start(String[] args) {
         // your startup logic here
@@ -18,7 +20,7 @@ public class MainApp implements EntryPoint {
 }
 ```
 
-In your main application, you will implement the `EntryPoint` interface to override the "start" method.
+In your main application, you must implement the `EntryPoint` interface to override the "start" method.
 Typically, a main application is used to initiate some application start up procedure.
 
 In some case when your application does not need any start up logic, you can just print a message to indicate
@@ -26,19 +28,28 @@ that your application has started.
 
 You may want to keep the static "main" method which can be used to run your application inside an IDE.
 
-The pom.xml build script is designed to run the `AppStarter` start up function that will execute your main
-application's start method.
+The pom.xml build script is designed to run the `AutoStart` class that will execute your main application's
+start method.
 
 In some case, your application may have more than one main application module. You can decide the sequence of
-execution using the "sequence" parameter in the `MainApplication` annotation. The module with the smallest sequence
-number will run first.  Normal startup sequence must be between 6 and 999.  Sequence 5 is reserved by the AsyncHttpClientLoader. 
-If your startup code must run before this system module, you can use sequence from 1 to 4.
+execution using the "sequence" parameter in the `MainApplication` annotation. The module with the smallest
+sequence number will run first. Duplicated sequence numbers are allowed. Normal startup sequence must be
+between 1 and 999.
 
-Note: It is the "start" method of each EntryPoint implementation that follows the execution sequence of the `MainApplication` annotation.
-The "main" method is used only to kick off the application bootstrap.  Therefore, even though the default sequence of the
-`MainApplication` annotation is 10, the "main" method of `MainApp` class still executes first.
+*Note*: It is the "start" method of each EntryPoint implementation that follows the execution sequence of the
+`MainApplication` annotation. The optional "main" method is used only to kick off the application bootstrap and
+it must include only the following statement:
 
-## Optional environment setup before MainApplication
+```java
+public static void main(String[] args) {
+    AutoStart.main(args);
+}
+```
+
+Therefore, even when the default sequence of the `MainApplication` annotation is 10 and you invoke the "main"
+method from an IDE, the "start" method of each MainApplication modules will execute orderly.
+
+## Setup before the Main Application
 
 Sometimes, it may be required to set up some environment configuration before your main application starts.
 You can implement a `BeforeApplication` module. Its syntax is similar to the `MainApplication`.
@@ -55,9 +66,13 @@ public class EnvSetup implements EntryPoint {
 }
 ```
 
-The `BeforeApplication` logic will run before your `MainApplication` module. This is useful when you want to do
+The `BeforeApplication` logic will run before your `MainApplication` module(s). This is useful when you want to do
 special handling of environment variables. For example, decrypt an environment variable secret, construct an X.509
 certificate, and save it in the "/tmp" folder before your main application starts.
+
+Normal startup sequence must be between 6 and 999.  Sequence 5 is reserved by the AsyncHttpClientLoader. 
+If your startup code does not need the async HTTP client service and you want it to run first, you may use
+sequence from 1 to 4.
 
 ## Event envelope
 
