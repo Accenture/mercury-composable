@@ -360,6 +360,9 @@ public class FlowTests extends TestBase {
         assertEquals(USER, result.get("demo2"));
         // input mapping 'input.header -> header' relays all HTTP headers
         assertEquals("greetings", result.get("demo3"));
+        // check map values
+        assertEquals(Map.of("hello", "world", "good", "day"), result.get("map1"));
+        assertEquals(Map.of("test", "message", "direction", "right"), result.get("map2"));
     }
 
     @SuppressWarnings("unchecked")

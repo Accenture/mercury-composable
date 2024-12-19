@@ -443,12 +443,43 @@ Note that external state machine namespace uses ":" to indicate that the key-val
 | Float     | `float(number)`                                              |
 | Double    | `double(number)`                                             |
 | Boolean   | `boolean(true or false)`                                     |
+| Map       | `map(k1=v1, k2=v2)`<br>`map(base.config.parameter)`          |
 | File      | `file(text:file_path)`<br>`file(binary:file_path)`           |
 | Classpath | `classpath(text:file_path)`<br>`classpath(binary:file_path)` |
 
 For input data mapping, the "file" constant type is used to load some file content as an argument of a user function.
 You can tell the system to render the file as "text" or "binary". Similarly, the "classpath" constant type refers
 to static file in the application source code's "resources" folder.
+
+The "map" constant type is used for two purposes:
+
+*Map of key-values*
+
+The following example illustrates creation of a map of key-values. In the first entry, a map of 2 key-values
+is set as the input argument "myMap" of a user function. In the second entry, the map's values are retrieved
+from the key "some.key" in base configuration and the environment variable "ENV_VAR_ONE".
+
+```text
+'map(k1=v1, k2=v2) -> myMap'
+'map(k1=${some.key}, k2=${ENV_VAR_ONE}) -> myMap'
+```
+
+*Mapping values from application.yml*
+
+The following input data mapping sets the value of "my.key" from the application.yml base configuration file
+to the input argument "myKey" of a user function.
+
+```text
+'map(my.key) -> myKey'
+```
+
+Since the system uses both application.properties and application.yml as base configuration files,
+you can use either configuration files depending on the data type of the value.
+
+For application.properties, "map(my.key)" is the same as "text(${my.key})".
+
+For application.yml, "map(my.key)" would set a primitive value (text, integer, float, boolean), 
+a hash map of key-values or an array of values.
 
 *Special content type for output data mapping*
 

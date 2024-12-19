@@ -162,6 +162,7 @@ public class ConfigReaderTest {
         assertEquals(12345, o);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void appConfigTest() {
         // AppConfigReader will combine both application.properties and application.yml
@@ -170,6 +171,14 @@ public class ConfigReaderTest {
         assertEquals("platform-core", reader.getProperty("application.name"));
         // hello.world is stored in "application.yml"
         assertEquals("great", reader.get("hello.world"));
+        // read complex map and list in application.yml
+        Object v = reader.get("oh.hi");
+        assertInstanceOf(Map.class, v);
+        MultiLevelMap mm = new MultiLevelMap((Map<String, Object>) v);
+        assertEquals(1, mm.getElement("great[0]"));
+        assertNull(mm.getElement("great[1]"));
+        assertEquals("great", mm.getElement("great[2].nice.way"));
+        assertEquals("good", mm.getElement("great[2].nice.another[0]"));
     }
 
     @Test

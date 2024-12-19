@@ -5,6 +5,7 @@ this.is.a.test: 'message'
 
 oh:
   hi.great:
+    # the second element is intentionally to be missing. It will return null.
     - 1
     -
     - nice:

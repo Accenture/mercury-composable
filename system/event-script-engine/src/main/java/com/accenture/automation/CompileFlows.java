@@ -67,6 +67,7 @@ public class CompileFlows implements EntryPoint {
     private static final String BOOLEAN_TYPE = "boolean(";
     private static final String CLASSPATH_TYPE = "classpath(";
     private static final String FILE_TYPE = "file(";
+    private static final String MAP_TYPE = "map(";
     private static final String CLOSE_BRACKET = ")";
     private static final String MAP_TO = "->";
     private static final String TASKS = "tasks";
@@ -635,6 +636,8 @@ public class CompileFlows implements EntryPoint {
                 if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
                         lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     return true;
+                } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+                    return validKeyValues(lhs);
                 } else {
                     return (lhs.startsWith(TEXT_TYPE) ||
                             lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
@@ -645,6 +648,27 @@ public class CompileFlows implements EntryPoint {
             }
         }
         return false;
+    }
+
+    private boolean validKeyValues(String xyx) {
+        int last = xyx.lastIndexOf(CLOSE_BRACKET);
+        String ref = xyx.substring(MAP_TYPE.length(), last).trim();
+        if (ref.contains("=") || ref.contains(",")) {
+            List<String> keyValues = Utility.getInstance().split(ref, ",");
+            Set<String> keys = new HashSet<>();
+            for (String kv: keyValues) {
+                int eq = kv.indexOf('=');
+                String k = eq == -1? kv.trim() : kv.substring(0, eq).trim();
+                if (k.isEmpty()) {
+                    return false;
+                } else {
+                    keys.add(k);
+                }
+            }
+            return keys.size() == keyValues.size();
+        } else {
+            return !ref.isEmpty();
+        }
     }
 
     private boolean validOutput(String output, boolean isDecision) {
@@ -665,8 +689,11 @@ public class CompileFlows implements EntryPoint {
                 || lhs.equals(STATUS)
                 || lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)) {
             return true;
+        } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+            return validKeyValues(lhs);
         } else {
-            return (lhs.startsWith(TEXT_TYPE) || lhs.startsWith(FILE_TYPE) ||
+            return (lhs.startsWith(TEXT_TYPE) ||
+                    lhs.startsWith(FILE_TYPE) ||
                     lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
                     lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
                     lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);

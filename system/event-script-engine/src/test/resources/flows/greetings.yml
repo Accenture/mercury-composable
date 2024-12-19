@@ -16,6 +16,7 @@ tasks:
       - 'float(12.345) -> float_number'
       - 'double(12.345) -> double_number'
       - 'boolean(true) -> boolean_value'
+      - 'map(direction=right, test=message) -> model.map'
       - 'text(demo_token) -> model.access_token'
       - 'input.header -> header'
       - 'input.path_parameter.user -> header.user'
@@ -26,6 +27,8 @@ tasks:
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
+      - 'map(test.map) -> output.body.map1'
+      - 'model.map -> output.body.map2'
       # invalid HTTP status will be rejected
       - 'text(20000) -> output.status'
       - 'status -> output.status'

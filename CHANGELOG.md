@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.1.1, 12/18/2024
+
+### Added
+
+Added "map" constant type in input data mapping.
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated Chapter-4 for the new "map" constant feature.
+
+---
 ## Version 4.1.0, 12/11/2024
 
 This milestone version achieves ideal event choreography by removing additional event routing

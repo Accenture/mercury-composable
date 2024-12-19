@@ -22,6 +22,7 @@ flows:
   - 'parser-test-20.yml'
   - 'parser-test-21.yml'
   - 'parser-test-22.yml'
+  - 'parser-test-23.yml'
   # duplicated filename is intentional for unit test
   - 'parser-test-17.yml'
 

@@ -1,0 +1,4 @@
+event:
+  http:
+    - route: 'hello.world'
+      target: 'http://127.0.0.1:8086/api/event'

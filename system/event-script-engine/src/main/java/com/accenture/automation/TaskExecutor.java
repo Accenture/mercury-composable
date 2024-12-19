@@ -27,6 +27,7 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -79,6 +80,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String BOOLEAN_TYPE = "boolean(";
     private static final String CLASSPATH_TYPE = "classpath(";
     private static final String FILE_TYPE = "file(";
+    private static final String MAP_TYPE = "map(";
     private static final String CLOSE_BRACKET = ")";
     private static final String TEXT_FILE = "text:";
     private static final String BINARY_FILE = "binary:";
@@ -1011,6 +1013,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
             if (lhs.startsWith(BOOLEAN_TYPE)) {
                 return TRUE.equalsIgnoreCase(lhs.substring(BOOLEAN_TYPE.length(), last).trim());
+            }
+            if (lhs.startsWith(MAP_TYPE)) {
+                String ref = lhs.substring(MAP_TYPE.length(), last).trim();
+                if (ref.contains("=") || ref.contains(",")) {
+                    List<String> keyValues = util.split(ref, ",");
+                    Map<String, Object> map = new HashMap<>();
+                    for (String kv: keyValues) {
+                        int eq = kv.indexOf('=');
+                        String k = eq == -1? kv.trim() : kv.substring(0, eq).trim();
+                        String v = eq == -1? "" : kv.substring(eq+1).trim();
+                        if (!k.isEmpty()) {
+                            map.put(k, v);
+                        }
+                    }
+                    return map;
+                } else {
+                    return AppConfigReader.getInstance().get(ref);
+                }
             }
             if (lhs.startsWith(FILE_TYPE)) {
                 SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
