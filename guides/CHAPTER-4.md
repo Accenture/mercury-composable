@@ -453,7 +453,7 @@ to static file in the application source code's "resources" folder.
 
 The "map" constant type is used for two purposes:
 
-*Map of key-values*
+*1. Map of key-values*
 
 The following example illustrates creation of a map of key-values. In the first entry, a map of 2 key-values
 is set as the input argument "myMap" of a user function. In the second entry, the map's values are retrieved
@@ -464,7 +464,10 @@ from the key "some.key" in base configuration and the environment variable "ENV_
 'map(k1=${some.key}, k2=${ENV_VAR_ONE}) -> myMap'
 ```
 
-*Mapping values from application.yml*
+Note that the comma character is used as a separator for each key-value pair. If the value contains a comma,
+the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
+
+*2. Mapping values from application.yml*
 
 The following input data mapping sets the value of "my.key" from the application.yml base configuration file
 to the input argument "myKey" of a user function.
@@ -490,10 +493,12 @@ a hash map of key-values or an array of values.
 For output data mapping, the "file" content type is used to save some data from the output of a user function
 to a file in the local file system.
 
+*Decison value*
+
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
 (See "Decision" in the task section).
 
-*Each flow has its end-to-end input and output.*
+*Each flow has its own input and output*
 
 Each function has its input headers, input body and output result set.
 Optionally, a function can return an EventEnvelope object to hold its result set in the "body", a "status" code
