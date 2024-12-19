@@ -83,10 +83,13 @@ public class FlowTests extends TestBase {
         assertInstanceOf(Map.class, res1.getBody());
         Map<String, Object> result1 = (Map<String, Object>) res1.getBody();
         assertEquals("world", result1.get("hello"));
-        // We must assume that external state machine is eventual consistent.
-        // Therefore, result may not be immediately available.
-        // However, for unit test, we set the external state machine function to have a single worker instance
-        // so that the GET request will wait until the PUT request is done, thus returning result correctly.
+        /*
+         * We must assume that external state machine is eventual consistent.
+         * Therefore, result may not be immediately available.
+         *
+         * However, for unit test, we set the external state machine function to have a single worker instance
+         * so that the GET request will wait until the PUT request is done, thus returning result correctly.
+         */
         AsyncHttpRequest request2 = new AsyncHttpRequest();
         request2.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request2.setUrl("/api/ext/state/"+USER);
@@ -109,7 +112,6 @@ public class FlowTests extends TestBase {
         final String B64_TEXT = util.bytesToBase64(util.getUTF(HELLO_WORLD));
         final byte[] HELLO_WORLD_BYTES = util.getUTF(HELLO_WORLD);
         final long TIMEOUT = 8000;
-        final String USERNAME = "test user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
@@ -161,14 +163,20 @@ public class FlowTests extends TestBase {
         assertInstanceOf(Integer.class, mm.getElement("long"));
         assertInstanceOf(Double.class, mm.getElement("float"));
         assertInstanceOf(Double.class, mm.getElement("double"));
-        // test boolean and/or feature
-        // true and false = false
-        // true or false = true
+        /*
+         * test boolean and/or feature
+         *
+         * true and false = false
+         * true or false = true
+         */
         assertEquals(false, mm.getElement("and"));
         assertEquals(true, mm.getElement("or"));
-        // test failed boolean mapping
-        // the following will return true because the mapping command "and(nothing)" is not operational
-        // 'model.positive:and(nothing) -> output.body.nothing'
+        /*
+         * test failed boolean mapping
+         *
+         * The following will return true because "nothing" does not belong to the state machine:
+         * 'model.positive:and(nothing) -> output.body.nothing'
+         */
         assertEquals(true, mm.getElement("nothing"));
     }
 
@@ -361,7 +369,17 @@ public class FlowTests extends TestBase {
         // input mapping 'input.header -> header' relays all HTTP headers
         assertEquals("greetings", result.get("demo3"));
         // check map values
-        assertEquals(Map.of("hello", "world", "good", "day"), result.get("map1"));
+        String port = AppConfigReader.getInstance().getProperty("server.port");
+        /*
+         * Prove that map containing system properties or environment variables is resolved by the config system.
+         * The mapping of "map(test.map)" should return the resolved key-values.
+         *
+         *    test.map:
+         *      good: day
+         *      hello: world
+         *      port: ${server.port}
+         */
+        assertEquals(Map.of("hello", "world", "good", "day", "port", port), result.get("map1"));
         assertEquals(Map.of("test", "message", "direction", "right"), result.get("map2"));
     }
 

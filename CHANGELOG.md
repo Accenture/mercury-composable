@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Added "map" constant type in input data mapping.
+1. "map" constant type in input data mapping
+2. AppConfigReader will resolve key-values from system properties and environment variables at startup
 
 ### Removed
 

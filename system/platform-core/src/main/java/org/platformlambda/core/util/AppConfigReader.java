@@ -63,15 +63,15 @@ public class AppConfigReader implements ConfigBase {
                 list.forEach(filename -> mergeConfig(consolidated, filename.toString()));
                 // check for the parameter spring.profiles.active
                 List<String> profiles = getActiveProfiles(consolidated);
-                int n = 0;
+                int n1 = 0;
                 for (String profile: profiles) {
                     String additionalProp = APPLICATION_PREFIX+profile+".properties";
                     String additionalYaml = APPLICATION_PREFIX+profile+".yml";
-                    n += mergeConfig(consolidated, additionalProp);
-                    n += mergeConfig(consolidated, additionalYaml);
+                    n1 += mergeConfig(consolidated, additionalProp);
+                    n1 += mergeConfig(consolidated, additionalYaml);
                 }
-                if (n > 0) {
-                    log.info("Updated {} parameter{} from active profiles {}", n, n == 1? "" : "s", profiles);
+                if (n1 > 0) {
+                    log.info("Updated {} parameter{} from active profiles {}", n1, n1 == 1? "" : "s", profiles);
                 } else if (!profiles.isEmpty()) {
                     log.info("Active profiles {} contain no additional parameters", profiles);
                 }
@@ -80,6 +80,25 @@ public class AppConfigReader implements ConfigBase {
                 Collections.sort(keys);
                 keys.forEach(k -> multiMap.setElement(k, consolidated.get(k)));
                 config.load(multiMap.getMap());
+                // resolve references to system properties and environment variables from the newly created config
+                int n2 = 0;
+                for (String k: keys) {
+                    Object o = consolidated.get(k);
+                    if (o instanceof String v) {
+                        int start = v.indexOf("${");
+                        int end = v.indexOf('}');
+                        if (start != -1 && end != -1 && end > start) {
+                            n2++;
+                        }
+                    }
+                }
+                // if found, reload configuration
+                if (n2 > 0) {
+                    keys.forEach(k -> multiMap.setElement(k, config.get(k)));
+                    config.load(multiMap.getMap());
+                    log.info("Resolved {} key-value{} from system properties and environment variables",
+                            n2, n2 == 1? "" : "s");
+                }
             } else {
                 throw new IOException("missing 'resources' section in "+APP_CONFIG_READER_YML);
             }

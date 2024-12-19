@@ -315,12 +315,12 @@ public class ConfigReaderTest {
     @Test
     public void compositeKeyValueTest() throws IOException {
         AppConfigReader config = AppConfigReader.getInstance();
-        // prove that config.getMap() method returns raw data without value substitution
+        // prove that the configuration key-values are fully resolved from system properties and environment variables
         Map<String, Object> raw = config.getMap();
         MultiLevelMap multi = new MultiLevelMap(raw);
-        assertEquals("${recursive.key}", multi.getElement("recursive.key"));
+        assertNull(multi.getElement("recursive.key"));
         // prove that config.get() method resolves value substitution
-        assertEquals(null, config.get("recursive.key"));
+        assertNull(config.get("recursive.key"));
         // prove that compositeKeyValues return the same value as config.get() method
         Map<String, Object> map = config.getCompositeKeyValues();
         assertEquals(config.get("application.feature.route.substitution"),
