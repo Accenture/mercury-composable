@@ -2,3 +2,6 @@ test.map:
   good: day
   hello: world
   port: ${server.port}
+
+test.map3:
+  good: day

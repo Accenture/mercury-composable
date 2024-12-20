@@ -381,6 +381,17 @@ public class FlowTests extends TestBase {
          */
         assertEquals(Map.of("hello", "world", "good", "day", "port", port), result.get("map1"));
         assertEquals(Map.of("test", "message", "direction", "right"), result.get("map2"));
+        /*
+         * The test case with map3 demonstrates that the key/value pairs from both application.properties
+         * and application.yml * are merged into one map.  In the example below, map(test.map3) contains 3 entries.
+         *
+         * test.map3.hello=world
+         * test.map3.ping=pong
+         *
+         * test.map3:
+         *   good: day
+         */
+        assertEquals(Map.of("hello", "world", "ping", "pong", "good", "day"), result.get("map3"));
     }
 
     @SuppressWarnings("unchecked")
