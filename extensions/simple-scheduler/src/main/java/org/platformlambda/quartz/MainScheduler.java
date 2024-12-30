@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -194,11 +194,10 @@ public class MainScheduler implements EntryPoint {
         AppConfigReader reader = AppConfigReader.getInstance();
         List<String> paths = Utility.getInstance().split(reader.getProperty("yaml.cron",
                 "file:/tmp/config/cron.yaml, classpath:/cron.yaml"), ", ");
-        for (String p: paths) {
-            ConfigReader config = new ConfigReader();
+        for (String p: paths) {            
             try {
-                config.load(p);
-                log.info("Loading config from {}", p);
+                ConfigReader config = new ConfigReader(p);
+                log.info("Loaded config from {}", p);
                 return config;
             } catch (IOException e) {
                 log.warn("Skipping {} - {}", p, e.getMessage());

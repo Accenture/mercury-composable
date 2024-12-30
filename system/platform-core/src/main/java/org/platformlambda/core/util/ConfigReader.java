@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,22 +42,44 @@ public class ConfigReader implements ConfigBase {
     private static final String YAML = ".yaml";
     private static final String DOT_PROPERTIES = ".properties";
 
-    private static AppConfigReader baseConfig;
-    private MultiLevelMap config = new MultiLevelMap();
+    private static ConfigReader baseConfig = null;
+    private boolean resolved = false;
+    private final String id = Utility.getInstance().getUuid();
+    private final MultiLevelMap config = new MultiLevelMap();
     private final Map<String, Object> cachedFlatMap = new HashMap<>();
 
     /**
-     * Set the base configuration reader (AppConfigReader)
-     * Note that this is done automatically when your application starts.
-     * You only need to set this when you are running unit tests for the
-     * config reader without starting the platform module.
+     * Create a new instance of ConfigReader
+     * without resolving references to base configuration.
+     */
+    public ConfigReader() { }
+
+    /**
+     * Create a new instance of ConfigReader
+     * with resolved references to base configuration parameters,
+     * environment variables and system properties.
+     *
+     * @param path in classpath or file convention
+     * @throws IOException if file not found
+     */
+    public ConfigReader(String path) throws IOException {
+        this.load(path);
+        this.resolveReferences();
+    }
+
+    /**
+     * This method is reserved for internal use.
      *
      * @param config is the singleton AppConfigReader class
      */
-    public static void setBaseConfig(AppConfigReader config) {
+    public static void setBaseConfig(ConfigReader config) {
         if (ConfigReader.baseConfig == null) {
             ConfigReader.baseConfig = config;
         }
+    }
+
+    public boolean isBaseConfig() {
+        return baseConfig != null && this.id.equals(baseConfig.id);
     }
 
     /**
@@ -286,7 +308,8 @@ public class ConfigReader implements ConfigBase {
      * @throws IOException if file not found
      */
     @SuppressWarnings("unchecked")
-    public void load(String path) throws IOException {
+    public ConfigReader load(String path) throws IOException {
+        resolved = false;
         boolean isYaml = path.endsWith(YML) || path.endsWith(YAML);
         // ".yaml" and ".yml" can be used interchangeably
         String alternativePath = null;
@@ -328,12 +351,11 @@ public class ConfigReader implements ConfigBase {
                 Yaml yaml = new Yaml();
                 String data = util.getUTF(util.stream2bytes(in, false));
                 Map<String, Object> m = yaml.load(data.contains("\t")? data.replace("\t", "  ") : data);
-                config = getMultiLevelMap(m);
+                config.reload(enforceKeysAsText(m));
             } else if (path.endsWith(JSON)) {
                 Map<String, Object> m = SimpleMapper.getInstance().getMapper().readValue(in, Map.class);
-                config = getMultiLevelMap(m);
+                config.reload(enforceKeysAsText(m));
             } else if (path.endsWith(DOT_PROPERTIES)) {
-                config = new MultiLevelMap();
                 Properties p = new Properties();
                 p.load(in);
                 Map<String, Object> map = new HashMap<>();
@@ -349,21 +371,7 @@ public class ConfigReader implements ConfigBase {
                 //
             }
         }
-    }
-
-    /**
-     * Normalized a raw map where the input map may be null
-     *
-     * @param raw input map
-     * @return multi level map
-     */
-    private MultiLevelMap getMultiLevelMap(Map<String, Object> raw) {
-        if (raw == null) {
-            return new MultiLevelMap();
-        } else {
-            enforceKeysAsText(raw);
-            return new MultiLevelMap(normalizeMap(raw));
-        }
+        return this;
     }
 
     /**
@@ -371,34 +379,60 @@ public class ConfigReader implements ConfigBase {
      *
      * @param map of key-values
      */
-    public void load(Map<String, Object> map) {
-        enforceKeysAsText(map);
-        config = new MultiLevelMap(normalizeMap(map));
+    public ConfigReader load(Map<String, Object> map) {
+        resolved = false;
+        config.reload(enforceKeysAsText(map));
+        return this;
     }
 
-    private Map<String, Object> normalizeMap(Map<String, Object> map) {
-        Map<String, Object> flat = Utility.getInstance().getFlatMap(map);
-        List<String> keys = new ArrayList<>(flat.keySet());
-        Collections.sort(keys);
-        MultiLevelMap multiMap = new MultiLevelMap();
-        keys.forEach(k -> multiMap.setElement(k, flat.get(k)));
-        return multiMap.getMap();
+    /**
+     * Render references to base application config, environment variables and system properties.
+     * When using the constructor without file path, this allows the resolution to be invoked
+     * programmatically or deferred.
+     */
+    public void resolveReferences() {
+        if (!resolved) {
+            resolved = true;
+            Map<String, Object> flat = Utility.getInstance().getFlatMap(config.getMap());
+            List<String> keys = new ArrayList<>(flat.keySet());
+            Collections.sort(keys);
+            boolean hasReferences = false;
+            for (String k : keys) {
+                Object o = config.getElement(k);
+                if (o instanceof String v) {
+                    int start = v.indexOf("${");
+                    int end = v.indexOf('}');
+                    if (start != -1 && end != -1 && end > start) {
+                        hasReferences = true;
+                        break;
+                    }
+                }
+            }
+            // if found, reload configuration
+            if (hasReferences) {
+                MultiLevelMap multiMap = new MultiLevelMap();
+                keys.forEach(k -> multiMap.setElement(k, this.get(k)));
+                config.reload(multiMap.getMap());
+            }
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void enforceKeysAsText(Map raw) {
-        Set keys = new HashSet(raw.keySet());
-        for (Object k: keys) {
-            Object v = raw.get(k);
-            // key is assumed to be string
-            if (!(k instanceof String)) {
-                raw.remove(k);
-                raw.put(String.valueOf(k), v);
-            }
-            if (v instanceof Map map) {
-                enforceKeysAsText(map);
+    private Map<String, Object> enforceKeysAsText(Map raw) {
+        Map<String, Object> result = new HashMap<>();
+        if (raw != null && !raw.isEmpty()) {
+            Set keys = new HashSet(raw.keySet());
+            for (Object k : keys) {
+                String key = String.valueOf(k);
+                Object value = raw.get(k);
+                if (value instanceof Map map) {
+                    result.put(key, enforceKeysAsText(map));
+                } else {
+                    result.put(key, value);
+                }
             }
         }
+        return result;
     }
 
     private record EnvVarSegment(int start, int end) { }

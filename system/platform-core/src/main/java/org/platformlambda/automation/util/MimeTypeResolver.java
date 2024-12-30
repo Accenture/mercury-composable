@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,9 +39,8 @@ public class MimeTypeResolver {
     @SuppressWarnings("unchecked")
     private MimeTypeResolver() {
         AppConfigReader config = AppConfigReader.getInstance();
-        ConfigReader reader = new ConfigReader();
         try {
-            reader.load(CONFIG_FILE);
+            ConfigReader reader = new ConfigReader(CONFIG_FILE);
             Object types = reader.get("mime.types");
             if (types instanceof Map) {
                 loadTypes((Map<String, Object>) types);

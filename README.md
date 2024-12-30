@@ -5,7 +5,7 @@ codebase. It is a comprehensive toolkit to write composable applications includi
 serverless. This technology was filed under US Patent application 18/459,307. The source code is provided
 as is under the Apache 2.0 license.
 
-August 2024
+January 2025
 
 # Getting Started
 

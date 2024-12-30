@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,12 +36,15 @@ public class CustomContentTypeResolver {
     private static final CustomContentTypeResolver instance = new CustomContentTypeResolver();
     private boolean initialized = false;
 
+    public static CustomContentTypeResolver getInstance() {
+        return instance;
+    }
+
     @SuppressWarnings("unchecked")
     private CustomContentTypeResolver() {
         AppConfigReader config = AppConfigReader.getInstance();
-        ConfigReader reader = new ConfigReader();
         try {
-            reader.load(CONFIG_FILE);
+            ConfigReader reader = new ConfigReader(CONFIG_FILE);
             Object types = reader.get("custom.content.types");
             if (types instanceof List) {
                 loadTypes((List<Object>) types);
@@ -75,10 +78,6 @@ public class CustomContentTypeResolver {
                 }
             }
         });
-    }
-
-    public static CustomContentTypeResolver getInstance() {
-        return instance;
     }
 
     public String getContentType(String ext) {

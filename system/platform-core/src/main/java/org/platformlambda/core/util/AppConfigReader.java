@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class AppConfigReader implements ConfigBase {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     private AppConfigReader() {
-        ConfigReader.setBaseConfig(this);
+        ConfigReader.setBaseConfig(config);
         try (InputStream in = AppConfigReader.class.getResourceAsStream("/"+APP_CONFIG_READER_YML)) {
             if (in == null) {
                 throw new IOException("missing "+APP_CONFIG_READER_YML);
@@ -63,15 +63,15 @@ public class AppConfigReader implements ConfigBase {
                 list.forEach(filename -> mergeConfig(consolidated, filename.toString()));
                 // check for the parameter spring.profiles.active
                 List<String> profiles = getActiveProfiles(consolidated);
-                int n1 = 0;
+                int n = 0;
                 for (String profile: profiles) {
                     String additionalProp = APPLICATION_PREFIX+profile+".properties";
                     String additionalYaml = APPLICATION_PREFIX+profile+".yml";
-                    n1 += mergeConfig(consolidated, additionalProp);
-                    n1 += mergeConfig(consolidated, additionalYaml);
+                    n += mergeConfig(consolidated, additionalProp);
+                    n += mergeConfig(consolidated, additionalYaml);
                 }
-                if (n1 > 0) {
-                    log.info("Updated {} parameter{} from active profiles {}", n1, n1 == 1? "" : "s", profiles);
+                if (n > 0) {
+                    log.info("Updated {} parameter{} from active profiles {}", n, n == 1? "" : "s", profiles);
                 } else if (!profiles.isEmpty()) {
                     log.info("Active profiles {} contain no additional parameters", profiles);
                 }
@@ -80,29 +80,10 @@ public class AppConfigReader implements ConfigBase {
                 Collections.sort(keys);
                 keys.forEach(k -> multiMap.setElement(k, consolidated.get(k)));
                 config.load(multiMap.getMap());
-                // resolve references to system properties and environment variables from the newly created config
-                int n2 = 0;
-                for (String k: keys) {
-                    Object o = consolidated.get(k);
-                    if (o instanceof String v) {
-                        int start = v.indexOf("${");
-                        int end = v.indexOf('}');
-                        if (start != -1 && end != -1 && end > start) {
-                            n2++;
-                        }
-                    }
-                }
-                // if found, reload configuration
-                if (n2 > 0) {
-                    keys.forEach(k -> multiMap.setElement(k, config.get(k)));
-                    config.load(multiMap.getMap());
-                    log.info("Resolved {} key-value{} from system properties and environment variables",
-                            n2, n2 == 1? "" : "s");
-                }
+                config.resolveReferences();
             } else {
                 throw new IOException("missing 'resources' section in "+APP_CONFIG_READER_YML);
             }
-
         } catch (IOException e) {
             log.error("Unable to parse base application configuration - {}", e.getMessage());
         }
@@ -123,9 +104,13 @@ public class AppConfigReader implements ConfigBase {
     }
 
     private int mergeConfig(Map<String, Object> consolidated, String filename) {
-        ConfigReader reader = new ConfigReader();
         try {
-            reader.load("/"+filename);
+            /*
+             * create a new instance of ConfigReader without resolving references
+             * because the AppConfigReader constructor will resolve references
+             * after merging all base configuration files.
+             */
+            ConfigReader reader = new ConfigReader().load("/"+filename);
             Map<String, Object> flat = Utility.getInstance().getFlatMap(reader.getMap());
             if (!flat.isEmpty()) {
                 consolidated.putAll(flat);
@@ -136,6 +121,11 @@ public class AppConfigReader implements ConfigBase {
             // ok to ignore
             return 0;
         }
+    }
+
+    @Override
+    public boolean isBaseConfig() {
+        return config.isBaseConfig();
     }
 
     /**

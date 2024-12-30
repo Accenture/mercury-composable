@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -94,12 +94,11 @@ public class EventEmitter {
         String multicast = config.getProperty(MULTICAST_YAML);
         if (multicast != null) {
             platform.getVirtualThreadExecutor().submit(() -> {
-                log.info("Loading multicast config from {}", multicast);
-                ConfigReader reader = new ConfigReader();
                 try {
-                    reader.load(multicast);
+                    ConfigReader reader = new ConfigReader(multicast);
                     loadMulticast(multicast, reader);
                     multicastEnabled = true;
+                    log.info("Loaded multicast config from {}", multicast);
                 } catch (IOException e) {
                     log.error("Unable to load multicast config - {}", e.getMessage());
                 }
@@ -108,29 +107,28 @@ public class EventEmitter {
         String journal = config.getProperty(JOURNAL_YAML);
         if (journal != null) {
             platform.getVirtualThreadExecutor().submit(() -> {
-                log.info("Loading journal config from {}", journal);
-                ConfigReader reader = new ConfigReader();
                 try {
-                    reader.load(journal);
+                    ConfigReader reader = new ConfigReader(journal);
+                    loadJournalRoutes(reader);
                     journalEnabled = true;
+                    log.info("Loaded journal config from {}", journal);
                 } catch (IOException e) {
                     log.error("Unable to load journal config - {}", e.getMessage());
                 }
-                loadJournalRoutes(reader);
             });
         }
         String eventHttpConfig = config.getProperty(EVENT_OVER_HTTP_YAML);
         if (eventHttpConfig != null) {
             platform.getVirtualThreadExecutor().submit(() -> {
-                log.info("Loading event-over-http config from {}", eventHttpConfig);
-                ConfigReader reader = new ConfigReader();
                 try {
-                    reader.load(eventHttpConfig);
+                    ConfigReader reader = new ConfigReader(eventHttpConfig);
+                    loadHttpRoutes(eventHttpConfig, reader);
                     eventHttpEnabled = true;
+                    log.info("Loaded event-over-http config from {}", eventHttpConfig);
                 } catch (IOException e) {
                     log.error("Unable to load event-over-http config - {}", e.getMessage());
                 }
-                loadHttpRoutes(eventHttpConfig, reader);
+
             });
         }
         // load route substitution table if any
@@ -334,10 +332,9 @@ public class EventEmitter {
     private ConfigReader getRouteSubstitutionConfig(String location) throws IOException {
         List<String> paths = Utility.getInstance().split(location, ", ");
         for (String p: paths) {
-            ConfigReader config = new ConfigReader();
             try {
-                config.load(p);
-                log.info("Loading route substitutions from {}", p);
+                ConfigReader config = new ConfigReader(p);
+                log.info("Loaded route substitutions from {}", p);
                 return config;
             } catch (IOException e) {
                 log.warn("Skipping {} - {}", p, e.getMessage());

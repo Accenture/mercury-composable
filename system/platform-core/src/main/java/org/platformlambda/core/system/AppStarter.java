@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -207,8 +207,7 @@ public class AppStarter {
             List<String> paths = util.split(path, ", ");
             for (String p: paths) {
                 try {
-                    ConfigReader overrideConfig = new ConfigReader();
-                    overrideConfig.load(p);
+                    ConfigReader overrideConfig = new ConfigReader(p);
                     Map<String, PreLoadInfo> tasks = parsePreloadOverride(overrideConfig);
                     if (result.isEmpty()) {
                         result.putAll(tasks);
@@ -537,14 +536,14 @@ public class AppStarter {
         Map<String, Map<String, Object>> allCorsEntries = new HashMap<>();
         Map<String, Map<String, Object>> allHeaderEntries = new HashMap<>();
         for (String p: paths) {
-            ConfigReader config = new ConfigReader();
+            final ConfigReader config;
             try {
-                config.load(p);
+                config = new ConfigReader(p);
+                log.info("Loading config from {}", p);
             } catch (IOException e) {
                 log.error("Unable to load REST entries from {} - {}", p, e.getMessage());
                 continue;
             }
-            log.info("Loading config from {}", p);
             // load configuration for static content filters, cors and headers
             Object sc = config.get(STATIC_CONTENT);
             if (sc instanceof Map) {
@@ -612,9 +611,7 @@ public class AppStarter {
         if (mm.isEmpty()) {
             log.error("There are no REST endpoints found in {}", paths);
         }
-        ConfigReader combined = new ConfigReader();
-        combined.load(mm.getMap());
-        return combined;
+        return new ConfigReader().load(mm.getMap());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

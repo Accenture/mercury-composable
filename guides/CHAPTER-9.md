@@ -556,12 +556,11 @@ You can override the main application configuration at run-time using the Java a
 
 > java -Dserver.port=8080 -jar myApp.jar
 
-Additional configuration files can be added with the `ConfigReader` API like this:
+Additional configuration files can be added with the `ConfigReader` constructor like this:
 
 ```java
 // filePath should have location prefix "classpath:/" or "file:/"
-ConfigReader reader = new ConfigReader();
-reader.load(filePath);
+ConfigReader reader = new ConfigReader(filePath);
 ```
 
 The configuration system supports environment variable or reference to the main application configuration

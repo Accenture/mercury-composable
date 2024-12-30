@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import org.platformlambda.core.models.PubSubProvider;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.ConfigReader;
-import org.platformlambda.core.util.Utility;
-
 import java.io.IOException;
 import java.util.*;
 
@@ -36,16 +34,16 @@ public class MockPubSub implements PubSubProvider {
     private static final Map<String, LambdaFunction> subscriptions = new HashMap<>();
 
     public MockPubSub() {
-        ConfigReader reader = new ConfigReader();
         try {
-            reader.load("classpath:/topic-substitution.yaml");
+            ConfigReader reader = new ConfigReader("classpath:/topic-substitution.yaml");
+            Map<String, Object> map = reader.getCompositeKeyValues();
+            for (String item: map.keySet()) {
+                topicStore.put(item, 1);
+            }
         } catch (IOException e) {
             // this should not happen
         }
-        Map<String, Object> map = reader.getCompositeKeyValues();
-        for (String item: map.keySet()) {
-            topicStore.put(item, 1);
-        }
+
     }
 
     @Override

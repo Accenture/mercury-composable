@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -91,7 +91,6 @@ public class CompileFlows implements EntryPoint {
     private static final String SKIP_INVALID_TASK = "Skip invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
-
     /**
      * This main class is only used when testing the app from the IDE.
      *
@@ -109,9 +108,9 @@ public class CompileFlows implements EntryPoint {
         String locations = config.getProperty("yaml.flow.automation", "classpath:/flows.yaml");
         List<String> paths = util.split(locations, ", ");
         for (String p: paths) {
-            ConfigReader reader = new ConfigReader();
+            final ConfigReader reader;            
             try {
-                reader.load(p);
+                reader = new ConfigReader(p);
             } catch (IOException e) {
                 log.error("Unable to load Event Scripts from {} - {}", p, e.getMessage());
                 continue;
@@ -132,10 +131,9 @@ public class CompileFlows implements EntryPoint {
                 List<String> ordered = new ArrayList<>(uniqueFlows);
                 Collections.sort(ordered);
                 for (String f: ordered) {
-                    if (f.endsWith(".yml") || f.endsWith(".yaml")) {
-                        ConfigReader flow = new ConfigReader();
+                    if (f.endsWith(".yml") || f.endsWith(".yaml")) {                        
                         try {
-                            flow.load(prefix + f);
+                            ConfigReader flow = new ConfigReader(prefix + f);
                             log.info("Parsing {}{}", prefix, f);
                             createFlow(f, flow);
                         } catch (IOException e) {

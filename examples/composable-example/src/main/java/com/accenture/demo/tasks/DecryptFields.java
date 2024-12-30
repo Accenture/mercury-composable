@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -54,15 +54,15 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
         if (input.containsKey(DATASET)) {
             String masterKey = input.get(B64_MASTER_KEY).toString();
             Map<String, Object> dataset = (Map<String, Object>) input.get(DATASET);
-            MultiLevelMap map = new MultiLevelMap(dataset);
+            MultiLevelMap multiLevels = new MultiLevelMap(dataset);
             List<String> fields = util.split((String) input.get(PROTECTED_FIELDS), ", ");
             for (String f: fields) {
-                if (map.exists(f)) {
-                    String cipherText = map.getElement(f).toString();
-                    map.setElement(f, decryptField(cipherText, masterKey));
+                if (multiLevels.exists(f)) {
+                    String cipherText = multiLevels.getElement(f).toString();
+                    multiLevels.setElement(f, decryptField(cipherText, masterKey));
                 }
             }
-            return dataset;
+            return multiLevels.getMap();
         } else {
             throw new IllegalArgumentException(MISSING+DATASET);
         }

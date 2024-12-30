@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2024 Accenture Technology
+    Copyright 2018-2025 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,14 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 public class MultiLevelMap {
-    private final Map<String, Object> multiLevels;
+    private final Map<String, Object> multiLevels = new HashMap<>();
 
     /**
      * Create an empty multi-level map
      */
-    public MultiLevelMap() {
-        this.multiLevels = new HashMap<>();
-    }
+    public MultiLevelMap() { }
 
     /**
      * Create a multi-level map from a hashmap
@@ -39,7 +37,17 @@ public class MultiLevelMap {
      * @param map of key-values
      */
     public MultiLevelMap(Map<String, Object> map) {
-        this.multiLevels = map == null? new HashMap<>() : map;
+        this.multiLevels.putAll(map);
+    }
+
+    /**
+     * Reload key-values from a different map
+     *
+     * @param map of key-values
+     */
+    public void reload(Map<String, Object> map) {
+        this.multiLevels.clear();
+        this.multiLevels.putAll(map);
     }
 
     /**
