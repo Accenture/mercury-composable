@@ -26,17 +26,15 @@ public class Flow {
     public final Map<String, Task> tasks = new HashMap<>();
 
     public final String id;
-    public final String description;
     public final long ttl;
 
     public final String firstTask;
     public final String externalStateMachine;
     public final String exception;
 
-    public Flow(String id, String description, String firstTask, String externalStateMachine,
+    public Flow(String id, String firstTask, String externalStateMachine,
                 long duration, String exception) {
         this.id = id;
-        this.description = description;
         this.firstTask = firstTask;
         this.externalStateMachine = externalStateMachine;
         this.exception = exception;

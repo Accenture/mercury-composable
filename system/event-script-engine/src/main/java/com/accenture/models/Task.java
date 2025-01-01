@@ -34,7 +34,6 @@ public class Task {
     public final List<String> pipelineSteps = new ArrayList<>();
     public final String service;
     public final String functionRoute;
-    public final String description;
 
     // execution: decision, response, end, sequential, parallel
     public final String execution;
@@ -45,10 +44,9 @@ public class Task {
     private String loopType = "none";
     private String whileModelKey = null;
 
-    public Task(String service, String functionRoute, String description, String execution) {
+    public Task(String service, String functionRoute, String execution) {
         this.service = service;
         this.functionRoute = functionRoute == null? service : functionRoute;
-        this.description = description;
         this.execution = execution;
     }
 

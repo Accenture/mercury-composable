@@ -111,36 +111,31 @@ public class CompileFlows implements EntryPoint {
             final ConfigReader reader;            
             try {
                 reader = new ConfigReader(p);
-            } catch (IOException e) {
-                log.error("Unable to load Event Scripts from {} - {}", p, e.getMessage());
-                continue;
-            }
-            log.info("Loading event scripts from {}", p);
-            String prefix = reader.getProperty("location", "classpath:/flows/");
-            Object flowConfig = reader.get("flows");
-            if (flowConfig instanceof List flows) {
-                Set<String> uniqueFlows = new HashSet<>();
-                for (int i = 0; i < flows.size(); i++) {
-                    String f = reader.getProperty("flows[" + i + "]");
-                    if (f.endsWith(".yml") || f.endsWith(".yaml")) {
-                        uniqueFlows.add(f);
-                    } else {
-                        log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
+                log.info("Loading event scripts from {}", p);
+                String prefix = reader.getProperty("location", "classpath:/flows/");
+                Object flowConfig = reader.get("flows");
+                if (flowConfig instanceof List flows) {
+                    Set<String> uniqueFlows = new HashSet<>();
+                    for (int i = 0; i < flows.size(); i++) {
+                        String f = reader.getProperty("flows[" + i + "]");
+                        if (f.endsWith(".yml") || f.endsWith(".yaml")) {
+                            uniqueFlows.add(f);
+                        } else {
+                            log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
+                        }
                     }
-                }
-                List<String> ordered = new ArrayList<>(uniqueFlows);
-                Collections.sort(ordered);
-                for (String f: ordered) {
-                    if (f.endsWith(".yml") || f.endsWith(".yaml")) {                        
+                    List<String> ordered = new ArrayList<>(uniqueFlows);
+                    Collections.sort(ordered);
+                    for (String f: ordered) {
                         try {
-                            ConfigReader flow = new ConfigReader(prefix + f);
-                            log.info("Parsing {}{}", prefix, f);
-                            createFlow(f, flow);
+                            createFlow(f, new ConfigReader(prefix + f));
                         } catch (IOException e) {
                             log.error("Ignored {} - {}", f, e.getMessage());
                         }
                     }
                 }
+            } catch (IOException e) {
+                log.error("Unable to load Event Scripts from {} - {}", p, e.getMessage());
             }
         }
         List<String> flows = Flows.getAllFlows();
@@ -153,6 +148,7 @@ public class CompileFlows implements EntryPoint {
 
     @SuppressWarnings("unchecked")
     private void createFlow(String name, ConfigReader flow) {
+        log.info("Parsing {}", name);
         Utility util = Utility.getInstance();
         Object id = flow.get("flow.id");
         Object description = flow.get("flow.description");
@@ -160,8 +156,12 @@ public class CompileFlows implements EntryPoint {
         Object exceptionTask = flow.get("flow.exception");
         Object firstTask = flow.get("first.task");
         Object ext = flow.get("external.state.machine");
-        if (id instanceof String flowId && description instanceof String desc
-                && timeToLive instanceof String ttl && firstTask instanceof String task1) {
+        /*
+         * Flow description is enforced at compile time for documentation purpose.
+         * It is not used in flow processing.
+         */
+        if (id instanceof String flowId && description instanceof String
+                && timeToLive instanceof String ttl && firstTask instanceof String start) {
             if (Flows.flowExists(flowId)) {
                 log.error("Skip {} - Flow '{}' already exists", name, flowId);
                 return;
@@ -170,7 +170,7 @@ public class CompileFlows implements EntryPoint {
             // minimum 1 second for TTL
             long ttlSeconds = Math.max(1, util.getDurationInSeconds(ttl));
             String extState = ext instanceof String es? es : null;
-            Flow entry = new Flow(flowId, desc, task1, extState, ttlSeconds * 1000L, unhandledException);
+            Flow entry = new Flow(flowId, start, extState, ttlSeconds * 1000L, unhandledException);
             int taskCount = 0;
             Object taskList = flow.get(TASKS);
             if (taskList instanceof List) {
@@ -190,6 +190,9 @@ public class CompileFlows implements EntryPoint {
                  * to point to the original composable function.
                  *
                  * When "name" is not provided, the "process" value will be used instead.
+                 *
+                 * Task description is enforced at compile time for documentation purpose.
+                 * It is not used in flow processing.
                  */
                 String taskName = flow.getProperty(TASKS+"["+i+"]."+NAME);
                 String functionRoute = flow.getProperty(TASKS+"["+i+"]."+PROCESS);
@@ -200,8 +203,8 @@ public class CompileFlows implements EntryPoint {
                 Object taskLoop = flow.get(TASKS+"["+i+"]."+LOOP);
                 String uniqueTaskName = taskName == null? functionRoute : taskName;
                 if (input instanceof List && output instanceof List && uniqueTaskName != null &&
-                        taskDesc instanceof String taskDescription &&
-                        execution instanceof String taskExecution && validExecutionType(taskExecution)) {
+                        taskDesc instanceof String && execution instanceof String taskExecution &&
+                        validExecutionType(taskExecution)) {
                     boolean validTask = true;
                     if (uniqueTaskName.contains("://") && !uniqueTaskName.startsWith(FLOW_PROTOCOL)) {
                         log.error("{} {} in {}. Syntax is flow://{flow-name}", SKIP_INVALID_TASK, uniqueTaskName, name);
@@ -219,7 +222,7 @@ public class CompileFlows implements EntryPoint {
                                     SKIP_INVALID_TASK, uniqueTaskName, name);
                         return;
                     }
-                    Task task = new Task(uniqueTaskName, functionRoute, taskDescription, taskExecution);
+                    Task task = new Task(uniqueTaskName, functionRoute, taskExecution);
                     if (delay instanceof Integer) {
                         long n = util.str2long(delay.toString());
                         if (n < entry.ttl) {
