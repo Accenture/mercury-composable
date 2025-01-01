@@ -190,7 +190,8 @@ public class ObjectStreamIO {
         List<String> list = new ArrayList<>(streams.keySet());
         for (String id : list) {
             StreamInfo info = streams.get(id);
-            if (now - info.updated > info.expiryMills) {
+            // test null pointer to avoid racing condition
+            if (info != null && now - info.updated > info.expiryMills) {
                 try {
                     String createdTime = util.date2str(new Date(info.created));
                     String updatedTime = util.date2str(new Date(info.updated));

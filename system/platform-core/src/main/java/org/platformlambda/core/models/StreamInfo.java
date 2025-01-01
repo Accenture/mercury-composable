@@ -19,12 +19,11 @@
 package org.platformlambda.core.models;
 
 public class StreamInfo {
-    public long created = System.currentTimeMillis();
-    public long updated;
-    public long expiryMills;
+    public final long created = System.currentTimeMillis();
+    public long updated = created;
+    public final long expiryMills;
 
     public StreamInfo(long expirySeconds) {
-        this.updated = this.created;
         this.expiryMills = expirySeconds * 1000;
     }
 }
