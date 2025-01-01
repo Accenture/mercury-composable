@@ -70,11 +70,6 @@ public class PipelineInfo extends PipeInfo {
         completed = false;
     }
 
-    public void restorePrev(int prevPointer, boolean completed) {
-        this.ptr.set(prevPointer);
-        this.completed = completed;
-    }
-
     public void setCompleted() {
         this.completed = true;
     }

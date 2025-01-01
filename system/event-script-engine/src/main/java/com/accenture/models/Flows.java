@@ -51,10 +51,6 @@ public class Flows {
         flowInstances.put(instance.id, instance);
     }
 
-    public static boolean hasFlowInstance(String id) {
-        return flowInstances.containsKey(id);
-    }
-
     public static void closeFlowInstance(String id) {
         FlowInstance instance = flowInstances.get(id);
         if (instance != null) {
