@@ -44,7 +44,7 @@ public class FlowInstance {
     public final String id = Utility.getInstance().getUuid();
     public final String cid;
     public final String replyTo;
-    public final String timeoutWatcher;
+    private final String timeoutWatcher;
     private final Flow flow;
     private String traceId;
     private String tracePath;

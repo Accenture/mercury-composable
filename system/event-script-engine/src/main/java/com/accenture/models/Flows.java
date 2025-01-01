@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class Flows {
-    private Flows() {}
     private static final ConcurrentMap<String, Flow> allFlows = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, FlowInstance> flowInstances = new ConcurrentHashMap<>();
 
@@ -62,5 +61,4 @@ public class Flows {
             flowInstances.remove(id);
         }
     }
-
 }

@@ -32,8 +32,7 @@ public class Flow {
     public final String externalStateMachine;
     public final String exception;
 
-    public Flow(String id, String firstTask, String externalStateMachine,
-                long duration, String exception) {
+    public Flow(String id, String firstTask, String externalStateMachine, long duration, String exception) {
         this.id = id;
         this.firstTask = firstTask;
         this.externalStateMachine = externalStateMachine;
