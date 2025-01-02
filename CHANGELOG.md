@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Version 4.1.3, 12/30/2024
+## Version 4.1.3, 1/1/2025
 
 ### Added
 
@@ -24,6 +24,7 @@ N/A
    MultiLevelMap classes.
 2. Input to MultiLevelMap is now immutable.
 3. OSS updates as follows.
+4. Simplified event script's pipeline condition syntax.
 
 Spring Boot parent version 3.4.1
 Kotlin version 2.1.0

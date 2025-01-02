@@ -383,7 +383,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     log.debug("Flow {}:{} pipeline #{} next step-{} {}",
                             flowInstance.getFlow().id, flowInstance.id, seq, n+1, pipeline.getTaskName(n));
                 }
-                if (pipelineTask.conditions.isEmpty()) {
+                if (pipelineTask.condition.isEmpty()) {
                     executeTask(flowInstance, pipeline.getTaskName(n), seq);
                 } else {
                     /*
@@ -391,20 +391,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                      * The second element is "continue" or "break".
                      */
                     boolean conditionMet = false;
-                    for (List<String> condition: pipelineTask.conditions) {
-                        Object o = consolidated.getElement(condition.getFirst());
-                        if (Boolean.TRUE.equals(o)) {
-                            String action = condition.get(1);
-                            conditionMet = action != null;
-                            if (BREAK.equals(action)) {
-                                flowInstance.pipeMap.remove(seq);
-                                executeTask(flowInstance, pipeline.getExitTask());
-                            } else if (CONTINUE.equals(action)) {
-                                pipeline.setCompleted();
-                                pipelineCompletion(flowInstance, pipeline, consolidated, seq);
-                            }
-                            consolidated.removeElement(condition.getFirst());
-                            break;
+                    Object o = consolidated.getElement(pipelineTask.condition.getFirst());
+                    if (Boolean.TRUE.equals(o)) {
+                        String action = pipelineTask.condition.get(1);
+                        conditionMet = action != null;
+                        if (BREAK.equals(action)) {
+                            flowInstance.pipeMap.remove(seq);
+                            executeTask(flowInstance, pipeline.getExitTask());
+                        } else if (CONTINUE.equals(action)) {
+                            pipeline.setCompleted();
+                            pipelineCompletion(flowInstance, pipeline, consolidated, seq);
                         }
                     }
                     if (!conditionMet) {

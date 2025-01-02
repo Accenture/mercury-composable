@@ -27,14 +27,13 @@ public class Task {
     public final List<String> init = new ArrayList<>();
     public final List<String> comparator = new ArrayList<>();
     public final List<String> sequencer = new ArrayList<>();
-    public final List<List<String>> conditions = new ArrayList<>();
+    public final List<String> condition = new ArrayList<>();
     public final List<String> input = new ArrayList<>();
     public final List<String> output = new ArrayList<>();
     public final List<String> nextSteps = new ArrayList<>();
     public final List<String> pipelineSteps = new ArrayList<>();
     public final String service;
     public final String functionRoute;
-
     // execution: decision, response, end, sequential, parallel
     public final String execution;
     private long delay = -1;

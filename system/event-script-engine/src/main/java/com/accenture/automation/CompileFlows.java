@@ -146,7 +146,7 @@ public class CompileFlows implements EntryPoint {
         log.info("Event scripts deployed: {}", flows.size());
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void createFlow(String name, ConfigReader flow) {
         log.info("Parsing {}", name);
         Utility util = Utility.getInstance();
@@ -264,35 +264,46 @@ public class CompileFlows implements EntryPoint {
                          * A sequential or pipeline must have one next task.
                          */
                         if (!SINK.equals(execution)) {
-                            List<String> nextTasks = (List<String>) flow.get(TASKS+"["+i+"]."+NEXT, new ArrayList<>());
-                            if (nextTasks.isEmpty()) {
-                                log.error("{} {} in {}. Missing a list of next tasks",
+                            Object nextList = flow.get(TASKS+"["+i+"]."+NEXT, new ArrayList<>());
+                            if (nextList instanceof List list) {
+                                if (list.isEmpty()) {
+                                    log.error("{} {} in {}. Missing a list of next tasks",
+                                            SKIP_INVALID_TASK, uniqueTaskName, name);
+                                    return;
+                                }
+                                List<String> nextTasks = new ArrayList<>();
+                                list.forEach(v -> nextTasks.add(String.valueOf(v)));
+                                if (nextTasks.size() > 1 &&
+                                        (SEQUENTIAL.equals(execution) || PIPELINE.equals(execution))) {
+                                    log.error("Invalid {} task {} in {}. Expected one next task, Actual: {}",
+                                            execution, uniqueTaskName, name, nextTasks.size());
+                                    return;
+                                }
+                                task.nextSteps.addAll(nextTasks);
+                            } else {
+                                log.error("{} {} in {}. 'next' should be a list",
                                         SKIP_INVALID_TASK, uniqueTaskName, name);
                                 return;
                             }
-                            if (nextTasks.size() > 1 && (SEQUENTIAL.equals(execution) || PIPELINE.equals(execution))) {
-                                log.error("Invalid {} task {} in {}. Expected one next task, Actual: {}",
-                                            execution, uniqueTaskName, name, nextTasks.size());
-                                return;
-                            }
-                            task.nextSteps.addAll(nextTasks);
                         }
                         /*
                          * A pipeline task must have at least one pipeline step
                          */
                         if (PIPELINE.equals(execution)) {
-                            List<String> pipelineSteps = (List<String>) flow.get(TASKS+"["+i+"]."+PIPELINE, new ArrayList<>());
-                            if (pipelineSteps.isEmpty()) {
-                                log.error("{} {} in {}. Missing a list of pipeline steps",
-                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                return;
-                            }
-                            task.pipelineSteps.addAll(pipelineSteps);
-                            if (taskLoop != null) {
+                            Object pipelineList = flow.get(TASKS+"["+i+"]."+PIPELINE, new ArrayList<>());
+                            if (pipelineList instanceof List list) {
+                                if (list.isEmpty()) {
+                                    log.error("{} {} in {}. Missing a list of pipeline steps",
+                                            SKIP_INVALID_TASK, uniqueTaskName, name);
+                                    return;
+                                }
+                                List<String> pipelineSteps = new ArrayList<>();
+                                list.forEach(v -> pipelineSteps.add(String.valueOf(v)));
+                                task.pipelineSteps.addAll(pipelineSteps);
                                 if (taskLoop instanceof Map) {
                                     MultiLevelMap loopMap = new MultiLevelMap((Map<String, Object>) taskLoop);
                                     Object statement = loopMap.getElement(STATEMENT);
-                                    Object conditions = loopMap.getElement(CONDITION);
+                                    Object condition = loopMap.getElement(CONDITION);
                                     if (statement instanceof String s) {
                                         int bracket = s.indexOf('(');
                                         if (bracket == -1) {
@@ -321,8 +332,8 @@ public class CompileFlows implements EntryPoint {
                                             if (parts.size() == 3) {
                                                 List<String> initializer = getForPart1(parts.getFirst());
                                                 if (initializer.isEmpty()) {
-                                                    log.error("{} {} in {}. Please check for-loop initializer. e.g. " +
-                                                                    "'for (model.n = 0; model.n < 3; model.n++)'",
+                                                    log.error("{} {} in {}. Please check for-loop initializer. " +
+                                                                "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
                                                             SKIP_INVALID_TASK, uniqueTaskName, name);
                                                     return;
                                                 }
@@ -342,7 +353,6 @@ public class CompileFlows implements EntryPoint {
                                                         SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
-
                                         } else {
                                             if (parts.size() != 1) {
                                                 log.error("{} {} in {}. 'while' loop should have only one value",
@@ -358,34 +368,23 @@ public class CompileFlows implements EntryPoint {
                                             }
                                             task.setWhileModelKey(modelKey);
                                         }
-
                                     } else {
                                         log.error("{} {} in {}. {} loop.statement", SKIP_INVALID_TASK,
                                                 uniqueTaskName, name, statement == null? "Missing" : "Please check");
                                         return;
                                     }
-                                    if (conditions != null) {
-                                        if (conditions instanceof List) {
-                                            List<List<String>> conditionList = getConditionList((List<String>) conditions);
-                                            if (conditionList.isEmpty()) {
-                                                log.error("{} {} in {}. please check loop.condition",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                            task.conditions.addAll(conditionList);
-
-                                        } else {
-                                            log.error("{} {} in {}. loop.condition should be a list of 'if' statements",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
+                                    if (condition instanceof String text) {
+                                        task.condition.addAll(getCondition(text));
                                     }
-
-                                } else {
+                                } else if (taskLoop != null) {
                                     log.error("{} {} in {}. 'loop' must be a map of for/while statement and conditions",
                                             SKIP_INVALID_TASK, uniqueTaskName, name);
                                     return;
                                 }
+                            } else {
+                                log.error("{} {} in {}. 'pipeline' should be a list",
+                                        SKIP_INVALID_TASK, uniqueTaskName, name);
+                                return;
                             }
                         }
                     }
