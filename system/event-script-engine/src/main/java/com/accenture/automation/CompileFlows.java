@@ -26,7 +26,6 @@ import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.AppStarter;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
-import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -200,7 +199,8 @@ public class CompileFlows implements EntryPoint {
                 Object execution = flow.get(TASKS+"["+i+"]."+EXECUTION);
                 Object delay = flow.get(TASKS+"["+i+"]."+DELAY);
                 Object taskException = flow.get(TASKS+"["+i+"]."+EXCEPTION);
-                Object taskLoop = flow.get(TASKS+"["+i+"]."+LOOP);
+                String loopStatement = flow.getProperty(TASKS+"["+i+"]."+LOOP+"."+STATEMENT);
+                String loopCondition = flow.getProperty(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
                 String uniqueTaskName = taskName == null? functionRoute : taskName;
                 if (input instanceof List && output instanceof List && uniqueTaskName != null &&
                         taskDesc instanceof String && execution instanceof String taskExecution &&
@@ -300,86 +300,76 @@ public class CompileFlows implements EntryPoint {
                                 List<String> pipelineSteps = new ArrayList<>();
                                 list.forEach(v -> pipelineSteps.add(String.valueOf(v)));
                                 task.pipelineSteps.addAll(pipelineSteps);
-                                if (taskLoop instanceof Map) {
-                                    MultiLevelMap loopMap = new MultiLevelMap((Map<String, Object>) taskLoop);
-                                    Object statement = loopMap.getElement(STATEMENT);
-                                    Object condition = loopMap.getElement(CONDITION);
-                                    if (statement instanceof String s) {
-                                        int bracket = s.indexOf('(');
-                                        if (bracket == -1) {
-                                            log.error("{} {} in {}. Please check loop.statement",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                        String type = s.substring(0, bracket).trim();
-                                        if (!type.equals(FOR) && !type.equals(WHILE)) {
-                                            log.error("{} {} in {}. loop.statement must be 'for' or 'while'",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                        task.setLoopType(type);
-                                        List<String> parts = util.split(s.substring(bracket+1), "(;)");
-                                        if (type.equals(FOR)) {
-                                            if (parts.size() < 2 || parts.size() > 3) {
-                                                log.error("{} {} in {}. 'for' loop should have 2 or 3 segments",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                            if (parts.size() == 2) {
-                                                task.comparator.addAll(getForPart2(parts.getFirst()));
-                                                task.sequencer.addAll(getForPart3(parts.get(1)));
-                                            }
-                                            if (parts.size() == 3) {
-                                                List<String> initializer = getForPart1(parts.getFirst());
-                                                if (initializer.isEmpty()) {
-                                                    log.error("{} {} in {}. Please check for-loop initializer. " +
-                                                                "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
-                                                            SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                    return;
-                                                }
-                                                task.init.addAll(initializer);
-                                                task.comparator.addAll(getForPart2(parts.get(1)));
-                                                task.sequencer.addAll(getForPart3(parts.get(2)));
-
-                                            }
-                                            if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
-                                                log.error("{} {} in {}. Please check for-loop syntax. e.g. " +
-                                                                "'for (model.n = 0; model.n < 3; model.n++)'",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                            if (!validForStatement(task.comparator, task.sequencer)) {
-                                                log.error("{} {} in {}. 'for' loop has invalid comparator or sequencer",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                        } else {
-                                            if (parts.size() != 1) {
-                                                log.error("{} {} in {}. 'while' loop should have only one value",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                            String modelKey = parts.getFirst().trim();
-                                            if (!modelKey.startsWith(MODEL_NAMESPACE) ||
-                                                    modelKey.contains("=") || modelKey.contains(" ")) {
-                                                log.error("{} {} in {}. 'while' should use a model key",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                            task.setWhileModelKey(modelKey);
-                                        }
-                                    } else {
-                                        log.error("{} {} in {}. {} loop.statement", SKIP_INVALID_TASK,
-                                                uniqueTaskName, name, statement == null? "Missing" : "Please check");
+                                if (loopStatement != null) {
+                                    int bracket = loopStatement.indexOf('(');
+                                    if (bracket == -1) {
+                                        log.error("{} {} in {}. Please check loop.statement",
+                                                SKIP_INVALID_TASK, uniqueTaskName, name);
                                         return;
                                     }
-                                    if (condition instanceof String text) {
-                                        task.condition.addAll(getCondition(text));
+                                    String type = loopStatement.substring(0, bracket).trim();
+                                    if (!type.equals(FOR) && !type.equals(WHILE)) {
+                                        log.error("{} {} in {}. loop.statement must be 'for' or 'while'",
+                                                SKIP_INVALID_TASK, uniqueTaskName, name);
+                                        return;
                                     }
-                                } else if (taskLoop != null) {
-                                    log.error("{} {} in {}. 'loop' must be a map of for/while statement and conditions",
-                                            SKIP_INVALID_TASK, uniqueTaskName, name);
-                                    return;
+                                    task.setLoopType(type);
+                                    List<String> parts = util.split(loopStatement.substring(bracket+1), "(;)");
+                                    if (type.equals(FOR)) {
+                                        if (parts.size() < 2 || parts.size() > 3) {
+                                            log.error("{} {} in {}. 'for' loop should have 2 or 3 segments",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
+                                            return;
+                                        }
+                                        if (parts.size() == 2) {
+                                            task.comparator.addAll(getForPart2(parts.getFirst()));
+                                            task.sequencer.addAll(getForPart3(parts.get(1)));
+                                        }
+                                        if (parts.size() == 3) {
+                                            List<String> initializer = getForPart1(parts.getFirst());
+                                            if (initializer.isEmpty()) {
+                                                log.error("{} {} in {}. Please check for-loop initializer. " +
+                                                            "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
+                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
+                                                return;
+                                            }
+                                            task.init.addAll(initializer);
+                                            task.comparator.addAll(getForPart2(parts.get(1)));
+                                            task.sequencer.addAll(getForPart3(parts.get(2)));
+
+                                        }
+                                        if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
+                                            log.error("{} {} in {}. Please check for-loop syntax. e.g. " +
+                                                            "'for (model.n = 0; model.n < 3; model.n++)'",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
+                                            return;
+                                        }
+                                        if (!validForStatement(task.comparator, task.sequencer)) {
+                                            log.error("{} {} in {}. 'for' loop has invalid comparator or sequencer",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
+                                            return;
+                                        }
+                                    } else {
+                                        if (parts.size() != 1) {
+                                            log.error("{} {} in {}. 'while' loop should have only one value",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
+                                            return;
+                                        }
+                                        String modelKey = parts.getFirst().trim();
+                                        if (!modelKey.startsWith(MODEL_NAMESPACE) ||
+                                                modelKey.contains("=") || modelKey.contains(" ")) {
+                                            log.error("{} {} in {}. 'while' should use a model key",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
+                                            return;
+                                        }
+                                        task.setWhileModelKey(modelKey);
+                                    }
+                                }
+                                if (loopCondition != null) {
+                                    List<String> condition = getCondition(loopCondition);
+                                    if (!condition.isEmpty()) {
+                                        task.condition.addAll(condition);
+                                    }
                                 }
                             } else {
                                 log.error("{} {} in {}. 'pipeline' should be a list",
@@ -484,29 +474,6 @@ public class CompileFlows implements EntryPoint {
             }
         }
         return false;
-    }
-
-    private List<List<String>> getConditionList(List<String> rawList) {
-        List<List<String>> result = new ArrayList<>();
-        for (String item: rawList) {
-            List<String> condition = getCondition(item);
-            if (condition.isEmpty()) {
-                return Collections.emptyList();
-            } else {
-                // ensure there is only one and only one condition
-                int control = 0;
-                for (String c: condition) {
-                    if (c.equals(BREAK) || c.equals(CONTINUE)) {
-                        control++;
-                    }
-                }
-                if (control > 1) {
-                    return Collections.emptyList();
-                }
-                result.add(condition);
-            }
-        }
-        return result;
     }
 
     private List<String> getCondition(String statement) {
