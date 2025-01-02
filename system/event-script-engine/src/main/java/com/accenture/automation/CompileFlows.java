@@ -336,7 +336,6 @@ public class CompileFlows implements EntryPoint {
                                             task.init.addAll(initializer);
                                             task.comparator.addAll(getForPart2(parts.get(1)));
                                             task.sequencer.addAll(getForPart3(parts.get(2)));
-
                                         }
                                         if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
                                             log.error("{} {} in {}. Please check for-loop syntax. e.g. " +
@@ -408,7 +407,6 @@ public class CompileFlows implements EntryPoint {
                     if (validTask) {
                         entry.addTask(task);
                     }
-
                 } else {
                     log.error("Unable to parse {} - " +
                             "a task must contain input, process, output, description and execution", name);
@@ -478,25 +476,23 @@ public class CompileFlows implements EntryPoint {
 
     private List<String> getCondition(String statement) {
         Utility util = Utility.getInstance();
+        List<String> result = new ArrayList<>();
         List<String> parts = util.split(statement, " ()");
         if (parts.size() == 3 && parts.getFirst().equals("if") && parts.get(1).startsWith(MODEL_NAMESPACE) &&
-                    (parts.get(2).equals(CONTINUE) || parts.get(2).equals(BREAK)) ) {
-            List<String> result = new ArrayList<>();
+            (parts.get(2).equals(CONTINUE) || parts.get(2).equals(BREAK)) ) {
             result.add(parts.get(1));
             result.add(parts.get(2));
-            return result;
-        } else {
-            return Collections.emptyList();
         }
+        return result;
     }
 
     private List<String> getForPart1(String text) {
         Utility util = Utility.getInstance();
         // add spaces for easy parsing
-        List<String> parts = util.split(text.replace("=", " = "), " ");
         List<String> result = new ArrayList<>();
+        List<String> parts = util.split(text.replace("=", " = "), " ");
         if (parts.size() == 3 && parts.getFirst().startsWith(MODEL_NAMESPACE) && util.isNumeric(parts.get(2)) &&
-                parts.get(1).equals("=")) {
+            parts.get(1).equals("=")) {
             result.add(parts.getFirst());
             result.add(parts.get(2));
         }
@@ -516,8 +512,8 @@ public class CompileFlows implements EntryPoint {
             s = s.replace(">", " > ");
         }
         Utility util = Utility.getInstance();
-        List<String> parts = util.split(s, " ");
         List<String> result = new ArrayList<>();
+        List<String> parts = util.split(s, " ");
         if (parts.size() == 3 &&
                 (parts.getFirst().startsWith(MODEL_NAMESPACE) || util.isNumeric(parts.getFirst())) &&
                 (parts.get(2).startsWith(MODEL_NAMESPACE) || util.isNumeric(parts.get(2))) &&
@@ -617,9 +613,9 @@ public class CompileFlows implements EntryPoint {
         return false;
     }
 
-    private boolean validKeyValues(String xyx) {
-        int last = xyx.lastIndexOf(CLOSE_BRACKET);
-        String ref = xyx.substring(MAP_TYPE.length(), last).trim();
+    private boolean validKeyValues(String text) {
+        int last = text.lastIndexOf(CLOSE_BRACKET);
+        String ref = text.substring(MAP_TYPE.length(), last).trim();
         if (ref.contains("=") || ref.contains(",")) {
             List<String> keyValues = Utility.getInstance().split(ref, ",");
             Set<String> keys = new HashSet<>();
