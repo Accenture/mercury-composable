@@ -319,7 +319,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                 default -> util.str2file(f, value.toString());
                             }
                         } else {
-                            log.warn("Failed data mapping {} -> {} - Cannot write {}", lhs, rhs, fd.fileName);
+                            log.warn("Failed data mapping {} -> {} - Unable to save file", lhs, rhs);
                         }
                     }
                     if (rhs.equals(OUTPUT_STATUS)) {
@@ -1032,26 +1032,18 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
                 File f = new File(fd.fileName);
                 if (f.exists() && !f.isDirectory() && f.canRead()) {
-                    if (fd.binary) {
-                        return util.file2bytes(f);
-                    } else {
-                        return util.file2str(f);
-                    }
+                    return fd.binary? util.file2bytes(f) : util.file2str(f);
                 } else {
-                    log.warn("Failed data mapping {} -> {} - Cannot read {}", lhs, rhs, fd.fileName);
+                    log.warn("Failed data mapping {} -> {} - Unable to read file", lhs, rhs);
                 }
             }
             if (lhs.startsWith(CLASSPATH_TYPE)) {
                 SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
                 InputStream in = this.getClass().getResourceAsStream(fd.fileName);
                 if (in != null) {
-                    if (fd.binary) {
-                        return util.stream2bytes(in);
-                    } else {
-                        return util.stream2str(in);
-                    }
+                    return fd.binary? util.stream2bytes(in) : util.stream2str(in);
                 } else {
-                    log.warn("Failed data mapping {} -> {} - Missing classpath {}", lhs, rhs, fd.fileName);
+                    log.warn("Failed data mapping {} -> {} - Unable to read classpath", lhs, rhs);
                 }
             }
         }
