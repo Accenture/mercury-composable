@@ -150,7 +150,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (ref != null) {
             taskRefs.remove(cid);
         }
-        String refId = ref == null? cid : ref.flowInstanceId();
+        String refId = ref == null? cid : ref.flowInstanceId;
         FlowInstance flowInstance = Flows.getFlowInstance(refId);
         if (flowInstance == null) {
             log.warn("Flow instance {} is invalid or expired", refId);
