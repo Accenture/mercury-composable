@@ -113,7 +113,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String SUBSTRING_TYPE = "substring(";
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
-
     private enum OPERATION {
         SIMPLE_COMMAND,
         SUBSTRING_COMMAND,
@@ -677,7 +676,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {
                             if (value instanceof Map) {
-                                target = new MultiLevelMap((Map<String, Object>) value);
+                                target.reload((Map<String, Object>) value);
                             } else {
                                 valid = false;
                             }
@@ -774,7 +773,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     throw new RuntimeException(e);
                 }
             });
-
         } else {
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
