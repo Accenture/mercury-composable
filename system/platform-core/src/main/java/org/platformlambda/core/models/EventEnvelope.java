@@ -191,7 +191,7 @@ public class EventEnvelope {
             } else if (body instanceof byte[]) {
                 return "***";
             } else {
-                return body instanceof String str? str : body.toString();
+                return body instanceof String str? str : String.valueOf(body);
             }
         } else {
             return null;
@@ -464,7 +464,8 @@ public class EventEnvelope {
     public EventEnvelope addTag(String key, Object value) {
         if (key != null && !key.isEmpty()) {
             Map<String, String> map = extraToKeyValues();
-            map.put(key, value == null? "*" : value.toString());
+            // underscore is a filler when value is not provided
+            map.put(key, value == null? "_" : String.valueOf(value));
             this.extra = mapToString(map);
         }
         return this;
@@ -538,7 +539,7 @@ public class EventEnvelope {
                 case null -> "";
                 case String str -> str;
                 case Date d -> Utility.getInstance().date2str(d);
-                default -> value.toString();
+                default -> String.valueOf(value);
             };
             // null value is transported as an empty string
             if (SET_COOKIE.equalsIgnoreCase(key)) {
@@ -654,7 +655,8 @@ public class EventEnvelope {
             ex.printStackTrace(writer);
             return out.toString();
         } catch (IOException e) {
-            return ex.toString();
+            // this should not happen
+            return ex.getMessage();
         }
     }
 

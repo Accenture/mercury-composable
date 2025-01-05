@@ -428,7 +428,7 @@ public class RoutingEntry {
         if (authConfig instanceof List) {
             List<Object> authList = (List<Object>) authConfig;
             for (Object o : authList) {
-                String authEntry = o.toString();
+                String authEntry = String.valueOf(o);
                 List<String> parts = util.split(authEntry, ": ");
                 if (parts.size() == 2) {
                     String authHeader = parts.get(0);

@@ -247,7 +247,7 @@ public class MsgPack {
                         Object value = kv.getValue();
                         if (value != null) {
                             // convert key to string
-                            packer.packString(key instanceof String str ? str : key.toString());
+                            packer.packString(key instanceof String str ? str : String.valueOf(key));
                             pack(packer, value);
                         }
                     }
@@ -291,7 +291,7 @@ public class MsgPack {
                     packer.packString(util.date2str(d));
             default ->
                 // unknown object
-                    packer.packString(o.toString());
+                    packer.packString(String.valueOf(o));
         }
         return packer;
     }

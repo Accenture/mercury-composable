@@ -410,13 +410,13 @@ public class AsyncHttpRequest {
                     final var list = (List<Object>) value;
                     for (Object o : list) {
                         if (o != null) {
-                            params.add(o instanceof String ? (String) o : o.toString());
+                            params.add(o instanceof String text? text : String.valueOf(o));
                         }
                     }
                     this.queryParams.put(key, params);
                 }
                 case null -> this.queryParams.put(key, "");
-                default -> this.queryParams.put(key, value.toString());
+                default -> this.queryParams.put(key, String.valueOf(value));
             }
         }
         return this;

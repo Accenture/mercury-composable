@@ -40,7 +40,7 @@ public class Kv {
             case null -> this.value = "";
             case String str -> this.value = str;
             case Date d -> this.value = Utility.getInstance().date2str(d);
-            default -> this.value = value.toString();
+            default -> this.value = String.valueOf(value);
         }
     }
 

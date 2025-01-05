@@ -77,10 +77,8 @@ public class RestEndpointTest extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("OPTIONS");
         req.setHeader("accept", "application/json");
-        req.setUrl("/api/hello/world?hello world=abc");
-        req.setQueryParameter("x1", "y");
+        req.setUrl("/api/hello/world?hello world=abc").setQueryParameter("x1", "y").setMethod("OPTIONS");
         List<String> list = new ArrayList<>();
         list.add("a");
         list.add("b");

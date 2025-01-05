@@ -21,6 +21,9 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -35,22 +38,21 @@ public class ModelTest {
         request.setContentLength(HELLO.length());
         request.setBody(HELLO);
         request.setHeader(HELLO, WORLD);
-        request.setCookie(HELLO, WORLD);
-        request.setMethod(PUT);
-        request.setFileName("none");
-        request.setPathParameter(HELLO, WORLD);
-        request.setQueryString(HELLO+"="+WORLD);
-        request.setQueryParameter(HELLO, WORLD);
+        request.setCookie(HELLO, WORLD).setMethod(PUT);
+        request.setFileName("none")
+                .setPathParameter(HELLO, WORLD)
+                .setQueryString(HELLO+"="+WORLD)
+                .setQueryParameter(HELLO, WORLD);
         request.setRemoteIp("127.0.0.1");
-        request.setSecure(false);
-        request.setStreamRoute("none");
-        request.setSessionInfo(HELLO, WORLD);
-        request.setTrustAllCert(false);
-        request.setTimeoutSeconds(10);
+        request.setSecure(false).setStreamRoute("none");
+        request.setSessionInfo(HELLO, WORLD).setTrustAllCert(false).setTimeoutSeconds(10);
         request.setTargetHost("http://localhost");
-        request.setUploadTag("file");
-        request.setUrl("/api/hello");
-
+        request.setUploadTag("file").setUrl("/api/hello");
+        request.removePathParameter(HELLO).setPathParameter(HELLO, WORLD);
+        request.removeHeader(HELLO).setHeader(HELLO, WORLD);
+        request.removeSessionInfo(HELLO).setSessionInfo(HELLO, WORLD);
+        request.removeCookie(HELLO).setCookie(HELLO, WORLD);
+        request.removeQueryParameter(HELLO).setQueryParameter(HELLO, WORLD);
         AsyncHttpRequest restored = new AsyncHttpRequest(request.toMap());
         assertEquals(HELLO, restored.getBody());
         // header, cookie, path and query's get methods are case-insensitive
@@ -69,5 +71,12 @@ public class ModelTest {
         assertEquals("http://localhost", restored.getTargetHost());
         assertEquals("file", restored.getUploadTag());
         assertEquals("/api/hello", restored.getUrl());
+        Map<String, String> parameters = restored.getPathParameters();
+        assertEquals(Map.of(HELLO, WORLD), parameters);
+        Map<String, Object> query = restored.getQueryParameters();
+        assertEquals(Map.of(HELLO, WORLD), query);
+        List<String> qp = restored.getQueryParameters(HELLO);
+        assertEquals(1, qp.size());
+        assertEquals(WORLD, qp.getFirst());
     }
 }

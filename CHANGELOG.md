@@ -23,14 +23,17 @@ N/A
 1. Improved configuration management and refactored AppConfigReader, ConfigReader and
    MultiLevelMap classes.
 2. Input to MultiLevelMap is now immutable.
-3. OSS updates as follows.
-4. Simplified event script's pipeline condition syntax.
+3. Simplified event script's pipeline condition syntax.
+4. Consistent exception transport for Java and Node.js composable applications
+5. OSS updates as follows.
 
+```
 Spring Boot parent version 3.4.1
 Kotlin version 2.1.0
 Spring Project Reactor version 3.7.1 (BOM version 2024.0.1)
 Google Guava version 33.4.0-jre
 JUnit version 5.11.4
+```
 
 ---
 ## Version 4.1.2, 12/20/2024

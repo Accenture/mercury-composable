@@ -160,14 +160,14 @@ public class EventEnvelopeTest {
         final String TAG_WITH_NO_VALUE = "tag-with-no-value";
         EventEnvelope event = new EventEnvelope();
         event.addTag(TAG_WITH_NO_VALUE).addTag(HELLO, WORLD).addTag(ROUTING, DATA);
-        // When a tag is created with no value, the system will set a "*" as a filler.
-        assertEquals("*", event.getTag(TAG_WITH_NO_VALUE));
+        // When a tag is created with no value, the system will set a "_" as a filler.
+        assertEquals("_", event.getTag(TAG_WITH_NO_VALUE));
         assertEquals(WORLD, event.getTag(HELLO));
         assertEquals(DATA, event.getTag(ROUTING));
         event.removeTag(HELLO).removeTag(ROUTING);
         assertNull(event.getTag(HELLO));
         assertNull(event.getTag(ROUTING));
-        assertEquals(TAG_WITH_NO_VALUE+"=*", event.getExtra());
+        assertEquals(TAG_WITH_NO_VALUE+"=_", event.getExtra());
         event.removeTag(TAG_WITH_NO_VALUE);
         assertNull(event.getExtra());
     }
