@@ -197,7 +197,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     var message = event.getRawBody();
                     Map<String, Object> error = new HashMap<>();
                     error.put(CODE, statusCode);
-                    error.put(MESSAGE, message == null? "null" : message);
+                    error.put(MESSAGE, message == null? "null" : String.valueOf(message));
                     String stackTrace = event.getStackTrace();
                     if (stackTrace != null) {
                         error.put(STACK_TRACE, stackTrace);
@@ -1055,27 +1055,26 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
         public SimpleFileDescriptor(String value) {
             int last = value.lastIndexOf(CLOSE_BRACKET);
-            final int offset;
+            int offset = 0;
             if (value.startsWith(FILE_TYPE)) {
                 offset = FILE_TYPE.length();
             } else if (value.startsWith(CLASSPATH_TYPE)) {
                 offset = CLASSPATH_TYPE.length();
-            } else {
-                // this should not occur
-                offset = 0;
             }
-            final String fileDescriptor = value.substring(offset, last).trim();
-            if (fileDescriptor.startsWith(TEXT_FILE)) {
-                fileName = fileDescriptor.substring(TEXT_FILE.length());
+            String name;
+            final String filePath = value.substring(offset, last).trim();
+            if (filePath.startsWith(TEXT_FILE)) {
+                name = filePath.substring(TEXT_FILE.length());
                 binary = false;
-            } else if (fileDescriptor.startsWith(BINARY_FILE)) {
-                fileName = fileDescriptor.substring(BINARY_FILE.length());
+            } else if (filePath.startsWith(BINARY_FILE)) {
+                name = filePath.substring(BINARY_FILE.length());
                 binary = true;
             } else {
                 // default fileType is binary
-                fileName = fileDescriptor;
+                name = filePath;
                 binary = true;
             }
+            fileName = name.startsWith("/")? name : "/" + name;
         }
     }
 
