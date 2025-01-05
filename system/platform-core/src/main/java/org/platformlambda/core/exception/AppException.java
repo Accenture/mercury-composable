@@ -40,5 +40,4 @@ public class AppException extends Exception {
     public int getStatus() {
         return status;
     }
-
 }

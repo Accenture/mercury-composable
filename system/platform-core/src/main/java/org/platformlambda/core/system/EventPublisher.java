@@ -56,8 +56,7 @@ public class EventPublisher {
         this.timer = Platform.getInstance().getVertx().setTimer(expiry, t -> {
             expired.set(true);
             String outStream = stream.getOutputStreamId();
-            AppException e = new AppException(408, "Event stream expired");
-            EventEnvelope error = new EventEnvelope().setException(e);
+            EventEnvelope error = new EventEnvelope().setException(new AppException(408, "Event stream expired"));
             try {
                 EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
             } catch (IOException ex) {
@@ -96,8 +95,8 @@ public class EventPublisher {
     }
 
     public void publishException(Throwable e) {
-        EventEnvelope error = new EventEnvelope().setException(e);
         try {
+            var error = new EventEnvelope().setException(e);
             EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
         } catch (IOException ex) {
             log.error("Unable to publish exception to {} - {}",

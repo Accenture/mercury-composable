@@ -64,9 +64,8 @@ public class FluxPublisher<T> {
         this.timer = Platform.getInstance().getVertx().setTimer(expiry, t -> {
             expired.set(true);
             String outStream = stream.getOutputStreamId();
-            AppException e = new AppException(408, "Event stream expired");
-            EventEnvelope error = new EventEnvelope().setException(e);
             try {
+                var error = new EventEnvelope().setException(new AppException(408, "Event stream expired"));
                 EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
             } catch (IOException ex) {
                 // nothing we can do
@@ -111,8 +110,8 @@ public class FluxPublisher<T> {
                         log.error("Unable to publish data to {} - {}", util.getSimpleRoute(outStream), e.getMessage());
                     }
                 }, e -> {
-                    EventEnvelope error = new EventEnvelope().setException(e);
                     try {
+                        var error = new EventEnvelope().setException(e);
                         EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
                     } catch (IOException ex) {
                         log.error("Unable to publish exception to {} - {}",

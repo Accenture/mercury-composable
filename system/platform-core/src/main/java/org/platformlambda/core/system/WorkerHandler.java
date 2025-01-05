@@ -249,9 +249,7 @@ public class WorkerHandler {
                     }, e -> {
                         if (e instanceof Throwable ex) {
                             completed.set(true);
-                            final int status = getStatusFromException(ex);
-                            String error = simplifyCastError(util.getRootCause(ex));
-                            final EventEnvelope errorResponse = prepareErrorResponse(event, ex, status, error);
+                            final EventEnvelope errorResponse = prepareErrorResponse(event, ex);
                             try {
                                 po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
                             } catch (IOException e2) {
@@ -330,7 +328,7 @@ public class WorkerHandler {
             }
             Map<String, Object> output = new HashMap<>();
             if (replyTo != null) {
-                final EventEnvelope errorResponse = prepareErrorResponse(event, e, status, error);
+                final EventEnvelope errorResponse = prepareErrorResponse(event, e);
                 try {
                     po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(diff));
                 } catch (Exception e4) {
@@ -370,10 +368,9 @@ public class WorkerHandler {
         }
     }
 
-    private EventEnvelope prepareErrorResponse(EventEnvelope event, Throwable e, int status, String error) {
+    private EventEnvelope prepareErrorResponse(EventEnvelope event, Throwable e) {
         final EventEnvelope response = new EventEnvelope();
-        response.setTo(event.getReplyTo()).setStatus(status).setBody(error);
-        response.setException(e).setFrom(def.getRoute());
+        response.setTo(event.getReplyTo()).setFrom(def.getRoute()).setException(e);
         if (event.getCorrelationId() != null) {
             response.setCorrelationId(event.getCorrelationId());
         }

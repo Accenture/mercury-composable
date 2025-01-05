@@ -13,6 +13,7 @@
 
 package org.platformlambda.core.models;
 
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -44,6 +45,7 @@ public class EventEnvelope {
     private static final String OPTIONAL_FIELD = "optional";
     private static final String BODY_FIELD = "body";
     private static final String EXCEPTION_FIELD = "exception";
+    private static final String STACK_FIELD = "stack";
     private static final String OBJ_TYPE_FIELD = "obj_type";
     private static final String EXECUTION_FIELD = "exec_time";
     private static final String ROUND_TRIP_FIELD = "round_trip";
@@ -80,6 +82,7 @@ public class EventEnvelope {
     private static final String JSON_FLAG = "j";
     // serialized exception object
     private static final String EXCEPTION_FLAG = "4";
+    private static final String STACK_FLAG = "5";
     // special header for setting HTTP cookie for rest-automation
     private static final String SET_COOKIE = "set-cookie";
 
@@ -99,6 +102,7 @@ public class EventEnvelope {
     private Object originalObject;
     private byte[] exceptionBytes;
     private Throwable exception;
+    private String stackTrace;
     private Float executionTime;
     private Float roundTrip;
     private boolean endOfRoute = false;
@@ -593,24 +597,65 @@ public class EventEnvelope {
     }
 
     /**
-     * Set exception cause
+     * Set exception
      *
-     * @param cause of an exception
+     * @param ex is the exception
      * @return event envelope
      */
-    public EventEnvelope setException(Throwable cause) {
-        if (cause != null) {
+    public EventEnvelope setException(Throwable ex) {
+        if (ex != null) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (ObjectOutputStream stream = new ObjectOutputStream(out)) {
-                stream.writeObject(cause);
+                stream.writeObject(ex);
                 exceptionBytes = out.toByteArray();
-                // for compatibility with language pack (Python and Node.js)
-                this.addTag(EXCEPTION_FIELD);
+                setStackTrace(getStackTrace(ex));
+                setBody(Utility.getInstance().getRootCause(ex).getMessage());
+                if (ex instanceof AppException appEx) {
+                    setStatus(appEx.getStatus());
+                } else if (ex instanceof IllegalArgumentException) {
+                    setStatus(400);
+                } else {
+                    setStatus(500);
+                }
             } catch (IOException e) {
                 // this won't happen
             }
         }
         return this;
+    }
+
+    public boolean isException() {
+        return stackTrace != null;
+    }
+
+    /**
+     * This is reserved for unit test to simulate getting stack trace
+     * from an external node.js composable application
+     *
+     * @param stackTrace as a text message with linefeed
+     * @return event envelope
+     */
+    public EventEnvelope setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
+        return this;
+    }
+
+    /**
+     * Retrieve stack trace returned from an external node.js composable application
+     *
+     * @return stackTrace if any
+     */
+    public String getStackTrace() {
+        return stackTrace;
+    }
+
+    private String getStackTrace(Throwable ex) {
+        try (StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out)) {
+            ex.printStackTrace(writer);
+            return out.toString();
+        } catch (IOException e) {
+            return ex.toString();
+        }
     }
 
     /**
@@ -769,6 +814,9 @@ public class EventEnvelope {
             if (message.containsKey(EXCEPTION_FLAG)) {
                 exceptionBytes = (byte[]) message.get(EXCEPTION_FLAG);
             }
+            if (message.containsKey(STACK_FLAG)) {
+                stackTrace = (String) message.get(STACK_FLAG);
+            }
             if (message.containsKey(OBJ_TYPE_FLAG)) {
                 type = (String) message.get(OBJ_TYPE_FLAG);
             }
@@ -845,6 +893,9 @@ public class EventEnvelope {
         if (exceptionBytes != null) {
             message.put(EXCEPTION_FLAG, exceptionBytes);
         }
+        if (stackTrace != null) {
+            message.put(STACK_FLAG, stackTrace);
+        }
         if (type != null) {
             message.put(OBJ_TYPE_FLAG, type);
         }
@@ -911,6 +962,9 @@ public class EventEnvelope {
         }
         if (message.containsKey(EXCEPTION_FIELD)) {
             exceptionBytes = (byte[]) message.get(EXCEPTION_FIELD);
+        }
+        if (message.containsKey(STACK_FIELD)) {
+            stackTrace = (String) message.get(STACK_FIELD);
         }
         if (message.containsKey(OBJ_TYPE_FIELD)) {
             type = (String) message.get(OBJ_TYPE_FIELD);
@@ -980,6 +1034,9 @@ public class EventEnvelope {
         }
         if (exceptionBytes != null) {
             message.put(EXCEPTION_FIELD, exceptionBytes);
+        }
+        if (stackTrace != null) {
+            message.put(STACK_FIELD, stackTrace);
         }
         if (type != null) {
             message.put(OBJ_TYPE_FIELD, type);

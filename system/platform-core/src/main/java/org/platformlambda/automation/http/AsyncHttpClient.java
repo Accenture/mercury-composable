@@ -196,16 +196,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             processRequest(headers, input, instance);
         } catch (Exception ex) {
             EventEnvelope response = new EventEnvelope();
-            response.setException(ex).setBody(ex.getMessage());
             if (input.getReplyTo() != null) {
-                if (ex instanceof AppException e) {
-                    response.setStatus(e.getStatus());
-                } else if (ex instanceof IllegalArgumentException) {
-                    response.setStatus(400);
-                } else {
-                    response.setStatus(500);
-                }
-                sendResponse(input, response);
+                sendResponse(input, response.setException(ex));
             } else {
                 log.error("Unhandled exception", ex);
             }
@@ -699,16 +691,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         public void handle(Throwable ex) {
             try {
                 EventEnvelope response = new EventEnvelope();
-                response.setException(ex).setBody(simplifyConnectionError(ex.getMessage()));
                 if (input.getReplyTo() != null) {
-                    if (ex instanceof AppException e) {
-                        response.setStatus(e.getStatus());
-                    } else if (ex instanceof IllegalArgumentException) {
-                        response.setStatus(400);
-                    } else {
-                        response.setStatus(500);
-                    }
-                    sendResponse(input, response);
+                    sendResponse(input, response.setException(ex).setBody(simplifyConnectionError(ex.getMessage())));
                 } else {
                     log.error("Unhandled exception", ex);
                 }

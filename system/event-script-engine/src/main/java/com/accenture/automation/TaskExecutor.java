@@ -167,7 +167,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             executeTask(flowInstance, firstTask);
         } else {
             // handle callback from a task
-            String from = ref != null? ref.processId() : event.getFrom();
+            String from = ref != null? ref.processId : event.getFrom();
             if (from == null) {
                 log.error("Unable to process callback {}:{} - task does not provide 'from' address", flowName, refId);
                 return null;
@@ -179,8 +179,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return null;
             }
             int statusCode = event.getStatus();
-            Throwable ex = event.getException();
-            if (statusCode >= 400 || ex != null) {
+            if (statusCode >= 400 || event.isException()) {
                 if (seq > 0) {
                     if (task.getExceptionTask() != null) {
                         // Clear this specific pipeline queue when task has its own exception handler
@@ -195,11 +194,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
                 String handler = task.getExceptionTask() != null? task.getExceptionTask() : flowInstance.getFlow().exception;
                 if (handler != null) {
+                    var message = event.getRawBody();
                     Map<String, Object> error = new HashMap<>();
                     error.put(CODE, statusCode);
-                    error.put(MESSAGE, event.getRawBody());
-                    if (event.getException() != null) {
-                        error.put(STACK_TRACE, getStackTrace(ex));
+                    error.put(MESSAGE, message == null? "null" : message);
+                    String stackTrace = event.getStackTrace();
+                    if (stackTrace != null) {
+                        error.put(STACK_TRACE, stackTrace);
                     }
                     executeTask(flowInstance, handler, -1, error);
                 } else {
@@ -211,15 +212,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             handleCallback(from, flowInstance, task, event, seq);
         }
         return null;
-    }
-
-    private String getStackTrace(Throwable ex) {
-        try (StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out)) {
-            ex.printStackTrace(writer);
-            return out.toString();
-        } catch (IOException e) {
-            return ex.toString();
-        }
     }
 
     private void abortFlow(FlowInstance flowInstance, int status, String message) throws IOException {

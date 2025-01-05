@@ -263,10 +263,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                             }, { e: Any? ->
                                 if (e is Throwable) {
                                     completed.set(true)
-                                    val status = getStatusFromException(e)
-                                    val error = simplifyCastError(util.getRootCause(e)
-                                    )
-                                    val errorResponse = prepareErrorResponse(event, e, status, error!!)
+                                    val errorResponse = prepareErrorResponse(event, e)
                                     try {
                                         po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)))
                                     } catch (e2: IOException) {
@@ -432,15 +429,9 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             }
         }
 
-        private fun prepareErrorResponse(
-            event: EventEnvelope,
-            e: Throwable,
-            status: Int,
-            error: String
-        ): EventEnvelope {
+        private fun prepareErrorResponse(event: EventEnvelope, e: Throwable): EventEnvelope {
             val response = EventEnvelope()
-            response.setTo(event.replyTo).setStatus(status).setBody(error)
-            response.setException(e).setFrom(def.route)
+            response.setTo(event.replyTo).setFrom(def.route).setException(e)
             if (event.correlationId != null) {
                 response.setCorrelationId(event.correlationId)
             }

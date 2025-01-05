@@ -79,8 +79,7 @@ public class FluxConsumer<T> {
                     eof.set(true);
                     if (platform.hasRoute(callback)) {
                         try {
-                            AppException e = new AppException(408, "Consumer expired");
-                            EventEnvelope error = new EventEnvelope().setException(e);
+                            var error = new EventEnvelope().setException(new AppException(408, "Consumer expired"));
                             po.send(new EventEnvelope().setTo(callback)
                                     .setHeader(TYPE, EXCEPTION).setBody(error.toBytes()));
                         } catch (IOException e) {

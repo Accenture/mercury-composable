@@ -1,6 +1,7 @@
 package org.platformlambda.core;
 
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -173,12 +174,14 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void mapSerializationTest() {
+    public void mapSerializationTest() throws IOException {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
         pojo.setNumber(10);
         EventEnvelope source = new EventEnvelope();
+        source.setException(new IllegalArgumentException("hello"));
+        // setException will put "hello" as body and setBody will override it with a PoJo in this test
         source.setBody(pojo);
         source.setFrom("unit.test");
         source.setTo("hello.world");
@@ -186,16 +189,15 @@ public class EventEnvelopeTest {
         source.setTrace("101", "PUT /api/unit/test");
         // use JSON instead of binary serialization
         source.setBinary(false);
-        source.setException(new IllegalArgumentException("hello"));
         source.setBroadcastLevel(1);
         source.setCorrelationId("121");
         source.setExtra("x=y");
         source.setEndOfRoute();
         source.setHeader("a", "b");
-        source.setStatus(400);
         source.setExecutionTime(1.23f);
         source.setRoundTrip(2.0f);
         EventEnvelope target = new EventEnvelope(source.toMap());
+        assertEquals(source.getStackTrace(), target.getStackTrace());
         MultiLevelMap map = new MultiLevelMap(target.toMap());
         assertEquals(HELLO, map.getElement("body.name"));
         assertEquals(10, map.getElement("body.number"));
@@ -219,7 +221,9 @@ public class EventEnvelopeTest {
         assertEquals(IllegalArgumentException.class, target.getException().getClass());
         assertInstanceOf(byte[].class, map.getElement("exception"));
         byte[] b = (byte[]) map.getElement("exception");
-        log.info("Stacktrace binary payload size = {}", b.length);
+        log.info("Stack trace = {}", target.getStackTrace().length());
+        log.info("Serialized exception size = {}", b.length);
+        log.info("Serialized event envelope size = {}", target.toBytes().length);
     }
 
     @SuppressWarnings("rawtypes")
@@ -245,4 +249,32 @@ public class EventEnvelopeTest {
         assertEquals(Optional.of("hello"), target.getBody());
     }
 
+    @Test void exceptionTransportTest() throws IOException {
+        AppException ex = new AppException(400, "hello world");
+        EventEnvelope source = new EventEnvelope().setException(ex);
+        byte[] b = source.toBytes();
+        EventEnvelope target = new EventEnvelope(b);
+        assertTrue(target.isException());
+        assertEquals(ex.getMessage(), target.getError());
+        Throwable restored = target.getException();
+        assertInstanceOf(AppException.class, restored);
+        assertEquals(ex.getMessage(), restored.getMessage());
+        assertEquals(400, target.getStatus());
+    }
+
+    @Test void stackTraceTransportTest() throws IOException {
+        String stack = "hello\nworld";
+        // transport by byte array
+        EventEnvelope source = new EventEnvelope().setStackTrace(stack);
+        byte[] b = source.toBytes();
+        EventEnvelope target1 = new EventEnvelope(b);
+        assertTrue(target1.isException());
+        assertEquals(stack, target1.getStackTrace());
+        // transport by map
+        Map<String, Object> map = source.toMap();
+        EventEnvelope target2 = new EventEnvelope();
+        target2.fromMap(map);
+        assertTrue(target2.isException());
+        assertEquals(stack, target2.getStackTrace());
+    }
 }
