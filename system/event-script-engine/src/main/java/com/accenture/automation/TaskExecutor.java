@@ -287,7 +287,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         SimpleFileDescriptor fd = new SimpleFileDescriptor(rhs);
                         File f = new File(fd.fileName);
                         // automatically create parent folder
-                        if (!f.exists()) {
+                        boolean fileNotFound = !f.exists();
+                        if (fileNotFound) {
                             String parentPath = f.getParent();
                             if (!("/".equals(parentPath))) {
                                 File parent = f.getParentFile();
@@ -300,7 +301,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                 }
                             }
                         }
-                        if (!f.exists() || (!f.isDirectory() && f.canWrite())) {
+                        if (fileNotFound || (!f.isDirectory() && f.canWrite())) {
                             switch (value) {
                                 case byte[] b -> util.bytes2file(f, b);
                                 case String str -> util.str2file(f, str);
@@ -317,7 +318,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         int status = value instanceof Integer ? (Integer) value : util.str2int(value.toString());
                         if (status < 100 || status > 599) {
                             log.error("Invalid output mapping '{}' - expect: valid HTTP status code, actual: {}",
-                                    entry, value);
+                                    entry, status);
                             required = false;
                         }
                     }
@@ -437,7 +438,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else if (FOR.equals(pipelineTask.getLoopType())) {
             // execute sequencer in the for-statement
             Object modelValue = consolidated.getElement(pipelineTask.sequencer.getFirst());
-            int v = modelValue instanceof Integer? (int) modelValue : util.str2int(modelValue.toString());
+            final int v = modelValue instanceof Integer? (int) modelValue : util.str2int(String.valueOf(modelValue));
             String command = pipelineTask.sequencer.get(1);
             if (INCREMENT.equals(command)) {
                 consolidated.setElement(pipelineTask.sequencer.getFirst(), v + 1);
@@ -480,7 +481,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else if (decisionValue != null) {
             decisionNumber = Math.max(1, util.str2int(decisionValue.toString()));
         } else {
-            // invalid decision number if value is not boolean or number
+            // decision number is null
             decisionNumber = nextTasks.size() + 1;
         }
         if (decisionNumber > nextTasks.size()) {
@@ -489,16 +490,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 500,
                     "Task "+task.service+" returned invalid decision ("+decisionValue+")");
         } else {
-            String next = nextTasks.get(decisionNumber - 1);
-            executeTask(flowInstance, next);
+            executeTask(flowInstance, nextTasks.get(decisionNumber - 1));
         }
     }
 
     private void queueSequentialTask(FlowInstance flowInstance, Task task) throws IOException {
         List<String> nextTasks = task.nextSteps;
         if (!nextTasks.isEmpty()) {
-            String next = nextTasks.getFirst();
-            executeTask(flowInstance, next);
+            executeTask(flowInstance, nextTasks.getFirst());
         }
     }
 
@@ -527,9 +526,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         int v = modelValue instanceof Integer? (int) modelValue : util.str2int(modelValue.toString());
         return switch (comparator) {
             case "<" -> v < value;
+            case "<=" -> v <= value;
             case ">" -> v > value;
             case ">=" -> v >= value;
-            case "<=" -> v <= value;
             case null, default -> false;
         };
     }

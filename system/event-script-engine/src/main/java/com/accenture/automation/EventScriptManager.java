@@ -74,7 +74,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         po.send(firstTask);
     }
 
-    private static FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template) {
+    private FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template) {
         if (template == null) {
             throw new IllegalArgumentException("Flow "+ flowId +" not found");
         }
