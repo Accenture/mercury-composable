@@ -161,55 +161,60 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 408, "Flow timeout for "+ flowInstance.getFlow().ttl+" ms");
             return null;
         }
-        String firstTask = headers.get(FIRST_TASK);
-        if (firstTask != null) {
-            pendingTasks.put(cid, new ConcurrentHashMap<>());
-            executeTask(flowInstance, firstTask);
-        } else {
-            // handle callback from a task
-            String from = ref != null? ref.processId : event.getFrom();
-            if (from == null) {
-                log.error("Unable to process callback {}:{} - task does not provide 'from' address", flowName, refId);
-                return null;
-            }
-            String caller = from.contains("@")? from.substring(0, from.indexOf('@')) : from;
-            Task task = flowInstance.getFlow().tasks.get(caller);
-            if (task == null) {
-                log.error("Unable to process callback {}:{} - missing task in {}", flowName, refId, caller);
-                return null;
-            }
-            int statusCode = event.getStatus();
-            if (statusCode >= 400 || event.isException()) {
-                if (seq > 0) {
-                    if (task.getExceptionTask() != null) {
-                        // Clear this specific pipeline queue when task has its own exception handler
-                        flowInstance.pipeMap.remove(seq);
+        try {
+            String firstTask = headers.get(FIRST_TASK);
+            if (firstTask != null) {
+                pendingTasks.put(cid, new ConcurrentHashMap<>());
+                executeTask(flowInstance, firstTask);
+            } else {
+                // handle callback from a task
+                String from = ref != null ? ref.processId : event.getFrom();
+                if (from == null) {
+                    log.error("Unable to process callback {}:{} - task does not provide 'from' address", flowName, refId);
+                    return null;
+                }
+                String caller = from.contains("@") ? from.substring(0, from.indexOf('@')) : from;
+                Task task = flowInstance.getFlow().tasks.get(caller);
+                if (task == null) {
+                    log.error("Unable to process callback {}:{} - missing task in {}", flowName, refId, caller);
+                    return null;
+                }
+                int statusCode = event.getStatus();
+                if (statusCode >= 400 || event.isException()) {
+                    if (seq > 0) {
+                        if (task.getExceptionTask() != null) {
+                            // Clear this specific pipeline queue when task has its own exception handler
+                            flowInstance.pipeMap.remove(seq);
+                        } else {
+                            /*
+                             * Clear all pipeline queues when task does not have its own exception handler.
+                             * System will route the exception to the generic exception handler.
+                             */
+                            flowInstance.pipeMap.clear();
+                        }
+                    }
+                    String handler = task.getExceptionTask() != null ? task.getExceptionTask() : flowInstance.getFlow().exception;
+                    if (handler != null) {
+                        var message = event.getRawBody();
+                        Map<String, Object> error = new HashMap<>();
+                        error.put(CODE, statusCode);
+                        error.put(MESSAGE, message == null ? "null" : String.valueOf(message));
+                        String stackTrace = event.getStackTrace();
+                        if (stackTrace != null) {
+                            error.put(STACK_TRACE, stackTrace);
+                        }
+                        executeTask(flowInstance, handler, -1, error);
                     } else {
-                        /*
-                         * Clear all pipeline queues when task does not have its own exception handler.
-                         * System will route the exception to the generic exception handler.
-                         */
-                        flowInstance.pipeMap.clear();
+                        // when there are no task or flow exception handlers
+                        abortFlow(flowInstance, statusCode, event.getError());
                     }
+                    return null;
                 }
-                String handler = task.getExceptionTask() != null? task.getExceptionTask() : flowInstance.getFlow().exception;
-                if (handler != null) {
-                    var message = event.getRawBody();
-                    Map<String, Object> error = new HashMap<>();
-                    error.put(CODE, statusCode);
-                    error.put(MESSAGE, message == null? "null" : String.valueOf(message));
-                    String stackTrace = event.getStackTrace();
-                    if (stackTrace != null) {
-                        error.put(STACK_TRACE, stackTrace);
-                    }
-                    executeTask(flowInstance, handler, -1, error);
-                } else {
-                    // when there are no task or flow exception handlers
-                    abortFlow(flowInstance, statusCode, event.getError());
-                }
-                return null;
+                handleCallback(from, flowInstance, task, event, seq);
             }
-            handleCallback(from, flowInstance, task, event, seq);
+        } catch (Exception e) {
+            log.error("Unable to execute flow {}:{} - {}", flowName, flowInstance.id, e.getMessage());
+            abortFlow(flowInstance, 500, e.getMessage());
         }
         return null;
     }

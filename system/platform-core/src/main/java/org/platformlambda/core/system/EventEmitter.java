@@ -777,8 +777,7 @@ public class EventEmitter {
                     throw new IllegalArgumentException("Not a TypedLambdaFunction");
                 }
             } catch (Exception e) {
-                // this should never happen unless the protected event script functions are overloaded mistakenly
-                log.error("Unable to execute event script - did you overload the system functions?", e);
+                log.error("Unable to execute event script - {}", e.getMessage());
             }
         });
     }
