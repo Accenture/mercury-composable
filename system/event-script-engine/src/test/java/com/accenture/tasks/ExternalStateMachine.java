@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-@PreLoad(route = "v1.ext.state.machine, v1.ext.state.machine.2")
+@PreLoad(route = "v1.ext.state.machine")
 public class ExternalStateMachine implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(ExternalStateMachine.class);
 

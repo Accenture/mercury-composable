@@ -62,6 +62,7 @@ public class FlowTests extends TestBase {
         EventEnvelope result = po.request(req, TIMEOUT).get();
         assertInstanceOf(Map.class, result.getBody());
         assertEquals(500, result.getStatus());
+        System.out.println(result.getBody());
         Map<String, Object> data = (Map<String, Object>) result.getBody();
         assertEquals("Flow no-such-flow not found", data.get("message"));
     }

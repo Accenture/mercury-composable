@@ -3,7 +3,7 @@ flow:
   description: 'Test externalization of state machine values'
   ttl: 10s
 
-first.task: 'v1.ext.state.machine'
+first.task: 'ext.state.machine.1'
 
 #
 # you should implement a user function as the external state machine.
@@ -23,7 +23,8 @@ first.task: 'v1.ext.state.machine'
 #
 
 tasks:
-  - input:
+  - name: 'ext.state.machine.1'
+    input:
       - 'text(get) -> header.type'
       - 'text(/${app.id}/user) -> header.key'
     process: 'v1.ext.state.machine'
@@ -34,12 +35,13 @@ tasks:
     description: 'Retrieve a key-value from an external state machine'
     execution: sequential
     next:
-      - 'v1.ext.state.machine.2'
+      - 'ext.state.machine.2'
 
-  - input:
+  - name: 'ext.state.machine.2'
+    input:
       - 'text(get) -> header.type'
       - 'text(/${app.id}/body) -> header.key'
-    process: 'v1.ext.state.machine.2'
+    process: 'v1.ext.state.machine'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'model.user -> output.body.user'
