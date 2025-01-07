@@ -3,7 +3,7 @@ flow:
   description: 'Test input data mapping of body and headers'
   ttl: 10s
 
-first.task: 'sequential.two'
+first.task: 'no.op'
 
 tasks:
   - input:
@@ -12,7 +12,7 @@ tasks:
       # input header is case-insensitive
       - 'input.header.User-Agent -> header.agent'
       - 'text(AAA) -> header.tag'
-    process: 'sequential.two'
+    process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

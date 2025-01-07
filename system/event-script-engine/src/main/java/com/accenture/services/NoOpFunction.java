@@ -19,20 +19,20 @@
 package com.accenture.services;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.util.Map;
 
 /**
  * This is a convenient no-operation function for event scripts.
- * You can use preload-override.yaml to create different route names in an event script
- * where you need placeholder tasks.
+ * It is effectively an echo function.
  */
 @PreLoad(route = "no.op", instances=50)
-public class NoOpFunction implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+public class NoOpFunction implements TypedLambdaFunction<Map<String, Object>, EventEnvelope> {
 
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        return input;
+    public EventEnvelope handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        return new EventEnvelope().setHeaders(headers).setBody(input);
     }
 }

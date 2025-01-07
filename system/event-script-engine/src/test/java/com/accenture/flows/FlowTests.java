@@ -109,13 +109,12 @@ public class FlowTests extends TestBase {
         final String HELLO_WORLD = "hello world";
         final String HELLO = "hello";
         final String WORLD = "world";
-        final String B64_TEXT = util.bytesToBase64(util.getUTF(HELLO_WORLD));
         final byte[] HELLO_WORLD_BYTES = util.getUTF(HELLO_WORLD);
+        final String B64_TEXT = util.bytesToBase64(HELLO_WORLD_BYTES);
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
-                .setHeader("content-type", "application/json")
                 .setUrl("/api/type/matching");
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /type/matching");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -123,28 +122,28 @@ public class FlowTests extends TestBase {
         assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap mm = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals(B64_TEXT, mm.getElement("b64"));
-        assertArrayEquals(HELLO_WORLD_BYTES, getBytesFromIntegerList((List<Integer>) mm.getElement("binary")));
+        assertArrayEquals(HELLO_WORLD_BYTES, getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("binary")));
         Map<String, Object> m1 = Map.of("b64", B64_TEXT, "text", HELLO_WORLD);
         Map<String, Object> m2 = SimpleMapper.getInstance().getMapper().readValue(mm.getElement("json"), Map.class);
         equalsMap(m1, m2);
         assertEquals(HELLO, mm.getElement("substring"));
-        byte[] bson = getBytesFromIntegerList((List<Integer>) mm.getElement("bson"));
+        byte[] bson = getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("bson"));
         Map<String, Object> m3 = SimpleMapper.getInstance().getMapper().readValue(bson, Map.class);
         equalsMap(m1, m3);
         assertEquals(HELLO, mm.getElement("source.substring"));
         assertEquals(WORLD, mm.getElement("source.substring-2"));
         assertArrayEquals(HELLO_WORLD_BYTES,
-                getBytesFromIntegerList((List<Integer>) mm.getElement("source.keep-as-binary")));
+                getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.keep-as-binary")));
         assertEquals(HELLO_WORLD, mm.getElement("source.no-change"));
         assertArrayEquals(HELLO_WORLD_BYTES,
-                getBytesFromIntegerList((List<Integer>) mm.getElement("source.binary")));
+                getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.binary")));
         assertArrayEquals(HELLO_WORLD_BYTES,
-                getBytesFromIntegerList((List<Integer>) mm.getElement("source.bytes")));
+                getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.bytes")));
         assertEquals(HELLO_WORLD, mm.getElement("source.out-of-bound"));
         assertEquals(HELLO_WORLD, mm.getElement("source.invalid-substring"));
         assertEquals(HELLO_WORLD, mm.getElement("source.text"));
         assertEquals(true, mm.getElement("positive"));
-        assertEquals(true, mm.getElement("positive"));
+        assertEquals(false, mm.getElement("negative"));
         assertEquals(false, mm.getElement("boolean-text"));
         assertEquals(true, mm.getElement("boolean-text-true"));
         assertEquals(true, mm.getElement("is-null"));
@@ -187,7 +186,7 @@ public class FlowTests extends TestBase {
         }
     }
 
-    private byte[] getBytesFromIntegerList(List<Integer> items) {
+    private byte[] getByteArrayFromEncodedIntegers(List<Integer> items) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (Integer i: items) {
             out.write(i);
