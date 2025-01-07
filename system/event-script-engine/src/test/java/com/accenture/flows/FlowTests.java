@@ -265,6 +265,7 @@ public class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, TIMEOUT).get();
+        assertInstanceOf(String.class, result.getBody());
         // "output data mapping" will pass the input classpath file as output body
         InputStream in = this.getClass().getResourceAsStream("/files/hello.txt");
         String resourceContent = util.stream2str(in);
@@ -279,7 +280,7 @@ public class FlowTests extends TestBase {
         assertTrue(f3.exists());
         String matched = util.file2str(f3);
         assertEquals("true", matched);
-        File f4 = new File("/tmp/temp-test-binary");
+        File f4 = new File("/tmp/temp-test-binary.txt");
         assertTrue(f4.exists());
         String binary = util.file2str(f4);
         assertEquals("binary", binary);

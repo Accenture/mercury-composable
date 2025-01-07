@@ -35,7 +35,7 @@ public class FileVaultReadWrite implements TypedLambdaFunction<Map<String, Objec
         Map<String, Object> result = new HashMap<>();
         if (text instanceof String && binary instanceof byte[] b) {
             String str = Utility.getInstance().getUTF(b);
-            if (text.equals(str)) {
+            if (str.equals(text)) {
                 result.put("text", text);
                 result.put("matched", true);
             } else {
@@ -51,7 +51,7 @@ public class FileVaultReadWrite implements TypedLambdaFunction<Map<String, Objec
         Object binaryRes = input.get("binary_resource");
         if (textRes instanceof String && binaryRes instanceof byte[] b) {
             String str = Utility.getInstance().getUTF(b);
-            if (text.equals(str)) {
+            if (str.equals(textRes)) {
                 result.put("text_resource", textRes);
                 result.put("matched", true);
             } else {
