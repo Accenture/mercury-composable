@@ -46,12 +46,12 @@ public class SimpleMapper {
         if (snake) {
             log.info("{} enabled", SNAKE_CASE_SERIALIZATION);
         }
-        this.mapper = new SimpleObjectMapper(getJson(snake, true), getJson(snake, false));
-        this.snakeMapper = new SimpleObjectMapper(getJson(true, true), getJson(true, false));
-        this.camelMapper = new SimpleObjectMapper(getJson(false, true), getJson(false, false));
+        this.mapper = new SimpleObjectMapper(getJson(snake));
+        this.snakeMapper = new SimpleObjectMapper(getJson(true));
+        this.camelMapper = new SimpleObjectMapper(getJson(false));
     }
 
-    public Gson getJson(boolean snake, boolean isMap) {
+    public Gson getJson(boolean snake) {
         // configure Gson engine
         GsonBuilder builder = new GsonBuilder();
         // avoid equal sign to become 003d unicode
@@ -80,10 +80,8 @@ public class SimpleMapper {
          *
          * For PoJo, Gson will do the conversion correctly because there are typing information in the class.
          */
-        if (isMap) {
-            builder.registerTypeAdapter(Map.class, new MapDeserializer());
-            builder.registerTypeAdapter(List.class, new ListDeserializer());
-        }
+        builder.registerTypeAdapter(Map.class, new MapDeserializer());
+        builder.registerTypeAdapter(List.class, new ListDeserializer());
         // Indent JSON output
         builder.setPrettyPrinting();
         // Camel or snake case
@@ -317,12 +315,10 @@ public class SimpleMapper {
          * Double is used to keep floating point number precision
          *
          * Note: ternary conditional operator does not work due to different return types
-         *
          */
         String number = p.getAsString();
         if (number.contains(".")) {
             return p.getAsDouble();
-
         } else {
             long asLong = p.getAsLong();
             if (asLong > Integer.MAX_VALUE || asLong < Integer.MIN_VALUE) {
@@ -364,5 +360,4 @@ public class SimpleMapper {
         }
         return true;
     }
-
 }

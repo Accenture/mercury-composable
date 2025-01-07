@@ -27,16 +27,14 @@ import java.util.*;
 
 public class SimpleObjectMapper {
 
-    private final Gson mapGson;
-    private final Gson objGson;
+    private final Gson gson;
 
-    public SimpleObjectMapper(Gson mapGson, Gson objGson) {
-        this.mapGson = mapGson;
-        this.objGson = objGson;
+    public SimpleObjectMapper(Gson gson) {
+        this.gson = gson;
     }
 
     public String writeValueAsString(Object value) {
-        return mapGson.toJson(value);
+        return gson.toJson(value);
     }
 
     public byte[] writeValueAsBytes(Object value) {
@@ -91,20 +89,12 @@ public class SimpleObjectMapper {
             if (isPrimitive(fromValue)) {
                 throw new IllegalArgumentException("Unable to convert a primitive into "+toValueType);
             }
-            if (outputIsList || outputIsMap) {
-                return mapGson.fromJson(mapGson.toJsonTree(fromValue), toValueType);
-            } else {
-                return objGson.fromJson(objGson.toJsonTree(fromValue), toValueType);
-            }
+            return gson.fromJson(gson.toJsonTree(fromValue), toValueType);
         }
     }
 
     private <T> T readJsonString(String fromValue, Class<T> toValueType) {
-        if (isMap(toValueType) || isList(toValueType)) {
-            return mapGson.fromJson(fromValue, toValueType);
-        } else {
-            return objGson.fromJson(fromValue, toValueType);
-        }
+        return gson.fromJson(fromValue, toValueType);
     }
 
     private boolean isMap(Class<?> type) {
@@ -117,10 +107,10 @@ public class SimpleObjectMapper {
 
     public <T> T restoreGeneric(Object fromValue, Class<T> toValueType, Class<?>... args) {
         if (fromValue instanceof Map) {
-            return objGson.fromJson(objGson.toJsonTree(fromValue),
+            return gson.fromJson(gson.toJsonTree(fromValue),
                     TypeToken.getParameterized(toValueType, args).getType());
         } else if (fromValue instanceof byte[] b) {
-            return objGson.fromJson(Utility.getInstance().getUTF(b),
+            return gson.fromJson(Utility.getInstance().getUTF(b),
                     TypeToken.getParameterized(toValueType, args).getType());
         } else {
             throw new IllegalArgumentException("Unable to restore to "+fromValue.getClass().getName()+
@@ -131,5 +121,4 @@ public class SimpleObjectMapper {
     public boolean isPrimitive(Object obj) {
         return (obj instanceof Number || obj instanceof Boolean || obj instanceof Date);
     }
-
 }

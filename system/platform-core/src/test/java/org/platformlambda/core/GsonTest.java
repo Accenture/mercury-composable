@@ -25,11 +25,13 @@ import org.platformlambda.core.serializers.SimpleObjectMapper;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GsonTest {
 
@@ -91,6 +93,21 @@ public class GsonTest {
         return sample;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Test
+    public void nestedUntypedMapInPoJo() {
+        SimplePoJo sample = new SimplePoJo();
+        sample.map.put("number", 10L);
+        Map map = SimpleMapper.getInstance().getMapper().readValue(sample, Map.class);
+        MultiLevelMap multi = new MultiLevelMap((Map<String, Object>) map);
+        assertInstanceOf(Integer.class, multi.getElement("map.number"));
+        assertEquals(10, multi.getElement("map.number"));
+        // restoring the PoJo
+        SimplePoJo restored = SimpleMapper.getInstance().getMapper().readValue(map, SimplePoJo.class);
+        assertInstanceOf(Integer.class, restored.map.get("number"));
+        assertEquals(10, restored.map.get("number"));
+    }
+
     private static class SimplePoJo {
         int number;
         long longNumber;
@@ -102,5 +119,6 @@ public class GsonTest {
         Date date;
         BigInteger bigInteger;
         BigDecimal bigDecimal;
+        Map<String, Object> map = new HashMap<>();
     }
 }
