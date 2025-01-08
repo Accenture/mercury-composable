@@ -38,6 +38,7 @@ tasks:
       - 'abort.request'
 
   - input:
+      - 'text(error) -> type'
       - 'model.status -> status'
       - 'model.message -> message'
     process: 'abort.request'

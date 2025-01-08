@@ -34,7 +34,7 @@ public class SimpleCircuitBreaker implements TypedLambdaFunction<Map<String, Obj
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         Utility util = Utility.getInstance();
-        int maxAttempts = util.str2int(input.getOrDefault("max_attempts", "2").toString());
+        int maxAttempts = util.str2int(input.getOrDefault("max_attempts", "1").toString());
         int attempt = util.str2int(input.getOrDefault("attempt", "0").toString());
         int status = util.str2int(input.getOrDefault("status", "200").toString());
         String message = input.getOrDefault("message", "unknown").toString();

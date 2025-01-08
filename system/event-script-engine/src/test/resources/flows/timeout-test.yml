@@ -3,7 +3,6 @@ flow:
   description: 'Simplest flow of one task'
   ttl: 1s
 
-
 first.task: 'greeting.test'
 
 tasks:

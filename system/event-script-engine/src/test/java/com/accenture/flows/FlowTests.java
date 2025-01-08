@@ -320,6 +320,8 @@ public class FlowTests extends TestBase {
         assertEquals(400, result.getStatus());
         assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> output = (Map<String, Object>) result.getBody();
+        assertEquals("error", output.get("type"));
+        assertEquals(400, output.get("status"));
         assertEquals("Just a demo exception for circuit breaker to handle", output.get("message"));
     }
 
