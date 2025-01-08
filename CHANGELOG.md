@@ -21,11 +21,12 @@ N/A
 ### Changed
 
 1. Improved configuration management and refactored AppConfigReader, ConfigReader and
-   MultiLevelMap classes.
-2. Input to MultiLevelMap is now immutable.
-3. Simplified event script's pipeline condition syntax.
+   MultiLevelMap classes
+2. Input to MultiLevelMap is now immutable
+3. Simplified event script's pipeline condition syntax
 4. Consistent exception transport for Java and Node.js composable applications
-5. OSS updates as follows.
+5. Bugfix to handle untyped map inside a PoJo
+6. OSS updates as follows.
 
 ```
 Spring Boot parent version 3.4.1
