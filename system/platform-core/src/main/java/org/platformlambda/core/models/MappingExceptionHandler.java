@@ -24,11 +24,19 @@ import org.platformlambda.core.exception.AppException;
  * You can add this interface to your TypedLambdaFunction or KotlinLambdaFunction
  * to catch object casting exception.
  * <p>
- * For example, if the calling function sends a string to the input that is defined as PoJo,
- * object casting exception will happen. Without this interface, the casting error will be
- * treated as "unhandled exception" and logged.
+ *     The system will do best effort to map PoJo if you define a PoJo or a Map
+ *     as input in the TypedLambdaFunction (or KotlinLambdaFunction).
  * <p>
- * With this interface, your application can catch this and handle properly.
+ *     This is designed to catch casting of Java primitive to a Map or PoJo since
+ *     it is not possible to do meaningful mapping.
+ * <p>
+ *     You can implement this interface to handle this type of Casting exception.
+ * <p>
+ *     IMPORTANT:
+ *     If you are using Event Script, the engine will guarantee that Java primitive
+ *     is not mapped into the input of a Composable function in an event flow.
+ *     Therefore, there is no need to use this interface to catch casting
+ *     exception when using Event Script.
  */
 public interface MappingExceptionHandler {
 

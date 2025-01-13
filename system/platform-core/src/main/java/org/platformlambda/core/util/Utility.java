@@ -1057,7 +1057,7 @@ public class Utility {
         int multiplier = 1;
         final int n;
         if (duration.endsWith("s") || duration.endsWith("m") || duration.endsWith("h") || duration.endsWith("d")) {
-            n = util.str2int(duration.substring(0, duration.length()-1));
+            n = util.str2int(duration.substring(0, duration.length()-1).trim());
             if (duration.endsWith("m")) {
                 multiplier = ONE_MINUTE;
             }

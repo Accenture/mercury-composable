@@ -36,7 +36,7 @@ public class PrepareParallelTest implements TypedLambdaFunction<Map<String, Obje
         if (input.containsKey(COUNT)) {
             int total = Math.max(1, Integer.parseInt(input.get(COUNT).toString()));
             log.info("Reset parallel counter to {}", total);
-            ParallelTask.resetCounter(total);
+            ParallelTask.counter.set(total);
         }
         return null;
     }

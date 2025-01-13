@@ -38,8 +38,13 @@ public class HelloException implements TypedLambdaFunction<Map<String, Object>, 
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        log.info("User defined exception handler got {} {}", headers, input);
+
         if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
+            Object stack = input.get("stack");
+            if (stack instanceof String text) {
+                log.info("User defined exception handler got {}, rc={}, error={}, stack size={}",
+                        headers, input.get(STATUS), input.get(MESSAGE), text.length());
+            }
             Map<String, Object> error = new HashMap<>();
             error.put(STATUS, input.get(STATUS));
             error.put(MESSAGE, input.get(MESSAGE));

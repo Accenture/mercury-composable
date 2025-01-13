@@ -13,16 +13,19 @@ tasks:
     output:
       - 'result -> model.pojo'
       - 'result -> output.body'
+      - 'text(application/json) -> output.header.content-type'
     description: 'Pass a pojo to another task'
     execution: response
     next:
       - 'sequential.two'
 
-  - input:
+  - name: 'sequential.two'
+    input:
       - 'model.pojo -> pojo'
-    process: 'sequential.two'
+    process: 'no.op'
     output:
-      - 'text(application/json) -> output.header.content-type'
-      - 'result -> output.body'
+      # this output will not be delivered to the caller because the response was sent in previous step
+      - 'text(text/plain) -> output.header.content-type'
+      - 'text(end) -> output.body'
     description: 'Return result'
     execution: end

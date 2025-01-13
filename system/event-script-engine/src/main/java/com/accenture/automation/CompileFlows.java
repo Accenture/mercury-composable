@@ -197,10 +197,10 @@ public class CompileFlows implements EntryPoint {
                 String functionRoute = flow.getProperty(TASKS+"["+i+"]."+PROCESS);
                 Object taskDesc = flow.get(TASKS+"["+i+"]."+DESCRIPTION);
                 Object execution = flow.get(TASKS+"["+i+"]."+EXECUTION);
-                Object delay = flow.get(TASKS+"["+i+"]."+DELAY);
+                String delay = flow.getProperty(TASKS+"["+i+"]."+DELAY);
                 Object taskException = flow.get(TASKS+"["+i+"]."+EXCEPTION);
                 String loopStatement = flow.getProperty(TASKS+"["+i+"]."+LOOP+"."+STATEMENT);
-                String loopCondition = flow.getProperty(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
+                Object loopCondition = flow.get(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
                 String uniqueTaskName = taskName == null? functionRoute : taskName;
                 if (input instanceof List && output instanceof List && uniqueTaskName != null &&
                         taskDesc instanceof String && execution instanceof String taskExecution &&
@@ -223,23 +223,30 @@ public class CompileFlows implements EntryPoint {
                         return;
                     }
                     Task task = new Task(uniqueTaskName, functionRoute, taskExecution);
-                    if (delay instanceof Integer) {
-                        long n = util.str2long(delay.toString());
-                        if (n < entry.ttl) {
-                            task.setDelay(n);
-                        } else {
-                            log.error("{} {} in {}. delay must be less than TTL",
-                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                            return;
+                    if (delay != null && !delay.isEmpty()) {
+                        if (delay.endsWith("ms")) {
+                            // the "ms" suffix is used for documentation purpose only
+                            delay = delay.substring(0, delay.length() - 2).trim();
                         }
-                    } else if (delay instanceof String d) {
-                        List<String> dParts = util.split(d, ".");
-                        if (dParts.size() > 1 && d.startsWith(MODEL_NAMESPACE)) {
-                            task.setDelayVar(d);
+                        if (util.isNumeric(delay)) {
+                            // delay must be positive
+                            long n = Math.max(1, util.str2long(delay));
+                            if (n < entry.ttl) {
+                                task.setDelay(n);
+                            } else {
+                                log.error("{} {} in {}. delay must be less than TTL",
+                                        SKIP_INVALID_TASK, uniqueTaskName, name);
+                                return;
+                            }
                         } else {
-                            log.error("{} {} in {}. delay variable must starts with 'model.'",
-                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                            return;
+                            List<String> dParts = util.split(delay, ".");
+                            if (dParts.size() > 1 && delay.startsWith(MODEL_NAMESPACE)) {
+                                task.setDelayVar(delay);
+                            } else {
+                                log.error("{} {} in {}. delay variable must starts with 'model.'",
+                                        SKIP_INVALID_TASK, uniqueTaskName, name);
+                                return;
+                            }
                         }
                     }
                     if (taskException instanceof String te) {
@@ -339,7 +346,7 @@ public class CompileFlows implements EntryPoint {
                                         }
                                         if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
                                             log.error("{} {} in {}. Please check for-loop syntax. e.g. " +
-                                                            "'for (model.n = 0; model.n < 3; model.n++)'",
+                                                            "for (model.n = 0; model.n < 3; model.n++)",
                                                     SKIP_INVALID_TASK, uniqueTaskName, name);
                                             return;
                                         }
@@ -364,10 +371,26 @@ public class CompileFlows implements EntryPoint {
                                         task.setWhileModelKey(modelKey);
                                     }
                                 }
-                                if (loopCondition != null) {
-                                    List<String> condition = getCondition(loopCondition);
-                                    if (!condition.isEmpty()) {
-                                        task.condition.addAll(condition);
+                                if (loopCondition instanceof String oneCondition) {
+                                    List<String> condition = getCondition(oneCondition);
+                                    if (condition.size() == 2) {
+                                        task.conditions.add(condition);
+                                    } else {
+                                        log.error("{} {} in {}. loop condition syntax error - {}",
+                                                SKIP_INVALID_TASK, uniqueTaskName, name, loopCondition);
+                                        return;
+                                    }
+                                }
+                                if (loopCondition instanceof List multiConditions) {
+                                    for (Object c: multiConditions) {
+                                        List<String> condition = getCondition(String.valueOf(c));
+                                        if (condition.size() == 2) {
+                                            task.conditions.add(condition);
+                                        } else {
+                                            log.error("{} {} in {}. loop conditions syntax error - {}",
+                                                    SKIP_INVALID_TASK, uniqueTaskName, name, loopCondition);
+                                            return;
+                                        }
                                     }
                                 }
                             } else {
@@ -382,9 +405,14 @@ public class CompileFlows implements EntryPoint {
                         String line = flow.getProperty(TASKS+"["+i+"]."+INPUT+"["+j+"]");
                         String filtered = filterMapping(line);
                         if (validInput(filtered)) {
+                            int sep = filtered.indexOf(MAP_TO);
+                            String rhs = filtered.substring(sep+2).trim();
+                            if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
+                                log.warn("Task {} in {} uses input namespace in right-hand-side {}", uniqueTaskName, name, line);
+                            }
                             task.input.add(filtered);
                         } else {
-                            log.error("Skip invalid task {} in {} has invalid input {}", uniqueTaskName, name, line);
+                            log.error("Skip invalid task {} in {} that has invalid input mapping {}", uniqueTaskName, name, line);
                             validTask = false;
                         }
                     }
@@ -396,7 +424,7 @@ public class CompileFlows implements EntryPoint {
                         if (validOutput(filtered, isDecisionTask)) {
                             task.output.add(filtered);
                         } else {
-                            log.error("Skip invalid task {} in {} has invalid output {}", uniqueTaskName, name, line);
+                            log.error("Skip invalid task {} in {} that has invalid output mapping {}", uniqueTaskName, name, line);
                             validTask = false;
                         }
                     }

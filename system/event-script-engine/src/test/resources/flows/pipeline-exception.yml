@@ -21,19 +21,21 @@ tasks:
       - 'echo.three'
 
   # you can remove a model key-value by passing a non-exist model. e.g. "model.none"
-  - input:
+  - name: 'echo.one'
+    input:
       - 'model.pojo -> data'
-    process: 'echo.one'
+    process: 'decision.case'
     output:
       - 'result.data -> model.pojo2'
       - 'model.none -> model.pojo'
     description: 'first step of a pipeline'
     execution: sink
 
-  - input:
+  - name: 'echo.two'
+    input:
       - 'model.pojo2 -> data'
       - 'text(just a test) -> exception'
-    process: 'echo.two'
+    process: 'decision.case'
     output:
       - 'result.data -> model.pojo3'
       - 'model.none -> model.pojo2'
@@ -41,9 +43,10 @@ tasks:
     execution: sink
     exception: 'v1.hello.exception'
 
-  - input:
+  - name: 'echo.three'
+    input:
       - 'model.pojo3 -> data'
-    process: 'echo.three'
+    process: 'decision.case'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

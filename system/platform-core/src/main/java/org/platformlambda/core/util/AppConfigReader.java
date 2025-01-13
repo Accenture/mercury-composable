@@ -78,6 +78,7 @@ public class AppConfigReader implements ConfigBase {
                 MultiLevelMap multiMap = new MultiLevelMap();
                 List<String> keys = new ArrayList<>(consolidated.keySet());
                 Collections.sort(keys);
+                // the datasets are always normalized because it is a flat map of key-values
                 keys.forEach(k -> multiMap.setElement(k, consolidated.get(k)));
                 config.load(multiMap.getMap());
                 config.resolveReferences();

@@ -1,7 +1,3 @@
-#
-# Parser exception test - duplicated map key-values
-#
-
 flow:
   id: 'parser-test-23'
   description: 'Test duplicated map key-values'

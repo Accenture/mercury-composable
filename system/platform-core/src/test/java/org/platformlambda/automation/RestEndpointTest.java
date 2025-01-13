@@ -312,8 +312,8 @@ public class RestEndpointTest extends TestBase {
             len += line.length;
         }
         /*
-         * The payload size is 66890 which is larger than default threshold of 50000,
-         * the rest automation system will upload it as a stream to the target service.
+         * While the payload size is large, the content-length is given.
+         * Therefore, the system will render it as a byte array.
          */
         byte[] b = bytes.toByteArray();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -327,22 +327,8 @@ public class RestEndpointTest extends TestBase {
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
         assert response != null;
-        assertNull(response.getBody());
-        // async.http.request returns a stream
-        String streamId = response.getHeader("x-stream-id");
-        assertNotNull(streamId);
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
-        flux.consume(data -> {
-            try {
-                result.write(data);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, null, () -> bench2.add(true));
-        Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(true, done);
-        assertArrayEquals(b, result.toByteArray());
+        assertInstanceOf(byte[].class, response.getBody());
+        assertArrayEquals(b, (byte[]) response.getBody());
     }
 
     @Test

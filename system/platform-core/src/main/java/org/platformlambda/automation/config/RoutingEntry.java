@@ -39,7 +39,6 @@ public class RoutingEntry {
     private static final String CORS = "cors";
     private static final String AUTHENTICATION = "authentication";
     private static final String UPLOAD = "upload";
-    private static final String THRESHOLD = "threshold";
     private static final String TRACING = "tracing";
     private static final String SERVICE = "service";
     private static final String FLOW = "flow";
@@ -63,8 +62,6 @@ public class RoutingEntry {
     private static final String ACCESS_CONTROL_PREFIX = "Access-Control-";
     private static final String[] VALID_METHODS = {"GET", "PUT", "POST", "DELETE", "HEAD", "PATCH", OPTIONS_METHOD};
     private static final List<String> METHOD_LIST = Arrays.asList(VALID_METHODS);
-    private static final int MIN_THRESHOLD = 5000;
-    private static final int MAX_THRESHOLD = 500000;
     private static final int FIVE_MINUTES = 5 * 60;
     private static final Map<String, RouteInfo> routes = new HashMap<>();
     private static final Map<String, Boolean> exactRoutes = new HashMap<>();
@@ -465,10 +462,6 @@ public class RoutingEntry {
                             config.get(REST+"["+idx+"]"));
                 return;
             }
-        }
-        String threshold = config.getProperty(REST+"["+idx+"]."+THRESHOLD);
-        if (threshold != null) {
-            info.threshold = Math.min(MAX_THRESHOLD, Math.max(MIN_THRESHOLD, util.str2int(threshold)));
         }
         String tracing = config.getProperty(REST+"["+idx+"]."+TRACING);
         if ("true".equalsIgnoreCase(tracing)) {

@@ -1,7 +1,3 @@
-#
-# Parser exception test - duplicated flow.id
-#
-
 flow:
   id: 'parser-test-incomplete-mappings'
   description: 'Test incomplete mapping entry'

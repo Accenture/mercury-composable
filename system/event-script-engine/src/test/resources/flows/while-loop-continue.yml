@@ -1,7 +1,7 @@
 flow:
-  id: 'for-loop-continue'
+  id: 'while-loop-continue'
   description: 'Test the flow of a pipeline task'
-  ttl: 20s
+  ttl: 10s
 
 first.task: 'sequential.one'
 
@@ -12,7 +12,8 @@ tasks:
     process: 'sequential.one'
     output:
       - 'result -> model.pojo'
-      - 'int(5) -> model.n'
+      - 'int(0) -> model.n'
+      - 'boolean(true) -> model.running'
     description: 'Pass a pojo to another task'
     execution: pipeline
     #
@@ -23,7 +24,7 @@ tasks:
     # 3. The condition is a 'if' statement to evaluate a model value to decide to break or continue
     #
     loop:
-      statement: 'for (model.n = 0; model.n < 4; model.n++)'
+      statement: 'while (model.running)'
       condition: 'if (model.continue) continue'
     pipeline:
       - 'echo.one'
@@ -37,10 +38,17 @@ tasks:
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
+      - 'text(2) -> continue'
       - 'text(echo.1) -> title'
+      # tell user function to increment "n"
+      - 'boolean(true) -> increment'
     process: 'decision.case'
     output:
+      # set model.n with the updated "n" from result set
+      - 'result.n -> model.n'
       - 'result.data -> model.pojo'
+      # update model.continue with result set so that the system will detect it
+      - 'result.continue -> model.continue'
     description: 'first step of a pipeline'
     execution: sink
 
@@ -48,12 +56,15 @@ tasks:
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
-      - 'text(2) -> continue'
+      - 'text(2) -> break'
       - 'text(echo.2) -> title'
     process: 'decision.case'
     output:
       - 'result.data -> model.pojo'
-      - 'result.continue -> model.continue'
+      - 'result.quit -> model.quit'
+      # when model.n = 3, set model.running to finish the pipeline
+      # You can update model.running at any pipeline step, and it will be evaluated in the beginning of the pipeline.
+      - 'model.n:boolean(3=false) -> model.running'
     description: 'second step of a pipeline'
     execution: sink
 

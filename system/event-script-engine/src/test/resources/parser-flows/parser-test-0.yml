@@ -4,13 +4,14 @@
 
 flow:
   id: 'parser-test-no-description'
-  description: 'Test no description'
+  description: 'Test no description in a task'
   ttl: 10s
 
 first.task: 'greeting.test'
 
 tasks:
   - input:
+      - 'text(warning) -> input'
       - 'input.path_parameter.user -> user'
       - 'input.query.ex -> exception'
       - 'text(hello world) -> greeting'

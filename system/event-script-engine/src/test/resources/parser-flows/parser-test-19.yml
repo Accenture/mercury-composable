@@ -1,7 +1,3 @@
-#
-# Parser exception test - duplicated flow.id
-#
-
 flow:
   id: 'parser-test-missing-external-state-machine'
   description: 'Test missing external state machine'

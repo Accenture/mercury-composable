@@ -1,6 +1,6 @@
 flow:
-  id: 'future-response-test'
-  description: 'Test a flow with immediate response'
+  id: 'delayed-response-test'
+  description: 'Test a flow with delayed response'
   ttl: 10s
 
 first.task: 'sequential.one'
@@ -14,16 +14,18 @@ tasks:
       - 'result -> model.pojo'
     description: 'Pass a pojo to another task'
     execution: sequential
-    delay: 20
+    # setting 200 ms for the delay to be observed in application log
+    delay: '200 ms'
     next:
       - 'sequential.two'
 
   # model.delay does not exist at this point, and it will be ignored
-  - input:
+  - name: 'sequential.two'
+    input:
       - 'model.pojo -> *'
       # intentionally not setting model.delay to create an error condition for delay processing
-      # 'int(10) -> model.delay'
-    process: 'sequential.two'
+#      - 'int(100) -> model.delay'
+    process: 'no.op'
     output: []
     description: 'Return result'
     delay: model.delay
@@ -36,7 +38,7 @@ tasks:
     input:
       - 'model.pojo -> *'
       - 'input.query.delay -> model.delay'
-    process: 'sequential.two'
+    process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

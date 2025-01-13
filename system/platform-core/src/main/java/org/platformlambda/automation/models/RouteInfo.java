@@ -27,7 +27,6 @@ public class RouteInfo {
 
     public String url, defaultAuthService, corsId, requestTransformId, responseTransformId, primary;
     public List<String> services;
-    public int threshold = 50000;
     public boolean tracing = false;
     public List<String> methods;
     public int timeoutSeconds = 30;

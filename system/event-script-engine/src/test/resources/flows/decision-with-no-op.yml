@@ -19,9 +19,10 @@ tasks:
       - 'decision.case.one'
       - 'decision.case.two'
 
-  - input:
+  - name: 'decision.case.one'
+    input:
       - 'model.decision -> decision'
-    process: 'decision.case.one'
+    process: 'decision.case'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'text(one) -> output.body.from'
@@ -29,9 +30,10 @@ tasks:
     description: 'Just a test'
     execution: end
 
-  - input:
+  - name: 'decision.case.two'
+    input:
       - 'model.decision -> decision'
-    process: 'decision.case.two'
+    process: 'decision.case'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'text(two) -> output.body.from'

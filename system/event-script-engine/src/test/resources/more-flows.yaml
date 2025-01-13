@@ -8,7 +8,9 @@ flows:
   - 'parser-test-6.yml'
   - 'parser-test-7.yml'
   - 'parser-test-8.yml'
-  - 'parser-test-9.yml'
+  - 'parser-test-9a.yml'
+  - 'parser-test-9b.yml'
+  - 'parser-test-9c.yml'
   - 'parser-test-10.yml'
   - 'parser-test-11.yml'
   - 'parser-test-12.yml'
@@ -23,6 +25,9 @@ flows:
   - 'parser-test-21.yml'
   - 'parser-test-22.yml'
   - 'parser-test-23.yml'
+  - 'parser-test-24.yml'
+  - 'parser-test-25.yml'
+  - 'parser-test-26.yml'
   # duplicated filename is intentional for unit test
   - 'parser-test-17.yml'
 

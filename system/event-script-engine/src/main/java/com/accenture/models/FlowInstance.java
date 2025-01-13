@@ -25,6 +25,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,6 +41,8 @@ public class FlowInstance {
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
     public final AtomicInteger pipeCounter = new AtomicInteger(0);
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
+    public final ConcurrentLinkedQueue<String> tasks = new ConcurrentLinkedQueue<>();
+    public final ConcurrentMap<String, Boolean> pendingTasks = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
     public final String id = Utility.getInstance().getUuid();
     public final String cid;

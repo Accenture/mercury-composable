@@ -1,7 +1,7 @@
 flow:
   id: 'fork-n-join-test'
   description: 'Test fork-n-join flow'
-  ttl: 1s
+  ttl: 5s
 
 first.task: 'my.first.task'
 
@@ -23,15 +23,16 @@ tasks:
   - name: 'my.echo.function'
     input:
       - 'text(hello-world-one) -> key1'
-    process: 'echo.one'
+    process: 'no.op'
     output:
       - 'result.key1 -> model.key1'
     description: 'Hello world'
     execution: sink
 
-  - input:
+  - name: 'echo.two'
+    input:
       - 'text(hello-world-two) -> key2'
-    process: 'echo.two'
+    process: 'no.op'
     output:
       - 'result.key2 -> model.key2'
     description: 'Hello world'
@@ -41,11 +42,12 @@ tasks:
   # the "*" pojo mapping entry must be the first one in the input mapping
   # so that the subsequent update to the pojo is possible.
   #
-  - input:
+  - name: 'join.task'
+    input:
       - 'model.pojo -> *'
       - 'model.key1 -> key1'
       - 'model.key2 -> key2'
-    process: 'join.task'
+    process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

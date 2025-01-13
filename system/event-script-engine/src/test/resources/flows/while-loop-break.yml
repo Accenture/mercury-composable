@@ -1,5 +1,5 @@
 flow:
-  id: 'for-loop-continue'
+  id: 'while-loop-break'
   description: 'Test the flow of a pipeline task'
   ttl: 20s
 
@@ -12,7 +12,8 @@ tasks:
     process: 'sequential.one'
     output:
       - 'result -> model.pojo'
-      - 'int(5) -> model.n'
+      - 'int(0) -> model.n'
+      - 'boolean(true) -> model.running'
     description: 'Pass a pojo to another task'
     execution: pipeline
     #
@@ -23,8 +24,8 @@ tasks:
     # 3. The condition is a 'if' statement to evaluate a model value to decide to break or continue
     #
     loop:
-      statement: 'for (model.n = 0; model.n < 4; model.n++)'
-      condition: 'if (model.continue) continue'
+      statement: 'while (model.running)'
+      condition: 'if (model.quit) break'
     pipeline:
       - 'echo.one'
       - 'echo.two'
@@ -43,17 +44,22 @@ tasks:
       - 'result.data -> model.pojo'
     description: 'first step of a pipeline'
     execution: sink
+    delay: '100 ms'
 
   - name: 'echo.two'
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
-      - 'text(2) -> continue'
+      - 'text(2) -> break'
       - 'text(echo.2) -> title'
+      # tell user function to increment "n"
+      - 'boolean(true) -> increment'
     process: 'decision.case'
     output:
+      # set model.n with the updated "n" from result set
+      - 'result.n -> model.n'
       - 'result.data -> model.pojo'
-      - 'result.continue -> model.continue'
+      - 'result.quit -> model.quit'
     description: 'second step of a pipeline'
     execution: sink
 

@@ -49,10 +49,6 @@ rest:
     #    authentication: "v1.api.auth"
     cors: cors_1
     headers: header_1
-    # for HTTP request body that is not JSON/XML, it will be turned into a stream if it is undefined
-    # or larger than threshold. Otherwise, it will be delivered as a byte array in the message body.
-    # Default is 50000 bytes, min is 5000, max is 500000
-    threshold: 30000
     # optionally, you can turn on Distributed Tracing
     tracing: true
 
@@ -139,8 +135,8 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
-    url: "/api/future-response/{user}?seq=_"
-    flow: 'future-response-test'
+    url: "/api/delayed-response/{user}?seq=_"
+    flow: 'delayed-response-test'
     timeout: 10s
     cors: cors_1
     headers: header_1
@@ -202,26 +198,35 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
-    url: "/api/for-loop-if-then-else/{user}?seq=_"
-    flow: 'for-loop-if-then-else'
-    timeout: 10s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
-  - service: "http.flow.adapter"
-    methods: ['GET']
-    url: "/api/for-loop-if-then-else-parallel/{user}?seq=_"
-    flow: 'for-loop-if-then-else-parallel'
-    timeout: 10s
-    cors: cors_1
-    headers: header_1
-    tracing: true
-
-  - service: "http.flow.adapter"
-    methods: ['GET']
     url: "/api/parallel"
     flow: 'parallel-test'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/while-loop/{user}?seq=_"
+    flow: 'while-loop'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/while-loop-break/{user}?seq=_"
+    flow: 'while-loop-break'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/while-loop-continue/{user}?seq=_"
+    flow: 'while-loop-continue'
     timeout: 10s
     cors: cors_1
     headers: header_1

@@ -179,13 +179,18 @@ public class EventEnvelope {
         return binary;
     }
 
+    /**
+     * Since we use the same HTTP status code numbering,
+     * an error condition is defined as status code >= 400.
+     *
+     * @return true if the event is considered as an error.
+     */
     public boolean hasError() {
-        return status != null && status != 200;
+        return status != null && status >= 400;
     }
 
     public String getError() {
         if (hasError()) {
-            // body is used to store error message if status is not 200
             if (body == null) {
                 return "null";
             } else if (body instanceof byte[]) {
@@ -238,25 +243,6 @@ public class EventEnvelope {
             originalObject = body;
         }
         return optional? Optional.ofNullable(originalObject) : originalObject;
-    }
-
-    /**
-     * Get event exception if any
-     *
-     * @return exception cause
-     */
-    public Throwable getException() {
-        if (!exRestored) {
-            if (exceptionBytes != null) {
-                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(exceptionBytes))) {
-                    exception = (Throwable) in.readObject();
-                } catch (IOException | ClassNotFoundException e) {
-                    // ignore it because there is nothing we can do
-                }
-            }
-            exRestored = true;
-        }
-        return exception;
     }
 
     /**
@@ -598,6 +584,29 @@ public class EventEnvelope {
     }
 
     /**
+     * Get event exception if any
+     *
+     * @return exception cause
+     */
+    public Throwable getException() {
+        if (!exRestored) {
+            if (exceptionBytes != null) {
+                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(exceptionBytes))) {
+                    exception = (Throwable) in.readObject();
+                } catch (IOException | ClassNotFoundException e) {
+                    // ignore it because there is nothing we can do
+                }
+            }
+            // best effort to recreate an exception
+            if (exception == null && stackTrace != null) {
+                exception = new RuntimeException(String.valueOf(body));
+            }
+            exRestored = true;
+        }
+        return exception;
+    }
+
+    /**
      * Set exception
      *
      * @param ex is the exception
@@ -605,21 +614,22 @@ public class EventEnvelope {
      */
     public EventEnvelope setException(Throwable ex) {
         if (ex != null) {
+            if (ex instanceof AppException appEx) {
+                setStatus(appEx.getStatus());
+            } else if (ex instanceof IllegalArgumentException) {
+                setStatus(400);
+            } else {
+                setStatus(500);
+            }
+            setBody(Utility.getInstance().getRootCause(ex).getMessage());
+            setStackTrace(getStackTrace(ex));
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (ObjectOutputStream stream = new ObjectOutputStream(out)) {
                 stream.writeObject(ex);
                 exceptionBytes = out.toByteArray();
-                setStackTrace(getStackTrace(ex));
-                setBody(Utility.getInstance().getRootCause(ex).getMessage());
-                if (ex instanceof AppException appEx) {
-                    setStatus(appEx.getStatus());
-                } else if (ex instanceof IllegalArgumentException) {
-                    setStatus(400);
-                } else {
-                    setStatus(500);
-                }
             } catch (IOException e) {
-                // this won't happen
+                // Ignore the specific exception object because it is not serializable.
+                // The exception is not transported but the stack trace should be available.
             }
         }
         return this;
@@ -630,8 +640,10 @@ public class EventEnvelope {
     }
 
     /**
+     * DO NOT use this method directly in your user application code.
+     * <p>
      * This is reserved for unit test to simulate getting stack trace
-     * from an external node.js composable application
+     * from an external node.js composable application.
      *
      * @param stackTrace as a text message with linefeed
      * @return event envelope
@@ -655,7 +667,7 @@ public class EventEnvelope {
             ex.printStackTrace(writer);
             return out.toString();
         } catch (IOException e) {
-            // this should not happen
+            // best effort is to keep the exception message
             return ex.getMessage();
         }
     }

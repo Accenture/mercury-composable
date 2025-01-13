@@ -1652,12 +1652,36 @@ public class PostOfficeTest extends TestBase {
         platform.registerPrivate(POJO_HAPPY_CASE, f, 1);
         platform.registerPrivate(SIMPLE_CALLBACK, new SimpleCallback(bench, TRACE_ID), 1);
         po.send(new EventEnvelope().setTo(POJO_HAPPY_CASE).setReplyTo(SIMPLE_CALLBACK).setBody(HELLO)
-                        .setFrom("unit.test").setTrace(TRACE_ID, "HAPPY /10000"));
+                        .setFrom("unit.test").setTrace(TRACE_ID, "TEST /callback"));
         Object result = bench.poll(10, TimeUnit.SECONDS);
         assertNotNull(result);
         assertEquals(PoJo.class, result.getClass());
         assertEquals(HELLO, ((PoJo) result).getName());
         platform.release(POJO_HAPPY_CASE);
+        platform.release(SIMPLE_CALLBACK);
+    }
+
+    @Test
+    public void testMapToPoJoCasting() throws IOException, InterruptedException {
+        final BlockingQueue<Object> bench = new ArrayBlockingQueue<>(1);
+        var TRACE_ID = "30000";
+        var TEXT = "test";
+        var HELLO = Map.of("name", TEXT);
+        String POJO_SUCCESS_CASE = "pojo.success.case";
+        String SIMPLE_CALLBACK = "simple.callback.2";
+        Platform platform = Platform.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        LambdaFunction f = (headers, input, instance) -> HELLO;
+        platform.registerPrivate(POJO_SUCCESS_CASE, f, 1);
+        platform.registerPrivate(SIMPLE_CALLBACK, new SimpleCallback(bench, TRACE_ID), 1);
+        po.send(new EventEnvelope().setTo(POJO_SUCCESS_CASE).setReplyTo(SIMPLE_CALLBACK).setBody(HELLO)
+                .setTrace(TRACE_ID, "TEST /best/effort/mapping"));
+        Object result = bench.poll(10, TimeUnit.SECONDS);
+        assertNotNull(result);
+        assertEquals(PoJo.class, result.getClass());
+        PoJo restored = (PoJo) result;
+        assertEquals(TEXT, restored.getName());
+        platform.release(POJO_SUCCESS_CASE);
         platform.release(SIMPLE_CALLBACK);
     }
 
@@ -1674,13 +1698,14 @@ public class PostOfficeTest extends TestBase {
         platform.registerPrivate(POJO_ERROR_CASE, f, 1);
         platform.registerPrivate(SIMPLE_CALLBACK, new SimpleCallback(bench, TRACE_ID), 1);
         po.send(new EventEnvelope().setTo(POJO_ERROR_CASE).setReplyTo(SIMPLE_CALLBACK).setBody(HELLO)
-                .setTrace(TRACE_ID, "CAST /30000"));
+                .setTrace(TRACE_ID, "TEST /cast/error"));
         Object result = bench.poll(10, TimeUnit.SECONDS);
         assertNotNull(result);
         assertEquals(AppException.class, result.getClass());
         AppException ex = (AppException) result;
         assertEquals(500, ex.getStatus());
-        assertTrue(ex.getMessage().contains("cannot be cast to"));
+        assertEquals("class java.lang.String cannot be cast to class org.platformlambda.core.models.PoJo",
+                ex.getMessage());
         platform.release(POJO_ERROR_CASE);
         platform.release(SIMPLE_CALLBACK);
     }
@@ -1796,8 +1821,8 @@ public class PostOfficeTest extends TestBase {
             EventEmitter po = EventEmitter.getInstance();
             TraceInfo trace = po.getTrace(route, instance);
             if (trace != null && traceId.equals(trace.id)) {
-                log.info("onError found trace path '{}'", trace.path);
-                log.info("Caught casting exception, status={}, message={}", e.getStatus(), e.getMessage());
+                log.info("Caught casting exception, id={}, status={}, message={}",
+                        trace.id, e.getStatus(), e.getMessage());
                 bench.add(e);
             }
         }

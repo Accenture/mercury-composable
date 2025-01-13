@@ -43,7 +43,6 @@ import java.util.concurrent.ConcurrentMap;
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
     private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();
-    private static final ConcurrentMap<String, ConcurrentMap<String, Boolean>> pendingTasks = new ConcurrentHashMap<>();
     private static final Utility util = Utility.getInstance();
     public static final String SERVICE_NAME = "task.executor";
     private static final String FIRST_TASK = "first_task";
@@ -164,7 +163,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         try {
             String firstTask = headers.get(FIRST_TASK);
             if (firstTask != null) {
-                pendingTasks.put(cid, new ConcurrentHashMap<>());
                 executeTask(flowInstance, firstTask);
             } else {
                 // handle callback from a task
@@ -241,17 +239,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         flowInstance.close();
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
-        var pending = pendingTasks.get(flowInstance.id);
-        int totalExecutions = pending.size();
-        pending.keySet().forEach(taskRefs::remove);
-        pendingTasks.remove(flowInstance.id);
+        flowInstance.pendingTasks.keySet().forEach(taskRefs::remove);
         String traceId = flowInstance.getTraceId();
         String logId = traceId != null? traceId : flowInstance.id;
         long diff = Math.max(0, System.currentTimeMillis() - flowInstance.getStartMillis());
         String formatted = Utility.getInstance().elapsedTime(diff);
-        log.info("Flow {} ({}) {}. Run {} task{} in {}",
+        List<String> taskList = new ArrayList<>(flowInstance.tasks);
+        int totalExecutions = taskList.size();
+        log.info("Flow {} ({}) {}. Run {} task{} in {}. {}",
                 flowInstance.getFlow().id, logId, normal? "completed" : "aborted",
-                totalExecutions, totalExecutions == 1? "" : "s", formatted);
+                totalExecutions, totalExecutions == 1? "" : "s", formatted, taskList);
     }
 
     @SuppressWarnings("rawtypes")
@@ -375,32 +372,36 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 if (pipeline.isLastStep(n)) {
                     pipeline.setCompleted();
                     log.debug("Flow {}:{} pipeline #{} last step-{} {}",
-                            flowInstance.getFlow().id, flowInstance.id, seq, n+1, pipeline.getTaskName(n));
+                            flowInstance.getFlow().id, flowInstance.id, seq, n + 1, pipeline.getTaskName(n));
                 } else {
                     log.debug("Flow {}:{} pipeline #{} next step-{} {}",
-                            flowInstance.getFlow().id, flowInstance.id, seq, n+1, pipeline.getTaskName(n));
+                            flowInstance.getFlow().id, flowInstance.id, seq, n + 1, pipeline.getTaskName(n));
                 }
-                if (pipelineTask.condition.isEmpty()) {
+                if (pipelineTask.conditions.isEmpty()) {
                     executeTask(flowInstance, pipeline.getTaskName(n), seq);
                 } else {
-                    /*
-                     * The first element of a condition is the model key.
-                     * The second element is "continue" or "break".
-                     */
-                    boolean conditionMet = false;
-                    Object o = consolidated.getElement(pipelineTask.condition.getFirst());
-                    if (Boolean.TRUE.equals(o)) {
-                        String action = pipelineTask.condition.get(1);
-                        conditionMet = action != null;
-                        if (BREAK.equals(action)) {
-                            flowInstance.pipeMap.remove(seq);
-                            executeTask(flowInstance, pipeline.getExitTask());
-                        } else if (CONTINUE.equals(action)) {
-                            pipeline.setCompleted();
-                            pipelineCompletion(flowInstance, pipeline, consolidated, seq);
+                    String action = null;
+                    for (List<String> condition: pipelineTask.conditions) {
+                        /*
+                         * The first element of a loop condition is the model key.
+                         * The second element is "continue" or "break".
+                         */
+                        var resolved = resolveCondition(condition, consolidated);
+                        if (resolved != null) {
+                            action = resolved;
+                            if (CONTINUE.equals(resolved)) {
+                                // clear condition
+                                consolidated.setElement(condition.getFirst(), false);
+                            }
+                            break;
                         }
                     }
-                    if (!conditionMet) {
+                    if (BREAK.equals(action)) {
+                        flowInstance.pipeMap.remove(seq);
+                        executeTask(flowInstance, pipeline.getExitTask());
+                    } else if (CONTINUE.equals(action)) {
+                        pipelineCompletion(flowInstance, pipeline, consolidated, seq);
+                    } else {
                         executeTask(flowInstance, pipeline.getTaskName(n), seq);
                     }
                 }
@@ -430,6 +431,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         if (PIPELINE.equals(executionType)) {
             handlePipelineTask(flowInstance, task, consolidated);
+        }
+    }
+
+    private String resolveCondition(List<String> condition, MultiLevelMap consolidated) {
+        if (Boolean.TRUE.equals(consolidated.getElement(condition.getFirst()))) {
+            return condition.get(1);
+        } else {
+            return null;
         }
     }
 
@@ -622,6 +631,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 500, SERVICE_AT +processName+" not defined");
             return;
         }
+        // add the task to the flow-instance
+        String functionRoute = task.getFunctionRoute();
+        flowInstance.tasks.add(task.service.equals(functionRoute)? functionRoute : task.service+"("+functionRoute+")");
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -718,8 +730,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (task.getDelayVar() != null) {
                 Object d = source.getElement(task.getDelayVar());
                 if (d != null) {
-                    long delay = util.str2long(d.toString());
-                    if (delay > 0 && delay < flowInstance.getFlow().ttl) {
+                    long delay = Math.max(1, util.str2long(d.toString()));
+                    if (delay < flowInstance.getFlow().ttl) {
                         deferred = delay;
                     } else {
                         log.warn("Unable to schedule future task for {} because {} is invalid (TTL={}, delay={})",
@@ -735,18 +747,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         final String uuid = util.getDateUuid();
         final TaskReference ref = new TaskReference(flowInstance.id, task.service);
         taskRefs.put(uuid, ref);
-        var pending = pendingTasks.get(flowInstance.id);
-        if (pending != null) {
-            pending.put(uuid, true);
-        }
+        flowInstance.pendingTasks.put(uuid, true);
         final String compositeCid = seq > 0? uuid + "#" + seq : uuid;
-        if (task.functionRoute.startsWith(FLOW_PROTOCOL)) {
-            String flowId = task.functionRoute.substring(FLOW_PROTOCOL.length());
+        if (functionRoute.startsWith(FLOW_PROTOCOL)) {
+            String flowId = functionRoute.substring(FLOW_PROTOCOL.length());
             Flow subFlow = Flows.getFlow(flowId);
             if (subFlow == null) {
                 log.error("Unable to process flow {}:{} - missing sub-flow {}",
-                        flowInstance.getFlow().id, flowInstance.id, task.functionRoute);
-                abortFlow(flowInstance, 500, task.functionRoute+" not defined");
+                        flowInstance.getFlow().id, flowInstance.id, functionRoute);
+                abortFlow(flowInstance, 500, functionRoute+" not defined");
                 return;
             }
             if (!optionalHeaders.isEmpty()) {
@@ -754,8 +763,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
             EventEnvelope forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
                     .setHeader(FLOW_ID, flowId).setBody(target.getMap()).setCorrelationId(util.getUuid());
-            PostOffice po = new PostOffice(task.functionRoute,
-                                            flowInstance.getTraceId(), flowInstance.getTracePath());
+            PostOffice po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
             po.asyncRequest(forward, subFlow.ttl, false).onSuccess(response -> {
                 EventEnvelope event = new EventEnvelope()
                         .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
@@ -772,7 +780,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else {
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
-            EventEnvelope event = new EventEnvelope().setTo(task.functionRoute)
+            EventEnvelope event = new EventEnvelope().setTo(functionRoute)
                     .setCorrelationId(compositeCid)
                     .setReplyTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
                     .setBody(target.getMap());

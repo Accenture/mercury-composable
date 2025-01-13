@@ -26,9 +26,10 @@ tasks:
     next:
       - 'sequential.two'
 
-  - input:
+  - name: 'sequential.two'
+    input:
       - 'model.pojo -> *'
-    process: 'sequential.two'
+    process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body.pojo'

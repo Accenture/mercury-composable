@@ -393,12 +393,17 @@ public class ConfigReader implements ConfigBase {
     public void resolveReferences() {
         if (!resolved) {
             resolved = true;
+            // normalize the dataset first
             Map<String, Object> flat = Utility.getInstance().getFlatMap(config.getMap());
+            MultiLevelMap dataset = new MultiLevelMap();
             List<String> keys = new ArrayList<>(flat.keySet());
             Collections.sort(keys);
+            keys.forEach(k -> dataset.setElement(k, flat.get(k)));
+            config.reload(dataset.getMap());
+            // check if there are references
             boolean hasReferences = false;
             for (String k : keys) {
-                Object o = config.getElement(k);
+                Object o = flat.get(k);
                 if (o instanceof String v) {
                     int start = v.indexOf("${");
                     int end = v.indexOf('}');

@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.1.4, 1/13/2024
+
+### Added
+
+1. Task list included in "end of flow" logging
+2. Pipeline-while-loop unit tests
+3. EventScriptMock helper class to override a function route for a flow task
+
+### Removed
+
+Removed the "threshold" feature in variable HTTP payload in REST automation for
+consistent syntax with Node.js Composable version
+
+### Changed
+
+1. Update the setException method in EventEnvelope to handle non-serializable exception
+2. Improved event script's pipeline for-loop-continue feature
+3. Normalize dataset when loading new configuration using ConfigReader
+
+---
 ## Version 4.1.3, 1/1/2025
 
 ### Added

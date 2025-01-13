@@ -149,7 +149,8 @@ and create a new flow instance to process the user request.
 
 `flow.ttl` - "Time to live (TTL)" timer for each flow. You can define the maximum time for a flow to finish processing.
 All events are delivered asynchronously and there is no timeout value for each event. The TTL defines the time budget
-for a complete end-to-end flow. Upon expiry, an unfinished flow will be aborted.
+for a complete end-to-end flow. Upon expiry, an unfinished flow will be aborted. You can use suffix "s" for seconds,
+"m" for minutes and "h" for hours. e.g. "30s" for 30 seconds.
 
 `first.task` - this points to the route name of a function (aka "task") to which the flow engine will deliver
 the incoming event.
@@ -867,6 +868,17 @@ tasks:
       - 'echo.four'
 ```
 
+Note that the "condition" parameter can be a single condition or a list of conditions.
+In the following example, the system will evaluate both the model.quit and model.jump values.
+
+```yaml
+    loop:
+      statement: 'for (model.n = 0; model.n < 3; model.n++)'
+      condition: 
+        - 'if (model.quit) break'
+        - 'if (model.jump) break'
+```
+
 ## Handling exception
 
 You can define exception handler at the top level or at the task level.
@@ -1168,10 +1180,12 @@ This feature is usually used for unit tests or "future task scheduling".
 Since the system is event-driven and non-blocking, the delay is simulated by event scheduling.
 It does not block the processing flow.
 
-| Type           | Value                  | Example           |
-|:---------------|:-----------------------|:------------------|
-| Fixed delay    | Milliseconds           | delay=1000        |
-| Variable delay | State machine variable | delay=model.delay |
+| Type           | Value                  | Example             |
+|:---------------|:-----------------------|:--------------------|
+| Fixed delay    | Milliseconds           | delay: '1000 ms'    |
+| Variable delay | State machine variable | delay: model.delay  |
+
+Note that the "ms" suffix is optional for documentation purpose. It denotes milliseconds if present.
 
 When delay is set to a state variable that its value is not configured by a prior data mapping,
 the delay command will be ignored.
@@ -1189,7 +1203,7 @@ tasks:
       - 'result -> output.body'
     description: 'Hello World'
     execution: end
-    delay: 2000
+    delay: '2000 ms'
 ```
 <br/>
 

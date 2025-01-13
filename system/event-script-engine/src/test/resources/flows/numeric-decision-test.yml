@@ -17,10 +17,12 @@ tasks:
     next:
       - 'decision.case.one'
       - 'decision.case.two'
+      - 'decision.case.three'
 
-  - input:
+  - name: 'decision.case.one'
+    input:
       - 'model.decision -> decision'
-    process: 'decision.case.one'
+    process: 'decision.case'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'text(one) -> output.body.from'
@@ -28,12 +30,24 @@ tasks:
     description: 'Just a test'
     execution: end
 
-  - input:
+  - name: 'decision.case.two'
+    input:
       - 'model.decision -> decision'
-    process: 'decision.case.two'
+    process: 'decision.case'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'text(two) -> output.body.from'
+      - 'result.decision -> output.body.decision'
+    description: 'Just a test'
+    execution: end
+
+  - name: 'decision.case.three'
+    input:
+      - 'model.decision -> decision'
+    process: 'decision.case'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'text(three) -> output.body.from'
       - 'result.decision -> output.body.decision'
     description: 'Just a test'
     execution: end

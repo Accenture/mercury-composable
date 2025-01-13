@@ -3,7 +3,7 @@
 #
 
 flow:
-  id: 'parser-test'
+  id: 'greetings'
   description: 'Test duplicated flow ID'
   ttl: 10s
 

@@ -653,12 +653,14 @@ public class ServiceGateway {
             } else {
                 /*
                  * Input is not JSON, XML or TEXT.
-                 * Check if the content-length is larger than threshold.
-                 * For large payload, it is better to deliver as a stream.
+                 *
+                 * If content-length is not given, the payload size is variable.
+                 * The "x-small-payload-as-bytes" header allows the system to
+                 * render variable size payload as a fix length content.
                  */
                 int contentLen = util.str2int(request.getHeader(CONTENT_LEN));
                 boolean noStream = "true".equals(request.getHeader(X_NO_STREAM));
-                if (noStream || (contentLen > 0 && contentLen <= route.info.threshold)) {
+                if (noStream || contentLen > 0) {
                     request.bodyHandler(block -> {
                         byte[] b = block.getBytes(0, block.length());
                         requestBody.write(b, 0, b.length);

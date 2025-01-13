@@ -16,9 +16,10 @@ tasks:
       - 'parallel.one'
       - 'parallel.two'
 
-  - input:
+  - name: 'parallel.one'
+    input:
       - 'text(hello-world-one) -> key1'
-    process: 'parallel.one'
+    process: 'parallel.task'
     output:
       - 'result.key1 -> model.key1'
       - 'result.decision -> decision'
@@ -28,9 +29,10 @@ tasks:
       - 'echo.one'
       - 'echo.two'
 
-  - input:
+  - name: 'parallel.two'
+    input:
       - 'text(hello-world-two) -> key2'
-    process: 'parallel.two'
+    process: 'parallel.task'
     output:
       - 'result.key2 -> model.key2'
       - 'result.decision -> decision'
@@ -40,20 +42,29 @@ tasks:
       - 'echo.one'
       - 'echo.two'
 
-  - input:
+  #
+  # Running parallel tasks requires the flow to be active.
+  #
+  # For this unit test, we use a bench to keep track of the remaining tasks.
+  # echo.one will execute when there are no remaining tasks.
+  # Therefore, the execution will come to an end when echo.one finally executes.
+  #
+  - name: 'echo.one'
+    input:
       - 'model.key1 -> key1'
       - 'model.key2 -> key2'
-    process: 'echo.one'
+    process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Hello world'
     execution: end
 
-  - input:
+  - name: 'echo.two'
+    input:
       - 'model.key1 -> key1'
       - 'model.key2 -> key2'
-    process: 'echo.two'
+    process: 'no.op'
     output: []
     description: 'Hello world'
     execution: sink

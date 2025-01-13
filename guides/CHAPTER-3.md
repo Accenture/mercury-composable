@@ -81,24 +81,35 @@ A REST endpoint may look like this:
     timeout: 10s
     cors: cors_1
     headers: header_1
-    threshold: 30000
+    authentication: 'v1.api.auth'
     tracing: true
 ```
 
-In this example, the URL for the REST endpoint is "/api/hello/world" and it accepts a list of HTTP methods.
-When an HTTP request is sent to the URL, the HTTP event will be sent to the function declared with service route name 
-"hello.world". The input event will be the "AsyncHttpRequest" object. Since the "hello.world" function is written
-as an inline LambdaFunction in the `lambda-example` application, the AsyncHttpRequest is converted to a HashMap. 
+*Syntax*
 
-To process the input as an AsyncHttpRequest object, the function must be written as a regular class. See the
-"services" folder of the lambda-example for additional examples.
+| Parameter      | Usage                                                              | Example                                                     |
+|:---------------|:-------------------------------------------------------------------|:------------------------------------------------------------|
+| service        | List of one or two route names of a service                        | 'hello.world'<br>['primary.service', 'secondary.service']   |
+| methods        | List of one or two HTTP methods                                    | ['GET']                                                     |
+| url            | URI path of the service                                            | '/api/hello/world'                                          |
+| timeout        | Maximum time to wait for a REST response                           | Default value is '30s' for 30 seconds.<br>("s" for seconds) |
+| cors           | Reference ID of a CORS section                                     | 'cors_1'                                                    |
+| headers        | Reference ID of a HEADERS transformation section                   | 'header_1'                                                  |
+| authentication | *Optional*. Route the HTTP request for authentication is provided. | default is false                                            |
+| tracing        | Enable distributed tracing when set to 'true'                      | default is false                                            |
+
+When more than one service route name is provided, the first one is the primary service and the system will
+deliver its output as HTTP response. The second one is the secondary service for listening to the REST endpoint.
+Output from the secondary service will be ignored.
+
+When content length is not given, the system will render payload as a stream of bytes.
 
 The "timeout" value is the maximum time that REST endpoint will wait for a response from your function.
 If there is no response within the specified time interval, the user will receive an HTTP-408 timeout exception.
 
-The "authentication" tag is optional. If configured, the route name given in the authentication tag will be used.
-The input event will be delivered to a function with the authentication route name. In this example, it is
-"v1.api.auth".
+The "authentication" parameter is optional. If configured, the route name given in the authentication parameter
+will be used. The input event will be delivered to the authentication function with the route name. In this example,
+it is "v1.api.auth".
 
 Your custom authentication function may look like this:
 ```java

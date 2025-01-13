@@ -276,4 +276,20 @@ public class EventEnvelopeTest {
         assertTrue(target2.isException());
         assertEquals(stack, target2.getStackTrace());
     }
+
+    @Test
+    public void testBestEffortToRestoreException() throws IOException {
+        String message = "hello world";
+        String stack = "hello\nworld";
+        // this emulates how Node.js Composable application sets exception
+        EventEnvelope source = new EventEnvelope().setStackTrace(stack).setBody(message).setStatus(400);
+        EventEnvelope target = new EventEnvelope(source.toBytes());
+        assertTrue(target.isException());
+        assertEquals(stack, target.getStackTrace());
+        Throwable ex = target.getException();
+        assertNotNull(ex);
+        assertInstanceOf(RuntimeException.class, ex);
+        assertEquals(400, target.getStatus());
+        assertEquals(message, ex.getMessage());
+    }
 }
