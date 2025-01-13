@@ -147,7 +147,7 @@ public void rpcTest() throws IOException, InterruptedException, ExecutionExcepti
     EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
     EventEnvelope response = po.request(request, 800).get();
     assert response != null;
-    assertEquals(HashMap.class, response.getBody().getClass());
+    assertInstanceOf(Map.class, response.getBody());
     MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
     assertEquals(NAME, map.getElement("body.name"));
     assertEquals(ADDRESS, map.getElement("body.address"));
