@@ -1,7 +1,7 @@
 flow:
   id: 'parallel-test'
   description: 'Test parallel processing'
-  ttl: 1s
+  ttl: 5s
 
 first.task: 'begin.parallel.test'
 
