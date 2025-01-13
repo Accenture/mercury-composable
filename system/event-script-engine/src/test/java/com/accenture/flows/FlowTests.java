@@ -22,7 +22,6 @@ import com.accenture.adapters.FlowExecutor;
 import com.accenture.mock.EventScriptMock;
 import com.accenture.models.PoJo;
 import com.accenture.setup.TestBase;
-import com.accenture.tasks.ParallelTask;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
