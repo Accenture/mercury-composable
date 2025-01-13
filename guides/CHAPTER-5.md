@@ -137,29 +137,28 @@ A typical unit test may look like this:
 ```java
 @SuppressWarnings("unchecked")
 @Test
-public void nonBlockingRpcTest() throws IOException, InterruptedException, ExecutionException {
-    final PostOffice po = new PostOffice("unit.test", "10000", "POST /api/slow/rpc");
-    final String HELLO_WORLD = "hello world";
-    // the target service will simulate a one-second delay
-    EventEnvelope request = new EventEnvelope().setTo("slow.rpc.function").setBody(HELLO_WORLD);
-    EventEnvelope response = po.request(request, 5000).get();
+public void rpcTest() throws IOException, InterruptedException, ExecutionException {
+    Utility util = Utility.getInstance();
+    String NAME = "hello";
+    String ADDRESS = "world";
+    String TELEPHONE = "123-456-7890";
+    DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
+    PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
+    EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
+    EventEnvelope response = po.request(request, 800).get();
     assert response != null;
-    assertInstanceOf(Map.class, response.getBody());
+    assertEquals(HashMap.class, response.getBody().getClass());
     MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-    assertEquals(2, map.getElement("body"));
-    assertEquals(HELLO_WORLD, map.getElement("headers.body"));
+    assertEquals(NAME, map.getElement("body.name"));
+    assertEquals(ADDRESS, map.getElement("body.address"));
+    assertEquals(TELEPHONE, map.getElement("body.telephone"));
+    assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
 }
 ```
 
-Note that the PostOffice instance can be created with tracing information in a Unit Test. The above example
-tells the system that the sender is "unit.test", the trace ID is 12345 and the trace path is "POST /api/hello/world".
-
-In the above example, the unit test sends the text "hello world" as a request body.
-The "slow.rpc.function" in turns makes another request to the "hello.world" function that
-sets the result set to contain the "body" and "headers" sections. The MultiLevelMap is used
-to read the result set using the standard JSON access convention.
-
-If the function is designed to handle PoJo, you can set the event's body as a HashMap or PoJo.
+Note that the PostOffice instance can be created with tracing information in a Unit Test.
+The above example tells the system that the sender is "unit.test", the trace ID is 12345
+and the trace path is "POST /api/hello/world".
 
 ### Convenient utility classes
 

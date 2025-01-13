@@ -29,9 +29,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -39,17 +37,15 @@ public class HelloWorldTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void rpcTest() throws IOException, InterruptedException {
+    public void rpcTest() throws IOException, InterruptedException, ExecutionException {
         Utility util = Utility.getInstance();
-        BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String NAME = "hello";
         String ADDRESS = "world";
         String TELEPHONE = "123-456-7890";
         DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
         PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
-        po.asyncRequest(request, 800).onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        EventEnvelope response = po.request(request, 800).get();
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
