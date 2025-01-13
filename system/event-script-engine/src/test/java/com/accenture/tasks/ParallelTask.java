@@ -20,13 +20,11 @@ package com.accenture.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.PostOffice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @PreLoad(route="parallel.task", instances=10)
@@ -34,17 +32,13 @@ public class ParallelTask implements TypedLambdaFunction<Map<String, Object>, Ma
     private static final Logger log = LoggerFactory.getLogger(ParallelTask.class);
 
     private static final String DECISION = "decision";
-    public static final ConcurrentLinkedQueue<String> tasks = new ConcurrentLinkedQueue<>();
     public static final AtomicInteger counter = new AtomicInteger(0);
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws InterruptedException {
-        var po = new PostOffice(headers, instance);
-        var myRoute = po.getRoute();
-        tasks.add(myRoute);
         int n = counter.incrementAndGet();
-        boolean done = tasks.size() == 2 && n == 2;
-        log.info("Parallel tasks executed {}, counter={}", tasks, n);
+        boolean done = n == 2;
+        log.info("Processing {}, counter={}", input, n);
         Map<String, Object> result = new HashMap<>();
         result.put(DECISION, done);
         result.putAll(input);

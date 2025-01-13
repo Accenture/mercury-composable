@@ -19,6 +19,7 @@ tasks:
   - name: 'parallel.one'
     input:
       - 'text(hello-world-one) -> key1'
+      - 'text(parallel.one) -> from'
     process: 'parallel.task'
     output:
       - 'result.key1 -> model.key1'
@@ -32,6 +33,7 @@ tasks:
   - name: 'parallel.two'
     input:
       - 'text(hello-world-two) -> key2'
+      - 'text(parallel.two) -> from'
     process: 'parallel.task'
     output:
       - 'result.key2 -> model.key2'

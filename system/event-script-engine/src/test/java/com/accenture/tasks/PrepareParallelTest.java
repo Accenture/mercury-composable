@@ -35,7 +35,6 @@ public class PrepareParallelTest implements TypedLambdaFunction<Map<String, Obje
     public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         if (input.containsKey(COUNT)) {
             log.info("Reset parallel task counter");
-            ParallelTask.tasks.clear();
             ParallelTask.counter.set(0);
         }
         return null;
