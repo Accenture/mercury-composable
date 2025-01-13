@@ -49,7 +49,7 @@ public class TestBase {
     protected static final String HELLO_WORLD = "hello.world";
     protected static final String HELLO_MOCK = "hello.mock";
     protected static final String LONG_RUNNING_RPC = "long.running.rpc";
-    protected static final String LONG_RUNNING_RPC_ALIAS = "long.running.rpc.alias";
+    protected static final String SLOW_RPC_FUNCTION = "slow.rpc.function";
     protected static final String HELLO_LIST = "hello.list";
     protected static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
     protected static final int MINIMALIST_HTTP_PORT = 8020;
@@ -83,7 +83,7 @@ public class TestBase {
             platform.registerPrivate(HELLO_MOCK, new MockHelloWorld(), 10);
             platform.registerKotlinPrivate(LONG_RUNNING_RPC, new LongRunningRpcSimulator(), 15);
             // test registering the same function with an alias route name
-            platform.registerKotlin(LONG_RUNNING_RPC_ALIAS, new LongRunningRpcSimulator(), 10);
+            platform.registerKotlin(SLOW_RPC_FUNCTION, new LongRunningRpcSimulator(), 10);
             // hello.list is a special function to test returning result set as a list
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->
                     Collections.singletonList(input), 5);

@@ -132,48 +132,34 @@ public class TestBase {
 
 The atomic integer "seq" is used to ensure the main application entry point is executed only once.
 
-Your first unit test may look like this:
+A typical unit test may look like this:
 
 ```java
 @SuppressWarnings("unchecked")
 @Test
-public void rpcTest() throws IOException, InterruptedException {
-    Utility util = Utility.getInstance();
-    BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-    String name = "hello";
-    String address = "world";
-    String telephone = "123-456-7890";
-    DemoPoJo pojo = new DemoPoJo(name, address, telephone);
-    PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
-    EventEnvelope request = new EventEnvelope().setTo("hello.world")
-                                .setHeader("a", "b").setBody(pojo.toMap());
-    po.asyncRequest(request, 800).onSuccess(bench::add);
-    EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+public void nonBlockingRpcTest() throws IOException, InterruptedException, ExecutionException {
+    final PostOffice po = new PostOffice("unit.test", "10000", "POST /api/slow/rpc");
+    final String HELLO_WORLD = "hello world";
+    // the target service will simulate a one-second delay
+    EventEnvelope request = new EventEnvelope().setTo("slow.rpc.function").setBody(HELLO_WORLD);
+    EventEnvelope response = po.request(request, 5000).get();
     assert response != null;
-    assertEquals(HashMap.class, response.getBody().getClass());
+    assertInstanceOf(Map.class, response.getBody());
     MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-    assertEquals("b", map.getElement("headers.a"));
-    assertEquals(name, map.getElement("body.name"));
-    assertEquals(address, map.getElement("body.address"));
-    assertEquals(telephone, map.getElement("body.telephone"));
-    assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
+    assertEquals(2, map.getElement("body"));
+    assertEquals(HELLO_WORLD, map.getElement("headers.body"));
 }
 ```
 
 Note that the PostOffice instance can be created with tracing information in a Unit Test. The above example
 tells the system that the sender is "unit.test", the trace ID is 12345 and the trace path is "POST /api/hello/world".
 
-For unit test, we need to convert the asynchronous code into "synchronous" execution so that unit test can run
-sequentially. "BlockingQueue" is a good choice for this.
+In the above example, the unit test sends the text "hello world" as a request body.
+The "slow.rpc.function" in turns makes another request to the "hello.world" function that
+sets the result set to contain the "body" and "headers" sections. The MultiLevelMap is used
+to read the result set using the standard JSON access convention.
 
-The "hello.world" is an echo function. The above unit test sends an event containing a key-value `{"a":"b"}` and
-the payload of a HashMap from the DemoPoJo.
-
-If the function is designed to handle PoJo, we can send PoJo directly instead of a Map.
-
-> IMPORTANT: blocking code should only be used for unit tests. DO NOT use blocking code in your
-             application code because it will block the event system and dramatically slow down
-             your application.
+If the function is designed to handle PoJo, you can set the event's body as a HashMap or PoJo.
 
 ### Convenient utility classes
 
@@ -211,7 +197,7 @@ mock value.
 
 ```java
 @Test
-public void pojoTest() throws IOException, InterruptedException {
+public void pojoRpcTest() throws IOException, InterruptedException {
     Integer ID = 1;
     String NAME = "Simple PoJo class";
     String ADDRESS = "100 World Blvd, Planet Earth";
@@ -221,7 +207,7 @@ public void pojoTest() throws IOException, InterruptedException {
     po.asyncRequest(request, 800).onSuccess(bench::add);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
-    assertEquals(SamplePoJo.class, response.getBody().getClass());
+    assertEquals(HashMap.class, response.getBody().getClass());
     SamplePoJo pojo = response.getBody(SamplePoJo.class);
     assertEquals(ID, pojo.getId());
     assertEquals(NAME, pojo.getName());
@@ -305,6 +291,100 @@ The "hello.upload" is a Kotlin suspend function. It will be executed when the ev
 After saving the test file, it will return an HTTP response object that the unit test can validate.
 
 In this fashion, you can create unit tests to test suspend functions in an event-driven manner.
+
+## Event Flow mocking framework
+
+We recommend using Event Script to write Composable application for highest level of decoupling.
+Event Script supports sophisticated event choreography by configuration.
+
+In Event Script, you have a event flow configuration and a few Composable functions in an application.
+Composable functions are self-contained with zero dependencies with other composable functions. 
+You can invoke an event flow from an event flow adapter.
+
+The most common flow adapter is the "HTTP flow adapter" and it is available as a built-in module in
+the event-script-engine module in the system. You can associate many REST endpoints to the HTTP flow
+adapter.
+
+Since function routes for each composable function is defined in a event flow configuration and the same
+function route may be used for more than one task in the flow, the system provides a mock helper class
+called "EventScriptMock" to let your unit tests to override a task's function routes during test.
+
+In the following unit test example for a "pipeline" test, we created a mock function "my.mock.function"
+to override the "no.op" function that is associated with the first task "echo.one" in a pipeline.
+
+The original "no.op" function is an echo function. The mocked function increments a counter
+in addition to just echoing the input payload. In this fashion, the unit test can count the number
+of iteration of a pipeline to validate the looping feature of a pipeline.
+
+The unit test programmatically registers the mock function and then release it from the event loop
+when the test finishes.
+
+```java
+    @SuppressWarnings("unchecked")
+    @Test
+    public void pipelineForLoopTest() throws IOException, InterruptedException {
+        Platform platform = Platform.getInstance();
+        // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
+        // We want to override no.op with my.mock.function to demonstrate mocking a function
+        // for a flow.
+        var ECHO_ONE = "echo.one";
+        var MOCK_FUNCTION = "my.mock.function";
+        var iteration = new AtomicInteger(0);
+        LambdaFunction f = (headers, body, instance) -> {
+            var n = iteration.incrementAndGet();
+            log.info("Iteration-{} {}", n, body);
+            return body;
+        };
+        platform.registerPrivate(MOCK_FUNCTION, f, 1);
+        // override the function for the task "echo.one" to the mock function
+        var mock = new EventScriptMock("for-loop-test");
+        var previousRoute = mock.getFunctionRoute(ECHO_ONE);
+        var currentRoute = mock.assignFunctionRoute(ECHO_ONE, MOCK_FUNCTION).getFunctionRoute(ECHO_ONE);
+        assertEquals("no.op", previousRoute);
+        assertEquals(MOCK_FUNCTION, currentRoute);
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        int SEQ = 100;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/for-loop/"+USER).setQueryParameter("seq", SEQ);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertTrue(result.containsKey("data"));
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(3, result.get("n"));
+        assertEquals(3, iteration.get());
+        platform.release(MOCK_FUNCTION);
+    }
+```
+
+When the event flow finishes, you will see an "end-of-flow" log like this. It shows that the function
+route for the "echo.one" task has been changed to "my.mock.function". This end-of-flow log is useful
+during application development and tests so that the developer knows exactly which function has been
+executed.
+
+```json
+Flow for-loop-test (0afcf555fc4141f4a16393422e468dc9) completed. Run 11 tasks in 28 ms. 
+[ sequential.one, 
+  echo.one(my.mock.function), 
+  echo.two(no.op), 
+  echo.three(no.op), 
+  echo.one(my.mock.function), 
+  echo.two(no.op), 
+  echo.three(no.op), 
+  echo.one(my.mock.function), 
+  echo.two(no.op), 
+  echo.three(no.op), 
+  echo.four(no.op) ]
+```
 
 ## Deployment
 

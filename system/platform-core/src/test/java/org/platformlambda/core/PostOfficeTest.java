@@ -1321,14 +1321,12 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void nonBlockingRpcTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+    public void nonBlockingRpcTest() throws IOException, InterruptedException, ExecutionException {
+        final PostOffice po = new PostOffice("unit.test", "10000", "POST /api/slow/rpc");
         final String HELLO_WORLD = "hello world";
-        EventEnvelope request = new EventEnvelope().setTo("long.running.rpc.alias").setBody(HELLO_WORLD)
-                        .setHeader("timeout", 2000)
-                        .setTrace("10000", "/api/non-blocking/rpc").setFrom("unit.test");
-        EventEmitter.getInstance().asyncRequest(request, 5000).onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        // the target service will simulate a one-second delay
+        EventEnvelope request = new EventEnvelope().setTo("slow.rpc.function").setBody(HELLO_WORLD);
+        EventEnvelope response = po.request(request, 5000).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -1340,7 +1338,7 @@ public class PostOfficeTest extends TestBase {
     public void nonBlockingRpcTimeoutTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final String HELLO_WORLD = "hello world";
-        EventEnvelope request = new EventEnvelope().setTo("long.running.rpc.alias").setBody(HELLO_WORLD)
+        EventEnvelope request = new EventEnvelope().setTo("slow.rpc.function").setBody(HELLO_WORLD)
                 .setHeader("timeout", 500)
                 .setTrace("10001", "/api/non-blocking/rpc").setFrom("unit.test");
         /*
