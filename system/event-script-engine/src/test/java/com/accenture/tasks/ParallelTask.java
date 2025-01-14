@@ -46,6 +46,7 @@ public class ParallelTask implements TypedLambdaFunction<Map<String, Object>, Ma
         if (done) {
             log.info("I am the second task. I would like to sleep briefly so the first task can complete");
             Thread.sleep(200);
+            log.info("I have waked up");
         } else {
             log.info("I am the first task");
         }
