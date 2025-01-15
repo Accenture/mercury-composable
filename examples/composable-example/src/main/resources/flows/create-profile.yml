@@ -22,6 +22,7 @@ tasks:
 
   - input:
       - 'file(text:/tmp/keystore/demo.txt) -> model.b64_key'
+      # convert the b64 string into bytes using simple type matching
       - 'model.b64_key:b64 -> key'
       - 'input.body -> dataset'
       - 'text(address, telephone) -> protected_fields'
