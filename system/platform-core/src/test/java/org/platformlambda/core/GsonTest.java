@@ -43,14 +43,13 @@ public class GsonTest {
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         Map m = mapper.readValue(obj, Map.class);
         assertEquals(String.class, m.get("date").getClass());
-        // small long number will be converted to integer
-        assertEquals(Integer.class, m.get("number").getClass());
-        assertEquals(Integer.class, m.get("small_long").getClass());
+        // integer becomes long because numbers in a map is untyped based on GSON's ToNumberPolicy.LONG_OR_DOUBLE
+        assertEquals(Long.class, m.get("number").getClass());
+        assertEquals(Long.class, m.get("small_long").getClass());
         assertEquals(Long.class, m.get("long_number").getClass());
         assertEquals(Double.class, m.get("float_number").getClass());
-        // small double number will be converted to float
+        // small number will be converted to double
         assertEquals(Double.class, m.get("small_double").getClass());
-        // small double number will be converted to float
         assertEquals(Double.class, m.get("double_number").getClass());
         assertEquals(obj.name, m.get("name"));
         // date is converted to ISO-8601 string
@@ -97,15 +96,15 @@ public class GsonTest {
     @Test
     public void nestedUntypedMapInPoJo() {
         SimplePoJo sample = new SimplePoJo();
-        sample.map.put("number", 10L);
+        sample.map.put("number", 10);
         Map map = SimpleMapper.getInstance().getMapper().readValue(sample, Map.class);
         MultiLevelMap multi = new MultiLevelMap((Map<String, Object>) map);
-        assertInstanceOf(Integer.class, multi.getElement("map.number"));
-        assertEquals(10, multi.getElement("map.number"));
+        assertInstanceOf(Long.class, multi.getElement("map.number"));
+        assertEquals(10L, multi.getElement("map.number"));
         // restoring the PoJo
         SimplePoJo restored = SimpleMapper.getInstance().getMapper().readValue(map, SimplePoJo.class);
-        assertInstanceOf(Integer.class, restored.map.get("number"));
-        assertEquals(10, restored.map.get("number"));
+        assertInstanceOf(Long.class, restored.map.get("number"));
+        assertEquals(10L, restored.map.get("number"));
     }
 
     private static class SimplePoJo {

@@ -18,15 +18,18 @@
 
 package org.platformlambda.core;
 
-import com.google.gson.JsonPrimitive;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.models.nested.ChildPoJo;
+import org.platformlambda.core.models.nested.ParentPoJo;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +38,30 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleMapperTest {
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void nestPoJoTest() {
+        // this test validates GSON's behavior of ToNumberPolicy.LONG_OR_DOUBLE
+        var child = new ChildPoJo();
+        child.number1 = 123L;
+        child.number2 = 10.2d;
+        child.number3 = 280;
+        child.number4 = Utility.getInstance().str2float("620.1");
+        var parent = new ParentPoJo();
+        parent.children = new ArrayList<>();
+        parent.children.add(child);
+        Map<String, Object> map = SimpleMapper.getInstance().getMapper().readValue(parent, Map.class);
+        MultiLevelMap mm = new MultiLevelMap(map);
+        assertInstanceOf(Long.class, mm.getElement("children[0].number1"));
+        assertInstanceOf(Double.class, mm.getElement("children[0].number2"));
+        assertEquals(child.number1, mm.getElement("children[0].number1"));
+        assertEquals(child.number2, mm.getElement("children[0].number2"));
+        assertInstanceOf(Long.class, mm.getElement("children[0].number3"));
+        assertInstanceOf(Double.class, mm.getElement("children[0].number4"));
+        assertEquals((long) child.number3, mm.getElement("children[0].number3"));
+        assertEquals(620.1d, mm.getElement("children[0].number4"));
+    }
+
     @Test
     public void returnOriginalClassIfSameTargetClass() {
         PoJo pojo = new PoJo();
@@ -42,20 +69,6 @@ public class SimpleMapperTest {
         pojo.setNumber(123);
         Object o = SimpleMapper.getInstance().getMapper().readValue(pojo, PoJo.class);
         assertEquals(pojo, o);
-    }
-
-    @Test
-    public void typedNumberShouldMapDouble() {
-        final JsonPrimitive number = new JsonPrimitive("1.12345678");
-        Object result = SimpleMapper.getInstance().typedNumber(number);
-        assertEquals(result, 1.12345678d);
-    }
-
-    @Test
-    public void typedNumberShouldMapFloat() {
-        final JsonPrimitive number = new JsonPrimitive("1.12");
-        Object result = SimpleMapper.getInstance().typedNumber(number);
-        assertEquals(result, 1.12d);
     }
 
     @Test
@@ -91,7 +104,8 @@ public class SimpleMapperTest {
         // sql date is yyyy-mm-dd
         assertEquals(new java.sql.Date(now.getTime()).toString(), converted.get("sql_date"));
         assertEquals(iso8601, converted.get("sql_timestamp"));
-        assertEquals(Integer.class, converted.get("integer").getClass());
+        // OK - Integer becomes Long because of GSON's behavior of ToNumberPolicy.LONG_OR_DOUBLE
+        assertEquals(Long.class, converted.get("integer").getClass());
         String name = "hello world";
         Map<String, Object> input = new HashMap<>();
         input.put("full_name", name);

@@ -19,7 +19,7 @@
 package org.platformlambda.core.mock;
 
 import org.platformlambda.common.JacksonSerializer;
-import org.platformlambda.common.SimplePoJo;
+import org.platformlambda.core.models.SimplePoJo;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 

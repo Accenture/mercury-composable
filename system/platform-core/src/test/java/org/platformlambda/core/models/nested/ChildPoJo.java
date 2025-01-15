@@ -16,11 +16,12 @@
 
  */
 
-package org.platformlambda.common;
+package org.platformlambda.core.models.nested;
 
-public class SimplePoJo {
+public class ChildPoJo {
 
-    public String name;
-    public String address;
-    public int telephone;
+    public Long number1;
+    public Double number2;
+    public Integer number3;
+    public Float number4;
 }

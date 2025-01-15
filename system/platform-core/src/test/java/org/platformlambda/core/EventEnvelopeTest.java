@@ -178,6 +178,7 @@ public class EventEnvelopeTest {
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
         pojo.setNumber(10);
+        pojo.setLongNumber(Long.MAX_VALUE);
         EventEnvelope source = new EventEnvelope();
         source.setException(new IllegalArgumentException("hello"));
         // setException will put "hello" as body and setBody will override it with a PoJo in this test
@@ -195,12 +196,13 @@ public class EventEnvelopeTest {
         source.setHeader("a", "b");
         source.setExecutionTime(1.23f);
         source.setRoundTrip(2.0f);
-        EventEnvelope target = new EventEnvelope(source.toMap());
+        EventEnvelope target = new EventEnvelope(source.toBytes());
         assertEquals(source.getStackTrace(), target.getStackTrace());
         MultiLevelMap map = new MultiLevelMap(target.toMap());
         assertEquals(HELLO, map.getElement("body.name"));
+        // when event envelope is serialized, it will become very compact
         assertEquals(10, map.getElement("body.number"));
-        assertEquals(0, map.getElement("body.long_number"));
+        assertEquals(Long.MAX_VALUE, map.getElement("body.long_number"));
         assertEquals("y", target.getTag("x"));
         assertEquals(1.23f, target.getExecutionTime(), 0f);
         assertEquals(2.0f, target.getRoundTrip(), 0f);

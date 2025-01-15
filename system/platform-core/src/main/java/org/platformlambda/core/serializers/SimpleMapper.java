@@ -72,16 +72,8 @@ public class SimpleMapper {
         builder.registerTypeAdapter(BigInteger.class, new BigIntegerDeserializer());
         builder.registerTypeAdapter(BigDecimal.class, new BigDecimalSerializer());
         builder.registerTypeAdapter(BigDecimal.class, new BigDecimalDeserializer());
-        /*
-         * Gson stores all numbers as Double internally.
-         * For Map and List, we want to preserve int and long as one group and float and double as another.
-         * Since typing information for numbers are lost in a map, this is the best effort for number conversion.
-         * i.e. small number in long will be converted to integer and small number in double to float.
-         *
-         * For PoJo, Gson will do the conversion correctly because there are typing information in the class.
-         */
-        builder.registerTypeAdapter(Map.class, new MapDeserializer());
-        builder.registerTypeAdapter(List.class, new ListDeserializer());
+        // tell GSON not to use double for all numbers and treat them correctly
+        builder.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE);
         // Indent JSON output
         builder.setPrettyPrinting();
         // Camel or snake case
@@ -225,107 +217,6 @@ public class SimpleMapper {
         @Override
         public BigDecimal deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return new BigDecimal(json.getAsString());
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private class MapDeserializer implements JsonDeserializer<Map> {
-
-        @Override
-        public Map deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-            if (json.isJsonObject()) {
-                return scan(json.getAsJsonObject());
-            } else {
-                return new HashMap();
-            }
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private class ListDeserializer implements JsonDeserializer<List> {
-
-        @Override
-        public List deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-            if (json.isJsonArray()) {
-                return scan(json.getAsJsonArray());
-            } else {
-                return new ArrayList();
-            }
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Map scan(JsonObject o) {
-        Map<String, Object> result = new HashMap<>();
-        for (String k: o.keySet()) {
-            if (!o.get(k).isJsonNull()) {
-                if (o.get(k).isJsonObject()) {
-                    result.put(k, scan(o.get(k).getAsJsonObject()));
-                } else if (o.get(k).isJsonArray()) {
-                    result.put(k, scan(o.get(k).getAsJsonArray()));
-                } else if (o.get(k).isJsonPrimitive()) {
-                    JsonPrimitive p = o.get(k).getAsJsonPrimitive();
-                    if (p.isBoolean()) {
-                        result.put(k, p.getAsBoolean());
-                    }
-                    if (p.isString()) {
-                        result.put(k, p.getAsString());
-                    }
-                    if (p.isNumber()) {
-                        result.put(k, typedNumber(p));
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private List scan(JsonArray array) {
-        List result = new ArrayList();
-        for (JsonElement o: array) {
-            if (o.isJsonNull()) {
-                result.add(null);
-            } else if (o.isJsonObject()) {
-                result.add(scan(o.getAsJsonObject()));
-            } else if (o.isJsonArray()) {
-                result.add(scan(o.getAsJsonArray()));
-            } else if (o.isJsonPrimitive()) {
-                JsonPrimitive p = o.getAsJsonPrimitive();
-                if (p.isBoolean()) {
-                    result.add(p.getAsBoolean());
-                }
-                if (p.isString()) {
-                    result.add(p.getAsString());
-                }
-                if (p.isNumber()) {
-                    result.add(typedNumber(p));
-                }
-            }
-        }
-        return result;
-    }
-
-    public Object typedNumber(JsonPrimitive p) {
-        /*
-         * Type information is lost for numbers.
-         * This is the best effort to keep int/long and float/double value.
-         *
-         * Make int/long handling consistent between SimpleMapper and MsgPack
-         * Double is used to keep floating point number precision
-         *
-         * Note: ternary conditional operator does not work due to different return types
-         */
-        String number = p.getAsString();
-        if (number.contains(".")) {
-            return p.getAsDouble();
-        } else {
-            long asLong = p.getAsLong();
-            if (asLong > Integer.MAX_VALUE || asLong < Integer.MIN_VALUE) {
-                return asLong;
-            } else {
-                return p.getAsInt();
-            }
         }
     }
 

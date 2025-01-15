@@ -21,7 +21,7 @@ package org.platformlambda.core;
 import io.vertx.core.Future;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.common.JacksonSerializer;
-import org.platformlambda.common.SimplePoJo;
+import org.platformlambda.core.models.SimplePoJo;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;

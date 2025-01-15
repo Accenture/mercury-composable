@@ -72,48 +72,48 @@ public class MsgPack {
      * @throws IOException for mapping exception
      */
     public Object unpack(byte[] bytes, int offset, int length) throws IOException  {
-        MessageUnpacker unpacker = null;
+        MessageUnpacker handler = null;
         try {
-            unpacker = MessagePack.newDefaultUnpacker(bytes, offset, length);
-            if (unpacker.hasNext()) {
-                MessageFormat mf = unpacker.getNextFormat();
+            handler = MessagePack.newDefaultUnpacker(bytes, offset, length);
+            if (handler.hasNext()) {
+                MessageFormat mf = handler.getNextFormat();
                 ValueType type = mf.getValueType();
                 if (type == ValueType.MAP) {
-                    return unpack(unpacker, new HashMap<>());
+                    return unpack(handler, new HashMap<>());
                 } else if (type == ValueType.ARRAY) {
-                    return unpack(unpacker, new ArrayList<>());
+                    return unpack(handler, new ArrayList<>());
                 } else {
                     throw new MessageFormatException("Packed input should be Map or List, Actual: "+type);
                 }
             }
-            unpacker.close();
-            unpacker = null;
+            handler.close();
+            handler = null;
         } finally {
-            if (unpacker != null) {
-                unpacker.close();
+            if (handler != null) {
+                handler.close();
             }
         }
         // this should not occur
         return new HashMap<String, Object>();
     }
 
-    private Map<String, Object> unpack(MessageUnpacker unpacker, Map<String, Object> map) throws IOException {
-        int n = unpacker.unpackMapHeader();
+    private Map<String, Object> unpack(MessageUnpacker handler, Map<String, Object> map) throws IOException {
+        int n = handler.unpackMapHeader();
         for (int i=0; i < n; i++) {
-            String key = unpacker.unpackString();
-            MessageFormat mf = unpacker.getNextFormat();
+            String key = handler.unpackString();
+            MessageFormat mf = handler.getNextFormat();
             ValueType type = mf.getValueType();
             if (type == ValueType.MAP) {
                 Map<String, Object> submap = new HashMap<>();
                 map.put(key, submap);
-                unpack(unpacker, submap);
+                unpack(handler, submap);
             } else if (type == ValueType.ARRAY) {
                 List<Object> array = new ArrayList<>();
                 map.put(key, array);
-                unpack(unpacker, array);
+                unpack(handler, array);
             } else {
                 // skip null value
-                Object value = unpackValue(unpacker, mf);
+                Object value = unpackValue(handler, mf);
                 if (value != null) {
                     map.put(key, value);
                 }
@@ -122,72 +122,59 @@ public class MsgPack {
         return map;
     }
 
-    private List<Object> unpack(MessageUnpacker unpacker, List<Object> list) throws IOException {
-        int len = unpacker.unpackArrayHeader();
+    private List<Object> unpack(MessageUnpacker handler, List<Object> list) throws IOException {
+        int len = handler.unpackArrayHeader();
         for (int i=0; i < len; i++) {
-            MessageFormat mf = unpacker.getNextFormat();
+            MessageFormat mf = handler.getNextFormat();
             ValueType type = mf.getValueType();
             if (type == ValueType.MAP) {
                 Map<String, Object> submap = new HashMap<>();
                 list.add(submap);
-                unpack(unpacker, submap);
+                unpack(handler, submap);
             } else if (type == ValueType.ARRAY) {
                 List<Object> array = new ArrayList<>();
                 list.add(array);
-                unpack(unpacker, array);
+                unpack(handler, array);
             } else {
                 // null value is allowed to preserve the original sequence of the list
-                list.add(unpackValue(unpacker, mf));
+                list.add(unpackValue(handler, mf));
             }
         }
         return list;
     }
 
-    private Object unpackValue(MessageUnpacker unpacker, MessageFormat mf) throws IOException {
+    private Object unpackValue(MessageUnpacker handler, MessageFormat mf) throws IOException {
         ValueType type = mf.getValueType();
         switch (type) {
             case STRING:
-                return unpacker.unpackString();
-
-            /*
-             * Type information is lost for numbers.
-             * This is the best effort to keep int/long and float/double value.
-             *
-             * Make int/long handling consistent between SimpleMapper and MsgPack
-             *
-             * Note: ternary conditional operator does not work due to different return types
-             */
+                return handler.unpackString();
+            // best effort type matching
             case INTEGER:
-                long asLong = unpacker.unpackLong();
-                if (asLong > Integer.MAX_VALUE || asLong < Integer.MIN_VALUE) {
-                    return asLong;
+                long n = handler.unpackLong();
+                if (n > Integer.MAX_VALUE || n < Integer.MIN_VALUE) {
+                    return n;
                 } else {
-                    return (int) asLong;
+                    return (int) n;
                 }
-
             case FLOAT:
                 if (mf == MessageFormat.FLOAT64) {
-                    return unpacker.unpackDouble();
+                    return handler.unpackDouble();
                 } else {
-                    return unpacker.unpackFloat();
+                    return handler.unpackFloat();
                 }
-
             case BINARY:
-                int bytesLen = unpacker.unpackBinaryHeader();
+                int bytesLen = handler.unpackBinaryHeader();
                 byte[] bytesValue = new byte[bytesLen];
-                unpacker.readPayload(bytesValue);
+                handler.readPayload(bytesValue);
                 return bytesValue;
-
             case BOOLEAN:
-                return unpacker.unpackBoolean();
-
+                return handler.unpackBoolean();
             case NIL:
-                unpacker.unpackNil();
+                handler.unpackNil();
                 return null;
-
             default:
                 // for simplicity, custom types are not supported
-                unpacker.skipValue();
+                handler.skipValue();
                 return null;
         }
     }

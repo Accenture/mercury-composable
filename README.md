@@ -1,9 +1,15 @@
-# Mercury Composable
+# Mercury Composable for Java
 
-Since version 4.0, we have merged our enterprise extension ("Event Script") with the Mercury v3.1 foundation
-codebase. It is a comprehensive toolkit to write composable applications including microservices and
-serverless. This technology was filed under US Patent application 18/459,307. The source code is provided
-as is under the Apache 2.0 license.
+Good news! We have merged our enterprise extension ("Event Script") into the Mercury event-driven
+programming foundation codebase from version 4 onwards. It is a comprehensive toolkit to write
+composable applications including microservices and serverless.
+
+This technology was filed under US Patent application 18/459,307. 
+The source code is provided as is under the Apache 2.0 license.
+
+The project is available in both Java and Node.js languages.
+
+If you prefer Node.js, please visit [Mercury Composable for Node](https://github.com/Accenture/mercury-nodejs).
 
 January 2025
 
@@ -81,6 +87,4 @@ Here's a breakdown of the approach:
 
 Composable design patterns offer a powerful paradigm for building maintainable, scalable, and future-proof applications.
 By embracing the principles of self-contained functions and event-driven communication, you can conquer complexity and
-write code that is a joy to work with. 
-
-Are you ready to take your development practices to the next level? Embrace composable design now!
+write code that is a joy to work with.

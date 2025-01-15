@@ -807,11 +807,7 @@ public class EventEnvelope {
                 optional = true;
             }
             if (message.containsKey(STATUS_FLAG)) {
-                if (message.get(STATUS_FLAG) instanceof Integer i) {
-                    status = Math.max(0, i);
-                } else {
-                    status = Math.max(0, util.str2int(message.get(STATUS_FLAG).toString()));
-                }
+                status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FLAG))));
             }
             if (message.containsKey(HEADERS_FLAG)) {
                 setHeaders((Map<String, String>) message.get(HEADERS_FLAG));
@@ -819,8 +815,8 @@ public class EventEnvelope {
             if (message.containsKey(END_ROUTE_FLAG)) {
                 endOfRoute = (Boolean) message.get(END_ROUTE_FLAG);
             }
-            if (message.get(BROADCAST_FLAG) instanceof Integer i) {
-                broadcastLevel = i;
+            if (message.containsKey(BROADCAST_FLAG)) {
+                broadcastLevel = Math.max(0, util.str2int(String.valueOf(message.get(BROADCAST_FLAG))));
             }
             if (message.containsKey(BODY_FLAG)) {
                 body = message.get(BODY_FLAG);
@@ -835,18 +831,10 @@ public class EventEnvelope {
                 type = (String) message.get(OBJ_TYPE_FLAG);
             }
             if (message.containsKey(EXECUTION_FLAG)) {
-                if (message.get(EXECUTION_FLAG) instanceof Float f) {
-                    executionTime = Math.max(0, f);
-                } else {
-                    executionTime = Math.max(0, util.str2float((message.get(EXECUTION_FLAG).toString())));
-                }
+                executionTime = Math.max(0, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
             }
             if (message.containsKey(ROUND_TRIP_FLAG)) {
-                if (message.get(ROUND_TRIP_FLAG) instanceof Float f) {
-                    roundTrip = Math.max(0, f);
-                } else {
-                    roundTrip = Math.max(0, util.str2float((message.get(ROUND_TRIP_FLAG).toString())));
-                }
+                roundTrip = Math.max(0, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
             }
             if (message.containsKey(JSON_FLAG)) {
                 binary = false;
@@ -956,11 +944,7 @@ public class EventEnvelope {
             optional = true;
         }
         if (message.containsKey(STATUS_FIELD)) {
-            if (message.get(STATUS_FIELD) instanceof Integer i) {
-                status = Math.max(0, i);
-            } else {
-                status = Math.max(0, util.str2int(message.get(STATUS_FIELD).toString()));
-            }
+            status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FIELD))));
         }
         if (message.containsKey(HEADERS_FIELD)) {
             setHeaders((Map<String, String>) message.get(HEADERS_FIELD));
@@ -968,8 +952,8 @@ public class EventEnvelope {
         if (message.containsKey(END_ROUTE_FIELD)) {
             endOfRoute = (Boolean) message.get(END_ROUTE_FIELD);
         }
-        if (message.get(BROADCAST_FIELD) instanceof Integer i) {
-            broadcastLevel = i;
+        if (message.containsKey(BROADCAST_FIELD)) {
+            broadcastLevel = Math.max(0, util.str2int(String.valueOf(message.get(BROADCAST_FIELD))));
         }
         if (message.containsKey(BODY_FIELD)) {
             body = message.get(BODY_FIELD);
@@ -984,18 +968,10 @@ public class EventEnvelope {
             type = (String) message.get(OBJ_TYPE_FIELD);
         }
         if (message.containsKey(EXECUTION_FIELD)) {
-            if (message.get(EXECUTION_FIELD) instanceof Float f) {
-                executionTime = Math.max(0f, f);
-            } else {
-                executionTime = Math.max(0f, util.str2float((message.get(EXECUTION_FIELD).toString())));
-            }
+            executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FIELD))));
         }
         if (message.containsKey(ROUND_TRIP_FIELD)) {
-            if (message.get(ROUND_TRIP_FIELD) instanceof Float f) {
-                roundTrip = Math.max(0, f);
-            } else {
-                roundTrip = Math.max(0, util.str2float((message.get(ROUND_TRIP_FIELD).toString())));
-            }
+            roundTrip = Math.max(0, util.str2float(String.valueOf(message.get(ROUND_TRIP_FIELD))));
         }
         if (message.containsKey(JSON_FIELD)) {
             binary = false;
