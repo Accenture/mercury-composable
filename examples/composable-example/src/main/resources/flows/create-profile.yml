@@ -9,6 +9,7 @@ first.task: 'v1.create.profile'
 tasks:
   - input:
       - 'input.body -> *'
+      - 'text(id, name, address, telephone) -> header.required_fields'
       - 'text(address, telephone) -> header.protected_fields'
     process: 'v1.create.profile'
     output:
@@ -20,7 +21,8 @@ tasks:
       - 'v1.encrypt.fields'
 
   - input:
-      - 'file(text:/tmp/keystore/demo.txt) -> b64_key'
+      - 'file(text:/tmp/keystore/demo.txt) -> model.b64_key'
+      - 'model.b64_key:b64 -> key'
       - 'input.body -> dataset'
       - 'text(address, telephone) -> protected_fields'
     process: 'v1.encrypt.fields'
@@ -34,6 +36,7 @@ tasks:
   - input:
       - 'model.profile -> *'
       - 'text(id) -> id_field'
+      - 'text(id, name, address, telephone) -> header.required_fields'
     process: 'v1.save.profile'
     output: []
     description: 'Perform field encryption and save user profile record'

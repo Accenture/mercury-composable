@@ -62,5 +62,4 @@ public class MainApp implements EntryPoint {
         }
         log.info("Started");
     }
-
 }

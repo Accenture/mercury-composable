@@ -37,7 +37,7 @@ public class CryptoTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void encryptAndDecryptTest() throws IOException, ExecutionException, InterruptedException {
-        String b64Key = util.bytesToBase64(crypto.generateAesKey(strongCrypto? 256 : 128));
+        byte[] key = crypto.generateAesKey(strongCrypto? 256 : 128);
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /crypto");
         String KEY1 = "k1";
         String KEY2 = "k2";
@@ -46,7 +46,7 @@ public class CryptoTests extends TestBase {
         Map<String, Object> input = new HashMap<>();
         Map<String, Object> dataset = new HashMap<>();
         input.put("protected_fields", "k1, k2");
-        input.put("b64_key", b64Key);
+        input.put("key", key);
         dataset.put(KEY1, KEY1_DATA);
         dataset.put(KEY2, KEY2_DATA);
         input.put("dataset", dataset);

@@ -29,13 +29,13 @@ import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Map;
 
-@PreLoad(route="v1.decrypt.fields", instances=100)
+@PreLoad(route="v1.decrypt.fields", instances=10)
 public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     private static final Utility util = Utility.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
 
-    private static final String B64_MASTER_KEY = "b64_key";
+    private static final String KEY = "key";
     private static final String PROTECTED_FIELDS = "protected_fields";
     private static final String DATASET = "dataset";
     private static final String MISSING = "Missing ";
@@ -44,22 +44,25 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws GeneralSecurityException, IOException {
-
         if (!input.containsKey(PROTECTED_FIELDS)) {
             throw new IllegalArgumentException(MISSING+PROTECTED_FIELDS);
         }
-        if (!input.containsKey(B64_MASTER_KEY)) {
-            throw new IllegalArgumentException(MISSING+ B64_MASTER_KEY);
+        if (!input.containsKey(KEY)) {
+            throw new IllegalArgumentException(MISSING+ KEY);
+        }
+        Object keyBytes = input.get(KEY);
+        if (!(keyBytes instanceof byte[])) {
+            throw new IllegalArgumentException(KEY + " - Expect bytes, Actual: " + keyBytes.getClass());
         }
         if (input.containsKey(DATASET)) {
-            String masterKey = input.get(B64_MASTER_KEY).toString();
+            byte[] key = (byte[]) keyBytes;
             Map<String, Object> dataset = (Map<String, Object>) input.get(DATASET);
             MultiLevelMap multiLevels = new MultiLevelMap(dataset);
             List<String> fields = util.split((String) input.get(PROTECTED_FIELDS), ", ");
             for (String f: fields) {
                 if (multiLevels.exists(f)) {
-                    String cipherText = multiLevels.getElement(f).toString();
-                    multiLevels.setElement(f, decryptField(cipherText, masterKey));
+                    byte[] cipherText = util.base64ToBytes(String.valueOf(multiLevels.getElement(f)));
+                    multiLevels.setElement(f, decryptField(cipherText, key));
                 }
             }
             return multiLevels.getMap();
@@ -68,9 +71,8 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
         }
     }
 
-    private String decryptField(String cipherText, String masterKey) throws GeneralSecurityException, IOException {
-        byte[] encrypted = util.base64ToBytes(cipherText);
-        byte[] b = crypto.aesDecrypt(encrypted, util.base64ToBytes(masterKey));
+    private String decryptField(byte[] cipherText, byte[] key) throws GeneralSecurityException, IOException {
+        byte[] b = crypto.aesDecrypt(cipherText, key);
         return util.getUTF(b);
     }
 

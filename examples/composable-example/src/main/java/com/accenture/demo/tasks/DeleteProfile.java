@@ -26,7 +26,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-@PreLoad(route="v1.delete.profile", instances=100)
+@PreLoad(route="v1.delete.profile", instances=10)
 public class DeleteProfile implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     private static final String PROFILE_ID = "profile_id";

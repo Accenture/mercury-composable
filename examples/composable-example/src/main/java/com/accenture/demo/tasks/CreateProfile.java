@@ -19,44 +19,59 @@
  package com.accenture.demo.tasks;
 
 import com.accenture.demo.models.ProfileConfirmation;
-import com.accenture.demo.models.Profile;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
 import java.util.List;
 import java.util.Map;
 
-@PreLoad(route="v1.create.profile", instances=100)
-public class CreateProfile implements TypedLambdaFunction<Profile, ProfileConfirmation> {
+@PreLoad(route="v1.create.profile", instances=10)
+public class CreateProfile implements TypedLambdaFunction<Map<String, Object>, ProfileConfirmation> {
 
     private static final Utility util = Utility.getInstance();
+    private static final String REQUIRED_FIELDS = "required_fields";
     private static final String PROTECTED_FIELDS = "protected_fields";
 
-    @SuppressWarnings("unchecked")
+    /**
+     * To make this function generic, we use Map as input instead of the Profile class.
+     *
+     * @param headers containing required_fields and protected_fields parameters
+     * @param input dataset
+     * @param instance of this function
+     * @return profile confirmation object
+     */
     @Override
-    public ProfileConfirmation handleEvent(Map<String, String> headers, Profile profile, int instance) {
-        if (profile.id == null) {
+    public ProfileConfirmation handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        if (input.containsKey("id")) {
             throw new IllegalArgumentException("Missing id");
+        }
+        String requiredFields = headers.get(REQUIRED_FIELDS);
+        if (requiredFields == null) {
+            throw new IllegalArgumentException("Missing required_fields");
         }
         String protectedFields = headers.get(PROTECTED_FIELDS);
         if (protectedFields == null) {
             throw new IllegalArgumentException("Missing protected_fields");
         }
-        MultiLevelMap masked = new MultiLevelMap(SimpleMapper.getInstance().getMapper().readValue(profile, Map.class));
-        List<String> fields = util.split(protectedFields, ", ");
+        MultiLevelMap data = new MultiLevelMap(input);
+        List<String> fields = util.split(requiredFields, ", ");
         for (String f: fields) {
-            if (masked.exists(f)) {
-                masked.setElement(f, "***");
+            if (!data.exists(f)) {
+                throw new IllegalArgumentException("Missing " + f);
+            }
+        }
+        List<String> pFields = util.split(protectedFields, ", ");
+        for (String f: pFields) {
+            if (data.exists(f)) {
+                data.setElement(f, "***");
             }
         }
         ProfileConfirmation result = new ProfileConfirmation();
-        result.profile = masked.getMap();
+        result.profile = data.getMap();
         result.type = "CREATE";
-        result.secure = fields;
+        result.secure = pFields;
         return result;
     }
-
 }

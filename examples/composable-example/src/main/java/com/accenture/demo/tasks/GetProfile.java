@@ -28,7 +28,7 @@ import org.platformlambda.core.util.Utility;
 import java.io.File;
 import java.util.Map;
 
-@PreLoad(route="v1.get.profile", instances=100)
+@PreLoad(route="v1.get.profile", instances=10)
 public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Profile> {
 
     private static final  Utility util = Utility.getInstance();
@@ -38,8 +38,7 @@ public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Prof
     private static final String JSON_EXT = ".json";
 
     @Override
-    public Profile handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
-            throws Exception {
+    public Profile handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws Exception {
         if (!headers.containsKey(PROFILE_ID)) {
             throw new AppException(400, "Missing profile_id");
         }
