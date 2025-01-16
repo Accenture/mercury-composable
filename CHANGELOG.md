@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Support 3 logging formats using the log.format parameter in application.properties
 
-```
+```text
 text - default to text string output
 compact - json output without linefeed for redirection to log analytics system
 json - pretty print for human readers

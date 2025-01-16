@@ -342,6 +342,36 @@ If you write your own Kafka flow adapter, the dataset should contain headers and
 
 For other flow adapters, you may use different set of key-values.
 
+## Application log format
+
+The system supports 3 types of log formats. You can set "log.format" parameter in application.properties to change
+the log format or override it at runtime using the Java "-D" argument. e.g.
+
+```shell
+java -Dlog.format=json -jar myapp.jar
+```
+
+| Format  | Description                                                                   | 
+|:--------|:------------------------------------------------------------------------------|
+| text    | this is the default log format                                                |
+| json    | application log will be printed in json format with line feed and indentation |
+| compact | json format without line feed and indentation                                 |
+
+text and json formats are for human readers and compact format is designed for log analytics system.
+
+To leverge the advantage of json log format, your application may log JSON string directly like this:
+
+```java
+var message = new HashMap<>();
+message.put("flow", flowInstance.getFlow().id);
+message.put("id", logId);
+message.put("status", normal? "completed" : "aborted");
+message.put("execution", "Run " + totalExecutions +
+                         " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
+message.put("tasks", taskList);
+log.info("{}", serializer.toJson(message));
+```
+
 <br/>
 
 |                 Appendix-II                  |                   Home                    | 

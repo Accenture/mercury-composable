@@ -19,6 +19,9 @@
 package com.accenture.automation;
 
 import com.accenture.models.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
@@ -42,6 +45,8 @@ import java.util.concurrent.ConcurrentMap;
 @PreLoad(route = "task.executor")
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
+    private static final Gson serializer = new GsonBuilder().disableHtmlEscaping()
+                                            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
     private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();
     private static final Utility util = Utility.getInstance();
     public static final String SERVICE_NAME = "task.executor";
@@ -246,9 +251,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String formatted = Utility.getInstance().elapsedTime(diff);
         List<String> taskList = new ArrayList<>(flowInstance.tasks);
         int totalExecutions = taskList.size();
-        log.info("Flow {} ({}) {}. Run {} task{} in {}. {}",
-                flowInstance.getFlow().id, logId, normal? "completed" : "aborted",
-                totalExecutions, totalExecutions == 1? "" : "s", formatted, taskList);
+        var message = new HashMap<>();
+        message.put("flow", flowInstance.getFlow().id);
+        message.put("id", logId);
+        message.put("status", normal? "completed" : "aborted");
+        message.put("execution", "Run " + totalExecutions +
+                        " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
+        message.put("tasks", taskList);
+        log.info("{}", serializer.toJson(message));
     }
 
     @SuppressWarnings("rawtypes")
