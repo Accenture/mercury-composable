@@ -76,7 +76,7 @@ public class CompactAppender extends AbstractAppender {
                 if (message instanceof ObjectMessage obj) {
                     data.put("message", String.valueOf(obj.getParameter()));
                 } else if (message != null) {
-                    var text = message.getFormattedMessage();
+                    var text = message.getFormattedMessage().trim();
                     if (text.startsWith("{") && text.endsWith("}")) {
                         try {
                             data.put("message", serializer.fromJson(text, Map.class));
