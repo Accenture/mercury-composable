@@ -362,6 +362,7 @@ text and json formats are for human readers and compact format is designed for l
 To leverge the advantage of json log format, your application may log JSON string directly like this:
 
 ```java
+Gson serializer = SimpleMapper.getInstance().getCompactGson();
 var message = new HashMap<>();
 message.put("flow", flowInstance.getFlow().id);
 message.put("id", logId);
@@ -371,6 +372,8 @@ message.put("execution", "Run " + totalExecutions +
 message.put("tasks", taskList);
 log.info("{}", serializer.toJson(message));
 ```
+
+The SimpleMapper provides a convenient Gson instance for this purpose.
 
 <br/>
 

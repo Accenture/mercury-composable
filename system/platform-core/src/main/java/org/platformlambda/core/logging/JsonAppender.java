@@ -30,6 +30,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
@@ -42,8 +43,7 @@ import java.util.Map;
 @Plugin(name = "JsonLogger", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class JsonAppender extends AbstractAppender {
 
-    private static final Gson serializer = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting()
-                                                .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+    private static final Gson serializer = SimpleMapper.getInstance().getPrettyGson();
     private static final Utility util = Utility.getInstance();
 
     protected JsonAppender(String name, Filter filter,

@@ -37,6 +37,12 @@ public class SimpleMapper {
     private final SimpleObjectMapper mapper;
     private final SimpleObjectMapper snakeMapper;
     private final SimpleObjectMapper camelMapper;
+    private final Gson snakeGson;
+    private final Gson camelGson;
+    private static final Gson compactGson = new GsonBuilder().disableHtmlEscaping()
+                                            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
+    private static final Gson prettyGson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting()
+                                            .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
     private static final SimpleMapper SIMPLE_MAPPER_INSTANCE = new SimpleMapper();
 
     private SimpleMapper() {
@@ -46,12 +52,47 @@ public class SimpleMapper {
         if (snake) {
             log.info("{} enabled", SNAKE_CASE_SERIALIZATION);
         }
-        this.mapper = new SimpleObjectMapper(getJson(snake));
-        this.snakeMapper = new SimpleObjectMapper(getJson(true));
-        this.camelMapper = new SimpleObjectMapper(getJson(false));
+        this.mapper = new SimpleObjectMapper(preconfigureGson(snake));
+        this.snakeGson = preconfigureGson(true);
+        this.camelGson = preconfigureGson(false);
+        this.snakeMapper = new SimpleObjectMapper(this.snakeGson);
+        this.camelMapper = new SimpleObjectMapper(this.camelGson);
     }
 
+    /**
+     * This Gson instance may be used for writing JSON string in application log.
+     *
+     * @return gson instance
+     */
+    public Gson getCompactGson() {
+        return compactGson;
+    }
+
+    /**
+     * This Gson instance may be used for pretty printing.
+     *
+     * @return gson instance
+     */
+    public Gson getPrettyGson() {
+        return prettyGson;
+    }
+
+    /**
+     * If you prefer to use the Gson serializer API directly,
+     * you may get this shared Gson instance that has been pre-configured.
+     * <p>
+     * Please do not reconfigure this gson instance because it will break
+     * the serialization behavior. If you need to customize your own Gson,
+     * create a new builder instance.
+     *
+     * @param snake case (true or false)
+     * @return preconfigured gson
+     */
     public Gson getJson(boolean snake) {
+        return snake? snakeGson : camelGson;
+    }
+
+    private Gson preconfigureGson(boolean snake) {
         // configure Gson engine
         GsonBuilder builder = new GsonBuilder();
         // avoid equal sign to become 003d unicode
