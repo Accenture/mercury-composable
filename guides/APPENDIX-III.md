@@ -193,7 +193,9 @@ If content length is not given, the response body would arrive as a stream.
 
 Your application should check if the HTTP response header "stream" exists. Its value is the input "streamId".
 
-You can process the input stream using the FluxConsumer class like this:
+You can process the input stream using the FluxConsumer class like this.
+Please note that the FluxConsumer is typed. If you do not know the data type for the stream content, use
+`Object` for untyped read and test the object type of the incoming messages in the content stream.
 
 ```java
 String streamId = headers.get("stream");
