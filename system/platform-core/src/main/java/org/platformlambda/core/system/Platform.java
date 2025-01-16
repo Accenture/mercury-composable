@@ -96,7 +96,7 @@ public class Platform {
                 log.error("Unable to reconfigure logger because {} does not exist", xmlFile);
             }
         } catch (IOException e) {
-            log.error("Unable to load reconfigure logger - {}", e.getMessage());
+            log.error("Unable to reconfigure logger - {}", e.getMessage());
         }
     }
 
