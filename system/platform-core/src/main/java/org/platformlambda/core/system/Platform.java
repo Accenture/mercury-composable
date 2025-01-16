@@ -23,6 +23,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.platformlambda.core.annotations.CloudConnector;
 import org.platformlambda.core.annotations.CloudService;
 import org.platformlambda.core.models.*;
@@ -31,7 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -53,6 +56,12 @@ public class Platform {
     private static final String NOT_FOUND = " not found";
     private static final String INVALID_ROUTE = "Invalid route ";
     private static final String RELOADING = "Reloading";
+    private static final String TEXT = "text";
+    private static final String JSON = "json";
+    private static final String COMPACT = "compact";
+    private static final String CLASSPATH = "classpath:";
+    private static final String COMPACT_LOG4J = "log4j2-compact.xml";
+    private static final String JSON_LOG4J = "log4j2-json.xml";
     private static String originId;
     private static boolean cloudSelected = false;
     private static boolean cloudServicesStarted = false;
@@ -76,9 +85,30 @@ public class Platform {
         return INSTANCE;
     }
 
+    private static void reConfigLogger(boolean json) {
+        String xmlFile = json? JSON_LOG4J : COMPACT_LOG4J;
+        try (InputStream res = Utility.class.getResourceAsStream("/"+ xmlFile)) {
+            if (res != null) {
+                String classPath = CLASSPATH + xmlFile;
+                Configurator.reconfigure(URI.create(classPath));
+                log.info("Logger reconfigured in {} mode", json? JSON : COMPACT);
+            } else {
+                log.error("Unable to reconfigure logger because {} does not exist", xmlFile);
+            }
+        } catch (IOException e) {
+            log.error("Unable to load reconfigure logger - {}", e.getMessage());
+        }
+    }
+
     private static void initialize() {
         if (initCounter.incrementAndGet() == 1) {
             AppConfigReader config = AppConfigReader.getInstance();
+            String logFormat = config.getProperty("log.format", TEXT);
+            if (JSON.equals(logFormat)) {
+                reConfigLogger(true);
+            } else if (COMPACT.equals(logFormat)) {
+                reConfigLogger(false);
+            }
             int poolSize = Math.max(32, Utility.getInstance().str2int(config.getProperty("kernel.thread.pool", "100")));
             system = Vertx.vertx().eventBus();
             vertx = Vertx.vertx();

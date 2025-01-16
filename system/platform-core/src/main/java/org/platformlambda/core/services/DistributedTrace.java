@@ -18,6 +18,9 @@
 
 package org.platformlambda.core.services;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.ToNumberPolicy;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
@@ -36,7 +39,8 @@ import java.util.Map;
 @ZeroTracing
 public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(DistributedTrace.class);
-
+    private static final Gson serializer = new GsonBuilder().disableHtmlEscaping()
+                                                .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
     private static final String DISTRIBUTED_TRACE_FORWARDER = "distributed.trace.forwarder";
     private static final String TRANSACTION_JOURNAL_RECORDER = "transaction.journal.recorder";
     private static final String TRACE = "trace";
@@ -72,14 +76,14 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
                 metrics.put(FROM, trimOrigin(from));
             }
             if (!delivered || !rpc) {
-                if (annotations.isEmpty()) {
-                    log.info("trace={}", metrics);
-                } else {
-                    log.info("trace={}, annotations={}", metrics, annotations);
+                var map = new HashMap<>();
+                map.put(TRACE, metrics);
+                if (!annotations.isEmpty()) {
+                    map.put(ANNOTATIONS, annotations);
                 }
+                log.info("{}", serializer.toJson(map));
             }
             /*
-             *
              * Optionally, forward the perf metrics to a telemetry system.
              * You may implement a function with the "distributed.trace.forwarder" route name.
              *
@@ -127,5 +131,4 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
     private String trimOrigin(String route) {
         return route.endsWith(ORIGIN_SUFFIX)? route.substring(0, route.indexOf('@')) : route;
     }
-
 }
