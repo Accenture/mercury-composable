@@ -36,6 +36,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class WorkerHandler {
     private static final Logger log = LoggerFactory.getLogger(WorkerHandler.class);
     private static final Utility util = Utility.getInstance();

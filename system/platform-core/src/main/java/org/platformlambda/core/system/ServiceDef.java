@@ -27,6 +27,10 @@ import org.platformlambda.core.util.Utility;
 import java.lang.reflect.Method;
 import java.util.Date;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class ServiceDef {
 
     private enum RunnerType {

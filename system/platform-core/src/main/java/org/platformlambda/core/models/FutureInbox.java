@@ -35,6 +35,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class FutureInbox extends InboxBase {
     private static final Logger log = LoggerFactory.getLogger(FutureInbox.class);
 

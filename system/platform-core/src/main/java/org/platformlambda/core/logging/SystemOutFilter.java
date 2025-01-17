@@ -21,6 +21,10 @@ package org.platformlambda.core.logging;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class SystemOutFilter extends PrintStream {
 
     public SystemOutFilter(OutputStream out) {
@@ -29,7 +33,7 @@ public class SystemOutFilter extends PrintStream {
 
     @Override
     public void print(String text) {
-        // this filter out non-JSON text because we don't want to print debug log from System.out.print
+        // this filter out non-JSON text because we don't want to print debug log from System.out
         if (text != null && text.startsWith("{") && text.endsWith("}")) {
             super.print(text);
             super.print('\n');

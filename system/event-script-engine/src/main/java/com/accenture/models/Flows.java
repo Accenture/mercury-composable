@@ -27,30 +27,75 @@ public class Flows {
     private static final ConcurrentMap<String, Flow> allFlows = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, FlowInstance> flowInstances = new ConcurrentHashMap<>();
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param id for an event flow configuration
+     * @return event flow config
+     */
     public static Flow getFlow(String id) {
         return allFlows.get(id);
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return all flow configurations
+     */
     public static List<String> getAllFlows() {
         return new ArrayList<>(allFlows.keySet());
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param id for an event flow instance
+     * @return specific flow instance
+     */
     public static FlowInstance getFlowInstance(String id) {
         return id == null? null : flowInstances.get(id);
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param id for an event flow instance
+     * @return true if exists
+     */
     public static boolean flowExists(String id) {
         return allFlows.containsKey(id);
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param flow configuration
+     */
     public static void addFlow(Flow flow) {
         allFlows.put(flow.id, flow);
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param instance of an event flow
+     */
     public static void addFlowInstance(FlowInstance instance) {
         flowInstances.put(instance.id, instance);
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param id of an event flow instance
+     */
     public static void closeFlowInstance(String id) {
         FlowInstance instance = flowInstances.get(id);
         if (instance != null) {

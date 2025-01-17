@@ -36,6 +36,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class AsyncMultiInbox extends InboxBase {
     private static final Logger log = LoggerFactory.getLogger(AsyncMultiInbox.class);
 

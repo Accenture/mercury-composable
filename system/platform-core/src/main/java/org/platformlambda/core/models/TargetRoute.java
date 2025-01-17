@@ -20,8 +20,11 @@ package org.platformlambda.core.models;
 
 import org.platformlambda.core.system.ServiceQueue;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class TargetRoute {
-
     private final ServiceQueue manager;
     private final boolean cloud;
 

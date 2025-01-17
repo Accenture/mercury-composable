@@ -29,6 +29,10 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @PreLoad(route = "actuator.services", instances = 10)
 class ActuatorServices : KotlinLambdaFunction<EventEnvelope, Any> {
 

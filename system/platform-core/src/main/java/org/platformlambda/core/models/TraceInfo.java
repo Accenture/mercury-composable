@@ -24,8 +24,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class TraceInfo {
-
     public String route;
     public String id;
     public String path;

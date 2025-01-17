@@ -32,6 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class ServiceQueue {
     private static final Logger log = LoggerFactory.getLogger(ServiceQueue.class);
     private static final String READY = "ready";

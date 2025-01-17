@@ -21,6 +21,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class EventBlocks {
     private final Map<Integer, byte[]> buffer = new HashMap<>();
     private final String id;

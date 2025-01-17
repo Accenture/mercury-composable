@@ -39,6 +39,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @EventInterceptor
 @PreLoad(route = "task.executor")
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {

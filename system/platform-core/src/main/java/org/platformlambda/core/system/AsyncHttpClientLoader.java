@@ -25,7 +25,11 @@ import org.platformlambda.core.services.DistributedTrace;
 
 import java.io.IOException;
 
+
 /**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ * <p>
  * This module loads the AsyncHttpClient before loading other user application start-up code
  * so that its service is available to them. It is recommended that your start-up modules use
  * sequence from 6 onwards.

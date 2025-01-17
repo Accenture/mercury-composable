@@ -22,6 +22,10 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.Date;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class FutureEvent {
 
     public Date time;

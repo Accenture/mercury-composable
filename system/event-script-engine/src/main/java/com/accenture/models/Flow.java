@@ -32,6 +32,16 @@ public class Flow {
     public final String externalStateMachine;
     public final String exception;
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param id for the event flow configuration
+     * @param firstTask for the flow
+     * @param externalStateMachine if any
+     * @param duration in milliseconds
+     * @param exception handler to catch unhandled exceptions
+     */
     public Flow(String id, String firstTask, String externalStateMachine, long duration, String exception) {
         this.id = id;
         this.firstTask = firstTask;
@@ -40,6 +50,12 @@ public class Flow {
         this.ttl = duration;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param entry of a task
+     */
     public void addTask(Task entry) {
         tasks.put(entry.service, entry);
     }

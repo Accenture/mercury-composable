@@ -24,6 +24,10 @@ import io.vertx.core.http.ServerWebSocketHandshake;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class WsHandshakeHandler implements Handler<ServerWebSocketHandshake> {
 
     private final List<String> wsPaths;

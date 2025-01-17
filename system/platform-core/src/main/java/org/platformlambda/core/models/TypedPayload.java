@@ -18,8 +18,11 @@
 
 package org.platformlambda.core.models;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class TypedPayload {
-
     private final String type;
     private final Object payload;
 

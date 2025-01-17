@@ -32,6 +32,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @EventInterceptor
 @PreLoad(route = "event.script.manager")
 public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Void> {

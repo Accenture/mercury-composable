@@ -38,6 +38,10 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @Plugin(name = "CompactLogger", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class CompactAppender extends AbstractAppender {
 
@@ -48,7 +52,7 @@ public class CompactAppender extends AbstractAppender {
                               Layout<? extends Serializable> layout,
                               boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
-        // rely solely on logging and disable other use of System.out
+        // disable other use of System.out
         System.setOut(new SystemOutFilter(System.out));
         System.setErr(new SystemOutFilter(System.err));
     }

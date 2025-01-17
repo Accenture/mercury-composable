@@ -23,6 +23,10 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.*;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class PayloadMapper {
     public static final String MAP = "M";
     public static final String LIST = "L";

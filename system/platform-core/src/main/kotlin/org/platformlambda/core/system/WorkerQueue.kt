@@ -42,6 +42,10 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 import kotlin.math.max
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : WorkerQueues(def, route) {
     private val myOrigin: String
     private val useEnvelope: Boolean

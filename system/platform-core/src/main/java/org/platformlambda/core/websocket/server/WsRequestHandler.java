@@ -40,6 +40,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ * <p>
  * Websocket request handler
  */
 public class WsRequestHandler implements Handler<ServerWebSocket> {

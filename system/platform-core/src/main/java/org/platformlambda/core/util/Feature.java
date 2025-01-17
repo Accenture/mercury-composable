@@ -22,6 +22,10 @@ import org.platformlambda.core.annotations.OptionalService;
 
 import java.util.List;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class Feature {
 
     private Feature() {}

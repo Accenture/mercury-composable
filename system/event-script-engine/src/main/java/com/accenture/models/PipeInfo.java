@@ -21,10 +21,22 @@ package com.accenture.models;
 public class PipeInfo {
     protected String type;
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param type for a pipeline
+     */
     public PipeInfo(String type) {
         this.type = type;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return type for a pipeline
+     */
     public String getType() {
         return type;
     }

@@ -28,7 +28,8 @@ import org.platformlambda.core.util.Utility;
 import java.util.Map;
 
 /**
- * Outgoing message handler
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
  */
 @ZeroTracing
 public class WsServerTransmitter implements LambdaFunction {

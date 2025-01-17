@@ -34,6 +34,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @EventInterceptor
 @ZeroTracing
 public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void> {

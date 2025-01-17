@@ -25,6 +25,13 @@ public class JoinTaskInfo extends PipeInfo {
     public final String joinTask;
     public final AtomicInteger resultCount = new AtomicInteger(0);
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param forks number of tasks
+     * @param joinTask to be executed
+     */
     public JoinTaskInfo(int forks, String joinTask) {
         super("join");
         this.forks = forks;

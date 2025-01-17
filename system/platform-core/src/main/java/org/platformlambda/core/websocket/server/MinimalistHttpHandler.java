@@ -36,6 +36,9 @@ import io.vertx.core.buffer.Buffer;
 import java.util.*;
 
 /**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ * <p>
  * HTTP admin endpoints for info, health, env, shutdown, suspend and resume
  * to be available with the same port when websocket server is deployed.
  * i.e. when user defined websocket server using WebSocketService is found.

@@ -36,6 +36,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @ZeroTracing
 @EventInterceptor
 @PreLoad(route="event.api.service", instances=50)

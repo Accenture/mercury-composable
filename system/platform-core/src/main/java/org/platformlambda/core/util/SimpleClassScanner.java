@@ -25,8 +25,11 @@ import io.github.classgraph.ScanResult;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class SimpleClassScanner {
-
     private static final String WEB_COMPONENT_SCAN = "web.component.scan";
     private static final String PLATFORM_LAMBDA = "org.platformlambda.";
     private static final String ACCENTURE_COM = "com.accenture.";

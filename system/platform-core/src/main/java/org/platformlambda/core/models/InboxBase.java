@@ -24,6 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public abstract class InboxBase {
 
     protected static final ExecutorService executor = Platform.getInstance().getVirtualThreadExecutor();

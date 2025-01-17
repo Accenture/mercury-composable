@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 public class SimpleHttpCookie {
-
     private static final String SEPARATOR = "|";
     private final String name;
     private String value;

@@ -30,6 +30,10 @@ import org.platformlambda.core.util.Utility
 import org.slf4j.LoggerFactory
 import java.io.IOException
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 class HealthService : KotlinLambdaFunction<EventEnvelope, Any> {
     private val requiredServices: List<String>
     private val optionalServices: List<String>

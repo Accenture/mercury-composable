@@ -35,6 +35,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class AsyncInbox extends InboxBase {
     private static final Logger log = LoggerFactory.getLogger(AsyncInbox.class);
 

@@ -27,6 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class StreamQueue extends WorkerQueues {
     private static final Logger log = LoggerFactory.getLogger(StreamQueue.class);
 

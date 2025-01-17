@@ -33,6 +33,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @BeforeApplication(sequence=3)
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);

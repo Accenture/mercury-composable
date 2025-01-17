@@ -31,7 +31,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * IMPORTANT: Reserved for internal uses.
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ * <p>
  * e.g. MultipartPayload class for segmentation of large event payload
  * <p>
  * SimpleCache is a simple ConcurrentHashMap with automatic removal of inactive entries

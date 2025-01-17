@@ -8,7 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
-## Version 4.1.7, 1/16/2024
+## Version 4.1.8, 1/17/2025
+
+### Added
+
+Notice in Javadoc to identify system reserved classes
+
+### Removed
+
+N/A
+
+### Changed
+
+log.format parameter changed to be case insensitive
+
+---
+## Version 4.1.7, 1/16/2025
 
 ### Added
 
@@ -28,7 +43,7 @@ N/A
 3. Clean up log4j XML configuration templates in platform-core to be used as examples
 
 ---
-## Version 4.1.6, 1/15/2024
+## Version 4.1.6, 1/15/2025
 
 ### Added
 
@@ -49,7 +64,7 @@ N/A
 N/A
 
 ---
-## Version 4.1.5, 1/14/2024
+## Version 4.1.5, 1/14/2025
 
 ### Added
 
@@ -65,7 +80,7 @@ Apply ToNumberPolicy.LONG_OR_DOUBLE to GSON serialization of untyped numbers
 in hash map.
 
 ---
-## Version 4.1.4, 1/13/2024
+## Version 4.1.4, 1/13/2025
 
 ### Added
 

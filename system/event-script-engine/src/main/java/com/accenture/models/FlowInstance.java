@@ -55,6 +55,15 @@ public class FlowInstance {
     private boolean responded = false;
     private boolean running = true;
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param flowId of the event flow configuration
+     * @param cid correlation ID
+     * @param replyTo of the caller to a flow adapter
+     * @param flow event flow configuration
+     */
     public FlowInstance(String flowId, String cid, String replyTo, Flow flow) {
         this.flow = flow;
         this.cid = cid;
@@ -71,6 +80,13 @@ public class FlowInstance {
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param traceId for tracing
+     * @param tracePath for tracing
+     */
     @SuppressWarnings("unchecked")
     public void setTrace(String traceId, String tracePath) {
         this.setTraceId(traceId);
@@ -81,10 +97,20 @@ public class FlowInstance {
         }
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return start time of a flow instance
+     */
     public long getStartMillis() {
         return start;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     */
     public void close() {
         if (running) {
             running = false;
@@ -92,30 +118,71 @@ public class FlowInstance {
         }
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return true if event flow is outstanding
+     */
     public boolean isNotResponded() {
         return !responded;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param responded if a response has been sent to the caller
+     */
     public void setResponded(boolean responded) {
         this.responded = responded;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return trace ID
+     */
     public String getTraceId() {
         return traceId;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param traceId for tracing
+     */
     public void setTraceId(String traceId) {
         this.traceId = traceId;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return trace path
+     */
     public String getTracePath() {
         return tracePath;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param tracePath for tracing
+     */
     public void setTracePath(String tracePath) {
         this.tracePath = tracePath;
     }
 
+    /**
+     * Retrieve the event flow configuration
+     *
+     * @return event flow configuration
+     */
     public Flow getFlow() {
         return flow;
     }

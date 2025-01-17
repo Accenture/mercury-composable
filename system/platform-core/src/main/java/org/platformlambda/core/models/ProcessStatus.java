@@ -21,8 +21,11 @@ package org.platformlambda.core.models;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class ProcessStatus {
-
     private boolean success = true;
     private boolean delivered = true;
     private boolean reactive = false;

@@ -18,8 +18,11 @@
 
 package org.platformlambda.core.system;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class ServiceDiscovery {
-
     public static final String SERVICE_REGISTRY = "system.service.registry";
     public static final String SERVICE_QUERY = "system.service.query";
     public static final String TYPE = "type";

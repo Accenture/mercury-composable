@@ -20,6 +20,10 @@ package org.platformlambda.core.models;
 
 import org.platformlambda.core.util.Utility;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class NonBlockingInbox extends InboxBase implements AutoCloseable {
 
     public NonBlockingInbox() {

@@ -25,11 +25,23 @@ public class PipelineInfo extends PipeInfo {
     public final AtomicInteger ptr = new AtomicInteger(-1);
     private boolean completed = false;
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param task for a pipeline
+     */
     public PipelineInfo(Task task) {
         super("pipeline");
         this.task = task;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return pointer to the next step
+     */
     public int nextStep() {
         int n = ptr.get();
         if (n < task.pipelineSteps.size()) {
@@ -40,6 +52,9 @@ public class PipelineInfo extends PipeInfo {
     }
 
     /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     * <p>
      * Exit task is the one to be executed after completion of a pipeline
      * @return route name of the exit task
      */
@@ -48,6 +63,9 @@ public class PipelineInfo extends PipeInfo {
     }
 
     /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     * <p>
      * Get route name of the task associated with a specific pipeline step
      * @param n is the index pointer
      * @return route name
@@ -57,6 +75,9 @@ public class PipelineInfo extends PipeInfo {
     }
 
     /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     * <p>
      * Indicates that this the last step of the pipeline
      * @param n is the index pointer
      * @return true or false
@@ -65,19 +86,39 @@ public class PipelineInfo extends PipeInfo {
         return n >= task.pipelineSteps.size() - 1;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     */
     public void resetPointer() {
         ptr.set(0);
         completed = false;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     */
     public void setCompleted() {
         this.completed = true;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return completion status
+     */
     public boolean isCompleted() {
         return completed;
     }
 
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return task for a pipeline
+     */
     public Task getTask() {
         return task;
     }

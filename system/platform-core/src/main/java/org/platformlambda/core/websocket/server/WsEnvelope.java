@@ -20,8 +20,11 @@ package org.platformlambda.core.websocket.server;
 
 import io.vertx.core.http.ServerWebSocket;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class WsEnvelope {
-
     public static final String TYPE = "type";
     public static final String OPEN = "open";
     public static final String CLOSE = "close";

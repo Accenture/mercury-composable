@@ -30,6 +30,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @EventInterceptor
 @PreLoad(route = "http.flow.adapter", envInstances = "http.flow.adapter.instances", instances = 200)
 public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {

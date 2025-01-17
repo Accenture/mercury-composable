@@ -27,6 +27,10 @@ import java.text.NumberFormat
 import java.util.*
 import kotlin.collections.HashMap
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 class InfoService : KotlinLambdaFunction<EventEnvelope, Any> {
     private val appDesc: String
     private val isServiceMonitor: Boolean
