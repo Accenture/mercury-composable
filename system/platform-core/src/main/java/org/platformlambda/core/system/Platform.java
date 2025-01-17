@@ -104,9 +104,9 @@ public class Platform {
         if (initCounter.incrementAndGet() == 1) {
             AppConfigReader config = AppConfigReader.getInstance();
             String logFormat = config.getProperty("log.format", TEXT);
-            if (JSON.equals(logFormat)) {
+            if (JSON.equalsIgnoreCase(logFormat)) {
                 reConfigLogger(true);
-            } else if (COMPACT.equals(logFormat)) {
+            } else if (COMPACT.equalsIgnoreCase(logFormat)) {
                 reConfigLogger(false);
             }
             int poolSize = Math.max(32, Utility.getInstance().str2int(config.getProperty("kernel.thread.pool", "100")));
