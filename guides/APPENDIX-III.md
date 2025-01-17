@@ -356,15 +356,15 @@ java -Dlog.format=json -jar myapp.jar
 | Format  | Description                                                                   | 
 |:--------|:------------------------------------------------------------------------------|
 | text    | this is the default log format                                                |
-| json    | application log will be printed in json format with line feed and indentation |
-| compact | json format without line feed and indentation                                 |
+| json    | application log will be printed in JSON format with line feed and indentation |
+| compact | JSON format without line feed and indentation                                 |
 
 text and json formats are for human readers and compact format is designed for log analytics system.
 
-To leverge the advantage of json log format, your application may log JSON string directly like this:
+To leverge the advantage of json log format, your application may log JSON string like this:
 
 ```java
-Gson serializer = SimpleMapper.getInstance().getCompactGson();
+Gson serializer = SimpleMapper.getInstance().getPrettyGson();
 var message = new HashMap<>();
 message.put("flow", flowInstance.getFlow().id);
 message.put("id", logId);
@@ -377,6 +377,43 @@ log.info("{}", serializer.toJson(message));
 
 The SimpleMapper provides a convenient Gson instance for this purpose.
 
+## Customize log4j configuration
+
+The log4j configuration templates are available in the main "resources" folder of the platform-core.
+If you want to adjust the "loggers" section in log4j, please copy the required XML files to
+the main "resources" folder in your application.
+
+| File               | Description                                                       | 
+|:-------------------|:------------------------------------------------------------------|
+| log4j2.xml         | this is the default configuration file for logging in text format |
+| log4j2-json.xml    | configuration file for logging in JSON format                     |
+| log4j2-compact.xml | configuration file for logging in COMPACT format                  |
+
+The default log4j2.xml configuration file looks like this:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger:%line - %msg%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="${env:LOG_LEVEL:-INFO}" additivity="false">
+            <AppenderRef ref="Console" />
+        </Root>
+
+        <!-- Enable INFO logging for DistributedTrace -->
+        <logger name="org.platformlambda.core.services.DistributedTrace" level="INFO" />
+    </Loggers>
+</Configuration>
+```
+
+In the "loggers" section, you can expand the class list to tell log4j which classes to log
+and at what level.
+
+Please note that the "AppenderRef" must point to the same "Appenders" in the XML file.
 <br/>
 
 |                 Appendix-II                  |                   Home                    | 

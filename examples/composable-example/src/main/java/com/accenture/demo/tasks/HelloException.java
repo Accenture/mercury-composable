@@ -16,30 +16,38 @@
 
  */
 
- package com.accenture.demo.tasks;
+package com.accenture.demo.tasks;
 
+import com.google.gson.Gson;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @PreLoad(route="v1.hello.exception", instances=10)
 public class HelloException implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(HelloException.class);
+    private static final Gson serializer = SimpleMapper.getInstance().getPrettyGson();
 
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
+    private static final String STACK = "stack";
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        log.info("User defined exception handler got {} {}", headers, input);
+        if (input.containsKey(STACK)) {
+            // pretty print stack trace as JSON
+            var map = Utility.getInstance().stackTraceToMap(String.valueOf(input.get(STACK)));
+            log.info("{}", serializer.toJson(map));
+        }
         if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
+            log.info("User defined exception handler - status={} error={}", input.get(STATUS), input.get(MESSAGE));
             Map<String, Object> error = new HashMap<>();
             error.put(TYPE, ERROR);
             error.put(STATUS, input.get(STATUS));
@@ -49,5 +57,4 @@ public class HelloException implements TypedLambdaFunction<Map<String, Object>, 
             return Collections.emptyMap();
         }
     }
-
 }

@@ -26,7 +26,6 @@ import java.util.*;
 
 public class EventEnvelope {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelope.class);
-
     private static final MsgPack msgPack = new MsgPack();
     private static final PayloadMapper converter = PayloadMapper.getInstance();
 
@@ -655,6 +654,7 @@ public class EventEnvelope {
 
     /**
      * Retrieve stack trace returned from an external node.js composable application
+     * (For efficiency, stack trace will be limited to maximum of 10 lines)
      *
      * @return stackTrace if any
      */
@@ -662,10 +662,27 @@ public class EventEnvelope {
         return stackTrace;
     }
 
+    /**
+     * Limit stack trace to a maximum of 10 lines
+     * @param ex is the exception object
+     * @return stack trace trimmed
+     */
     private String getStackTrace(Throwable ex) {
         try (StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out)) {
+            var util = Utility.getInstance();
             ex.printStackTrace(writer);
-            return out.toString();
+            var stack = out.toString();
+            // limit stack trace to 10 lines
+            List<String> lines = util.split(stack, "\r\n");
+            StringBuilder sb = new StringBuilder();
+            for (int i=0; i < 10 && i < lines.size(); i++) {
+                sb.append(lines.get(i).trim());
+                sb.append('\n');
+            }
+            if (lines.size() > 10) {
+                sb.append("...(").append(lines.size()).append(")");
+            }
+            return sb.toString();
         } catch (IOException e) {
             // best effort is to keep the exception message
             return ex.getMessage();

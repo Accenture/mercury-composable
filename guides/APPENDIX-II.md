@@ -101,7 +101,6 @@ To support traceId that is stored in X-Correlation-Id HTTP header, set this in a
 # list of supported traceId headers where the first one is the default label
 trace.http.header=X-Correlation-Id, X-Trace-Id
 ```
-
 <br/>
 
 |                 Appendix-I                 |                   Home                    |                    Appendix-III                    |

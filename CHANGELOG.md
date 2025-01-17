@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.1.7, 1/16/2024
+
+### Added
+
+Limit stack trace transport to a max of 10 lines for transport efficiency because
+the original stack trace can be retrieved with the getException() method
+
+Flow tests for composable-example application
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Update composable-example to be consistent with Node.js version
+2. Change distributed trace to log as pretty print JSON
+3. Clean up log4j XML configuration templates in platform-core to be used as examples
+
+---
 ## Version 4.1.6, 1/15/2024
 
 ### Added

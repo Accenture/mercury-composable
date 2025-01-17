@@ -20,6 +20,7 @@ package com.accenture.support;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.core.system.AutoStart;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +33,14 @@ public class TestBase {
     private static final AtomicInteger startCounter = new AtomicInteger(0);
     protected static final CryptoApi crypto = new CryptoApi();
     protected static boolean strongCrypto;
+    protected static String HOST;
 
     @BeforeAll
     public static void setup() {
         // execute only once
         if (startCounter.incrementAndGet() == 1) {
+            AppConfigReader config = AppConfigReader.getInstance();
+            HOST = "http://127.0.0.1:" + config.getProperty("rest.server.port", "8100");
             AutoStart.main(new String[0]);
             strongCrypto = crypto.strongCryptoSupported();
             if (!strongCrypto) {

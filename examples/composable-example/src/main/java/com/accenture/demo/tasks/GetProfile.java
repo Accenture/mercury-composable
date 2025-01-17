@@ -16,7 +16,7 @@
 
  */
 
- package com.accenture.demo.tasks;
+package com.accenture.demo.tasks;
 
 import com.accenture.demo.models.Profile;
 import org.platformlambda.core.annotations.PreLoad;
@@ -45,7 +45,7 @@ public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Prof
         String profileId = headers.get(PROFILE_ID);
         File profileFile = new File(TEMP_DATA_STORE, profileId+JSON_EXT);
         if (!profileFile.exists()) {
-            throw new AppException(400, "Profile "+profileId+" not found");
+            throw new AppException(404, "Profile "+profileId+" not found");
         }
         String json = util.file2str(profileFile);
         return SimpleMapper.getInstance().getMapper().readValue(json, Profile.class);

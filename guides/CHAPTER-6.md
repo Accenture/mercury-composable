@@ -223,7 +223,6 @@ To try out the demo websocket server, visit http://127.0.0.1:8083 and select "We
 The `rest-spring-3` subproject is a pre-configured Spring Boot 3 library. 
 
 In "rest-spring-3", Spring WebFlux replaces JAX-RS as the asynchronous HTTP servlet engine.
-
 <br/>
 
 |               Chapter-5                |                   Home                    |            Chapter-7            |

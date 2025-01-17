@@ -84,9 +84,9 @@ public class XmlReadWriteTest {
         // xml without array
         try (InputStream in = this.getClass().getResourceAsStream("/log4j2.xml")) {
             MultiLevelMap mm = new MultiLevelMap(parser.parse(in));
-            assertEquals("console", mm.getElement("Appenders.name"));
+            assertEquals("Console", mm.getElement("Appenders.name"));
             assertEquals("false", mm.getElement("Loggers.additivity"));
-            assertEquals("console", mm.getElement("Loggers.Root.ref"));
+            assertEquals("Console", mm.getElement("Loggers.Root.ref"));
         }
     }
 

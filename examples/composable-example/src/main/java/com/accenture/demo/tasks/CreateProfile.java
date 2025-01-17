@@ -16,7 +16,7 @@
 
  */
 
- package com.accenture.demo.tasks;
+package com.accenture.demo.tasks;
 
 import com.accenture.demo.models.ProfileConfirmation;
 import org.platformlambda.core.annotations.PreLoad;
@@ -44,7 +44,7 @@ public class CreateProfile implements TypedLambdaFunction<Map<String, Object>, P
      */
     @Override
     public ProfileConfirmation handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        if (input.containsKey("id")) {
+        if (!input.containsKey("id")) {
             throw new IllegalArgumentException("Missing id");
         }
         String requiredFields = headers.get(REQUIRED_FIELDS);

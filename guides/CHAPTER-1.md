@@ -409,7 +409,6 @@ even when using reactive or event-driven programming styles.
 
 However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core APIs
 to do event-driven programming. API overview will be covered in [Chapter 9](CHAPTER-9.md).
-
 <br/>
 
 |                   Home                    |                  Chapter-2                  |

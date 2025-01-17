@@ -57,7 +57,6 @@ public class WorkerHandler {
     private static final String EXCEPTION = "exception";
     private static final String ASYNC = "async";
     private static final String ANNOTATIONS = "annotations";
-    private static final String REMARK = "remark";
     private static final String JOURNAL = "journal";
     private static final String DELIVERED = "delivered";
     private static final String MY_ROUTE = "my_route";
@@ -120,7 +119,9 @@ public class WorkerHandler {
                         metrics.put(EXCEPTION, ps.getException());
                     }
                     if (!ps.isDelivered()) {
-                        metrics.put(REMARK, "Response not delivered - "+ps.getDeliveryError());
+                        metrics.put(STATUS, 500);
+                        metrics.put(SUCCESS, false);
+                        metrics.put(EXCEPTION, "Response not delivered - "+ps.getDeliveryError());
                     }
                     payload.put(TRACE, metrics);
                     dt.setHeader(DELIVERED, ps.isDelivered());

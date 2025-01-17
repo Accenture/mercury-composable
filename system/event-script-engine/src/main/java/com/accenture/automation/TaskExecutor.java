@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 @PreLoad(route = "task.executor")
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
-    private static final Gson serializer = SimpleMapper.getInstance().getCompactGson();
+    private static final Gson serializer = SimpleMapper.getInstance().getPrettyGson();
     private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();
     private static final Utility util = Utility.getInstance();
     public static final String SERVICE_NAME = "task.executor";

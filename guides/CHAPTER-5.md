@@ -467,7 +467,6 @@ containing the performance metrics data and a "journal" section with the request
 
 > IMPORTANT: journaling may contain sensitive personally identifiable data and secrets. Please check
              security compliance before storing them into access restricted audit data store.
-
 <br/>
 
 |              Chapter-4              |                   Home                    |          Chapter-6          |

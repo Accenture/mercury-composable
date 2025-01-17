@@ -18,6 +18,7 @@
 
 package org.platformlambda.core;
 
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.automation.util.SimpleHttpUtility;
@@ -27,14 +28,18 @@ import org.platformlambda.core.system.PubSub;
 import org.platformlambda.core.system.ServerPersonality;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UtilityTests {
+    private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
     private static final String HELLO_WORLD = "hello.world";
     private static final long ONE_SECOND = 1000;
@@ -49,6 +54,12 @@ public class UtilityTests {
         if (!temp.exists()) {
             temp.mkdir();
         }
+        Configurator.reconfigure(URI.create("classpath:log4j2-json.xml"));
+        log.info("Reconfigured to JSON logging");
+        Configurator.reconfigure(URI.create("classpath:log4j2-compact.xml"));
+        log.info("Reconfigured to COMPACT logging");
+        Configurator.reconfigure(URI.create("classpath:log4j2.xml"));
+        log.info("Restore to TEXT logging");
     }
 
     @Test

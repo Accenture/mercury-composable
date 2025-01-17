@@ -16,11 +16,12 @@
 
  */
 
- package com.accenture.demo.tasks;
+package com.accenture.demo.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.util.Utility;
 
 import java.io.File;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.Map;
 public class DeleteProfile implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 
     private static final String PROFILE_ID = "profile_id";
+    private static final String ID = "id";
     private static final String TEMP_DATA_STORE = "/tmp/store";
     private static final String JSON_EXT = ".json";
     private static final String DELETED = "deleted";
@@ -45,9 +47,9 @@ public class DeleteProfile implements TypedLambdaFunction<Map<String, Object>, M
         if (!f.exists()) {
             throw new AppException(404, "Profile "+profileId+" not found");
         }
-        // save profile ID into the return result set so the next task can use it
+        Utility util = Utility.getInstance();
         Map<String, Object> result = new HashMap<>();
-        result.put(PROFILE_ID, profileId);
+        result.put(ID, util.isDigits(profileId)? util.str2int(profileId) : profileId);
         result.put(DELETED, f.delete());
         return result;
     }

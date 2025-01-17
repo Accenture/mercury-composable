@@ -456,8 +456,6 @@ Mercury Composable supports mixed thread management - virtual threads, suspend f
 
 Functions running in different types of threads are connected loosely in events. This functional isolation
 and encapsulation mean that you can precisely control how your application performs for each functional logic block.
-
-
 <br/>
 
 |          Chapter-1           |                   Home                    |            Chapter-3            |

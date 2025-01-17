@@ -16,13 +16,12 @@
 
  */
 
-package com.accenture.tasks;
+package com.accenture.flows;
 
 import com.accenture.support.TestBase;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
-import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -31,8 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CryptoTests extends TestBase {
-    private static final Utility util = Utility.getInstance();
+public class CryptoTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
@@ -73,5 +71,4 @@ public class CryptoTests extends TestBase {
         assertEquals(KEY1_DATA, decrypted.get(KEY1));
         assertEquals(KEY2_DATA, decrypted.get(KEY2));
     }
-
 }

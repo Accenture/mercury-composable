@@ -319,7 +319,6 @@ HTTP redirection loop.
 
 Similarly, you can throw exception and the HTTP request will be rejected with the given status
 code and error message accordingly.
-
 <br/>
 
 |                   Chapter-2                   |                   Home                    |              Chapter-4              |

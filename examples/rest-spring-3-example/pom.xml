@@ -5,7 +5,7 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>rest-spring-3-example</artifactId>
-    <version>4.1.6</version>
+    <version>4.1.7</version>
     <packaging>jar</packaging>
     <name>Spring Boot 3 example using platform-core</name>
 
@@ -48,14 +48,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.1.6</version>
+            <version>4.1.7</version>
         </dependency>
 
         <!-- Optionally, select your optional cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.1.6</version>
+            <version>4.1.7</version>
         </dependency>
 
         <dependency>

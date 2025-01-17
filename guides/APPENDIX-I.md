@@ -259,7 +259,6 @@ In the above example, the HTTP payload with the custom content type is treated a
 
 If you want to put the custom content types in a separate configuration file, please put them in a file named
 "custom-content-type.yml" under the "resources" folder.
-
 <br/>
 
 |          Chapter-9           |                   Home                    |                 Appendix-II                  |

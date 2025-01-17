@@ -352,7 +352,6 @@ When an application instance stops, the presence monitor will detect the event, 
 release the topic associated with the disconnected application instance.
 
 The presence monitor is using the "presence" feature in websocket, thus we call it "presence" monitor.
-
 <br/>
 
 |            Chapter-7            |                   Home                    |          CHAPTER-9           |

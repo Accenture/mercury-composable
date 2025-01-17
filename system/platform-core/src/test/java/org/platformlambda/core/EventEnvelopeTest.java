@@ -172,6 +172,7 @@ public class EventEnvelopeTest {
         assertNull(event.getExtra());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void mapSerializationTest() throws IOException {
         String HELLO = "hello";
@@ -198,6 +199,13 @@ public class EventEnvelopeTest {
         source.setRoundTrip(2.0f);
         EventEnvelope target = new EventEnvelope(source.toBytes());
         assertEquals(source.getStackTrace(), target.getStackTrace());
+        // stack trace to Map
+        Map<String, Object> stackList = Utility.getInstance().stackTraceToMap(target.getStackTrace());
+        assertTrue(stackList.containsKey("stack"));
+        assertInstanceOf(List.class, stackList.get("stack"));
+        List<String> list = (List<String>) stackList.get("stack");
+        assertTrue(list.getFirst().contains("IllegalArgumentException"));
+        assertTrue(list.get(1).startsWith("at"));
         MultiLevelMap map = new MultiLevelMap(target.toMap());
         assertEquals(HELLO, map.getElement("body.name"));
         // when event envelope is serialized, it will become very compact

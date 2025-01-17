@@ -631,6 +631,15 @@ public class Utility {
         return new String(b, StandardCharsets.UTF_8);
     }
 
+    public Map<String, Object> stackTraceToMap(String stackTrace) {
+        Map<String, Object> result = new HashMap<>();
+        List<String> stack = new ArrayList<>();
+        List<String> lines = split(stackTrace, "\r\n");
+        lines.forEach(line -> stack.add(line.trim()));
+        result.put("stack", stack);
+        return result;
+    }
+
     public String getSimpleRoute(String route) {
         int at = route.indexOf('@');
         return at == -1? route : route.substring(0, at);

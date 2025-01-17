@@ -16,7 +16,7 @@
 
  */
 
- package com.accenture.demo.tasks;
+package com.accenture.demo.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -48,7 +48,7 @@ public class SaveProfile implements TypedLambdaFunction<Map<String, Object>, Voi
      */
     @Override
     public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        if (input.containsKey("id")) {
+        if (!input.containsKey("id")) {
             throw new IllegalArgumentException("Missing id in profile");
         }
         String requiredFields = headers.get(REQUIRED_FIELDS);
