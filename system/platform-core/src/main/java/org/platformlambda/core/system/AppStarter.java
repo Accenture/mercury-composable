@@ -25,8 +25,8 @@ import io.vertx.core.http.HttpServerOptions;
 import org.platformlambda.automation.config.RoutingEntry;
 import org.platformlambda.automation.http.HttpRequestHandler;
 import org.platformlambda.automation.models.AsyncContextHolder;
-import org.platformlambda.automation.services.ServiceGateway;
-import org.platformlambda.automation.services.ServiceResponseHandler;
+import org.platformlambda.automation.services.HttpRouter;
+import org.platformlambda.automation.services.AsyncHttpResponse;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.annotations.MainApplication;
@@ -432,7 +432,7 @@ public class AppStarter {
                     // Compile endpoints to be used by the REST automation system
                     renderRestEndpoints();
                     // Start HTTP request and response handlers
-                    ServiceGateway gateway = new ServiceGateway();
+                    HttpRouter gateway = new HttpRouter();
                     contexts = gateway.getContexts();
                     server.requestHandler(new HttpRequestHandler(gateway));
                 } else {
@@ -455,7 +455,7 @@ public class AppStarter {
                         Platform platform = Platform.getInstance();
                         try {
                             platform.registerPrivate(ASYNC_HTTP_RESPONSE,
-                                                        new ServiceResponseHandler(contexts), 200);
+                                                        new AsyncHttpResponse(contexts), 200);
                         } catch (IOException e) {
                             log.error("Unable to register HTTP request/response handlers - {}", e.getMessage());
                         }

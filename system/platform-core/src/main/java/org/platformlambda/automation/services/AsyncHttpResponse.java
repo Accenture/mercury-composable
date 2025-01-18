@@ -40,9 +40,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @EventInterceptor
-public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope, Void> {
-    private static final Logger log = LoggerFactory.getLogger(ServiceResponseHandler.class);
+public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Void> {
+    private static final Logger log = LoggerFactory.getLogger(AsyncHttpResponse.class);
 
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final String APPLICATION_JSON = "application/json";
@@ -64,7 +68,7 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
 
     private final ConcurrentMap<String, AsyncContextHolder> contexts;
 
-    public ServiceResponseHandler(ConcurrentMap<String, AsyncContextHolder> contexts) {
+    public AsyncHttpResponse(ConcurrentMap<String, AsyncContextHolder> contexts) {
         this.contexts = contexts;
     }
 
@@ -175,10 +179,10 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
                             }
                         }, e -> {
                             log.error("Closing stream {} - {}", util.getSimpleRoute(flux.getStreamId()), e.getMessage());
-                            ServiceGateway.closeContext(requestId);
+                            HttpRouter.closeContext(requestId);
                             response.end();
                         }, () ->{
-                            ServiceGateway.closeContext(requestId);
+                            HttpRouter.closeContext(requestId);
                             response.end();
                         });
                         return null;
@@ -235,7 +239,7 @@ public class ServiceResponseHandler implements TypedLambdaFunction<EventEnvelope
                         response.write(Buffer.buffer(payload));
                     }
                 }
-                ServiceGateway.closeContext(requestId);
+                HttpRouter.closeContext(requestId);
                 response.end();
             }
         }

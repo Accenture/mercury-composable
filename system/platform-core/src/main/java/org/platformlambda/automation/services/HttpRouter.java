@@ -29,9 +29,12 @@ import org.platformlambda.automation.models.*;
 import org.platformlambda.automation.util.CustomContentTypeResolver;
 import org.platformlambda.automation.util.MimeTypeResolver;
 import org.platformlambda.automation.util.SimpleHttpUtility;
+import org.platformlambda.core.annotations.EventInterceptor;
+import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
 import org.platformlambda.core.system.*;
@@ -49,8 +52,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ServiceGateway {
-    private static final Logger log = LoggerFactory.getLogger(ServiceGateway.class);
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
+public class HttpRouter {
+    private static final Logger log = LoggerFactory.getLogger(HttpRouter.class);
 
     private static final CryptoApi crypto = new CryptoApi();
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
@@ -95,7 +102,7 @@ public class ServiceGateway {
     private static String staticFolder;
     private static String resourceFolder;
 
-    public ServiceGateway() {
+    public HttpRouter() {
         initialize();
     }
 
@@ -129,7 +136,7 @@ public class ServiceGateway {
             CustomContentTypeResolver.getInstance().init();
             // register authentication handler
             try {
-                platform.registerPrivate(AUTH_HANDLER, new AuthInterceptor(), 200);
+                platform.registerPrivate(AUTH_HANDLER, new HttpAuth(), 200);
             } catch (IOException e) {
                 log.error("Unable to load {} - {}", AUTH_HANDLER, e.getMessage());
             }
@@ -203,8 +210,7 @@ public class ServiceGateway {
                                             filter.service, e.getMessage());
                                 }
                             } else {
-                                log.warn("Static content filter {} ignored because it does not exist",
-                                        filter.service);
+                                log.warn("Static content filter {} ignored because it does not exist", filter.service);
                             }
                         }
                         sendStaticFile(requestId, file, noCache, request, response);
@@ -800,5 +806,116 @@ public class ServiceGateway {
         }
         return sb.isEmpty() ? null : sb.substring(0, sb.length()-1);
     }
-
 }
+
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
+@ZeroTracing
+@EventInterceptor
+class HttpAuth implements LambdaFunction {
+    private static final Logger log = LoggerFactory.getLogger(HttpAuth.class);
+
+    private static final String HTTP_REQUEST = "http.request";
+    private static final String ASYNC_HTTP_RESPONSE = AppStarter.ASYNC_HTTP_RESPONSE;
+
+    @Override
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+        if (input instanceof EventEnvelope incomingEvent) {
+            Utility util = Utility.getInstance();
+            EventEmitter po = EventEmitter.getInstance();
+            HttpRequestEvent evt = new HttpRequestEvent(incomingEvent.getBody());
+            if (evt.authService != null && evt.requestId != null &&
+                    evt.httpRequest != null && !evt.httpRequest.isEmpty()) {
+                AsyncHttpRequest req = new AsyncHttpRequest(evt.httpRequest);
+                String path = util.getSafeDisplayUri(req.getUrl());
+                EventEnvelope authRequest = new EventEnvelope();
+                // the AsyncHttpRequest is sent as a map
+                authRequest.setTo(evt.authService).setBody(evt.httpRequest);
+                // distributed tracing required?
+                if (evt.tracing) {
+                    authRequest.setFrom(HTTP_REQUEST);
+                    authRequest.setTrace(evt.traceId, evt.tracePath);
+                }
+                po.asyncRequest(authRequest, evt.timeout)
+                        .onSuccess(response -> {
+                            if (Boolean.TRUE.equals(response.getBody())) {
+                                /*
+                                 * Upon successful authentication,
+                                 * the authentication service may save session information as headers
+                                 * (auth headers are converted to lower case for case insensitivity)
+                                 */
+                                Map<String, String> authResHeaders = response.getHeaders();
+                                for (Map.Entry<String, String> entry : authResHeaders.entrySet()) {
+                                    req.setSessionInfo(entry.getKey(), entry.getValue());
+                                }
+                                // forward request to target service(s)
+                                EventEnvelope event = new EventEnvelope();
+                                event.setTo(evt.primary).setBody(req)
+                                        .setCorrelationId(evt.requestId)
+                                        .setReplyTo(ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+                                // enable distributed tracing if needed
+                                if (evt.tracing) {
+                                    event.setFrom(evt.authService);
+                                    event.setTrace(evt.traceId, evt.tracePath);
+                                }
+                                try {
+                                    po.send(event);
+                                    // copying to secondary services if any
+                                    if (evt.services.size() > 1) {
+                                        for (String secondary : evt.services) {
+                                            if (!secondary.equals(evt.primary)) {
+                                                EventEnvelope copy = new EventEnvelope()
+                                                        .setTo(secondary).setBody(evt.httpRequest);
+                                                if (evt.tracing) {
+                                                    copy.setFrom(HTTP_REQUEST);
+                                                    copy.setTrace(evt.traceId, evt.tracePath);
+                                                }
+                                                sendToSecondaryTarget(copy);
+                                            }
+                                        }
+                                    }
+                                } catch (IOException e) {
+                                    sendError(evt, 400, e.getMessage(), path);
+                                }
+                            } else {
+                                sendError(evt, 401, "Unauthorized", path);
+                            }
+                        })
+                        .onFailure(e -> sendError(evt, 408, e.getMessage(), path));
+            }
+        }
+        return null;
+    }
+
+    private void sendError(HttpRequestEvent evt, int status, String message, String path) {
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope event = new EventEnvelope();
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", status);
+        result.put("message", message);
+        result.put("type", "error");
+        result.put("path", path);
+        event.setTo(ASYNC_HTTP_RESPONSE).setCorrelationId(evt.requestId).setStatus(status).setBody(result);
+        // enable distributed tracing if needed
+        if (evt.tracing) {
+            event.setFrom(evt.authService);
+            event.setTrace(evt.traceId, evt.tracePath);
+        }
+        try {
+            po.send(event);
+        } catch (IOException e) {
+            log.error("Unable to send error to {} - {}", ASYNC_HTTP_RESPONSE, e.getMessage());
+        }
+    }
+
+    private void sendToSecondaryTarget(EventEnvelope event) {
+        try {
+            EventEmitter.getInstance().send(event);
+        } catch (Exception e) {
+            log.warn("Unable to copy event to {} - {}", event.getTo(), e.getMessage());
+        }
+    }
+}
+

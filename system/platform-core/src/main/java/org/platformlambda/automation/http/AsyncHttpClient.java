@@ -33,7 +33,7 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.multipart.MultipartForm;
 import org.platformlambda.automation.models.OutputStreamQueue;
-import org.platformlambda.automation.services.ServiceGateway;
+import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.util.CustomContentTypeResolver;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
@@ -121,7 +121,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             log.info("Temporary work directory {} created", tempDir);
         }
         if (initCounter.incrementAndGet() == 1) {
-            ServiceGateway.initialize();
+            HttpRouter.initialize();
             Platform.getInstance().getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredFiles());
             log.info("Housekeeper started");
         }
@@ -330,7 +330,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         // propagate X-Trace-Id when forwarding the HTTP request
         String traceId = po.getTraceId();
         if (traceId != null) {
-            http.putHeader(ServiceGateway.getDefaultTraceIdLabel(), traceId);
+            http.putHeader(HttpRouter.getDefaultTraceIdLabel(), traceId);
         }
         // set cookies if any
         Map<String, String> cookies  = request.getCookies();

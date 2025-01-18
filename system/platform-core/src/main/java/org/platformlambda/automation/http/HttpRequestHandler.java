@@ -24,7 +24,7 @@ import io.vertx.core.http.HttpServerResponse;
 import org.platformlambda.automation.config.RoutingEntry;
 import org.platformlambda.automation.models.AssignedRoute;
 import org.platformlambda.automation.models.AsyncContextHolder;
-import org.platformlambda.automation.services.ServiceGateway;
+import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.AppStarter;
@@ -40,6 +40,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class HttpRequestHandler implements Handler<HttpServerRequest> {
     private static final Logger log = LoggerFactory.getLogger(HttpRequestHandler.class);
 
@@ -73,11 +77,11 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
                                                         HEALTH_SERVICE, ENV_SERVICE, LIVENESSPROBE};
     private static final long GRACE_PERIOD = 5000;
 
-    private final ServiceGateway gateway;
+    private final HttpRouter gateway;
     private final ConcurrentMap<String, AsyncContextHolder> contexts;
     private final boolean protectEndpoint;
 
-    public HttpRequestHandler(ServiceGateway gateway) {
+    public HttpRequestHandler(HttpRouter gateway) {
         AppConfigReader config = AppConfigReader.getInstance();
         this.gateway = gateway;
         this.contexts = gateway.getContexts();

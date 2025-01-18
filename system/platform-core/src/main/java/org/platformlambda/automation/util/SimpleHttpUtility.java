@@ -22,7 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import org.platformlambda.automation.models.HeaderInfo;
-import org.platformlambda.automation.services.ServiceGateway;
+import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.util.Utility;
@@ -151,7 +151,7 @@ public class SimpleHttpUtility {
     }
 
     public void sendResponse(String type, String requestId, HttpServerRequest request, int status, String message) {
-        ServiceGateway.closeContext(requestId);
+        HttpRouter.closeContext(requestId);
         String accept = request.getHeader(ACCEPT);
         if (accept == null) {
             accept = "?";
