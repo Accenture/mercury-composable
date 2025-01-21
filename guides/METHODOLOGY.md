@@ -233,7 +233,7 @@ export class MyFirstFunction implements Composable {
 ```
 
 A composable function is declared with a "route name" using the "preload" annotation. While Java
-and Node.js has different syntax for annotation, they use a similar declarative approach.
+and Node.js have different syntax for annotation, they use a similar declarative approach.
 
 > *Note*: the "instance" count for each composable function controls execution concurrency in a single application.
   It can be used with horizontal scaling to optimize use of computing resources.
