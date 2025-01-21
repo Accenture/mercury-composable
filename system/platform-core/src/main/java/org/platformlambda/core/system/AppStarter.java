@@ -22,6 +22,7 @@ import io.github.classgraph.ClassInfo;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.platformlambda.automation.config.RoutingEntry;
 import org.platformlambda.automation.http.HttpRequestHandler;
 import org.platformlambda.automation.models.AsyncContextHolder;
@@ -41,7 +42,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -65,7 +68,12 @@ public class AppStarter {
     private static final String BEFORE_APP_PHASE = " during BeforeApplication phase";
     private static final String PRELOAD_PHASE = " during PreLoad phase";
     private static final String SERVER_STARTUP = " during HTTP server startup";
-
+    private static final String TEXT = "text";
+    private static final String JSON = "json";
+    private static final String COMPACT = "compact";
+    private static final String CLASSPATH = "classpath:";
+    private static final String COMPACT_LOG4J = "log4j2-compact.xml";
+    private static final String JSON_LOG4J = "log4j2-json.xml";
     private static final String DEFAULT_INSTANCES = "-1";
     private static final int MAX_SEQ = 999;
     private static boolean loaded = false;
@@ -78,6 +86,13 @@ public class AppStarter {
     public static void main(String[] args) {
         if (!loaded) {
             loaded = true;
+            AppConfigReader config = AppConfigReader.getInstance();
+            String logFormat = config.getProperty("log.format", TEXT);
+            if (JSON.equalsIgnoreCase(logFormat)) {
+                reConfigLogger(true);
+            } else if (COMPACT.equalsIgnoreCase(logFormat)) {
+                reConfigLogger(false);
+            }
             /*
              * Print out basic JVM and memory information before starting app.
              * This helps to check if JVM is configured correctly.
@@ -114,6 +129,21 @@ public class AppStarter {
                 log.info("Loading user application");
                 instance.doApps(args, true);
             }
+        }
+    }
+
+    private static void reConfigLogger(boolean json) {
+        String xmlFile = json? JSON_LOG4J : COMPACT_LOG4J;
+        try (InputStream res = Utility.class.getResourceAsStream("/"+ xmlFile)) {
+            if (res != null) {
+                String classPath = CLASSPATH + xmlFile;
+                Configurator.reconfigure(URI.create(classPath));
+                log.info("Logger reconfigured in {} mode", json? JSON : COMPACT);
+            } else {
+                log.error("Unable to reconfigure logger because {} does not exist", xmlFile);
+            }
+        } catch (IOException e) {
+            log.error("Unable to reconfigure logger - {}", e.getMessage());
         }
     }
 

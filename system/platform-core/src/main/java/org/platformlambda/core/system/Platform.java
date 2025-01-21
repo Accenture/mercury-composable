@@ -23,7 +23,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.platformlambda.core.annotations.CloudConnector;
 import org.platformlambda.core.annotations.CloudService;
 import org.platformlambda.core.models.*;
@@ -32,9 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -47,21 +44,15 @@ public class Platform {
     private static final CryptoApi crypto = new CryptoApi();
     private static final ConcurrentMap<String, ServiceDef> registry = new ConcurrentHashMap<>();
     private static final String PERSONALITY = "personality";
-    private static final String SPRING_APPNAME = "spring.application.name";
-    private static final String APPNAME = "application.name";
-    private static final String DEFAULT_APPNAME = "application";
+    private static final String SPRING_NAME = "spring.application.name";
+    private static final String APPLICATION_NAME = "application.name";
+    private static final String DEFAULT_NAME = "application";
     private static final String CONNECTOR = "connector";
     private static final String SERVICE = "service";
     private static final String ROUTE = "Route ";
     private static final String NOT_FOUND = " not found";
     private static final String INVALID_ROUTE = "Invalid route ";
     private static final String RELOADING = "Reloading";
-    private static final String TEXT = "text";
-    private static final String JSON = "json";
-    private static final String COMPACT = "compact";
-    private static final String CLASSPATH = "classpath:";
-    private static final String COMPACT_LOG4J = "log4j2-compact.xml";
-    private static final String JSON_LOG4J = "log4j2-json.xml";
     private static String originId;
     private static boolean cloudSelected = false;
     private static boolean cloudServicesStarted = false;
@@ -85,31 +76,11 @@ public class Platform {
         return INSTANCE;
     }
 
-    private static void reConfigLogger(boolean json) {
-        String xmlFile = json? JSON_LOG4J : COMPACT_LOG4J;
-        try (InputStream res = Utility.class.getResourceAsStream("/"+ xmlFile)) {
-            if (res != null) {
-                String classPath = CLASSPATH + xmlFile;
-                Configurator.reconfigure(URI.create(classPath));
-                log.info("Logger reconfigured in {} mode", json? JSON : COMPACT);
-            } else {
-                log.error("Unable to reconfigure logger because {} does not exist", xmlFile);
-            }
-        } catch (IOException e) {
-            log.error("Unable to reconfigure logger - {}", e.getMessage());
-        }
-    }
-
     private static void initialize() {
         if (initCounter.incrementAndGet() == 1) {
-            AppConfigReader config = AppConfigReader.getInstance();
-            String logFormat = config.getProperty("log.format", TEXT);
-            if (JSON.equalsIgnoreCase(logFormat)) {
-                reConfigLogger(true);
-            } else if (COMPACT.equalsIgnoreCase(logFormat)) {
-                reConfigLogger(false);
-            }
-            int poolSize = Math.max(32, Utility.getInstance().str2int(config.getProperty("kernel.thread.pool", "100")));
+            var util = Utility.getInstance();
+            var config = AppConfigReader.getInstance();
+            int poolSize = Math.max(32, util.str2int(config.getProperty("kernel.thread.pool", "100")));
             system = Vertx.vertx().eventBus();
             vertx = Vertx.vertx();
             cache = SimpleCache.createCache("system.log.cache", 30000);
@@ -211,7 +182,7 @@ public class Platform {
     public String getName() {
         if (applicationName == null) {
             AppConfigReader config = AppConfigReader.getInstance();
-            applicationName = config.getProperty(APPNAME, config.getProperty(SPRING_APPNAME, DEFAULT_APPNAME));
+            applicationName = config.getProperty(APPLICATION_NAME, config.getProperty(SPRING_NAME, DEFAULT_NAME));
         }
         return applicationName;
     }
