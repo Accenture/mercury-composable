@@ -1,4 +1,4 @@
-# Introduction
+# Background
 
 The high level concept of composable architecture was advocated by Gartner in 2022.
 
