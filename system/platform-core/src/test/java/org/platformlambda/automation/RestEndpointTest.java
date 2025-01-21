@@ -134,19 +134,16 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uriPathSecurityTest() throws IOException, InterruptedException {
-        uriPathSecurity("/api/hello/world moved to https://evil.site?hello world=abc",
-                "/api/hello/world moved to https");
-        uriPathSecurity("/api/hello/world <div>test</div>",
-                "/api/hello/world ");
-        uriPathSecurity("/api/hello/world > something",
-                "/api/hello/world ");
-        uriPathSecurity("/api/hello/world &nbsp;",
-                "/api/hello/world ");
+    public void invalidUriTest() throws IOException, InterruptedException {
+        // invalid paths will be rejected
+        checkInvalidUrl("/api/hello/world moved to https://evil.site?hello world=abc");
+        checkInvalidUrl("/api/hello/world <div>test</div>");
+        checkInvalidUrl("/api/hello/world > something");
+        checkInvalidUrl("/api/hello/world &nbsp;");
     }
 
     @SuppressWarnings("unchecked")
-    private void uriPathSecurity(String uri, String expected) throws IOException, InterruptedException {
+    private void checkInvalidUrl(String uri) throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -168,7 +165,7 @@ public class RestEndpointTest extends TestBase {
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> map = (Map<String, Object>) response.getBody();
         assertEquals("Resource not found", map.get("message"));
-        assertEquals(expected, map.get("path"));
+        assertEquals("error", map.get("type"));
     }
 
     @SuppressWarnings("unchecked")

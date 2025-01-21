@@ -4,7 +4,7 @@ Good news! We have merged our enterprise extension ("Event Script") into the Mer
 programming foundation codebase from version 4 onwards. It is a comprehensive toolkit to write
 composable applications including microservices and serverless.
 
-This technology was filed under US Patent application 18/459,307. 
+This technology has been filed under US Patent application 18/459,307. 
 The source code is provided as is under the Apache 2.0 license.
 
 The project is available in both Java and Node.js languages.

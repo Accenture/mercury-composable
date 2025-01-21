@@ -1090,26 +1090,10 @@ public class Utility {
                                               new Kv(STATUS, status), new Kv(MESSAGE, message));
     }
 
-    public String getUrlDecodedPath(String uri) {
+    public String getDecodedUri(String uri) {
         if (uri != null && uri.contains("%")) {
             return URLDecoder.decode(uri, StandardCharsets.UTF_8);
         }
         return uri;
     }
-
-    public String getSafeDisplayUri(String uri) {
-        String path = getUrlDecodedPath(uri);
-        path = dropDangerousSegment(path, "://");
-        path = dropDangerousSegment(path, "%");
-        path = dropDangerousSegment(path, "<");
-        path = dropDangerousSegment(path, ">");
-        path = dropDangerousSegment(path, "&");
-        path = dropDangerousSegment(path, ";");
-        return path;
-    }
-
-    private String dropDangerousSegment(String uri, String pattern) {
-        return uri != null && uri.contains(pattern)? uri.substring(0, uri.indexOf(pattern)) : uri;
-    }
-
 }

@@ -683,8 +683,7 @@ While we are updating the technology frequently, the essential internals and the
 
 ## Technical support
 
-For enterprise clients, optional technical support is available. Please contact your Accenture representative
-for details.
+For enterprise clients, technical support is available. Please contact your Accenture representative for details.
 <br/>
 
 |                Chapter-8                |                   Home                    |

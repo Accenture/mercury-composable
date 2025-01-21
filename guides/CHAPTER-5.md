@@ -20,10 +20,10 @@ public class MainApp implements EntryPoint {
 }
 ```
 
-Note that MainApplication is mandatory. You must have at least one "main application" module.
+You must have at least one "main application" module because it is mandatory.
 
-> Note: Please adjust the parameter "web.component.scan" in application.properties 
-        to point to your user application package(s) in your source code project.
+> *Note*: Please adjust the parameter "web.component.scan" in application.properties 
+  to point to your user application package(s) in your source code project.
 
 If your application does not require additional startup logic, you may just print a greeting message.
 
@@ -49,7 +49,7 @@ src/main/kotlin
 src/test/java
 ```
 
-Note that kotlin unit test directory is not included because you can test all functions in Java unit tests.
+> *Note*: The kotlin unit test directory is not included because you can test all functions in Java unit tests.
 
 Since all functions are connected using the in-memory event bus, you can test any function by sending events
 from a unit test module in Java. If you are comfortable with the Kotlin language, you may also set up Kotlin 
@@ -98,7 +98,7 @@ You can do "URL rewrite" to change the URL path to the target endpoint path. In 
 One feature in REST automation "rest.yaml" configuration is that you can configure more than one function in the
 "service" section. In the following example, there are two function route names ("hello.world" and "hello.copy"). 
 The first one "hello.world" is the primary service provider. The second one "hello.copy" will receive a copy of 
-the incoming event automatically.
+the incoming event.
 
 This feature allows you to write new version of a function without disruption to current functionality. Once you are
 happy with the new version of function, you can route the endpoint directly to the new version by updating the
@@ -145,7 +145,7 @@ public void rpcTest() throws IOException, InterruptedException, ExecutionExcepti
     DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
     PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
     EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
-    EventEnvelope response = po.request(request, 800).get();
+    EventEnvelope response = po.request(request, 8000).get();
     assert response != null;
     assertInstanceOf(Map.class, response.getBody());
     MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -184,7 +184,7 @@ For example, given a map like this:
 |    1    | map.getElement("body.time")     | 2023-03-27T18:10:34.234Z |
 |    2    | map.getElement("body.hello[2]") | 3                        |
 
-## The second unit test
+## Your second unit test
 
 Let's do a unit test for PoJo. In this second unit test, it sends a RPC request to the "hello.pojo" function that
 is designed to return a SamplePoJo object with some mock data.
@@ -203,7 +203,7 @@ public void pojoRpcTest() throws IOException, InterruptedException {
     BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
     PostOffice po = new PostOffice("unit.test", "20001", "GET /api/hello/pojo");
     EventEnvelope request = new EventEnvelope().setTo("hello.pojo").setHeader("id", "1");
-    po.asyncRequest(request, 800).onSuccess(bench::add);
+    po.asyncRequest(request, 8000).onSuccess(bench::add);
     EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
     assert response != null;
     assertEquals(HashMap.class, response.getBody().getClass());
@@ -220,10 +220,10 @@ Note that you can do class "casting" or use the built-in casting API as shown be
 
 > SamplePoJo pojo = response.getBody(SamplePoJo.class)
 
-## The third unit test
+## Your third unit test
 
-Testing Kotlin suspend functions is challenging. However, testing suspend function using events is straight forward
-because of loose coupling.
+Testing Kotlin suspend functions may be challenging. However, testing suspend function using events is straight
+forward because of loose coupling.
 
 Let's do a unit test for the lambda-example's FileUploadDemo function. Its route name is "hello.upload".
 
@@ -465,8 +465,8 @@ In the above example, the "my.test.function" and "another.function" will be moni
 payloads will be forwarded to your custom audit function. The input to your audit function will be a HashMap
 containing the performance metrics data and a "journal" section with the request and response payloads in clear form.
 
-> IMPORTANT: journaling may contain sensitive personally identifiable data and secrets. Please check
-             security compliance before storing them into access restricted audit data store.
+> *IMPORTANT*: journaling may contain sensitive personally identifiable data and secrets. Please check
+  security compliance before storing them into access restricted audit data store.
 <br/>
 
 |              Chapter-4              |                   Home                    |          Chapter-6          |

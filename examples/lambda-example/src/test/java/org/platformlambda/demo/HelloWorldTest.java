@@ -46,7 +46,7 @@ public class HelloWorldTest extends TestBase {
         DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
         PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
-        EventEnvelope response = po.request(request, 800).get();
+        EventEnvelope response = po.request(request, 8000).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());

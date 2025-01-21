@@ -11,8 +11,8 @@ The additional infrastructure requirements vary among products.
 
 We will discuss using Kafka as a minimalist service mesh.
 
-> Note: Service mesh is optional. You can use "event over HTTP" for inter-container
-        communication if service mesh is not suitable.
+> *Note*: Service mesh is optional. You can use "event over HTTP" for inter-container
+  communication if service mesh is not suitable.
 
 Typically, a service mesh system uses a "side-car" to sit next to the application container in the same POD to provide
 service discovery and network proxy services.
@@ -60,7 +60,7 @@ project when necessary.
 
 When the kafka server is started, it will create a temporary directory "/tmp/kafka-logs".
 
-> The kafka server is designed for development purpose only. The kafka message log store
+> *Note*: The kafka server is designed for development purpose only. The kafka message log store
   will be cleared when the server is restarted.
 
 ## Prepare the kafka-presence application
@@ -68,7 +68,7 @@ When the kafka server is started, it will create a temporary directory "/tmp/kaf
 The "kafka-presence" is a "presence monitor" application. It is a minimalist "control plane" in service mesh
 terminology.
 
-What is a presence monitor? A presence monitor is the control plane that assigns unique "topic" for each
+*What is a presence monitor?* A presence monitor is the control plane that assigns unique "topic" for each
 user application instance.
 
 It monitors the "presence" of each application. If an application fails or stops, the presence monitor will 
@@ -100,20 +100,19 @@ Presence monitor is resilient. You can run more than one instance to back up eac
 If you are not using Docker or Kubernetes, you need to change the "server.port" parameter of the second instance
 to 8081 so that the two application instances can run in the same laptop.
 
-## Launch the rest-spring-2-example and lambda-example with kafka
+## Launch the rest-spring-3-example and lambda-example with kafka
 
-Let's run the rest-spring-2-example (rest-spring-3-example) and lambda-example applications with
-Kafka connector turned on.
+Let's run the rest-spring-3-example and lambda-example applications with Kafka connector turned on.
 
-For demo purpose, the rest-spring-2-example and lambda-example are pre-configured with "kafka-connector". 
+For demo purpose, the rest-spring-3-example and lambda-example are pre-configured with "kafka-connector". 
 If you do not need these libraries, please remove them from the pom.xml built script.
 
 Since kafka-connector is pre-configured, we can start the two demo applications like this:
 
 ```text
-cd examples/rest-spring-2-example
+cd examples/rest-spring-3-example
 java -Dcloud.connector=kafka -Dmandatory.health.dependencies=cloud.connector.health 
-     -jar target/rest-spring-2-example-3.1.2.jar
+     -jar target/rest-spring-3-example-3.1.2.jar
 ```
 
 ```text
@@ -127,7 +126,7 @@ The above command uses the "-D" parameters to configure the "cloud.connector" an
 The parameter `mandatory.health.dependencies=cloud.connector.health` tells the system to turn on the health check
 endpoint for the application.
                
-For the rest-spring-2-example, the start-up log may look like this:
+For the rest-spring-3-example, the start-up log may look like this:
 
 ```text
 AppStarter:344 - Modules loaded in 2,825 ms
@@ -137,7 +136,7 @@ EventConsumer:160 - Subscribed multiplex.0001.0
 ServiceLifeCycle:73 - multiplex.0001, partition 0 ready
 ```
 
-This means that the rest-spring-2-example has successfully connected to the presence monitor at port 8080.
+This means that the rest-spring-3-example has successfully connected to the presence monitor at port 8080.
 It has subscribed to the topic "multiplex.0001" partition 0.
 
 For the lambda-example, the log may look like this:
@@ -148,17 +147,17 @@ PresenceConnector:155 - Connected pc.991a2be0.in, 127.0.0.1:8080,
                         /ws/presence/2023032808d82ebe2c0d4e5aa9ca96b3813bdd25
 EventConsumer:160 - Subscribed multiplex.0001.1
 ServiceLifeCycle:73 - multiplex.0001, partition 1 ready
-ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-2-example 3.0.0)
-ServiceRegistry:383 - hello.world (rest-spring-2-example, WEB.202303282583899cf43a49b98f0522492b9ca178) registered
+ServiceRegistry:242 - Peer 202303282583899cf43a49b98f0522492b9ca178 joins (rest-spring-3-example 4.1.8)
+ServiceRegistry:383 - hello.world (rest-spring-3-example, WEB.202303282583899cf43a49b98f0522492b9ca178) registered
 ```
 
-You notice that the lambda-example has discovered the rest-spring-2-example through Kafka and added the 
+You notice that the lambda-example has discovered the rest-spring-3-example through Kafka and added the 
 "hello.world" to the distributed routing table.
 
-At this point, the rest-spring-2-example will find the lambda-example application as well:
+At this point, the rest-spring-3-example will find the lambda-example application as well:
 
 ```text
-ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example 3.0.0)
+ServiceRegistry:242 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 joins (lambda-example 4.1.8)
 ServiceRegistry:383 - hello.world (lambda-example, 
                                    APP.2023032808d82ebe2c0d4e5aa9ca96b3813bdd25) registered
 ServiceRegistry:383 - hello.pojo (lambda-example, 
@@ -169,9 +168,9 @@ This is real-time service discovery coordinated by the "kafka-presence" monitor 
 
 Now you have created a minimalist event-driven service mesh.
 
-## Send an event request from rest-spring-2-example to lambda-example
+## Send an event request from rest-spring-3-example to lambda-example
 
-In [Chapter-7](CHAPTER-7.md), you have sent a request from the rest-spring-2-example to the lambda-example using 
+In [Chapter-7](CHAPTER-7.md), you have sent a request from the rest-spring-3-example to the lambda-example using 
 "Event over HTTP" without a service mesh.
 
 In this section, you can make the same request using service mesh.
@@ -202,7 +201,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
   "app": {
     "name": "kafka-presence",
     "description": "Presence Monitor",
-    "version": "3.0.0"
+    "version": "4.1.8"
   },
   "personality": "RESOURCES",
   "additional_info": {
@@ -216,8 +215,8 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
       "service.monitor (11)"
     ],
     "virtual_topics": [
-      "multiplex.0001-000 -> 202303282583899cf43a49b98f0522492b9ca178, rest-spring-2-example v3.0.0",
-      "multiplex.0001-001 -> 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example v3.0.0"
+      "multiplex.0001-000 -> 202303282583899cf43a49b98f0522492b9ca178, rest-spring-3-example v4.1.8",
+      "multiplex.0001-001 -> 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25, lambda-example v4.1.8"
     ],
     "connections": [
       {
@@ -229,7 +228,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
         "monitor": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
         "type": "APP",
         "updated": "2023-03-28T18:08:25Z",
-        "version": "3.0.0",
+        "version": "4.1.8",
         "seq": 65,
         "group": 1
       },
@@ -237,12 +236,12 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
         "elapsed": "29 minutes 42 seconds",
         "created": "2023-03-28T17:38:47Z",
         "origin": "202303282583899cf43a49b98f0522492b9ca178",
-        "name": "rest-spring-2-example",
+        "name": "rest-spring-3-example",
         "topic": "multiplex.0001-000",
         "monitor": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
         "type": "WEB",
         "updated": "2023-03-28T18:08:29Z",
-        "version": "3.0.0",
+        "version": "4.1.8",
         "seq": 75,
         "group": 1
       }
@@ -264,7 +263,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
 }
 ```
 
-In this example, it shows that there are two user applications (rest-spring-2-example and lambda-example) connected.
+In this example, it shows that there are two user applications (rest-spring-3-example and lambda-example) connected.
 
 ## Presence monitor health endpoint
 
@@ -293,7 +292,7 @@ You can visit http://127.0.0.1:8080/health and it will show something like this:
 
 ## User application health endpoint
 
-Similarly, you can check the health status of the rest-spring-2-example application with http://127.0.0.1:8083/health
+Similarly, you can check the health status of the rest-spring-3-example application with http://127.0.0.1:8083/health
 
 ```json
 {
@@ -330,22 +329,22 @@ Additional actuator endpoints includes:
 
 You can press "control-C" to stop an application. Let's stop the lambda-example application.
 
-Once you stopped lamdba-example from the command line, the rest-spring-2-example will detect it:
+Once you stopped lamdba-example from the command line, the rest-spring-3-example will detect it:
 
 ```text
-ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example 3.0.0)
+ServiceRegistry:278 - Peer 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left (lambda-example 4.1.8)
 ServiceRegistry:401 - hello.world 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 ServiceRegistry:401 - hello.pojo 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 unregistered
 ```
 
-The rest-spring-2-example will update its distributed routing table automatically.
+The rest-spring-3-example will update its distributed routing table automatically.
 
 You will also find log messages in the kafka-presence application like this:
 
 ```text
 MonitorService:120 - Member 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25 left
 TopicController:250 - multiplex.0001-001 released by 2023032808d82ebe2c0d4e5aa9ca96b3813bdd25,
-                                                     lambda-example, 3.0.0
+                                                     lambda-example, 4.1.8
 ```
 
 When an application instance stops, the presence monitor will detect the event, remove it from the registry and

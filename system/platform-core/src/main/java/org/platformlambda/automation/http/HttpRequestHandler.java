@@ -97,7 +97,7 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
         if (KEEP_ALIVE.equals(connectionType)) {
             response.putHeader(CONNECTION_HEADER, KEEP_ALIVE);
         }
-        String uri = util.getUrlDecodedPath(request.path());
+        String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
         String requestId = util.getUuid();
         AsyncContextHolder holder = new AsyncContextHolder(request);
@@ -220,7 +220,7 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
             return;
         }
         Utility util = Utility.getInstance();
-        String uri = util.getUrlDecodedPath(request.path());
+        String uri = util.getDecodedUri(request.path());
         List<String> parts = util.split(uri, "/");
         if (parts.size() == 1) {
             parts.add(NOW);

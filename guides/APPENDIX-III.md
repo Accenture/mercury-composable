@@ -265,7 +265,7 @@ of the payload.
 
 ## Content length for HTTP request
 
-IMPORTANT: Do not set the "content-length" HTTP header because the system will automatically compute the
+*IMPORTANT*: Do not set the "content-length" HTTP header because the system will automatically compute the
 correct content-length for small payload. For large payload, it will use the chunking method.
 
 ## Starting a flow programmatically

@@ -148,7 +148,7 @@ configuration. This service abstraction means that user applications do not need
 
 You can enable Event-over-HTTP configuration by adding this parameter in application.properties:
 
-```yaml
+```text
 #
 # Optional event-over-http target maps
 #
@@ -178,9 +178,10 @@ If additional authentication is required for the peer's "/api/event" endpoint, y
 headers in each route.
 
 When you send asynchronous event or make a RPC call to "event.save.get" service, it will be forwarded to the
-peer's "event-over-HTTP" endpoint (`/api/event`) accordingly.
+peer's "event-over-HTTP" endpoint (`/api/event`) accordingly. If the route is a task in an event flow,
+the event manager will make the "Event over HTTP" to the target service.
 
-You may also add variable references to the application.properties (or application.yaml) file, such as
+You may also add environment variable or base configuration references to the application.yaml file, such as
 "server.port" in this example.
 
 An example in the rest-spring-3-example subproject is shown below to illustrate this service abstraction.
@@ -218,9 +219,8 @@ public class HelloPoJoEventOverHttpByConfig {
 }
 ```
 
-> Note: The configuration based "event-over-HTTP" feature does not support fork-n-join request API.
-        You can achieve similar parallel processing using multiple calls to "po.request API"
-        where each call returns a Java "Future".
+> *Note*: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
+  a HTTP-403 exception.
 
 ## Advantages
 

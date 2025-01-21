@@ -37,8 +37,6 @@ public class HttpErrorHandler implements ErrorController {
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final String ERROR_PATH = "/error";
     private static final String UTF8 = "utf-8";
-    private static final String REQUEST_URI = "javax.servlet.error.request_uri";
-    private static final String FORWARD_URI = "javax.servlet.forward.request_uri";
     private static final String ERROR_MESSAGE = "javax.servlet.error.message";
     private static final String ERROR_EXCEPTION = "javax.servlet.error.exception";
     private static final String STATUS_CODE = "javax.servlet.error.status_code";
@@ -51,26 +49,17 @@ public class HttpErrorHandler implements ErrorController {
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String OK = "ok";
-    private static final String PATH = "path";
     private static final String ACCEPT = "accept";
     private static final String ACCEPT_ANY = "*/*";
     private static final String MESSAGE = "message";
     private static final String STATUS = "status";
     private static final String SET_MESSAGE = "${message}";
-    private static final String SET_PATH = "${path}";
     private static final String SET_STATUS = "${status}";
     private static final String SET_WARNING = "${warning}";
     private static String templateFile;
 
     @RequestMapping(ERROR_PATH)
     public void handlerError(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String path = (String) request.getAttribute(REQUEST_URI);
-        if (path == null) {
-            path = (String) request.getAttribute(FORWARD_URI);
-        }
-        if (path == null) {
-            path = ERROR_PATH;
-        }
         String message = getError(request);
         Integer status = (Integer) request.getAttribute(STATUS_CODE);
         if (status == null) {
@@ -79,7 +68,7 @@ public class HttpErrorHandler implements ErrorController {
         if (status == 404 && message.isEmpty()) {
             message = NOT_FOUND;
         }
-        HttpErrorHandler.sendResponse(response, status, message, path, request.getHeader(ACCEPT));
+        HttpErrorHandler.sendResponse(response, status, message, request.getHeader(ACCEPT));
     }
 
     private String getError(HttpServletRequest request) {
@@ -94,18 +83,16 @@ public class HttpErrorHandler implements ErrorController {
         return "";
     }
 
-    public static void sendResponse(HttpServletResponse response, int status, String message, String uri, String accept)
+    public static void sendResponse(HttpServletResponse response, int status, String message, String accept)
             throws IOException {
         if (templateFile == null) {
             templateFile = util.stream2str(HttpErrorHandler.class.getResourceAsStream(TEMPLATE));
         }
-        String path = util.getSafeDisplayUri(util.getUrlDecodedPath(uri));
         HashMap<String, Object> error = new HashMap<>();
         error.put(TYPE, status < 300? OK : ERROR);
         error.put(MESSAGE, message);
-        error.put(PATH, path);
         error.put(STATUS, status);
-        String contentType;
+        final String contentType;
         if (accept == null) {
             contentType = MediaType.APPLICATION_JSON_VALUE;
         } else if (accept.contains(MediaType.TEXT_HTML_VALUE)) {
@@ -121,9 +108,7 @@ public class HttpErrorHandler implements ErrorController {
         response.setCharacterEncoding(UTF8);
         response.setContentType(contentType);
         if (contentType.equals(MediaType.TEXT_HTML_VALUE)) {
-            String errorPage = templateFile.replace(SET_STATUS, String.valueOf(status))
-                    .replace(SET_PATH, path)
-                    .replace(SET_MESSAGE, message);
+            String errorPage = templateFile.replace(SET_STATUS, String.valueOf(status)).replace(SET_MESSAGE, message);
             if (status >= 500) {
                 errorPage = errorPage.replace(SET_WARNING, HTTP_500_WARNING);
             } else if (status >= 400) {
@@ -140,5 +125,4 @@ public class HttpErrorHandler implements ErrorController {
             response.getOutputStream().write(util.getUTF(xmlWriter.write(ERROR, error)));
         }
     }
-
 }

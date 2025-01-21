@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -273,13 +274,13 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             // when there are more than one query separator, drop the middle portion.
             int sep1 = request.getUrl().indexOf('?');
             int sep2 = request.getUrl().lastIndexOf('?');
-            uri = encodeUri(util.getSafeDisplayUri(request.getUrl().substring(0, sep1)));
+            uri = encodeUri(getSafeDisplayUri(request.getUrl().substring(0, sep1)));
             String q = request.getUrl().substring(sep2+1).trim();
             if (!q.isEmpty()) {
                 request.setQueryString(q);
             }
         } else {
-            uri = encodeUri(util.getSafeDisplayUri(request.getUrl()));
+            uri = encodeUri(getSafeDisplayUri(request.getUrl()));
         }
         // construct target URL
         String qs = request.getQueryString();
@@ -390,6 +391,21 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             httpResponse.onSuccess(new HttpResponseHandler(input, request, queue));
             httpResponse.onFailure(new HttpExceptionHandler(input, queue));
         }
+    }
+
+    public String getSafeDisplayUri(String uri) {
+        String path = uri != null && uri.contains("%")? URLDecoder.decode(uri, StandardCharsets.UTF_8) : uri;
+        path = dropDangerousSegment(path, "://");
+        path = dropDangerousSegment(path, "%");
+        path = dropDangerousSegment(path, "<");
+        path = dropDangerousSegment(path, ">");
+        path = dropDangerousSegment(path, "&");
+        path = dropDangerousSegment(path, ";");
+        return path;
+    }
+
+    private String dropDangerousSegment(String uri, String pattern) {
+        return uri != null && uri.contains(pattern)? uri.substring(0, uri.indexOf(pattern)) : uri;
     }
 
     private String encodeUri(String uri) {

@@ -2,23 +2,17 @@
 
 Mercury Composable is a software development toolkit for writing composable applications.
 
-At the platform level, composable architecture refers to loosely coupled platform services, utilities, and
-business applications. With modular design, you can assemble platform components and applications to create
-new use cases or to adjust for ever-changing business environment and requirements. Domain driven design (DDD),
-Command Query Responsibility Segregation (CQRS) and Microservices patterns are the popular tools that architects
-use to build composable architecture. You may deploy application in container, serverless or other means.
-
-At the application level, a composable application means that an application is assembled from modular software
-components or functions that are self-contained and pluggable. You can mix-n-match functions to form new applications.
-You can retire outdated functions without adverse side effect to a production system. Multiple versions of a function
-can exist, and you can decide how to route user requests to different versions of a function. Applications would be
-easier to design, develop, maintain, deploy, and scale.
+Composable application means that an application is assembled from modular software components or functions that
+are self-contained and pluggable. You can mix-n-match functions to form new applications. You can retire outdated
+functions without adverse side effect to a production system. Multiple versions of a function can exist, and you
+can decide how to route user requests to different versions of a function. Applications would be easier to design,
+develop, maintain, deploy, and scale.
 
 ## Composable application architecture
 
 > Figure 1 - Composable application architecture
 
-![Composable Application Architecture](../diagrams/composable-application.png)
+![Composable Application Architecture](./diagrams/composable-framework.png)
 
 As shown in Figure 1, a composable application contains the following:
 
@@ -31,7 +25,7 @@ As shown in Figure 1, a composable application contains the following:
 A non-blocking HTTP flow adapter is built-in. For other external interface types, you can implement your own
 flow adapters. e.g. Adapters for MQ, Kafka, Serverless, File based staging area, etc.
 
-The standard HTTP flow adapter leverages the underlying Mercury REST automation system to serve user facing REST
+The standard HTTP flow adapter leverages the underlying REST automation system to serve user facing REST
 API endpoints. For example, a hypothetical "get profile" endpoint is created like this in the "rest.yaml"
 configuration file:
 
@@ -129,15 +123,15 @@ framework. You can define input/output as Map or PoJo.
 Mercury Composable leverages the best of Java 21 virtual threading technology. Therefore, you would need to
 install Java JDK version 21 or higher. You also need maven version 3.9.7 or higher to build the libraries.
 
-Assuming you clone the Mercury repository into the "sandbox" directory, you may build the libraries like this.
+Assuming you clone the repository into the "sandbox" directory, you may build the libraries like this.
 
 ```shell
 cd sandbox/mercury-composable
 mvn clean install
 ```
 
-The compiled libraries will be saved to your local ".m2" maven repository. For convenience, you may also publish
-the Mercury libraries into your enterprise artifactory.
+The compiled libraries will be saved to your local ".m2" maven repository. For production, you may publish
+the Mercury Composable libraries into your enterprise artifactory.
 
 We use "maven" build scripts. If your organization uses other build tools such as gradle, please convert them
 accordingly.
@@ -175,7 +169,7 @@ To run it from the command line, you may do this:
 
 ```shell
 cd sandbox/mercury-composable/examples/composable-example
-java -jar target/composable-example-4.0.9.jar
+java -jar target/composable-example-4.2.0.jar
 ```
 
 If you run the application from the IDE, you may execute the "main" method in the `MainApp` class under the
@@ -190,12 +184,26 @@ For example, label the arrows as true, false or a number starting from 1.
 The composable-example application is a hypothetical "profile management system" where you can create a profile,
 browse or delete it.
 
-> Figure 2 - Event flow diagram
+> Figure 2 - Create a profile
 
-![Event Flow Diagram](../diagrams/event-flow-diagram.png)
+![Event Flow Diagram](./diagrams/create-profile.png)
 
-As shown in Figure 2, there are three event flows. One for "get profile", one for "delete profile" and the other
-one for "create profile".
+Figure 2 illustrates an event flow to create a profile. Note that the "create profile" can send acknowledgement
+to the user first. It then encrypts and saves the profile into a data store.
+
+> Figure 3 - Retrieve a profile
+
+![Event Flow Diagram](./diagrams/get-profile.png)
+
+Figure 3 demonstrates the case to retrieve a profile. It retrieves an encrypted profile and then passes it to
+the decryption decryption function to return "clear text" of the profile to the user.
+
+> Figure 4 - Delete a profile
+
+![Event Flow Diagram](./diagrams/delete-profile.png)
+
+Figure 4 shows the case to delete a profile. It deletes a profile using the given profile ID and sends an
+acknowledgement to the user.
 
 The REST endpoints for the three use cases are shown in the "rest.yaml" configuration file under the "main/resources"
 in the example subproject.
@@ -214,7 +222,7 @@ files for the three event flows, namely get-profile.yml, delete-profile.yml and 
 
 ### Starting the application
 
-When the application is started, you will see application log like this:
+When the application starts, you will see extract of the application log like this:
 
 ```log
 CompileFlows:142 - Loaded create-profile
@@ -230,9 +238,7 @@ AppStarter:378 - Modules loaded in 663 ms
 AppStarter:365 - Reactive HTTP server running on port-8100
 ```
 
-Note that the above log is trimmed for presentation purpose.
-
-It shows that the 3 flow configuration files are compiled as objects for performance reason. The user functions are
+It shows that the 3 flow configuration files are compiled as objects to optimize performance. The user functions are
 loaded into the event system and the REST endpoints are rendered from the "rest.yaml" file.
 
 ### Testing the application
@@ -298,7 +304,17 @@ DistributedTrace:76 - trace={path=POST /api/profile, service=v1.encrypt.fields, 
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
                             exec_time=3.64, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
 SaveProfile:52 - Profile 12345 saved
-TaskExecutor:186 - Flow create-profile (f6a6ae62340e43afb0a6f30445166e08) completed in 11 ms
+TaskExecutor:186 - TaskExecutor:262 - {
+  "execution": "Run 3 tasks in 11 ms",
+  "id": "a0eef12d94bd4ab3b5fd6c25e2461130",
+  "flow": "get-profile",
+  "tasks": [
+    "v1.create.profile",
+    "v1.encrypt.fields",
+    "v1.save.profile"
+  ],
+  "status": "completed"
+}
 DistributedTrace:76 - trace={path=POST /api/profile, service=v1.save.profile, success=true,
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.533Z,
                             exec_time=2.006, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
@@ -315,7 +331,16 @@ DistributedTrace:76 - trace={path=GET /api/profile/12345, service=v1.get.profile
 DistributedTrace:76 - trace={path=GET /api/profile/12345, service=v1.decrypt.fields, success=true, 
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.093Z,
                             exec_time=1.22, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
-TaskExecutor:186 - Flow get-profile (1a29105044e94cc3ac68aee002f6f429) completed in 4 ms
+TaskExecutor:262 - {
+  "execution": "Run 2 tasks in 7 ms",
+  "id": "a0eef12d94bd4ab3b5fd6c25e2461130",
+  "flow": "get-profile",
+  "tasks": [
+    "v1.get.profile",
+    "v1.decrypt.fields"
+  ],
+  "status": "completed"
+}
 DistributedTrace:76 - trace={path=GET /api/profile/12345, service=async.http.response, success=true, 
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.095Z, 
                             exec_time=0.214, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
@@ -349,10 +374,8 @@ is started.
 
 As a best practice, your user functions should not have any dependencies with other user functions.
 
-However, within a single user function, you may use your preferred framework or libraries. 
-For maintainability, we do recommend to reduce library dependencies as much as you can. For example, you want to
-push JDBC or JPA dependency to a small number of user functions (for `CRUD` operation) so that the rest of the
-user functions do not need any DB dependencies.
+The second principle of composable design is "zero to one dependency". If your composable function must use
+an external system, platform or database, you can encapsulate the dependency in a composable function.
 
 ## Component scan
 
@@ -395,7 +418,8 @@ The above Dockerfile will fetch Openjdk 21 packaged in "Ubuntu 22.04 LTS".
 The best practice for composable design is event choreography by configuration (`Event Script`) discussed above.
 We will examine the Event Script syntax in [Chapter 4](CHAPTER-4.md).
 
-Generally, you do not need to use Mercury core APIs in your user functions.
+Generally, you only need to use a very minimal set of mercury core APIs in your user functions.
+e.g. use PostOffice to obtain a trackable event emitter and AsyncHttpRequest to connect to external system.
 
 For composable applications that use Event Script, Mercury core APIs (Platform, PostOffice and FastRPC) are only
 required for writing unit tests, "custom flow adapters", "legacy functional wrappers" or "external gateways".
@@ -407,10 +431,10 @@ required for writing unit tests, "custom flow adapters", "legacy functional wrap
 For example, just an "Import" statement of another function would create tight coupling of two pieces of code, 
 even when using reactive or event-driven programming styles.
 
-However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core APIs
-to do event-driven programming. API overview will be covered in [Chapter 9](CHAPTER-9.md).
+However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core
+APIs to do event-driven programming. API overview will be covered in [Chapter 9](CHAPTER-9.md).
 <br/>
 
-|                   Home                    |                  Chapter-2                  |
-|:-----------------------------------------:|:-------------------------------------------:|
-| [Table of Contents](TABLE-OF-CONTENTS.md) | [Function Execution Strategy](CHAPTER-2.md) |
+|          Methodology          |                   Home                    |                  Chapter-2                  |
+|:-----------------------------:|:-----------------------------------------:|:-------------------------------------------:|
+| [Methodology](METHODOLOGY.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Function Execution Strategy](CHAPTER-2.md) |

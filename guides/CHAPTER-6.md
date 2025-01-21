@@ -5,7 +5,7 @@ application into an executable Spring Boot application.
 
 There are two ways to do that:
 
-1. Add dependency for Spring Boot version 3.2.1 and implement your Spring Boot main application
+1. Add dependency for Spring Boot version 3 and implement your Spring Boot main application
 2. Add the `rest-spring-3` add-on library for a pre-configured Spring Boot experience
 
 ## Add platform-core to an existing Spring Boot application
@@ -39,7 +39,10 @@ built-in lightweight non-blocking HTTP server.
 If you want to disable the lightweight HTTP server, you can set `rest.automation=false` in application.properties.
 The REST automation engine and the lightweight HTTP server will be turned off.
 
-> IMPORTANT: the platform-core library assumes the application configuration files to be either
+> *IMPORTANT*: When using Event Script, you must keep `rest.automation=true` because the HTTP flow adapter
+  depends on the REST automation engine for incoming HTTP requests.
+
+> *Note*: the platform-core library assumes the application configuration files to be either
   application.yml or application.properties. If you use custom Spring profile, please keep the
   application.yml or application.properties for the platform-core. If you use default Spring 
   profile, both platform-core and Spring Boot will use the same configuration files.
@@ -77,7 +80,7 @@ your corporate style guide. Please keep the parameters (status, message, path, w
 </html>
 ```
 
-If you want to keep REST automation's lightweight HTTP server together with Spring Boot's Tomcat or other 
+If you want to keep REST automation's lightweight HTTP server to co-exist with Spring Boot's Tomcat or other 
 application server, please add the following to your application.properties file:
 
 ```properties
@@ -193,7 +196,7 @@ websocket.server.port=8085
 
 The above assumes Spring Boot runs on port 8083 and the websocket server runs on port 8085.
 
-> Note that "websocket.server.port" is an alias of "rest.server.port"
+> *Note*: "websocket.server.port" is an alias of "rest.server.port"
 
 You can create a websocket service with a Java class like this:
 
@@ -210,7 +213,7 @@ public class WsEchoDemo implements LambdaFunction {
 
 The above creates a websocket service at the URL "/ws/hello" server endpoint.
 
-Please review the example code in the WsEchoDemo class in the rest-spring-2-example project for details.
+Please review the example code in the WsEchoDemo class in the rest-spring-3-example project for details.
 
 If you want to use Spring Boot's Tomcat websocket server, you can disable the non-blocking websocket server feature
 by removing the `websocket.server.port` configuration and any websocket service classes with the `WebSocketService`

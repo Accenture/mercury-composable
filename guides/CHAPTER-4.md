@@ -18,7 +18,7 @@ flows:
 location: 'classpath:/flows/'
 ```
 
-The "location" tag is optional. If present, you can tell the system to load the flow config files from
+The "location" parameter is optional. If present, you can tell the system to load the flow config files from
 another folder location.
 
 ## Multiple flow lists
@@ -36,7 +36,7 @@ yaml.flow.automation=classpath:/flows.yaml, classpath:/more-flows.yaml
 
 ## Writing new REST endpoint and function
 
-You can use the "flow-demo" subproject as a template to write your own composable application.
+You can use the "composable-example" subproject as a template to write your own composable application.
 
 For each filename in the flows.yml, you should create a corresponding configuration file under the
 "resources/flows" folder.
@@ -96,7 +96,7 @@ input arguments (headers and body) in your function. Now you can write your new 
 "greeting.demo". Please copy-n-paste the following into a Java class called "Greetings" and save in the package
 under "my.organization.tasks" in the source project.
 
-> Note: "my.organization" package name is an example. Please replace it with your organization package path.
+> *Note*: "my.organization" package name is just an example. Please replace it with your organization package path.
 
 ```java
 @PreLoad(route="greeting.demo", instances=10, isPrivate = false)
@@ -152,6 +152,10 @@ All events are delivered asynchronously and there is no timeout value for each e
 for a complete end-to-end flow. Upon expiry, an unfinished flow will be aborted. You can use suffix "s" for seconds,
 "m" for minutes and "h" for hours. e.g. "30s" for 30 seconds.
 
+> *Note*: When using the HTTP Flow Adapter, the flow.ttl value can be higher than the REST endpoint's timeout value.
+  This would happen when one of your tasks in the event flow responds to the caller and the event flow continues to
+  execute the rest of the flow. This type of task is called "response" task.
+
 `first.task` - this points to the route name of a function (aka "task") to which the flow engine will deliver
 the incoming event.
 
@@ -167,22 +171,22 @@ Eclipse Vertx, Kotlin coroutine and suspend function.
 The integration points are intentionally minimalist. For most use cases, the user application does not need
 to make any API calls to the underlying event system.
 
-## REST automation and HTTP adapter
+## REST automation and HTTP flow adapter
 
 The most common transaction entry point is a REST endpoint. The event flow may look like this:
 
 ```text
-Request -> "http.request" -> "task.executor" -> user defined tasks
-        -> "async.http.response" -> Response
+REQUEST -> "http.request" -> "task.executor" -> user defined tasks
+        -> "async.http.response" -> RESPONSE
 ```
 
-REST automation is part of the Mercury platform-core library. It contains a non-blocking HTTP server that converts
+REST automation is part of the platform-core library. It contains a non-blocking HTTP server that converts
 HTTP requests and responses into events.
 
 It routes an HTTP request event to the HTTP adapter if the "flow" tag is provided.
 
 In the following example, the REST endpoint definition is declared in a "rest.yaml" configuration. It will route
-the URI "/api/decision" to the HTTP adapter that exposes its service route name as "http.flow.adapter".
+the URI "/api/decision" to the HTTP flow adapter that exposes its service route name as "http.flow.adapter".
 
 ```yaml
 rest:
@@ -196,13 +200,13 @@ rest:
     tracing: true
 ```
 
-The "cors" and "headers" tags are optional. When specified, the REST endpoint will insert CORS headers and HTTP request
-headers accordingly.
+The "cors" and "headers" sections are optional. When specified, the REST endpoint will insert CORS headers and HTTP
+request headers accordingly.
 
-For rest.yaml syntax, please refer to https://accenture.github.io/mercury-composable/guides/CHAPTER-3
+For REST automation syntax, please refer to [Chapter 3](../guides/CHAPTER-3.md)
 
-The HTTP adapter maps the HTTP request dataset and the flow ID into a standard event envelope for delivery to the
-flow engine.
+The HTTP flow adapter maps the HTTP request dataset and the flow ID into a standard event envelope for delivery
+to the flow engine.
 
 The HTTP request dataset, addressable with the "input." namespace, contains the following:
 
@@ -220,16 +224,12 @@ The HTTP request dataset, addressable with the "input." namespace, contains the 
 | filename       | filename if request is a multipart file upload |
 | session        | authenticated session key-values if any        |
 
-For easy matching, keys of headers, cookies, query and path parameters are case-insensitive.
+For easy matching, please use lower case for headers, cookies, query and path parameters.
 
-Regular API uses JSON and XML and they will be converted to a hashmap in the event's body.
+Regular API uses JSON and XML and they will be converted to a hash map in the event's body.
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
-the binary payload. Please refer to the following sections for details.
-
-https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#send-http-request-body-as-a-stream
-
-https://accenture.github.io/mercury-composable/guides/APPENDIX-III/#read-http-response-body-stream
+the binary payload. Please refer to [Appendix-III](../guides/APPENDIX-III.md)
 
 ## Task and its corresponding function
 
@@ -247,7 +247,7 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<S
 }
 ```
 
-The "route" in the Preload annotation is the task name. The "instances" define the maximum number of "workers" that
+The "route" in the `Preload` annotation is the task name. The "instances" define the maximum number of "workers" that
 the function can handle concurrently. The system is designed to be reactive and the function does not consume memory
 and CPU resources until an event arrives.
 
@@ -256,15 +256,17 @@ standard environment variable syntax like `${SOME_ENV_VARIABLE:default_value}`.
 
 ## Unique task naming
 
-Composable functions are designed to be reusable. By changing some input data mapping to feed different parameters and
-payload, your function can behave differently.
+Composable functions are designed to be reusable. By changing some input data mapping to feed different parameters
+and payload, your function can behave differently.
 
-Therefore, it is quite common to use the same function ("process") more than once in a single event flow.
+Therefore, it is quite common to use the same function (i.e. the `process` parameter) more than once in a single
+event flow.
 
-When a task is not named, the "process" tag is used to name the task.
+When a task is not named, the "process" parameter is used to name the task.
 
-Since each task must have a unique name for event routing, we cannot use the same "process" name more than once in an
-event flow. To handle this use case, you can create unique names for the same function (i.e. "process") like this:
+Since each task must have a unique name for event routing, we cannot use the same "process" name more than once in
+an event flow. To handle this use case, you can create unique names for the same function using the `name` parameter
+like this:
 
 ```yaml
 flow:
@@ -289,12 +291,9 @@ tasks:
 ```
 
 The above event flow configuration uses "my.first.task" as a named route for "greeting.demo" by adding the
-"name" tag to the composable function.
+"name" parameter to the composable function.
 
-For configuration simplicity, the "name" tag is optional. If not provided, the process name is assumed to be
-the unique "task" name.
-
-> Important: The Event Manager performs event choreography using the unique task name.
+> *Note*: The Event Manager performs event choreography using the unique task name.
   Therefore, when the "process" name for the function is not unique, you must create unique task "names"
   for the same function to ensure correct routing.
 
@@ -320,7 +319,7 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<S
 }
 ```
 
-> Note: The "unique task naming" method is more memory efficient than creating additional route names
+> *Note*: The "unique task naming" method is more memory efficient than creating additional route names
 
 ## Preload overrides
 
@@ -405,7 +404,7 @@ Hierarchy of flows would reduce the complexity of a single flow configuration fi
 value of the parent flow should be set to a value that covers the complete flow including the time used in
 the sub-flows.
 
-For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
+> *Note*: For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
 
 ## Tasks and data mapping
 
@@ -432,7 +431,8 @@ To handle this level of modularity, the system provides configurable input/outpu
 | State machine dataset             | `model.`                     | left/right | I/O      |
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
-Note that external state machine namespace uses ":" to indicate that the key-value is external.
+> *Note*: The external state machine namespace uses the colon character (`:`) to indicate that the key-value
+  is external.
 
 *Constants for input data mapping*
 
@@ -465,8 +465,8 @@ from the key "some.key" in base configuration and the environment variable "ENV_
 'map(k1=${some.key}, k2=${ENV_VAR_ONE}) -> myMap'
 ```
 
-Note that the comma character is used as a separator for each key-value pair. If the value contains a comma,
-the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
+> *Note*: The comma character is used as a separator for each key-value pair. If the value contains a comma,
+  the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
 
 *2. Mapping values from application.yml*
 
@@ -494,7 +494,7 @@ a hash map of key-values or an array of values.
 For output data mapping, the "file" content type is used to save some data from the output of a user function
 to a file in the local file system.
 
-*Decison value*
+*Decision value*
 
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
 (See "Decision" in the task section).
@@ -524,7 +524,7 @@ and "numbers[1]" will retrieve the value `200` below:
 { "numbers":  [100, 200] }
 ```
 
-The assignment is done using the `->` syntax.
+The assignment is done using the assignment (`->`) syntax.
 
 In the following example, the HTTP input query parameter 'amount' is passed as input body argument 'amount'
 to the task 'simple.decision'. The result (function "return value") from the task will be mapped to the
@@ -567,7 +567,7 @@ Invalid input mapping 'text(ok) -> header', expect: Map, Actual: String
 When function input namespace `header.` is used, the system will map the value resolved from the "left hand side"
 statement into the specific header.
 
-For example, the input data mapping statement `text(ok) -> header.demo` will set "demo=ok" into input event
+For example, the input data mapping statement `text(ok) -> header.demo` will set "demo=ok" into the input event
 envelope's headers.
 
 When function output keyword `header` is specified in the "left hand side" of an output data mapping statement,
@@ -579,14 +579,14 @@ key of the function output event envelope's headers.
 ### Function input and output
 
 To support flexible input data mapping, the input to a function must be either `Map<String, Object>` or `PoJo`.
-The output (i.e. result set) of a function can be Map, PoJo or Java primitive.
+However, the output (i.e. result set) of a function can be Map, PoJo or Java primitive.
 
-Your function can implement the `TypedLambdaFunction` interface to configure input and output.
+Your function should implement the `TypedLambdaFunction` interface to configure input and output.
 
 Since a data structure is passed to your function's input argument as key-values, you may create a PoJo class
 to deserialize the data structure.
 
-To tell the system that your function is expecting input as a PoJo, you can use the special notation `*` in
+To tell the system that your function is expecting input as a PoJo, you can use the special notation `*` on
 the right hand side.
 
 For example, the following entry tells the system to set the value in "model.dataset" as a PoJo input.
@@ -596,7 +596,7 @@ For example, the following entry tells the system to set the value in "model.dat
       - 'model.dataset -> *'
 ```
 
-> If the value from the left hand side is not a map, the system will ignore the input mapping command and
+> *Note*: If the value from the left hand side is not a map, the system will ignore the input mapping command and
 print out an error message in the application log.
 
 ### Setting function input headers
@@ -604,7 +604,7 @@ print out an error message in the application log.
 When function input body is used to hold a PoJo, we may use function input headers to pass other arguments
 to the function without changing the data structure of a user defined PoJo.
 
-In the following example, the HTTP query parameter "userid" will be mappped to the function input header
+In the following example, the HTTP query parameter "userid" will be mapped to the function input header
 key "user" and the HTTP request body will be mapped to the function input body.
 
 ```yaml
@@ -734,7 +734,7 @@ tasks:
 
 Fork-n-join is a parallel processing pattern.
 
-A "fork" task will execute multiple "next" tasks in parallel and then consolidate the result sets before running
+A "fork" task will execute multiple "next" tasks in parallel and then wait for the result sets before running
 the "join" task.
 
 This task has the tag `execution=fork`. It must have a list of "next" tasks and a "join" task.
@@ -914,6 +914,8 @@ The following input arguments will be delivered to your function when exception 
 The exception handler function can be an "end" task to abort the transaction or a decision task
 to take care of the exception. For example, the exception handler can be a "circuit-breaker" to retry a request.
 
+> *Note*: for efficiency, stack trace transport is limited to the first 10 lines.
+
 ### Task-level exception handler
 
 You can attach an exception handler to a task. One typical use is the "circuit breaker" pattern.
@@ -956,7 +958,7 @@ The configuration for the circuit breaker function may look like this:
       - 'abort.request'
 ```
 
-An exception handler will be provided with the "error" object that contains error code, error message and an exception
+An exception handler will be provided with the "error" object that contains error code, error message and a
 stack trace. The exception handler can inspect the error object to make decision of the next step.
 
 For circuit breaker, we can keep the number of retry attempts in the state machine under "model.attempt" or any
@@ -971,7 +973,7 @@ status and stack trace. In this case, the decision value can be a number from 1 
 task list.
 
 Exception handlers may be used in both queries and transactions. For a complex transaction, the exception handler
-may implement some data rollback logic or recovery mechanism.
+may implement database rollback logic or recovery mechanism.
 
 ### Best practice
 
@@ -981,8 +983,8 @@ A top-level exception handler should not throw exception. Otherwise it may go in
 
 Therefore, we recommend that an exception handler should return regular result set in a PoJo or a Map object.
 
-An example of task-level exception handler is shown in the "HelloException.class" in the unit test section of
-the event script engine where it set the status code in the result set so that the system can map the status code
+An example of task-level exception handler is shown in the "HelloException.class" in the "task" folder
+where it set the status code in the result set so that the system can map the status code
 from the result set to the next task or to the HTTP output status code.
 
 ## Advanced features
@@ -1060,7 +1062,7 @@ In these use cases, you can implement an external state machine function and con
 Below is an example from a unit test. When you externalize a key-value to an external state machine,
 you must configure the route name (aka level-3 functional topic) of the external state machine.
 
-Note that when passing a `null` value to a key of an external state machine means "removal".
+> *Note*: Passing a `null` value to a key of an external state machine means "removal".
 
 ```yaml
 external.state.machine: 'v1.ext.state.machine'
@@ -1092,14 +1094,14 @@ When present, the system will send a key-value from the current flow instance's 
 to the function implementing the external state machine. The system uses the "ext:" namespace
 to externalize a state machine's key-value.
 
-Note that the delivery of key-values to the external state machine is asynchronous.
-Therefore, please assume eventual consistency.
+> *Note*: The delivery of key-values to the external state machine is asynchronous.
+  Therefore, please assume eventual consistency.
 
 You should implement a user function as the external state machine.
 
 The input interface contract to the external state machine for saving a key-value is:
 
-```
+```shell
 header.type = 'put'
 header.key = key
 body = value
@@ -1107,20 +1109,19 @@ body = value
 
 Your function should save the input key-value to a persistent store.
 
-In another flow that requires the key-value, you can add an initial task
-to retrieve from the persistent store and do "output data mapping" to
-save to the in-memory state machine so that your transaction flow can
-use the persisted key-values to continue processing.
+In another flow that requires the key-value, you can add an initial task to retrieve from the persistent store
+and do "output data mapping" to save to the in-memory state machine so that your transaction flow can use the
+persisted key-values to continue processing.
 
 In the unit tests of the event-script-engine subproject, these two flows work together:
 
-```
+```shell
 externalize-put-key-value
 externalize-get-key-value
 ```
 
-IMPORTANT: Events to an external state machine are delivered asynchronously. If you want to guarantee
-message sequencing, please do not set the "instances" parameter in the PreLoad annotation.
+> *IMPORTANT*: Events to an external state machine are delivered asynchronously. If you want to guarantee
+  message sequencing, please do not set the "instances" parameter in the `PreLoad` annotation.
 
 To illustrate a minimalist implementation, below is an example of an external state machine in the
 event-script-engine's unit test section.

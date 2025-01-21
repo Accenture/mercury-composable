@@ -93,7 +93,7 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
         if (KEEP_ALIVE.equals(connectionType)) {
             response.putHeader(CONNECTION_HEADER, KEEP_ALIVE);
         }
-        final String uri = util.getUrlDecodedPath(request.path());
+        final String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
         String origin = request.getHeader(APP_INSTANCE);
         if (origin != null && !po.exists(origin)) {

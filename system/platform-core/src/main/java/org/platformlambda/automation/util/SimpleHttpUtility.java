@@ -50,7 +50,6 @@ public class SimpleHttpUtility {
     private static final String HTTP_400_WARNING = "The system is unable to process your request";
     private static final String HTTP_500_WARNING = "Something may be broken";
     private static final String SET_MESSAGE = "${message}";
-    private static final String SET_PATH = "${path}";
     private static final String SET_STATUS = "${status}";
     private static final String SET_WARNING = "${warning}";
     private final String template;
@@ -158,11 +157,8 @@ public class SimpleHttpUtility {
         }
         Utility util = Utility.getInstance();
         HttpServerResponse response = request.response().setStatusCode(status);
-        String path = util.getSafeDisplayUri(request.path());
         if (accept.startsWith(TEXT_HTML)) {
-            String errorPage = template.replace(SET_STATUS, String.valueOf(status))
-                    .replace(SET_PATH, path)
-                    .replace(SET_MESSAGE, message);
+            String errorPage = template.replace(SET_STATUS, String.valueOf(status)).replace(SET_MESSAGE, message);
             if (status >= 500) {
                 errorPage = errorPage.replace(SET_WARNING, HTTP_500_WARNING);
             } else if (status >= 400) {
@@ -179,7 +175,6 @@ public class SimpleHttpUtility {
             result.put("status", status);
             result.put("message", message);
             result.put("type", type);
-            result.put("path", path);
             if (accept.startsWith(APPLICATION_XML)) {
                 byte[] payload = util.getUTF(xmlWriter.write("root", result));
                 response.putHeader(CONTENT_TYPE, APPLICATION_XML);

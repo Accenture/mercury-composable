@@ -33,7 +33,7 @@ updating metadata.
 Please perform a test run with the following setup to validate that it is compatible with your development environment.
 1. this standalone kafka server
 2. presence monitor
-3. rest-spring-2-example or rest-spring-3-example
+3. rest-spring-3-example
 4. lambda-example
 
 If all 4 apps start up normally, your JVM is compatible with this standalone kafka server.

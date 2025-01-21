@@ -2,6 +2,8 @@
 
 Mercury Composable is a software development toolkit for writing composable applications.
 
+[Methodology](METHODOLOGY.md)
+
 [Chapter 1 - Getting Started](CHAPTER-1.md)
 
 [Chapter 2 - Function Execution Strategies](CHAPTER-2.md)

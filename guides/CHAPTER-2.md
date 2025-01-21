@@ -7,8 +7,9 @@ In a composable application, each function is self-contained with zero dependenc
 Only flow adapter, data adapter, notification function or gateway has a single external dependency such as
 a network event system, a database or an external REST resource.
 
-A function is a class that implements the LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction interface.
-Within each function boundary, it may have private methods that are fully contained within the class.
+A "task" or "function" is a class that implements the LambdaFunction, TypedLambdaFunction or
+KotlinLambdaFunction interface. Within each function boundary, it may have private methods that are fully
+contained within the class.
 
 As discussed in Chapter-1, a function may look like this:
 
@@ -25,34 +26,34 @@ public class MyFirstFunction implements TypedLambdaFunction<MyPoJo, AnotherPoJo>
 ```
 
 A function is an event listener with the "handleEvent" method. The data structures of input and output are defined
-by API interface contract during application design phase.
+by API interface contract in an event flow configuration.
 
 In the above example, the input is MyPoJo and the output is AnotherPoJo.
 
-For event choreography, PoJos are treated as key-value Maps so that you can use the dot-bracket convention
-to map subset of a PoJo from one function to another if needed.
+For event choreography, input body is represented as a PoJo or a Map of key-values so that you can use the
+dot-bracket convention to map subset of a PoJo from one function to another if needed.
 
-When the input is used for a PoJo, you may also pass parameters to the user function as headers. We will discuss
-this in Chapter 3 "Event Script syntax".
+In addition to the input PoJo, you may pass additional parameters to the user function as event headers.
+We will discuss this in [Chapter 4 - Event Script Syntax](CHAPTER-4.md).
 
 ## Non-blocking design
 
-While you can apply sequential, object oriented or reactive programming styles in your functions, you should pay
+While you can apply sequential, object-oriented or reactive programming styles in your functions, you should pay
 attention to making your function non-blocking and fast.
 
 In a virtual thread, if you use Java Future, the ".get()" method is synchronous but it is non-blocking behind the
 curtain. This is like using the "await" keyword in other programming language.
 
-Virtual thread execution promotes high performance and high concurrency. However, it would be suboptimal
+Virtual thread execution promotes performance and high concurrency. However, it would be suboptimal
 if you mix blocking code in a user function. It will block the whole event loop, resulting in substantial
 degradation of application performance. We therefore recommend your user function to be implemented in non-blocking
 or reactive styles.
 
-When you are using a reactive libaries in your function, your function can return a "Mono" or "Flux" reactive
+When you are using a reactive library in your function, your function can return a "Mono" or "Flux" reactive
 response object using the Project-Reactor Core library. This feature is supported in Java and Kotlin.
 
 For simplicity, we support only the Mono and Flux reactive response objects. If you use other types of reactive APIs,
-please convert them into a Mono or Flux in the return value.
+please convert them into a Mono or Flux accordingly.
 
 ## User function that returns a Mono object
 
@@ -91,6 +92,9 @@ mono.subscribeOn(Schedulers.fromExecutor(Platform.getInstance().getVirtualThread
 
 Without the scheduler, the subscribe statement will be blocked. Your next statement will not be reachable until
 the mono has completed with data or exception.
+
+> *Note*: If you are not sure if the underlying reactive library has its own scheduler, there is no harm in adding
+  a virtual thread scheduler to subscribe to a reactive response.
 
 ## User function that returns a Flux object
 
@@ -156,8 +160,8 @@ fc.consume(
 
 ## Object serialization consideration
 
-The system is designed to deliver Java primitive and HashMap through an event stream. If you pass Java
-primitive such as String or byte[], you do not need to do any serialization.
+The system is designed to deliver Java primitive and HashMap through an event stream. If you pass PoJo,
+HashMap or Java primitive such as String or byte[], you do not need to do any serialization.
 
 If the objects that your function streams over a Mono or Flux channel are not supported, you must perform
 custom serialization.
@@ -199,11 +203,12 @@ To approve an incoming request, your custom authentication function can return `
 
 Optionally, you can add "session" key-values by returning an EventEnvelope like this:
 
-```java
+```shell
 return new EventEnvelope().setHeader("user_id", "A12345").setBody(true);
 ```
 
-The above example approves the incoming request and returns a "session" variable ("user_id": "A12345") to the next task.
+The above example approves the incoming request and returns a "session" variable ("user_id": "A12345") to the
+next task.
 
 If your authentication function returns `false`, the user will receive a "HTTP-401 Unauthorized" error response.
 
@@ -223,12 +228,12 @@ A composable application is assembled from a collection of self-contained functi
 
 ## Number of workers for a function
 
+In the following annotation, the parameter "instances" tells the system to reserve a number of workers for the function.
+Workers are running on-demand to handle concurrent user requests.
+
 ```java
 @PreLoad(route = "my.first.function", instances = 10)
 ```
-
-In the above function, the parameter "instances" tells the system to reserve a number of workers for the function.
-Workers are running on-demand to handle concurrent user requests.
 
 Note that you can use smaller number of workers to handle many concurrent users if your function finishes
 processing very quickly. If not, you should reserve more workers to handle the work load.
@@ -266,7 +271,7 @@ EventEnvelope result = future.get();
 EventEnvelope result = po.request(requestEvent, timeout).get();
 ```
 
-> The PostOffice API is used when you want to do orchestration by code. If you are using Event Script, you can
+> *Note*: The PostOffice API is used when you want to do orchestration by code. If you are using Event Script, you can
   manage event flows using one or more configuration files.
 
 ### Suspend function
@@ -342,7 +347,7 @@ business logic. You can add the `yield()` statement before you execute a block o
 control to the event loop so that other coroutines and suspend functions will not be blocked by a heavy weighted
 function.
 
-> Do not block your function because it may block all coroutines since they run in a single kernel thread
+> *Note*: Do not block your function because it may block all coroutines since they run in a single kernel thread
 
 Suspend function is a powerful way to write high throughput application. Your code is presented in a sequential
 flow that is easier to write and maintain.
@@ -380,7 +385,7 @@ For very large file download, you may want to write the FileDownloadDemo functio
 with the `EventInterceptor` annotation or implement a suspend function using KotlinLambdaFunction. Suspend function
 is non-blocking.
 
-> The FastRPC API is used when you want to do orchestration by code. If you are using Event Script, you can
+> *Note*: The FastRPC API is used when you want to do orchestration by code. If you are using Event Script, you can
   manage event flows using one or more configuration files.
 
 ### Kernel thread pool
@@ -396,7 +401,7 @@ The parameter `kernel.thread.pool` is defined with a default value of 100. You c
 the actual CPU power in your environment. Keep the default value for best performance unless you have tested the
 limit in your environment.
 
-> When you have more concurrent requests, your application may slow down because some functions
+> *Note*: When you have more concurrent requests, your application may slow down because some functions
   are blocked when the number of concurrent kernel threads is reached.
 
 You should reduce the number of "instances" (i.e. worker pool) for a function to a small number so that your
@@ -449,8 +454,8 @@ from the target service.
 
 Although your code appears to be "blocked", the virtual thread is “suspended”. It will wake up when the response
 arrives. When a virtual thread is suspended, it does not consume CPU time and the memory structure for keeping
-the thread in suspend mode is very small. Virtual thread technology is designed to support tens of thousands,
-if not millions, of concurrent RPC requests in a single compute machine, container or serverless instance.
+the thread in suspend mode is very small. Virtual thread technology is designed to support tens of thousands
+of concurrent RPC requests in a single compute machine, container or serverless instance.
 
 Mercury Composable supports mixed thread management - virtual threads, suspend functions and kernel threads.
 

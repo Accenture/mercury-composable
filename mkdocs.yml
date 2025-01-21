@@ -3,6 +3,7 @@ site_url: https://github.com/accenture/mercury
 nav:
     - Home: README.md
     - Contents: guides/TABLE-OF-CONTENTS.md
+    - Methodology: guides/METHODOLOGY.md
     - Chapter-1: guides/CHAPTER-1.md
     - Chapter-2: guides/CHAPTER-2.md
     - Chapter-3: guides/CHAPTER-3.md

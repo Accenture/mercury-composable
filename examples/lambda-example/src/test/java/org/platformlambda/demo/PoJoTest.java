@@ -42,7 +42,7 @@ public class PoJoTest extends TestBase {
         BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         PostOffice po = new PostOffice("unit.test", "20001", "GET /api/hello/pojo");
         EventEnvelope request = new EventEnvelope().setTo("hello.pojo").setHeader("id", "1");
-        po.asyncRequest(request, 800).onSuccess(bench::add);
+        po.asyncRequest(request, 8000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());

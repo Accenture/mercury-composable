@@ -171,13 +171,13 @@ is wired to the "/api/hello/generic/{id}" endpoint as follows:
     tracing: true
 ```
 
-The `tracing` tag tells the system to turn on "distributed tracing". In the console log shown above, you see
+The `tracing` parameter tells the system to turn on "distributed tracing". In the console log shown above, you see
 three lines of log from "distributed trace" showing that the HTTP request is processed by "v1.api.auth" and 
 "hello.generic" before returning result to the browser using the "async.http.response" function.
 
-> Note: the "async.http.response" is a built-in function to send the HTTP response to the browser.
+> *Note*: the "async.http.response" is a built-in function to send the HTTP response to the browser.
 
-The optional `cors` and `headers` tags point to the specific CORS and HEADERS sections respectively.
+The optional `cors` and `headers` sections point to the specific CORS and HEADERS sections respectively.
 
 ## CORS section
 

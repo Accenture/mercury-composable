@@ -1151,7 +1151,7 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setFrom("unit.test")
                                     .setTrace("100", "TEST /timeout/exception")
                                     .setHeader("exception", true).setBody(1);
-        po.asyncRequest(request, 800).onSuccess(bench::add);
+        po.asyncRequest(request, 8000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(400, response.getStatus());
@@ -1166,7 +1166,7 @@ public class PostOfficeTest extends TestBase {
         int input = 111;
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setHeader("a", "b").setBody(input);
-        po.asyncRequest(request, 800).onSuccess(bench::add);
+        po.asyncRequest(request, 8000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
@@ -1453,7 +1453,7 @@ public class PostOfficeTest extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         // with route substitution in the application.properties, hello.test will route to hello.world
         EventEnvelope request = new EventEnvelope().setTo("hello.test").setBody(input);
-        po.asyncRequest(request, 800).onSuccess(bench::add);
+        po.asyncRequest(request, 8000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());

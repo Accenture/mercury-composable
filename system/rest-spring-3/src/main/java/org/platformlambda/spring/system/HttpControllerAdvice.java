@@ -34,33 +34,23 @@ public class HttpControllerAdvice {
     @ExceptionHandler(value = { IllegalArgumentException.class })
     public void handleError(HttpServletRequest request, HttpServletResponse response, IllegalArgumentException e)
             throws IOException {
-        HttpErrorHandler.sendResponse(response, 400, e.getMessage(),
-                request.getRequestURI(), request.getHeader(ACCEPT));
+        HttpErrorHandler.sendResponse(response, 400, e.getMessage(), request.getHeader(ACCEPT));
     }
 
     @ExceptionHandler(value = { IOException.class })
     public void handleError(HttpServletRequest request, HttpServletResponse response, IOException e)
             throws IOException {
-        HttpErrorHandler.sendResponse(response, 500, e.getMessage(),
-                request.getRequestURI(), request.getHeader(ACCEPT));
+        HttpErrorHandler.sendResponse(response, 500, e.getMessage(), request.getHeader(ACCEPT));
     }
 
     @ExceptionHandler(value = { NullPointerException.class })
-    public void handleError(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        HttpErrorHandler.sendResponse(response, 500, "Null pointer exception",
-                request.getRequestURI(), request.getHeader(ACCEPT));
+    public void handleError(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpErrorHandler.sendResponse(response, 500, "null", request.getHeader(ACCEPT));
     }
-
-    /////////////////////////////
-    // for application exception
-    /////////////////////////////
 
     @ExceptionHandler(value = { AppException.class })
     public void handleError(HttpServletRequest request, HttpServletResponse response, AppException e)
             throws IOException {
-        HttpErrorHandler.sendResponse(response, e.getStatus(), e.getMessage(),
-                request.getRequestURI(), request.getHeader(ACCEPT));
+        HttpErrorHandler.sendResponse(response, e.getStatus(), e.getMessage(), request.getHeader(ACCEPT));
     }
-
 }

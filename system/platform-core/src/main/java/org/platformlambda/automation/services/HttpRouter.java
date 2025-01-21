@@ -159,8 +159,9 @@ public class HttpRouter {
     public void handleEvent(AssignedRoute route, String requestId, int status, String error) {
         AsyncContextHolder holder = contexts.get(requestId);
         if (holder != null) {
+            Utility util = Utility.getInstance();
             HttpServerRequest request = holder.request;
-            String path = Utility.getInstance().getUrlDecodedPath(request.path());
+            String path = util.getDecodedUri(request.path());
             SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
             HttpServerResponse response = request.response();
             if (error != null) {
@@ -178,7 +179,6 @@ public class HttpRouter {
                                             .setBody(createAsyncHttpRequestFromHeaders(request, path));
                                     po.asyncRequest(event, FILTER_TIMEOUT, false)
                                         .onSuccess(filtered -> {
-                                            Utility util = Utility.getInstance();
                                             // this allows the filter to set HTTP response headers
                                             Map<String, String> headers = filtered.getHeaders();
                                             headers.forEach(response::putHeader);
@@ -415,7 +415,7 @@ public class HttpRouter {
             throws AppException, IOException {
         Utility util = Utility.getInstance();
         HttpServerRequest request = holder.request;
-        String uri = util.getUrlDecodedPath(request.path());
+        String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
         holder.setUrl(uri).setMethod(method).setResHeaderId(route.info.responseTransformId);
         SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
@@ -823,13 +823,11 @@ class HttpAuth implements LambdaFunction {
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
         if (input instanceof EventEnvelope incomingEvent) {
-            Utility util = Utility.getInstance();
             EventEmitter po = EventEmitter.getInstance();
             HttpRequestEvent evt = new HttpRequestEvent(incomingEvent.getBody());
             if (evt.authService != null && evt.requestId != null &&
                     evt.httpRequest != null && !evt.httpRequest.isEmpty()) {
                 AsyncHttpRequest req = new AsyncHttpRequest(evt.httpRequest);
-                String path = util.getSafeDisplayUri(req.getUrl());
                 EventEnvelope authRequest = new EventEnvelope();
                 // the AsyncHttpRequest is sent as a map
                 authRequest.setTo(evt.authService).setBody(evt.httpRequest);
@@ -877,26 +875,25 @@ class HttpAuth implements LambdaFunction {
                                         }
                                     }
                                 } catch (IOException e) {
-                                    sendError(evt, 400, e.getMessage(), path);
+                                    sendError(evt, 400, e.getMessage());
                                 }
                             } else {
-                                sendError(evt, 401, "Unauthorized", path);
+                                sendError(evt, 401, "Unauthorized");
                             }
                         })
-                        .onFailure(e -> sendError(evt, 408, e.getMessage(), path));
+                        .onFailure(e -> sendError(evt, 408, e.getMessage()));
             }
         }
         return null;
     }
 
-    private void sendError(HttpRequestEvent evt, int status, String message, String path) {
+    private void sendError(HttpRequestEvent evt, int status, String message) {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event = new EventEnvelope();
         Map<String, Object> result = new HashMap<>();
         result.put("status", status);
         result.put("message", message);
         result.put("type", "error");
-        result.put("path", path);
         event.setTo(ASYNC_HTTP_RESPONSE).setCorrelationId(evt.requestId).setStatus(status).setBody(result);
         // enable distributed tracing if needed
         if (evt.tracing) {
