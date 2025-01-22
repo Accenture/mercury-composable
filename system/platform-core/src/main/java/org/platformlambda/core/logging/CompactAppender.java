@@ -78,13 +78,15 @@ public class CompactAppender extends AbstractAppender {
                 if (message instanceof ObjectMessage obj) {
                     data.put("message", String.valueOf(obj.getParameter()));
                 } else if (message != null) {
+                    /*
+                     * Support logging of map for the following use case
+                     * log.info("{}", map);
+                     */
                     var text = message.getFormattedMessage().trim();
-                    if (text.startsWith("{") && text.endsWith("}")) {
-                        try {
-                            data.put("message", serializer.fromJson(text, Map.class));
-                        } catch (Exception se) {
-                            data.put("message", text);
-                        }
+                    Object[] objects = message.getParameters();
+                    if (objects.length == 1 && objects[0] instanceof Map &&
+                            text.startsWith("{") && text.endsWith("}")) {
+                        data.put("message", objects[0]);
                     } else {
                         data.put("message", text);
                     }

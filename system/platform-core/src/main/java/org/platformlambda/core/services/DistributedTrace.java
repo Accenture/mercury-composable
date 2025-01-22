@@ -18,12 +18,10 @@
 
 package org.platformlambda.core.services;
 
-import com.google.gson.Gson;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.slf4j.Logger;
@@ -42,7 +40,6 @@ import java.util.Map;
 @ZeroTracing
 public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(DistributedTrace.class);
-    private static final Gson serializer = SimpleMapper.getInstance().getPrettyGson();
     private static final String DISTRIBUTED_TRACE_FORWARDER = "distributed.trace.forwarder";
     private static final String TRANSACTION_JOURNAL_RECORDER = "transaction.journal.recorder";
     private static final String TRACE = "trace";
@@ -83,7 +80,7 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
                 if (!annotations.isEmpty()) {
                     map.put(ANNOTATIONS, annotations);
                 }
-                log.info("{}", serializer.toJson(map));
+                log.info("{}", map);
             }
             /*
              * Optionally, forward the perf metrics to a telemetry system.

@@ -361,10 +361,10 @@ java -Dlog.format=json -jar myapp.jar
 
 text and json formats are for human readers and compact format is designed for log analytics system.
 
-To leverge the advantage of json log format, your application may log JSON string like this:
+To leverge the advantage of json log format, your application may log JSON using the
+parameter formatter `{}` with a single Map parameter like this:
 
 ```java
-Gson serializer = SimpleMapper.getInstance().getPrettyGson();
 var message = new HashMap<>();
 message.put("flow", flowInstance.getFlow().id);
 message.put("id", logId);
@@ -372,10 +372,8 @@ message.put("status", normal? "completed" : "aborted");
 message.put("execution", "Run " + totalExecutions +
                          " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
 message.put("tasks", taskList);
-log.info("{}", serializer.toJson(message));
+log.info("{}", message);
 ```
-
-The SimpleMapper provides a convenient Gson instance for this purpose.
 
 ## Customize log4j configuration
 
