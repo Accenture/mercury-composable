@@ -84,7 +84,7 @@ public class JsonAppender extends AbstractAppender {
                      */
                     var text = message.getFormattedMessage().trim();
                     Object[] objects = message.getParameters();
-                    if (objects.length == 1 && objects[0] instanceof Map &&
+                    if (objects != null && objects.length == 1 && objects[0] instanceof Map &&
                             text.startsWith("{") && text.endsWith("}")) {
                         data.put("message", objects[0]);
                     } else {
