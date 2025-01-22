@@ -20,10 +20,9 @@ package org.platformlambda.core.util;
 
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.common.ConfigBase;
+import org.yaml.snakeyaml.Yaml;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -33,7 +32,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ConfigReader implements ConfigBase {
     private static final Logger log = LoggerFactory.getLogger(ConfigReader.class);
-
     private static final ConcurrentMap<String, List<String>> loopDetection = new ConcurrentHashMap<>();
     private static final String CLASSPATH = "classpath:";
     private static final String FILEPATH = "file:";

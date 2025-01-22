@@ -19,8 +19,6 @@
 package org.platformlambda.core.util;
 
 import org.platformlambda.core.util.common.ConfigBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -28,12 +26,13 @@ import java.io.InputStream;
 import java.util.*;
 
 public class AppConfigReader implements ConfigBase {
-    private static final Logger log = LoggerFactory.getLogger(AppConfigReader.class);
     private static final String APP_CONFIG_READER_YML = "app-config-reader.yml";
     private static final String RESOURCES = "resources";
     private static final String SPRING_ACTIVE_PROFILES = "spring.profiles.active";
     private static final String APPLICATION_PREFIX = "application-";
     private static final ConfigReader config = new ConfigReader();
+    private static final List<String> initLog = new ArrayList<>();
+    private static final List<String> initError = new ArrayList<>();
     private static final AppConfigReader INSTANCE = new AppConfigReader();
 
     public static AppConfigReader getInstance() {
@@ -71,9 +70,9 @@ public class AppConfigReader implements ConfigBase {
                     n += mergeConfig(consolidated, additionalYaml);
                 }
                 if (n > 0) {
-                    log.info("Updated {} parameter{} from active profiles {}", n, n == 1? "" : "s", profiles);
+                    initLog.add("Updated "+n+" parameter"+(n == 1? "" : "s")+" from active profiles "+profiles);
                 } else if (!profiles.isEmpty()) {
-                    log.info("Active profiles {} contain no additional parameters", profiles);
+                    initLog.add("Active profiles "+profiles+" contain no additional parameters");
                 }
                 MultiLevelMap multiMap = new MultiLevelMap();
                 List<String> keys = new ArrayList<>(consolidated.keySet());
@@ -86,10 +85,10 @@ public class AppConfigReader implements ConfigBase {
                 throw new IOException("missing 'resources' section in "+APP_CONFIG_READER_YML);
             }
         } catch (IOException e) {
-            log.error("Unable to parse base application configuration - {}", e.getMessage());
+            initError.add("Unable to parse base application configuration - "+e.getMessage());
         }
         if (config.isEmpty()) {
-            log.error("Application config is empty. Please check.");
+            initError.add("Application config is empty. Please check.");
         }
     }
 
@@ -115,13 +114,42 @@ public class AppConfigReader implements ConfigBase {
             Map<String, Object> flat = Utility.getInstance().getFlatMap(reader.getMap());
             if (!flat.isEmpty()) {
                 consolidated.putAll(flat);
-                log.info("Loaded {}", filename);
+                initLog.add("Loaded "+filename);
             }
             return flat.size();
         } catch (IOException e) {
             // ok to ignore
             return 0;
         }
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return initialization log
+     */
+    public List<String> getInitLog() {
+        return new ArrayList<>(initLog);
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return initialization error log
+     */
+    public List<String> getInitError() {
+        return new ArrayList<>(initError);
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     */
+    public void clearInitLog() {
+        initLog.clear();
+        initError.clear();
     }
 
     @Override

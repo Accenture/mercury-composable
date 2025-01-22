@@ -93,6 +93,14 @@ public class AppStarter {
             } else if (COMPACT.equalsIgnoreCase(logFormat)) {
                 reConfigLogger(false);
             }
+            // print AppConfigReader's deferred log
+            for (String text: config.getInitError()) {
+                log.error("{}", text);
+            }
+            for (String text: config.getInitLog()) {
+                log.info("{}", text);
+            }
+            config.clearInitLog();
             /*
              * Print out basic JVM and memory information before starting app.
              * This helps to check if JVM is configured correctly.

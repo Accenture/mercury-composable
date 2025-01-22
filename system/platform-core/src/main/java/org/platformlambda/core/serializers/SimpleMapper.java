@@ -21,8 +21,6 @@ package org.platformlambda.core.serializers;
 import com.google.gson.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -31,8 +29,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public class SimpleMapper {
-    private static final Logger log = LoggerFactory.getLogger(SimpleMapper.class);
-
     private static final String SNAKE_CASE_SERIALIZATION = "snake.case.serialization";
     private final SimpleObjectMapper mapper;
     private final SimpleObjectMapper snakeMapper;
@@ -49,9 +45,6 @@ public class SimpleMapper {
         // Camel or snake case
         AppConfigReader config = AppConfigReader.getInstance();
         boolean snake = "true".equals(config.getProperty(SNAKE_CASE_SERIALIZATION, "true"));
-        if (snake) {
-            log.info("{} enabled", SNAKE_CASE_SERIALIZATION);
-        }
         this.mapper = new SimpleObjectMapper(preconfigureGson(snake));
         this.snakeGson = preconfigureGson(true);
         this.camelGson = preconfigureGson(false);
