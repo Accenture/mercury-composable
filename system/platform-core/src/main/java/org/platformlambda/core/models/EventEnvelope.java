@@ -26,6 +26,7 @@ import java.util.*;
 
 public class EventEnvelope {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelope.class);
+    private static final Utility util = Utility.getInstance();
     private static final MsgPack msgPack = new MsgPack();
     private static final PayloadMapper converter = PayloadMapper.getInstance();
 
@@ -111,7 +112,7 @@ public class EventEnvelope {
     private int broadcastLevel = 0;
 
     public EventEnvelope() {
-        this.id = Utility.getInstance().getUuid();
+        this.id = util.getUuid();
     }
 
     public EventEnvelope(byte[] event) throws IOException {
@@ -401,7 +402,7 @@ public class EventEnvelope {
 
     private Map<String, String> extraToKeyValues() {
         Map<String, String> map = new HashMap<>();
-        List<String> tags = Utility.getInstance().split(this.extra, "|");
+        List<String> tags = util.split(this.extra, "|");
         for (String t: tags) {
             int sep = t.indexOf('=');
             if (sep != -1) {
@@ -523,7 +524,7 @@ public class EventEnvelope {
             String v = switch (value) {
                 case null -> "";
                 case String str -> str;
-                case Date d -> Utility.getInstance().date2str(d);
+                case Date d -> util.date2str(d);
                 default -> String.valueOf(value);
             };
             // null value is transported as an empty string
@@ -575,7 +576,7 @@ public class EventEnvelope {
             case null, default -> payload = body;
         }
         // encode body and save object type
-        this.originalObject = payload instanceof Date d? Utility.getInstance().date2str(d) : payload;
+        this.originalObject = payload instanceof Date d? util.date2str(d) : payload;
         TypedPayload typed = converter.encode(payload, binary);
         this.body = typed.getPayload();
         this.type = typed.getType();
@@ -620,7 +621,7 @@ public class EventEnvelope {
             } else {
                 setStatus(500);
             }
-            setBody(Utility.getInstance().getRootCause(ex).getMessage());
+            setBody(util.getRootCause(ex).getMessage());
             setStackTrace(getStackTrace(ex));
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (ObjectOutputStream stream = new ObjectOutputStream(out)) {
@@ -668,25 +669,18 @@ public class EventEnvelope {
      * @return stack trace trimmed
      */
     private String getStackTrace(Throwable ex) {
-        try (StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out)) {
-            var util = Utility.getInstance();
-            ex.printStackTrace(writer);
-            var stack = out.toString();
-            // limit stack trace to 10 lines
-            List<String> lines = util.split(stack, "\r\n");
-            StringBuilder sb = new StringBuilder();
-            for (int i=0; i < 10 && i < lines.size(); i++) {
-                sb.append(lines.get(i).trim());
-                sb.append('\n');
-            }
-            if (lines.size() > 10) {
-                sb.append("...(").append(lines.size()).append(")");
-            }
-            return sb.toString();
-        } catch (IOException e) {
-            // best effort is to keep the exception message
-            return ex.getMessage();
+        String stack = util.getStackTrace(ex);
+        // limit stack trace to 10 lines
+        List<String> lines = util.split(stack, "\r\n");
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i < 10 && i < lines.size(); i++) {
+            sb.append(lines.get(i).trim());
+            sb.append('\n');
         }
+        if (lines.size() > 10) {
+            sb.append("...(").append(lines.size()).append(")");
+        }
+        return sb.toString();
     }
 
     /**
@@ -794,7 +788,6 @@ public class EventEnvelope {
     public void load(byte[] bytes) throws IOException {
         Object o = msgPack.unpack(bytes);
         if (o instanceof Map) {
-            Utility util = Utility.getInstance();
             Map<String, Object> message = (Map<String, Object>) o;
             if (message.containsKey(ID_FLAG)) {
                 id = (String) message.get(ID_FLAG);
@@ -932,7 +925,6 @@ public class EventEnvelope {
 
     @SuppressWarnings("unchecked")
     public void fromMap(Map<String, Object> message) {
-        Utility util = Utility.getInstance();
         if (message.containsKey(ID_FIELD)) {
             id = (String) message.get(ID_FIELD);
         }

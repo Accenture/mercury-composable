@@ -33,10 +33,9 @@ public class SystemOutFilter extends PrintStream {
 
     @Override
     public void print(String text) {
-        // this filter out non-JSON text because we don't want to print debug log from System.out
-        if (text != null && text.startsWith("{") && text.endsWith("}")) {
+        // only accept text with JSON signature from JsonAppender and CompactAppender
+        if (text != null && text.startsWith("{") && text.endsWith("}\n")) {
             super.print(text);
-            super.print('\n');
         }
     }
 

@@ -20,41 +20,27 @@ package org.platformlambda.core.logging;
 
 import com.google.gson.Gson;
 import org.apache.logging.log4j.core.*;
-import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-import org.apache.logging.log4j.message.Message;
-import org.apache.logging.log4j.message.ObjectMessage;
 import org.platformlambda.core.serializers.SimpleMapper;
-import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  */
 @Plugin(name = "CompactLogger", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
-public class CompactAppender extends AbstractAppender {
-
+public class CompactAppender extends JsonLogger {
     private static final Gson serializer = SimpleMapper.getInstance().getCompactGson();
-    private static final Utility util = Utility.getInstance();
 
     protected CompactAppender(String name, Filter filter,
                               Layout<? extends Serializable> layout,
                               boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
-        // disable other use of System.out
-        System.setOut(new SystemOutFilter(System.out));
-        System.setErr(new SystemOutFilter(System.err));
     }
 
     @PluginFactory
@@ -69,46 +55,7 @@ public class CompactAppender extends AbstractAppender {
     @Override
     public void append(LogEvent event) {
         if (event != null) {
-            try {
-                Map<String, Object> data = new HashMap<>();
-                data.put("time", util.getLocalTimestamp());
-                data.put("level", String.valueOf(event.getLevel()));
-                data.put("source", String.valueOf(event.getSource()));
-                Message message = event.getMessage();
-                if (message instanceof ObjectMessage obj) {
-                    data.put("message", String.valueOf(obj.getParameter()));
-                } else if (message != null) {
-                    /*
-                     * Support logging of map for the following use case
-                     * log.info("{}", map);
-                     */
-                    var text = message.getFormattedMessage().trim();
-                    Object[] objects = message.getParameters();
-                    if (objects != null && objects.length == 1 && objects[0] instanceof Map &&
-                            text.startsWith("{") && text.endsWith("}")) {
-                        data.put("message", objects[0]);
-                    } else {
-                        data.put("message", text);
-                    }
-                }
-                Throwable ex = event.getThrown();
-                if (ex != null) {
-                    data.put("stack", getStackTrace(ex));
-                }
-                System.out.print(serializer.toJson(data));
-            } catch (Exception e) {
-                // nothing we can do
-            }
-        }
-    }
-
-    private String getStackTrace(Throwable ex) {
-        try (StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out)) {
-            ex.printStackTrace(writer);
-            return out.toString();
-        } catch (IOException e) {
-            // best effort is to keep the exception message
-            return ex.getMessage();
+            System.out.print(serializer.toJson(getJson(event)) + "\n");
         }
     }
 }

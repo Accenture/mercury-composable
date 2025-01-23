@@ -640,6 +640,16 @@ public class Utility {
         return result;
     }
 
+    public String getStackTrace(Throwable ex) {
+        try (StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out)) {
+            ex.printStackTrace(writer);
+            return out.toString();
+        } catch (IOException e) {
+            // best effort is to keep the exception message
+            return ex.getMessage();
+        }
+    }
+
     public String getSimpleRoute(String route) {
         int at = route.indexOf('@');
         return at == -1? route : route.substring(0, at);

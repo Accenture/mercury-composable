@@ -22,6 +22,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.automation.util.SimpleHttpUtility;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.MockPubSub;
 import org.platformlambda.core.system.PubSub;
@@ -56,6 +57,7 @@ public class UtilityTests {
         }
         Configurator.reconfigure(URI.create("classpath:log4j2-json.xml"));
         log.info("Reconfigured to JSON logging");
+        log.info("{}", Map.of("x", 100), new AppException(400, "testing json logger"));
         Configurator.reconfigure(URI.create("classpath:log4j2-compact.xml"));
         log.info("Reconfigured to COMPACT logging");
         Configurator.reconfigure(URI.create("classpath:log4j2.xml"));
@@ -402,5 +404,4 @@ public class UtilityTests {
         String url = "/api/hello/world";
         assertEquals("/api/v2/hello/world", http.normalizeUrl(url, rewrite));
     }
-
 }

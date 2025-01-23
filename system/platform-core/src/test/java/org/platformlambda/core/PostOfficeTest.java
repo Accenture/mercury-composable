@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PostOfficeTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(PostOfficeTest.class);
-
+    private static final Utility util = Utility.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
     private static final BlockingQueue<String> interceptorBench = new ArrayBlockingQueue<>(1);
     private static final String TASK_EXECUTOR = "task.executor";
@@ -212,7 +212,7 @@ public class PostOfficeTest extends TestBase {
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));
         assertNotNull(response.getHeader(X_TTL));
-        long ttl = Utility.getInstance().str2long(response.getHeader(X_TTL));
+        long ttl = util.str2long(response.getHeader(X_TTL));
         String streamId = response.getHeader(X_STREAM_ID);
         final List<Map<String, Object>> messages = new ArrayList<>();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
@@ -244,7 +244,7 @@ public class PostOfficeTest extends TestBase {
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));
         assertNotNull(response.getHeader(X_TTL));
-        long ttl = Utility.getInstance().str2long(response.getHeader(X_TTL));
+        long ttl = util.str2long(response.getHeader(X_TTL));
         String streamId = response.getHeader(X_STREAM_ID);
         Map<String, Object> store = new HashMap<>();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
@@ -276,7 +276,7 @@ public class PostOfficeTest extends TestBase {
         assertEquals(200, response.getStatus());
         assertInstanceOf(byte[].class, response.getBody());
         if (response.getBody() instanceof byte[] b) {
-            assertEquals(HELLO, Utility.getInstance().getUTF(b));
+            assertEquals(HELLO, util.getUTF(b));
         }
         // HTTP response header "x-content-length" is provided by AsyncHttpClient when rendering small payload as bytes
         assertEquals(String.valueOf(HELLO.length()), response.getHeader("x-content-length"));
@@ -284,7 +284,6 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void httpClientDetectStreamingContent() throws IOException, ExecutionException, InterruptedException {
-        Utility util = Utility.getInstance();
         final String HELLO = "hello world 0123456789";
         final AppConfigReader config = AppConfigReader.getInstance();
         String port = config.getProperty("server.port");
@@ -321,15 +320,13 @@ public class PostOfficeTest extends TestBase {
         }, e -> log.error("unexpected error", e), () -> completion.add(true));
         Boolean done = completion.take();
         assertEquals(true, done);
-        String content = Utility.getInstance().getUTF(out.toByteArray());
-        assertEquals(HELLO, content);
+        assertEquals(HELLO, util.getUTF(out.toByteArray()));
     }
 
     @Test
     public void concurrentEventTest() throws InterruptedException {
         final BlockingQueue<Boolean> wait = new ArrayBlockingQueue<>(1);
         final AppConfigReader config = AppConfigReader.getInstance();
-        final Utility util = Utility.getInstance();
         int poolSize = Math.max(32, util.str2int(config.getProperty("kernel.thread.pool", "100")));
         final ExecutorService executor = Platform.getInstance().getVirtualThreadExecutor();
         final String RPC_FORWARDER = "rpc.forwarder";
@@ -527,7 +524,6 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void wsTest() throws InterruptedException {
-        final Utility util = Utility.getInstance();
         final AppConfigReader config = AppConfigReader.getInstance();
         final int PORT = util.str2int(config.getProperty("websocket.server.port",
                                         config.getProperty("server.port", "8085")));
@@ -578,6 +574,7 @@ public class PostOfficeTest extends TestBase {
         client.close();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testExceptionTransport() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -592,14 +589,18 @@ public class PostOfficeTest extends TestBase {
         assertEquals(400, response.getStatus());
         assertEquals(MESSAGE, response.getBody());
         assertEquals(AppException.class, response.getException().getClass());
-        log.info("Exception transported - {}", response.getException().toString());
-        log.info("Stack trace transported through the response event:");
-        StackTraceElement[] elements = response.getException().getStackTrace();
-        for (StackTraceElement e: elements) {
-            if (e.getClassName().startsWith("org.platformlambda.")) {
-                log.info("Found - {}", e);
+        log.info("Exception transported - {}", String.valueOf(response.getException()));
+        var stack = util.stackTraceToMap(util.getStackTrace(response.getException()));
+        var list = stack.get("stack");
+        assertInstanceOf(List.class, list);
+        List<String> relevantItems = new ArrayList<>();
+        var lines = (List<String>) stack.get("stack");
+        lines.forEach(line -> {
+            if (line.contains("org.platformlambda.")) {
+                relevantItems.add(line);
             }
-        }
+        });
+        log.info("{}", Map.of("stack", relevantItems));
     }
 
     @Test
@@ -693,7 +694,6 @@ public class PostOfficeTest extends TestBase {
          */
         Platform platform = Platform.getInstance();
         assertEquals(APP_ID, platform.getAppId());
-        Utility util = Utility.getInstance();
         // validate the hashing algorithm
         String id = util.getUuid();
         byte[] hash = crypto.getSHA256(util.getUTF(platform.getAppId()));
@@ -824,7 +824,7 @@ public class PostOfficeTest extends TestBase {
     public void cancelFutureEventTest() {
         long FIVE_SECONDS = 5000;
         long now = System.currentTimeMillis();
-        String TRACE_ID = Utility.getInstance().getUuid();
+        String TRACE_ID = util.getUuid();
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event1 = new EventEnvelope().setTo(HELLO_WORLD)
                 .setTraceId(TRACE_ID).setTracePath("GET /1").setBody(1);
@@ -871,7 +871,7 @@ public class PostOfficeTest extends TestBase {
         String WORLD = "world";
         String RETURN_VALUE = "some_value";
         String MY_FUNCTION = "my.test.function";
-        String traceId = Utility.getInstance().getUuid();
+        String traceId = util.getUuid();
         LambdaFunction f = (headers, input, instance) -> {
             // guarantee that this function has received the correct trace and journal
             Map<String, Object> trace = (Map<String, Object>) input;
@@ -915,7 +915,7 @@ public class PostOfficeTest extends TestBase {
         String WORLD = "world";
         String RETURN_VALUE = "some_value";
         String MY_FUNCTION = "my.test.function";
-        String traceId = Utility.getInstance().getUuid();
+        String traceId = util.getUuid();
         LambdaFunction f = (headers, input, instance) -> {
             // guarantee that this function has received the correct trace and journal
             Map<String, Object> trace = (Map<String, Object>) input;
@@ -965,7 +965,7 @@ public class PostOfficeTest extends TestBase {
         String WORLD = "world";
         String RETURN_VALUE = "some_value";
         String SIMPLE_FUNCTION = "another.simple.function";
-        String traceId = Utility.getInstance().getUuid();
+        String traceId = util.getUuid();
         LambdaFunction f = (headers, input, instance) -> {
             // guarantee that this function has received the correct trace
             Map<String, Object> trace = (Map<String, Object>) input;
@@ -1007,7 +1007,7 @@ public class PostOfficeTest extends TestBase {
         String WORLD = "world";
         String RETURN_VALUE = "some_value";
         String SIMPLE_FUNCTION = "another.simple.function";
-        String traceId = Utility.getInstance().getUuid();
+        String traceId = util.getUuid();
         LambdaFunction f = (headers, input, instance) -> {
             // guarantee that this function has received the correct trace
             Map<String, Object> trace = (Map<String, Object>) input;
@@ -1773,7 +1773,7 @@ public class PostOfficeTest extends TestBase {
         response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         map = (Map<String, Object>) response.getBody();
-        assertEquals(Utility.getInstance().date2str(now), map.get("body"));
+        assertEquals(util.date2str(now), map.get("body"));
     }
 
     @SuppressWarnings("unchecked")

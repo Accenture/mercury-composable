@@ -24,7 +24,6 @@ import org.platformlambda.core.util.SimpleCache;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 public class CacheTest {
 
     // note that the cache expiry has a minimum value of 1000 ms
