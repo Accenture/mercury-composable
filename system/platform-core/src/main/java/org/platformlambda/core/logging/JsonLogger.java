@@ -50,6 +50,7 @@ public abstract class JsonLogger extends AbstractAppender {
         data.put("level", String.valueOf(event.getLevel()));
         data.put("source", String.valueOf(event.getSource()));
         data.put("message", getMessage(event));
+        data.put("thread", event.getThreadId());
         Throwable ex = event.getThrown();
         if (ex != null) {
             data.putAll(util.stackTraceToMap(util.getStackTrace(ex)));
