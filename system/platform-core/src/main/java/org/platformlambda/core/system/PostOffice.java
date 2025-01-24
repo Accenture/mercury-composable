@@ -74,7 +74,8 @@ public class PostOffice {
 
     /**
      * Create a PostOffice instance with hard coded route, traceId and tracePath.
-     * This is normally used for unit test purpose.
+     * <p>
+     * IMPORTANT: This should only be used for unit test purpose, and you should not manually create a traceId
      *
      * @param myRoute to emulate the sender's route name
      * @param myTraceId to emulate a traceId
@@ -90,7 +91,8 @@ public class PostOffice {
 
     /**
      * Create a PostOffice instance with hard coded route, traceId and tracePath.
-     * This is normally used for unit test purpose.
+     * <p>
+     * IMPORTANT: This should only be used for unit test purpose, and you should not manually create a traceId
      *
      * @param myRoute to emulate the sender's route name
      * @param myTraceId to emulate a traceId

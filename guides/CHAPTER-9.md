@@ -319,6 +319,19 @@ PostOffice po = new PostOffice(headers, instance);
 The PostOffice is the event manager that you can use to send asynchronous events or to make RPC requests.
 The constructor uses the READ only metadata in the "headers" argument in the "handleEvent" method of your function.
 
+For end-to-end traceability, please use the PostOffice instance to make requests to a composable library.
+It maintains the same traceId and tracePath in the traceability graph. If your handleEvent method calls another
+method in your class, you should pass this PostOffice instance so that any event calls from the other method
+can propagate the tracing information.
+
+For Unit Tests, a test does not start with the handleEvent of a LambdaFunction, you can use the following
+to create a PostOffice with your own traceId. The "myRoute" is the caller's route name. In this case, you can
+set it to "unit.test".
+
+```java
+public PostOffice(String myRoute, String myTraceId, String myTracePath);
+```
+
 ### Send an asynchronous event to a function
 
 You can send an asynchronous event like this.
