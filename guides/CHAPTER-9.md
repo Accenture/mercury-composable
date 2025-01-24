@@ -324,7 +324,7 @@ It maintains the same traceId and tracePath in the traceability graph. If your h
 method in your class, you should pass this PostOffice instance so that any event calls from the other method
 can propagate the tracing information.
 
-For Unit Tests, a test does not start with the handleEvent of a LambdaFunction, you can use the following
+For Unit Tests, since a test does not start with the handleEvent of a LambdaFunction, you can use the following
 to create a PostOffice with your own traceId. The "myRoute" is the caller's route name. In this case, you can
 set it to "unit.test".
 
