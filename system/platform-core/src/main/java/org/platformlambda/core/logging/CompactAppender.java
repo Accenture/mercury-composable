@@ -18,16 +18,15 @@
 
 package org.platformlambda.core.logging;
 
-import com.google.gson.Gson;
 import org.apache.logging.log4j.core.*;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-import org.platformlambda.core.serializers.SimpleMapper;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * This is reserved for system use.
@@ -35,7 +34,6 @@ import java.io.Serializable;
  */
 @Plugin(name = "CompactLogger", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class CompactAppender extends JsonLogger {
-    private static final Gson serializer = SimpleMapper.getInstance().getCompactGson();
 
     protected CompactAppender(String name, Filter filter,
                               Layout<? extends Serializable> layout,
@@ -55,7 +53,9 @@ public class CompactAppender extends JsonLogger {
     @Override
     public void append(LogEvent event) {
         if (event != null) {
-            System.out.print(serializer.toJson(getJson(event)) + "\n");
+            // 0 - true if pretty print
+            // 1 - map of key-values
+            queue.add(Map.of("0", false, "1", getJson(event)));
         }
     }
 }

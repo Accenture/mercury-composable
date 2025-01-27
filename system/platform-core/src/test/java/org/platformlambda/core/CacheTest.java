@@ -25,7 +25,6 @@ import org.platformlambda.core.util.SimpleCache;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CacheTest {
-
     // note that the cache expiry has a minimum value of 1000 ms
     private static final ManagedCache cache1 = ManagedCache.createCache("hello.world", 1000, 100);
     private static final SimpleCache cache2 = SimpleCache.createCache("simple.cache", 500);

@@ -571,7 +571,7 @@ public class AppStarter {
                 config = new ConfigReader(p);
                 log.info("Loading config from {}", p);
             } catch (IOException e) {
-                log.error("Unable to load REST entries from {} - {}", p, e.getMessage());
+                log.warn("Unable to load REST entries from {} - {}", p, e.getMessage());
                 continue;
             }
             // load configuration for static content filters, cors and headers

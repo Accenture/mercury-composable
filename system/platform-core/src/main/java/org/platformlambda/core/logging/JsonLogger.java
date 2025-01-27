@@ -18,6 +18,7 @@
 
 package org.platformlambda.core.logging;
 
+import com.google.gson.Gson;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
@@ -26,22 +27,62 @@ import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.impl.MutableLogEvent;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class JsonLogger extends AbstractAppender {
+    protected static final ConcurrentLinkedQueue<Map<String, Object>> queue = new ConcurrentLinkedQueue<>();
+    private static final Gson prettySerializer = SimpleMapper.getInstance().getPrettyGson();
+    private static final Gson compactSerializer = SimpleMapper.getInstance().getCompactGson();
     private static final Utility util = Utility.getInstance();
+    private static final AtomicInteger counter = new AtomicInteger(0);
+    private static boolean running = true;
 
     protected JsonLogger(String name, Filter filter,
                          Layout<? extends Serializable> layout,
                          boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
+        if (counter.incrementAndGet() == 1) {
+            // perform asynchronous logging and do System.out.print orderly
+            Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
+                Runtime.getRuntime().addShutdownHook(new Thread(JsonLogger::shutdown));
+                while (running) {
+                    var message = queue.poll();
+                    if (message == null) {
+                        try {
+                            // Thread.sleep is non-blocking in a virtual thread
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            // just ignore it
+                        }
+                    } else {
+                        // message is encoded as key-values with elements ("0" and "1")
+                        var pretty = message.get("0");
+                        var data = message.get("1");
+                        if (Boolean.TRUE.equals(pretty)) {
+                            System.out.print(prettySerializer.toJson(data) + "\n");
+                        } else {
+                            System.out.print(compactSerializer.toJson(data) + "\n");
+                        }
+                    }
+                }
+            });
+        }
         // disable other use of System.out
         System.setOut(new SystemOutFilter(System.out));
         System.setErr(new SystemOutFilter(System.err));
+    }
+
+    private static void shutdown() {
+        running = false;
     }
 
     protected Map<String, Object> getJson(LogEvent event) {
@@ -61,26 +102,42 @@ public abstract class JsonLogger extends AbstractAppender {
     private Object getMessage(LogEvent event) {
         Message message = event.getMessage();
         if (message != null) {
-            if (message instanceof ObjectMessage obj) {
-                return String.valueOf(obj.getParameter());
-            }
+            /*
+             * variances of log event
+             */
             if (event instanceof MutableLogEvent mutableEvent) {
-                String format = mutableEvent.getFormat();
-                /*
-                 * Only support logging JSON using format string "{}".
-                 * Allows operator putting a few leading or trailing spaces unintentionally.
-                 */
-                if (format != null && format.length() < 10 && "{}".equals(format.trim())) {
-                    Object[] objects = message.getParameters();
-                    // Note that it is possible to have 2 objects where the second one is a Throwable
-                    if (objects != null && objects.length > 0 && objects[0] instanceof Map) {
-                        return objects[0];
-                    }
+                var content = getMapContent(mutableEvent.getFormat(), message.getParameters());
+                if (content != null) {
+                    return content;
                 }
+            } else if (message instanceof ParameterizedMessage msg) {
+                var content = getMapContent(msg.getFormat(), message.getParameters());
+                if (content != null) {
+                    return content;
+                }
+            } else if (message instanceof ObjectMessage obj) {
+                return String.valueOf(obj.getParameter());
             }
             return message.getFormattedMessage();
         } else {
             return "null";
         }
+    }
+
+    /**
+     * Handle the use case to log JSON (map of key-values) using log.info("{}", keyValues)
+     *
+     * @param format should be "{}"
+     * @param objects are the log parameters
+     * @return map of key-values
+     */
+    private Object getMapContent(String format, Object[] objects) {
+        if ("{}".equals(format)) {
+            // Note that it is possible to have 2 objects where the second one is a Throwable
+            if (objects != null && objects.length > 0 && objects[0] instanceof Map) {
+                return objects[0];
+            }
+        }
+        return null;
     }
 }

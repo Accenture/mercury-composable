@@ -23,3 +23,11 @@ application.properties will be used.
 
 While application.properties can also store text based key-values, application.yml supports text, numbers, boolean,
 list and map values.
+
+## JSON logging
+
+To illustrate JSON logging, we have configured the following parameter in application.properties
+
+```shell
+log.format=json
+```
