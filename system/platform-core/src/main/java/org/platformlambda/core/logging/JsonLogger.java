@@ -64,13 +64,20 @@ public abstract class JsonLogger extends AbstractAppender {
                             // just ignore it
                         }
                     } else {
-                        // message is encoded as key-values with elements ("0" and "1")
+                        // enforce data contract
                         var pretty = message.get("0");
                         var data = message.get("1");
-                        if (Boolean.TRUE.equals(pretty)) {
-                            System.out.print(prettySerializer.toJson(data) + "\n");
-                        } else {
-                            System.out.print(compactSerializer.toJson(data) + "\n");
+                        if (pretty instanceof Boolean prettyPrint && data instanceof Map) {
+                            try {
+                                if (prettyPrint) {
+                                    System.out.print(prettySerializer.toJson(data) + "\n");
+                                } else {
+                                    System.out.print(compactSerializer.toJson(data) + "\n");
+                                }
+                            } catch (Exception e) {
+                                // guarantee printing even when serializer fails
+                                System.out.print(data + "\n");
+                            }
                         }
                     }
                 }
@@ -102,9 +109,7 @@ public abstract class JsonLogger extends AbstractAppender {
     private Object getMessage(LogEvent event) {
         Message message = event.getMessage();
         if (message != null) {
-            /*
-             * variances of log event
-             */
+            // variances of log event
             if (event instanceof MutableLogEvent mutableEvent) {
                 var content = getMapContent(mutableEvent.getFormat(), message.getParameters());
                 if (content != null) {
