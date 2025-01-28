@@ -423,7 +423,7 @@ Numbers in a value are handled differently in two cases.
 *Serialization of an event envelope*: this is done using the MsgPack protocol for binary
 JSON. The serialization process is optimized for performance and payload size. As a result,
 a small number that is declared as Long will be serialized as an Integer (Long uses 8 bytes
-and Integer uses 4 bytes).
+and Integer uses 2 or 4 bytes).
 
 *Serialization of nested Map in a PoJo*: this is done using the GSON library. It is optimized
 for type matching. Integers are treated as Long numbers.
