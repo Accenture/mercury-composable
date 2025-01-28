@@ -623,10 +623,10 @@ public class CompileFlows implements EntryPoint {
         // Detect and reformat "negate" of a model value in LHS and RHS
         // !model.key becomes model.key:! for consistent processing by TaskExecutor
         if (lhs.startsWith(NEGATE_MODEL)) {
-            lhs = lhs.substring(1).trim() + ":!";
+            lhs = lhs.substring(1) + ":!";
         }
         if (rhs.startsWith(NEGATE_MODEL)) {
-            rhs = rhs.substring(1).trim() + ":!";
+            rhs = rhs.substring(1) + ":!";
         }
         return lhs + " " + MAP_TO + " " + rhs;
     }

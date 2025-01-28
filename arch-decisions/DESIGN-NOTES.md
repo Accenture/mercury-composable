@@ -43,6 +43,28 @@ The convertValue method has been consolidated into the readValue method.
 For efficient and serialization performance, we use MsgPack as schemaless binary transport for
 EventEnvelope that contains event metadata, headers and payload.
 
+### Handling numbers in a Map
+
+The system assumes each key of a Map object to be a text string. If you use integer as a key,
+it will be converted to a text string. The assumed Map class is `Map<String, Object>`.
+
+Numbers in a value are handled differently in two cases.
+
+*Serialization of an event envelope*: this is done using the MsgPack protocol for binary
+JSON. The serialization process is optimized for performance and payload size. As a result,
+a small number that is declared as Long will be serialized as an Integer (Long uses 8 bytes
+and Integer uses 4 bytes).
+
+*Serialization of nested Map in a PoJo*: this is done using the GSON library. It is optimized
+for type matching. Integers are treated as Long numbers.
+
+If you want to enforce Integer or Long, please design a PoJo to fit your use case.
+
+However, floating point numbers (Float and Double) are rendered without type matching.
+
+For untyped numbers, you may use the convenient type conversion methods in the platform-core's
+Utility class. For examples, util.str2int and util.str2long.
+
 ### User provided serializers
 
 This provides more flexibility for user function to take full control of their PoJo serialization needs.
