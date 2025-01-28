@@ -113,6 +113,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FLOAT_SUFFIX = "float";
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
+    private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
@@ -892,6 +893,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
                 case BOOLEAN_SUFFIX -> {
                     return "true".equalsIgnoreCase(String.valueOf(value));
+                }
+                case NEGATE_SUFFIX -> {
+                    return !("true".equalsIgnoreCase(String.valueOf(value)));
                 }
                 case INTEGER_SUFFIX -> {
                     return util.str2int(String.valueOf(value));

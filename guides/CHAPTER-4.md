@@ -542,6 +542,72 @@ The "decision" value is also saved to the state machine (`model`) for subsequent
       - 'result -> model.decision'
 ```
 
+### Simple type matching and conversion
+
+Event script's state machine supports simple type matching and conversion for the model namespace.
+
+This "impedance matching" feature allows us to accommodate minor interface contract changes without
+refactoring business logic of a user function.
+
+This is supported in both the left-hand-side and right-hand-side of both input and output data mappings.
+
+For the left-hand-side, the state machine's model value is matched or converted to the target data type before
+setting the value of the right-hand-side. The state machine values are unchanged.
+
+For the right-hand-side, the matched or converted value is applied to the state machine's model value.
+
+The syntax is `model.somekey:type` where "type" is one of the following:
+
+| Type                  | Match value as               | Example                               |
+|:----------------------|:-----------------------------|:--------------------------------------|
+| text                  | text string                  | model.someKey:text                    |
+| binary                | byte array                   | model.someKey:binary                  |
+| int                   | integer or -1 if not numeric | model.someKey:int                     |
+| long                  | long or -1 if not numeric    | model.someKey:long                    |
+| float                 | float or -1 if not numeric   | model.someKey:float                   |
+| double                | double or -1 if not numeric  | model.someKey:double                  |
+| boolean               | true or false                | model.someKey:boolean                 |
+| boolean(value)        | true if value matches        | model.someKey:boolean(positive)       |
+| boolean(value=true)   | true if value matches        | model.someKey:boolean(positive=true)  |
+| boolean(value=false)  | false if value matches       | model.someKey:boolean(negative=false) |
+| and(model.key)        | boolean AND of 2 model keys  | model.someKey:and(model.another)      |
+| or(model.key)         | boolean OR of 2 model keys   | model.someKey:or(model.another)       |
+| !model.key            | negate of a model variable   | !model.someKey                        |
+| substring(start, end) | extract a substring          | model.someKey:substring(0, 5)         |
+| substring(start)      | extract a substring          | model.someKey:substring(5)            |
+| b64                   | byte-array to Base64 text    | model.someKey:b64                     |
+| b64                   | Base64 text to byte-array    | model.someKey:b64                     |
+
+For Base64 type matching, it handles 2 symmetrically use cases. If the key-value is a text string,
+the system would assume it is a Base64 text string and convert it to a byte-array. If the key-value
+is a byte-array, the system will encode it into a Base64 text string.
+
+For simplicity of syntax, each type matching command is a single operation. For more complex
+operation such as multiple AND, OR and NEGATE operators, you can configure multiple steps of
+operation.
+
+For boolean with value matching, you can test if the key-value in the left-hand-side is a null
+value. An interesting use case is a simple decision task using the built-in no-op function.
+For example, when a control file for the application is not available, your application will
+switch to run in dev mode.
+
+A sample task may look like this:
+
+```yaml
+first.task: 'no.op'
+
+tasks:
+- input:
+    - 'file(binary:/tmp/interesting-config-file) -> model.is-local:boolean(null=true)'
+  process: 'no.op'
+  output:
+    - 'model.is-local -> decision'
+  execution: decision
+  next:
+    - 'start.in.dev.mode'
+    - 'start.in.cloud'
+```
+
 ### Metadata for each flow instance
 
 For each flow instance, the state machine in the "model" namespace provides the following metadata that
@@ -988,67 +1054,6 @@ where it set the status code in the result set so that the system can map the st
 from the result set to the next task or to the HTTP output status code.
 
 ## Advanced features
-
-### Simple type matching and conversion
-
-Event script's state machine supports simple type matching and conversion. This "impedance matching" feature
-allows us to accommodate minor interface contract changes without refactoring business logic of a user function.
-
-This is supported in both the left-hand-side and right-hand-side of both input and output data mappings.
-
-For the left-hand-side, the state machine's model value is matched or converted to the target data type before
-setting the value of the right-hand-side. The state machine values are unchanged.
-
-For the right-hand-side, the matched or converted value is applied to the state machine's model value.
-
-The syntax is `model.somekey:type` where "type" is one of the following:
-
-| Type                  | Match value as               | Example                               |
-|:----------------------|:-----------------------------|:--------------------------------------|
-| text                  | text string                  | model.someKey:text                    |
-| binary                | byte array                   | model.someKey:binary                  |
-| int                   | integer or -1 if not numeric | model.someKey:int                     |
-| long                  | long or -1 if not numeric    | model.someKey:long                    |
-| float                 | float or -1 if not numeric   | model.someKey:float                   |
-| double                | double or -1 if not numeric  | model.someKey:double                  |
-| boolean               | true or false                | model.someKey:boolean                 |
-| boolean(value)        | true if value matches        | model.someKey:boolean(positive)       |
-| boolean(value=true)   | true if value matches        | model.someKey:boolean(positive=true)  |
-| boolean(value=false)  | false if value matches       | model.someKey:boolean(negative=false) |
-| and(model.key)        | boolean AND of 2 model keys  | model.someKey:and(model.another)      |
-| or(model.key)         | boolean OR of 2 model keys   | model.someKey:or(model.another)       |
-| substring(start, end) | extract a substring          | model.someKey:substring(0, 5)         |
-| substring(start)      | extract a substring          | model.someKey:substring(5)            |
-| b64                   | byte-array to Base64 text    | model.someKey:b64                     |
-| b64                   | Base64 text to byte-array    | model.someKey:b64                     |
-
-For boolean with value matching, the value can be null. This allows your function to test if the
-key-value in the left-hand-side is a null value.
-
-For Base64 type matching, if the key-value is a text string, the system will assume it is a
-Base64 text string and convert it to a byte-array. If the key-value is a byte-array, the system
-will encode it into a Base64 text string.
-
-An interesting use case of type matching is a simple decision task using the built-in no-op function.
-For example, when a control file for the application is not available, your application will switch
-to run in dev mode.
-
-A sample task may look like this:
-
-```yaml
-first.task: 'no.op'
-
-tasks:
-- input:
-    - 'file(binary:/tmp/interesting-config-file) -> model.is-local:boolean(null=true)'
-  process: 'no.op'
-  output:
-    - 'model.is-local -> decision'
-  execution: decision
-  next:
-    - 'start.in.dev.mode'
-    - 'start.in.cloud'
-```
 
 ### External state machine
 

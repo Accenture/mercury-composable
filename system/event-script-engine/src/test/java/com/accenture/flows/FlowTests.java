@@ -365,6 +365,8 @@ public class FlowTests extends TestBase {
         assertEquals(12.345, original.get("float_number"));
         assertEquals(12.345, original.get("double_number"));
         assertEquals(true, original.get("boolean_value"));
+        assertEquals(false, original.get("negate_value"));
+        assertEquals(false, original.get("also_negate_value"));
         assertEquals(System.getenv("PATH"), original.get("path"));
         // check metadata for a flow
         assertEquals(TRACE_ID, original.get("trace_id"));

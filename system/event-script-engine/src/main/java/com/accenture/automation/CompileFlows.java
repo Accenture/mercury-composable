@@ -57,6 +57,7 @@ public class CompileFlows implements EntryPoint {
     private static final String INPUT_NAMESPACE = "input.";
     private static final String OUTPUT_NAMESPACE = "output.";
     private static final String MODEL_NAMESPACE = "model.";
+    private static final String NEGATE_MODEL = "!model.";
     private static final String RESULT_NAMESPACE = "result.";
     private static final String HEADER_NAMESPACE = "header.";
     private static final String HEADER = "header";
@@ -138,7 +139,7 @@ public class CompileFlows implements EntryPoint {
                     }
                 }
             } catch (IOException e) {
-                log.error("Unable to load Event Scripts from {} - {}", p, e.getMessage());
+                log.warn("Unable to load Event Scripts from {} - {}", p, e.getMessage());
             }
         }
         List<String> flows = Flows.getAllFlows();
@@ -612,13 +613,21 @@ public class CompileFlows implements EntryPoint {
     }
 
     private String filterMapping(String mapping) {
-        String text = mapping.trim();
+        var text = mapping.trim();
         int sep = text.indexOf(MAP_TO);
         if (sep == -1) {
             return mapping;
         }
-        String lhs = text.substring(0, sep).trim();
-        String rhs = text.substring(sep+2).trim();
+        var lhs = text.substring(0, sep).trim();
+        var rhs = text.substring(sep+2).trim();
+        // Detect and reformat "negate" of a model value in LHS and RHS
+        // !model.key becomes model.key:! for consistent processing by TaskExecutor
+        if (lhs.startsWith(NEGATE_MODEL)) {
+            lhs = lhs.substring(1).trim() + ":!";
+        }
+        if (rhs.startsWith(NEGATE_MODEL)) {
+            rhs = rhs.substring(1).trim() + ":!";
+        }
         return lhs + " " + MAP_TO + " " + rhs;
     }
 
