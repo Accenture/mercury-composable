@@ -91,6 +91,11 @@ of application performance and throughput.
 
 In Mercury version 3.1, the platform core engine is fully integrated with Java 21 virtual thread.
 
+Since Mercury version 4, the event script engine is integrated with the platform-core. This adds
+event choreography capability directly in the event system. Event script describes a transaction as
+an event flow configuration that drives composable functions to work together as a single application.
+A composable function, by design, is self-contained with I/O immutability.
+
 ## Spring Boot 3
 
 The `platform-core` includes a non-blocking HTTP and websocket server for standalone operation without
