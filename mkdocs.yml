@@ -20,4 +20,5 @@ nav:
     - Inclusivity: INCLUSIVITY.md
     - Code of Conduct: CODE_OF_CONDUCT.md
     - Contribution: CONTRIBUTING.md
+    - Contents: guides/TABLE-OF-CONTENTS.md
 theme: readthedocs
