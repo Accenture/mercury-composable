@@ -51,7 +51,7 @@ public abstract class JsonLogger extends AbstractAppender {
                          boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
         if (counter.incrementAndGet() == 1) {
-            // perform asynchronous logging and do System.out.print orderly
+            // perform asynchronous logging and do System.out orderly
             Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
                 Runtime.getRuntime().addShutdownHook(new Thread(JsonLogger::shutdown));
                 while (running) {
@@ -70,22 +70,19 @@ public abstract class JsonLogger extends AbstractAppender {
                         if (pretty instanceof Boolean prettyPrint && data instanceof Map) {
                             try {
                                 if (prettyPrint) {
-                                    System.out.print(prettySerializer.toJson(data) + "\n");
+                                    System.out.println(prettySerializer.toJson(data));
                                 } else {
-                                    System.out.print(compactSerializer.toJson(data) + "\n");
+                                    System.out.println(compactSerializer.toJson(data));
                                 }
                             } catch (Exception e) {
                                 // guarantee printing even when serializer fails
-                                System.out.print(data + "\n");
+                                System.out.println(data);
                             }
                         }
                     }
                 }
             });
         }
-        // disable other use of System.out
-        System.setOut(new SystemOutFilter(System.out));
-        System.setErr(new SystemOutFilter(System.err));
     }
 
     private static void shutdown() {
