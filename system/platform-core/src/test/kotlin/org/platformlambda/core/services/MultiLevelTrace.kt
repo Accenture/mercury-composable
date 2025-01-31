@@ -21,14 +21,14 @@ package org.platformlambda.core.services
 import org.platformlambda.core.annotations.PreLoad
 import org.platformlambda.core.models.EventEnvelope
 import org.platformlambda.core.models.KotlinLambdaFunction
-import org.platformlambda.core.system.FastRPC
 import org.platformlambda.core.system.Platform
 import org.platformlambda.core.system.PostOffice
+import reactor.core.publisher.Mono
+import reactor.core.publisher.MonoSink
 
 @PreLoad(route="hello.level.1", instances=10)
 class MultiLevelTrace: KotlinLambdaFunction<EventEnvelope, Any> {
     override suspend fun handleEvent(headers: Map<String, String>, input: EventEnvelope, instance: Int): Any {
-        val fastRPC = FastRPC(headers)
         val po = PostOffice(headers, instance)
         val result: MutableMap<String, Any> = HashMap()
         result["headers"] = headers
@@ -43,8 +43,12 @@ class MultiLevelTrace: KotlinLambdaFunction<EventEnvelope, Any> {
         po.annotateTrace("another_key", "another_value")
         // send to level-2 service
         val request = EventEnvelope().setTo("hello.level.2").setBody("test")
-        val response = fastRPC.awaitRequest(request, 5000)
-        result["level-2"] = response.body
-        return result
+        return Mono.create({ callback: MonoSink<EventEnvelope> ->
+            po.asyncRequest(request, 5000)
+                .onSuccess({ res: EventEnvelope ->
+                    result["level-2"] = res.body
+                    callback.success(EventEnvelope().setBody(result))
+                })
+        })
     }
 }

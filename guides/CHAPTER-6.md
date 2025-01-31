@@ -42,16 +42,13 @@ The REST automation engine and the lightweight HTTP server will be turned off.
 > *IMPORTANT*: When using Event Script, you must keep `rest.automation=true` because the HTTP flow adapter
   depends on the REST automation engine for incoming HTTP requests.
 
-> *Note*: the platform-core library assumes the application configuration files to be either
+> *Note*: The platform-core library assumes the application configuration files to be either
   application.yml or application.properties. If you use custom Spring profile, please keep the
   application.yml or application.properties for the platform-core. If you use default Spring 
   profile, both platform-core and Spring Boot will use the same configuration files.
 
 You can customize your error page using the default `errorPage.html` by copying it from the platform-core's or 
 rest-spring's resources folder to your source project. The default page is shown below.
-
-This is the HTML error page that the platform-core or rest-spring library uses. You can update it with
-your corporate style guide. Please keep the parameters (status, message, path, warning) intact.
 
 ```html
 <!DOCTYPE html>
@@ -71,7 +68,6 @@ your corporate style guide. Please keep the parameters (status, message, path, w
         <tr><td style="font-style: italic; width: 100px">Type</td><td>error</td></tr>
         <tr><td style="font-style: italic; width: 100px">Status</td><td>${status}</td></tr>
         <tr><td style="font-style: italic; width: 100px">Message</td><td>${message}</td></tr>
-        <tr><td style="font-style: italic; width: 100px">Path</td><td>${path}</td></tr>
         </tbody>
     </table>
 
@@ -79,6 +75,9 @@ your corporate style guide. Please keep the parameters (status, message, path, w
 </body>
 </html>
 ```
+
+This is the HTML error page that the platform-core or rest-spring library uses. You can update it with
+your corporate style guide. Please keep the parameters (status, message, path, warning) intact.
 
 If you want to keep REST automation's lightweight HTTP server to co-exist with Spring Boot's Tomcat or other 
 application server, please add the following to your application.properties file:
@@ -97,8 +96,8 @@ Let's review the `rest-spring-3-example` demo application in the "examples/rest-
 
 You can use the rest-spring-3-example as a template to create a Spring Boot application.
 
-In addition to the REST automation engine that let you create REST endpoints by configuration, you can also
-programmatically create REST endpoints with the following approaches:
+In addition to the REST automation engine that lets you create REST endpoints by configuration, you can also
+programmatically create REST endpoints with the following methods:
 
 1. Spring RestControllers with Mono/Flux
 2. Servlet 3.1 WebServlets
@@ -167,13 +166,13 @@ platform.register("hello.world", echo, 20);
 
 When "hello.world" responds, its result set will be returned to the `onSuccess` method as a "future response".
 
-The "onSuccess" method then sends the response to the browser using the JAX-RS resume mechanism.
+The "onSuccess" method then sends the response to the browser.
 
 The `AsyncHelloConcurrent` is the same as the `AsyncHelloWorld` except that it performs a "fork-n-join" operation
 to multiple instances of the "hello.world" function.
 
-Unlike "rest.yaml" that defines tracing by configuration, you can turn on tracing programmatically in a JAX-RS
-endpoint. To enable tracing, the function sets the trace ID and path in the PostOffice constructor. 
+Unlike "rest.yaml" that defines tracing by configuration, you must turn on tracing programmatically in a Spring
+RestController endpoint. To enable tracing, the function sets the trace ID and path in the PostOffice constructor. 
 
 When you try the endpoint at http://127.0.0.1:8083/api/hello/world, it will echo your HTTP request headers. 
 In the command terminal, you will see tracing information in the console log like this:
@@ -196,7 +195,7 @@ websocket.server.port=8085
 
 The above assumes Spring Boot runs on port 8083 and the websocket server runs on port 8085.
 
-> *Note*: "websocket.server.port" is an alias of "rest.server.port"
+> *Note*: The "websocket.server.port" parameter is an alias of "rest.server.port"
 
 You can create a websocket service with a Java class like this:
 
@@ -223,9 +222,8 @@ To try out the demo websocket server, visit http://127.0.0.1:8083 and select "We
 
 # Spring Boot version 3
 
-The `rest-spring-3` subproject is a pre-configured Spring Boot 3 library. 
-
-In "rest-spring-3", Spring WebFlux replaces JAX-RS as the asynchronous HTTP servlet engine.
+The `rest-spring-3` subproject is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
+HTTP servlet engine.
 <br/>
 
 |               Chapter-5                |                   Home                    |            Chapter-7            |

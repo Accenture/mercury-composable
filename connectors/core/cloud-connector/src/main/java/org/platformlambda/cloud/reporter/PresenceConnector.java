@@ -35,11 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PresenceConnector implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(PresenceConnector.class);
-
     private static final String APP_GROUP = ServiceRegistry.APP_GROUP;
-
     private static final String FAST_KEEP_ALIVE = "member.keep.alive";
-
     private static final String TYPE = "type";
     private static final String OPEN = "open";
     private static final String CLOSE = "close";

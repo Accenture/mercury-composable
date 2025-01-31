@@ -18,20 +18,12 @@
 
 package org.platformlambda.core.models;
 
-import org.platformlambda.core.util.Utility;
+public class InboxCorrelation {
+    public String to;
+    public String cid;
 
-/**
- * This is reserved for system use.
- * DO NOT use this directly in your application code.
- */
-public class NonBlockingInbox extends InboxBase implements AutoCloseable {
-
-    public NonBlockingInbox() {
-        this.id = "r."+ Utility.getInstance().getUuid();
-        inboxes.put(id, this);
-    }
-    @Override
-    public void close() throws Exception {
-        InboxBase.inboxes.remove(id);
+    public InboxCorrelation(String to, String cid) {
+        this.to = to;
+        this.cid = cid;
     }
 }

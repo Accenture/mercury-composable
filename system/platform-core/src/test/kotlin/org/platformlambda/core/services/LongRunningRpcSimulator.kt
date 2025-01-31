@@ -20,47 +20,53 @@ package org.platformlambda.core.services
 
 import org.platformlambda.core.models.EventEnvelope
 import org.platformlambda.core.models.KotlinLambdaFunction
-import org.platformlambda.core.system.FastRPC
 import org.platformlambda.core.system.PostOffice
 import org.platformlambda.core.util.Utility
+import reactor.core.publisher.Mono
+import reactor.core.publisher.MonoSink
 import java.util.*
 
 
 /**
  * Demonstrate non-blocking RPC for single request and fork-n-join
- *
- * Since this is a "suspend" function, the awaitRequest will suspend this coroutine until a response arrives.
  */
 class LongRunningRpcSimulator : KotlinLambdaFunction<EventEnvelope, Any> {
 
     override suspend fun handleEvent(headers: Map<String, String>, input: EventEnvelope, instance: Int): Any {
         val po = PostOffice(headers, instance)
-        val fastRPC = FastRPC(headers)
         val util = Utility.getInstance()
         po.annotateTrace("demo", "long-running")
         po.annotateTrace("time", util.date2str(Date()))
         val timeout = Utility.getInstance().str2long(headers.getOrDefault(TIMEOUT, "5000"))
-        if (headers.containsKey(FORK_N_JOIN)) {
-            val forward = EventEnvelope().setTo(HELLO_WORLD).setHeaders(headers).setHeader(BODY, input.body)
-            val requests  = ArrayList<EventEnvelope>()
-            // create a list of 4 request events
-            for (i in 0..3) {
-                requests.add(EventEnvelope(forward.toBytes()).setBody(i).setCorrelationId("cid-$i"))
-            }
-            val consolidated = HashMap<String, Any>()
-            val response = fastRPC.awaitRequest(requests, timeout)
-            for (res in response) {
-                if (res.status == 200) {
-                    consolidated[res.correlationId] = res.body
+        return Mono.create({ callback: MonoSink<EventEnvelope> ->
+            if (headers.containsKey(FORK_N_JOIN)) {
+                val forward = EventEnvelope().setTo(HELLO_WORLD).setHeaders(headers).setHeader(BODY, input.body)
+                val requests  = ArrayList<EventEnvelope>()
+                // create a list of 4 request events
+                for (i in 0..3) {
+                    requests.add(EventEnvelope(forward.toBytes()).setBody(i).setCorrelationId("cid-$i"))
                 }
+                val consolidated = HashMap<String, Any>()
+                po.asyncRequest(requests, timeout, false)
+                    .onSuccess({ response: List<EventEnvelope> ->
+                        for (res in response) {
+                            if (res.status == 200) {
+                                consolidated[res.correlationId] = res.body
+                            }
+                        }
+                        callback.success(EventEnvelope().setBody(consolidated))
+                    })
             }
-            return EventEnvelope().setBody(consolidated)
-        } else {
-            // simulate delay of one second by setting body to even number
-            val forward = EventEnvelope().setTo(HELLO_WORLD).setBody(2)
-                .setHeaders(headers).setHeader(BODY, input.body)
-            return fastRPC.awaitRequest(forward, timeout)
-        }
+            else {
+                // simulate delay of one second by setting body to even number
+                val forward = EventEnvelope().setTo(HELLO_WORLD).setBody(2)
+                                .setHeaders(headers).setHeader(BODY, input.body)
+                po.asyncRequest(forward, timeout, false)
+                    .onSuccess({ res: EventEnvelope ->
+                        callback.success(res)
+                    })
+            }
+        })
     }
 
     companion object {

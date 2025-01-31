@@ -17,6 +17,7 @@ to avoid breaking the system unintentionally.
 | system.ws.server.cleanup     | Websocket server cleanup service      | platform-core    |
 | http.auth.handler            | REST automation authentication router | platform-core    |
 | event.api.service            | Event API service                     | platform-core    |
+| temporary.inbox              | Event listener for RPC                | platform-core    |
 | event.script.manager         | Instantiate new event flow instance   | event-script     |
 | task.executor                | Perform event choreography            | event-script     |
 | http.flow.adapter            | Built-in flow adapter                 | event-script     |
@@ -24,6 +25,7 @@ to avoid breaking the system unintentionally.
 | system.service.registry      | Distributed routing registry          | Connector        |
 | system.service.query         | Distributed routing query             | Connector        |
 | cloud.connector.health       | Cloud connector health service        | Connector        |
+| cloud.health.inbox           | Event listerner for loopback test     | Connector        |
 | cloud.manager                | Cloud manager service                 | Connector        |
 | presence.service             | Presence signal service               | Connector        |
 | presence.housekeeper         | Presence keep-alive service           | Connector        |

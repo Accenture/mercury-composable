@@ -35,6 +35,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 @ZeroTracing
 public class ServiceRegistry implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(ServiceRegistry.class);

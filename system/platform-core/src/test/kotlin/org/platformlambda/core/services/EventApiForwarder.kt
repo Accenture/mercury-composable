@@ -21,27 +21,37 @@ package org.platformlambda.core.services
 import org.platformlambda.core.annotations.PreLoad
 import org.platformlambda.core.models.EventEnvelope
 import org.platformlambda.core.models.KotlinLambdaFunction
-import org.platformlambda.core.system.FastRPC
+import org.platformlambda.core.system.PostOffice
 import org.platformlambda.core.util.Utility
-import java.util.HashMap
+import reactor.core.publisher.Mono
+import reactor.core.publisher.MonoSink
 
 @PreLoad(route="event.api.forwarder", instances=10)
 class EventApiForwarder: KotlinLambdaFunction<EventEnvelope, Any> {
     override suspend fun handleEvent(headers: Map<String, String>, input: EventEnvelope, instance: Int): Any {
-        val fastRPC = FastRPC(headers)
+        val po = PostOffice(headers, instance)
         val util = Utility.getInstance()
         val timeout = util.str2long(headers["timeout"])
         val endpoint = headers["endpoint"]
         val authorization = headers["authorization"]
         if (input.body is ByteArray) {
-            if (endpoint != null && authorization != null) {
-                val rpc = "true" == headers["rpc"]
-                val securityHeaders: MutableMap<String, String> = HashMap()
-                securityHeaders["Authorization"] = authorization
-                return fastRPC.awaitRequest(EventEnvelope(input.body as ByteArray), timeout, securityHeaders, endpoint, rpc)
-            } else {
-                return fastRPC.awaitRequest(EventEnvelope(input.body as ByteArray), timeout)
-            }
+            return Mono.create({ callback: MonoSink<EventEnvelope> ->
+                val event = EventEnvelope(input.body as ByteArray)
+                if (endpoint != null && authorization != null) {
+                    val rpc = "true" == headers["rpc"]
+                    val securityHeaders: MutableMap<String, String> = HashMap()
+                    securityHeaders["Authorization"] = authorization
+                    po.asyncRequest(event, timeout, securityHeaders, endpoint, rpc)
+                        .onSuccess({ res: EventEnvelope ->
+                            callback.success(res)
+                        })
+                } else {
+                    po.asyncRequest(event, timeout)
+                        .onSuccess({ res: EventEnvelope ->
+                            callback.success(res)
+                        })
+                }
+            })
         }
         throw IllegalArgumentException("Invalid request")
     }

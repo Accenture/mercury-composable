@@ -66,19 +66,19 @@ public class BenchmarkService implements LambdaFunction {
         LambdaFunction callback = (headers, input, instance) -> {
             Utility util = Utility.getInstance();
             EventEmitter po = EventEmitter.getInstance();
-            benchmarkRequest.received++;
-            if (benchmarkRequest.received % 100 == 0) {
+            int n = benchmarkRequest.received.incrementAndGet();
+            if (n % 100 == 0) {
                 po.send(BENCHMARK_USERS, util.getLocalTimestamp()+
-                        " INFO: received "+benchmarkRequest.received+" event responses");
+                        " INFO: received "+n+" event responses");
             }
             if (input instanceof Map) {
                 Map<String, Object> data = (Map<String, Object>) input;
                 if (data.containsKey(TIME)) {
                     Date oneTrip = util.str2date(data.get(TIME).toString());
-                    responses.put(benchmarkRequest.received, new BenchmarkResponse(oneTrip));
+                    responses.put(n, new BenchmarkResponse(oneTrip));
                 }
             }
-            if (benchmarkRequest.received >= benchmarkRequest.count) {
+            if (n >= benchmarkRequest.count) {
                 testRunning = false;
                 po.send(BENCHMARK_USERS, util.getLocalTimestamp()+" INFO: Benchmark completed.");
                 calculateBenchmark();

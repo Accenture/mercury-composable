@@ -30,6 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class EventProducer implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(EventProducer.class);
     /*

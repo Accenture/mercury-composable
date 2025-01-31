@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import org.platformlambda.core.models.*;
+import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -705,21 +706,6 @@ public class EventEmitter {
             });
             return;
         }
-        // is this a reply message?
-        int slash = to.indexOf('@');
-        if (slash > 0) {
-            String origin = to.substring(slash+1);
-            if (origin.equals(Platform.getInstance().getOrigin())) {
-                String cid = to.substring(0, slash);
-                InboxBase inbox = InboxBase.getHolder(cid);
-                if (inbox != null) {
-                    // Clear broadcast indicator because this is a reply message to an inbox
-                    event.setReplyTo(cid).setBroadcastLevel(0);
-                    Platform.getInstance().getEventSystem().send(inbox.getId(), event.toBytes());
-                    return;
-                }
-            }
-        }
         TargetRoute target = discover(to, event.isEndOfRoute());
         if (target.isCloud()) {
             /*
@@ -1080,9 +1066,9 @@ public class EventEmitter {
         }
         Platform platform = Platform.getInstance();
         TargetRoute target = discover(to, event.isEndOfRoute());
-        AsyncInbox inbox = new AsyncInbox(event.getFrom(), to, event.getTraceId(), event.getTracePath(),
-                                            timeout, timeoutException);
-        event.setReplyTo(inbox.getId() + "@" + platform.getOrigin());
+        AsyncInbox inbox = new AsyncInbox(to, event, timeout, timeoutException);
+        event.setCorrelationId(inbox.getCorrelationId());
+        event.setReplyTo(TemporaryInbox.ROUTE + "@" + platform.getOrigin());
         event.addTag(RPC, timeout);
         event.setBroadcastLevel(0);
         if (target.isCloud()) {
@@ -1138,9 +1124,9 @@ public class EventEmitter {
         }
         Platform platform = Platform.getInstance();
         TargetRoute target = discover(to, event.isEndOfRoute());
-        FutureInbox inbox = new FutureInbox(event.getFrom(), to, event.getTraceId(), event.getTracePath(),
-                                            timeout, timeoutException);
-        event.setReplyTo(inbox.getId() + "@" + platform.getOrigin());
+        FutureInbox inbox = new FutureInbox(to, event, timeout, timeoutException);
+        event.setCorrelationId(inbox.getCorrelationId());
+        event.setReplyTo(TemporaryInbox.ROUTE + "@" + platform.getOrigin());
         event.addTag(RPC, timeout);
         event.setBroadcastLevel(0);
         if (target.isCloud()) {
@@ -1198,34 +1184,27 @@ public class EventEmitter {
         String traceId = first.getTraceId();
         String tracePath = first.getTracePath();
         AsyncMultiInbox inbox = new AsyncMultiInbox(events.size(), from, traceId, tracePath, timeout, timeoutException);
-        List<TargetRoute> destinations = new ArrayList<>();
-        int seq = 1;
+        String cid = inbox.getCorrelationId();
+        Platform platform = Platform.getInstance();
+        EventBus system = platform.getEventSystem();
+        String replyTo = TemporaryInbox.ROUTE + "@" + platform.getOrigin();
+        int seq = 0;
         for (EventEnvelope event: events) {
+            seq++;
+            String sequencedCid = cid + "-" + seq;
             String destination = event.getTo();
             if (destination == null) {
                 throw new IllegalArgumentException(MISSING_ROUTING_PATH);
             }
             String to = substituteRouteIfAny(destination);
             event.setTo(to);
-            // propagate the same trace info to each request
+            // propagate trace
             event.setFrom(from).setTraceId(traceId).setTracePath(tracePath);
-            // insert sequence number when correlation ID if not present
-            // so that the caller can correlate the service responses
-            if (event.getCorrelationId() == null) {
-                event.setCorrelationId(String.valueOf(seq++));
-            }
-            inbox.setCorrelation(event.getCorrelationId(), to);
-            destinations.add(discover(to, event.isEndOfRoute()));
-        }
-        Platform platform = Platform.getInstance();
-        EventBus system = platform.getEventSystem();
-        String replyTo = inbox.getId() + "@" + platform.getOrigin();
-        int n = 0;
-        for (EventEnvelope event : events) {
-            TargetRoute target = destinations.get(n++);
-            event.setReplyTo(replyTo);
-            event.addTag(RPC, timeout);
-            event.setBroadcastLevel(0);
+            event.setReplyTo(replyTo).addTag(RPC, timeout).setBroadcastLevel(0);
+            String originalCid = event.getCorrelationId();
+            event.setCorrelationId(sequencedCid);
+            inbox.setCorrelation(sequencedCid, new InboxCorrelation(to, originalCid));
+            TargetRoute target = discover(to, event.isEndOfRoute());
             if (target.isCloud()) {
                 MultipartPayload.getInstance().outgoing(target.getManager(), event);
             } else {
@@ -1273,34 +1252,27 @@ public class EventEmitter {
         String traceId = first.getTraceId();
         String tracePath = first.getTracePath();
         FutureMultiInbox inbox = new FutureMultiInbox(events.size(), from, traceId, tracePath, timeout, timeoutException);
-        List<TargetRoute> destinations = new ArrayList<>();
-        int seq = 1;
+        String cid = inbox.getCorrelationId();
+        Platform platform = Platform.getInstance();
+        EventBus system = platform.getEventSystem();
+        String replyTo = TemporaryInbox.ROUTE + "@" + platform.getOrigin();
+        int seq = 0;
         for (EventEnvelope event: events) {
+            seq++;
+            String sequencedCid = cid + "-" + seq;
             String destination = event.getTo();
             if (destination == null) {
                 throw new IllegalArgumentException(MISSING_ROUTING_PATH);
             }
             String to = substituteRouteIfAny(destination);
             event.setTo(to);
-            // propagate the same trace info to each request
+            // propagate trace
             event.setFrom(from).setTraceId(traceId).setTracePath(tracePath);
-            // insert sequence number when correlation ID if not present
-            // so that the caller can correlate the service responses
-            if (event.getCorrelationId() == null) {
-                event.setCorrelationId(String.valueOf(seq++));
-            }
-            inbox.setCorrelation(event.getCorrelationId(), to);
-            destinations.add(discover(to, event.isEndOfRoute()));
-        }
-        Platform platform = Platform.getInstance();
-        EventBus system = platform.getEventSystem();
-        String replyTo = inbox.getId() + "@" + platform.getOrigin();
-        int n = 0;
-        for (EventEnvelope event : events) {
-            TargetRoute target = destinations.get(n++);
-            event.setReplyTo(replyTo);
-            event.addTag(RPC, timeout);
-            event.setBroadcastLevel(0);
+            event.setReplyTo(replyTo).addTag(RPC, timeout).setBroadcastLevel(0);
+            String originalCid = event.getCorrelationId();
+            event.setCorrelationId(sequencedCid);
+            inbox.setCorrelation(sequencedCid, new InboxCorrelation(to, originalCid));
+            TargetRoute target = discover(to, event.isEndOfRoute());
             if (target.isCloud()) {
                 MultipartPayload.getInstance().outgoing(target.getManager(), event);
             } else {

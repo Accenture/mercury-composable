@@ -18,7 +18,9 @@
 
 package org.platformlambda.core.models;
 
+import io.vertx.core.Future;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.util.Utility;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,19 +31,33 @@ import java.util.concurrent.ExecutorService;
  * DO NOT use this directly in your application code.
  */
 public abstract class InboxBase {
-
     protected static final ExecutorService executor = Platform.getInstance().getVirtualThreadExecutor();
-
-    protected String id;
-
     protected static final ConcurrentMap<String, InboxBase> inboxes = new ConcurrentHashMap<>();
+    protected static final String RPC = "rpc";
+    protected static final String UNDERSCORE = "_";
+    protected static final String ANNOTATIONS = "annotations";
+
+    public final String cid = Utility.getInstance().getUuid();
 
     public static InboxBase getHolder(String inboxId) {
         return inboxes.get(inboxId);
     }
 
-    public String getId() {
-        return id;
+    public String getCorrelationId() {
+        return cid;
     }
 
+    public void close() {
+        inboxes.remove(cid);
+    }
+
+    /**
+     * To be overridden by various inbox implementations
+     *
+     * @param callback event
+     * @return nothing
+     */
+    public Void handleEvent(EventEnvelope callback) {
+        throw new IllegalArgumentException("Not implemented");
+    }
 }

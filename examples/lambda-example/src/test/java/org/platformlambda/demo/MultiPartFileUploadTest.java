@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SuspendFunctionTest extends TestBase {
+public class MultiPartFileUploadTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test

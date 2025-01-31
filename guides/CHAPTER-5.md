@@ -214,82 +214,11 @@ public void pojoRpcTest() throws IOException, InterruptedException {
 }
 ```
 
-Note that you can do class "casting" or use the built-in casting API as shown below:
+Note that you can use the built-in serialization API to restore a PoJo like this:
 
-> SamplePoJo pojo = (SamplePoJo) response.getBody()
-
-> SamplePoJo pojo = response.getBody(SamplePoJo.class)
-
-## Your third unit test
-
-Testing Kotlin suspend functions may be challenging. However, testing suspend function using events is straight
-forward because of loose coupling.
-
-Let's do a unit test for the lambda-example's FileUploadDemo function. Its route name is "hello.upload".
-
-Please refer to "uploadTest" method in the "SuspendFunctionTest" class in the lambda-example for details.
-
-```java
-@SuppressWarnings("unchecked")
-@Test
-public void uploadTest() throws IOException, InterruptedException {
-    String FILENAME = "unit-test-data.txt";
-    BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-    Utility util = Utility.getInstance();
-    String traceId = Utility.getInstance().getUuid();
-    PostOffice po = new PostOffice("unit.test", traceId, "/stream/upload/test");
-    int len = 0;
-    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-    EventPublisher publisher = new EventPublisher(10000);
-    for (int i=0; i < 10; i++) {
-        String line = "hello world "+i+"\n";
-        byte[] d = util.getUTF(line);
-        publisher.publish(d);
-        bytes.write(d);
-        len += d.length;
-    }
-    publisher.publishCompletion();
-    // emulate a multipart file upload
-    AsyncHttpRequest req = new AsyncHttpRequest();
-    req.setMethod("POST");
-    req.setUrl("/api/upload/demo");
-    req.setTargetHost("http://127.0.0.1:8080");
-    req.setHeader("accept", "application/json");
-    req.setHeader("content-type", "multipart/form-data");
-    req.setContentLength(len);
-    req.setFileName(FILENAME);
-    req.setStreamRoute(publisher.getStreamId());
-    // send the HTTP request event to the "hello.upload" function
-    EventEnvelope request = new EventEnvelope().setTo("hello.upload")
-            .setBody(req).setTrace("12345", "/api/upload/demo").setFrom("unit.test");
-    po.asyncRequest(request, 8000).onSuccess(bench::add);
-    EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-    assert response != null;
-    assertEquals(HashMap.class, response.getBody().getClass());
-    Map<String, Object> map = (Map<String, Object>) response.getBody();
-    System.out.println(response.getBody());
-    assertEquals(len, map.get("expected_size"));
-    assertEquals(len, map.get("actual_size"));
-    assertEquals(FILENAME, map.get("filename"));
-    assertEquals("Upload completed", map.get("message"));
-    // finally check that "hello.upload" has saved the test file
-    File dir = new File("/tmp/upload-download-demo");
-    File file = new File(dir, FILENAME);
-    assertTrue(file.exists());
-    assertEquals(len, file.length());
-    // compare file content
-    byte[] b = Utility.getInstance().file2bytes(file);
-    assertArrayEquals(bytes.toByteArray(), b);
-}
+```shell
+SamplePoJo pojo = response.getBody(SamplePoJo.class)
 ```
-
-In the above unit test, we use the ObjectStreamIO to emulate a file stream and write 10 blocks of data into it.
-The unit test then makes an RPC call to the "hello.upload" with the emulated HTTP request event.
-
-The "hello.upload" is a Kotlin suspend function. It will be executed when the event arrives.
-After saving the test file, it will return an HTTP response object that the unit test can validate.
-
-In this fashion, you can create unit tests to test suspend functions in an event-driven manner.
 
 ## Event Flow mocking framework
 
@@ -418,8 +347,8 @@ A sample Dockerfile for an executable JAR may look like this:
 FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
 EXPOSE 8083
 WORKDIR /app
-COPY target/rest-spring-3-example-3.1.2.jar .
-ENTRYPOINT ["java","-jar","rest-spring-3-example-3.1.2.jar"]
+COPY target/rest-spring-3-example-4.2.3.jar .
+ENTRYPOINT ["java","-jar","rest-spring-3-example-4.2.3.jar"]
 ```
 
 ## Distributed tracing
@@ -429,7 +358,7 @@ The system has a built-in distributed tracing feature. You can enable tracing fo
 
 You may also upload performance metrics from the distributed tracing data to your favorite telemetry system dashboard.
 
-To do that, please implement a custom metrics function with the route name `distributed.trace.forwarder`.
+To do that, you can implement a custom metrics function with the route name `distributed.trace.forwarder`.
 
 The input to the function will be a HashMap like this:
 

@@ -74,7 +74,7 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
             if (presenceMonitor) {
                 EventEmitter po = EventEmitter.getInstance();
                 EventEnvelope req = new EventEnvelope().setTo(CLOUD_MANAGER).setHeader(TYPE, LIST)
-                                            .setHeader(ORIGIN, Platform.getInstance().getOrigin());
+                        .setHeader(ORIGIN, Platform.getInstance().getOrigin());
                 Future<EventEnvelope> res = po.asyncRequest(req, TIMEOUT);
                 res.onSuccess(evt -> {
                     if (evt.getBody() instanceof List) {
@@ -87,13 +87,10 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
                                     topicList.size() + " " + (topicList.size() == 1 ? "topic" : "topics");
                         }
                         doLoopbackTest(input, monitorTopicPartition, message);
-
                     } else {
                         sendError(input, 500, "Unable to list topics");
                     }
                 });
-
-
             } else {
                 PresenceConnector connector = PresenceConnector.getInstance();
                 boolean ready = connector.isConnected() && connector.isReady();
@@ -122,30 +119,26 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
         String topic = getTopic(topicPartition);
         int partition = getPartition(topicPartition);
         long begin = System.currentTimeMillis();
-        // wait for reply
+        // publish a ping signal and wait for response
         PubSub ps = PubSub.getInstance();
         String me = Platform.getInstance().getOrigin();
-        String from = input.getFrom();
-        String traceId = input.getTraceId();
-        String tracePath = input.getTracePath();
-        AsyncInbox inbox = new AsyncInbox(from, "cloud.connector", traceId, tracePath, TIMEOUT, true);
+        EchoInbox inbox = new EchoInbox(5000);
         Map<String, String> parameters = new HashMap<>();
-        parameters.put(REPLY_TO, inbox.getId()+"@"+me);
+        parameters.put(REPLY_TO, EchoService.ROUTE+"@"+me);
         parameters.put(ORIGIN, me);
         try {
             ps.publish(topic, partition, parameters, LOOP_BACK);
             Future<EventEnvelope> res = inbox.getFuture();
             res.onSuccess(pong -> {
-                if (pong.getBody() instanceof Boolean && Boolean.TRUE.equals(pong.getBody())) {
+                if (pong.getStatus() == 200) {
                     long diff = System.currentTimeMillis() - begin;
                     String text = "Loopback test took " + diff + " ms" + (message == null? "" : "; "+message);
                     sendResponse(input, text);
                 } else {
-                    sendError(input, 500, "Loopback failed");
+                    sendError(input, pong.getStatus(), "Loopback failed");
                 }
             });
             res.onFailure(ex -> sendError(input, 408, ex.getMessage()));
-
         } catch (IOException e) {
             sendError(input, 500, e.getMessage());
         }

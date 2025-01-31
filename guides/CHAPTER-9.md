@@ -186,17 +186,21 @@ default value.
 
 ## Inspect event metadata
 
-There are some reserved metadata for route name ("my_route"), trace ID ("my_trace_id") and trace path ("my_trace_path")
-in the "headers" argument. They do not exist in the incoming event envelope. Instead, the system automatically
-insert them as read-only metadata.
+There are some reserved metadata such as route name ("my_route"), trace ID ("my_trace_id") and trace path
+("my_trace_path") in the "headers" argument. They do not exist in the incoming event envelope. Instead,
+the system automatically insert them as read-only metadata.
 
-They are used when your code want to obtain an instance of PostOffice or FastRPC.
+They are used to create a trackable instance of the PostOffice. e.g.
 
-To inspect all metadata, you can declare the input as "EventEnvelope". The system will map the whole event envelope
-into the "input" argument. You can retrieve the replyTo address and other useful metadata.
+```java
+var po = new PostOffice(headers, instance);
+```
 
-Note that the "replyTo" address is optional. It only exists when the caller is making an RPC call to your function.
-If the caller sends an asynchronous request, the "replyTo" value is null.
+To inspect all metadata, you can declare the input as "EventEnvelope" in a TypedLambdaFunction. The system will
+map the whole event envelope into the "input" argument. You can retrieve the replyTo address and other useful items.
+
+> *Note*: The "replyTo" address is optional. It is only required when the caller is making an RPC call.
+          If the caller sends an asynchronous request, the "replyTo" value is null.
 
 ## Platform API
 
@@ -232,7 +236,7 @@ platform.registerKoltinPrivate("another.suspend.function", new AnotherSuspendFun
 ### What is a public function?
 
 A public function is visible by any application instances in the same network. When a function is declared as
-"public", the function is reachable through the EventAPI REST endpoint or a service mesh.
+"public", the function is reachable through the Event-over-HTTP REST endpoint or a service mesh.
 
 A private function is invisible outside the memory space of the application instance that it resides.
 This allows application to encapsulate business logic according to domain boundary. You can assemble closely
@@ -242,7 +246,7 @@ related functions as a composable application that can be deployed independently
 
 In some use cases, you want to release a function on-demand when it is no longer required.
 
-```java
+```text
 platform.release("another.function");
 ```
 
@@ -252,7 +256,7 @@ The above API will unload the function from memory and release it from the "even
 
 You can check if a function with the named route has been deployed.
 
-```java
+```text
 if (platform.hasRoute("another.function")) {
     // do something
 }
@@ -265,11 +269,11 @@ to your application when the MainApplication starts.
 
 For functions that are registered on-demand, you can wait for the function to get ready like this:
 
-```java
-Future<Boolean> status = platform.waitForProvider("cloud.connector", 10);
-status.onSuccess(ready -> {
-   // business logic when "cloud.connector" is ready 
-});
+```text
+platform.waitForProvider("cloud.connector", 10)
+        .onSuccess(ready -> {
+            // business logic when "cloud.connector" is ready 
+        });
 ```
 Note that the "onFailure" method is not required. The onSuccess will return true or false. In the above example,
 your application waits for up to 10 seconds. If the function (i.e. the "provider") is available, the API will invoke
@@ -280,7 +284,7 @@ the "onSuccess" method immediately.
 When an application instance starts, a unique ID is generated. We call this the "Origin ID".
 
 ```java
-String originId = po.getOrigin();
+var originId = po.getOrigin();
 ```
 
 When running the application in a minimalist service mesh using Kafka or similar network event stream system,
@@ -299,7 +303,7 @@ An application may have one of the following personality:
 
 You can change the application personality like this:
 
-```java
+```text
 // the default value is "APP"
 ServerPersonality.getInstance().setType(ServerPersonality.Type.REST);
 ```
@@ -313,7 +317,7 @@ You can obtain an instance of the PostOffice from the input "headers" and "insta
 arguments of your function.
 
 ```java
-PostOffice po = new PostOffice(headers, instance);
+var po = new PostOffice(headers, instance);
 ```
 
 The PostOffice is the event manager that you can use to send asynchronous events or to make RPC requests.
@@ -447,56 +451,6 @@ EventEnvelope result = po.request(requestEvent, timeoutInMills).get();
 PostOffice po = new PostOffice(headers, instance);
 List<EventEnvelope> result = po.request(requestEvents, timeoutInMills).get();
 ```
-
-If you prefer the Kotlin programming language, you may use the FastRPC API.
-
-It is the event manager for KotlinLambdaFunction. You can create an instance of the FastRPC using the "headers"
-parameters in the input arguments of your function.
-
-```java
-val fastRPC = new FastRPC(headers)
-val request = EventEnvelope().setTo("another.function")
-                            .setHeader("some_key", "some_value").setBody(somePoJo)
-// example-1
-val response = fastRPC.awaitRequest(request, 5000)
-// handle the response event
-
-// example-2 with the "rpc" boolean parameter set to true
-val response = fastRPC.awaitRequest(request, 5000, "http://peer/api/event", true)
-// handle the response event
-```
-
-1. Example-1 performs a non-blocking RPC call
-2. Example-2 makes a non-blocking "Event Over HTTP" RPC call
-
-Note that timeout exception is returned as a regular event with status 408.
-
-Sequential non-blocking code is easier to read. Moreover, it handles more concurrent users and requests
-without consuming a lot of CPU resources because it is "suspended" while waiting for a response from another function.
-
-### Perform a sequential non-blocking fork-n-join call to multiple functions
-
-You can make a sequential non-blocking fork-n-join call using the FastRPC API like this:
-
-```java
-val fastRPC = FastRPC(headers)
-val template = EventEnvelope().setTo("hello.world").setHeader("someKey", "someValue")
-val requests  = ArrayList<EventEnvelope>()
-// create a list of 4 request events
-for (i in 0..3) {
-    requests.add(EventEnvelope(template.toBytes()).setBody(i).setCorrelationId("cid-$i"))
-}
-val responses: List<EventEnvelope> = fastRPC.awaitRequest(requests, 5000)
-// handle the response events
-```
-
-In the above example, the function creates a list of request events from a template event with target service
-"hello.world". It sets the number 0 to 3 to the individual events with unique correlation IDs.
-
-The response events contain the same set of correlation IDs so that your business logic can decide how to
-handle individual response event.
-
-The result may be a partial list of response events if one or more functions failed to respond on time.
 
 ### Check if a function with a named route exists
 
@@ -671,15 +625,15 @@ as you like, including sequential, object-oriented and reactive programming styl
 The core-engine has a built-in lightweight non-blocking HTTP server, but you can also use Spring Boot and other
 application server framework with it.
 
-A sample Spring Boot integration is provided in the "rest-spring" project. It is an optional feature, and you can
-decide to use a regular Spring Boot application with Mercury or to pick the customized Spring Boot in the
-"rest-spring" library.
+A sample Spring Boot integration is provided in the "rest-spring-3" project. It is an optional feature, and you can
+decide to use a regular Spring Boot application with Mercury Composable or to pick the customized Spring Boot in the
+"rest-spring-3" library.
 
-## Template application for quick start
+## Application template for quick start
 
-We recommend using the `composable-example` project as a template to start writing your Composable applications.
+We recommend using the `composable-example` project as a template to start writing your own Composable applications.
 You can follow the Composable methodology where you draw event flow diagrams to represent various use cases,
-convert them into event scripts that carry out event chorerography for your self-contained functions.
+convert them into event scripts that carry out event choreography for your self-contained functions.
 
 For more information, please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md).
 
@@ -691,8 +645,11 @@ It is preconfigured to support kernel threads, coroutine and suspend function.
 This project is licensed under the Apache 2.0 open sources license. We will update the public codebase after
 it passes regression tests and meets stability and performance benchmarks in our production systems.
 
-Mercury is developed as an engine for you to build the latest cloud native and composable applications.
-While we are updating the technology frequently, the essential internals and the core APIs are stable.
+Mercury Composable is developed as an engine for you to build the latest cloud native applications.
+
+Composable technology is evolving rapidly. We would exercise best effort to keep the essential internals
+and core APIs stable. Please browse the latest Developer Guide, release notes and Javadoc for any breaking
+API changes.
 
 ## Technical support
 

@@ -18,16 +18,12 @@
 
 package org.platformlambda.core.models;
 
-import io.vertx.core.Handler;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,24 +45,21 @@ public class FutureInbox extends InboxBase {
     private final String tracePath;
     private final String from;
     private final String to;
+    private final String originalCid;
     private final long timeout;
     private final boolean timeoutException;
     private final long timer;
-    private final MessageConsumer<byte[]> listener;
 
-    public FutureInbox(String from, String to, String traceId, String tracePath, long timeout,
-                       boolean timeoutException) {
-        final Platform platform = Platform.getInstance();
+    public FutureInbox(String to, EventEnvelope event, long timeout, boolean timeoutException) {
         this.timeoutException = timeoutException;
-        this.from = from == null? "unknown" : from;
+        this.from = event.getFrom() == null? "unknown" : event.getFrom();
         this.to = to;
-        this.traceId = traceId;
-        this.tracePath = tracePath;
+        this.traceId = event.getTraceId();
+        this.tracePath = event.getTracePath();
+        this.originalCid = event.getCorrelationId();
         this.timeout = Math.max(100, timeout);
-        this.id = "r."+ Utility.getInstance().getUuid();
-        this.listener = platform.getEventSystem().localConsumer(this.id, new InboxHandler());
-        inboxes.put(id, this);
-        timer = platform.getVertx().setTimer(timeout, t -> abort(this.id));
+        inboxes.put(cid, this);
+        this.timer = Platform.getInstance().getVertx().setTimer(timeout, t -> abort(this.cid));
     }
 
     public Future<EventEnvelope> getFuture() {
@@ -86,91 +79,76 @@ public class FutureInbox extends InboxBase {
         }
     }
 
-    private void close() {
-        inboxes.remove(id);
-        if (listener.isRegistered()) {
-            listener.unregister();
+    @Override
+    public Void handleEvent(EventEnvelope callback) {
+        String inboxId = callback.getCorrelationId();
+        if (inboxId != null) {
+            if (originalCid != null) {
+                callback.setCorrelationId(originalCid);
+            }
+            saveResponse(inboxId, callback.setReplyTo(null));
         }
+        return null;
     }
 
-    private class InboxHandler implements Handler<Message<byte[]>> {
-
-        private static final String RPC = "rpc";
-        private static final String UNDERSCORE = "_";
-        private static final String ANNOTATIONS = "annotations";
-
-        @Override
-        public void handle(Message<byte[]> message) {
-            try {
-                EventEnvelope event = new EventEnvelope(message.body());
-                String inboxId = event.getReplyTo();
-                if (inboxId != null) {
-                    saveResponse(inboxId, event.setReplyTo(null));
+    private void saveResponse(String inboxId, EventEnvelope reply) {
+        FutureInbox holder = (FutureInbox) inboxes.get(inboxId);
+        if (holder != null) {
+            holder.close();
+            Platform.getInstance().getVertx().cancelTimer(timer);
+            float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
+            // adjust precision to 3 decimal points
+            float roundTrip = Float.parseFloat(String.format("%.3f", Math.max(0.0f, diff)));
+            reply.setRoundTrip(roundTrip);
+            // remove some metadata that are not relevant for a RPC response
+            reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
+            Map<String, Object> annotations = new HashMap<>();
+            // decode trace annotations from reply event
+            Map<String, String> headers = reply.getHeaders();
+            if (headers.containsKey(UNDERSCORE)) {
+                int count = Utility.getInstance().str2int(headers.get(UNDERSCORE));
+                for (int i=1; i <= count; i++) {
+                    String kv = headers.get(UNDERSCORE+i);
+                    if (kv != null) {
+                        int eq = kv.indexOf('=');
+                        if (eq > 0) {
+                            annotations.put(kv.substring(0, eq), kv.substring(eq+1));
+                        }
+                    }
                 }
-            } catch (IOException e) {
-                log.error("Unable to decode event - {}", e.getMessage());
+                headers.remove(UNDERSCORE);
+                for (int i=1; i <= count; i++) {
+                    headers.remove(UNDERSCORE+i);
+                }
             }
-        }
-
-        private void saveResponse(String inboxId, EventEnvelope reply) {
-            FutureInbox holder = (FutureInbox) inboxes.get(inboxId);
-            if (holder != null) {
-                holder.close();
-                Platform.getInstance().getVertx().cancelTimer(timer);
-                float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-                // adjust precision to 3 decimal points
-                float roundTrip = Float.parseFloat(String.format("%.3f", Math.max(0.0f, diff)));
-                reply.setRoundTrip(roundTrip);
-                // remove some metadata that are not relevant for a RPC response
-                reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
-                Map<String, Object> annotations = new HashMap<>();
-                // decode trace annotations from reply event
-                Map<String, String> headers = reply.getHeaders();
-                if (headers.containsKey(UNDERSCORE)) {
-                    int count = Utility.getInstance().str2int(headers.get(UNDERSCORE));
-                    for (int i=1; i <= count; i++) {
-                        String kv = headers.get(UNDERSCORE+i);
-                        if (kv != null) {
-                            int eq = kv.indexOf('=');
-                            if (eq > 0) {
-                                annotations.put(kv.substring(0, eq), kv.substring(eq+1));
-                            }
-                        }
+            future.complete(reply);
+            if (to != null && holder.traceId != null && holder.tracePath != null) {
+                try {
+                    Map<String, Object> payload = new HashMap<>();
+                    Map<String, Object> metrics = new HashMap<>();
+                    metrics.put("origin", Platform.getInstance().getOrigin());
+                    metrics.put("id", holder.traceId);
+                    metrics.put("service", to);
+                    metrics.put("from", holder.from);
+                    metrics.put("exec_time", reply.getExecutionTime());
+                    metrics.put("round_trip", roundTrip);
+                    metrics.put("start", start);
+                    metrics.put("path", holder.tracePath);
+                    payload.put("trace", metrics);
+                    if (!annotations.isEmpty()) {
+                        payload.put(ANNOTATIONS, annotations);
                     }
-                    headers.remove(UNDERSCORE);
-                    for (int i=1; i <= count; i++) {
-                        headers.remove(UNDERSCORE+i);
+                    metrics.put("status", reply.getStatus());
+                    if (reply.getStatus() >= 400) {
+                        metrics.put("success", false);
+                        metrics.put("exception", reply.getError());
+                    } else {
+                        metrics.put("success", true);
                     }
-                }
-                future.complete(reply);
-                if (to != null && holder.traceId != null && holder.tracePath != null) {
-                    try {
-                        Map<String, Object> payload = new HashMap<>();
-                        Map<String, Object> metrics = new HashMap<>();
-                        metrics.put("origin", Platform.getInstance().getOrigin());
-                        metrics.put("id", holder.traceId);
-                        metrics.put("service", to);
-                        metrics.put("from", holder.from);
-                        metrics.put("exec_time", reply.getExecutionTime());
-                        metrics.put("round_trip", roundTrip);
-                        metrics.put("start", start);
-                        metrics.put("path", holder.tracePath);
-                        payload.put("trace", metrics);
-                        if (!annotations.isEmpty()) {
-                            payload.put(ANNOTATIONS, annotations);
-                        }
-                        metrics.put("status", reply.getStatus());
-                        if (reply.getStatus() >= 400) {
-                            metrics.put("success", false);
-                            metrics.put("exception", reply.getError());
-                        } else {
-                            metrics.put("success", true);
-                        }
-                        EventEnvelope dt = new EventEnvelope().setTo(EventEmitter.DISTRIBUTED_TRACING);
-                        EventEmitter.getInstance().send(dt.setBody(payload));
-                    } catch (Exception e) {
-                        log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e);
-                    }
+                    EventEnvelope dt = new EventEnvelope().setTo(EventEmitter.DISTRIBUTED_TRACING);
+                    EventEmitter.getInstance().send(dt.setBody(payload));
+                } catch (Exception e) {
+                    log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e);
                 }
             }
         }

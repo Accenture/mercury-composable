@@ -21,6 +21,7 @@ package com.accenture.models;
 import org.platformlambda.core.util.Utility;
 
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BenchmarkRequest {
 
@@ -30,7 +31,7 @@ public class BenchmarkRequest {
     public Date start;
     public String cid;
     public long timeSpendPublishing = 0;
-    public int received = 0;
+    public AtomicInteger received = new AtomicInteger(0);
 
     public BenchmarkRequest(String type, int count, int size) {
         this.type = type;

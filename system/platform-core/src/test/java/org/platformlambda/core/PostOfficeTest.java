@@ -1493,7 +1493,7 @@ public class PostOfficeTest extends TestBase {
     @Test
     public void infoTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        EventEmitter po = EventEmitter.getInstance();
+        PostOffice po = new PostOffice("unit.test", "201", "TEST /info/test");
         EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"info");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -1547,8 +1547,8 @@ public class PostOfficeTest extends TestBase {
     public void livenessProbeTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope()
-                                    .setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"livenessprobe");
+        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES)
+                                    .setHeader("type" ,"livenessprobe");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
@@ -1560,8 +1560,7 @@ public class PostOfficeTest extends TestBase {
     public void envTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope()
-                .setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"env");
+        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"env");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;

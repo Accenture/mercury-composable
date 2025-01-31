@@ -96,7 +96,7 @@ input arguments (headers and body) in your function. Now you can write your new 
 "greeting.demo". Please copy-n-paste the following into a Java class called "Greetings" and save in the package
 under "my.organization.tasks" in the source project.
 
-> *Note*: "my.organization" package name is just an example. Please replace it with your organization package path.
+> *Note*: The package name, "my.organization", is an example. Please replace it with your organization package path.
 
 ```java
 @PreLoad(route="greeting.demo", instances=10, isPrivate = false)

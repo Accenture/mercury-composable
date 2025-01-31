@@ -31,6 +31,10 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * This is reserved for system use.
+ * DO NOT use this directly in your application code.
+ */
 public class ServiceLifeCycle extends Thread {
     private static final Logger log = LoggerFactory.getLogger(ServiceLifeCycle.class);
 
@@ -61,7 +65,7 @@ public class ServiceLifeCycle extends Thread {
     }
 
     @Override
-    public void start() {
+    public void run() {
         final Platform platform = Platform.getInstance();
         final EventEmitter po = EventEmitter.getInstance();
         final Utility util = Utility.getInstance();

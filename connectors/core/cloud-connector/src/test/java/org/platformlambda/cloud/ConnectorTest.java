@@ -51,8 +51,8 @@ public class ConnectorTest extends TestBase {
 
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
-    @BeforeEach
-    public void waitForMockCloud() throws InterruptedException {
+    @BeforeAll
+    public static void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
             final int WAIT = 20;
@@ -67,7 +67,7 @@ public class ConnectorTest extends TestBase {
         }
     }
 
-    private void waitForConnector() {
+    private static void waitForConnector() {
         boolean ready = false;
         PresenceConnector connector = PresenceConnector.getInstance();
         for (int i=0; i < 20; i++) {
