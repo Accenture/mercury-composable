@@ -85,7 +85,7 @@ public class EventHttpTest extends TestBase {
         asyncResponse.onSuccess(evt -> wait2.add(evt.getBody()));
         Object result = wait2.poll(5, TimeUnit.SECONDS);
         assertEquals(HELLO, result);
-        // test kotlin FastRPC
+        // test API forwarding
         EventEnvelope forward = new EventEnvelope().setTo("event.api.forwarder")
                                 .setBody(get.toBytes()).setHeader("timeout", 10000);
         EventEnvelope kotlinResponse = po.request(forward, 10000).get();

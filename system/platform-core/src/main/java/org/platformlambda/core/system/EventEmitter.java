@@ -777,8 +777,7 @@ public class EventEmitter {
      *     Note that onFailure is not required because exceptions are returned as regular event.
      * <p>
      * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please use the future request API or
-     * implement KotlinLambdaFunction in your function and use the awaitRequest API in FastRPC.kt
+     * If you want sequential non-blocking RPC, please use the request API
      *
      * @param event to be sent to a peer application instance
      * @param timeout to abort the request
@@ -1019,8 +1018,7 @@ public class EventEmitter {
      * onFailure(Throwable timeoutException)
      * <p>
      * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please use the future request API or
-     * implement KotlinLambdaFunction in your function and use the awaitRequest API in FastRPC.kt
+     * If you want sequential non-blocking RPC, please use the request API
      *
      * @param event to the target
      * @param timeout in milliseconds
@@ -1039,8 +1037,7 @@ public class EventEmitter {
      * onFailure(Throwable timeoutException)
      * <p>
      * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please use the future request API or
-     * implement KotlinLambdaFunction in your function and use the awaitRequest API in FastRPC.kt
+     * If you want sequential non-blocking RPC, please use the request API
      *
      * @param event to the target
      * @param timeout in milliseconds
@@ -1145,8 +1142,7 @@ public class EventEmitter {
      * onFailure(Throwable timeoutException)
      * <p>
      * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please use the future request API or
-     * implement KotlinLambdaFunction in your function and use the awaitRequest API in FastRPC.kt
+     * If you want sequential non-blocking RPC, please use the request API
      *
      * @param events list of envelopes
      * @param timeout in milliseconds
@@ -1165,8 +1161,7 @@ public class EventEmitter {
      * onFailure(Throwable timeoutException)
      * <p>
      * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please use the future request API or
-     * implement KotlinLambdaFunction in your function and use the awaitRequest API in FastRPC.kt
+     * If you want sequential non-blocking RPC, please use the request API
      *
      * @param events list of envelopes
      * @param timeout in milliseconds

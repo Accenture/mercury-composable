@@ -131,26 +131,6 @@ res.onSuccess(response -> {
 });
 ```
 
-If you prefer writing in Kotlin, you can create a suspend function using KotlinLambdaFunction, 
-the same logic may look like this:
-
-```java
-val fastRPC = FastRPC(headers)
-val req = AsyncHttpRequest()
-req.setMethod("GET")
-req.setHeader("accept", "application/json")
-req.setUrl("/api/hello/world?hello world=abc")
-req.setQueryParameter("x1", "y")
-val list: MutableList<String> = ArrayList()
-list.add("a")
-list.add("b")
-req.setQueryParameter("x2", list)
-req.setTargetHost("http://127.0.0.1:8083")
-val request = EventEnvelope().setTo("async.http.request").setBody(req)
-val response = fastRPC.awaitRequest(request, 5000)
-// do something with the result
-```
-
 ### Send HTTP request body for HTTP PUT, POST and PATCH methods
 
 For most cases, you can just set a HashMap into the request body and specify content-type as JSON or XML.
@@ -216,32 +196,6 @@ fc.consume(
 
 By default, a user function is executed in a virtual thread which effectively is an "async" function and
 the PostOffice "request" API operates in the non-blocking "await" mode.
-
-If you prefers writing in Kotlin, it may look like this:
-
-```java
-val po = PostOffice(headers, instance)
-val fastRPC = FastRPC(headers)
-
-val req = EventEnvelope().setTo(streamId).setHeader("type", "read")
-while (true) {
-    val event = fastRPC.awaitRequest(req, 5000)
-    if (event.status == 408) {
-        // handle input stream timeout
-        break
-    }
-    if ("eof" == event.headers["type"]) {
-        po.send(streamId, Kv("type", "close"))
-        break
-    }
-    if ("data" == event.headers["type"]) {
-        val block = event.body
-        if (block is ByteArray) {
-            // handle the data block from the input stream
-        }
-    }
-}
-```
 
 ## Rendering a small payload of streaming content
 

@@ -71,14 +71,10 @@ input "headers". However, they are not part of the EventEnvelope.
 | my_trace_path | trace path, if any, for the incoming event | 
 
 You can create a trackable PostOffice using the "headers" and the "instance" parameters in the input arguments
-of your function. The FastRPC instance requires only the "headers" parameters.
+of your function.
 
 ```java
-// Java
-PostOffice po = new PostOffice(headers, instance);
-
-// Kotlin
-val fastRPC = FastRPC(headers);
+var po = new PostOffice(headers, instance);
 ```
 
 ## Reserved HTTP header names

@@ -421,7 +421,7 @@ We will examine the Event Script syntax in [Chapter 4](CHAPTER-4.md).
 Generally, you only need to use a very minimal set of mercury core APIs in your user functions.
 e.g. use PostOffice to obtain a trackable event emitter and AsyncHttpRequest to connect to external system.
 
-For composable applications that use Event Script, Mercury core APIs (Platform, PostOffice and FastRPC) are only
+For composable applications that use Event Script, Mercury core APIs (Platform and PostOffice) are only
 required for writing unit tests, "custom flow adapters", "legacy functional wrappers" or "external gateways".
 
 ## Orchestration by code

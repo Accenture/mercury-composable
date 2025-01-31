@@ -434,9 +434,7 @@ public class PostOffice {
      * onSuccess(EventEnvelope event)
      * onFailure(Throwable timeoutException)
      * <p>
-     * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please implement KotlinLambdaFunction in your function
-     * and use the awaitRequest API in FastRPC.kt
+     * IMPORTANT: This is an asynchronous RPC using Future
      *
      * @param events list of envelopes
      * @param timeout in milliseconds
@@ -455,9 +453,7 @@ public class PostOffice {
      * onSuccess(EventEnvelope event)
      * onFailure(Throwable timeoutException)
      * <p>
-     * IMPORTANT: This is an asynchronous RPC using Future.
-     * If you want sequential non-blocking RPC, please implement KotlinLambdaFunction in your function
-     * and use the awaitRequest API in FastRPC.kt
+     * IMPORTANT: This is an asynchronous RPC using Future
      *
      * @param events list of envelopes
      * @param timeout in milliseconds
