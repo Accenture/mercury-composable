@@ -130,7 +130,7 @@ public class Platform {
     /**
      * Internal API - This vertx instance must be used exclusively by the platform-core
      * <p>
-     * This is used for running kotlin co-routines in the event loop
+     * This is used for running kotlin coroutines in the event loop
      * and spinning up worker threads for blocking code on demand.
      * <p>
      * Please do not use it at user application level to avoid blocking the event loop.
