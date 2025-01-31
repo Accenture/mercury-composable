@@ -6,15 +6,12 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.InboxBase;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 @EventInterceptor
 @PreLoad(route= TemporaryInbox.ROUTE, instances = 100)
 public class TemporaryInbox implements TypedLambdaFunction<EventEnvelope, Void> {
-    private static final Logger log = LoggerFactory.getLogger(TemporaryInbox.class);
     public static final String ROUTE = "temporary.inbox";
 
     @Override
