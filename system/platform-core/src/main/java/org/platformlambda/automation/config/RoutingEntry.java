@@ -18,8 +18,8 @@
 
 package org.platformlambda.automation.config;
 
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.models.*;
-import org.platformlambda.core.system.AppStarter;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -31,8 +31,6 @@ import java.util.*;
 
 public class RoutingEntry {
     private static final Logger log = LoggerFactory.getLogger(RoutingEntry.class);
-
-    private static final String ASYNC_HTTP_REQUEST = AppStarter.ASYNC_HTTP_REQUEST;
     private static final String HTTP = "http://";
     private static final String HTTPS = "https://";
     private static final String REST = "rest";
@@ -536,7 +534,7 @@ public class RoutingEntry {
                 }
                 // set primary to ASYNC_HTTP_REQUEST
                 info.host = info.primary;
-                info.primary = ASYNC_HTTP_REQUEST;
+                info.primary = AsyncHttpClient.ASYNC_HTTP_REQUEST;
             } catch (URISyntaxException e) {
                 log.error("Skipping entry with invalid service URL {} - {}", info.primary, e.getMessage());
                 return;

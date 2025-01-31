@@ -25,6 +25,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import org.platformlambda.automation.config.RoutingEntry;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.models.*;
 import org.platformlambda.automation.util.CustomContentTypeResolver;
 import org.platformlambda.automation.util.MimeTypeResolver;
@@ -79,7 +80,6 @@ public class HttpRouter {
     private static final String PROTOCOL = "x-forwarded-proto";
     private static final String HTTPS = "https";
     private static final String COOKIE = "cookie";
-    private static final String ASYNC_HTTP_RESPONSE = AppStarter.ASYNC_HTTP_RESPONSE;
     private static final String OPTIONS = "OPTIONS";
     private static final String GET = "GET";
     private static final String PUT = "PUT";
@@ -715,7 +715,7 @@ public class HttpRouter {
             EventEnvelope event = new EventEnvelope();
             event.setTo(requestEvent.primary).setFrom(HTTP_REQUEST)
                     .setCorrelationId(requestEvent.requestId).setBody(requestEvent.httpRequest)
-                    .setReplyTo(ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+                    .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
             // enable distributed tracing if needed
             if (requestEvent.tracing) {
                 event.setTrace(requestEvent.traceId, requestEvent.tracePath);
@@ -816,9 +816,7 @@ public class HttpRouter {
 @EventInterceptor
 class HttpAuth implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(HttpAuth.class);
-
     private static final String HTTP_REQUEST = "http.request";
-    private static final String ASYNC_HTTP_RESPONSE = AppStarter.ASYNC_HTTP_RESPONSE;
 
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
@@ -852,7 +850,7 @@ class HttpAuth implements LambdaFunction {
                                 EventEnvelope event = new EventEnvelope();
                                 event.setTo(evt.primary).setBody(req)
                                         .setCorrelationId(evt.requestId)
-                                        .setReplyTo(ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+                                        .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
                                 // enable distributed tracing if needed
                                 if (evt.tracing) {
                                     event.setFrom(evt.authService);
@@ -894,7 +892,7 @@ class HttpAuth implements LambdaFunction {
         result.put("status", status);
         result.put("message", message);
         result.put("type", "error");
-        event.setTo(ASYNC_HTTP_RESPONSE).setCorrelationId(evt.requestId).setStatus(status).setBody(result);
+        event.setTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE).setCorrelationId(evt.requestId).setStatus(status).setBody(result);
         // enable distributed tracing if needed
         if (evt.tracing) {
             event.setFrom(evt.authService);
@@ -903,7 +901,7 @@ class HttpAuth implements LambdaFunction {
         try {
             po.send(event);
         } catch (IOException e) {
-            log.error("Unable to send error to {} - {}", ASYNC_HTTP_RESPONSE, e.getMessage());
+            log.error("Unable to send error to {} - {}", AsyncHttpClient.ASYNC_HTTP_RESPONSE, e.getMessage());
         }
     }
 

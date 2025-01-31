@@ -20,6 +20,7 @@ package org.platformlambda.core.models;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
@@ -167,10 +168,10 @@ public class AsyncMultiInbox extends InboxBase {
                         } else {
                             metrics.put("success", true);
                         }
-                        EventEnvelope dt = new EventEnvelope().setTo(EventEmitter.DISTRIBUTED_TRACING);
+                        EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
                         EventEmitter.getInstance().send(dt.setBody(payload));
                     } catch (Exception e) {
-                        log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e);
+                        log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
                     }
                 }
             }

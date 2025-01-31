@@ -25,12 +25,11 @@ import java.lang.annotation.*;
  * <p>
  * Note that the "BeforeApplication" class should also implement the EntryPoint interface.
  * <p>
- * Smaller sequence will be executed first
+ * Smaller sequence will be executed first. Normal startup sequence must be between 3 and 999.
  * <p>
- * Normal startup sequence must be between 6 and 999
- * <p>
- * (Sequence 5 is reserved by the AsyncHttpClientLoader. If your startup code must run
- *  before this system module, you can use sequence from 1 to 4)
+ * (Sequence 0 is reserved by the EssentialServiceLoader and 2 reserved by Event Script.
+ * If your startup code must run before this system module, you can use sequence 1.
+ * Otherwise, use a number between 3 and 999)
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

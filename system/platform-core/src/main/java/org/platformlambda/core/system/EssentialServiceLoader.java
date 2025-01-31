@@ -22,26 +22,25 @@ import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.TemporaryInbox;
 
 import java.io.IOException;
-
 
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  * <p>
- * This module loads the AsyncHttpClient before loading other user application start-up code
- * so that its service is available to them. It is recommended that your start-up modules use
- * sequence from 6 onwards.
+ * This module loads essential services before running application start-up code
+ * so that services are available to them. It is therefore has a sequence number of 0.
  */
-@BeforeApplication(sequence = 5)
-public class AsyncHttpClientLoader implements EntryPoint {
+@BeforeApplication(sequence = 0)
+public class EssentialServiceLoader implements EntryPoint {
 
     @Override
     public void start(String[] args) throws IOException {
         Platform platform = Platform.getInstance();
-        platform.registerPrivate("async.http.request", new AsyncHttpClient(), 200);
-        platform.registerPrivate("distributed.tracing", new DistributedTrace(), 1);
+        platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 100);
+        platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_REQUEST, new AsyncHttpClient(), 100);
+        platform.registerPrivate(DistributedTrace.DISTRIBUTED_TRACING, new DistributedTrace(), 1);
     }
-
 }

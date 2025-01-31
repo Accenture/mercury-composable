@@ -64,6 +64,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @EventInterceptor
 public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void> {
+    public static final String ASYNC_HTTP_REQUEST = "async.http.request";
+    public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpClient.class);
     private static final AtomicInteger initCounter = new AtomicInteger(0);
     private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
@@ -85,7 +87,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String TRUST_ALL_FACTORY = "trust_all.";
     private static final String COOKIE = "cookie";
     private static final String DESTINATION = "destination";
-    private static final String HTTP_RELAY = "async.http.request";
     private static final String GET = "GET";
     private static final String PUT = "PUT";
     private static final String POST = "POST";
@@ -452,7 +453,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private void sendResponse(EventEnvelope input, EventEnvelope response) {
-        response.setTo(input.getReplyTo()).setFrom(HTTP_RELAY)
+        response.setTo(input.getReplyTo()).setFrom(AsyncHttpClient.ASYNC_HTTP_REQUEST)
                 .setCorrelationId(input.getCorrelationId())
                 .setTrace(input.getTraceId(), input.getTracePath());
         try {

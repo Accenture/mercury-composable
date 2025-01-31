@@ -35,7 +35,7 @@ import java.util.Map;
  * DO NOT use this directly in your application code.
  */
 @EventInterceptor
-@PreLoad(route = "http.flow.adapter", envInstances = "http.flow.adapter.instances", instances = 200)
+@PreLoad(route = "http.flow.adapter", instances = 200)
 public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String TYPE = "type";
     private static final String ERROR = "error";
@@ -84,5 +84,4 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
         dataset.put("session", request.getSessionInfo());
         FlowExecutor.getInstance().launch(po, flowId, dataset, event.getReplyTo(), event.getCorrelationId());
     }
-
 }

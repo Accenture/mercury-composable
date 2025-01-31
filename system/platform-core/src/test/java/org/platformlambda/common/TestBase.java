@@ -23,6 +23,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.service.MockHelloWorld;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -44,8 +45,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestBase {
     private static final Logger log = LoggerFactory.getLogger(TestBase.class);
-
-    protected static final String HTTP_CLIENT = "async.http.request";
     protected static final String HELLO_WORLD = "hello.world";
     protected static final String HELLO_MOCK = "hello.mock";
     protected static final String LONG_RUNNING_RPC = "long.running.rpc";
@@ -73,12 +72,11 @@ public class TestBase {
             AutoStart.main(new String[0]);
             AppStarter.runMainApp();
             ServerPersonality.getInstance().setType(ServerPersonality.Type.REST);
-            blockingWait(AppStarter.ASYNC_HTTP_RESPONSE, 20);
+            blockingWait(AsyncHttpClient.ASYNC_HTTP_RESPONSE, 20);
             blockingWait(CLOUD_CONNECTOR_HEALTH, 20);
             // you can convert a private function to public when needed
             blockingWait(HELLO_WORLD, 5);
             log.info("Mock cloud ready");
-
             Platform platform = Platform.getInstance();
             platform.registerPrivate(HELLO_MOCK, new MockHelloWorld(), 10);
             platform.registerKotlinPrivate(LONG_RUNNING_RPC, new LongRunningRpcSimulator(), 15);
@@ -129,11 +127,13 @@ public class TestBase {
         }
     }
 
-    private static boolean blockingWait(String provider, int seconds) throws InterruptedException {
+    private static void blockingWait(String provider, int seconds) throws InterruptedException {
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         Future<Boolean> status = Platform.getInstance().waitForProvider(provider, seconds);
         status.onSuccess(bench::add);
-        return Boolean.TRUE.equals(bench.poll(12, TimeUnit.SECONDS));
+        if (!Boolean.TRUE.equals(bench.poll(seconds, TimeUnit.SECONDS))) {
+            log.error("{} provider not available in {} seconds", provider, seconds);
+        }
     }
 
     protected EventEnvelope httpGet(String host, String path, Map<String, String> headers)
@@ -147,7 +147,7 @@ public class TestBase {
                 req.setHeader(kv.getKey(), kv.getValue());
             }
         }
-        EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
+        EventEnvelope event = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(event, 10000);
         res.onSuccess(bench::add);
         return bench.poll(10, TimeUnit.SECONDS);
@@ -166,7 +166,7 @@ public class TestBase {
                 req.setHeader(kv.getKey(), kv.getValue());
             }
         }
-        EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
+        EventEnvelope event = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(event, 10000);
         res.onSuccess(bench::add);
         return bench.poll(10, TimeUnit.SECONDS);

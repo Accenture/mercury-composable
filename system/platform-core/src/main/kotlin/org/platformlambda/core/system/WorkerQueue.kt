@@ -29,6 +29,7 @@ import org.platformlambda.core.models.AsyncHttpRequest
 import org.platformlambda.core.models.EventEnvelope
 import org.platformlambda.core.models.MappingExceptionHandler
 import org.platformlambda.core.models.ProcessStatus
+import org.platformlambda.core.services.DistributedTrace
 import org.platformlambda.core.util.Utility
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
@@ -110,7 +111,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     val journaled = po.isJournaled(def.route)
                     if (journaled || rpc == null || !ps.isDelivered) {
                         // Send tracing information to distributed trace logger
-                        val dt = EventEnvelope().setTo(EventEmitter.DISTRIBUTED_TRACING)
+                        val dt = EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING)
                         val payload: MutableMap<String, Any> = HashMap()
                         payload[ANNOTATIONS] = trace.annotations
                         // send input/output dataset to journal if configured in journal.yaml
@@ -142,7 +143,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         po.send(dt.setBody(payload))
                     }
                 } catch (e: Exception) {
-                    log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e)
+                    log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e)
                 }
             } else {
                 // print delivery warning if tracing is not enabled

@@ -36,8 +36,14 @@ import java.util.*;
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
+ * <p>
+ * Event Script should start right after essential services
+ * Therefore, we set sequence number to 2 and essential services to 0.
+ * <p>
+ * If you have a reason to execute another BeforeApplication module before
+ * Event Script starts, you can set it to 1.
  */
-@BeforeApplication(sequence=3)
+@BeforeApplication(sequence=2)
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);
 

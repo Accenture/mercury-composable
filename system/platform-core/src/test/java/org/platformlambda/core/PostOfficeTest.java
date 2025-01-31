@@ -20,6 +20,7 @@ package org.platformlambda.core;
 
 import io.vertx.core.Future;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.common.JacksonSerializer;
 import org.platformlambda.core.models.SimplePoJo;
 import org.platformlambda.common.TestBase;
@@ -27,6 +28,7 @@ import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
@@ -270,7 +272,7 @@ public class PostOfficeTest extends TestBase {
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setTargetHost("http://127.0.0.1:"+port).setHeader("X-Small-Payload-As-Bytes", "true")
                 .setUrl("/api/hello/bytes").setMethod("GET");
-        EventEnvelope httpResponse = new EventEnvelope().setTo("async.http.request").setBody(req);
+        EventEnvelope httpResponse = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope response = po.request(httpResponse, 5000).get();
         assertEquals(200, response.getStatus());
@@ -289,7 +291,7 @@ public class PostOfficeTest extends TestBase {
         String port = config.getProperty("server.port");
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/api/hello/bytes").setMethod("GET");
-        EventEnvelope httpResponse = new EventEnvelope().setTo("async.http.request").setBody(req);
+        EventEnvelope httpResponse = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope response = po.request(httpResponse, 5000).get();
         /*
@@ -1469,7 +1471,7 @@ public class PostOfficeTest extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"health");
+        EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"health");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
@@ -1494,7 +1496,7 @@ public class PostOfficeTest extends TestBase {
     public void infoTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         PostOffice po = new PostOffice("unit.test", "201", "TEST /info/test");
-        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"info");
+        EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"info");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
@@ -1513,7 +1515,7 @@ public class PostOfficeTest extends TestBase {
     public void libTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"lib");
+        EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"lib");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
@@ -1530,7 +1532,7 @@ public class PostOfficeTest extends TestBase {
         String MY_FUNCTION = "my.test.function";
         String ANOTHER_FUNCTION = "another.function";
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"routes");
+        EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"routes");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
@@ -1547,7 +1549,7 @@ public class PostOfficeTest extends TestBase {
     public void livenessProbeTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES)
+        EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES)
                                     .setHeader("type" ,"livenessprobe");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -1560,7 +1562,7 @@ public class PostOfficeTest extends TestBase {
     public void envTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope().setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"env");
+        EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"env");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
@@ -1578,7 +1580,7 @@ public class PostOfficeTest extends TestBase {
         final String WHEN = "when";
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope()
-                .setTo(EventEmitter.ACTUATOR_SERVICES).setHeader("type" ,"resume")
+                .setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"resume")
                 .setHeader(USER, "someone").setHeader(WHEN, "now");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);

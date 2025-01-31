@@ -27,7 +27,7 @@ import org.platformlambda.automation.models.AsyncContextHolder;
 import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.system.AppStarter;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
@@ -46,8 +46,6 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class HttpRequestHandler implements Handler<HttpServerRequest> {
     private static final Logger log = LoggerFactory.getLogger(HttpRequestHandler.class);
-
-    private static final String ASYNC_HTTP_RESPONSE = AppStarter.ASYNC_HTTP_RESPONSE;
     private static final String HOST = "host";
     private static final String TYPE = "type";
     private static final String ACCEPT = "Accept";
@@ -170,19 +168,19 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
         String accept = request.getHeader(ACCEPT);
         event.setHeader(ACCEPT_CONTENT, accept != null? accept : APPLICATION_JSON);
         if (origin.equals(Platform.getInstance().getOrigin())) {
-            event.setTo(EventEmitter.ACTUATOR_SERVICES);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
                 httpUtil.sendError(requestId, request, 404, origin+NOT_REACHABLE);
                 return true;
             }
-            event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         }
-        event.setCorrelationId(requestId).setReplyTo(ASYNC_HTTP_RESPONSE +"@"+ platform.getOrigin());
+        event.setCorrelationId(requestId).setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE +"@"+ platform.getOrigin());
         try {
             po.send(event);
         } catch (IOException e) {
-            log.warn("Unable to send request to {} - {}", EventEmitter.ACTUATOR_SERVICES, e.getMessage());
+            log.warn("Unable to send request to {} - {}", ActuatorServices.ACTUATOR_SERVICES, e.getMessage());
         }
         return true;
     }
@@ -197,13 +195,13 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
         }
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, SHUTDOWN);
         if (origin.equals(Platform.getInstance().getOrigin())) {
-            event.setTo(EventEmitter.ACTUATOR_SERVICES);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
                 httpUtil.sendError(requestId, request, 404, origin+NOT_REACHABLE);
                 return;
             }
-            event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         }
         event.setHeader(USER, System.getProperty("user.name"));
         po.sendLater(event, new Date(System.currentTimeMillis() + GRACE_PERIOD));
@@ -225,7 +223,7 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
         if (parts.size() == 1) {
             parts.add(NOW);
         }
-        String type = parts.get(0);
+        String type = parts.getFirst();
         if (!po.exists(REGISTRY)) {
             httpUtil.sendError(requestId, request, 400, type+" not available in standalone mode");
             return;
@@ -233,13 +231,13 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type)
                 .setHeader(USER, System.getProperty("user.name"));
         if (origin.equals(Platform.getInstance().getOrigin())) {
-            event.setTo(EventEmitter.ACTUATOR_SERVICES);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
                 httpUtil.sendError(requestId, request, 404, origin+NOT_REACHABLE);
                 return;
             }
-            event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         }
         String when = NOW.equals(parts.get(1)) ? NOW : LATER;
         event.setHeader(WHEN, when);

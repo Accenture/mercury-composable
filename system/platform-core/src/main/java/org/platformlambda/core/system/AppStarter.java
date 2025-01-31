@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.platformlambda.automation.config.RoutingEntry;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.http.HttpRequestHandler;
 import org.platformlambda.automation.models.AsyncContextHolder;
 import org.platformlambda.automation.services.HttpRouter;
@@ -57,8 +58,6 @@ public class AppStarter {
     private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
     private static final AtomicInteger compileCycle = new AtomicInteger(0);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 1000L;    // 10 seconds
-    public static final String ASYNC_HTTP_REQUEST = "async.http.request";
-    public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
     private static final String SKIP_OPTIONAL = "Skipping optional {}";
     private static final String CLASS_NOT_FOUND = "Class {} not found";
     private static final String JAVA_VERSION = "java.version";
@@ -172,7 +171,7 @@ public class AppStarter {
                 try {
                     Class<?> cls = Class.forName(info.getName());
                     if (Feature.isRequired(cls)) {
-                        int seq = getSequence(cls, main);
+                        int seq = Math.max(0, getSequence(cls, main));
                         String key = util.zeroFill(seq, MAX_SEQ) + "." + util.zeroFill(++n, MAX_SEQ);
                         steps.put(key, cls);
                     } else {
@@ -484,7 +483,7 @@ public class AppStarter {
                     if (contexts != null) {
                         Platform platform = Platform.getInstance();
                         try {
-                            platform.registerPrivate(ASYNC_HTTP_RESPONSE,
+                            platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE,
                                                         new AsyncHttpResponse(contexts), 200);
                         } catch (IOException e) {
                             log.error("Unable to register HTTP request/response handlers - {}", e.getMessage());

@@ -21,6 +21,7 @@ package org.platformlambda.servlets;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
@@ -50,13 +51,13 @@ public class SuspendResume {
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type)
                 .setHeader(USER, System.getProperty("user.name"));
         if (origin.equals(Platform.getInstance().getOrigin())) {
-            event.setTo(EventEmitter.ACTUATOR_SERVICES);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
                 response.sendError(404, "Target not reachable");
                 return;
             }
-            event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         }
         List<String> path = Utility.getInstance().split(request.getPathInfo(), "/");
         String when = !path.isEmpty() && NOW.equals(path.getFirst()) ? NOW : LATER;

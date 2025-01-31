@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-@MainApplication(sequence=1)
+@MainApplication
 public class MainApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 

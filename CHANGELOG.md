@@ -21,7 +21,10 @@ programming
 
 ### Changed
 
-Developer guide updated accordingly
+1. Developer guide updated accordingly
+2. Essential services are started as the first "BeforeApplication" using sequence 0
+3. Event Script runs as the second "BeforeApplication" using sequence 2
+4. BeforeApplication sequence 1 is reserved to handle rare use case that a module must run before event script
 
 ---
 ## Version 4.2.3, 1/28/2025

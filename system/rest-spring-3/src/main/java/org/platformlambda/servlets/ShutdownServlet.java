@@ -23,6 +23,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 
@@ -56,13 +57,13 @@ public class ShutdownServlet extends HttpServlet {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, SHUTDOWN);
         if (origin.equals(Platform.getInstance().getOrigin())) {
-            event.setTo(EventEmitter.ACTUATOR_SERVICES);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
                 response.sendError(404, "Target not reachable");
                 return;
             }
-            event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         }
         event.setHeader(USER, System.getProperty("user.name"));
         po.sendLater(event, new Date(System.currentTimeMillis() + GRACE_PERIOD));

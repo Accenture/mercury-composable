@@ -21,6 +21,7 @@ package org.platformlambda.automation;
 import io.vertx.core.Future;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -46,7 +47,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RestEndpointTest extends TestBase {
 
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
-    private static final String HTTP_REQUEST = "async.http.request";
     private static final long RPC_TIMEOUT = 10000;
 
     private static final SimpleXmlParser xml = new SimpleXmlParser();
@@ -84,7 +84,7 @@ public class RestEndpointTest extends TestBase {
         list.add("b");
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -112,7 +112,7 @@ public class RestEndpointTest extends TestBase {
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setTimeoutSeconds(TTL_SECONDS);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -156,7 +156,7 @@ public class RestEndpointTest extends TestBase {
         list.add("b");
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -181,7 +181,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("authorization", credentials);
         req.setUrl("/api/hello/world");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -203,7 +203,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("x-app-name", "demo");
         req.setUrl("/api/hello/world");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -233,7 +233,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setBody(b);
         req.setContentLength(len);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -271,7 +271,7 @@ public class RestEndpointTest extends TestBase {
         req.setStreamRoute(publisher.getStreamId());
         req.setTimeoutSeconds(TTL);
         req.setContentLength(len);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
@@ -319,7 +319,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setBody(b);
         req.setContentLength(len);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
@@ -354,7 +354,7 @@ public class RestEndpointTest extends TestBase {
         req.setContentLength(len);
         req.setStreamRoute(publisher.getStreamId());
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
@@ -403,7 +403,7 @@ public class RestEndpointTest extends TestBase {
         req.setContentLength(len);
         req.setFileName("hello-world.txt");
         req.setStreamRoute(publisher.getStreamId());
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
@@ -441,7 +441,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -478,7 +478,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -510,7 +510,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("content-type", "application/xml");
         req.setHeader("x-raw-xml", "true");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -547,7 +547,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -582,7 +582,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -621,7 +621,7 @@ public class RestEndpointTest extends TestBase {
         req.setTimeoutSeconds((int) (RPC_TIMEOUT / 1000)).setBody(xml);
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -652,7 +652,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -679,7 +679,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setHeader("x-correlation-id", traceId);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -704,7 +704,7 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setHeader("x-trace-id", traceId);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -733,7 +733,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/xml");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -768,7 +768,7 @@ public class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "application/json");
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -797,7 +797,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/index.html");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -825,7 +825,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -853,7 +853,7 @@ public class RestEndpointTest extends TestBase {
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/assets");
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -870,7 +870,7 @@ public class RestEndpointTest extends TestBase {
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/test/%2e%2e/%2e%2e/index.html");
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -889,7 +889,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/assets/another.css");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -915,7 +915,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/sample.js");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -939,7 +939,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/sample.xml").setHeader("x-raw-xml", "true");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -961,7 +961,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/assets/hello.txt");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
@@ -986,7 +986,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("GET");
         req.setUrl("/assets/hello.json");
         req.setTargetHost("http://127.0.0.1:"+port);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);

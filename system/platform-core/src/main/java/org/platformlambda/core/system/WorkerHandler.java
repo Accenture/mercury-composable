@@ -20,6 +20,7 @@ package org.platformlambda.core.system;
 
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
+import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +103,7 @@ public class WorkerHandler {
                 boolean journaled = po.isJournaled(def.getRoute());
                 if (journaled || rpc == null || !ps.isDelivered()) {
                     // Send tracing information to distributed trace logger
-                    EventEnvelope dt = new EventEnvelope().setTo(EventEmitter.DISTRIBUTED_TRACING);
+                    EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
                     Map<String, Object> payload = new HashMap<>();
                     payload.put(ANNOTATIONS, trace.annotations);
                     // send input/output dataset to journal if configured in journal.yaml
@@ -134,7 +135,7 @@ public class WorkerHandler {
                     po.send(dt.setBody(payload));
                 }
             } catch (Exception e) {
-                log.error("Unable to send to {}", EventEmitter.DISTRIBUTED_TRACING, e);
+                log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
             }
         } else {
             if (!ps.isDelivered()) {

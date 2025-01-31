@@ -1,7 +1,7 @@
 package org.platformlambda.core.services;
 
 import org.platformlambda.core.annotations.EventInterceptor;
-import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.InboxBase;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -9,10 +9,10 @@ import org.platformlambda.core.system.Platform;
 
 import java.util.Map;
 
+@ZeroTracing
 @EventInterceptor
-@PreLoad(route= TemporaryInbox.ROUTE, instances = 100)
 public class TemporaryInbox implements TypedLambdaFunction<EventEnvelope, Void> {
-    public static final String ROUTE = "temporary.inbox";
+    public static final String TEMPORARY_INBOX = "temporary.inbox";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {

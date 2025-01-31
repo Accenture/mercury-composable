@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
@@ -72,13 +73,13 @@ public abstract class ServletBase extends HttpServlet {
         }
         event.setHeader(ACCEPT_CONTENT, accept);
         if (origin.equals(myOrigin)) {
-            event.setTo(EventEmitter.ACTUATOR_SERVICES);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
         } else {
             if (!po.exists(origin)) {
                 response.sendError(404, "Target not reachable");
                 return;
             }
-            event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         }
         AsyncContext context = request.startAsync();
         Future<EventEnvelope> result = po.asyncRequest(event, 10000);

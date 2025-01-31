@@ -21,6 +21,7 @@ package org.platformlambda.core.system;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.AppConfigReader;
@@ -41,15 +42,12 @@ import java.util.concurrent.ExecutionException;
 
 public class EventEmitter {
     private static final Logger log = LoggerFactory.getLogger(EventEmitter.class);
-
     public static final int ONE_MILLISECOND = 1000000;
     public static final String CLOUD_CONNECTOR = "cloud.connector";
     public static final String CLOUD_SERVICES = "cloud.services";
-    public static final String DISTRIBUTED_TRACING = "distributed.tracing";
-    public static final String ACTUATOR_SERVICES = "actuator.services";
-    public static final String MISSING_ROUTING_PATH = "Missing routing path";
-    public static final String MISSING_EVENT = "Missing outgoing event";
     public static final String RPC = "rpc";
+    private static final String MISSING_ROUTING_PATH = "Missing routing path";
+    private static final String MISSING_EVENT = "Missing outgoing event";
     private static final long ASYNC_EVENT_HTTP_TIMEOUT = 60 * 1000L; // assume 60 seconds
     private static final String TASK_EXECUTOR = "task.executor";
     private static final String EVENT_MANAGER = "event.script.manager";
@@ -57,7 +55,6 @@ public class EventEmitter {
     private static final String ERROR = "error";
     private static final String MESSAGE = "message";
     private static final String X_EVENT_API = "x-event-api";
-    private static final String HTTP_REQUEST = "async.http.request";
     private static final String X_NO_STREAM = "x-small-payload-as-bytes";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
@@ -829,7 +826,7 @@ public class EventEmitter {
         byte[] b = event.toBytes();
         req.setBody(b);
         req.setContentLength(b.length);
-        EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         if (event.getFrom() != null) {
             request.setFrom(event.getFrom());
         }
@@ -940,7 +937,7 @@ public class EventEmitter {
         byte[] b = event.toBytes();
         req.setBody(b);
         req.setContentLength(b.length);
-        EventEnvelope apiRequest = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
+        EventEnvelope apiRequest = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         if (event.getFrom() != null) {
             apiRequest.setFrom(event.getFrom());
         }
@@ -1065,7 +1062,7 @@ public class EventEmitter {
         TargetRoute target = discover(to, event.isEndOfRoute());
         AsyncInbox inbox = new AsyncInbox(to, event, timeout, timeoutException);
         event.setCorrelationId(inbox.getCorrelationId());
-        event.setReplyTo(TemporaryInbox.ROUTE + "@" + platform.getOrigin());
+        event.setReplyTo(TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin());
         event.addTag(RPC, timeout);
         event.setBroadcastLevel(0);
         if (target.isCloud()) {
@@ -1123,7 +1120,7 @@ public class EventEmitter {
         TargetRoute target = discover(to, event.isEndOfRoute());
         FutureInbox inbox = new FutureInbox(to, event, timeout, timeoutException);
         event.setCorrelationId(inbox.getCorrelationId());
-        event.setReplyTo(TemporaryInbox.ROUTE + "@" + platform.getOrigin());
+        event.setReplyTo(TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin());
         event.addTag(RPC, timeout);
         event.setBroadcastLevel(0);
         if (target.isCloud()) {
@@ -1182,7 +1179,7 @@ public class EventEmitter {
         String cid = inbox.getCorrelationId();
         Platform platform = Platform.getInstance();
         EventBus system = platform.getEventSystem();
-        String replyTo = TemporaryInbox.ROUTE + "@" + platform.getOrigin();
+        String replyTo = TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin();
         int seq = 0;
         for (EventEnvelope event: events) {
             seq++;
@@ -1250,7 +1247,7 @@ public class EventEmitter {
         String cid = inbox.getCorrelationId();
         Platform platform = Platform.getInstance();
         EventBus system = platform.getEventSystem();
-        String replyTo = TemporaryInbox.ROUTE + "@" + platform.getOrigin();
+        String replyTo = TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin();
         int seq = 0;
         for (EventEnvelope event: events) {
             seq++;

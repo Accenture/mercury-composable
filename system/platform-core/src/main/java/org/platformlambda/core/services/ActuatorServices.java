@@ -1,6 +1,7 @@
 package org.platformlambda.core.services;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -16,8 +17,10 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@PreLoad(route="actuator.services", instances=10)
+@ZeroTracing
+@PreLoad(route=ActuatorServices.ACTUATOR_SERVICES, instances=10)
 public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Object> {
+    public static final String ACTUATOR_SERVICES = "actuator.services";
     private static final Logger log = LoggerFactory.getLogger(ActuatorServices.class);
     private static final Utility util = Utility.getInstance();
     private static final SimpleCache cache = SimpleCache.createCache("health.info", 5000);
@@ -358,7 +361,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
             up = false;
         }
         // save the current health status
-        po.send(EventEmitter.ACTUATOR_SERVICES, up, new Kv(TYPE, HEALTH_STATUS));
+        po.send(ACTUATOR_SERVICES, up, new Kv(TYPE, HEALTH_STATUS));
         // checkServices will update the "dependency" service list
         result.put(DEPENDENCY, dependency);
         if (dependency.isEmpty()) {

@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpServerResponse;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
+import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
@@ -105,7 +106,7 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
             String type = getAdminEndpointType(uri);
             if (type != null) {
                 EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-                event.setTo(origin != null? EventEmitter.ACTUATOR_SERVICES+"@"+origin : EventEmitter.ACTUATOR_SERVICES);
+                event.setTo(origin != null? ActuatorServices.ACTUATOR_SERVICES+"@"+origin : ActuatorServices.ACTUATOR_SERVICES);
                 String accept = request.getHeader(ACCEPT);
                 event.setHeader(ACCEPT_CONTENT, accept != null? accept : APPLICATION_JSON);
                 try {
@@ -193,7 +194,7 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
             return;
         }
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-        event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+        event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         event.setHeader(USER, System.getProperty("user.name"));
         String when = NOW.equals(parts.get(1)) ? NOW : LATER;
         event.setHeader(WHEN, when);
@@ -211,7 +212,7 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
             return;
         }
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, SHUTDOWN);
-        event.setTo(EventEmitter.ACTUATOR_SERVICES+"@"+origin);
+        event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
         event.setHeader(USER, System.getProperty("user.name"));
         EventEmitter.getInstance().sendLater(event, new Date(System.currentTimeMillis() + GRACE_PERIOD));
         sendResponse(SHUTDOWN, response, uri, 200, origin+" will be shutdown in "+GRACE_PERIOD+" ms");
