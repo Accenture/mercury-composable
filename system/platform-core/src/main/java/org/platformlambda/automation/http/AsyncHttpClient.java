@@ -453,7 +453,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private void sendResponse(EventEnvelope input, EventEnvelope response) {
-        response.setTo(input.getReplyTo()).setFrom(AsyncHttpClient.ASYNC_HTTP_REQUEST)
+        response.setTo(input.getReplyTo()).setFrom(ASYNC_HTTP_REQUEST)
                 .setCorrelationId(input.getCorrelationId())
                 .setTrace(input.getTraceId(), input.getTracePath());
         try {
