@@ -232,7 +232,7 @@ A function is executed when an event arrives. There are three function execution
 | Strategy         | Advantage                                                                                           | Disadvantage                                                                   |
 |:-----------------|:----------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------|
 | Virtual thread   | Higher throughput in terms of<br/>concurrent users. Functionally<br/>similar to a suspend function. | N/A                                                                            |
-| Suspend function | Coroutine for high concurrency                                                                     | Requires coding in Kotlin language                                             |
+| Suspend function | Coroutine for high concurrency                                                                      | Requires coding in Kotlin language                                             |
 | Kernel threads   | Higher performance in terms of<br/>operations per seconds                                           | Lower number of concurrent threads<br/>due to high context switching overheads |
 
 ### Virtual thread
