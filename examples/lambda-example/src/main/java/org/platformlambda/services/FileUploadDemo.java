@@ -19,7 +19,6 @@ public class FileUploadDemo implements TypedLambdaFunction<AsyncHttpRequest, Obj
             
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        log.info("1------{} {} {}", headers, input.getStreamRoute(), input.getFileName());
         String streamId = input.getStreamRoute();
         String filename = input.getFileName();
         int size = input.getContentLength();
