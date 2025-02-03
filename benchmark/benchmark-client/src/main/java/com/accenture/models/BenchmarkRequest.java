@@ -36,7 +36,7 @@ public class BenchmarkRequest {
     public BenchmarkRequest(String type, int count, int size) {
         this.type = type;
         this.count = Math.max(1, count);
-        this.size = Math.max(10, (size / 10) * 10); // to be nearest 10
+        this.size = Math.max(10, (size / 10) * 10); // rounded to the nearest 10
         this.start = new Date();
         this.cid = Utility.getInstance().getUuid();
     }

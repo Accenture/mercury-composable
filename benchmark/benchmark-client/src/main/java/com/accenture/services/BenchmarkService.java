@@ -109,7 +109,6 @@ public class BenchmarkService implements LambdaFunction {
                     " INFO: Publish rate = "+number.format(publishRate)+EVENTS_PER_SECOND+", "+
                     number.format(publishBps)+BPS);
         }
-
         long minOneTrip = Long.MAX_VALUE;
         long maxOneTrip = 0;
         long minRoundTrip = Long.MAX_VALUE;
@@ -118,7 +117,6 @@ public class BenchmarkService implements LambdaFunction {
         long totalTime = now.getTime() - start.getTime();
         po.send(BENCHMARK_USERS, util.getLocalTimestamp()+
                 " INFO: Total time spent end-to-end = "+number.format(totalTime)+" ms");
-
         for (Map.Entry<Integer, BenchmarkResponse> entry: responses.entrySet()) {
             BenchmarkResponse res = entry.getValue();
             long oneTripLatency = Math.abs(res.oneTrip.getTime() - start.getTime());
@@ -140,12 +138,10 @@ public class BenchmarkService implements LambdaFunction {
                 " INFO: First one trip event arrives in "+number.format(minOneTrip)+MS);
         po.send(BENCHMARK_USERS, util.getLocalTimestamp()+
                 " INFO: Last one trip event arrives in "+number.format(maxOneTrip)+MS);
-
         po.send(BENCHMARK_USERS, util.getLocalTimestamp()+
                 " INFO: First round trip event returns in "+number.format(minRoundTrip)+MS);
         po.send(BENCHMARK_USERS, util.getLocalTimestamp()+
                 " INFO: Last round trip event returns in "+number.format(maxRoundTrip)+MS);
-
         if (maxOneTrip > 0) {
             float avgOneTrip = ((float) count * 1000) / maxOneTrip;
             float oneTripBps = avgOneTrip * size * 8;
@@ -170,7 +166,6 @@ public class BenchmarkService implements LambdaFunction {
         String me = Platform.getInstance().getOrigin();
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
-
         if (headers.containsKey(SENDER) && headers.containsKey(COMMAND)) {
             String sender = headers.get(SENDER);
             String command = headers.get(COMMAND);
@@ -237,17 +232,14 @@ public class BenchmarkService implements LambdaFunction {
                 }
                 String target = ASYNC.equals(benchmarkRequest.type)? NETWORK_ONE_WAY : NETWORK_ECHO;
                 int cycles = benchmarkRequest.size / 10;
-                String sb = "123456789.".repeat(Math.max(0, cycles));
+                String sb = "123456789.".repeat(cycles);
                 Map<String, Object> data = new HashMap<>();
                 data.put(SENDER, sender);
                 data.put(PAYLOAD, sb);
                 data.put(START, new Date());
-
                 responses.clear();
                 testRunning = true;
-
                 long start = System.currentTimeMillis();
-
                 if (HTTP.equals(benchmarkRequest.type)) {
                     if (httpTarget == null) {
                         throw new IllegalArgumentException("Please set target for EventOverHttp first");
@@ -279,7 +271,6 @@ public class BenchmarkService implements LambdaFunction {
                     }
                 }
                 benchmarkRequest.timeSpendPublishing = System.currentTimeMillis() - start;
-
             } catch(IllegalArgumentException e) {
                 po.send(sender, util.getLocalTimestamp()+WARNING+e.getMessage());
             }
@@ -295,10 +286,10 @@ public class BenchmarkService implements LambdaFunction {
                     util.isDigits(parts.get(1)) && util.isDigits(parts.get(3)))) {
                 int count = util.str2int(parts.get(1));
                 int size = util.str2int(parts.get(3));
+                // payload size is rounded to the nearest 10
                 return new BenchmarkRequest(parts.get(0), count, size);
 
         }
         throw new IllegalArgumentException("Syntax: async | echo {count} payload {size in bytes}");
     }
-
 }
