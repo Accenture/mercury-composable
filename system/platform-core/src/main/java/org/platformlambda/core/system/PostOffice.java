@@ -23,7 +23,6 @@ import org.platformlambda.core.models.CustomSerializer;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TraceInfo;
-import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.util.Date;
@@ -146,22 +145,43 @@ public class PostOffice {
     }
 
     /**
-     * Convert the event response body into a PoJo
+     * Convert the event body into a PoJo using a custom serializer if any
+     * <p>
+     * Custom serializer at the PostOffice level is used when the user function is not
+     * configured with a custom one.
      *
-     * @param response event
+     * @param event that has a body
      * @param toValueType class
      * @return pojo
      * @param <T> pojo class
      */
-    public <T> T getResponseBodyAsPoJo(EventEnvelope response, Class<T> toValueType) {
-        if (response.getRawBody() instanceof Map) {
+    public <T> T getEventBodyAsPoJo(EventEnvelope event, Class<T> toValueType) {
+        if (event.getRawBody() instanceof Map) {
             if (serializer == null) {
-                return response.getBody(toValueType);
+                return event.getBody(toValueType);
             } else {
-                return serializer.toPoJo(response.getRawBody(), toValueType);
+                return serializer.toPoJo(event.getRawBody(), toValueType);
             }
         } else {
             throw new IllegalArgumentException("Event body is not a PoJo");
+        }
+    }
+
+    /**
+     * Set a pojo as an event body using a custom serializer if any
+     * <p>
+     * Custom serializer at the PostOffice level is used when the user function is not
+     * configured with a custom one.
+     *
+     * @param event to be set with a pojo body
+     * @param pojo input
+     */
+    public void setEventBodyAsPoJo(EventEnvelope event, Object pojo) {
+        if (serializer == null) {
+            event.setBody(pojo);
+        } else {
+            event.setBody(serializer.toMap(pojo));
+            event.setType(pojo.getClass().getName());
         }
     }
 
@@ -513,12 +533,6 @@ public class PostOffice {
         }
         if (event.getTracePath() == null) {
             event.setTracePath(myTracePath);
-        }
-        if (serializer != null) {
-            Object original = event.getOriginalObject();
-            if (Utility.getInstance().isPoJo(original)) {
-                event.setBody(serializer.toMap(original));
-            }
         }
         return event;
     }

@@ -664,10 +664,11 @@ public class EventEmitter {
     /**
      * Send an event to a target service
      *
-     * @param event to the target
+     * @param input event to the target
      * @throws IOException if invalid route or missing parameters
      */
-    public void send(final EventEnvelope event) throws IOException {
+    public void send(final EventEnvelope input) throws IOException {
+        var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
@@ -776,7 +777,7 @@ public class EventEmitter {
      * IMPORTANT: This is an asynchronous RPC using Future.
      * If you want sequential non-blocking RPC, please use the request API
      *
-     * @param event to be sent to a peer application instance
+     * @param input event to be sent to a peer application instance
      * @param timeout to abort the request
      * @param headers optional security headers such as "Authorization"
      * @param eventEndpoint fully qualified URL such as http://domain:port/api/event
@@ -786,12 +787,10 @@ public class EventEmitter {
      * @throws IOException in case of routing error
      */
     @SuppressWarnings("unchecked")
-    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout,
+    public Future<EventEnvelope> asyncRequest(final EventEnvelope input, long timeout,
                                               Map<String, String> headers,
                                               String eventEndpoint, boolean rpc) throws IOException {
-        if (event == null) {
-            throw new IllegalArgumentException(MISSING_EVENT);
-        }
+        var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
@@ -887,7 +886,7 @@ public class EventEmitter {
      * <p>
      *     Note that timeout is returned as a regular event with status=408
      *
-     * @param event to be sent to a peer application instance
+     * @param input event to be sent to a peer application instance
      * @param timeout to abort the request
      * @param headers optional security headers such as "Authorization"
      * @param eventEndpoint fully qualified URL such as http://domain:port/api/event
@@ -897,12 +896,10 @@ public class EventEmitter {
      * @throws IOException in case of routing error
      */
     @SuppressWarnings("unchecked")
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
                                               Map<String, String> headers,
                                               String eventEndpoint, boolean rpc) throws IOException {
-        if (event == null) {
-            throw new IllegalArgumentException(MISSING_EVENT);
-        }
+        var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
@@ -1036,17 +1033,15 @@ public class EventEmitter {
      * IMPORTANT: This is an asynchronous RPC using Future.
      * If you want sequential non-blocking RPC, please use the request API
      *
-     * @param event to the target
+     * @param input event to the target
      * @param timeout in milliseconds
      * @param timeoutException if true, return TimeoutException in onFailure method. Otherwise, return timeout event.
      * @return future result
      * @throws IOException in case of routing error
      */
-    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout, boolean timeoutException)
+    public Future<EventEnvelope> asyncRequest(final EventEnvelope input, long timeout, boolean timeoutException)
             throws IOException {
-        if (event == null) {
-            throw new IllegalArgumentException(MISSING_EVENT);
-        }
+        var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
@@ -1093,18 +1088,16 @@ public class EventEmitter {
      * <p>
      * You can retrieve result using future.get()
      *
-     * @param event to the target
+     * @param input event to the target
      * @param timeout in milliseconds
      * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
      *                         Otherwise, return timeout as a regular event.
      * @return future result
      * @throws IOException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
                                                               boolean timeoutException) throws IOException {
-        if (event == null) {
-            throw new IllegalArgumentException(MISSING_EVENT);
-        }
+        var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
@@ -1181,7 +1174,8 @@ public class EventEmitter {
         EventBus system = platform.getEventSystem();
         String replyTo = TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin();
         int seq = 0;
-        for (EventEnvelope event: events) {
+        for (EventEnvelope input: events) {
+            var event = input.copy();
             seq++;
             String sequencedCid = cid + "-" + seq;
             String destination = event.getTo();
@@ -1249,7 +1243,8 @@ public class EventEmitter {
         EventBus system = platform.getEventSystem();
         String replyTo = TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin();
         int seq = 0;
-        for (EventEnvelope event: events) {
+        for (EventEnvelope input: events) {
+            var event = input.copy();
             seq++;
             String sequencedCid = cid + "-" + seq;
             String destination = event.getTo();
@@ -1376,5 +1371,4 @@ public class EventEmitter {
             }
         });
     }
-
 }

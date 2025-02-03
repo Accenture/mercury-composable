@@ -38,7 +38,6 @@ import java.util.concurrent.TimeoutException;
  */
 public class FutureInbox extends InboxBase {
     private static final Logger log = LoggerFactory.getLogger(FutureInbox.class);
-
     private final String start = Utility.getInstance().date2str(new Date());
     private final long begin = System.nanoTime();
     private final CompletableFuture<EventEnvelope> future = new CompletableFuture<>();

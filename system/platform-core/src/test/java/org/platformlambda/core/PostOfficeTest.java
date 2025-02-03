@@ -1783,31 +1783,37 @@ public class PostOfficeTest extends TestBase {
         PostOffice po = new PostOffice("custom.serializer.test",
                 "10108", "/custom/serializer", new JacksonSerializer());
         SimplePoJo pojo = new SimplePoJo();
-        pojo.name = "hello";
+        pojo.fullName = "hello";
         pojo.address = "world";
         pojo.telephone = 12345678;
+        var event1 = new EventEnvelope().setTo("custom.serializer.service.java");
+        po.setEventBodyAsPoJo(event1, pojo);
+        // class name is encoded as type so user function can inspect it
+        assertEquals(pojo.getClass().getName(), event1.getType());
         // test java user function
-        EventEnvelope result1 = po.request(
-                new EventEnvelope().setTo("custom.serializer.service.java").setBody(pojo), 5000).get();
+        EventEnvelope result1 = po.request(event1, 5000).get();
         assertInstanceOf(Map.class, result1.getBody());
         Map<String, Object> data1 = (Map<String, Object>) result1.getBody();
-        assertEquals(pojo.name, data1.get("name"));
+        assertEquals(pojo.fullName, data1.get("fullName"));
         assertEquals(pojo.address, data1.get("address"));
         assertEquals(pojo.telephone, data1.get("telephone"));
-        SimplePoJo responsePoJo1 = po.getResponseBodyAsPoJo(result1, SimplePoJo.class);
-        assertEquals(pojo.name, responsePoJo1.name);
+        SimplePoJo responsePoJo1 = po.getEventBodyAsPoJo(result1, SimplePoJo.class);
+        assertEquals(pojo.fullName, responsePoJo1.fullName);
         assertEquals(pojo.address, responsePoJo1.address);
         assertEquals(pojo.telephone, responsePoJo1.telephone);
+        // result event envelope is encoded as Map ("M") because the custom serializer is external to the function
+        assertEquals("M", result1.getType());
         // test kotlin user function
-        EventEnvelope result2 = po.request(
-                new EventEnvelope().setTo("custom.serializer.service.kotlin").setBody(pojo), 5000).get();
+        var event2 = new EventEnvelope().setTo("custom.serializer.service.kotlin");
+        po.setEventBodyAsPoJo(event2, pojo);
+        EventEnvelope result2 = po.request(event2, 5000).get();
         assertInstanceOf(Map.class, result2.getBody());
         Map<String, Object> data2 = (Map<String, Object>) result2.getBody();
-        assertEquals(pojo.name, data2.get("name"));
+        assertEquals(pojo.fullName, data2.get("fullName"));
         assertEquals(pojo.address, data2.get("address"));
         assertEquals(pojo.telephone, data2.get("telephone"));
-        SimplePoJo responsePoJo2 = po.getResponseBodyAsPoJo(result2, SimplePoJo.class);
-        assertEquals(pojo.name, responsePoJo2.name);
+        SimplePoJo responsePoJo2 = po.getEventBodyAsPoJo(result2, SimplePoJo.class);
+        assertEquals(pojo.fullName, responsePoJo2.fullName);
         assertEquals(pojo.address, responsePoJo2.address);
         assertEquals(pojo.telephone, responsePoJo2.telephone);
     }

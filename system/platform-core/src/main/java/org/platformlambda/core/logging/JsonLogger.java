@@ -108,19 +108,14 @@ public abstract class JsonLogger extends AbstractAppender {
         if (message != null) {
             // variances of log event
             if (event instanceof MutableLogEvent mutableEvent) {
-                var content = getMapContent(mutableEvent.getFormat(), message.getParameters());
-                if (content != null) {
-                    return content;
-                }
+                return getMapContent(message, mutableEvent.getFormat(), message.getParameters());
             } else if (message instanceof ParameterizedMessage msg) {
-                var content = getMapContent(msg.getFormat(), message.getParameters());
-                if (content != null) {
-                    return content;
-                }
+                return getMapContent(message, msg.getFormat(), message.getParameters());
             } else if (message instanceof ObjectMessage obj) {
                 return String.valueOf(obj.getParameter());
+            } else {
+                return message.getFormattedMessage();
             }
-            return message.getFormattedMessage();
         } else {
             return "null";
         }
@@ -129,17 +124,17 @@ public abstract class JsonLogger extends AbstractAppender {
     /**
      * Handle the use case to log JSON (map of key-values) using log.info("{}", keyValues)
      *
+     * @param message object
      * @param format should be "{}"
      * @param objects are the log parameters
      * @return map of key-values
      */
-    private Object getMapContent(String format, Object[] objects) {
-        if ("{}".equals(format)) {
-            // Note that it is possible to have 2 objects where the second one is a Throwable
-            if (objects != null && objects.length > 0 && objects[0] instanceof Map) {
-                return objects[0];
-            }
+    private Object getMapContent(Message message, String format, Object[] objects) {
+        // Note that it is possible to have 2 objects where the second one is a Throwable
+        if ("{}".equals(format) && objects != null && objects.length > 0 && objects[0] instanceof Map) {
+            return objects[0];
+        } else {
+            return message.getFormattedMessage();
         }
-        return null;
     }
 }

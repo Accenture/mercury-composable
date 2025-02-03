@@ -20,6 +20,9 @@ package org.platformlambda.core;
 
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -32,12 +35,75 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ObjectStreamTest {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamTest.class);
+    private static final String TYPE = "type";
+    private static final String DATA = "data";
+    private static final String READ = "read";
+    private static final String END_OF_STREAM = "eof";
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void streamConsumerTest() throws IOException, InterruptedException, ExecutionException {
+        final long TIME_TO_LIVE = 3000;
+        final String FIRST_MESSAGE = "first message";
+        final String SECOND_MESSAGE = "second message";
+        final String THIRD_MESSAGE = "third message";
+        // Step 1 - user function create a Flux or pass the Flux object from a database
+        //          (note that emitter will not start until FluxPublish begins publishing)
+        Flux<String> source = Flux.create(emitter -> {
+            emitter.next(FIRST_MESSAGE);
+            emitter.next(SECOND_MESSAGE);
+            emitter.next(THIRD_MESSAGE);
+            emitter.complete();
+        });
+        // Step 2 - do data transformation
+        Flux<Map<String, Object>> filtered = source.map(d -> Map.of(DATA, d));
+        // Step 3 - called function creates publisher from a Flux object
+        FluxPublisher<Map<String, Object>> fluxRelay = new FluxPublisher<>(filtered, TIME_TO_LIVE);
+        String streamId = fluxRelay.publish();
+        // Blocking queue is used in Unit Test for demo purpose only
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        final List<Object> messages = new ArrayList<>();
+        // Step 4 - calling function creates consumer from a streamId
+        var po = new PostOffice("unit.test", "202", "STREAM /low/level");
+        Platform platform = Platform.getInstance();
+        platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 1);
+        platform.registerPrivate(DistributedTrace.DISTRIBUTED_TRACING, new DistributedTrace(), 1);
+        // use low-level stream READ protocol. This demonstrates compatibility with Composable Node.js version.
+        var req = new EventEnvelope().setTo(streamId).setCorrelationId("101").setHeader(TYPE, READ)
+                        .setTrace("202", "STREAM /low/level");
+        while (true) {
+            var res = po.request(req, 5000).get();
+            // replyTo is set to the request event but input event is guaranteed to be immutable, thus null value.
+            assertNull(req.getReplyTo());
+            String type = res.getHeader(TYPE);
+            if (END_OF_STREAM.equals(type)) {
+                log.info("END OF STREAM");
+                break;
+            }
+            if (DATA.equals(type) && res.getBody() != null) {
+                log.info("correlationId={}, message={}", res.getCorrelationId(), res.getBody());
+                messages.add(res.getBody());
+                assertEquals("101", res.getCorrelationId());
+            }
+        }
+        assertEquals(3, messages.size());
+        assertInstanceOf(Map.class, messages.get(0));
+        assertInstanceOf(Map.class, messages.get(1));
+        assertInstanceOf(Map.class, messages.get(2));
+        Object message1 = ((Map<String, Object>) messages.get(0)).get(DATA);
+        Object message2 = ((Map<String, Object>) messages.get(1)).get(DATA);
+        Object message3 = ((Map<String, Object>) messages.get(2)).get(DATA);
+        assertEquals(FIRST_MESSAGE, message1);
+        assertEquals(SECOND_MESSAGE, message2);
+        assertEquals(THIRD_MESSAGE, message3);
+    }
 
     @SuppressWarnings("unchecked")
     @Test
@@ -45,7 +111,6 @@ public class ObjectStreamTest {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
-        final String TAG = "data";
         // Step 1 - user function create a Flux or pass the Flux object from a database
         //          (note that emitter will not start until FluxPublish begins publishing)
         Flux<String> source = Flux.create(emitter -> {
@@ -54,7 +119,7 @@ public class ObjectStreamTest {
             emitter.complete();
         });
         // Step 2 - do data transformation
-        Flux<Map<String, Object>> filtered = source.map(d -> Map.of(TAG, d));
+        Flux<Map<String, Object>> filtered = source.map(d -> Map.of(DATA, d));
         // Step 3 - called function creates publisher from a Flux object
         FluxPublisher<Map<String, Object>> fluxRelay = new FluxPublisher<>(filtered, TIME_TO_LIVE);
         String streamId = fluxRelay.publish();
@@ -72,8 +137,8 @@ public class ObjectStreamTest {
         assertEquals(2, messages.size());
         assertInstanceOf(Map.class, messages.get(0));
         assertInstanceOf(Map.class, messages.get(1));
-        Object message1 = ((Map<String, Object>) messages.get(0)).get(TAG);
-        Object message2 = ((Map<String, Object>) messages.get(1)).get(TAG);
+        Object message1 = ((Map<String, Object>) messages.get(0)).get(DATA);
+        Object message2 = ((Map<String, Object>) messages.get(1)).get(DATA);
         assertEquals(FIRST_MESSAGE, message1);
         assertEquals(SECOND_MESSAGE, message2);
     }
@@ -85,7 +150,6 @@ public class ObjectStreamTest {
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
         final String DEMO_EXCEPTION = "demo exception";
-        final String TAG = "data";
         // Step 1 - user function create a Flux or pass the Flux object from a database
         //          (note that emitter will not start until FluxPublish begins publishing)
         Flux<String> source = Flux.create(emitter -> {
@@ -94,7 +158,7 @@ public class ObjectStreamTest {
             emitter.error(new AppException(400, DEMO_EXCEPTION));
         });
         // Step 2 - do data transformation
-        Flux<Map<String, Object>> filtered = source.map(d -> Map.of(TAG, d));
+        Flux<Map<String, Object>> filtered = source.map(d -> Map.of(DATA, d));
         // Step 3 - called function creates publisher from a Flux object
         FluxPublisher<Map<String, Object>> fluxRelay = new FluxPublisher<>(filtered, TIME_TO_LIVE);
         String streamId = fluxRelay.publish();
@@ -113,8 +177,8 @@ public class ObjectStreamTest {
         assertInstanceOf(Map.class, messages.get(0));
         assertInstanceOf(Map.class, messages.get(1));
         assertInstanceOf(AppException.class, messages.get(2));
-        Object message1 = ((Map<String, Object>) messages.get(0)).get(TAG);
-        Object message2 = ((Map<String, Object>) messages.get(1)).get(TAG);
+        Object message1 = ((Map<String, Object>) messages.get(0)).get(DATA);
+        Object message2 = ((Map<String, Object>) messages.get(1)).get(DATA);
         var ex = (AppException) messages.get(2);
         assertEquals(FIRST_MESSAGE, message1);
         assertEquals(SECOND_MESSAGE, message2);
@@ -211,8 +275,8 @@ public class ObjectStreamTest {
         ObjectStreamIO unused = new ObjectStreamIO(0);
         assertEquals(1, unused.getExpirySeconds());
         String unusedStream = unused.getInputStreamId().substring(0, unused.getInputStreamId().indexOf('@'));
-        // create a stream with 5 second expiry
-        EventPublisher publisher = new EventPublisher(5000);
+        // create a stream with 3 second expiry
+        EventPublisher publisher = new EventPublisher(3000);
         publisher.publish(TEXT);
         Map<String, Object> info = ObjectStreamIO.getStreamInfo();
         assertNotNull(info.get("count"));
@@ -220,16 +284,17 @@ public class ObjectStreamTest {
         assertTrue(count > 0);
         String id = publisher.getStreamId().substring(0, publisher.getStreamId().indexOf('@'));
         assertTrue(info.containsKey(id));
-        FluxConsumer<String> flux = new FluxConsumer<>(publisher.getStreamId(), 3000);
+        FluxConsumer<String> flux = new FluxConsumer<>(publisher.getStreamId(), 2000);
         flux.consume(dataBench::add, exceptionBench::add, null);
         String result = dataBench.poll(10, TimeUnit.SECONDS);
         assertEquals(TEXT, result);
-        // The stream is intentionally left open
-        Thread.sleep(1100);
+        // The stream is intentionally left open so the consumer will time out
         Throwable e = exceptionBench.poll(5, TimeUnit.SECONDS);
         assertInstanceOf(AppException.class, e);
         var exception = (AppException) e;
         assertEquals(408, exception.getStatus());
+        // consume has expiry time of 2 seconds and publisher would expire in 3 seconds
+        // we want to see FluxConsumer expiry here so it is set to a smaller value than the publisher
         assertEquals("Consumer expired", exception.getMessage());
         /*
          * The system will check expired streams every 30 seconds
@@ -243,8 +308,8 @@ public class ObjectStreamTest {
         // The stream has not yet expired
         assertTrue(allStreams.containsKey(id));
         log.info("{} is still active", id);
-        // Sleep past the expiry
-        Thread.sleep(4000);
+        // Sleep past the expiry for the publisher
+        Thread.sleep(1500);
         ObjectStreamIO.checkExpiredStreams();
         allStreams = ObjectStreamIO.getStreamInfo();
         // It should be gone at this point

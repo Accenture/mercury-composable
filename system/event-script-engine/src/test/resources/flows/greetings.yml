@@ -9,6 +9,7 @@ tasks:
   - name: 'my.greeting.task'
     input:
       - 'input.path_parameter.user -> user'
+      - 'input.path_parameter.user -> model.user:int -> user_number'
       - 'input.query.ex -> exception'
       - 'text(hello world) -> greeting'
       - 'text(${PATH}) -> path'
@@ -16,9 +17,8 @@ tasks:
       - 'float(12.345) -> float_number'
       - 'double(12.345) -> double_number'
       - 'boolean(true) -> boolean_value'
-      - 'boolean(true) -> model.true'
-      - '!model.true -> negate_value'
-      - 'model.true:! -> also_negate_value'
+      - 'boolean(true) -> !model.bool -> negate_value'
+      - 'model.bool:! -> double_negate_value'
       - 'map(direction=right, test=message) -> model.map'
       - 'text(demo_token) -> model.access_token'
       - 'input.header -> header'
@@ -41,6 +41,7 @@ tasks:
       - 'header -> output.header'
       - 'header.demo -> output.header.x-demo'
       - 'text(${application.name}) -> output.body.name'
+      - 'model.bool -> !model.bool -> output.body.positive'
     description: 'Hello World'
     execution: end
     exception: 'v1.hello.exception'

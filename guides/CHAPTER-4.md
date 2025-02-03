@@ -620,6 +620,34 @@ If your composable function requires a path parameter to be accepted as an integ
 The above input data mapping example illustrates the use of a model variable to convert a text parameter
 into an integer. Note that if the path parameter is not numeric, the converted value will be -1.
 
+### Convenient data mapping using model variable
+
+To address the common use case of using a model variable as an intermediate value, the system supports the following
+formats for input data mapping and output data mapping.
+
+```text
+// 2-part data mapping format
+LHS -> RHS
+// 3-part data mapping format
+LHS -> model.variable -> RHS
+```
+
+For the 2-part data mapping format, there are left-hand-side and right-hand-side where the value retrieved
+from the left-hand-side variable is mapped to the right-hand-side.
+
+The 3-part data mapping allows us to use a model variable as an intermediate for simple type matching.
+
+In the previous example, it uses two entries to convert a HTTP path parameter from a text string to a number and
+set the number as input argument. The configuration syntax can be simplified as follows:
+
+```yaml
+- input:
+    - 'input.path_parameter.userid -> model.userid:int -> userid'
+```
+
+The above 3-part data mapping entry will be expanded into two entries internally. This extra processing is done
+at the "CompileFlows" step and thus there is no impact to the task execution speed.
+
 ### Metadata for each flow instance
 
 For each flow instance, the state machine in the "model" namespace provides the following metadata that

@@ -70,7 +70,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final AtomicInteger initCounter = new AtomicInteger(0);
     private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
-    private static final long TEN_MINUTE = 10 * 60 * 1000L;
+    private static final long THIRTY_MINUTE = 30 * 60 * 1000L;
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final ConcurrentMap<String, WebClient> webClients = new ConcurrentHashMap<>();
@@ -534,7 +534,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         File[] files = tempDir.listFiles();
         if (files != null && files.length > 0) {
             for (File f: files) {
-                if (f.isFile() && now - f.lastModified() > TEN_MINUTE) {
+                if (f.isFile() && now - f.lastModified() > THIRTY_MINUTE) {
                     expired.add(f);
                 }
             }

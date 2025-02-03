@@ -67,15 +67,15 @@ rest:
   - service: "hello.download"
     methods: ['GET']
     url: "/api/hello/download"
-    timeout: 20
+    timeout: 20s
     cors: cors_1
     headers: header_1
     tracing: true
 
   - service: "hello.download"
     methods: ['GET']
-    url: "/api/hello/download/{filename}"
-    timeout: 20
+    url: "/api/hello/download"
+    timeout: 20s
     cors: cors_1
     headers: header_1
     tracing: true

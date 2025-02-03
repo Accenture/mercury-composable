@@ -38,7 +38,6 @@ import java.util.concurrent.TimeoutException;
  */
 public class AsyncInbox extends InboxBase {
     private static final Logger log = LoggerFactory.getLogger(AsyncInbox.class);
-
     private final String start = Utility.getInstance().date2str(new Date());
     private final long begin = System.nanoTime();
     private final String traceId;

@@ -23,6 +23,8 @@ import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.services.TemporaryInbox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -35,9 +37,11 @@ import java.io.IOException;
  */
 @BeforeApplication(sequence = 0)
 public class EssentialServiceLoader implements EntryPoint {
+    private static final Logger log = LoggerFactory.getLogger(EssentialServiceLoader.class);
 
     @Override
     public void start(String[] args) throws IOException {
+        log.info("Loading essential services");
         Platform platform = Platform.getInstance();
         platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 100);
         platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_REQUEST, new AsyncHttpClient(), 100);

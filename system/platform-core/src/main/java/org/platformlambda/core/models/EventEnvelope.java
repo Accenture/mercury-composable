@@ -85,7 +85,6 @@ public class EventEnvelope {
     private static final String STACK_FLAG = "5";
     // special header for setting HTTP cookie for rest-automation
     private static final String SET_COOKIE = "set-cookie";
-
     private final Map<String, String> headers = new HashMap<>();
     private String id;
     private String from;
@@ -95,11 +94,10 @@ public class EventEnvelope {
     private String tracePath;
     private String cid;
     private String extra;
-    // type: Map = "M", List = "L", Primitive = "P", Nothing = "N"
+    // type: Map = "M", List = "L", Primitive = "P", Nothing = "N" or body class name
     private String type;
     private Integer status;
     private Object body;
-    private Object originalObject;
     private byte[] exceptionBytes;
     private Throwable exception;
     private String stackTrace;
@@ -225,24 +223,12 @@ public class EventEnvelope {
     }
 
     /**
-     * Get the original body object
-     * 
-     * @return original body
-     */
-    public Object getOriginalObject() {
-        return originalObject;
-    }
-
-    /**
      * Get event body
      *
-     * @return original or restored event body
+     * @return body or optional.of(body)
      */
     public Object getBody() {
-        if (body != null && originalObject == null) {
-            originalObject = body;
-        }
-        return optional? Optional.ofNullable(originalObject) : originalObject;
+        return optional? Optional.ofNullable(body) : body;
     }
 
     /**
@@ -573,10 +559,12 @@ public class EventEnvelope {
             case AsyncHttpRequest request -> {
                 return setBody(request.toMap());
             }
+            case Date d -> {
+                payload = util.date2str(d);
+            }
             case null, default -> payload = body;
         }
         // encode body and save object type
-        this.originalObject = payload instanceof Date d? util.date2str(d) : payload;
         TypedPayload typed = converter.encode(payload, binary);
         this.body = typed.getPayload();
         this.type = typed.getType();
@@ -758,7 +746,7 @@ public class EventEnvelope {
 
     public EventEnvelope copy() {
         EventEnvelope event = new EventEnvelope();
-        event.originalObject = this.originalObject;
+        event.id = this.id;
         event.body = this.body;
         event.setTo(this.getTo())
             .setHeaders(this.getHeaders())
@@ -775,6 +763,9 @@ public class EventEnvelope {
             .setReplyTo(this.getReplyTo())
             .setTraceId(this.getTraceId())
             .setTracePath(this.getTracePath());
+        // copy exception and stack trace
+        event.stackTrace = this.stackTrace;
+        event.exceptionBytes = this.exceptionBytes;
         return event;
     }
 

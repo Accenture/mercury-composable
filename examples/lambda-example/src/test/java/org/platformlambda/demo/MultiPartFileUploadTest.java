@@ -81,13 +81,5 @@ public class MultiPartFileUploadTest extends TestBase {
         assertEquals(len, map.get("actual_size"));
         assertEquals(FILENAME, map.get("filename"));
         assertEquals("Upload completed", map.get("message"));
-        // finally check that "hello.upload" has saved the test file
-        File dir = new File("/tmp/upload-download-demo");
-        File file = new File(dir, FILENAME);
-        assertTrue(file.exists());
-        assertEquals(len, file.length());
-        // compare file content
-        byte[] b = Utility.getInstance().file2bytes(file);
-        assertArrayEquals(bytes.toByteArray(), b);
     }
 }

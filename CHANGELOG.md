@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.2.5, 2/2/2025
+
+### Added
+
+Add 3-part syntax for Event Script's data mapping processing.
+
+Supports the following data mapping syntax:
+
+1. LHS -> RHS
+2. LHS -> model.variable -> RHS
+
+### Removed
+
+N/A
+
+### Changed
+
+Make input event immutable to PostOffice's send, asyncRequest and request API
+
+---
 ## Version 4.2.4, 1/30/2025
 
 ### Added
@@ -292,7 +312,7 @@ N/A
 
 ### Added
 
-1. For completeness, added Boolean AND and OR operations for simple type mapping.
+1. For completeness, added Boolean AND and OR operations for simple type matching.
 2. Added traceId as metadata for a flow instance
 
 ### Removed
@@ -301,7 +321,7 @@ N/A
 
 ### Changed
 
-1. Update Chapter-4 for the new AND/OR type mapping feature
+1. Update Chapter-4 for the new AND/OR type matching feature
 2. Consistent custom HTTP headers for event over http protocol and streaming content
 
 ---

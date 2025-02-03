@@ -20,7 +20,7 @@ package org.platformlambda.core.models;
 
 public class SimplePoJo {
 
-    public String name;
+    public String fullName;
     public String address;
     public int telephone;
 }

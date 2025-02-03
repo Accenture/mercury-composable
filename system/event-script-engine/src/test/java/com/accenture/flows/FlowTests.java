@@ -336,7 +336,7 @@ public class FlowTests extends TestBase {
         final long TIMEOUT = 8000;
         final String TRACE_ID = "1001";
         final String GREETINGS = "greetings";
-        String USER = "test-user";
+        String USER = "12345";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greetings/"+USER);
@@ -350,6 +350,7 @@ public class FlowTests extends TestBase {
         assertEquals(USER, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
         assertEquals("hello world", result.get("greeting"));
+        assertEquals(true, result.get("positive"));
         assertTrue(result.containsKey("original"));
         Map<String, Object> original = (Map<String, Object>) result.get("original");
         assertEquals(201, res.getStatus());
@@ -361,12 +362,14 @@ public class FlowTests extends TestBase {
          * serialization compresses numbers to long and float
          * if the number is not greater than MAX integer or float
          */
+        assertEquals(Utility.getInstance().str2int(USER), original.get("user_number"));
         assertEquals(12345, original.get("long_number"));
         assertEquals(12.345, original.get("float_number"));
         assertEquals(12.345, original.get("double_number"));
         assertEquals(true, original.get("boolean_value"));
         assertEquals(false, original.get("negate_value"));
-        assertEquals(false, original.get("also_negate_value"));
+        // double negate becomes true
+        assertEquals(true, original.get("double_negate_value"));
         assertEquals(System.getenv("PATH"), original.get("path"));
         // check metadata for a flow
         assertEquals(TRACE_ID, original.get("trace_id"));

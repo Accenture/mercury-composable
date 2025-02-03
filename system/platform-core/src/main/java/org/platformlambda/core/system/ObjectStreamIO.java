@@ -61,7 +61,7 @@ public class ObjectStreamIO {
     private String streamRoute;
     private final int expirySeconds;
     private final AtomicBoolean eof = new AtomicBoolean(false);
-    private final ConcurrentLinkedQueue<String> callbacks = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<CallBackReference> callbacks = new ConcurrentLinkedQueue<>();
 
     /**
      * Create an object stream with given expiry timer in seconds
@@ -225,33 +225,24 @@ public class ObjectStreamIO {
             String type = headers.get(TYPE);
             if (DATA.equals(type) || EXCEPTION.equals(type)) {
                 if (!eof.get()) {
-                    String cb = callbacks.poll();
-                    if (cb != null) {
-                        sendReply(cb, input, type);
+                    var ref = callbacks.poll();
+                    if (ref != null) {
+                        sendReply(ref, input, type);
                     }
                 }
             } else if (END_OF_STREAM.equals(type) && !eof.get()) {
                 eof.set(true);
-                String cb = callbacks.poll();
-                if (cb != null) {
-                    sendReply(cb, input, END_OF_STREAM);
+                var ref = callbacks.poll();
+                if (ref != null) {
+                    sendReply(ref, input, END_OF_STREAM);
                 }
             }
         }
 
-        private void sendReply(String cb, Object input, String type) {
+        private void sendReply(CallBackReference ref, Object input, String type) {
             try {
-                EventEmitter po = EventEmitter.getInstance();
-                if (cb.contains("|")) {
-                    int sep = cb.indexOf('|');
-                    String callback = cb.substring(0, sep);
-                    String extra = cb.substring(sep + 1);
-                    EventEnvelope eventExtra = new EventEnvelope();
-                    eventExtra.setTo(callback).setExtra(extra).setHeader(TYPE, type).setBody(input);
-                    po.send(eventExtra);
-                } else {
-                    po.send(cb, input, new Kv(TYPE, type));
-                }
+                EventEmitter.getInstance().send(new EventEnvelope().setTo(ref.cb)
+                        .setCorrelationId(ref.cid).setExtra(ref.extra).setHeader(TYPE, type).setBody(input));
             } catch(IOException e) {
                 log.error("Unable to callback - {}", e.getMessage());
             }
@@ -278,13 +269,17 @@ public class ObjectStreamIO {
             EventEnvelope event = (EventEnvelope) input;
             String type = event.getHeaders().get(TYPE);
             String cb = event.getReplyTo();
+            String cid = event.getCorrelationId();
             String extra = event.getExtra();
             if (READ.equals(type) && cb != null) {
-                if (extra != null) {
-                    callbacks.add(cb + "|" + extra);
-                } else {
-                    callbacks.add(cb);
+                var ref = new CallBackReference(cb);
+                if (cid != null) {
+                    ref.cid = cid;
                 }
+                if (extra != null) {
+                    ref.extra = extra;
+                }
+                callbacks.add(ref);
                 publisher.get();
                 touch(in);
             }
@@ -293,16 +288,20 @@ public class ObjectStreamIO {
                 platform.release(out);
                 streams.remove(in);
                 if (cb != null) {
-                    if (extra != null) {
-                        EventEnvelope eventExtra = new EventEnvelope();
-                        eventExtra.setTo(cb).setExtra(extra).setBody(true);
-                        po.send(eventExtra);
-                    } else {
-                        po.send(cb, true);
-                    }
+                    po.send(new EventEnvelope().setTo(cb).setCorrelationId(cid).setExtra(extra).setBody(true));
                 }
             }
             return null;
+        }
+    }
+
+    public static class CallBackReference {
+        final String cb;
+        String cid;
+        String extra;
+
+        public CallBackReference(String cb) {
+            this.cb = cb;
         }
     }
 

@@ -970,7 +970,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                     });
                     if (!filtered.isEmpty() && filtered.size() < 3) {
-                        // enforce value to a text string where null value will become "null"
+                        // Enforce value to a text string where null value will become "null".
+                        // Therefore, null value or "null" string in the command is treated as the same.
                         String str = String.valueOf(value);
                         boolean condition = filtered.size() == 1 || "true".equalsIgnoreCase(filtered.get(1));
                         String target = filtered.getFirst();

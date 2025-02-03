@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AsyncMultiInbox extends InboxBase {
     private static final Logger log = LoggerFactory.getLogger(AsyncMultiInbox.class);
-
     private final AtomicInteger total = new AtomicInteger(1);
     private final Map<String, InboxCorrelation> correlations = new HashMap<>();
     private final String start = Utility.getInstance().date2str(new Date());

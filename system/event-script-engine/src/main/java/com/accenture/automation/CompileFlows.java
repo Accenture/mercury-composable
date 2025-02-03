@@ -46,7 +46,6 @@ import java.util.*;
 @BeforeApplication(sequence=2)
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);
-
     private static final String INPUT = "input";
     private static final String PROCESS = "process";
     private static final String NAME = "name";
@@ -411,31 +410,45 @@ public class CompileFlows implements EntryPoint {
                             }
                         }
                     }
-                    List<Object> inputList = (List<Object>) input;
-                    for (int j=0; j < inputList.size(); j++) {
-                        String line = flow.getProperty(TASKS+"["+i+"]."+INPUT+"["+j+"]");
-                        String filtered = filterMapping(line);
-                        if (validInput(filtered)) {
-                            int sep = filtered.indexOf(MAP_TO);
-                            String rhs = filtered.substring(sep+2).trim();
+                    List<String> inputList = new ArrayList<>();
+                    // ensure data mapping entries are text strings
+                    int inputListSize = ((List<Object>) input).size();
+                    for (int j=0; j < inputListSize; j++) {
+                        inputList.add(flow.getProperty(TASKS + "[" + i + "]." + INPUT + "[" + j + "]"));
+                    }
+                    // Support two data mapping formats and convert the 3-part syntax into two entries of 2-part syntax
+                    // LHS -> RHS
+                    // LHS -> model -> RHS
+                    List<String> filteredInputMapping = filterDataMapping(inputList);
+                    for (String line: filteredInputMapping) {
+                        if (validInput(line)) {
+                            int sep = line.indexOf(MAP_TO);
+                            String rhs = line.substring(sep+2).trim();
                             if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
-                                log.warn("Task {} in {} uses input namespace in right-hand-side {}", uniqueTaskName, name, line);
+                                log.warn("Task {} in {} uses input namespace in right-hand-side - {}", uniqueTaskName, name, line);
                             }
-                            task.input.add(filtered);
+                            task.input.add(line);
                         } else {
-                            log.error("Skip invalid task {} in {} that has invalid input mapping {}", uniqueTaskName, name, line);
+                            log.error("Skip invalid task {} in {} that has invalid input mapping - {}", uniqueTaskName, name, line);
                             validTask = false;
                         }
                     }
                     boolean isDecisionTask = DECISION.equals(execution);
-                    List<Object> outputList = (List<Object>) output;
-                    for (int j=0; j < outputList.size(); j++) {
-                        String line = flow.getProperty(TASKS+"["+i+"]."+OUTPUT+"["+j+"]");
-                        String filtered = filterMapping(line);
-                        if (validOutput(filtered, isDecisionTask)) {
-                            task.output.add(filtered);
+                    List<String> outputList = new ArrayList<>();
+                    // ensure data mapping entries are text strings
+                    int outputListSize = ((List<Object>) output).size();
+                    for (int j=0; j < outputListSize; j++) {
+                        outputList.add(flow.getProperty(TASKS + "[" + i + "]." + OUTPUT + "[" + j + "]"));
+                    }
+                    // Support two data mapping formats and convert the 3-part syntax into two entries of 2-part syntax
+                    // LHS -> RHS
+                    // LHS -> model -> RHS
+                    List<String> filteredOutputMapping = filterDataMapping(outputList);
+                    for (String line: filteredOutputMapping) {
+                        if (validOutput(line, isDecisionTask)) {
+                            task.output.add(line);
                         } else {
-                            log.error("Skip invalid task {} in {} that has invalid output mapping {}", uniqueTaskName, name, line);
+                            log.error("Skip invalid task {} in {} that has invalid output mapping - {}", uniqueTaskName, name, line);
                             validTask = false;
                         }
                     }
@@ -618,6 +631,34 @@ public class CompileFlows implements EntryPoint {
         return false;
     }
 
+    private List<String> filterDataMapping(List<String> entries) {
+        List<String> result = new ArrayList<>();
+        for (String line: entries) {
+            List<String> parts = new ArrayList<>();
+            var entry = line;
+            while (entry.contains(MAP_TO)) {
+                var sep = entry.indexOf(MAP_TO);
+                var first = entry.substring(0, sep).trim();
+                parts.add(first);
+                entry = entry.substring(sep+2).trim();
+            }
+            parts.add(entry);
+            if (parts.size() == 2) {
+                result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
+            } else if (parts.size() == 3) {
+                if (parts.get(1).startsWith(MODEL_NAMESPACE) || parts.get(1).startsWith(NEGATE_MODEL)) {
+                    result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
+                    result.add(removeNegate(parts.get(1)) + " " + MAP_TO + " " + parts.get(2));
+                } else {
+                    result.add("3-part data mapping must have model variable as the middle part");
+                }
+            } else {
+                result.add("Syntax must be (LHS -> RHS) or (LHS -> model.variable -> RHS)");
+            }
+        }
+        return result;
+    }
+
     private String filterMapping(String mapping) {
         var text = mapping.trim();
         int sep = text.indexOf(MAP_TO);
@@ -629,12 +670,23 @@ public class CompileFlows implements EntryPoint {
         // Detect and reformat "negate" of a model value in LHS and RHS
         // !model.key becomes model.key:! for consistent processing by TaskExecutor
         if (lhs.startsWith(NEGATE_MODEL)) {
-            lhs = lhs.substring(1) + ":!";
+            lhs = normalizedTypeMapping(lhs);
         }
         if (rhs.startsWith(NEGATE_MODEL)) {
-            rhs = rhs.substring(1) + ":!";
+            rhs = normalizedTypeMapping(rhs);
         }
         return lhs + " " + MAP_TO + " " + rhs;
+    }
+
+    private String normalizedTypeMapping(String negate) {
+        // convert the leading negate character with a trailing colon format
+        // e.g. !model.something becomes model.something:!
+        return (negate.contains(":")? negate.substring(1, negate.indexOf(':')) : negate.substring(1)) + ":!";
+    }
+
+    private String removeNegate(String negate) {
+        var step1 = negate.startsWith("!")? negate.substring(1) : negate;
+        return step1.contains(":")? step1.substring(0, step1.indexOf(':')) : step1;
     }
 
     private boolean validInput(String input) {

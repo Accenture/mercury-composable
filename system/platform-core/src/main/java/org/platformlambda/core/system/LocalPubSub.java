@@ -131,7 +131,7 @@ public class LocalPubSub {
                 for (String target: members) {
                     if (po.exists(target)) {
                         try {
-                            po.send(input.copy().setTo(target));
+                            po.send(input.setTo(target));
                         } catch (Exception e) {
                             log.debug("Unable to relay {} -> {} - {}", myRoute, target, e.getMessage());
                         }

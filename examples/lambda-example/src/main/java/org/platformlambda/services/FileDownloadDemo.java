@@ -26,9 +26,7 @@ import org.platformlambda.core.system.EventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.Map;
 
 /**
@@ -48,8 +46,6 @@ import java.util.Map;
 public class FileDownloadDemo implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
     private static final Logger log = LoggerFactory.getLogger(FileDownloadDemo.class);
 
-    private static final String TEMP_DEMO_FOLDER = "/tmp/upload-download-demo";
-    private static final String FILENAME = "filename";
     private static final String SAMPLE_FILE = "helloworld.txt";
 
     @Override
@@ -60,33 +56,17 @@ public class FileDownloadDemo implements TypedLambdaFunction<AsyncHttpRequest, E
                                                 "Please route the request through REST automation");
         }
         // demonstrates reading common HTTP attributes from the request
-        String filename = input.getPathParameter(FILENAME);
         String uri = input.getUrl();
         Map<String, Object> queries = input.getQueryParameters();
         Map<String, String> cookies = input.getCookies();
         String ip = input.getRemoteIp();
-        log.info("Got download request - URI={}, filename={}, ip={}, queries={}, cookies={}",
-                    uri, filename, ip, queries, cookies);
+        log.info("Got download request - URI={}, ip={}, queries={}, cookies={}", uri, ip, queries, cookies);
         final String filePath;
-        final InputStream in;
-        if (filename == null) {
-            in = FileDownloadDemo.class.getResourceAsStream("/"+SAMPLE_FILE);
-            filename = SAMPLE_FILE;
-            filePath = "classpath:/"+SAMPLE_FILE;
-        } else {
-            File dir = new File(TEMP_DEMO_FOLDER);
-            File file = new File(dir, filename);
-            if (!file.exists()) {
-                throw new IllegalArgumentException("File not found");
-            } else {
-                in = Files.newInputStream(file.toPath());
-                filePath = file.getPath();
+        try (InputStream in = FileDownloadDemo.class.getResourceAsStream("/"+SAMPLE_FILE)) {
+            filePath = "classpath:/" + SAMPLE_FILE;
+            if (in == null) {
+                throw new IllegalArgumentException("Missing " + filePath);
             }
-        }
-        if (in == null) {
-            throw new IllegalArgumentException("Unable to download "+filePath);
-        }
-        try {
             int len;
             int total = 0;
             EventPublisher publisher = new EventPublisher(60 * 1000L);
@@ -100,9 +80,7 @@ public class FileDownloadDemo implements TypedLambdaFunction<AsyncHttpRequest, E
             log.info("Sending {} with {} bytes to {}", filePath, total, publisher.getStreamId());
             return new EventEnvelope().setHeader("stream", publisher.getStreamId())
                     .setHeader("Content-Type", "application/octet-stream")
-                    .setHeader("Content-Disposition", "attachment; filename="+filename);
-        } finally {
-            in.close();
+                    .setHeader("Content-Disposition", "attachment; filename=" + SAMPLE_FILE);
         }
     }
 }
