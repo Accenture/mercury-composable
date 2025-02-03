@@ -20,7 +20,6 @@ package com.accenture.examples.services;
 
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
 

@@ -745,7 +745,7 @@ public class EventEnvelope {
     }
 
     public EventEnvelope copy() {
-        EventEnvelope event = new EventEnvelope();
+        var event = new EventEnvelope();
         event.id = this.id;
         event.body = this.body;
         event.setTo(this.getTo())
@@ -766,6 +766,8 @@ public class EventEnvelope {
         // copy exception and stack trace
         event.stackTrace = this.stackTrace;
         event.exceptionBytes = this.exceptionBytes;
+        event.executionTime = this.executionTime;
+        event.roundTrip = this.roundTrip;
         return event;
     }
 
