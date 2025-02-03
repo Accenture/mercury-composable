@@ -216,7 +216,7 @@ public void pojoRpcTest() throws IOException, InterruptedException {
 
 Note that you can use the built-in serialization API to restore a PoJo like this:
 
-```shell
+```java
 SamplePoJo pojo = response.getBody(SamplePoJo.class)
 ```
 

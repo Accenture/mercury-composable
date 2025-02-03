@@ -176,6 +176,8 @@ three lines of log from "distributed trace" showing that the HTTP request is pro
 "hello.generic" before returning result to the browser using the "async.http.response" function.
 
 > *Note*: The "async.http.response" is a built-in function to send the HTTP response to the browser.
+          The term "browser" also refers to a caller from an application ("client"). Therefore,
+          browser and client can be used interchangeably.
 
 The optional `cors` and `headers` sections point to the specific CORS and HEADERS sections respectively.
 
@@ -314,7 +316,7 @@ In the above http.request.filter, it adds a HTTP response header "X-Filter" for 
 to validate.
 
 If you set status code in the return EventEnvelope to 302 and add a header "Location", the system
-will redirect the browser to the given URL in the location header. Please be careful to avoid
+will redirect the browser/client to the given URL in the location header. Please be careful to avoid
 HTTP redirection loop.
 
 Similarly, you can throw exception and the HTTP request will be rejected with the given status
