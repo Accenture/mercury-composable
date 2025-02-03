@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -47,18 +46,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class WsRequestHandler implements Handler<ServerWebSocket> {
     private static final Logger log = LoggerFactory.getLogger(WsRequestHandler.class);
-
+    private static final CryptoApi crypto = new CryptoApi();
     private static final String HOUSEKEEPER = "system.ws.server.cleanup";
     private static final String IN = ".in";
     private static final String OUT = ".out";
     private static final long HOUSEKEEPING_INTERVAL = 10 * 1000L;      // 10 seconds
-
-    private static final CryptoApi crypto = new CryptoApi();
-
     private static final ConcurrentMap<String, WsEnvelope> connections = new ConcurrentHashMap<>();
     private static final AtomicInteger counter = new AtomicInteger(0);
-    private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
-
     private final ConcurrentMap<String, LambdaFunction> lambdas;
     private final List<String> wsPaths;
 
@@ -182,18 +176,6 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
         }
 
         private void removeExpiredConnections() {
-            if (housekeeperNotRunning.compareAndSet(true, false)) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                    try {
-                        checkExpiredConnections();
-                    } finally {
-                        housekeeperNotRunning.set(true);
-                    }
-                });
-            }
-        }
-
-        private void checkExpiredConnections() {
             long now = System.currentTimeMillis();
             List<String> sessions = new ArrayList<>();
             for (Map.Entry<String, WsEnvelope> kv : connections.entrySet()) {

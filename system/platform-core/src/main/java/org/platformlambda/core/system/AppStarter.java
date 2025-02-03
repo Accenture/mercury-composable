@@ -49,13 +49,11 @@ import java.net.URI;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AppStarter {
     private static final Logger log = LoggerFactory.getLogger(AppStarter.class);
     private static final ConcurrentMap<String, LambdaFunction> wsLambdas = new ConcurrentHashMap<>();
-    private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
     private static final AtomicInteger compileCycle = new AtomicInteger(0);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 1000L;    // 10 seconds
     private static final String SKIP_OPTIONAL = "Skipping optional {}";
@@ -702,18 +700,6 @@ public class AppStarter {
     private record Housekeeper(ConcurrentMap<String, AsyncContextHolder> contexts) {
 
         private void removeExpiredConnections() {
-            if (housekeeperNotRunning.compareAndSet(true, false)) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                    try {
-                        checkAsyncTimeout();
-                    } finally {
-                        housekeeperNotRunning.set(true);
-                    }
-                });
-            }
-        }
-
-        private void checkAsyncTimeout() {
             // check async context timeout
             if (!contexts.isEmpty()) {
                 List<String> list = new ArrayList<>(contexts.keySet());

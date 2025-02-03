@@ -42,10 +42,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ObjectStreamIO {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamIO.class);
-
     private static final ConcurrentMap<String, StreamInfo> streams = new ConcurrentHashMap<>();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
-    private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
     private static final String TYPE = "type";
     private static final String READ = "read";
@@ -172,18 +170,9 @@ public class ObjectStreamIO {
     }
 
     /**
-     * Remote expired streams
+     * Remove expired streams
      */
     public static void removeExpiredStreams() {
-        if (housekeeperNotRunning.compareAndSet(true, false)) {
-            Platform.getInstance().getVirtualThreadExecutor().submit(ObjectStreamIO::checkExpiredStreams);
-        }
-    }
-
-    /**
-     * Close expired streams if any
-     */
-    public static void checkExpiredStreams() {
         EventEmitter po = EventEmitter.getInstance();
         Utility util = Utility.getInstance();
         long now = System.currentTimeMillis();

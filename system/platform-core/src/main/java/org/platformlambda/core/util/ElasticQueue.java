@@ -33,19 +33,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ElasticQueue implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ElasticQueue.class);
-
     private static final Utility util = Utility.getInstance();
     private static final AtomicInteger generation = new AtomicInteger(0);
     private static final ReentrantLock lock = new ReentrantLock();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
-    private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
-    private static final AtomicBoolean keepAliveNotRunning = new AtomicBoolean(true);
     private static final long ONE_SECOND = 1000L;
     private static final long ONE_MINUTE = 60 * ONE_SECOND;
     private static final long ONE_HOUR = 60 * ONE_MINUTE;
@@ -119,30 +115,10 @@ public class ElasticQueue implements AutoCloseable {
     }
 
     private void keepAlive() {
-        if (keepAliveNotRunning.compareAndSet(true, false)) {
-            Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                try {
-                    util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
-                } finally {
-                    keepAliveNotRunning.set(true);
-                }
-            });
-        }
+        util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
     }
 
     private void housekeeping() {
-        if (housekeeperNotRunning.compareAndSet(true, false)) {
-            Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                try {
-                    removeExpiredDbStatistics();
-                } finally {
-                    housekeeperNotRunning.set(true);
-                }
-            });
-        }
-    }
-
-    private void removeExpiredDbStatistics() {
         long now = System.currentTimeMillis();
         List<File> outdated = new ArrayList<>();
         File[] files = dbFolder.listFiles();

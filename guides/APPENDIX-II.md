@@ -98,6 +98,10 @@ To support traceId that is stored in X-Correlation-Id HTTP header, set this in a
 ```properties
 # list of supported traceId headers where the first one is the default label
 trace.http.header=X-Correlation-Id, X-Trace-Id
+
+## Transient data store
+
+The system uses a temp folder in "/tmp/composable/java/temp-streams" to hold temporary data blocks for streaming I/O.
 ```
 <br/>
 

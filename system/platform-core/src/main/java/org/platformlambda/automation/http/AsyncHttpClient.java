@@ -59,7 +59,6 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @EventInterceptor
@@ -68,7 +67,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpClient.class);
     private static final AtomicInteger initCounter = new AtomicInteger(0);
-    private static final AtomicBoolean housekeeperNotRunning = new AtomicBoolean(true);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
     private static final long THIRTY_MINUTE = 30 * 60 * 1000L;
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
@@ -117,15 +115,21 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     public AsyncHttpClient() {
         // create temp upload directory
         AppConfigReader reader = AppConfigReader.getInstance();
-        String temp = reader.getProperty("app.temp.dir", "/tmp/temp_files_to_delete");
+        String temp = reader.getProperty("app.temp.dir", "/tmp/composable/java/temp-streams");
         tempDir = new File(temp);
         if (!tempDir.exists() && tempDir.mkdirs()) {
             log.info("Temporary work directory {} created", tempDir);
         }
         if (initCounter.incrementAndGet() == 1) {
             HttpRouter.initialize();
-            Platform.getInstance().getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredFiles());
-            log.info("Housekeeper started");
+            Platform platform = Platform.getInstance();
+            platform.getVirtualThreadExecutor().submit(() -> {
+                // clean up when application starts
+                removeExpiredFiles();
+                // then schedule clean up every 30 minutes
+                platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredFiles());
+                log.info("Housekeeper started");
+            });
         }
         if (initCounter.get() > 10000) {
             initCounter.set(10);
@@ -511,18 +515,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private void removeExpiredFiles() {
-        if (housekeeperNotRunning.compareAndSet(true, false)) {
-            Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                try {
-                    checkExpiredFiles();
-                } finally {
-                    housekeeperNotRunning.set(true);
-                }
-            });
-        }
-    }
-
-    private void checkExpiredFiles() {
         /*
          * The temporary directory is used as a buffer for binary HTTP payload (including multipart file upload).
          * They are removed immediately after relay.

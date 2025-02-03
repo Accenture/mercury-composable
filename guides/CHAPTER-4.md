@@ -620,6 +620,11 @@ If your composable function requires a path parameter to be accepted as an integ
 The above input data mapping example illustrates the use of a model variable to convert a text parameter
 into an integer. Note that if the path parameter is not numeric, the converted value will be -1.
 
+> *Note*: The system only supports "type matching modifier" in the model namespace because of
+          the design principle of data immutability. The model is a state machine for a flow instance.
+          As a temporary store, we can use it for this purpose without side effect that the user application
+          would accidentally modify a value of the flow's input.
+
 ### Convenient data mapping using model variable
 
 To address the common use case of using a model variable as an intermediate value, the system supports the following
