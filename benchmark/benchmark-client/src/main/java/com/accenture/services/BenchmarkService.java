@@ -236,14 +236,11 @@ public class BenchmarkService implements LambdaFunction {
                     throw new IllegalArgumentException("Max payload size is 2,000,000");
                 }
                 String target = ASYNC.equals(benchmarkRequest.type)? NETWORK_ONE_WAY : NETWORK_ECHO;
-                StringBuilder sb = new StringBuilder();
                 int cycles = benchmarkRequest.size / 10;
-                for (int i=0; i < cycles; i++) {
-                    sb.append("123456789.");
-                }
+                String sb = "123456789.".repeat(Math.max(0, cycles));
                 Map<String, Object> data = new HashMap<>();
                 data.put(SENDER, sender);
-                data.put(PAYLOAD, sb.toString());
+                data.put(PAYLOAD, sb);
                 data.put(START, new Date());
 
                 responses.clear();
