@@ -243,11 +243,18 @@ public class EventEnvelope {
         return SimpleMapper.getInstance().getMapper().readValue(body, toValueType);
     }
 
+    /**
+     * Convert body to a list of PoJo
+     *
+     * @param toValueType target class type
+     * @return list of pojo
+     * @param <T> class type
+     */
     @SuppressWarnings("rawtypes")
-    public List<Object> getBodyAsListOfPoJo(Class<?> toValueType) {
+    public <T> List<T> getBodyAsListOfPoJo(Class<T> toValueType) {
         List pojoList = null;
-        List<Object> result = new ArrayList<>();
-        // for compatibility with previous version
+        List<T> result = new ArrayList<>();
+        // for compatibility with older version 2
         if (body instanceof Map m) {
             Object o = m.get("list");
             if (o instanceof List oList) {
@@ -559,9 +566,7 @@ public class EventEnvelope {
             case AsyncHttpRequest request -> {
                 return setBody(request.toMap());
             }
-            case Date d -> {
-                payload = util.date2str(d);
-            }
+            case Date d -> payload = util.date2str(d);
             case null, default -> payload = body;
         }
         // encode body and save object type

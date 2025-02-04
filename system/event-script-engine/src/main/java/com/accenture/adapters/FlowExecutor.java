@@ -124,7 +124,6 @@ public class FlowExecutor {
     /**
      * A convenient method to start an asynchronous flow execution by providing a custom constructed post office.
      * This is a convenience method for {@link #launch(PostOffice, String, Map, String, String)}.
-     *
      * <p>
      * To enable tracing, your PostOffice instance must have traceId and tracePath.
      * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.
@@ -143,7 +142,6 @@ public class FlowExecutor {
     /**
      * A convenient method to start an asynchronous flow execution by providing a custom constructed post office
      * and a callback function.
-     *
      * <p>
      * To enable tracing, your PostOffice instance must have traceId and tracePath.
      * To disable tracing, you can set traceId and tracePath as null for the PostOffice instance.

@@ -99,8 +99,7 @@ public class FutureMultiInbox extends InboxBase {
         FutureMultiInbox holder = (FutureMultiInbox) inboxes.get(inboxId);
         if (holder != null) {
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            float roundTrip = Float.parseFloat(String.format("%.3f", Math.max(0.0f, diff)));
-            reply.setRoundTrip(roundTrip);
+            reply.setRoundTrip(diff);
             // remove some metadata that are not relevant for a RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             Map<String, Object> annotations = new HashMap<>();
@@ -144,7 +143,7 @@ public class FutureMultiInbox extends InboxBase {
                         metrics.put("service", correlation.to);
                         metrics.put("from", holder.from);
                         metrics.put("exec_time", reply.getExecutionTime());
-                        metrics.put("round_trip", roundTrip);
+                        metrics.put("round_trip", reply.getRoundTrip());
                         metrics.put("start", start);
                         metrics.put("path", holder.tracePath);
                         payload.put("trace", metrics);

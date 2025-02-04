@@ -63,7 +63,6 @@ public class WorkerHandler {
     private static final String ASYNC = "async";
     private static final String ANNOTATIONS = "annotations";
     private static final String JOURNAL = "journal";
-    private static final String DELIVERED = "delivered";
     private static final String MY_ROUTE = "my_route";
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
@@ -119,8 +118,8 @@ public class WorkerHandler {
                     metrics.put(SUCCESS, ps.isSuccess());
                     metrics.put(FROM, event.getFrom() == null ? UNKNOWN : event.getFrom());
                     metrics.put(EXEC_TIME, ps.getExecutionTime());
+                    metrics.put(STATUS, ps.getStatus());
                     if (!ps.isSuccess()) {
-                        metrics.put(STATUS, ps.getStatus());
                         metrics.put(EXCEPTION, ps.getException());
                     }
                     if (!ps.isDelivered()) {
@@ -129,9 +128,6 @@ public class WorkerHandler {
                         metrics.put(EXCEPTION, "Response not delivered - "+ps.getDeliveryError());
                     }
                     payload.put(TRACE, metrics);
-                    dt.setHeader(DELIVERED, ps.isDelivered());
-                    dt.setHeader(EventEmitter.RPC, rpc != null);
-                    dt.setHeader(JOURNAL, journaled);
                     po.send(dt.setBody(payload));
                 }
             } catch (Exception e) {

@@ -45,6 +45,7 @@ import java.util.Map;
 @KernelThreadRunner
 @PreLoad(route="hello.world", instances=20)
 public class HelloWorld implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         Map<String, Object> result = new HashMap<>();

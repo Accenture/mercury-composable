@@ -127,8 +127,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         metrics[SUCCESS] = ps.isSuccess
                         metrics[FROM] = if (event.from == null) UNKNOWN else event.from
                         metrics[EXEC_TIME] = ps.executionTime
+                        metrics[STATUS] = ps.status
                         if (!ps.isSuccess) {
-                            metrics[STATUS] = ps.status
                             metrics[EXCEPTION] = ps.exception
                         }
                         if (!ps.isDelivered) {
@@ -137,9 +137,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                             metrics[EXCEPTION] = "Response not delivered - " + ps.deliveryError
                         }
                         payload[TRACE] = metrics
-                        dt.setHeader(DELIVERED, ps.isDelivered)
-                        dt.setHeader(RPC, rpc != null)
-                        dt.setHeader(JOURNAL, journaled)
                         po.send(dt.setBody(payload))
                     }
                 } catch (e: Exception) {
@@ -546,8 +543,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
         private const val ASYNC = "async"
         private const val ANNOTATIONS = "annotations"
         private const val JOURNAL = "journal"
-        private const val RPC = "rpc"
-        private const val DELIVERED = "delivered"
         private const val MY_ROUTE = "my_route"
         private const val MY_TRACE_ID = "my_trace_id"
         private const val MY_TRACE_PATH = "my_trace_path"

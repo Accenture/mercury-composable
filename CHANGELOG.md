@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.2.7, 2/4/2025
+
+### Added
+
+N/A
+
+### Removed
+
+redundant and inconsistent log4j2.xml config files from subprojects
+
+### Changed
+
+1. getBodyAsListOfPoJo method in EventEnvelope updated
+2. endFlow method of TaskExecutor sends event to distributed trace instead of logging
+
+---
 ## Version 4.2.6, 2/3/2025
 
 ### Added

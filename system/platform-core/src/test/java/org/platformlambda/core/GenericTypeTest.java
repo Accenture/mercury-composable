@@ -52,13 +52,13 @@ public class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope result = new EventEnvelope();
         result.load(b);
-        List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
+        List<PoJo> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(3, pojoList.size());
-        PoJo restored1 = (PoJo) pojoList.getFirst();
+        PoJo restored1 = pojoList.getFirst();
         assertEquals(NAME_1, restored1.getName());
         assertEquals(NUMBER_1, restored1.getNumber());
         assertNull(pojoList.get(1));
-        PoJo restored2 = (PoJo) pojoList.get(2);
+        PoJo restored2 = pojoList.get(2);
         assertEquals(NAME_2, restored2.getName());
         assertEquals(NUMBER_2, restored2.getNumber());
     }
@@ -85,13 +85,13 @@ public class GenericTypeTest {
         EventEnvelope result = new EventEnvelope();
         result.load(b);
         assertInstanceOf(List.class, result.getBody());
-        List<Object> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
+        List<PoJo> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(3, pojoList.size());
-        PoJo restored1 = (PoJo) pojoList.getFirst();
+        PoJo restored1 = pojoList.getFirst();
         assertEquals(NAME_1, restored1.getName());
         assertEquals(NUMBER_1, restored1.getNumber());
         assertNull(pojoList.get(1));
-        PoJo restored2 = (PoJo) pojoList.get(2);
+        PoJo restored2 = pojoList.get(2);
         assertEquals(NAME_2, restored2.getName());
         assertEquals(NUMBER_2, restored2.getNumber());
     }
@@ -114,11 +114,11 @@ public class GenericTypeTest {
         list.add(pojo2);
         EventEnvelope event = new EventEnvelope();
         event.setBody(list);
-        List<Object> pojoList = event.getBodyAsListOfPoJo(PoJo.class);
-        assertEquals(pojoList.getFirst().getClass(), PoJo.class);
+        List<PoJo> pojoList = event.getBodyAsListOfPoJo(PoJo.class);
+        assertEquals(PoJo.class, pojoList.getFirst().getClass());
         // non-PoJo is converted to null
         assertNull(pojoList.get(1));
-        assertEquals(pojoList.get(2).getClass(), PoJo.class);
+        assertEquals(PoJo.class, pojoList.get(2).getClass());
     }
 
     @Test

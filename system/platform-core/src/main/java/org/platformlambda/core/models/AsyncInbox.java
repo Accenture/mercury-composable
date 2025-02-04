@@ -104,9 +104,7 @@ public class AsyncInbox extends InboxBase {
             holder.close();
             Platform.getInstance().getVertx().cancelTimer(timer);
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            // adjust precision to 3 decimal points
-            float roundTrip = Float.parseFloat(String.format("%.3f", Math.max(0.0f, diff)));
-            reply.setRoundTrip(roundTrip);
+            reply.setRoundTrip(diff);
             // remove some metadata that are not relevant for a RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             Map<String, Object> annotations = new HashMap<>();
@@ -138,7 +136,7 @@ public class AsyncInbox extends InboxBase {
                     metrics.put("service", to);
                     metrics.put("from", holder.from);
                     metrics.put("exec_time", reply.getExecutionTime());
-                    metrics.put("round_trip", roundTrip);
+                    metrics.put("round_trip", reply.getRoundTrip());
                     metrics.put("start", start);
                     metrics.put("path", holder.tracePath);
                     payload.put("trace", metrics);

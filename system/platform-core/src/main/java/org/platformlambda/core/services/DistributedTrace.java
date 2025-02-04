@@ -46,8 +46,6 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
     private static final String TRACE = "trace";
     private static final String ANNOTATIONS = "annotations";
     private static final String JOURNAL = "journal";
-    private static final String RPC = "rpc";
-    private static final String DELIVERED = "delivered";
     private static final String FROM = "from";
     private static final String SERVICE = "service";
     private static final String ORIGIN_SUFFIX = "@" + Platform.getInstance().getOrigin();
@@ -56,9 +54,6 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         if (input.getRawBody() instanceof Map) {
-            boolean delivered = "true".equals(headers.getOrDefault(DELIVERED, "true"));
-            boolean rpc = "true".equals(headers.getOrDefault(RPC, "false"));
-            boolean journaled = "true".equals(headers.getOrDefault(JOURNAL, "false"));
             Platform platform = Platform.getInstance();
             EventEmitter po = EventEmitter.getInstance();
             Map<String, Object> payload = (Map<String, Object>) input.getRawBody();
@@ -75,14 +70,12 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
             if (from != null && from.contains("@")) {
                 metrics.put(FROM, trimOrigin(from));
             }
-            if (!delivered || !rpc) {
-                var map = new HashMap<>();
-                map.put(TRACE, metrics);
-                if (!annotations.isEmpty()) {
-                    map.put(ANNOTATIONS, annotations);
-                }
-                log.info("{}", map);
+            var dataset = new HashMap<String, Object>();
+            dataset.put(TRACE, metrics);
+            if (!annotations.isEmpty()) {
+                dataset.put(ANNOTATIONS, annotations);
             }
+            log.info("{}", dataset);
             /*
              * Optionally, forward the perf metrics to a telemetry system.
              * You may implement a function with the "distributed.trace.forwarder" route name.
@@ -100,28 +93,21 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
              * 2. distributed.trace.forwarder and/or transaction.journal.recorder must be bundled
              *    in the same application executable.
              */
-            if (journaled && payload.containsKey(JOURNAL) && platform.hasRoute(TRANSACTION_JOURNAL_RECORDER)) {
+            if (platform.hasRoute(DISTRIBUTED_TRACE_FORWARDER)) {
+                try {
+                    po.send(new EventEnvelope().setTo(DISTRIBUTED_TRACE_FORWARDER).setBody(dataset));
+                } catch (IOException e) {
+                    log.warn("Unable to relay trace to {} - {}", DISTRIBUTED_TRACE_FORWARDER, e.getMessage());
+                }
+            }
+            if (payload.containsKey(JOURNAL) && platform.hasRoute(TRANSACTION_JOURNAL_RECORDER)) {
                 EventEnvelope event = new EventEnvelope().setTo(TRANSACTION_JOURNAL_RECORDER);
-                Map<String, Object> forward = new HashMap<>();
-                forward.put(TRACE, metrics);
+                var forward = new HashMap<>(dataset);
                 forward.put(JOURNAL, payload.get(JOURNAL));
-                forward.put(ANNOTATIONS, annotations);
                 try {
                     po.send(event.setBody(forward));
                 } catch (IOException e) {
                     log.warn("Unable to relay journal to {} - {}", TRANSACTION_JOURNAL_RECORDER, e.getMessage());
-                }
-            }
-            // filter out duplicated metrics if RPC
-            if (platform.hasRoute(DISTRIBUTED_TRACE_FORWARDER) && (!delivered || !rpc)) {
-                EventEnvelope event = new EventEnvelope().setTo(DISTRIBUTED_TRACE_FORWARDER);
-                Map<String, Object> forward = new HashMap<>();
-                forward.put(TRACE, metrics);
-                forward.put(ANNOTATIONS, annotations);
-                try {
-                    po.send(event.setBody(forward));
-                } catch (IOException e) {
-                    log.warn("Unable to relay trace metrics to {} - {}", DISTRIBUTED_TRACE_FORWARDER, e.getMessage());
                 }
             }
         }

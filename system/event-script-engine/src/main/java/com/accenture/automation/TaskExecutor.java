@@ -25,6 +25,8 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
@@ -45,10 +47,10 @@ import java.util.concurrent.ConcurrentMap;
 @EventInterceptor
 @PreLoad(route = "task.executor")
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
+    public static final String SERVICE_NAME = "task.executor";
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
     private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();
     private static final Utility util = Utility.getInstance();
-    public static final String SERVICE_NAME = "task.executor";
     private static final String FIRST_TASK = "first_task";
     private static final String FLOW_ID = "flow_id";
     private static final String FLOW_PROTOCOL = "flow://";
@@ -240,7 +242,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         endFlow(flowInstance, false);
     }
 
-    private void endFlow(FlowInstance flowInstance, boolean normal) {
+    private void endFlow(FlowInstance flowInstance, boolean normal) throws IOException {
         flowInstance.close();
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
@@ -251,14 +253,29 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String formatted = Utility.getInstance().elapsedTime(diff);
         List<String> taskList = new ArrayList<>(flowInstance.tasks);
         int totalExecutions = taskList.size();
-        var message = new HashMap<>();
-        message.put("flow", flowInstance.getFlow().id);
-        message.put("id", logId);
-        message.put("status", normal? "completed" : "aborted");
-        message.put("execution", "Run " + totalExecutions +
+        var payload = new HashMap<String, Object>();
+        var metrics = new HashMap<String, Object>();
+        var annotations = new HashMap<String, Object>();
+        payload.put("trace", metrics);
+        payload.put("annotations", annotations);
+        metrics.put("origin", Platform.getInstance().getOrigin());
+        metrics.put("id", logId);
+        metrics.put("service", TaskExecutor.SERVICE_NAME);
+        metrics.put("from", EventScriptManager.SERVICE_NAME);
+        metrics.put("exec_time", diff);
+        metrics.put("start", util.date2str(new Date(flowInstance.getStartMillis())));
+        metrics.put("path", flowInstance.getTracePath());
+        metrics.put("status", normal? 200 : 400);
+        metrics.put("success", normal);
+        if (!normal) {
+            metrics.put("exception", "Flow aborted");
+        }
+        annotations.put("execution", "Run " + totalExecutions +
                         " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
-        message.put("tasks", taskList);
-        log.info("{}", message);
+        annotations.put("tasks", taskList);
+        annotations.put("flow", flowInstance.getFlow().id);
+        EventEmitter.getInstance().send(new EventEnvelope()
+                                    .setTo(DistributedTrace.DISTRIBUTED_TRACING).setBody(payload));
     }
 
     @SuppressWarnings("rawtypes")

@@ -18,7 +18,6 @@
 
 package org.platformlambda.core.models;
 
-import io.vertx.core.Future;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
 

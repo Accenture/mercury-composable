@@ -30,7 +30,7 @@ public class ProcessStatus {
     private boolean delivered = true;
     private boolean reactive = false;
     private float executionTime;
-    private int status = 0;
+    private int status = 200;
     private String exception;
     private String deliveryError;
     private Map<String, Object> inputOutput = new HashMap<>();

@@ -145,9 +145,9 @@ public class EventEnvelopeTest {
         MultiLevelMap multi = new MultiLevelMap(map);
         assertEquals(HELLO, multi.getElement("list[0].name"));
         assertInstanceOf(List.class, target.getBody());
-        List<Object> output = target.getBodyAsListOfPoJo(PoJo.class);
+        List<PoJo> output = target.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(1, output.size());
-        PoJo restoredPoJo = (PoJo) output.getFirst();
+        PoJo restoredPoJo = output.getFirst();
         assertEquals(HELLO, restoredPoJo.getName());
     }
 
