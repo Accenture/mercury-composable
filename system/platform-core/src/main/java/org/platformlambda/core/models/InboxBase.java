@@ -33,7 +33,6 @@ public abstract class InboxBase {
     protected static final ExecutorService executor = Platform.getInstance().getVirtualThreadExecutor();
     protected static final ConcurrentMap<String, InboxBase> inboxes = new ConcurrentHashMap<>();
     protected static final String RPC = "rpc";
-    protected static final String UNDERSCORE = "_";
     protected static final String ANNOTATIONS = "annotations";
 
     public final String cid = Utility.getInstance().getUuid();
