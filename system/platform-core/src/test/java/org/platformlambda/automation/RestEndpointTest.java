@@ -58,6 +58,8 @@ public class RestEndpointTest extends TestBase {
             LambdaFunction f = (headers, input, instance) -> {
                 PostOffice po = new PostOffice(headers, instance);
                 po.annotateTrace("hello", "world");
+                po.annotateTrace("demo-map", Map.of("status", "authenticated"));
+                po.annotateTrace("demo-list", List.of("item1", "item2"));
                 return true;
             };
             platform.registerPrivate("v1.api.auth", f, 1);
@@ -297,8 +299,7 @@ public class RestEndpointTest extends TestBase {
 
     @Test
     public void uploadLargePayloadWithPut() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
-        final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
         int len = 0;
@@ -321,8 +322,8 @@ public class RestEndpointTest extends TestBase {
         req.setContentLength(len);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::add);
-        EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
+        res.onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(byte[].class, response.getBody());
         assertArrayEquals(b, (byte[]) response.getBody());

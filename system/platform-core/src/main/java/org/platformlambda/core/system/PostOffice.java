@@ -196,23 +196,55 @@ public class PostOffice {
     }
 
     /**
-     * User application may add key-values using this method
+     * User application may add key-values to a trace using this method
      * <p>
      * Please note that trace annotation feature is available inside a user function
      * that implements LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction
-     * <p>
-     * Trace annotation is disabled when called directly. e.g. in a unit test.
      *
      * @param key of the annotation
      * @param value of the annotation
      * @return this PostOffice instance
      */
     public PostOffice annotateTrace(String key, String value) {
+        annotateTraceValue(key, value);
+        return this;
+    }
+
+    /**
+     * User application may add a map of key-values to a trace using this method
+     * <p>
+     * Please note that trace annotation feature is available inside a user function
+     * that implements LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction
+     *
+     * @param key of the annotation
+     * @param value of the annotation
+     * @return this PostOffice instance
+     */
+    public PostOffice annotateTrace(String key, Map<String, Object> value) {
+        annotateTraceValue(key, value);
+        return this;
+    }
+
+    /**
+     * User application may add a list of values to a trace using this method
+     * <p>
+     * Please note that trace annotation feature is available inside a user function
+     * that implements LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction
+     *
+     * @param key of the annotation
+     * @param value of the annotation
+     * @return this PostOffice instance
+     */
+    public PostOffice annotateTrace(String key, List<Object> value) {
+        annotateTraceValue(key, value);
+        return this;
+    }
+
+    private void annotateTraceValue(String key, Object value) {
         TraceInfo trace = getTrace();
         if (trace != null) {
             trace.annotate(key, value);
         }
-        return this;
     }
 
     /**

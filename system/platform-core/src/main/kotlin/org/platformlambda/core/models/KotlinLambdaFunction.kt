@@ -18,6 +18,14 @@
 
 package org.platformlambda.core.models
 
+/**
+ * Composable function interface contract definition
+ * <p>
+ * Note that the input class should be a Map or a PoJo
+ *
+ * @param <I> input class
+ * @param <O> output class
+ */
 interface KotlinLambdaFunction<I, O> {
     @Throws(Exception::class)
     suspend fun handleEvent(headers: Map<String, String>, input: I, instance: Int): O

@@ -29,7 +29,6 @@ public class EventEnvelope {
     private static final Utility util = Utility.getInstance();
     private static final MsgPack msgPack = new MsgPack();
     private static final PayloadMapper converter = PayloadMapper.getInstance();
-
     private static final String ID_FIELD = "id";
     private static final String TO_FIELD = "to";
     private static final String FROM_FIELD = "from";
@@ -37,26 +36,24 @@ public class EventEnvelope {
     private static final String TRACE_ID_FIELD = "trace_id";
     private static final String TRACE_PATH_FIELD = "trace_path";
     private static final String CID_FIELD = "cid";
-    private static final String EXTRA_FIELD = "extra";
+    private static final String TAG_FIELD = "tags";
+    private static final String ANNOTATION_FIELD = "annotations";
     private static final String STATUS_FIELD = "status";
     private static final String HEADERS_FIELD = "headers";
-    private static final String END_ROUTE_FIELD = "end";
-    private static final String BROADCAST_FIELD = "broadcast";
-    private static final String OPTIONAL_FIELD = "optional";
     private static final String BODY_FIELD = "body";
     private static final String EXCEPTION_FIELD = "exception";
     private static final String STACK_FIELD = "stack";
     private static final String OBJ_TYPE_FIELD = "obj_type";
     private static final String EXECUTION_FIELD = "exec_time";
     private static final String ROUND_TRIP_FIELD = "round_trip";
-    private static final String JSON_FIELD = "json";
+    private static final String OPTIONAL = "optional";
+    private static final String JSON = "json";
+    private static final String BROADCAST = "broadcast";
     // message-ID
     private static final String ID_FLAG = "0";
     // metrics
     private static final String EXECUTION_FLAG = "1";
     private static final String ROUND_TRIP_FLAG = "2";
-    // extra routing information for a request from a language pack client
-    private static final String EXTRA_FLAG = "3";
     // route paths
     private static final String TO_FLAG = "T";
     private static final String REPLY_TO_FLAG = "R";
@@ -73,19 +70,20 @@ public class EventEnvelope {
     private static final String CID_FLAG = "X";
     // object type for automatic serialization
     private static final String OBJ_TYPE_FLAG = "O";
-    // final destination
-    private static final String END_ROUTE_FLAG = "E";
-    // broadcast
-    private static final String BROADCAST_FLAG = "b";
     // optional
-    private static final String OPTIONAL_FLAG = "+";
-    private static final String JSON_FLAG = "j";
     // serialized exception object
     private static final String EXCEPTION_FLAG = "4";
     private static final String STACK_FLAG = "5";
+    // annotations
+    private static final String ANNOTATION_FLAG = "6";
+    // tags use number 7
+    // (skip flag number 3 that is used by older version to store tag as composite string in the "extra" field)
+    private static final String TAG_FLAG = "7";
     // special header for setting HTTP cookie for rest-automation
     private static final String SET_COOKIE = "set-cookie";
     private final Map<String, String> headers = new HashMap<>();
+    private final Map<String, String> tags = new HashMap<>();
+    private final Map<String, Object> annotations = new HashMap<>();
     private String id;
     private String from;
     private String to;
@@ -93,7 +91,6 @@ public class EventEnvelope {
     private String traceId;
     private String tracePath;
     private String cid;
-    private String extra;
     // type: Map = "M", List = "L", Primitive = "P", Nothing = "N" or body class name
     private String type;
     private Integer status;
@@ -103,11 +100,7 @@ public class EventEnvelope {
     private String stackTrace;
     private Float executionTime;
     private Float roundTrip;
-    private boolean endOfRoute = false;
-    private boolean binary = true;
-    private boolean optional = false;
     private boolean exRestored = false;
-    private int broadcastLevel = 0;
 
     public EventEnvelope() {
         this.id = util.getUuid();
@@ -149,10 +142,6 @@ public class EventEnvelope {
         return cid;
     }
 
-    public String getExtra() {
-        return extra;
-    }
-
     public int getStatus() {
         return status == null? 200 : status;
     }
@@ -166,15 +155,12 @@ public class EventEnvelope {
     }
 
     public int getBroadcastLevel() {
-        return broadcastLevel;
-    }
-
-    public boolean isEndOfRoute() {
-        return endOfRoute;
+        String broadcast = getTag(BROADCAST);
+        return broadcast != null? Math.max(0, util.str2int(broadcast)) : 0;
     }
 
     public boolean isBinary() {
-        return binary;
+        return !tags.containsKey(JSON);
     }
 
     /**
@@ -210,7 +196,7 @@ public class EventEnvelope {
     }
 
     public boolean isOptional() {
-        return optional;
+        return tags.containsKey(OPTIONAL);
     }
 
     /**
@@ -228,7 +214,7 @@ public class EventEnvelope {
      * @return body or optional.of(body)
      */
     public Object getBody() {
-        return optional? Optional.ofNullable(body) : body;
+        return isOptional()? Optional.ofNullable(body) : body;
     }
 
     /**
@@ -380,61 +366,18 @@ public class EventEnvelope {
     }
 
     /**
-     * This extra field is used to hold a small number of key-values for tagging purpose.
-     * e.g.
-     * 1. The PostOffice uses this to inform a target service about RPC timeout value.
-     * 2. The language pack uses this feature to support special routing to python and node.js applications.
-     *
-     * @param extra language pack extra routing information
-     * @return event envelope
-     */
-    public EventEnvelope setExtra(String extra) {
-        this.extra = extra;
-        return this;
-    }
-
-    private Map<String, String> extraToKeyValues() {
-        Map<String, String> map = new HashMap<>();
-        List<String> tags = util.split(this.extra, "|");
-        for (String t: tags) {
-            int sep = t.indexOf('=');
-            if (sep != -1) {
-                map.put(t.substring(0, sep), t.substring(sep+1));
-            } else {
-                map.put(t, "");
-            }
-        }
-        return map;
-    }
-
-    private String mapToString(Map<String, String> map) {
-        if (map == null || map.isEmpty()) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        map.forEach( (k, v) -> {
-            sb.append(k);
-            if (v != null && !v.isEmpty()) {
-                sb.append('=');
-                sb.append(v);
-            }
-            sb.append('|');
-        });
-        return sb.substring(0, sb.length()-1);
-    }
-
-    /**
-     * Add a tag without value to the extra field
+     * Add a tag without value
      *
      * @param key without value
      * @return event envelope
      */
     public EventEnvelope addTag(String key) {
-        return addTag(key, null);
+        return addTag(key, true);
     }
 
     /**
-     * Add a tag with key-value to the extra field
+     * Add a tag with key-value
+     * (Note: input value will be converted to a text string)
      *
      * @param key for a new tag
      * @param value for a new tag
@@ -442,25 +385,20 @@ public class EventEnvelope {
      */
     public EventEnvelope addTag(String key, Object value) {
         if (key != null && !key.isEmpty()) {
-            Map<String, String> map = extraToKeyValues();
-            // underscore is a filler when value is not provided
-            map.put(key, value == null? "_" : String.valueOf(value));
-            this.extra = mapToString(map);
+            tags.put(key, value == null? "true" : String.valueOf(value));
         }
         return this;
     }
 
     /**
-     * Remove a tag from the extra field
+     * Remove a tag
      *
      * @param key for a tag
      * @return event envelope
      */
     public EventEnvelope removeTag(String key) {
         if (key != null && !key.isEmpty()) {
-            Map<String, String> map = extraToKeyValues();
-            map.remove(key);
-            this.extra = map.isEmpty()? null : mapToString(map);
+            tags.remove(key);
         }
         return this;
     }
@@ -472,7 +410,32 @@ public class EventEnvelope {
      * @return event envelope
      */
     public String getTag(String key) {
-        return key != null && !key.isEmpty() ? extraToKeyValues().get(key) : null;
+        return tags.get(key);
+    }
+
+    public Map<String, String> getTags() {
+        return tags;
+    }
+
+    public EventEnvelope setTags(Map<String, String> tags) {
+        this.tags.clear();
+        this.tags.putAll(tags);
+        return this;
+    }
+
+    public Map<String, Object> getAnnotations() {
+        return annotations;
+    }
+
+    public EventEnvelope setAnnotations(Map<String, Object> annotations) {
+        this.annotations.clear();
+        this.annotations.putAll(annotations);
+        return this;
+    }
+
+    public EventEnvelope clearAnnotations() {
+        this.annotations.clear();
+        return this;
     }
 
     /**
@@ -555,7 +518,7 @@ public class EventEnvelope {
         final Object payload;
         switch (body) {
             case Optional ignored -> {
-                this.optional = true;
+                addTag(OPTIONAL);
                 Optional<Object> o = (Optional<Object>) body;
                 payload = o.orElse(null);
             }
@@ -570,7 +533,7 @@ public class EventEnvelope {
             case null, default -> payload = body;
         }
         // encode body and save object type
-        TypedPayload typed = converter.encode(payload, binary);
+        TypedPayload typed = converter.encode(payload, isBinary());
         this.body = typed.getPayload();
         this.type = typed.getType();
         return this;
@@ -701,21 +664,15 @@ public class EventEnvelope {
     /**
      * DO NOT set this manually. The system will set it.
      *
-     * @param level 0 to 2
+     * @param level 0 to 3
      * @return event envelope
      */
     public EventEnvelope setBroadcastLevel(int level) {
-        this.broadcastLevel = level;
-        return this;
-    }
-
-    /**
-     * DO NOT set this manually. The system will set it when needed.
-     *
-     * @return event envelope
-     */
-    public EventEnvelope setEndOfRoute() {
-        this.endOfRoute = true;
+        if (level > 0 && level < 4) {
+            addTag(BROADCAST, level);
+        } else {
+            removeTag(BROADCAST);
+        }
         return this;
     }
 
@@ -732,7 +689,11 @@ public class EventEnvelope {
      * @return this EventEnvelope
      */
     public EventEnvelope setBinary(boolean binary) {
-        this.binary = binary;
+        if (binary) {
+            tags.remove(JSON);
+        } else {
+            addTag(JSON);
+        }
         return this;
     }
 
@@ -751,28 +712,23 @@ public class EventEnvelope {
 
     public EventEnvelope copy() {
         var event = new EventEnvelope();
-        event.id = this.id;
-        event.body = this.body;
         event.setTo(this.getTo())
             .setHeaders(this.getHeaders())
             .setType(this.getType())
-            .setBroadcastLevel(this.getBroadcastLevel())
             .setFrom(this.getFrom())
-            .setBinary(this.isBinary())
             .setCorrelationId(this.getCorrelationId());
-        if (this.isEndOfRoute()) {
-            event.setEndOfRoute();
-        }
-        event.setExtra(this.getExtra())
-            .setStatus(this.getStatus())
+        event.setStatus(this.getStatus())
             .setReplyTo(this.getReplyTo())
             .setTraceId(this.getTraceId())
             .setTracePath(this.getTracePath());
-        // copy exception and stack trace
+        event.id = this.id;
+        event.body = this.body;
         event.stackTrace = this.stackTrace;
         event.exceptionBytes = this.exceptionBytes;
         event.executionTime = this.executionTime;
         event.roundTrip = this.roundTrip;
+        event.tags.putAll(this.tags);
+        event.annotations.putAll(this.annotations);
         return event;
     }
 
@@ -808,23 +764,25 @@ public class EventEnvelope {
             if (message.containsKey(CID_FLAG)) {
                 cid = (String) message.get(CID_FLAG);
             }
-            if (message.containsKey(EXTRA_FLAG)) {
-                extra = (String) message.get(EXTRA_FLAG);
+            if (message.containsKey(TAG_FLAG)) {
+                Object tf = message.get(TAG_FLAG);
+                if (tf instanceof Map) {
+                    Map<String, String> map = (Map<String, String>) tf;
+                    tags.putAll(map);
+                }
             }
-            if (message.containsKey(OPTIONAL_FLAG)) {
-                optional = true;
+            if (message.containsKey(ANNOTATION_FLAG)) {
+                Object tf = message.get(ANNOTATION_FLAG);
+                if (tf instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) tf;
+                    annotations.putAll(map);
+                }
             }
             if (message.containsKey(STATUS_FLAG)) {
                 status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FLAG))));
             }
             if (message.containsKey(HEADERS_FLAG)) {
                 setHeaders((Map<String, String>) message.get(HEADERS_FLAG));
-            }
-            if (message.containsKey(END_ROUTE_FLAG)) {
-                endOfRoute = (Boolean) message.get(END_ROUTE_FLAG);
-            }
-            if (message.containsKey(BROADCAST_FLAG)) {
-                broadcastLevel = Math.max(0, util.str2int(String.valueOf(message.get(BROADCAST_FLAG))));
             }
             if (message.containsKey(BODY_FLAG)) {
                 body = message.get(BODY_FLAG);
@@ -843,9 +801,6 @@ public class EventEnvelope {
             }
             if (message.containsKey(ROUND_TRIP_FLAG)) {
                 roundTrip = Math.max(0, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
-            }
-            if (message.containsKey(JSON_FLAG)) {
-                binary = false;
             }
         }
     }
@@ -879,23 +834,17 @@ public class EventEnvelope {
         if (cid != null) {
             message.put(CID_FLAG, cid);
         }
-        if (extra != null) {
-            message.put(EXTRA_FLAG, extra);
-        }
         if (status != null) {
             message.put(STATUS_FLAG, status);
         }
         if (!headers.isEmpty()) {
             message.put(HEADERS_FLAG, headers);
         }
-        if (endOfRoute) {
-            message.put(END_ROUTE_FLAG, true);
+        if (!tags.isEmpty()) {
+            message.put(TAG_FLAG, tags);
         }
-        if (broadcastLevel > 0) {
-            message.put(BROADCAST_FLAG, broadcastLevel);
-        }
-        if (optional) {
-            message.put(OPTIONAL_FLAG, true);
+        if (!annotations.isEmpty()) {
+            message.put(ANNOTATION_FLAG, annotations);
         }
         if (body != null) {
             message.put(BODY_FLAG, body);
@@ -914,9 +863,6 @@ public class EventEnvelope {
         }
         if (roundTrip != null) {
             message.put(ROUND_TRIP_FLAG, roundTrip);
-        }
-        if (!binary) {
-            message.put(JSON_FLAG, true);
         }
         return msgPack.pack(message);
     }
@@ -944,23 +890,25 @@ public class EventEnvelope {
         if (message.containsKey(CID_FIELD)) {
             cid = (String) message.get(CID_FIELD);
         }
-        if (message.containsKey(EXTRA_FIELD)) {
-            extra = (String) message.get(EXTRA_FIELD);
+        if (message.containsKey(TAG_FIELD)) {
+            Object tf = message.get(TAG_FIELD);
+            if (tf instanceof Map) {
+                Map<String, String> map = (Map<String, String>) tf;
+                tags.putAll(map);
+            }
         }
-        if (message.containsKey(OPTIONAL_FIELD)) {
-            optional = true;
+        if (message.containsKey(ANNOTATION_FIELD)) {
+            Object tf = message.get(ANNOTATION_FIELD);
+            if (tf instanceof Map) {
+                Map<String, Object> map = (Map<String, Object>) tf;
+                annotations.putAll(map);
+            }
         }
         if (message.containsKey(STATUS_FIELD)) {
             status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FIELD))));
         }
         if (message.containsKey(HEADERS_FIELD)) {
             setHeaders((Map<String, String>) message.get(HEADERS_FIELD));
-        }
-        if (message.containsKey(END_ROUTE_FIELD)) {
-            endOfRoute = (Boolean) message.get(END_ROUTE_FIELD);
-        }
-        if (message.containsKey(BROADCAST_FIELD)) {
-            broadcastLevel = Math.max(0, util.str2int(String.valueOf(message.get(BROADCAST_FIELD))));
         }
         if (message.containsKey(BODY_FIELD)) {
             body = message.get(BODY_FIELD);
@@ -979,9 +927,6 @@ public class EventEnvelope {
         }
         if (message.containsKey(ROUND_TRIP_FIELD)) {
             roundTrip = Math.max(0, util.str2float(String.valueOf(message.get(ROUND_TRIP_FIELD))));
-        }
-        if (message.containsKey(JSON_FIELD)) {
-            binary = false;
         }
     }
 
@@ -1008,23 +953,17 @@ public class EventEnvelope {
         if (cid != null) {
             message.put(CID_FIELD, cid);
         }
-        if (extra != null) {
-            message.put(EXTRA_FIELD, extra);
+        if (!tags.isEmpty()) {
+            message.put(TAG_FIELD, tags);
+        }
+        if (!annotations.isEmpty()) {
+            message.put(ANNOTATION_FIELD, annotations);
         }
         if (status != null) {
             message.put(STATUS_FIELD, status);
         }
         if (!headers.isEmpty()) {
             message.put(HEADERS_FIELD, headers);
-        }
-        if (endOfRoute) {
-            message.put(END_ROUTE_FIELD, true);
-        }
-        if (broadcastLevel > 0) {
-            message.put(BROADCAST_FIELD, broadcastLevel);
-        }
-        if (optional) {
-            message.put(OPTIONAL_FIELD, true);
         }
         if (body != null) {
             message.put(BODY_FIELD, body);
@@ -1044,10 +983,6 @@ public class EventEnvelope {
         if (roundTrip != null) {
             message.put(ROUND_TRIP_FIELD, roundTrip);
         }
-        if (!binary) {
-            message.put(JSON_FIELD, true);
-        }
         return message;
     }
-
 }

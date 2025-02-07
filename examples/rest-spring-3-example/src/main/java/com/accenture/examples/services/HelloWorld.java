@@ -18,7 +18,6 @@
 
 package com.accenture.examples.services;
 
-import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
@@ -28,21 +27,7 @@ import java.util.Map;
 
 /**
  * This demonstrates preloading of user function
- * <p>
- * IMPORTANT:
- * You can use Kernel thread when dealing with computational intensive tasks.
- * <p>
- * This example function is not computational intensive. Therefore, it does not
- * represent the ideal use of kernel threads.
- * <p>
- * Using kernel thread for reactive code is safe because the function will
- * exit very quickly and thus the kernel thread is not held up for a long time.
- * <p>
- * For function that makes blocking RPC calls, you should use virtual thread
- * (the default setting without the KernelThreadRunner annotation). It would
- * provide higher throughput.
  */
-@KernelThreadRunner
 @PreLoad(route="hello.world", instances=20)
 public class HelloWorld implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
 

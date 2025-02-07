@@ -20,6 +20,14 @@ package org.platformlambda.core.models;
 
 import java.util.Map;
 
+/**
+ * Composable function interface contract definition
+ * <p>
+ * Note that the input class should be a Map or a PoJo
+ *
+ * @param <I> input class
+ * @param <O> output class
+ */
 public interface TypedLambdaFunction<I, O> {
 
     O handleEvent(Map<String, String> headers, I input, int instance) throws Exception;

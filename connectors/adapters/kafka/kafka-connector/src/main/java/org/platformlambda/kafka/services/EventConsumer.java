@@ -226,7 +226,6 @@ public class EventConsumer extends Thread {
                         // payload is an embedded event
                         try {
                             message.load(data);
-                            message.setEndOfRoute();
                         } catch (Exception e) {
                             log.error("Unable to decode incoming event for {} - {}", topicPartition, e.getMessage());
                             continue;

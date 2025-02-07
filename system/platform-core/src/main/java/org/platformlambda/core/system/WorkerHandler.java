@@ -21,6 +21,7 @@ package org.platformlambda.core.system;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +93,9 @@ public class WorkerHandler {
     }
 
     public void executeFunction(EventEnvelope event) {
+        if (!TemporaryInbox.TEMPORARY_INBOX.equals(def.getRoute())) {
+            event.clearAnnotations();
+        }
         String rpc = event.getTag(EventEmitter.RPC);
         EventEmitter po = EventEmitter.getInstance();
         String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), instance) : "?";
@@ -174,6 +178,7 @@ public class WorkerHandler {
             if (useEnvelope || (interceptor && def.getInputClass() == null)) {
                 inputBody = event;
             } else {
+                // TODO: handle List of PoJo
                 if (event.getRawBody() instanceof Map && def.getInputClass() != null) {
                     if (def.getInputClass() == AsyncHttpRequest.class) {
                         // handle special case
@@ -206,11 +211,10 @@ public class WorkerHandler {
             String replyTo = event.getReplyTo();
             if (replyTo != null) {
                 long rpcTimeout = util.str2long(rpc);
-                // if it is a callback instead of a RPC call, use default timeout of 30 minutes
+                // if it is a callback instead of an RPC call, use default timeout of 30 minutes
                 final long expiry = rpcTimeout < 0? DEFAULT_TIMEOUT : rpcTimeout;
                 final EventEnvelope response = new EventEnvelope();
-                response.setTo(replyTo);
-                response.setFrom(def.getRoute());
+                response.setTo(replyTo).setTags(event.getTags()).setFrom(def.getRoute());
                 /*
                  * Preserve correlation ID and extra information
                  *
@@ -219,9 +223,6 @@ public class WorkerHandler {
                  */
                 if (event.getCorrelationId() != null) {
                     response.setCorrelationId(event.getCorrelationId());
-                }
-                if (event.getExtra() != null) {
-                    response.setExtra(event.getExtra());
                 }
                 // propagate the trace to the next service if any
                 if (event.getTraceId() != null) {
@@ -376,9 +377,7 @@ public class WorkerHandler {
         if (event.getCorrelationId() != null) {
             response.setCorrelationId(event.getCorrelationId());
         }
-        if (event.getExtra() != null) {
-            response.setExtra(event.getExtra());
-        }
+        response.setTags(event.getTags());
         // propagate the trace to the next service if any
         if (event.getTraceId() != null) {
             response.setTrace(event.getTraceId(), event.getTracePath());
@@ -442,18 +441,9 @@ public class WorkerHandler {
 
     private EventEnvelope encodeTraceAnnotations(EventEnvelope response) {
         EventEmitter po = EventEmitter.getInstance();
-        Map<String, String> headers = response.getHeaders();
         TraceInfo trace = po.getTrace(parentRoute, instance);
         if (trace != null) {
-            Map<String, String> annotations = trace.annotations;
-            if (!annotations.isEmpty()) {
-                int n = 0;
-                for (Map.Entry<String, String> kv : annotations.entrySet()) {
-                    n++;
-                    headers.put("_" + n, kv.getKey() + "=" + kv.getValue());
-                }
-                headers.put("_", String.valueOf(n));
-            }
+            response.setAnnotations(trace.annotations);
         }
         return response;
     }

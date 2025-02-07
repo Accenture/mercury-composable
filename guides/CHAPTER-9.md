@@ -98,7 +98,8 @@ is useful for DevSecOps admin dashboard.
 
 Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output.
 
-If you use the EventEnvelope as input, PoJo payload is provided as a HashMap in the event's body.
+If you use the EventEnvelope as an input in the TypedLambdaFunction, PoJo payload is mapped as a HashMap
+in the event's body.
 
 The original class name of the PoJo payload is saved in the event's type attribute.
 You can compare and restore the PoJo like this:
@@ -110,13 +111,11 @@ if (SamplePoJo.class.getName().equals(input.getType())) {
 }
 ```
 
-If you use the "untyped" LambdaFunction, the input "Object" is a HashMap and you would need to convert it back
-to a PoJo using the SimpleMapper or a serializer of your choice.
-
-For example,
-```java
-SamplePoJo pojo = SimpleMapper.getInstance().getMapper().readValue((Map<String, Object>) input, SamplePoJo.class);
-```
+> *Note*: List of PoJo is not recommended as a payload. You should consider using a PoJo parent class to hold
+          the list of PoJo. However, if you set it to an event's body, the PoJo class name will be recorded
+          as the event's type attribute. The transported payload will be delivered as a list of maps.
+          For example, you can return a list of maps as HTTP response body and the system will convert it to
+          a JSON string.
 
 ## Custom exception using AppException
 

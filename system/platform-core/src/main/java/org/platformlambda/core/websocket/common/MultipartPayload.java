@@ -119,7 +119,7 @@ public class MultipartPayload {
 
     public void outgoing(ServiceQueue target, EventEnvelope event) throws IOException {
         if (target != null && event != null) {
-            byte[] payload = event.setEndOfRoute().toBytes();
+            byte[] payload = event.toBytes();
             EventBus system = Platform.getInstance().getEventSystem();
             if (payload.length > maxPayload) {
                 int total = (payload.length / maxPayload) + (payload.length % maxPayload == 0 ? 0 : 1);
