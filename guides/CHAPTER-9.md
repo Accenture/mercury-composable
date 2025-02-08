@@ -96,9 +96,10 @@ is useful for DevSecOps admin dashboard.
 
 ## PoJo transport
 
-Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output.
+Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output
+and the system will restore PoJo payload accordingly.
 
-If you use the EventEnvelope as an input in the TypedLambdaFunction, PoJo payload is mapped as a HashMap
+However, if you use the EventEnvelope as an input in the TypedLambdaFunction, PoJo payload is mapped as a HashMap
 in the event's body.
 
 The original class name of the PoJo payload is saved in the event's type attribute.
@@ -111,11 +112,51 @@ if (SamplePoJo.class.getName().equals(input.getType())) {
 }
 ```
 
-> *Note*: List of PoJo is not recommended as a payload. You should consider using a PoJo parent class to hold
-          the list of PoJo. However, if you set it to an event's body, the PoJo class name will be recorded
-          as the event's type attribute. The transported payload will be delivered as a list of maps.
-          For example, you can return a list of maps as HTTP response body and the system will convert it to
-          a JSON string.
+## List of Pojo transport
+
+When sending events programmatically, you can send a list of PoJo to a user function. However, the list of pojo
+will be converted as a list of maps as input to the target function.
+
+Since type information is lost at runtime, you may add the `inputPojoClass` parameter in the `PreLoad` annotation
+of the target function. The system will then render the list of pojo as input to the target function.
+
+This applies to both untyped `LambdaFunction` and `TypedLambdaFunction`. In untyped LambdaFunction, the input is
+an object. In TypedLambdaFunction, you should configure the input as list of pojo and at the "inputPojoClass"
+hint in the PreLoad annotation. For example,
+
+```java
+@PreLoad(route = "input.list.of.pojo.java", inputPojoClass = PoJo.class)
+public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object> {
+    @Override
+    public Object handleEvent(Map<String, String> headers, List<PoJo> input, int instance) throws Exception {
+        List<String> names = new ArrayList<>();
+        // prove that the list of pojo is correctly deserialized
+        for (PoJo o: input) {
+            if (o != null) {
+                names.add(o.getName());
+            } else {
+                names.add("null");
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("names", names);
+        return result;
+    }
+}
+```
+
+## PoJo deserialization hints
+
+The PoJo class definition in the TypedLambdaFunction has precedence over the "inputPojoClass" parameter
+in the PreLoad annotation.
+
+For PoJo transport, the "inputPojoClass" parameter in the PreLoad annotation will only be used
+when the untyped "LambdaFunction" is declared. This is for backward compatibility with
+legacy version 2 and 3 where pojo transport restores pojo as input to user function written as
+untyped LambdaFunction.
+
+The list of pojo is handled differently as a deserialization hint in both the untyped LambdaFunction
+and the TypedLambdaFunction use cases as discussed earlier.
 
 ## Custom exception using AppException
 

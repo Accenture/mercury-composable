@@ -19,6 +19,14 @@ tasks:
       - 'boolean(true) -> boolean_value'
       - 'boolean(true) -> !model.bool -> negate_value'
       - 'model.bool:! -> double_negate_value'
+      # non-exist model variable can be used in 2 use cases ("boolean null" and "uuid")
+      - 'model.none:boolean(null=true) -> none_is_true'
+      - 'model.none:boolean(null=false) -> none_is_false'
+      - 'model.none:uuid -> unique_id1'
+      # 3-part entry is compiled into 2 entries of 2-part format
+      # since the right hand side (the middle one) is a model variable, a null value from LHS is fine
+      - 'model.none -> model.uuid:uuid -> unique_id2'
+      - 'model.uuid -> unique_id3'
       - 'map(direction=right, test=message) -> model.map'
       - 'text(demo_token) -> model.access_token'
       - 'input.header -> header'

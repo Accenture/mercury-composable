@@ -194,22 +194,55 @@ public class Utility {
         return libs;
     }
 
+    /**
+     * Zero fill a long number by adding leading zeros
+     *
+     * @param seq is the number to zero fill
+     * @param max number indicates the largest number for counting digits
+     * @return zero filled number in text
+     */
     public String zeroFill(int seq, int max) {
         int len = String.valueOf(max).length();
         String value = String.valueOf(seq);
         return value.length() < len? ZEROS.substring(0, len - value.length()) + value : value;
     }
 
+    /**
+     * Zero fill an integer by adding leading zeros
+     *
+     * @param seq is the number to zero fill
+     * @param max number indicates the largest number for counting digits
+     * @return zero filled number in text
+     */
     public String zeroFill(long seq, long max) {
         int len = String.valueOf(max).length();
         String value = String.valueOf(seq);
         return value.length() < len? ZEROS.substring(0, len - value.length()) + value : value;
     }
 
+    /**
+     * Get a UUID
+     *
+     * @return uuid4 random value
+     */
+    public String getUuid4() {
+        return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Get a UUID without the hyphen separator character
+     *
+     * @return uuid random value
+     */
     public String getUuid() {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+    /**
+     * Get a UUID with current day as the prefix (YYYYMMDD format)
+     *
+     * @return uuid random value
+     */
     public String getDateUuid() {
         return getDateOnly(new Date())+getUuid();
     }

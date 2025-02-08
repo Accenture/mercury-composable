@@ -438,6 +438,33 @@ public class Platform {
     }
 
     /**
+     * When using TypeLambdaFunction, the input class has precedence.
+     * When input class is not provided, you may set the input class using this method.
+     * <p>
+     * This method is also used when the input is a list of PoJo where the PoJo class
+     * information will be erased at runtime. Declaring it using this method allows
+     * the system to deserialize the list of Maps into a list of PoJo.
+     *
+     * @param route of the lambda function
+     * @param pojoClass to declare as input for both untyped class or a list of pojo
+     */
+    public void setPoJoClass(String route, Class<?> pojoClass) {
+        if (!hasRoute(route)) {
+            throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
+        }
+        ServiceDef service = registry.get(route);
+        if (service == null) {
+            throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
+        }
+        service.setPoJoClass(pojoClass);
+        if (pojoClass == null) {
+            log.info("Custom input PojoClass cleared for {}", route);
+        } else {
+            log.info("Input PoJoClass {} assigned to {}", pojoClass, route);
+        }
+    }
+
+    /**
      * Check the route registered in this application instance
      *
      * @param route name of a function

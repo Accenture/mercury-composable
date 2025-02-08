@@ -1818,9 +1818,70 @@ public class PostOfficeTest extends TestBase {
         assertEquals(pojo.telephone, responsePoJo2.telephone);
     }
 
+    @Test
+    public void testInputAsListOfPoJoJava() throws IOException, ExecutionException, InterruptedException {
+        testInputAsListOfPoJo("input.list.of.pojo.java", "10201");
+    }
+
+    @Test
+    public void testInputAsListOfPoJoKotlin() throws IOException, ExecutionException, InterruptedException {
+        testInputAsListOfPoJo("input.list.of.pojo.kotlin", "10202");
+    }
+
+    @SuppressWarnings("unchecked")
+    private void testInputAsListOfPoJo(String route, String traceId) throws IOException, ExecutionException, InterruptedException {
+        PostOffice po = new PostOffice("list.of.pojo.test", traceId, "GET /list/of/pojo");
+        List<PoJo> input = new ArrayList<>();
+        // note that when using list of pojo, the pojo type must be the same
+        // there must be at least one pojo in the list.
+        PoJo pojo1 = new PoJo();
+        pojo1.setName("hello1");
+        input.add(pojo1);
+        PoJo pojo2 = new PoJo();
+        pojo2.setName("hello2");
+        input.add(pojo2);
+        // prove that null can also be transported in a list of pojo
+        input.add(null);
+        var event = new EventEnvelope().setTo(route).setBody(input);
+        var result = po.request(event, 5000).get();
+        assertInstanceOf(Map.class, result.getBody());
+        var map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals(pojo1.getName(), map.getElement("names[0]"));
+        assertEquals(pojo2.getName(), map.getElement("names[1]"));
+        assertEquals("null", map.getElement("names[2]"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testInputAsPoJoUntyped() throws IOException, ExecutionException, InterruptedException {
+        PostOffice po = new PostOffice("untyped.pojo.test", "10300", "GET /untyped/pojo");
+        PoJo pojo = new PoJo();
+        pojo.setName("hello");
+        // prove that list of pojo can be restored using the inputPojoClass in the PreLoad annotation
+        var event = new EventEnvelope().setTo("input.pojo.untyped").setBody(pojo);
+        var result = po.request(event, 5000).get();
+        assertInstanceOf(Map.class, result.getBody());
+        System.out.println(result.getBody());
+        var map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals(pojo.getName(), map.getElement("map.name"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testInputAsPoJoListUntyped() throws IOException, ExecutionException, InterruptedException {
+        PostOffice po = new PostOffice("untyped.pojo.test", "10301", "GET /untyped/pojo");
+        PoJo pojo = new PoJo();
+        pojo.setName("hello");
+        // prove that list of pojo can be restored using the inputPojoClass in the PreLoad annotation
+        var event = new EventEnvelope().setTo("input.pojo.untyped").setBody(List.of(pojo));
+        var result = po.request(event, 5000).get();
+        assertInstanceOf(Map.class, result.getBody());
+        var map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals(pojo.getName(), map.getElement("list[0].name"));
+    }
+
     private record SimpleCallback(BlockingQueue<Object> bench, String traceId)
                                     implements TypedLambdaFunction<PoJo, Void>, MappingExceptionHandler {
-
         @Override
         public void onError(String route, AppException e, EventEnvelope event, int instance) {
             EventEmitter po = EventEmitter.getInstance();
@@ -1845,7 +1906,6 @@ public class PostOfficeTest extends TestBase {
 
     @EventInterceptor
     private static class SimpleInterceptor implements TypedLambdaFunction<EventEnvelope, Void> {
-
         @Override
         public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
             log.info("{} received event from {}", headers, event.getFrom());
@@ -1855,11 +1915,9 @@ public class PostOfficeTest extends TestBase {
     }
 
     private static class EventEnvelopeReader implements TypedLambdaFunction<EventEnvelope, EventEnvelope> {
-
         @Override
         public EventEnvelope handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
             return new EventEnvelope().setBody(input.getBody());
         }
     }
-
 }

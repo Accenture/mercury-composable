@@ -115,6 +115,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FLOAT_SUFFIX = "float";
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
+    private static final String UUID_SUFFIX = "uuid";
+    private static final String UUID_QUALIFIER = ":" + UUID_SUFFIX;
+    private static final String TRUE_QUALIFIER = ":boolean(null=true)";
+    private static final String FALSE_QUALIFIER = ":boolean(null=false)";
     private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
     private static final String AND_TYPE = "and(";
@@ -707,6 +711,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 } else if (isInput || lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     // normal case to input argument
                     Object value = getLhsElement(lhs, source);
+                    // special cases for simple type matching for a non-exist model variable
+                    if (value == null && lhs.startsWith(MODEL_NAMESPACE)) {
+                        if (lhs.endsWith(UUID_QUALIFIER)) {
+                            value = util.getUuid4();
+                        } else if (lhs.endsWith(TRUE_QUALIFIER)) {
+                            value = true;
+                        } else if (lhs.endsWith(FALSE_QUALIFIER)) {
+                            value = false;
+                        }
+                    }
                     if (value != null) {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {
@@ -926,6 +940,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 case DOUBLE_SUFFIX -> {
                     return util.str2double(String.valueOf(value));
                 }
+                case UUID_SUFFIX -> {
+                    return util.getUuid4();
+                }
                 case B64_SUFFIX -> {
                     if (value instanceof byte[] b) {
                         return util.bytesToBase64(b);
@@ -938,7 +955,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     }
                 }
                 default -> log.error("Unable to do {} of {} - " +
-                        "matching type must be substring(start, end), boolean, and, or, text, binary or b64", type, path);
+                        "matching type must be substring(start, end), boolean, !, and, or, text, binary, uuid or b64",
+                        type, path);
             }
         } else {
             String error = "missing close bracket";

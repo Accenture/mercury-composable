@@ -29,6 +29,7 @@ import org.platformlambda.core.models.AsyncHttpRequest
 import org.platformlambda.core.models.EventEnvelope
 import org.platformlambda.core.models.MappingExceptionHandler
 import org.platformlambda.core.models.ProcessStatus
+import org.platformlambda.core.serializers.SimpleMapper
 import org.platformlambda.core.services.DistributedTrace
 import org.platformlambda.core.services.TemporaryInbox
 import org.platformlambda.core.util.Utility
@@ -190,25 +191,59 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                  * we will pass the original event envelope instead of the message body.
                  */
                 val inputBody: Any?
-                if (useEnvelope || (interceptor && def.inputClass == null)) {
+                val cls = if (def.inputClass != null) def.inputClass else def.poJoClass
+                if (useEnvelope || (interceptor && cls == null)) {
                     inputBody = event
+                } else if (event.rawBody is List<*> && cls != null) {
+                    // check if the input is a list of map
+                    val inputList = event.rawBody as List<Any?>
+                    // validate that the objects are PoJo or null
+                    var n = 0
+                    for (o in inputList) {
+                        if (o == null || o is Map<*, *>) {
+                            n++
+                        }
+                    }
+                    if (n == inputList.size) {
+                        val updatedList: MutableList<Any?> = ArrayList()
+                        val mapper = SimpleMapper.getInstance().mapper
+                        for (o in inputList) {
+                            // convert Map to PoJo
+                            val pojo: Any?
+                            if (o == null) {
+                                pojo = null
+                            } else {
+                                val serializer = def.customSerializer
+                                pojo = if (customSerializer != null) {
+                                    serializer.toPoJo(o, cls)
+                                } else {
+                                    mapper.readValue(o, cls)
+                                }
+                            }
+                            updatedList.add(pojo)
+                        }
+                        inputBody = updatedList
+                    } else {
+                        inputBody = event.body
+                    }
                 } else {
-                    inputBody = if (event.rawBody is Map<*, *> && def.inputClass != null) {
-                        if (def.inputClass == AsyncHttpRequest::class.java) {
+                    inputBody = if (event.rawBody is Map<*, *> && cls != null) {
+                        if (cls == AsyncHttpRequest::class.java) {
                             // handle special case
                             AsyncHttpRequest(event.rawBody)
                         } else {
                             // automatically convert Map to PoJo
                             if (customSerializer != null) {
-                                customSerializer.toPoJo(event.rawBody, def.inputClass)
+                                customSerializer.toPoJo(event.rawBody, cls)
                             } else {
-                                event.getBody(def.inputClass)
+                                event.getBody(cls)
                             }
                         }
                     } else {
                         event.body
                     }
                 }
+
                 // Insert READ only metadata into function input headers
                 val parameters: MutableMap<String, String> = HashMap(event.headers)
                 parameters[MY_ROUTE] = parentRoute

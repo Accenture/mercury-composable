@@ -52,6 +52,7 @@ public class ServiceDef {
     private boolean isPrivateFunction = false;
     private ServiceQueue manager;
     private Class<?> inputClass;
+    private Class<?> pojoClass;
     private CustomSerializer serializer = null;
     private int instances = 1;
 
@@ -200,6 +201,15 @@ public class ServiceDef {
 
     public CustomSerializer getCustomSerializer() {
         return this.serializer;
+    }
+
+    public ServiceDef setPoJoClass(Class<?> cls) {
+        this.pojoClass = cls;
+        return this;
+    }
+
+    public Class<?> getPoJoClass() {
+        return pojoClass;
     }
 
     public boolean inputIsEnvelope() {

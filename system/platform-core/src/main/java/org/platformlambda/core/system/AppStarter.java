@@ -347,7 +347,11 @@ public class AppStarter {
                             }
                             boolean isPrivate = svc.isPrivate();
                             Object o = cls.getDeclaredConstructor().newInstance();
+                            Class<?> pojoClass = null;
                             CustomSerializer mapper = null;
+                            if (svc.inputPojoClass() != Void.class) {
+                                pojoClass = svc.inputPojoClass();
+                            }
                             if (svc.customSerializer() != Void.class) {
                                 try {
                                     Object mapperObj = svc.customSerializer().getDeclaredConstructor().newInstance();
@@ -372,6 +376,9 @@ public class AppStarter {
                                     if (mapper != null) {
                                         platform.setCustomSerializer(r, mapper);
                                     }
+                                    if (pojoClass != null) {
+                                        platform.setPoJoClass(r, pojoClass);
+                                    }
                                 }
                             } else if (o instanceof KotlinLambdaFunction f) {
                                 for (String r : routes) {
@@ -382,6 +389,9 @@ public class AppStarter {
                                     }
                                     if (mapper != null) {
                                         platform.setCustomSerializer(r, mapper);
+                                    }
+                                    if (pojoClass != null) {
+                                        platform.setPoJoClass(r, pojoClass);
                                     }
                                 }
                             } else {

@@ -20,6 +20,7 @@ package org.platformlambda.core.system;
 
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.Utility;
@@ -31,9 +32,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -175,22 +174,55 @@ public class WorkerHandler {
              * we will pass the original event envelope instead of the message body.
              */
             final Object inputBody;
-            if (useEnvelope || (interceptor && def.getInputClass() == null)) {
+            var cls = def.getInputClass() != null? def.getInputClass() : def.getPoJoClass();
+            if (useEnvelope || (interceptor && cls == null)) {
                 inputBody = event;
             } else {
-                // TODO: handle List of PoJo
-                if (event.getRawBody() instanceof Map && def.getInputClass() != null) {
-                    if (def.getInputClass() == AsyncHttpRequest.class) {
+
+                if (event.getRawBody() instanceof Map && cls != null) {
+                    if (cls == AsyncHttpRequest.class) {
                         // handle special case
                         inputBody = new AsyncHttpRequest(event.getRawBody());
                     } else {
-                        // automatically convert Map to PoJo
+                        // convert Map to PoJo
                         CustomSerializer customSerializer = def.getCustomSerializer();
                         if (customSerializer != null) {
-                            inputBody = customSerializer.toPoJo(event.getRawBody(), def.getInputClass());
+                            inputBody = customSerializer.toPoJo(event.getRawBody(), cls);
                         } else {
-                            inputBody = event.getBody(def.getInputClass());
+                            inputBody = event.getBody(cls);
                         }
+                    }
+                } else if (event.getRawBody() instanceof List && cls != null) {
+                    // check if the input is a list of map
+                    List<Object> inputList = (List<Object>) event.getRawBody();
+                    // validate that the objects are PoJo or null
+                    int n = 0;
+                    for (Object o: inputList) {
+                        if (o == null || o instanceof Map) {
+                            n++;
+                        }
+                    }
+                    if (n == inputList.size()) {
+                        List<Object> updatedList = new ArrayList<>();
+                        var mapper = SimpleMapper.getInstance().getMapper();
+                        for (Object o: inputList) {
+                            // convert Map to PoJo
+                            final Object pojo;
+                            if (o == null) {
+                                pojo = null;
+                            } else {
+                                CustomSerializer customSerializer = def.getCustomSerializer();
+                                if (customSerializer != null) {
+                                    pojo = customSerializer.toPoJo(o, cls);
+                                } else {
+                                    pojo = mapper.readValue(o, cls);
+                                }
+                            }
+                            updatedList.add(pojo);
+                        }
+                        inputBody = updatedList;
+                    } else {
+                        inputBody = event.getBody();
                     }
                 } else {
                     inputBody = event.getBody();

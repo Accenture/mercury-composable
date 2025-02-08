@@ -404,4 +404,20 @@ public class UtilityTests {
         String url = "/api/hello/world";
         assertEquals("/api/v2/hello/world", http.normalizeUrl(url, rewrite));
     }
+
+    @Test
+    public void uuid4test() {
+        final Utility util = Utility.getInstance();
+        var id1 = util.getUuid4();
+        var id2 = util.getUuid4();
+        assertNotEquals(id1, id2);
+        var parts = util.split(id1, "-");
+        // example for uuid4: 28ea2e7a-09c9-45be-8a3a-b51cb8d949d1
+        assertEquals(5, parts.size());
+        assertEquals(8, parts.getFirst().length());
+        assertEquals(4, parts.get(1).length());
+        assertEquals(4, parts.get(2).length());
+        assertEquals(4, parts.get(3).length());
+        assertEquals(12, parts.get(4).length());
+    }
 }

@@ -370,6 +370,14 @@ public class FlowTests extends TestBase {
         assertEquals(false, original.get("negate_value"));
         // double negate becomes true
         assertEquals(true, original.get("double_negate_value"));
+        // test non-exist model variable in boolean null and uuid use cases
+        assertEquals(true, original.get("none_is_true"));
+        assertEquals(false, original.get("none_is_false"));
+        assertNotNull(original.get("unique_id1"));
+        assertNotNull(original.get("unique_id2"));
+        assertNotEquals(original.get("unique_id1"), original.get("unique_id2"));
+        assertEquals(original.get("unique_id2"), original.get("unique_id3"));
+        // check environment variable substitution
         assertEquals(System.getenv("PATH"), original.get("path"));
         // check metadata for a flow
         assertEquals(TRACE_ID, original.get("trace_id"));
