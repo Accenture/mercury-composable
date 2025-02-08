@@ -70,9 +70,8 @@ The `BeforeApplication` logic will run before your `MainApplication` module(s). 
 special handling of environment variables. For example, decrypt an environment variable secret, construct an X.509
 certificate, and save it in the "/tmp" folder before your main application starts.
 
-Normal startup sequence must be between 6 and 999.  Sequence 5 is reserved by the AsyncHttpClientLoader. 
-If your startup code does not need the async HTTP client service and you want it to run first, you may use
-sequence from 1 to 4.
+> *Note*: Sequence 0 is reserved by the EssentialServiceLoader and 2 reserved by Event Script.
+          Your user functions should use a number between 3 and 999.
 
 ## Event envelope
 
