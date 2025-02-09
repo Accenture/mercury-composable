@@ -42,13 +42,15 @@ public class MsgPackTest {
     public void dataIsMap() throws IOException {
         PoJo pojo = new PoJo();
         pojo.setName("hello world");
-        String pojoInstanceString = pojo.toString();
         String[] HELLO_WORLD = {"hello", "world"};
         Map<String, Object> input = new HashMap<>();
         input.put("hello", "world");
         input.put("boolean", true);
         input.put("array", HELLO_WORLD);
         input.put("integer", 12345L);
+        input.put("long", 12345L);
+        input.put("float", 12.345f);
+        input.put("double", 12.345d);
         input.put("pojo", pojo);
         input.put(PayloadMapper.NOTHING, null);
         byte[] b = msgPack.pack(input);
@@ -56,15 +58,21 @@ public class MsgPackTest {
         assertInstanceOf(Map.class, o);
         Map<String, Object> result = (Map<String, Object>) o;
         // long number will be compressed into integer if applicable
-        assertEquals(Integer.class, result.get("integer").getClass());
+        assertInstanceOf(Integer.class, result.get("integer"));
+        assertInstanceOf(Integer.class, result.get("long"));
+        assertInstanceOf(Float.class, result.get("float"));
+        assertInstanceOf(Double.class, result.get("double"));
         // MsgPack does not transport null elements in a map
         assertFalse(result.containsKey(PayloadMapper.NOTHING));
         result.remove(PayloadMapper.NOTHING);
         assertEquals(o, result);
         // array is converted to list of objects
         assertEquals(Arrays.asList(HELLO_WORLD), result.get("array"));
-        // embedded pojo in a map is converted to the pojo's instance string
-        assertEquals(pojoInstanceString, result.get("pojo"));
+        // embedded pojo in a map is converted to a map
+        Object innerPoJo = result.get("pojo");
+        assertInstanceOf(Map.class, innerPoJo);
+        PoJo restored = SimpleMapper.getInstance().getMapper().readValue(innerPoJo, PoJo.class);
+        assertEquals(pojo.getName(), restored.getName());
     }
 
     @Test

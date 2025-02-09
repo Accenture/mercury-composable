@@ -43,7 +43,6 @@ public class MsgPackTest {
     public void dataIsMap() throws IOException {
         PoJo pojo = new PoJo();
         pojo.setName("hello world");
-        String pojoInstanceString = pojo.toString();
         String[] HELLO_WORLD = {"hello", "world"};
         Map<String, Object> input = new HashMap<>();
         input.put("hello", "world");
@@ -70,8 +69,11 @@ public class MsgPackTest {
         assertEquals(o, result);
         // array is converted to list of objects
         assertEquals(Arrays.asList(HELLO_WORLD), result.get("array"));
-        // embedded pojo in a map is converted to the pojo's instance string
-        assertEquals(pojoInstanceString, result.get("pojo"));
+        // embedded pojo in a map is converted to a map
+        Object innerPoJo = result.get("pojo");
+        assertInstanceOf(Map.class, innerPoJo);
+        PoJo restored = SimpleMapper.getInstance().getMapper().readValue(innerPoJo, PoJo.class);
+        assertEquals(pojo.getName(), restored.getName());
     }
 
     @Test
