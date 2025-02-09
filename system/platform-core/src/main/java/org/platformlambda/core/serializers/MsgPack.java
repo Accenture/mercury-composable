@@ -278,7 +278,7 @@ public class MsgPack {
                 // Date object will be packed as ISO-8601 string
                 packer.packString(util.date2str(d));
             default -> {
-                // handle nested pojo in data structure
+                // handle pojo inside data structure
                 if (util.isPoJo(o)) {
                     try {
                         var value = mapper.readValue(o, Map.class);
