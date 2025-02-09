@@ -265,10 +265,10 @@ public class MsgPack {
             case Double d -> packer.packDouble(d);
             case BigInteger bInt ->
                 // convert to string to preserve precision
-                    packer.packString(bInt.toString());
+                packer.packString(bInt.toString());
             case BigDecimal bDecimal ->
                 // convert to string to preserve precision
-                    packer.packString(bDecimal.toPlainString());
+                packer.packString(bDecimal.toPlainString());
             case Boolean bb -> packer.packBoolean(bb);
             case byte[] b -> {
                 packer.packBinaryHeader(b.length);
