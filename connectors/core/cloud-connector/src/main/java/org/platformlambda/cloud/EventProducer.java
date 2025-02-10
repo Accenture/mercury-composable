@@ -49,7 +49,6 @@ public class EventProducer implements LambdaFunction {
     public static final String BYTES_DATA = "bytes";
     public static final String MAP_DATA = "map";
     public static final String LIST_DATA = "list";
-
     private static final long ONE_MINUTE = 60 * 1000;
     private static final long TEN_MINUTES = 10 * ONE_MINUTE;
     private static final SimpleCache stickyDest = SimpleCache.createCache("sticky.destinations", ONE_MINUTE);
@@ -160,7 +159,7 @@ public class EventProducer implements LambdaFunction {
         if (available.isEmpty()) {
             return null;
         } else if (available.size() == 1) {
-            return available.get(0);
+            return available.getFirst();
         } else {
             // select target using round-robin protocol
             Map<String, Long> load = new HashMap<>();
@@ -176,7 +175,7 @@ public class EventProducer implements LambdaFunction {
                     load.put(target, 0L);
                 }
             }
-            String selected = available.get(0);
+            String selected = available.getFirst();
             long lowest = load.get(selected);
             // find the lowest load
             for (Map.Entry<String, Long> target: load.entrySet()) {

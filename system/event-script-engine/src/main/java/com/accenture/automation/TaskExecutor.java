@@ -93,6 +93,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String ALL = "*";
     private static final String END = "end";
     private static final String TRUE = "true";
+    private static final String FALSE = "false";
+    private static final String NULL = "null";
     private static final String RESPONSE = "response";
     private static final String SEQUENTIAL = "sequential";
     private static final String PARALLEL = "parallel";
@@ -115,10 +117,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FLOAT_SUFFIX = "float";
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
+    private static final String UUID_SUFFIX = "uuid";
     private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
+
     private enum OPERATION {
         SIMPLE_COMMAND,
         SUBSTRING_COMMAND,
@@ -203,7 +207,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         var message = event.getRawBody();
                         Map<String, Object> error = new HashMap<>();
                         error.put(CODE, statusCode);
-                        error.put(MESSAGE, message == null ? "null" : String.valueOf(message));
+                        error.put(MESSAGE, message == null ? NULL : String.valueOf(message));
                         String stackTrace = event.getStackTrace();
                         if (stackTrace != null) {
                             error.put(STACK_TRACE, stackTrace);
@@ -707,6 +711,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 } else if (isInput || lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     // normal case to input argument
                     Object value = getLhsElement(lhs, source);
+                    // special cases for simple type matching for a non-exist model variable
+                    if (value == null && lhs.startsWith(MODEL_NAMESPACE)) {
+                        value = getValueFromNonExistModel(lhs);
+                    }
                     if (value != null) {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {
@@ -821,6 +829,27 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    private Object getValueFromNonExistModel(String lhs) {
+        int colon = lhs.lastIndexOf(':');
+        if (colon > 0) {
+            var qualifier = lhs.substring(colon+1).trim();
+            if (UUID_SUFFIX.equals(qualifier)) {
+                return util.getUuid4();
+            } else {
+                var parts = util.split(qualifier, "(= )");
+                if (parts.size() == 3 && BOOLEAN_SUFFIX.equals(parts.getFirst()) && NULL.equals(parts.get(1))) {
+                    if (TRUE.equals(parts.get(2))) {
+                        return true;
+                    }
+                    if (FALSE.equals(parts.get(2))) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private void callExternalStateMachine(FlowInstance flowInstance, Task task, String rhs, Object value)
             throws IOException {
         String key = rhs.substring(EXT_NAMESPACE.length()).trim();
@@ -909,10 +938,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     };
                 }
                 case BOOLEAN_SUFFIX -> {
-                    return "true".equalsIgnoreCase(String.valueOf(value));
+                    return TRUE.equalsIgnoreCase(String.valueOf(value));
                 }
                 case NEGATE_SUFFIX -> {
-                    return !("true".equalsIgnoreCase(String.valueOf(value)));
+                    return !(TRUE.equalsIgnoreCase(String.valueOf(value)));
                 }
                 case INTEGER_SUFFIX -> {
                     return util.str2int(String.valueOf(value));
@@ -926,6 +955,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 case DOUBLE_SUFFIX -> {
                     return util.str2double(String.valueOf(value));
                 }
+                case UUID_SUFFIX -> {
+                    return util.getUuid4();
+                }
                 case B64_SUFFIX -> {
                     if (value instanceof byte[] b) {
                         return util.bytesToBase64(b);
@@ -938,7 +970,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     }
                 }
                 default -> log.error("Unable to do {} of {} - " +
-                        "matching type must be substring(start, end), boolean, and, or, text, binary or b64", type, path);
+                        "matching type must be substring(start, end), boolean, !, and, or, text, binary, uuid or b64",
+                        type, path);
             }
         } else {
             String error = "missing close bracket";
@@ -971,8 +1004,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     }
                 } else if (selection == OPERATION.AND_COMMAND || selection == OPERATION.OR_COMMAND) {
                     if (command.startsWith(MODEL_NAMESPACE)) {
-                        boolean v1 = "true".equals(String.valueOf(value));
-                        boolean v2 = "true".equals(String.valueOf(data.getElement(command)));
+                        boolean v1 = TRUE.equals(String.valueOf(value));
+                        boolean v2 = TRUE.equals(String.valueOf(data.getElement(command)));
                         return selection == OPERATION.AND_COMMAND ? v1 && v2 : v1 || v2;
                     } else {
                         error = "'" + command + "' is not a model variable";
@@ -990,7 +1023,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         // Enforce value to a text string where null value will become "null".
                         // Therefore, null value or "null" string in the command is treated as the same.
                         String str = String.valueOf(value);
-                        boolean condition = filtered.size() == 1 || "true".equalsIgnoreCase(filtered.get(1));
+                        boolean condition = filtered.size() == 1 || TRUE.equalsIgnoreCase(filtered.get(1));
                         String target = filtered.getFirst();
                         if (str.equals(target)) {
                             return condition;

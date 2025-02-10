@@ -320,12 +320,9 @@ parameter formatter `{}` with a single Map parameter like this:
 
 ```java
 var message = new HashMap<>();
-message.put("flow", flowInstance.getFlow().id);
-message.put("id", logId);
-message.put("status", normal? "completed" : "aborted");
-message.put("execution", "Run " + totalExecutions +
-                         " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
-message.put("tasks", taskList);
+message.put("id", id);
+message.put("status", "completed");
+message.put("notes", "Just a demo");
 log.info("{}", message);
 ```
 

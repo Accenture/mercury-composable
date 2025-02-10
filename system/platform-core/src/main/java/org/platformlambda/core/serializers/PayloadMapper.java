@@ -62,8 +62,11 @@ public class PayloadMapper {
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         Utility util = Utility.getInstance();
         List<Object> list = new ArrayList<>();
+        int total = 0;
+        Set<String> cls = new HashSet<>();
         for (Object o: objects) {
             if (o == null) {
+                total++;
                 list.add(null);
             } else if (isPrimitive(o)) {
                 list.add(o);
@@ -71,6 +74,8 @@ public class PayloadMapper {
                 list.add(o);
             } else {
                 if (util.isPoJo(o)) {
+                    total++;
+                    cls.add(o.getClass().getName());
                     if (binary) {
                         list.add(mapper.readValue(o, Map.class));
                     } else {
@@ -81,7 +86,11 @@ public class PayloadMapper {
                 }
             }
         }
-        return new TypedPayload(LIST, list);
+        if (total == objects.size() && cls.size() == 1) {
+            return new TypedPayload(cls.iterator().next(), list);
+        } else {
+            return new TypedPayload(LIST, list);
+        }
     }
 
     private TypedPayload getTypedPayload(Object obj, boolean binary) {

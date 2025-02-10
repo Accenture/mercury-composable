@@ -8,6 +8,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.2.9, 2/8/2025
+
+### Added
+
+1. uuid generation feature in Event Script's simple type matching
+2. inputPoJoClass parameter in PreLoad annotation
+
+### Removed
+
+N/A
+
+### Changed
+
+For feature completeness, the system now supports list of pojo as one type of event input
+for sending event programmatically.
+
+However, Event Script's input data mapping is configuration driven and thus list of pojo
+is not permitted.
+
+---
+## Version 4.2.8, 2/6/2025
+
+In this release, we have improved EventEnvelope and Trace Annotation features
+and tested interoperability with applications written in version 2 and 3.
+
+### Added
+
+Support text, map and list in trace annotation
+
+### Removed
+
+The "extra" and "end-of-route" fields in EventEnvelope are retired
+
+### Changed
+
+Updated EventEnvelope data structure for direct support of tags and annotations
+
+---
 ## Version 4.2.7, 2/4/2025
 
 ### Added

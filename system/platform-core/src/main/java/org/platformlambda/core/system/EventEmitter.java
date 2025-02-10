@@ -391,12 +391,10 @@ public class EventEmitter {
      * Service discovery
      *
      * @param to destination
-     * @param endOfRoute if no relay is needed
      * @return actor, websocket txPaths or null
      * @throws IOException in case route is not found
      */
-    public TargetRoute discover(String to, boolean endOfRoute) throws IOException {
-        boolean checkCloud = !endOfRoute && !CLOUD_CONNECTOR.equals(to);
+    public TargetRoute discover(String to) throws IOException {
         Platform platform = Platform.getInstance();
         if (to.contains("@")) {
             int at = to.indexOf('@');
@@ -406,17 +404,16 @@ public class EventEmitter {
                 if (platform.hasRoute(target)) {
                     return new TargetRoute(platform.getManager(target), false);
                 }
-            } else if (checkCloud) {
+            } else {
                 TargetRoute cloud = getCloudRoute();
                 if (cloud != null && (origin.startsWith(APP_GROUP_PREFIX) || cloudOrigins.containsKey(origin))) {
                     return cloud;
                 }
             }
-
         } else {
             if (platform.hasRoute(to)) {
                 return new TargetRoute(platform.getManager(to), false);
-            } else if (checkCloud) {
+            } else {
                 TargetRoute cloud = getCloudRoute();
                 if (cloud != null && exists(to)) {
                     return cloud;
@@ -704,7 +701,7 @@ public class EventEmitter {
             });
             return;
         }
-        TargetRoute target = discover(to, event.isEndOfRoute());
+        TargetRoute target = discover(to);
         if (target.isCloud()) {
             /*
              * If broadcast, set broadcast level to 3 because the event will be sent
@@ -1054,7 +1051,7 @@ public class EventEmitter {
             return asyncRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();
-        TargetRoute target = discover(to, event.isEndOfRoute());
+        TargetRoute target = discover(to);
         AsyncInbox inbox = new AsyncInbox(to, event, timeout, timeoutException);
         event.setCorrelationId(inbox.getCorrelationId());
         event.setReplyTo(TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin());
@@ -1110,7 +1107,7 @@ public class EventEmitter {
             return request(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();
-        TargetRoute target = discover(to, event.isEndOfRoute());
+        TargetRoute target = discover(to);
         FutureInbox inbox = new FutureInbox(to, event, timeout, timeoutException);
         event.setCorrelationId(inbox.getCorrelationId());
         event.setReplyTo(TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin());
@@ -1190,7 +1187,7 @@ public class EventEmitter {
             String originalCid = event.getCorrelationId();
             event.setCorrelationId(sequencedCid);
             inbox.setCorrelation(sequencedCid, new InboxCorrelation(to, originalCid));
-            TargetRoute target = discover(to, event.isEndOfRoute());
+            TargetRoute target = discover(to);
             if (target.isCloud()) {
                 MultipartPayload.getInstance().outgoing(target.getManager(), event);
             } else {
@@ -1259,7 +1256,7 @@ public class EventEmitter {
             String originalCid = event.getCorrelationId();
             event.setCorrelationId(sequencedCid);
             inbox.setCorrelation(sequencedCid, new InboxCorrelation(to, originalCid));
-            TargetRoute target = discover(to, event.isEndOfRoute());
+            TargetRoute target = discover(to);
             if (target.isCloud()) {
                 MultipartPayload.getInstance().outgoing(target.getManager(), event);
             } else {

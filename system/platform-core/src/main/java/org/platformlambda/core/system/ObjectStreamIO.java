@@ -231,7 +231,7 @@ public class ObjectStreamIO {
         private void sendReply(CallBackReference ref, Object input, String type) {
             try {
                 EventEmitter.getInstance().send(new EventEnvelope().setTo(ref.cb)
-                        .setCorrelationId(ref.cid).setExtra(ref.extra).setHeader(TYPE, type).setBody(input));
+                        .setCorrelationId(ref.cid).setHeader(TYPE, type).setBody(input));
             } catch(IOException e) {
                 log.error("Unable to callback - {}", e.getMessage());
             }
@@ -259,16 +259,8 @@ public class ObjectStreamIO {
             String type = event.getHeaders().get(TYPE);
             String cb = event.getReplyTo();
             String cid = event.getCorrelationId();
-            String extra = event.getExtra();
             if (READ.equals(type) && cb != null) {
-                var ref = new CallBackReference(cb);
-                if (cid != null) {
-                    ref.cid = cid;
-                }
-                if (extra != null) {
-                    ref.extra = extra;
-                }
-                callbacks.add(ref);
+                callbacks.add(new CallBackReference(cb, cid));
                 publisher.get();
                 touch(in);
             }
@@ -277,7 +269,7 @@ public class ObjectStreamIO {
                 platform.release(out);
                 streams.remove(in);
                 if (cb != null) {
-                    po.send(new EventEnvelope().setTo(cb).setCorrelationId(cid).setExtra(extra).setBody(true));
+                    po.send(new EventEnvelope().setTo(cb).setCorrelationId(cid).setBody(true));
                 }
             }
             return null;
@@ -286,11 +278,11 @@ public class ObjectStreamIO {
 
     public static class CallBackReference {
         final String cb;
-        String cid;
-        String extra;
+        final String cid;
 
-        public CallBackReference(String cb) {
+        public CallBackReference(String cb, String cid) {
             this.cb = cb;
+            this.cid = cid;
         }
     }
 

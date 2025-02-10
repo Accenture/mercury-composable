@@ -29,7 +29,9 @@ import org.platformlambda.core.models.AsyncHttpRequest
 import org.platformlambda.core.models.EventEnvelope
 import org.platformlambda.core.models.MappingExceptionHandler
 import org.platformlambda.core.models.ProcessStatus
+import org.platformlambda.core.serializers.SimpleMapper
 import org.platformlambda.core.services.DistributedTrace
+import org.platformlambda.core.services.TemporaryInbox
 import org.platformlambda.core.util.Utility
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
@@ -101,6 +103,9 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
         }
 
         private suspend fun executeFunction(event: EventEnvelope) {
+            if (TemporaryInbox.TEMPORARY_INBOX != def.route) {
+                event.clearAnnotations()
+            }
             val rpc = event.getTag(EventEmitter.RPC)
             val po = EventEmitter.getInstance()
             val ref = if (tracing) po.startTracing(parentRoute, event.traceId, event.tracePath, instance) else "?"
@@ -186,25 +191,59 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                  * we will pass the original event envelope instead of the message body.
                  */
                 val inputBody: Any?
-                if (useEnvelope || (interceptor && def.inputClass == null)) {
+                val cls = if (def.inputClass != null) def.inputClass else def.poJoClass
+                if (useEnvelope || (interceptor && cls == null)) {
                     inputBody = event
-                } else {
-                    if (event.rawBody is Map<*, *> && def.inputClass != null) {
-                        if (def.inputClass == AsyncHttpRequest::class.java) {
-                            // handle special case
-                            inputBody = AsyncHttpRequest(event.rawBody)
-                        } else {
-                            // automatically convert Map to PoJo
-                            if (customSerializer != null) {
-                                inputBody = customSerializer.toPoJo(event.rawBody, def.inputClass)
-                            } else {
-                                inputBody = event.getBody(def.inputClass)
-                            }
+                } else if (event.rawBody is List<*> && cls != null) {
+                    // check if the input is a list of map
+                    val inputList = event.rawBody as List<Any?>
+                    // validate that the objects are PoJo or null
+                    var n = 0
+                    for (o in inputList) {
+                        if (o == null || o is Map<*, *>) {
+                            n++
                         }
+                    }
+                    if (n == inputList.size) {
+                        val updatedList: MutableList<Any?> = ArrayList()
+                        val mapper = SimpleMapper.getInstance().mapper
+                        for (o in inputList) {
+                            // convert Map to PoJo
+                            val pojo: Any?
+                            if (o == null) {
+                                pojo = null
+                            } else {
+                                val serializer = def.customSerializer
+                                pojo = if (customSerializer != null) {
+                                    serializer.toPoJo(o, cls)
+                                } else {
+                                    mapper.readValue(o, cls)
+                                }
+                            }
+                            updatedList.add(pojo)
+                        }
+                        inputBody = updatedList
                     } else {
                         inputBody = event.body
                     }
+                } else {
+                    inputBody = if (event.rawBody is Map<*, *> && cls != null) {
+                        if (cls == AsyncHttpRequest::class.java) {
+                            // handle special case
+                            AsyncHttpRequest(event.rawBody)
+                        } else {
+                            // automatically convert Map to PoJo
+                            if (customSerializer != null) {
+                                customSerializer.toPoJo(event.rawBody, cls)
+                            } else {
+                                event.getBody(cls)
+                            }
+                        }
+                    } else {
+                        event.body
+                    }
                 }
+
                 // Insert READ only metadata into function input headers
                 val parameters: MutableMap<String, String> = HashMap(event.headers)
                 parameters[MY_ROUTE] = parentRoute
@@ -222,11 +261,12 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                 val replyTo = event.replyTo
                 if (replyTo != null) {
                     val rpcTimeout = util.str2long(rpc)
-                    // if it is a callback instead of a RPC call, use default timeout of 30 minutes
+                    // if it is a callback instead of an RPC call, use default timeout of 30 minutes
                     val expiry = if (rpcTimeout < 0) DEFAULT_TIMEOUT else rpcTimeout
                     val response = EventEnvelope()
                     response.to = replyTo
                     response.from = def.route
+                    response.tags = event.tags
                     /*
                      * Preserve correlation ID and extra information
                      *
@@ -235,9 +275,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                      */
                     if (event.correlationId != null) {
                         response.setCorrelationId(event.correlationId)
-                    }
-                    if (event.extra != null) {
-                        response.extra = event.extra
                     }
                     // propagate the trace to the next service if any
                     if (event.traceId != null) {
@@ -286,7 +323,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                                 }
                             })
                         // dispose a pending Mono if timeout
-                        timer.set(platform.vertx.setTimer(expiry) { t: Long? ->
+                        timer.set(platform.vertx.setTimer(expiry) { _: Long? ->
                             timer.set(-1)
                             if (!disposable.isDisposed) {
                                 log.warn(
@@ -313,7 +350,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         response.setHeader(X_STREAM_ID, fluxRelay.publish())
                     }
                     val simulatedStreamTimeout = !skipResponse && updateResponse(response, resultSet!!)
-                    if (!response.headers.isEmpty()) {
+                    if (response.headers.isNotEmpty()) {
                         output[HEADERS] = response.headers
                     }
                     output[BODY] =
@@ -379,9 +416,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     if (event.correlationId != null) {
                         response.correlationId = event.correlationId
                     }
-                    if (event.extra != null) {
-                        response.extra = event.extra
-                    }
+                    response.tags = event.tags
                     // propagate the trace to the next service if any
                     if (event.traceId != null) {
                         response.setTrace(event.traceId, event.tracePath)
@@ -407,18 +442,6 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             }
         }
 
-        private fun getStatusFromException(e: Throwable): Int {
-            if (e is AppException) {
-                return e.status
-            } else if (e is TimeoutException) {
-                return 408
-            } else if (e is IllegalArgumentException) {
-                return 400
-            } else {
-                return 500
-            }
-        }
-
         private fun sendMonoResponse(response: EventEnvelope, data: Any?, begin: Long) {
             val po = EventEmitter.getInstance()
             updateResponse(response, data)
@@ -439,9 +462,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             if (event.correlationId != null) {
                 response.setCorrelationId(event.correlationId)
             }
-            if (event.extra != null) {
-                response.setExtra(event.extra)
-            }
+            response.tags = event.tags
             // propagate the trace to the next service if any
             if (event.traceId != null) {
                 response.setTrace(event.traceId, event.tracePath)
@@ -490,7 +511,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
             return String.format("%.3f", max(0.0, delta.toDouble())).toFloat()
         }
 
-        private fun simplifyCastError(ex: Throwable): String? {
+        private fun simplifyCastError(ex: Throwable): String {
             val error = ex.message
             if (error == null) {
                 return "null"
@@ -504,18 +525,9 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
 
         private fun encodeTraceAnnotations(response: EventEnvelope): EventEnvelope {
             val po = EventEmitter.getInstance()
-            val headers = response.headers
             val trace = po.getTrace(parentRoute, instance)
             if (trace != null) {
-                val annotations = trace.annotations
-                if (annotations.isNotEmpty()) {
-                    var n = 0
-                    for ((key, value) in annotations) {
-                        n++
-                        headers["_$n"] = "$key=$value"
-                    }
-                    headers["_"] = n.toString()
-                }
+                response.setAnnotations(trace.annotations)
             }
             return response
         }

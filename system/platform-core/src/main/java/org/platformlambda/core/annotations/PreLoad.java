@@ -32,6 +32,14 @@ import java.lang.annotation.*;
  * The parameter may fetch value from an environment variable using "${ENV_VAR:default_value}" format.
  * If the parameter does not exist, or it does not resolve to a numeric value, the "instances" value in this
  * annotation will be used instead.
+ * <p>
+ * inputPojoClass is optional. When using TypeLambdaFunction, the input class has precedence over this parameter.
+ * When input class is not provided, you may set the input class using this parameter. This inputPoJoClass
+ * is also used when the TypedLambdaFunction's input is an Object and the input payload is a list of Maps.
+ * It will convert the list of Maps back to a list of PoJo.
+ * <p>
+ * Note that Event Script's Input/Output Data Mapping does not support list of PoJo because it would be
+ * more intuitive to map key-values to input arguments of a user function.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,8 +48,8 @@ public @interface PreLoad {
 
     String route();
     Class<?> customSerializer() default Void.class;
+    Class<?> inputPojoClass() default Void.class;
     int instances() default 1;
     String envInstances() default "";
     boolean isPrivate() default true;
-
 }

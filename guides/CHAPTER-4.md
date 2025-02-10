@@ -577,10 +577,15 @@ The syntax is `model.somekey:type` where "type" is one of the following:
 | substring(start)      | extract a substring          | model.someKey:substring(5)            |
 | b64                   | byte-array to Base64 text    | model.someKey:b64                     |
 | b64                   | Base64 text to byte-array    | model.someKey:b64                     |
+| uuid                  | generated UUID-4 value       | model.unique_id:uuid                  |
 
 For Base64 type matching, it handles two symmetrical use cases. If the key-value is a text string,
 the system would assume it is a Base64 text string and convert it to a byte-array. If the key-value
 is a byte-array, the system will encode it into a Base64 text string.
+
+For uuid type matching, the system will ignore the value of the model variable in the left hand
+side because UUID is a generated value. When using it in the right hand side, the model variable
+will be updated with a generated UUID value accordingly.
 
 For simplicity of syntax, each type matching command is a single operation. For more complex
 operation such as multiple AND, OR and NEGATE operators, you can configure multiple steps of

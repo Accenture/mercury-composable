@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MsgPack {
     private static final Utility util = Utility.getInstance();
     private static final PayloadMapper converter = PayloadMapper.getInstance();
+    private static final SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
 
     private static final String DATA = "_D";
     private static final String TYPE = "_T";
@@ -264,10 +265,10 @@ public class MsgPack {
             case Double d -> packer.packDouble(d);
             case BigInteger bInt ->
                 // convert to string to preserve precision
-                    packer.packString(bInt.toString());
+                packer.packString(bInt.toString());
             case BigDecimal bDecimal ->
                 // convert to string to preserve precision
-                    packer.packString(bDecimal.toPlainString());
+                packer.packString(bDecimal.toPlainString());
             case Boolean bb -> packer.packBoolean(bb);
             case byte[] b -> {
                 packer.packBinaryHeader(b.length);
@@ -275,12 +276,22 @@ public class MsgPack {
             }
             case Date d ->
                 // Date object will be packed as ISO-8601 string
-                    packer.packString(util.date2str(d));
-            default ->
-                // unknown object
+                packer.packString(util.date2str(d));
+            default -> {
+                // handle pojo inside data structure
+                if (util.isPoJo(o)) {
+                    try {
+                        var value = mapper.readValue(o, Map.class);
+                        pack(packer, value);
+                    } catch (Exception e) {
+                        packer.packString(String.valueOf(o));
+                    }
+                } else {
+                    // unknown object
                     packer.packString(String.valueOf(o));
+                }
+            }
         }
         return packer;
     }
-
 }

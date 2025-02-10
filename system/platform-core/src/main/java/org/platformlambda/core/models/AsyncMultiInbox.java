@@ -110,25 +110,8 @@ public class AsyncMultiInbox extends InboxBase {
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
             reply.setRoundTrip(diff)
                     .removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
-            Map<String, Object> annotations = new HashMap<>();
-            // decode trace annotations from reply event
-            Map<String, String> headers = reply.getHeaders();
-            if (headers.containsKey(UNDERSCORE)) {
-                int count = Utility.getInstance().str2int(headers.get(UNDERSCORE));
-                for (int i=1; i <= count; i++) {
-                    String kv = headers.get(UNDERSCORE+i);
-                    if (kv != null) {
-                        int eq = kv.indexOf('=');
-                        if (eq > 0) {
-                            annotations.put(kv.substring(0, eq), kv.substring(eq+1));
-                        }
-                    }
-                }
-                headers.remove(UNDERSCORE);
-                for (int i=1; i <= count; i++) {
-                    headers.remove(UNDERSCORE+i);
-                }
-            }
+            var annotations = new HashMap<>(reply.getAnnotations());
+            reply.clearAnnotations();
             InboxCorrelation correlation = holder.correlations.get(sequencedCid);
             if (correlation != null) {
                 // restore original correlation ID

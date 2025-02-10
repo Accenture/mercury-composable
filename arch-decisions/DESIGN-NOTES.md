@@ -65,6 +65,21 @@ However, floating point numbers (Float and Double) are rendered without type mat
 For untyped numbers, you may use the convenient type conversion methods in the platform-core's
 Utility class. For examples, util.str2int and util.str2long.
 
+## Input using Map or PoJo
+
+The input to a TypedLambdaFunction should be a Map or PoJo. A map allows you to use flexible data
+structure and a PoJo would enforce the interface contract. List of PoJo is not supported.
+
+First, this design improves the readability of "input data mapping" configuration in Event Script.
+Second, this avoids edge cases in serialization.
+
+## Keys of Map
+
+The system enforces the use of strings as keys in a map for reliable serialization.
+
+For example, the configuration management module will convert integers and other types as strings
+for keys in a configuration.
+
 ### User provided serializers
 
 This provides more flexibility for user function to take full control of their PoJo serialization needs.

@@ -138,6 +138,8 @@ public class EventEnvelopeTest {
         source.setBody(list);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
+        // when transporting list of PoJo, the PoJo class is saved as "type"
+        assertEquals(PoJo.class.getName(), target.getType());
         assertInstanceOf(List.class, target.getBody());
         List<Object> restored = (List<Object>) target.getBody();
         Map<String, Object> map = new HashMap<>();
@@ -160,16 +162,15 @@ public class EventEnvelopeTest {
         final String TAG_WITH_NO_VALUE = "tag-with-no-value";
         EventEnvelope event = new EventEnvelope();
         event.addTag(TAG_WITH_NO_VALUE).addTag(HELLO, WORLD).addTag(ROUTING, DATA);
-        // When a tag is created with no value, the system will set a "_" as a filler.
-        assertEquals("_", event.getTag(TAG_WITH_NO_VALUE));
+        // When a tag is created with no value, the system will set it to "true"
+        assertEquals("true", event.getTag(TAG_WITH_NO_VALUE));
         assertEquals(WORLD, event.getTag(HELLO));
         assertEquals(DATA, event.getTag(ROUTING));
         event.removeTag(HELLO).removeTag(ROUTING);
         assertNull(event.getTag(HELLO));
         assertNull(event.getTag(ROUTING));
-        assertEquals(TAG_WITH_NO_VALUE+"=_", event.getExtra());
         event.removeTag(TAG_WITH_NO_VALUE);
-        assertNull(event.getExtra());
+        assertTrue(event.getTags().isEmpty());
     }
 
     @SuppressWarnings("unchecked")
@@ -189,11 +190,9 @@ public class EventEnvelopeTest {
         source.setReplyTo("my.callback");
         source.setTrace("101", "PUT /api/unit/test");
         // use JSON instead of binary serialization
-        source.setBinary(false);
-        source.setBroadcastLevel(1);
+        source.setBinary(false).setBroadcastLevel(1);
         source.setCorrelationId("121");
-        source.setExtra("x=y");
-        source.setEndOfRoute();
+        source.addTag("x", "y");
         source.setHeader("a", "b");
         source.setExecutionTime(1.23f);
         source.setRoundTrip(2.0f);
@@ -223,7 +222,9 @@ public class EventEnvelopeTest {
         assertEquals("101", target.getTraceId());
         assertEquals("PUT /api/unit/test", target.getTracePath());
         assertEquals("b", map.getElement("headers.a"));
-        assertEquals(true, map.getElement("json"));
+        assertFalse(target.isBinary());
+        // when it is not binary encoding (default), it should contain the tag "json"
+        assertEquals("true", target.getTag("json"));
         PoJo output = target.getBody(PoJo.class);
         assertEquals(HELLO, output.getName());
         assertEquals(HELLO, target.getException().getMessage());

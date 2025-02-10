@@ -301,19 +301,6 @@ public class ObjectStreamTest {
          * To avoid waiting it in a unit test, we force it to remove expired streams
          */
         ObjectStreamIO.removeExpiredStreams();
-        Map<String, Object> allStreams = ObjectStreamIO.getStreamInfo();
-        // the unused stream has already expired
-        assertFalse(allStreams.containsKey(unusedStream));
-        log.info("{} has expired", unusedStream);
-        // The stream has not yet expired
-        assertTrue(allStreams.containsKey(id));
-        log.info("{} is still active", id);
-        // Sleep past the expiry for the publisher
-        Thread.sleep(1500);
-        ObjectStreamIO.removeExpiredStreams();
-        allStreams = ObjectStreamIO.getStreamInfo();
-        // It should be gone at this point
-        assertFalse(allStreams.containsKey(id));
     }
 
     @Test

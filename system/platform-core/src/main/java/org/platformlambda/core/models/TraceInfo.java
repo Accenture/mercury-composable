@@ -33,7 +33,7 @@ public class TraceInfo {
     public String id;
     public String path;
     public String startTime;
-    public Map<String, String> annotations = new HashMap<>();
+    public Map<String, Object> annotations = new HashMap<>();
 
     public TraceInfo(String route, String id, String path) {
         this.route = route;
@@ -47,12 +47,8 @@ public class TraceInfo {
         }
     }
 
-    public void annotate(String key, String value) {
+    public void annotate(String key, Object value) {
         annotations.put(key, value);
-    }
-
-    public String toString() {
-        return "id="+id +", annotations="+annotations;
     }
 
 }

@@ -20,6 +20,12 @@ package org.platformlambda.core.models;
 
 import java.util.Map;
 
+/**
+ * Composable function with relaxed interface contract
+ * (Your application is responsible for restoring the input to PoJo
+ *  using EventEnvelope's getBody(className) method if the input
+ *  is a PoJo)
+ */
 public interface LambdaFunction extends TypedLambdaFunction<Object, Object> {
 
     @Override

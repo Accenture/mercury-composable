@@ -16,27 +16,32 @@
 
  */
 
-package com.accenture.examples.services;
+package org.platformlambda.core.mock;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.Platform;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-/**
- * This demonstrates preloading of user function
- */
-@PreLoad(route="hello.world", instances=20)
-public class HelloWorld implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
-
+@PreLoad(route = "input.list.of.pojo.java", inputPojoClass = PoJo.class)
+public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object> {
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+    public Object handleEvent(Map<String, String> headers, List<PoJo> input, int instance) throws Exception {
+        List<String> names = new ArrayList<>();
+        // prove that the list of pojo is correctly deserialized
+        for (PoJo o: input) {
+            if (o != null) {
+                names.add(o.getName());
+            } else {
+                names.add("null");
+            }
+        }
         Map<String, Object> result = new HashMap<>();
-        result.put("body", input);
-        result.put("instance", instance);
-        result.put("origin", Platform.getInstance().getOrigin());
+        result.put("names", names);
         return result;
     }
 }

@@ -70,9 +70,8 @@ The `BeforeApplication` logic will run before your `MainApplication` module(s). 
 special handling of environment variables. For example, decrypt an environment variable secret, construct an X.509
 certificate, and save it in the "/tmp" folder before your main application starts.
 
-Normal startup sequence must be between 6 and 999.  Sequence 5 is reserved by the AsyncHttpClientLoader. 
-If your startup code does not need the async HTTP client service and you want it to run first, you may use
-sequence from 1 to 4.
+> *Note*: Sequence 0 is reserved by the EssentialServiceLoader and 2 reserved by Event Script.
+          Your user functions should use a number between 3 and 999.
 
 ## Event envelope
 
@@ -89,16 +88,15 @@ There are 3 elements in an event envelope:
 |    2    | headers  | User defined key-value pairs                                                                                      |
 |    3    | body     | Event payload (primitive, hash map or PoJo)                                                                       |
 
-Headers and body are optional, but you must provide at least one of them. If the envelope do not have any headers
-or body, the system will send your event as a "ping" command to the target function. The response acknowledgements
-that the target function exists. This ping/pong protocol tests the event loop or service mesh. This test mechanism
-is useful for DevSecOps admin dashboard.
+> *Note*: Headers and body are optional, but you should provide at least one of them.
 
 ## PoJo transport
 
-Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output.
+Your function can implement the TypedLambdaFunction interface if you want to use PoJo as input and output
+and the system will restore PoJo payload accordingly.
 
-If you use the EventEnvelope as input, PoJo payload is provided as a HashMap in the event's body.
+However, if you use the EventEnvelope as an input in the TypedLambdaFunction, PoJo payload is mapped as a HashMap
+in the event's body.
 
 The original class name of the PoJo payload is saved in the event's type attribute.
 You can compare and restore the PoJo like this:
@@ -110,13 +108,55 @@ if (SamplePoJo.class.getName().equals(input.getType())) {
 }
 ```
 
-If you use the "untyped" LambdaFunction, the input "Object" is a HashMap and you would need to convert it back
-to a PoJo using the SimpleMapper or a serializer of your choice.
+## List of Pojo transport
 
-For example,
+When sending events programmatically, you can send a list of PoJo to a user function. However, the list of pojo
+will be converted as a list of maps as input to the target function.
+
+Since type information is lost at runtime, you may add the `inputPojoClass` parameter in the `PreLoad` annotation
+of the target function. The system will then render the list of pojo as input to the target function.
+
+This applies to both untyped `LambdaFunction` and `TypedLambdaFunction`. In untyped LambdaFunction, the input is
+an object. In TypedLambdaFunction, you should configure the input as list of pojo and add the "inputPojoClass"
+hint in the PreLoad annotation. For example, the following unit test illustrates this:
+
 ```java
-SamplePoJo pojo = SimpleMapper.getInstance().getMapper().readValue((Map<String, Object>) input, SamplePoJo.class);
+@PreLoad(route = "input.list.of.pojo.java", inputPojoClass = PoJo.class)
+public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object> {
+    @Override
+    public Object handleEvent(Map<String, String> headers, List<PoJo> input, int instance) throws Exception {
+        List<String> names = new ArrayList<>();
+        // prove that the list of pojo is correctly deserialized
+        for (PoJo o: input) {
+            if (o != null) {
+                names.add(o.getName());
+            } else {
+                names.add("null");
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("names", names);
+        return result;
+    }
+}
 ```
+
+> *Note*: List of PoJo as input to a composable function is not supported by input data mapping
+          of Event Script. This is only allowed when sending events programmatically for certain
+          use cases.
+
+## PoJo deserialization hints
+
+The PoJo class definition in the TypedLambdaFunction has precedence over the "inputPojoClass" hint
+in the PreLoad annotation.
+
+For PoJo transport, the "inputPojoClass" parameter in the PreLoad annotation will only be used
+when the untyped "LambdaFunction" is declared. This is for backward compatibility with
+legacy version 2 and 3 where pojo transport restores pojo as input to user function written as
+untyped LambdaFunction.
+
+The list of pojo is handled differently as a deserialization hint in both the untyped LambdaFunction
+and the TypedLambdaFunction use cases as discussed earlier.
 
 ## Custom exception using AppException
 
@@ -485,20 +525,29 @@ String tracePath = po.getTracePath();
 
 ## Trace annotation
 
-You can use the PostOffice instance to annotate a trace in your function like this:
+To annotate additional information in the trace of your function, please obtain a trackable PostOffice
+instance using `new PostOffice(headers, instance)` and follow the following API signatures:
 
 ```java
-// annotate a trace with the key-value "hello:world"
+// API signatures
+public PostOffice annotateTrace(String key, String value);
+public PostOffice annotateTrace(String key, Map<String, Object> value);
+public PostOffice annotateTrace(String key, List<Object> value);
+
+// For example,
+var po = new PostOffice(headers, instance);
 po.annotateTrace("hello", "world");
 ```
 
-This is useful when you want to attach transaction specific information in the performance metrics.
-For example, the traces may be used in production transaction analytics.
+Annotations of key-values, if any, will be recorded in the trace and they are not accessible by
+another function.
 
-> IMPORTANT: do not annotate sensitive or secret information such as PII, PHI, PCI data because 
-             the trace is visible in application log. It may also be forwarded to a centralized
-             telemetry dashboard. 
+Please be moderate to attach only *small amount of transaction specific information* to the
+performance metrics of your functions.
 
+> *Note*: Don't annotate sensitive information or secrets such as PII, PHI, PCI data because 
+          the trace is visible in the application log. It may also be forwarded to a centralized
+          telemetry dashboard for visualization and analytics.
 
 ## Configuration API
 
