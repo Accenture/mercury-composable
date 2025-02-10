@@ -51,9 +51,13 @@ public class EventEnvelope {
     private static final String BROADCAST = "broadcast";
     // message-ID
     private static final String ID_FLAG = "0";
-    // metrics
     private static final String EXECUTION_FLAG = "1";
     private static final String ROUND_TRIP_FLAG = "2";
+    // extra flag "3" has been retired
+    private static final String EXCEPTION_FLAG = "4";
+    private static final String STACK_FLAG = "5";
+    private static final String ANNOTATION_FLAG = "6";
+    private static final String TAG_FLAG = "7";
     // route paths
     private static final String TO_FLAG = "T";
     private static final String REPLY_TO_FLAG = "R";
@@ -70,15 +74,6 @@ public class EventEnvelope {
     private static final String CID_FLAG = "X";
     // object type for automatic serialization
     private static final String OBJ_TYPE_FLAG = "O";
-    // optional
-    // serialized exception object
-    private static final String EXCEPTION_FLAG = "4";
-    private static final String STACK_FLAG = "5";
-    // annotations
-    private static final String ANNOTATION_FLAG = "6";
-    // tags use number 7
-    // (skip flag number 3 that is used by older version to store tag as composite string in the "extra" field)
-    private static final String TAG_FLAG = "7";
     // special header for setting HTTP cookie for rest-automation
     private static final String SET_COOKIE = "set-cookie";
     private final Map<String, String> headers = new HashMap<>();

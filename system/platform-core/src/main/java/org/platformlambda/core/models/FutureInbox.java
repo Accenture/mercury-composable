@@ -100,6 +100,8 @@ public class FutureInbox extends InboxBase {
             reply.setRoundTrip(diff);
             // remove some metadata that are not relevant for a RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
+            var annotations = new HashMap<>(reply.getAnnotations());
+            reply.clearAnnotations();
             future.complete(reply);
             if (to != null && holder.traceId != null && holder.tracePath != null) {
                 try {
@@ -114,8 +116,8 @@ public class FutureInbox extends InboxBase {
                     metrics.put("start", start);
                     metrics.put("path", holder.tracePath);
                     payload.put("trace", metrics);
-                    if (!reply.getAnnotations().isEmpty()) {
-                        payload.put(ANNOTATIONS, reply.getAnnotations());
+                    if (!annotations.isEmpty()) {
+                        payload.put(ANNOTATIONS, annotations);
                     }
                     metrics.put("status", reply.getStatus());
                     if (reply.getStatus() >= 400) {

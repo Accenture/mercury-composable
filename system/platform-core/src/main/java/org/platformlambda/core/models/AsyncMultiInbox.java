@@ -110,6 +110,8 @@ public class AsyncMultiInbox extends InboxBase {
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
             reply.setRoundTrip(diff)
                     .removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
+            var annotations = new HashMap<>(reply.getAnnotations());
+            reply.clearAnnotations();
             InboxCorrelation correlation = holder.correlations.get(sequencedCid);
             if (correlation != null) {
                 // restore original correlation ID
@@ -136,8 +138,8 @@ public class AsyncMultiInbox extends InboxBase {
                         metrics.put("start", start);
                         metrics.put("path", holder.tracePath);
                         payload.put("trace", metrics);
-                        if (!reply.getAnnotations().isEmpty()) {
-                            payload.put(ANNOTATIONS, reply.getAnnotations());
+                        if (!annotations.isEmpty()) {
+                            payload.put(ANNOTATIONS, annotations);
                         }
                         metrics.put("status", reply.getStatus());
                         if (reply.getStatus() >= 400) {

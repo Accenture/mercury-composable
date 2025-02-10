@@ -524,20 +524,29 @@ String tracePath = po.getTracePath();
 
 ## Trace annotation
 
-You can use the PostOffice instance to annotate a trace in your function like this:
+To annotate additional information in the trace of your function, please obtain a trackable PostOffice
+instance using `new PostOffice(headers, instance)` and follow the following API signatures:
 
 ```java
-// annotate a trace with the key-value "hello:world"
+// API signatures
+public PostOffice annotateTrace(String key, String value);
+public PostOffice annotateTrace(String key, Map<String, Object> value);
+public PostOffice annotateTrace(String key, List<Object> value);
+
+// For example,
+var po = new PostOffice(headers, instance);
 po.annotateTrace("hello", "world");
 ```
 
-This is useful when you want to attach transaction specific information in the performance metrics.
-For example, the traces may be used in production transaction analytics.
+Annotations of key-values, if any, will be recorded in the trace and they are not accessible by
+another function.
 
-> IMPORTANT: do not annotate sensitive or secret information such as PII, PHI, PCI data because 
-             the trace is visible in application log. It may also be forwarded to a centralized
-             telemetry dashboard. 
+Please be moderate to attach only *small amount of transaction specific information* to the
+performance metrics of your functions.
 
+> *Note*: Don't annotate sensitive information or secrets such as PII, PHI, PCI data because 
+          the trace is visible in the application log. It may also be forwarded to a centralized
+          telemetry dashboard for visualization and analytics.
 
 ## Configuration API
 
