@@ -120,8 +120,8 @@ Since type information is lost at runtime, you may add the `inputPojoClass` para
 of the target function. The system will then render the list of pojo as input to the target function.
 
 This applies to both untyped `LambdaFunction` and `TypedLambdaFunction`. In untyped LambdaFunction, the input is
-an object. In TypedLambdaFunction, you should configure the input as list of pojo and at the "inputPojoClass"
-hint in the PreLoad annotation. For example,
+an object. In TypedLambdaFunction, you should configure the input as list of pojo and add the "inputPojoClass"
+hint in the PreLoad annotation. For example, the following unit test illustrates this:
 
 ```java
 @PreLoad(route = "input.list.of.pojo.java", inputPojoClass = PoJo.class)
@@ -146,7 +146,7 @@ public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object
 
 ## PoJo deserialization hints
 
-The PoJo class definition in the TypedLambdaFunction has precedence over the "inputPojoClass" parameter
+The PoJo class definition in the TypedLambdaFunction has precedence over the "inputPojoClass" hint
 in the PreLoad annotation.
 
 For PoJo transport, the "inputPojoClass" parameter in the PreLoad annotation will only be used
