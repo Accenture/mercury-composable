@@ -88,10 +88,7 @@ There are 3 elements in an event envelope:
 |    2    | headers  | User defined key-value pairs                                                                                      |
 |    3    | body     | Event payload (primitive, hash map or PoJo)                                                                       |
 
-Headers and body are optional, but you must provide at least one of them. If the envelope do not have any headers
-or body, the system will send your event as a "ping" command to the target function. The response acknowledgements
-that the target function exists. This ping/pong protocol tests the event loop or service mesh. This test mechanism
-is useful for DevSecOps admin dashboard.
+> *Note*: Headers and body are optional, but you should provide at least one of them.
 
 ## PoJo transport
 
@@ -143,6 +140,10 @@ public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object
     }
 }
 ```
+
+> *Note*: List of PoJo as input to a composable function is not supported by input data mapping
+          of Event Script. This is only allowed when sending events programmatically for certain
+          use cases.
 
 ## PoJo deserialization hints
 
