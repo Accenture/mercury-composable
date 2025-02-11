@@ -79,7 +79,7 @@ For example, you may use only "application.yml" file without scanning applicatio
 
 ## Partial support of Spring Active Profiles
 
-When the parameter "spring.profiles.active" is available in application.properties or application.yml,
+When JVM runtime parameter "-Dspring.profiles.active" or environment variable "SPRING_PROFILES_ACTIVE",
 the AppConfigReader will try to load the additional configuration files.
 
 For example, if "spring.profiles.active=dev", the system will load "application-dev.properties"
