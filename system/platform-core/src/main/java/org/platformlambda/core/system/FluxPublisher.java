@@ -19,6 +19,7 @@
 package org.platformlambda.core.system;
 
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.CustomSerializer;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.util.Utility;
@@ -38,18 +39,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class FluxPublisher<T> {
     private static final Logger log = LoggerFactory.getLogger(FluxPublisher.class);
-
     private static final String TYPE = "type";
     private static final String DATA = "data";
     private static final String EXCEPTION = "exception";
     private static final String END_OF_STREAM = "eof";
-
-    private Disposable disposable = null;
     private final Flux<T> flux;
     private final ObjectStreamIO stream;
     private final long timer;
     private final AtomicBoolean eof = new AtomicBoolean(false);
     private final AtomicBoolean expired = new AtomicBoolean(false);
+    private Disposable disposable = null;
+    private CustomSerializer serializer = null;
 
     /**
      * Create a publisher to process a Flux stream object
@@ -80,6 +80,15 @@ public class FluxPublisher<T> {
     }
 
     /**
+     * Set custom serializer if necessary
+     *
+     * @param serializer for custom conversion
+     */
+    public void setCustomSerializer(CustomSerializer serializer) {
+        this.serializer = serializer;
+    }
+
+    /**
      * Begin publishing of the given Flux object
      *
      * @return stream ID of the event stream
@@ -105,7 +114,8 @@ public class FluxPublisher<T> {
                 })
                 .subscribe(data -> {
                     try {
-                        EventEmitter.getInstance().send(outStream, data, new Kv(TYPE, DATA));
+                        Object payload = serializer == null? data : serializer.toMap(data);
+                        EventEmitter.getInstance().send(outStream, payload, new Kv(TYPE, DATA));
                     } catch (IOException e) {
                         log.error("Unable to publish data to {} - {}", util.getSimpleRoute(outStream), e.getMessage());
                     }

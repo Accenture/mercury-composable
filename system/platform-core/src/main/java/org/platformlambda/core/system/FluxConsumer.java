@@ -19,12 +19,15 @@
 package org.platformlambda.core.system;
 
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.CustomSerializer;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -57,22 +60,60 @@ public class FluxConsumer<T> {
     }
 
     /**
-     * Begin reading the event stream
+     * Consume the event stream when the payload is not a PoJo
+     * (Support payload as Map and Java Primitive. Other types
+     *  may result in casting exception)
      *
      * @param consumer for handling messages
      * @param errorConsumer for handling exception message
      * @param completeConsumer for handling stream completion
      * @throws IOException in case of routing error
      */
+    public void consume(Consumer<T> consumer,
+                        Consumer<Throwable> errorConsumer,
+                        Runnable completeConsumer) throws IOException {
+        consume(consumer, errorConsumer, completeConsumer, null, null);
+    }
+
+    /**
+     * Consume the event stream when the payload can be mapped as PoJo
+     * (Using standard serializer)
+     *
+     * @param consumer for handling messages
+     * @param errorConsumer for handling exception message
+     * @param completeConsumer for handling stream completion
+     * @param pojoClass if type (T) is a PoJo. Otherwise, put in a null
+     * @throws IOException in case of routing error
+     */
+    public void consume(Consumer<T> consumer,
+                        Consumer<Throwable> errorConsumer,
+                        Runnable completeConsumer, Class<T> pojoClass) throws IOException {
+        consume(consumer, errorConsumer, completeConsumer, pojoClass, null);
+    }
+
+    /**
+     * Consume the event stream when the payload can be mapped as PoJo
+     * (Optional custom serializer)
+     *
+     * @param consumer for handling messages
+     * @param errorConsumer for handling exception message
+     * @param completeConsumer for handling stream completion
+     * @param pojoClass if type (T) is a PoJo. Otherwise, put in a null
+     * @param serializer custom serializer or null
+     * @throws IOException in case of routing error
+     */
     @SuppressWarnings("unchecked")
     public void consume(Consumer<T> consumer,
-                        Consumer<Throwable> errorConsumer, Runnable completeConsumer) throws IOException {
+                        Consumer<Throwable> errorConsumer,
+                        Runnable completeConsumer,
+                        Class<T> pojoClass, CustomSerializer serializer) throws IOException {
         if (consumed.get()) {
             throw new IllegalArgumentException("Consumer already assigned");
         } else {
             consumed.set(true);
-            final Platform platform = Platform.getInstance();
-            final EventEmitter po = EventEmitter.getInstance();
+            var platform = Platform.getInstance();
+            var po = EventEmitter.getInstance();
+            var mapper = SimpleMapper.getInstance().getMapper();
             final long timer = Platform.getInstance().getVertx().setTimer(ttl, t -> {
                 expired.set(true);
                 if (!eof.get()) {
@@ -102,7 +143,15 @@ public class FluxConsumer<T> {
                 }
                 if (DATA.equals(type) && body != null) {
                     if (consumer != null) {
-                        consumer.accept((T) body);
+                        if (body instanceof Map && pojoClass != null) {
+                            if (serializer != null) {
+                                consumer.accept(serializer.toPoJo(body, pojoClass));
+                            } else {
+                                consumer.accept(mapper.readValue(body, pojoClass));
+                            }
+                        } else {
+                            consumer.accept((T) body);
+                        }
                     }
                 }
                 if (EXCEPTION.equals(type) && body instanceof byte[] b) {

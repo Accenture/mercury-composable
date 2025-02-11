@@ -18,27 +18,25 @@
 
 package org.platformlambda.core.mock;
 
+import org.platformlambda.common.JacksonSerializer;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.PostOffice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
-@PreLoad(route = "v1.reactive.flux.function")
-public class FluxUserFunction implements TypedLambdaFunction<PoJo, Flux<PoJo>> {
-    private static final Logger log = LoggerFactory.getLogger(FluxUserFunction.class);
+@PreLoad(route = "v1.reactive.flux.custom.serializer", customSerializer = JacksonSerializer.class)
+public class FluxCustomSerializationFunction implements TypedLambdaFunction<PoJo, Flux<PoJo>> {
+    private static final Logger log = LoggerFactory.getLogger(FluxCustomSerializationFunction.class);
 
     private static final String EXCEPTION = "exception";
     @Override
     public Flux<PoJo> handleEvent(Map<String, String> headers, PoJo input, int instance) {
-        PostOffice po = new PostOffice(headers, instance);
-        po.annotateTrace("reactive", "test");
-        log.info("GOT {} {}", headers, input);
+        log.info("GOT {} {}", headers, input.getLongNumber());
         return Flux.create(emitter -> {
             if (headers.containsKey(EXCEPTION)) {
                 emitter.error(new AppException(400, headers.get(EXCEPTION)));
@@ -47,9 +45,7 @@ public class FluxUserFunction implements TypedLambdaFunction<PoJo, Flux<PoJo>> {
                 var pojo = new PoJo();
                 pojo.setName("first_one");
                 emitter.next(pojo);
-                if (input != null) {
-                    emitter.next(input);
-                }
+                emitter.next(input);
                 emitter.complete();
             }
         });
