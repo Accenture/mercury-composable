@@ -165,7 +165,7 @@ public void consume(Consumer<T> consumer,
 ## Serialization consideration
 
 If you use the FluxConsumer's consume method without pojoClass hint, the system will deliver
-Java primitive and HashMap through an event stream. If you pass PoJo, HashMap or Jaa primitive such as
+Java primitive and HashMap through an event stream. If you pass PoJo, HashMap or Java primitive such as
 String or byte[], you do not need to do any serialization.
 
 If the objects that your function streams over a Mono or Flux channel are not supported, you must perform
