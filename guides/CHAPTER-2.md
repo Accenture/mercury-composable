@@ -142,15 +142,34 @@ fc.consume(
 );
 ```
 
-## Object serialization consideration
+The API signatures for FluxConsumer are as follows:
 
-The system is designed to deliver Java primitive and HashMap through an event stream. If you pass PoJo,
-HashMap or Java primitive such as String or byte[], you do not need to do any serialization.
+```java
+// Consume the event stream when the payload is not a PoJo
+public void consume(Consumer<T> consumer,
+                    Consumer<Throwable> errorConsumer,
+                    Runnable completeConsumer) throws IOException;
+
+// Consume the event stream when the payload can be mapped as PoJo
+public void consume(Consumer<T> consumer,
+                    Consumer<Throwable> errorConsumer,
+                    Runnable completeConsumer, Class<T> pojoClass) throws IOException;
+
+// Consume the event stream when the payload can be mapped as PoJo using a custom serializer
+public void consume(Consumer<T> consumer,
+                    Consumer<Throwable> errorConsumer,
+                    Runnable completeConsumer,
+                    Class<T> pojoClass, CustomSerializer serializer) throws IOException;                                       
+```
+
+## Serialization consideration
+
+If you use the FluxConsumer's consume method without pojoClass hint, the system will deliver
+Java primitive and HashMap through an event stream. If you pass PoJo, HashMap or Java primitive such as
+String or byte[], you do not need to do any serialization.
 
 If the objects that your function streams over a Mono or Flux channel are not supported, you must perform
-custom serialization.
-
-This can be achieved using the "map" method of the Mono or Flux class.
+custom serialization. This can be achieved using the "map" method of the Mono or Flux class.
 
 For example, your function obtains a stream of Flux result objects from a database call. You can serialize
 the objects using a custom serializer like this:

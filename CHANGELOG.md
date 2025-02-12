@@ -8,6 +8,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.2.11, 2/11/2025
+
+### Added
+
+Support of Spring active profiles using JVM parameter "-Dspring.profiles.active" or
+environment variable "SPRING_PROFILES_ACTIVE"
+
+### Removed
+
+N/A
+
+### Changed
+
+Developer Guide's Appendix-I updated for the Spring active profile feature
+
+---
+## Version 4.2.10, 2/10/2025
+
+### Added
+
+1. PoJo class hint and custom serializer in FluxConsumer
+2. Optional custom serializer in FluxPublisher
+
+### Removed
+
+N/A
+
+### Changed
+
+1. WorkerHandler and WorkerQueue classes for FluxConsumer
+2. Developer Guide's Chapter 2
+3. Flow diagrams for sample app in Developer Guide
+
+---
 ## Version 4.2.9, 2/8/2025
 
 ### Added

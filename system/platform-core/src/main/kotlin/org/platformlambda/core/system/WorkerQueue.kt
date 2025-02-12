@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 import kotlin.math.max
 
+
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
@@ -183,13 +184,13 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                 input[BODY] = event.rawBody
             }
             inputOutput[INPUT] = input
-            val customSerializer = def.customSerializer
             val begin = System.nanoTime()
             return try {
                 /*
                  * If the service is an interceptor or the input argument is EventEnvelope,
                  * we will pass the original event envelope instead of the message body.
                  */
+                val serializer = def.customSerializer
                 val inputBody: Any?
                 val cls = if (def.inputClass != null) def.inputClass else def.poJoClass
                 if (useEnvelope || (interceptor && cls == null)) {
@@ -209,16 +210,10 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                         val mapper = SimpleMapper.getInstance().mapper
                         for (o in inputList) {
                             // convert Map to PoJo
-                            val pojo: Any?
-                            if (o == null) {
-                                pojo = null
+                            val pojo: Any? = if (o == null) {
+                                null
                             } else {
-                                val serializer = def.customSerializer
-                                pojo = if (customSerializer != null) {
-                                    serializer.toPoJo(o, cls)
-                                } else {
-                                    mapper.readValue(o, cls)
-                                }
+                                if (serializer != null) serializer.toPoJo(o, cls) else mapper.readValue(o, cls)
                             }
                             updatedList.add(pojo)
                         }
@@ -233,11 +228,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                             AsyncHttpRequest(event.rawBody)
                         } else {
                             // automatically convert Map to PoJo
-                            if (customSerializer != null) {
-                                customSerializer.toPoJo(event.rawBody, cls)
-                            } else {
-                                event.getBody(cls)
-                            }
+                            if (serializer != null) serializer.toPoJo(event.rawBody, cls) else event.getBody(cls)
                         }
                     } else {
                         event.body
@@ -337,15 +328,18 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                     }
                     var resultSet = result
                     /*
-                 * if response is a Flux, subscribe to it for a future response and immediately
-                 * return x-stream-id and x-ttl so the caller can use a FluxConsumer to read the stream.
-                 *
-                 * The response contract is two headers containing x-stream-id and x-ttl.
-                 * The response body is an empty map.
-                 */
+                     * if response is a Flux, subscribe to it for a future response and immediately
+                     * return x-stream-id and x-ttl so the caller can use a FluxConsumer to read the stream.
+                     *
+                     * The response contract is two headers containing x-stream-id and x-ttl.
+                     * The response body is an empty map.
+                     */
                     if (result is Flux<*>) {
                         resultSet = Collections.EMPTY_MAP
                         val fluxRelay = FluxPublisher<Any?>(result as Flux<Any?>, expiry)
+                        if (serializer != null) {
+                            fluxRelay.setCustomSerializer(serializer)
+                        }
                         response.setHeader(X_TTL, expiry)
                         response.setHeader(X_STREAM_ID, fluxRelay.publish())
                     }
@@ -471,7 +465,7 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
         }
 
         private fun updateResponse(response: EventEnvelope, result: Any?): Boolean {
-            val customSerializer = def.customSerializer
+            val serializer = def.customSerializer
             if (result is EventEnvelope) {
                 val headers = result.headers
                 if (headers.isEmpty() && result.status == 408 && result.rawBody == null) {
@@ -483,10 +477,13 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                      * 1. payload
                      * 2. key-values (as headers)
                      */
-                    response.setBody(result.rawBody)
-                    if (customSerializer == null) {
-                        response.setType(result.type)
+                    val body: Any = result.rawBody
+                    if (serializer != null && util.isPoJo(body)) {
+                        response.setBody(serializer.toMap(body))
+                    } else {
+                        response.setBody(body)
                     }
+                    response.setType(result.type)
                     for ((k, value) in headers) {
                         if (MY_ROUTE != k && MY_TRACE_ID != k && MY_TRACE_PATH != k) {
                             response.setHeader(k, value)
@@ -496,8 +493,8 @@ class WorkerQueue(def: ServiceDef, route: String, private val instance: Int) : W
                 }
             } else {
                 // when using custom serializer, the result will be converted to a Map
-                if (customSerializer != null && util.isPoJo(result)) {
-                    response.setBody(customSerializer.toMap(result))
+                if (serializer != null && util.isPoJo(result)) {
+                    response.setBody(serializer.toMap(result))
                 } else {
                     response.setBody(result)
                 }

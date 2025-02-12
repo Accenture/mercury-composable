@@ -198,7 +198,62 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testFluxFunction() throws IOException, ExecutionException, InterruptedException {
-        testFluxFunction(REACTIVE_FLUX);
+        final var first = new PoJo();
+        first.setName("first_one");
+        final var data = new PoJo();
+        data.setName("hello");
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data);
+        PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getHeader(X_STREAM_ID));
+        assertNotNull(response.getHeader(X_TTL));
+        long ttl = util.str2long(response.getHeader(X_TTL));
+        String streamId = response.getHeader(X_STREAM_ID);
+        final List<PoJo> messages = new ArrayList<>();
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        // demonstrate pojo transport
+        FluxConsumer<PoJo> fc = new FluxConsumer<>(streamId, ttl);
+        fc.consume(messages::add, null, () -> bench.add(true), PoJo.class);
+        Object done = bench.poll(5, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertEquals(2, messages.size());
+        assertEquals(first.getName(), messages.getFirst().getName());
+        assertEquals(data.getName(), messages.get(1).getName());
+    }
+
+    @Test
+    public void testFluxWithCustomSerializer() throws IOException, ExecutionException, InterruptedException {
+        var customSerializer = new JacksonSerializer();
+        // the first pojo is inserted by the user function for test purpose
+        final var first = new PoJo();
+        first.setName("first_one");
+        final var data = new PoJo();
+        data.setName("custom");
+        data.setNumber(123);
+        data.setLongNumber(200);
+        PostOffice po = new PostOffice("unit.test", "103", "TEST /custom/flux", customSerializer);
+        EventEnvelope request = new EventEnvelope().setTo("v1.reactive.flux.custom.serializer");
+        // perform custom serialization
+        po.setEventBodyAsPoJo(request, data);
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getHeader(X_STREAM_ID));
+        assertNotNull(response.getHeader(X_TTL));
+        long ttl = util.str2long(response.getHeader(X_TTL));
+        String streamId = response.getHeader(X_STREAM_ID);
+        final List<PoJo> messages = new ArrayList<>();
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        // demonstrate pojo transport
+        FluxConsumer<PoJo> fc = new FluxConsumer<>(streamId, ttl);
+        fc.consume(messages::add, null, () -> bench.add(true), PoJo.class, customSerializer);
+        Object done = bench.poll(5, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertEquals(2, messages.size());
+        assertEquals(first.getName(), messages.getFirst().getName());
+        assertEquals(data.getName(), messages.get(1).getName());
+        assertEquals(123, messages.get(1).getNumber());
+        assertEquals(200, messages.get(1).getLongNumber());
     }
 
     @Test
@@ -208,13 +263,9 @@ public class PostOfficeTest extends TestBase {
 
     @Test
     public void testFluxKotlinFunction() throws IOException, ExecutionException, InterruptedException {
-        testFluxFunction(REACTIVE_FLUX_KOTLIN);
-    }
-
-    private void testFluxFunction(String target) throws IOException, ExecutionException, InterruptedException {
         final var first = Map.of("first", "message");
         final var data = Map.of("hello", "world");
-        EventEnvelope request = new EventEnvelope().setTo(target).setBody(data);
+        EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX_KOTLIN).setBody(data);
         PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
         EventEnvelope response = po.request(request, 5000).get();
         assertEquals(200, response.getStatus());
@@ -225,6 +276,7 @@ public class PostOfficeTest extends TestBase {
         final List<Map<String, Object>> messages = new ArrayList<>();
         final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         FluxConsumer<Map<String, Object>> fc = new FluxConsumer<>(streamId, ttl);
+        // test Map transport
         fc.consume(messages::add, null, () -> bench.add(true));
         Object done = bench.poll(5, TimeUnit.SECONDS);
         assertEquals(true, done);

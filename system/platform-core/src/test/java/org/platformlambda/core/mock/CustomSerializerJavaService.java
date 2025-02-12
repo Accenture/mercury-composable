@@ -31,5 +31,4 @@ public class CustomSerializerJavaService implements TypedLambdaFunction<SimplePo
     public SimplePoJo handleEvent(Map<String, String> headers, SimplePoJo input, int instance) throws Exception {
         return input;
     }
-
 }

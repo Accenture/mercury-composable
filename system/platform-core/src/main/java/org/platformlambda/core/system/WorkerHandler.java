@@ -173,24 +173,19 @@ public class WorkerHandler {
              * If the service is an interceptor or the input argument is EventEnvelope,
              * we will pass the original event envelope instead of the message body.
              */
+            var serializer = def.getCustomSerializer();
             final Object inputBody;
             var cls = def.getInputClass() != null? def.getInputClass() : def.getPoJoClass();
             if (useEnvelope || (interceptor && cls == null)) {
                 inputBody = event;
             } else {
-
                 if (event.getRawBody() instanceof Map && cls != null) {
                     if (cls == AsyncHttpRequest.class) {
                         // handle special case
                         inputBody = new AsyncHttpRequest(event.getRawBody());
                     } else {
                         // convert Map to PoJo
-                        CustomSerializer customSerializer = def.getCustomSerializer();
-                        if (customSerializer != null) {
-                            inputBody = customSerializer.toPoJo(event.getRawBody(), cls);
-                        } else {
-                            inputBody = event.getBody(cls);
-                        }
+                        inputBody = serializer != null? serializer.toPoJo(event.getRawBody(), cls) : event.getBody(cls);
                     }
                 } else if (event.getRawBody() instanceof List && cls != null) {
                     // check if the input is a list of map
@@ -206,17 +201,11 @@ public class WorkerHandler {
                         List<Object> updatedList = new ArrayList<>();
                         var mapper = SimpleMapper.getInstance().getMapper();
                         for (Object o: inputList) {
-                            // convert Map to PoJo
                             final Object pojo;
                             if (o == null) {
                                 pojo = null;
                             } else {
-                                CustomSerializer customSerializer = def.getCustomSerializer();
-                                if (customSerializer != null) {
-                                    pojo = customSerializer.toPoJo(o, cls);
-                                } else {
-                                    pojo = mapper.readValue(o, cls);
-                                }
+                                pojo = serializer != null? serializer.toPoJo(o, cls) : mapper.readValue(o, cls);
                             }
                             updatedList.add(pojo);
                         }
@@ -318,6 +307,9 @@ public class WorkerHandler {
                 if (result instanceof Flux flux) {
                     resultSet = Collections.EMPTY_MAP;
                     FluxPublisher<Object> fluxRelay = new FluxPublisher<>(flux, expiry);
+                    if (serializer != null) {
+                        fluxRelay.setCustomSerializer(serializer);
+                    }
                     response.setHeader(X_TTL, expiry);
                     response.setHeader(X_STREAM_ID, fluxRelay.publish());
                 }
@@ -418,7 +410,7 @@ public class WorkerHandler {
     }
 
     private boolean updateResponse(EventEnvelope response, Object result) {
-        CustomSerializer customSerializer = def.getCustomSerializer();
+        CustomSerializer serializer = def.getCustomSerializer();
         if (result instanceof EventEnvelope resultEvent) {
             Map<String, String> headers = resultEvent.getHeaders();
             if (headers.isEmpty() && resultEvent.getStatus() == 408 && resultEvent.getRawBody() == null) {
@@ -430,10 +422,13 @@ public class WorkerHandler {
                  * 1. payload
                  * 2. key-values (as headers)
                  */
-                response.setBody(resultEvent.getRawBody());
-                if (customSerializer == null) {
-                    response.setType(resultEvent.getType());
+                Object body = resultEvent.getRawBody();
+                if (serializer != null && util.isPoJo(body)) {
+                    response.setBody(serializer.toMap(body));
+                } else {
+                    response.setBody(body);
                 }
+                response.setType(resultEvent.getType());
                 for (Map.Entry<String, String> kv: headers.entrySet()) {
                     String k = kv.getKey();
                     if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)) {
@@ -444,8 +439,8 @@ public class WorkerHandler {
             }
         } else {
             // when using custom serializer, the result will be converted to a Map
-            if (customSerializer != null && util.isPoJo(result)) {
-                response.setBody(customSerializer.toMap(result));
+            if (serializer != null && util.isPoJo(result)) {
+                response.setBody(serializer.toMap(result));
             } else {
                 response.setBody(result);
             }

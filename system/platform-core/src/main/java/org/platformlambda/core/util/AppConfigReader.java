@@ -32,6 +32,7 @@ public class AppConfigReader implements ConfigBase {
     private static final String APP_CONFIG_READER_YML = "app-config-reader.yml";
     private static final String RESOURCES = "resources";
     private static final String SPRING_ACTIVE_PROFILES = "spring.profiles.active";
+    private static final String ENV_SPRING_ACTIVE_PROFILES = "SPRING_PROFILES_ACTIVE";
     private static final String APPLICATION_PREFIX = "application-";
     private static final ConfigReader config = new ConfigReader();
     private static final AppConfigReader INSTANCE = new AppConfigReader();
@@ -92,7 +93,8 @@ public class AppConfigReader implements ConfigBase {
     }
 
     private List<String> getActiveProfiles(Map<String, Object> consolidated) {
-        String activeProfiles = System.getProperty(SPRING_ACTIVE_PROFILES);
+        String value = System.getenv(ENV_SPRING_ACTIVE_PROFILES);
+        String activeProfiles = value != null? value : System.getProperty(SPRING_ACTIVE_PROFILES);
         if (activeProfiles == null) {
             Object ap = consolidated.get(SPRING_ACTIVE_PROFILES);
             if (ap instanceof String profiles) {
