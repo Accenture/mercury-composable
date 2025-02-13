@@ -486,7 +486,6 @@ public class EventEnvelope {
                 } else {
                     this.headers.put(key, v);
                 }
-
             } else {
                 this.headers.put(key, v);
             }

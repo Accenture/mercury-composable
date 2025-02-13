@@ -289,9 +289,9 @@ public class HttpRouter {
             Set<Cookie> cookies = request.cookies();
             for (Cookie c : cookies) {
                 try {
-                    String value = ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
-                    req.setCookie(c.getName(), value);
-                } catch (IllegalArgumentException e) {
+                    ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
+                    req.setCookie(c.getName(), c.getValue());
+                } catch (Exception e) {
                     log.warn("Invalid cookie {} ignored during filtering - {}", c.getName(), e.getMessage());
                 }
             }
@@ -529,9 +529,9 @@ public class HttpRouter {
             Set<Cookie> cookies = request.cookies();
             for (Cookie c : cookies) {
                 try {
-                    String value = ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
-                    req.setCookie(c.getName(), value);
-                } catch (IllegalArgumentException e) {
+                    ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
+                    req.setCookie(c.getName(), c.getValue());
+                } catch (Exception e) {
                     log.warn("Invalid cookie {} ignored during routing - {}", c.getName(), e.getMessage());
                 }
             }
