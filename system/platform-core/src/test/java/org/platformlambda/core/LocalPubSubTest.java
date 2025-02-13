@@ -1,6 +1,7 @@
 package org.platformlambda.core;
 
 import org.junit.jupiter.api.Test;
+import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.LocalPubSub;
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LocalPubSubTest {
+public class LocalPubSubTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(LocalPubSubTest.class);
     private static final String MY_ROUTE = "my_route";
     private static final String TEST_TOPIC_ONE = "test.topic.one";

@@ -19,6 +19,7 @@
 package org.platformlambda.core;
 
 import org.junit.jupiter.api.Test;
+import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class PayloadSegmentationTest {
+public class PayloadSegmentationTest extends TestBase {
     private static final String TEST_STRING = "123456789.";
     private static final int CYCLE = 30000;
 

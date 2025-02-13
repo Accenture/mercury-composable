@@ -19,6 +19,7 @@
 package org.platformlambda.core;
 
 import org.junit.jupiter.api.Test;
+import org.platformlambda.common.TestBase;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.services.DistributedTrace;
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ObjectStreamTest {
+public class ObjectStreamTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamTest.class);
     private static final String TYPE = "type";
     private static final String DATA = "data";

@@ -20,6 +20,7 @@ package org.platformlambda.core;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MulticastTest {
+public class MulticastTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(MulticastTest.class);
     private static final String MY_ROUTE = "my_route";
     private static final int WAIT_INTERVAL = 300;
