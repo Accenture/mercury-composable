@@ -900,7 +900,7 @@ public class Utility {
             if (str.charAt(i) >= '0' && str.charAt(i) <= '9') continue;
             return false;
         }
-        return str.length() > 0;
+        return !str.isEmpty();
     }
 
     private String normalizeMs(String s) {

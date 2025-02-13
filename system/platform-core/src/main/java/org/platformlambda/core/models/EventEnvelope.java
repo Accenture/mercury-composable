@@ -478,6 +478,8 @@ public class EventEnvelope {
                 case Date d -> util.date2str(d);
                 default -> String.valueOf(value);
             };
+            // guarantee CR/LF are filtered out
+            v = v.replace("\r", "").replace("\n", " ");
             // null value is transported as an empty string
             if (SET_COOKIE.equalsIgnoreCase(key)) {
                 if (this.headers.containsKey(key)) {
