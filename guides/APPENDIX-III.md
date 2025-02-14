@@ -2,7 +2,7 @@
 
 ## Actuator endpoints
 
-The following admin endpoints are available.
+Administrative endpoints include the following:
 
 ```
 GET /info
@@ -11,7 +11,6 @@ GET /info/lib
 GET /env
 GET /health
 GET /livenessprobe
-POST /shutdown
 ```
 
 | Endpoint       | Purpose                                                                             | 
@@ -22,10 +21,42 @@ POST /shutdown
 | /env           | List all private and public function route names and selected environment variables |
 | /health        | Application health check endpoint                                                   |
 | /livenessprobe | Check if application is running normally                                            |
-| /shutdown      | Operator may use this endpoint to do a POST command to stop the application         |
 
-For the shutdown endpoint, you must provide an `X-App-Instance` HTTP header where the value is the "origin ID"
-of the application. You can get the value from the "/info" endpoint.
+When REST automation is turned on, you can configure the administrative endpoints with the following
+entries in the "rest.yaml" configuration file.
+
+```yaml
+rest:
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/info"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/info/{feature}"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/health"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/livenessprobe"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/env"
+    timeout: 10s
+```
+
+Therefore, you can selectively enable all or some of these endpoints.
+
+> *Note*: When using the rest-spring-3 library, the adminstrative endpoints are always available from the
+          Spring Boot's HTTP port.
 
 ## Custom health services
 

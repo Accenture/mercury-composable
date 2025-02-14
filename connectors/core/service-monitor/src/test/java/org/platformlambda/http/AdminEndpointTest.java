@@ -41,9 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AdminEndpointTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(AdminEndpointTest.class);
-
     private static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
-
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
     @BeforeEach
@@ -101,19 +99,6 @@ public class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteInfoEndpointTest() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
     public void libEndpointTest() throws IOException, InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
@@ -123,19 +108,6 @@ public class AdminEndpointTest extends TestBase {
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
         assertTrue(result.containsKey("library"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void remoteLibEndpointTest() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/lib", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")
@@ -155,19 +127,6 @@ public class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteRouteEndpointTest() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
     public void healthEndpointTest() throws IOException, InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
@@ -178,19 +137,6 @@ public class AdminEndpointTest extends TestBase {
         MultiLevelMap map = new MultiLevelMap(result);
         assertEquals("mock-cloud", map.getElement("dependency[0].service"));
         log.info("health report: {}", result);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void remoteHealthEndpointTest() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
     }
 
     @Test
@@ -204,19 +150,6 @@ public class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteLivenessEndpointTest() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/livenessprobe", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
     public void envEndpointTest() throws IOException, InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
@@ -226,155 +159,5 @@ public class AdminEndpointTest extends TestBase {
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
         assertInstanceOf(Map.class, result.get("env"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void remoteEnvEndpointTest() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/env", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shutdownUsingGetWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/shutdown/now", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("Resource not found", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void suspendUsingGetWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/suspend/now", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("Resource not found", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void resumeUsingGetWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/resume/now", headers);
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("Resource not found", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shutdownWithoutAppInstanceWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/shutdown", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(400, result.get("status"));
-        assertEquals("Missing X-App-Instance in request header", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shutdownWithIncorrectAppInstanceWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/shutdown", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void suspendWithoutAppInstanceWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(400, result.get("status"));
-        assertEquals("Missing X-App-Instance in request header", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void suspendWithIncorrectAppInstanceWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void resumeWithoutAppInstanceWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(400, result.get("status"));
-        assertEquals("Missing X-App-Instance in request header", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void resumeWithIncorrectAppInstanceWillFail() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("x-app-instance", "does-not-exist");
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(404, result.get("status"));
-        assertEquals("does-not-exist is not reachable", result.get("message"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void suspendAppInstanceOK() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("X-App-Instance", Platform.getInstance().getOrigin());
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(200, result.get("status"));
-        assertEquals("suspend", result.get("type"));
-        assertEquals("/suspend/now", result.get("path"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void resumeAppInstanceOK() throws IOException, InterruptedException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("X-App-Instance", Platform.getInstance().getOrigin());
-        EventEnvelope response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(200, result.get("status"));
-        assertEquals("resume", result.get("type"));
-        assertEquals("/resume/now", result.get("path"));
     }
 }

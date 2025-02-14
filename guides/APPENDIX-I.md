@@ -34,9 +34,9 @@ precedence.
 | cloud.connector                        | kafka, none, etc.                                               | Optional    |
 | cloud.services                         | e.g. some.interesting.service                                   | Optional    |
 | snake.case.serialization               | true (recommended)                                              | Optional    |
-| protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional    |
 | trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
 | hsts.feature                           | default is true                                                 | Optional*   |
+| protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional*   |
 | application.feature.route.substitution | default is false                                                | Optional    |
 | application.feature.topic.substitution | default is false                                                | Optional    |
 | kafka.replication.factor               | 3                                                               | Kafka       |
@@ -55,7 +55,7 @@ precedence.
 | deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
 
-`*` - when using the "rest-spring" library
+`*` - applies to the "rest-spring" library only
 
 ## Base configuration files
 

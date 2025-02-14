@@ -11,12 +11,37 @@ rest:
   # In the test/resources/application.properties, it tells the system to merge two config files
   # yaml.rest.automation=classpath:/event-api.yaml, classpath:/rest.yaml
   #
-  - service: ["event.api.service"]
+  - service: "event.api.service"
     methods: ['POST']
     url: "/api/event"
     timeout: 60s
     authentication: 'event.api.auth'
     tracing: true
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/info"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/info/{feature}"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/health"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/livenessprobe"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/env"
+    timeout: 10s
 
   # service should be a target service name or a list of service names
   # If more than one service name is provided, the first one is the primary target

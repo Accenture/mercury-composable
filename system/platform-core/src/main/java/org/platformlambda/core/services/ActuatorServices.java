@@ -1,7 +1,8 @@
 package org.platformlambda.core.services;
 
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.annotations.ZeroTracing;
+import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -17,7 +18,6 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@ZeroTracing
 @PreLoad(route=ActuatorServices.ACTUATOR_SERVICES, instances=10)
 public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Object> {
     public static final String ACTUATOR_SERVICES = "actuator.services";
@@ -31,12 +31,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     private static final String ENV = "env";
     private static final String HEALTH = "health";
     private static final String HEALTH_STATUS = "health_status";
-    private static final String SHUTDOWN = "shutdown";
-    private static final String SUSPEND = "suspend";
-    private static final String RESUME = "resume";
     private static final String LIVENESS_PROBE = "livenessprobe";
-    private static final String USER = "user";
-    private static final String WHEN = "when";
     private static final String ACCEPT = "accept";
     private static final String REQUIRED_SERVICES = "mandatory.health.dependencies";
     private static final String OPTIONAL_SERVICES = "optional.health.dependencies";
@@ -111,45 +106,58 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        if (headers.containsKey(TYPE)) {
-            var type = headers.get(TYPE);
-            if (HEALTH_STATUS.equals(type) && input.getBody() instanceof Boolean healthState) {
-                healthStatus.set(healthState);
-                return true;
+        // check if the request comes from a REST endpoint
+        if (input.getRawBody() instanceof Map) {
+            AsyncHttpRequest request = new AsyncHttpRequest(input.getRawBody());
+            var reqHeaders = request.getHeaders();
+            if (!reqHeaders.isEmpty()) {
+                headers.putAll(reqHeaders);
             }
-            if (LIVENESS_PROBE.equals(type)) {
-                if (healthStatus.get()) {
-                    return new EventEnvelope().setBody("OK").setHeader("content-type", "text/plain");
-                } else {
-                    return new EventEnvelope().setBody("Unhealthy. Please check '/health' endpoint.")
-                                            .setStatus(400).setHeader("content-type", "text/plain");
-                }
+            /*
+             * Note that the admin endpoint URLs are standardized for container management
+             * /info, /info/lib, /info/routes, /health and /livenessprobe
+             */
+            String path = request.getUrl();
+            if ("/health".equals(path)) {
+                headers.put(TYPE, HEALTH);
             }
-            if (HEALTH.equals(type)) {
-                return handleHealth(headers);
+            if ("/livenessprobe".equals(path)) {
+                headers.put(TYPE, LIVENESS_PROBE);
             }
-            if (INFO.equals(type) || LIB.equals(type) || ROUTES.equals(type) || ENV.equals(type)) {
-                return handleInfo(headers);
+            if ("/info".equals(path)) {
+                headers.put(TYPE, INFO);
             }
-            if (headers.containsKey(USER)) {
-                if (SUSPEND.equals(type) || RESUME.equals(type)) {
-                    if (headers.containsKey(TYPE) && headers.containsKey(WHEN)) {
-                        try {
-                            EventEmitter.getInstance().send(ServiceDiscovery.SERVICE_REGISTRY,
-                                            new Kv(TYPE, headers.get(TYPE)), new Kv(WHEN, headers.get(WHEN)),
-                                            new Kv(USER, headers.get(USER)));
-                        } catch (IOException e) {
-                            log.error("Unable to perform {} - {}", type, e.getMessage());
-                        }
-                    }
-                }
-                if (SHUTDOWN.equals(type) && headers.containsKey(USER)) {
-                    log.info("Shutdown requested by {}", headers.get(USER));
-                    System.exit(-2);
-                }
+            if (path.startsWith("/info/") && ROUTES.equals(request.getPathParameter("feature"))) {
+                headers.put(TYPE, ROUTES);
+            }
+            if (path.startsWith("/info/") && LIB.equals(request.getPathParameter("feature"))) {
+                headers.put(TYPE, LIB);
+            }
+            if ("/env".equals(path)) {
+                headers.put(TYPE, ENV);
             }
         }
-        return false;
+        // for MinimalistHttpHandler, the request will come as an event directly
+        var type = headers.get(TYPE);
+        if (HEALTH_STATUS.equals(type) && input.getBody() instanceof Boolean healthState) {
+            healthStatus.set(healthState);
+            return true;
+        }
+        if (LIVENESS_PROBE.equals(type)) {
+            if (healthStatus.get()) {
+                return new EventEnvelope().setBody("OK").setHeader("content-type", "text/plain");
+            } else {
+                return new EventEnvelope().setBody("Unhealthy. Please check '/health' endpoint.")
+                                        .setStatus(400).setHeader("content-type", "text/plain");
+            }
+        }
+        if (HEALTH.equals(type)) {
+            return handleHealth(headers);
+        }
+        if (INFO.equals(type) || LIB.equals(type) || ROUTES.equals(type) || ENV.equals(type)) {
+            return handleInfo(headers);
+        }
+        throw new AppException(404, "Resource not found");
     }
 
     private Object handleInfo(Map<String, String> headers) {
@@ -157,7 +165,6 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         var po = EventEmitter.getInstance();
         var acceptHeader = headers.getOrDefault(ACCEPT, "?");
         var accept = acceptHeader.startsWith(APPLICATION_XML)? APPLICATION_XML : APPLICATION_JSON;
-        var type = headers.get(TYPE);
         var result = new HashMap<String, Object>();
         var app = new HashMap<String, Object>();
         result.put(APP, app);
@@ -168,7 +175,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         if (appId != null) {
             app.put(INSTANCE, appId);
         }
-        switch (type) {
+        switch (headers.get(TYPE)) {
             case ROUTES -> {
                 if (isServiceMonitor) {
                     result.put(ROUTING, new HashMap<>());

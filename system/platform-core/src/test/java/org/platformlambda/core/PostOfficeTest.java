@@ -1626,21 +1626,6 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void resumeTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final String USER = "user";
-        final String WHEN = "when";
-        EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope()
-                .setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"resume")
-                .setHeader(USER, "someone").setHeader(WHEN, "now");
-        po.asyncRequest(request, 5000).onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
-        assertEquals(false, response.getBody());
-    }
-
-    @Test
     public void envelopeAsResponseTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String TARGET = "test.route.1";

@@ -184,5 +184,4 @@ public class ConnectorTest extends TestBase {
         Map<String, WsMetadata> sessions = MonitorService.getSessions();
         assertEquals(1, sessions.size());
     }
-
 }

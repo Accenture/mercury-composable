@@ -55,11 +55,9 @@ public abstract class ServletBase extends HttpServlet {
     protected void submit(String type, HttpServletRequest request, HttpServletResponse response) throws IOException {
         final String myOrigin = Platform.getInstance().getOrigin();
         final String appOrigin = request.getHeader(APP_INSTANCE);
-        if (appOrigin == null) {
-            if (PROTECT_ENDPOINT && !isIntranetAddress(request)) {
-                response.sendError(404, "Resource not found");
-                return;
-            }
+        if (PROTECT_ENDPOINT && !isIntranetAddress(request) && !myOrigin.equals(appOrigin)) {
+            response.sendError(404, "Resource not found");
+            return;
         }
         final String origin = appOrigin == null? myOrigin : appOrigin;
         EventEmitter po = EventEmitter.getInstance();
@@ -71,16 +69,7 @@ public abstract class ServletBase extends HttpServlet {
             // avoid CR/LF attack
             accept = accept.replace("\r", "").replace("\n", "");
         }
-        event.setHeader(ACCEPT_CONTENT, accept);
-        if (origin.equals(myOrigin)) {
-            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
-        } else {
-            if (!po.exists(origin)) {
-                response.sendError(404, "Target not reachable");
-                return;
-            }
-            event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
-        }
+        event.setHeader(ACCEPT_CONTENT, accept).setTo(ActuatorServices.ACTUATOR_SERVICES);
         AsyncContext context = request.startAsync();
         Future<EventEnvelope> result = po.asyncRequest(event, 10000);
         result.onSuccess(evt -> {
@@ -133,5 +122,4 @@ public abstract class ServletBase extends HttpServlet {
     private boolean isIntranetAddress(HttpServletRequest request) {
         return Utility.getInstance().isIntranetAddress(request.getHeader(HOST));
     }
-
 }

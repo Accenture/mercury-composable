@@ -8,11 +8,36 @@ rest:
   # "event.api.service" accepts an external application making event call to a function in this app instance.
   # Optionally, you can add "authentication" service to validate incoming request from the external application.
   #
-  - service: ["event.api.service"]
+  - service: "event.api.service"
     methods: ['POST']
     url: "/api/event"
     timeout: 60s
     tracing: true
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/info"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/info/{feature}"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/health"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/livenessprobe"
+    timeout: 10s
+
+  - service: "actuator.services"
+    methods: ['GET']
+    url: "/env"
+    timeout: 10s    
 
   - service: "http.flow.adapter"
     methods: ['GET']
