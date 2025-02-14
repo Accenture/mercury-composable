@@ -20,7 +20,7 @@ The feature to shutdown, suspend and resume of an application instance is retire
 
 ### Changed
 
-Update acturator services to serve REST requests directly
+Update actuator services to serve REST requests directly
 
 ---
 ## Version 4.2.12, 2/12/2025
