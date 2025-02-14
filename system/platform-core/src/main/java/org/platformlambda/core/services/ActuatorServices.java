@@ -18,12 +18,22 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@PreLoad(route=ActuatorServices.ACTUATOR_SERVICES, instances=10)
+@PreLoad(route=ActuatorServices.SERVICE_NAMES, instances=10)
 public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Object> {
     public static final String ACTUATOR_SERVICES = "actuator.services";
+    public static final String INFO_ACTUATOR = "info.actuator.service";
+    public static final String HEALTH_ACTUATOR = "health.actuator.service";
+    public static final String LIVENESS_ACTUATOR = "liveness.actuator.service";
+    public static final String ROUTES_ACTUATOR_SERVICE = "routes.actuator.service";
+    public static final String LIB_ACTUATOR = "lib.actuator.service";
+    public static final String ENV_ACTUATOR = "env.actuator.service";
+    public static final String SERVICE_NAMES = ACTUATOR_SERVICES + "," + INFO_ACTUATOR + "," + ENV_ACTUATOR + "," +
+                                                ROUTES_ACTUATOR_SERVICE + "," + LIB_ACTUATOR + "," +
+                                                HEALTH_ACTUATOR + "," + LIVENESS_ACTUATOR;
     private static final Logger log = LoggerFactory.getLogger(ActuatorServices.class);
     private static final Utility util = Utility.getInstance();
     private static final SimpleCache cache = SimpleCache.createCache("health.info", 5000);
+    private static final String MY_ROUTE = "my_route";
     private static final String TYPE = "type";
     private static final String INFO = "info";
     private static final String ROUTES = "routes";
@@ -110,31 +120,29 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         if (input.getRawBody() instanceof Map) {
             AsyncHttpRequest request = new AsyncHttpRequest(input.getRawBody());
             var reqHeaders = request.getHeaders();
+            // preserve HTTP headers
             if (!reqHeaders.isEmpty()) {
                 headers.putAll(reqHeaders);
             }
-            /*
-             * Note that the admin endpoint URLs are standardized for container management
-             * /info, /info/lib, /info/routes, /health and /livenessprobe
-             */
-            String path = request.getUrl();
-            if ("/health".equals(path)) {
-                headers.put(TYPE, HEALTH);
-            }
-            if ("/livenessprobe".equals(path)) {
-                headers.put(TYPE, LIVENESS_PROBE);
-            }
-            if ("/info".equals(path)) {
+            // retrieve different information according to target route, therefore avoiding hardcode of URLs
+            var myRoute = headers.get(MY_ROUTE);
+            if (INFO_ACTUATOR.equals(myRoute)) {
                 headers.put(TYPE, INFO);
             }
-            if (path.startsWith("/info/") && ROUTES.equals(request.getPathParameter("feature"))) {
-                headers.put(TYPE, ROUTES);
-            }
-            if (path.startsWith("/info/") && LIB.equals(request.getPathParameter("feature"))) {
+            if (LIB_ACTUATOR.equals(myRoute)) {
                 headers.put(TYPE, LIB);
             }
-            if ("/env".equals(path)) {
+            if (ROUTES_ACTUATOR_SERVICE.equals(myRoute)) {
+                headers.put(TYPE, ROUTES);
+            }
+            if (ENV_ACTUATOR.equals(myRoute)) {
                 headers.put(TYPE, ENV);
+            }
+            if (HEALTH_ACTUATOR.equals(myRoute) || ACTUATOR_SERVICES.equals(myRoute)) {
+                headers.put(TYPE, HEALTH);
+            }
+            if (LIVENESS_ACTUATOR.equals(myRoute)) {
+                headers.put(TYPE, LIVENESS_PROBE);
             }
         }
         // for MinimalistHttpHandler, the request will come as an event directly

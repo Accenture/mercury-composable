@@ -325,7 +325,7 @@ public class AppStarter {
                     Class<?> cls = Class.forName(serviceName);
                     if (Feature.isRequired(cls)) {
                         PreLoad svc = cls.getAnnotation(PreLoad.class);
-                        List<String> routes = util.split(svc.route(), ", ");
+                        List<String> routes = util.split(svc.route(), "[, ]");
                         if (routes.isEmpty()) {
                             log.error("Unable to preload {} - missing service route(s)", serviceName);
                         } else {

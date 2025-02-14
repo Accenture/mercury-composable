@@ -12,6 +12,12 @@ to avoid breaking the system unintentionally.
 | Route                        | Purpose                               | Modules          |
 |:-----------------------------|:--------------------------------------|:-----------------|
 | actuator.services            | Actuator endpoint services            | platform-core    |
+| info.actuator.service        | Info actuator endpoint                | platform-core    |
+| lib.actuator.service         | Info actuator endpoint                | platform-core    |
+| routes.actuator.service      | Info actuator endpoint                | platform-core    |
+| env.actuator.service         | Info actuator endpoint                | platform-core    |
+| health.actuator.service      | Info actuator endpoint                | platform-core    |
+| liveness.actuator.service    | Info actuator endpoint                | platform-core    |
 | elastic.queue.cleanup        | Elastic event buffer clean up task    | platform-core    |
 | distributed.tracing          | Distributed tracing logger            | platform-core    |
 | system.ws.server.cleanup     | Websocket server cleanup service      | platform-core    |

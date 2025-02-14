@@ -5,7 +5,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>service-monitor</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.13</version>
+    <version>4.2.14</version>
     <name>Presence monitor module</name>
 
     <parent>
@@ -48,13 +48,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.2.13</version>
+            <version>4.2.14</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.2.13</version>
+            <version>4.2.14</version>
         </dependency>
 
         <dependency>

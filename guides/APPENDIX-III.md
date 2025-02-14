@@ -27,27 +27,32 @@ entries in the "rest.yaml" configuration file.
 
 ```yaml
 rest:
-  - service: "actuator.services"
+  - service: "info.actuator.service"
     methods: ['GET']
     url: "/info"
     timeout: 10s
 
-  - service: "actuator.services"
+  - service: "lib.actuator.service"
     methods: ['GET']
-    url: "/info/{feature}"
+    url: "/info/lib"
     timeout: 10s
 
-  - service: "actuator.services"
+  - service: "routes.actuator.service"
+    methods: ['GET']
+    url: "/info/routes"
+    timeout: 10s
+
+  - service: "health.actuator.service"
     methods: ['GET']
     url: "/health"
     timeout: 10s
 
-  - service: "actuator.services"
+  - service: "liveness.actuator.service"
     methods: ['GET']
     url: "/livenessprobe"
     timeout: 10s
 
-  - service: "actuator.services"
+  - service: "env.actuator.service"
     methods: ['GET']
     url: "/env"
     timeout: 10s
