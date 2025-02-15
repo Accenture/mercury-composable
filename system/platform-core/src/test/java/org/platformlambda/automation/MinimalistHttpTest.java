@@ -24,6 +24,7 @@ import org.platformlambda.core.mock.MockCloud;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
 import java.util.List;
@@ -143,15 +144,21 @@ public class MinimalistHttpTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void envEndpointTest() throws IOException, InterruptedException {
+        Utility util = Utility.getInstance();
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/env", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        MultiLevelMap multi = new MultiLevelMap(result);
+        // normalize the map for easy retrieval using MultiLevelMap
+        Map<String, Object> result = util.getFlatMap((Map<String, Object>) response.getBody());
+        MultiLevelMap multi = new MultiLevelMap();
+        result.forEach(multi::setElement);
         assertEquals("platform-core", multi.getElement("app.name"));
         assertInstanceOf(Map.class, multi.getElement("env"));
-        assertInstanceOf(List.class, multi.getElement("routing.private"));
-        assertInstanceOf(List.class, multi.getElement("routing.public"));
+        assertEquals(System.getenv("PATH"), multi.getElement("env.environment.PATH"));
+        // environment variables that are not found will be shown as empty string
+        assertEquals("", multi.getElement("env.environment.NON_EXIST"));
+        assertEquals("true", multi.getElement("env.properties.rest.automation"));
+        assertEquals("true", multi.getElement("env.properties.snake.case.serialization"));
     }
 
     @SuppressWarnings("unchecked")

@@ -60,20 +60,19 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     private static final String APPLICATION_XML = "application/xml";
     private static final String APP_DESCRIPTION = "info.app.description";
     private static final String JAVA_VERSION = "java.version";
-    private static final String JAVA_VM_VERSION = "java.vm.version";
-    private static final String JAVA_RUNTIME_VERSION = "java.runtime.version";
     private static final String QUERY = "query";
     private static final String APP = "app";
     private static final String VERSION = "version";
     private static final String DESCRIPTION = "description";
-    private static final String JVM = "vm";
+    private static final String JAVA = "java";
     private static final String MEMORY = "memory";
     private static final String MAX = "max";
-    private static final String ALLOCATED = "allocated";
     private static final String USED = "used";
     private static final String FREE = "free";
+    private static final String MORE = "more";
     private static final String INSTANCE = "instance";
     private static final String PERSONALITY = "personality";
+    private static final String NETWORK = "network";
     private static final String ROUTING = "routing";
     private static final String DOWNLOAD = "download";
     private static final String CLOUD_CONNECTOR = "cloud.connector";
@@ -87,7 +86,6 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     private static final String SHOW_PROPERTIES = "show.application.properties";
     private static final String SYSTEM_ENV = "environment";
     private static final String APP_PROPS = "properties";
-    private static final String MISSING = "missing";
     private static final String JOURNAL = "journal";
     private static final String STREAMS = "streams";
     private static final String ADDITIONAL_INFO = "additional.info";
@@ -185,38 +183,33 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         }
         switch (headers.get(TYPE)) {
             case ROUTES -> {
-                if (isServiceMonitor) {
-                    result.put(ROUTING, new HashMap<>());
-                    result.put(MESSAGE, "Routing table is not visible from a presence monitor");
-                } else {
-                    var journaledRoutes = po.getJournaledRoutes();
-                    if (journaledRoutes.size() > 1) {
-                        Collections.sort(journaledRoutes);
+                // network routing table is not available in presence monitor
+                if (!isServiceMonitor) {
+                    var networkRoutes = getRoutingTable();
+                    if (!networkRoutes.isEmpty()) {
+                        result.put(NETWORK, networkRoutes);
                     }
+                }
+                result.put(ROUTING, getLocalRouting());
+                var journaledRoutes = po.getJournaledRoutes();
+                if (journaledRoutes.size() > 1) {
+                    Collections.sort(journaledRoutes);
+                }
+                if (!journaledRoutes.isEmpty()) {
                     result.put(JOURNAL, journaledRoutes);
-                    var more = getRoutingTable();
-                    if (more != null) {
-                        result.put(ROUTING, more);
-                    }
-                    // add route substitution list if any
-                    var substitutions = po.getRouteSubstitutionList();
-                    if (!substitutions.isEmpty()) {
-                        result.put(ROUTE_SUBSTITUTION, substitutions);
-                    }
+                }
+                var substitutions = po.getRouteSubstitutionList();
+                if (!substitutions.isEmpty()) {
+                    result.put(ROUTE_SUBSTITUTION, substitutions);
                 }
             }
             case LIB -> result.put(LIBRARY, util.getLibraryList());
-            case ENV -> {
-                result.put(ENV, getEnv());
-                result.put(ROUTING, getRegisteredServices());
-            }
+            case ENV -> result.put(ENV, getEnv());
             case null, default -> {
                 // java VM information
                 var jvm = new HashMap<String, Object>();
-                result.put(JVM, jvm);
-                jvm.put("java_version", System.getProperty(JAVA_VERSION));
-                jvm.put("java_vm_version", System.getProperty(JAVA_VM_VERSION));
-                jvm.put("java_runtime_version", System.getProperty(JAVA_RUNTIME_VERSION));
+                result.put(JAVA, jvm);
+                jvm.put(VERSION, System.getProperty(JAVA_VERSION));
                 // memory usage
                 var runtime = Runtime.getRuntime();
                 var number = NumberFormat.getInstance();
@@ -227,7 +220,6 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
                 result.put(MEMORY, memory);
                 memory.put(MAX, number.format(maxMemory));
                 memory.put(FREE, number.format(freeMemory));
-                memory.put(ALLOCATED, number.format(allocatedMemory));
                 memory.put(USED, number.format(allocatedMemory - freeMemory));
                 /*
                  * check streams resources if any
@@ -235,7 +227,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
                 result.put(STREAMS, ObjectStreamIO.getStreamCount());
                 var more = getAdditionalInfo();
                 if (more != null) {
-                    result.put("additional_info", more);
+                    result.put(MORE, more);
                 }
                 result.put(ORIGIN, platform.getOrigin());
                 result.put(PERSONALITY, ServerPersonality.getInstance().getType().name());
@@ -270,73 +262,27 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         var reader = AppConfigReader.getInstance();
         var envVars = util.split(reader.getProperty(SHOW_ENV, ""), ", ");
         var properties = util.split(reader.getProperty(SHOW_PROPERTIES, ""), ", ");
-        var missingVars = new ArrayList<String>();
         var eMap = new HashMap<String, Object>();
         if (!envVars.isEmpty()) {
             for (String key:  envVars) {
                 var v = System.getenv(key);
-                if (v == null) {
-                    missingVars.add(key);
-                } else {
-                    eMap.put(key, v);
-                }
+                eMap.put(key, v == null? "" : v);
             }
         }
         result.put(SYSTEM_ENV, eMap);
-        var missingProp = new ArrayList<String>();
         var pMap = new HashMap<String, Object>();
         if (!properties.isEmpty()) {
             for (String key: properties) {
                 var v = reader.getProperty(key);
-                if (v == null) {
-                    missingProp.add(key);
-                } else {
-                    pMap.put(key, v);
-                }
+                pMap.put(key, v == null? "" : v);
             }
         }
         result.put(APP_PROPS, pMap);
-        // any missing keys?
-        var missingKeys = new HashMap<String, Object>();
-        if (!missingVars.isEmpty()) {
-            missingKeys.put(SYSTEM_ENV, missingVars);
-        }
-        if (!missingProp.isEmpty()) {
-            missingKeys.put(APP_PROPS, missingProp);
-        }
-        if (!missingKeys.isEmpty()) {
-            result.put(MISSING, missingKeys);
-        }
         return result;
     }
 
-    private Map<String, List<String>> getRegisteredServices() {
-        var result = new HashMap<String, List<String>>();
-        result.put("public", getLocalRoutingDetails(false));
-        result.put("private", getLocalRoutingDetails(true));
-        return result;
-    }
-
-    private List<String> getLocalRoutingDetails(boolean isPrivate) {
-        var result = new ArrayList<String>();
-        var map = Platform.getInstance().getLocalRoutingTable();
-        for (String route: map.keySet()) {
-            var service = map.get(route);
-            if (service.isPrivate() == isPrivate) {
-                var queue = service.getManager();
-                var read = queue.getReadCounter();
-                var write = queue.getWriteCounter();
-                result.add(route + " (" + queue.getFreeWorkers() + "/" + service.getConcurrency() + ") " +
-                                " r/w=" + read + "/" + write);
-            }
-        }
-        if (result.size() > 1) {
-            Collections.sort(result);
-        }
-        return result;
-    }
-
-    private Object getRoutingTable() {
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getRoutingTable() {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         if (hasCloudConnector && (platform.hasRoute(ServiceDiscovery.SERVICE_QUERY) ||
@@ -345,21 +291,29 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
                 var req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
                             .setHeader(TYPE, DOWNLOAD).setHeader(ORIGIN, platform.getOrigin());
                 var res = po.request(req, 5000).get();
-                return res.getBody();
+                if (res.getRawBody() instanceof Map) {
+                    return (Map<String, Object>) res.getRawBody();
+                }
             } catch (Exception e) {
                 // ok to ignore
             }
         }
-        return getLocalPublicRouting();
+        return Collections.emptyMap();
     }
 
-    private Map<String, Object> getLocalPublicRouting() {
+    private Map<String, Object> getLocalRouting() {
         var result = new HashMap<String, Object>();
+        var publicRoutes = new HashMap<String, Object>();
+        var privateRoutes = new HashMap<String, Object>();
+        result.put("public", publicRoutes);
+        result.put("private", privateRoutes);
         var map = Platform.getInstance().getLocalRoutingTable();
         for (String route: map.keySet()) {
             var service = map.get(route);
-            if (!service.isPrivate()) {
-                result.put(route, service.getConcurrency());
+            if (service.isPrivate()) {
+                privateRoutes.put(route, service.getConcurrency());
+            } else {
+                publicRoutes.put(route, service.getConcurrency());
             }
         }
         return result;

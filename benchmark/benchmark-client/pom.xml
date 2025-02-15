@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>benchmark-client</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.14</version>
+    <version>4.2.15</version>
     <name>Benchmark client</name>
 
     <parent>
@@ -52,14 +52,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.2.14</version>
+            <version>4.2.15</version>
         </dependency>
 
         <!-- Optionally select your cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.2.14</version>
+            <version>4.2.15</version>
         </dependency>
 
         <dependency>

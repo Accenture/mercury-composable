@@ -152,9 +152,8 @@ public class ConnectorTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
-        Map<String, Object> info = (Map<String, Object>) response.getBody();
-        MultiLevelMap multi = new MultiLevelMap(info);
-        Object nodes = multi.getElement("routing.nodes");
+        MultiLevelMap multi = new MultiLevelMap((Map<String, Object>) response.getBody());
+        Object nodes = multi.getElement("network.nodes");
         assertInstanceOf(List.class, nodes);
         String nodeList = nodes.toString();
         assertTrue(nodeList.contains("unit-test"));

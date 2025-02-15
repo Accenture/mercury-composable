@@ -1553,13 +1553,13 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertTrue(result.containsKey("app"));
-        assertTrue(result.containsKey("memory"));
-        assertTrue(result.containsKey("personality"));
-        assertTrue(result.containsKey("vm"));
-        assertTrue(result.containsKey("streams"));
-        assertTrue(result.containsKey("origin"));
+        var result = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertTrue(result.exists("app"));
+        assertTrue(result.exists("memory"));
+        assertTrue(result.exists("personality"));
+        assertTrue(result.exists("java.version"));
+        assertTrue(result.exists("streams"));
+        assertTrue(result.exists("origin"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1614,15 +1614,23 @@ public class PostOfficeTest extends TestBase {
     public void envTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
+        // making RPC directly to the actuator service
         EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"env");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertTrue(result.containsKey("app"));
-        assertTrue(result.containsKey("routing"));
-        assertTrue(result.containsKey("env"));
+        // normalize the map for easy retrieval using MultiLevelMap
+        Map<String, Object> result = util.getFlatMap((Map<String, Object>) response.getBody());
+        MultiLevelMap multi = new MultiLevelMap();
+        result.forEach(multi::setElement);
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertInstanceOf(Map.class, multi.getElement("env"));
+        assertEquals(System.getenv("PATH"), multi.getElement("env.environment.PATH"));
+        // environment variables that are not found will be shown as empty string
+        assertEquals("", multi.getElement("env.environment.NON_EXIST"));
+        assertEquals("true", multi.getElement("env.properties.rest.automation"));
+        assertEquals("true", multi.getElement("env.properties.snake.case.serialization"));
     }
 
     @Test

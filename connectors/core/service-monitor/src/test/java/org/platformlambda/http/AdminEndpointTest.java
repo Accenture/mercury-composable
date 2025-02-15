@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -112,7 +111,7 @@ public class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void routeEndpointNotAvailableTest() throws IOException, InterruptedException {
+    public void routeEndpointHasLocalRoutingTest() throws IOException, InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
@@ -120,9 +119,12 @@ public class AdminEndpointTest extends TestBase {
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
         assertEquals("presence-monitor", multi.getElement("app.name"));
-        assertEquals(Collections.emptyMap(), multi.getElement("routing"));
-        assertEquals("Routing table is not visible from a presence monitor",
-                multi.getElement("message"));
+        assertInstanceOf(Map.class, multi.getElement("routing.public"));
+        assertInstanceOf(Map.class, multi.getElement("routing.private"));
+        Map<String, Object> publicRoutes = (Map<String, Object>) multi.getElement("routing.public");
+        Map<String, Object> privateRoutes = (Map<String, Object>) multi.getElement("routing.private");
+        assertTrue(publicRoutes.isEmpty());
+        assertTrue(privateRoutes.containsKey("temporary.inbox"));
     }
 
     @SuppressWarnings("unchecked")

@@ -29,7 +29,6 @@ import org.platformlambda.core.util.Utility;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -87,7 +86,12 @@ public class AdminEndpointTest extends TestBase {
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertInstanceOf(Map.class, result.get("routing"));
         Map<String, Object> routing = (Map<String, Object>) result.get("routing");
-        assertEquals(new HashMap<>(), routing.get("routes"));
+        assertTrue(routing.containsKey("public"));
+        assertTrue(routing.containsKey("private"));
+        Map<String, Object> publicRoutes = (Map<String, Object>) routing.get("public");
+        Map<String, Object> privateRoutes = (Map<String, Object>) routing.get("private");
+        assertTrue(privateRoutes.containsKey("routes.actuator.service"));
+        assertTrue(publicRoutes.containsKey("hello.mock"));
     }
 
     @SuppressWarnings("unchecked")
@@ -140,15 +144,21 @@ public class AdminEndpointTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void envEndpointTest() throws IOException, InterruptedException {
+        Utility util = Utility.getInstance();
         EventEnvelope response = httpGet(localHost, "/env", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        MultiLevelMap multi = new MultiLevelMap(result);
+        // normalize the map for easy retrieval using MultiLevelMap
+        Map<String, Object> result = util.getFlatMap((Map<String, Object>) response.getBody());
+        MultiLevelMap multi = new MultiLevelMap();
+        result.forEach(multi::setElement);
         assertEquals("platform-core", multi.getElement("app.name"));
         assertInstanceOf(Map.class, multi.getElement("env"));
-        assertInstanceOf(List.class, multi.getElement("routing.private"));
-        assertInstanceOf(List.class, multi.getElement("routing.public"));
+        assertEquals(System.getenv("PATH"), multi.getElement("env.environment.PATH"));
+        // environment variables that are not found will be shown as empty string
+        assertEquals("", multi.getElement("env.environment.NON_EXIST"));
+        assertEquals("true", multi.getElement("env.properties.rest.automation"));
+        assertEquals("true", multi.getElement("env.properties.snake.case.serialization"));
     }
 
     @Test
