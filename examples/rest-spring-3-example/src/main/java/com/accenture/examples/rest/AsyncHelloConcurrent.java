@@ -40,10 +40,8 @@ public class AsyncHelloConcurrent {
 
     @GetMapping(value = "/api/hello/concurrent", produces={"application/json"})
     public Mono<Map<String, Object>> hello(HttpServletRequest request) {
-        Utility util = Utility.getInstance();
-        String traceId = util.getUuid();
+        String traceId = Utility.getInstance().getUuid();
         PostOffice po = new PostOffice("hello.world.endpoint", traceId, "GET /api/hello/concurrent");
-
         Map<String, Object> forward = new HashMap<>();
         Enumeration<String> headers = request.getHeaderNames();
         while (headers.hasMoreElements()) {
@@ -74,7 +72,7 @@ public class AsyncHelloConcurrent {
                             singleResult.put("seq", evt.getCorrelationId());
                             singleResult.put("execution_time", evt.getExecutionTime());
                             singleResult.put("round_trip", evt.getRoundTrip());
-                            results.put("result_"+util.zeroFill(n, 999), singleResult);
+                            results.put("result-"+n, singleResult);
                         }
                         callback.success(results);
                     })
