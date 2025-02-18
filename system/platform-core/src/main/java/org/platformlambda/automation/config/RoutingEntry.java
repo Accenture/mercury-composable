@@ -335,7 +335,12 @@ public class RoutingEntry {
                 Collections.sort(exact);
             }
             if (!exact.isEmpty()) {
-                log.info("Exact API path{} {}", exact.size() == 1? "" : "s", exact);
+                var message = new HashMap<String, Object>();
+                message.put("type", "url");
+                message.put("match", "exact");
+                message.put("total", exact.size());
+                message.put("path", exact);
+                log.info("{}", message);
             }
             // sort URLs for easy parsing
             if (!routes.isEmpty()) {
@@ -353,7 +358,12 @@ public class RoutingEntry {
                 Collections.sort(urlPaths);
             }
             if (!urlPaths.isEmpty()) {
-                log.info("Wildcard API path{} {}", urlPaths.size() == 1? "" : "s", urlPaths);
+                var message = new HashMap<String, Object>();
+                message.put("type", "url");
+                message.put("match", "parameters");
+                message.put("total", urlPaths.size());
+                message.put("path", urlPaths);
+                log.info("{}", message);
             }
         }
     }
@@ -559,21 +569,21 @@ public class RoutingEntry {
                 log.error("Skipping invalid entry {}", config.get(REST+"["+idx+"]"));
             } else {
                 info.url = nUrl;
+                // ensure OPTIONS method is supported
                 allMethods.add(OPTIONS_METHOD);
                 for (String m: allMethods) {
                     String key = m+":"+nUrl;
                     routes.put(key, info);
                     String flowHint = info.flowId == null? "" : ", flow=" + info.flowId;
-                    // OPTIONS method is not traced
-                    if (OPTIONS_METHOD.equals(m)) {
-                        log.info("{} {} -> {}, timeout={}s", m, nUrl, info.services, info.timeoutSeconds);
-                    } else if (info.defaultAuthService != null) {
-                        log.info("{} {} -> {} -> {}, timeout={}s, tracing={}{}",
-                                m, nUrl, info.defaultAuthService, info.services,
-                                info.timeoutSeconds, info.tracing, flowHint);
-                    } else {
-                        log.info("{} {} -> {}, timeout={}s, tracing={}{}",
-                                m, nUrl, info.services, info.timeoutSeconds, info.tracing, flowHint);
+                    if (!OPTIONS_METHOD.equals(m)) {
+                        if (info.defaultAuthService != null) {
+                            log.info("{} {} -> {} -> {}, timeout={}s, tracing={}{}",
+                                    m, nUrl, info.defaultAuthService, info.services,
+                                    info.timeoutSeconds, info.tracing, flowHint);
+                        } else {
+                            log.info("{} {} -> {}, timeout={}s, tracing={}{}",
+                                    m, nUrl, info.services, info.timeoutSeconds, info.tracing, flowHint);
+                        }
                     }
                 }
             }
