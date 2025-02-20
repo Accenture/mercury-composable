@@ -76,20 +76,25 @@ public class SimpleObjectMapper {
         if (!outputIsList && !outputIsMap && fromClass.equals(toValueType.getName())) {
             return (T) fromValue;
         }
-        if (fromValue instanceof InputStream in) {
-            // input stream is a JSON string
-            return readJsonString(util.stream2str(in), toValueType);
-        } else if (fromValue instanceof String str) {
-            // input is a JSON string
-            return readJsonString(str, toValueType);
-        } else if (fromValue instanceof byte[] b) {
-            // input is a byte array of JSON
-            return readJsonString(util.getUTF(b), toValueType);
-        } else {
-            if (isPrimitive(fromValue)) {
-                throw new IllegalArgumentException("Unable to convert a primitive into "+toValueType);
+        switch (fromValue) {
+            case InputStream in -> {
+                // input stream is a JSON string
+                return readJsonString(util.stream2str(in), toValueType);
             }
-            return gson.fromJson(gson.toJsonTree(fromValue), toValueType);
+            case String str -> {
+                // input is a JSON string
+                return readJsonString(str, toValueType);
+            }
+            case byte[] b -> {
+                // input is a byte array of JSON
+                return readJsonString(util.getUTF(b), toValueType);
+            }
+            default -> {
+                if (isPrimitive(fromValue)) {
+                    throw new IllegalArgumentException("Unable to convert a primitive into " + toValueType);
+                }
+                return gson.fromJson(gson.toJsonTree(fromValue), toValueType);
+            }
         }
     }
 

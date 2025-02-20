@@ -25,7 +25,7 @@ public class PoJoSubset {
     private String name;
     private Date date;
 
-    private LocalDateTime time;
+    private LocalDateTime localDateTime;
 
     public String getName() {
         return name;
@@ -43,11 +43,11 @@ public class PoJoSubset {
         this.date = date;
     }
 
-    public LocalDateTime getTime() {
-        return time;
+    public LocalDateTime getLocalDateTime() {
+        return localDateTime;
     }
 
-    public void setTime(LocalDateTime time) {
-        this.time = time;
+    public void setLocalDateTime(LocalDateTime localDateTime) {
+        this.localDateTime = localDateTime;
     }
 }

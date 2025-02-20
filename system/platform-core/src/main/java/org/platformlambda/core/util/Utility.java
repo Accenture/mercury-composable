@@ -31,10 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -781,11 +778,30 @@ public class Utility {
         return local.toString().replace('T', ' ');
     }
 
-    public LocalDateTime str2localtime(String str) {
-        return str2localtime(str, false);
+    public LocalDate str2localDate(String str) {
+        if (str == null) {
+            return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        }
+        if (str.endsWith("Z") || str.contains("+")) {
+            Date date = str2date(str);
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        } else {
+            if (str.length() >= 16 && str.charAt(10) != 'T') {
+                str = str.substring(0, 10) + "T" + str.substring(11);
+            }
+            try {
+                return LocalDate.parse(str);
+            } catch (DateTimeParseException e) {
+                return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+        }
     }
 
-    public LocalDateTime str2localtime(String str, boolean throwException) {
+    public LocalDateTime str2LocalDateTime(String str) {
+        return str2LocalDateTime(str, false);
+    }
+
+    public LocalDateTime str2LocalDateTime(String str, boolean throwException) {
         if (str == null) {
             if (throwException) {
                 throw new IllegalArgumentException("time string cannot be null");
@@ -793,15 +809,7 @@ public class Utility {
                 return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
             }
         }
-        boolean hasTimeZone = false;
         if (str.endsWith("Z") || str.contains("+")) {
-            hasTimeZone = true;
-        } else {
-            if (str.length() > 20) {
-                hasTimeZone = str.charAt(str.length() - 5) == '-' || str.charAt(str.length() - 6) == '-';
-            }
-        }
-        if (hasTimeZone) {
             Date date = str2date(str);
             return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         } else {

@@ -1768,7 +1768,7 @@ public class PostOfficeTest extends TestBase {
         PoJoSubset minimalData = new PoJoSubset();
         minimalData.setName(HELLO_WORLD);
         minimalData.setDate(now);
-        minimalData.setTime(time);
+        minimalData.setLocalDateTime(time);
         EventEnvelope request = new EventEnvelope().setTo(AUTO_MAPPING).setBody(minimalData)
                                 .setTrace(TRACE_ID,TRACE_PATH).setFrom("unit.test");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
@@ -1780,7 +1780,7 @@ public class PostOfficeTest extends TestBase {
         assertEquals(PoJo.class.getName(), response.getType());
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(response.getBody(), PoJo.class);
         assertEquals(now, pojo.getDate());
-        assertEquals(time, pojo.getTime());
+        assertEquals(time, pojo.getLocalDateTime());
         assertEquals(HELLO_WORLD, pojo.getName());
         // default values in PoJo
         assertEquals(0, pojo.getNumber());

@@ -7,6 +7,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
+
+---
+## Version 4.2.17, 2/20/2025
+
+### Added
+
+LocalDate and LocalTime data type added to SimpleMapper
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
 ---
 ## Version 4.2.15, 2/15/2025
 

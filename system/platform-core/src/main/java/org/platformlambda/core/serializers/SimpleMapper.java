@@ -25,7 +25,9 @@ import org.platformlambda.core.util.Utility;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 public class SimpleMapper {
@@ -39,7 +41,7 @@ public class SimpleMapper {
                                             .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
     private static final Gson prettyGson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting()
                                             .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
-    private static final SimpleMapper SIMPLE_MAPPER_INSTANCE = new SimpleMapper();
+    private static final SimpleMapper instance = new SimpleMapper();
 
     private SimpleMapper() {
         // Camel or snake case
@@ -93,6 +95,12 @@ public class SimpleMapper {
         // UTC date
         builder.registerTypeAdapter(Date.class, new UtcSerializer());
         builder.registerTypeAdapter(Date.class, new UtcDeserializer());
+        // LocalDate
+        builder.registerTypeAdapter(LocalDate.class, new LocalDateSerializer());
+        builder.registerTypeAdapter(LocalDate.class, new LocalDateDeserializer());
+        // LocalTime
+        builder.registerTypeAdapter(LocalTime.class, new LocalTimeSerializer());
+        builder.registerTypeAdapter(LocalTime.class, new LocalTimeDeserializer());
         // LocalDateTime
         builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer());
         builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer());
@@ -118,7 +126,7 @@ public class SimpleMapper {
     }
 
     public static SimpleMapper getInstance() {
-        return SIMPLE_MAPPER_INSTANCE;
+        return instance;
     }
 
     /**
@@ -166,6 +174,38 @@ public class SimpleMapper {
         }
     }
 
+    private static class LocalTimeSerializer implements JsonSerializer<LocalTime> {
+
+        @Override
+        public JsonElement serialize(LocalTime time, Type type, JsonSerializationContext context) {
+            return new JsonPrimitive(time.toString());
+        }
+    }
+
+    private static class LocalTimeDeserializer implements JsonDeserializer<LocalTime> {
+
+        @Override
+        public LocalTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return LocalTime.parse(json.getAsString());
+        }
+    }
+
+    private static class LocalDateSerializer implements JsonSerializer<LocalDate> {
+
+        @Override
+        public JsonElement serialize(LocalDate date, Type type, JsonSerializationContext context) {
+            return new JsonPrimitive(date.toString());
+        }
+    }
+
+    private static class LocalDateDeserializer implements JsonDeserializer<LocalDate> {
+
+        @Override
+        public LocalDate deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return Utility.getInstance().str2localDate(json.getAsString());
+        }
+    }
+
     private static class LocalDateTimeSerializer implements JsonSerializer<LocalDateTime> {
 
         @Override
@@ -178,7 +218,7 @@ public class SimpleMapper {
 
         @Override
         public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-            return Utility.getInstance().str2localtime(json.getAsString());
+            return Utility.getInstance().str2LocalDateTime(json.getAsString());
         }
     }
 
