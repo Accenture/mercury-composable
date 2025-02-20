@@ -7,7 +7,7 @@ Service mesh systems require additional administrative containers (PODs) for "co
 
 The additional infrastructure requirements vary among products.
 
-# Using kafka as a minimalist service mesh
+## Using kafka as a minimalist service mesh
 
 We will discuss using Kafka as a minimalist service mesh.
 

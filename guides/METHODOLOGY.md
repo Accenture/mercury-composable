@@ -19,7 +19,7 @@ implementation of a Composable framework to realize the goal of composable archi
 
 Before we take a deep dive of the mercury-composable framework, let's review Composable Methodology first.
 
-# Methodology
+## Methodology
 
 The Composable Methodology takes a different approach in software development that empowers and aligns product owners,
 business analysts, technology architects and software engineers.
