@@ -111,7 +111,7 @@ public class SimpleMapperTest {
         assertEquals(localTime.toString(), converted.get("local_time"));
         // sql date is yyyy-mm-dd
         assertEquals(new java.sql.Date(now.getTime()).toString(), converted.get("sql_date"));
-        assertEquals(iso8601, converted.get("sql_timestamp"));
+        assertEquals(new java.sql.Timestamp(now.getTime()).toString(), converted.get("sql_timestamp"));
         // OK - Integer becomes Long because of GSON's behavior of ToNumberPolicy.LONG_OR_DOUBLE
         assertEquals(Long.class, converted.get("integer").getClass());
         String name = "hello world";
@@ -121,6 +121,9 @@ public class SimpleMapperTest {
         input.put("local_date_time", iso8601NoTimeZone);
         input.put("local_date", localDate.toString());
         input.put("local_time", localTime.toString());
+        input.put("sql_timestamp", new java.sql.Timestamp(now.getTime()));
+        input.put("sql_date", new java.sql.Date(now.getTime()));
+        input.put("sql_time", new java.sql.Time(now.getTime()));
         PoJo pojo = mapper.readValue(input, PoJo.class);
         // verify that the time is restored correctly
         assertEquals(now.getTime(), pojo.getDate().getTime());
@@ -132,7 +135,10 @@ public class SimpleMapperTest {
         // verify input timestamp can be in milliseconds too
         input.put("date", now.getTime());
         pojo = mapper.readValue(input, PoJo.class);
-        assertEquals(now.getTime(), pojo.getDate().getTime());
+        assertEquals(new Date(now.getTime()).toString(), pojo.getDate().toString());
+        assertEquals(new java.sql.Timestamp(now.getTime()).toString(), pojo.getSqlTimestamp().toString());
+        assertEquals(new java.sql.Date(now.getTime()).toString(), pojo.getSqlDate().toString());
+        assertEquals(new java.sql.Time(now.getTime()).toString(), pojo.getSqlTime().toString());
     }
 
     @Test

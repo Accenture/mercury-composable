@@ -136,7 +136,7 @@ By design, composable functions are granular in nature. They are registered to a
 a function is executed when an event arrives. Without multiple levels of tight coupling, each piece of user code
 consumes memory efficiently. Memory is released to the system as soon as the function finishes execution.
 
-# Composable framework
+## Composable framework
 
 To realize the composable design principles, a low-latency in-memory event system is available at the core
 of the Mercury-Composable framework.

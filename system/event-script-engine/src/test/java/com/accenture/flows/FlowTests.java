@@ -377,6 +377,8 @@ public class FlowTests extends TestBase {
         assertNotNull(original.get("unique_id2"));
         assertNotEquals(original.get("unique_id1"), original.get("unique_id2"));
         assertEquals(original.get("unique_id2"), original.get("unique_id3"));
+        // demonstrate string concatenation
+        assertEquals("a b,c", original.get("concat_string"));
         // check environment variable substitution
         assertEquals(System.getenv("PATH"), original.get("path"));
         // check metadata for a flow

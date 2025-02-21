@@ -558,26 +558,27 @@ For the right-hand-side, the matched or converted value is applied to the state 
 
 The syntax is `model.somekey:type` where "type" is one of the following:
 
-| Type                  | Match value as               | Example                               |
-|:----------------------|:-----------------------------|:--------------------------------------|
-| text                  | text string                  | model.someKey:text                    |
-| binary                | byte array                   | model.someKey:binary                  |
-| int                   | integer or -1 if not numeric | model.someKey:int                     |
-| long                  | long or -1 if not numeric    | model.someKey:long                    |
-| float                 | float or -1 if not numeric   | model.someKey:float                   |
-| double                | double or -1 if not numeric  | model.someKey:double                  |
-| boolean               | true or false                | model.someKey:boolean                 |
-| boolean(value)        | true if value matches        | model.someKey:boolean(positive)       |
-| boolean(value=true)   | true if value matches        | model.someKey:boolean(positive=true)  |
-| boolean(value=false)  | false if value matches       | model.someKey:boolean(negative=false) |
-| and(model.key)        | boolean AND of 2 model keys  | model.someKey:and(model.another)      |
-| or(model.key)         | boolean OR of 2 model keys   | model.someKey:or(model.another)       |
-| !model.key            | negate of a model variable   | !model.someKey                        |
-| substring(start, end) | extract a substring          | model.someKey:substring(0, 5)         |
-| substring(start)      | extract a substring          | model.someKey:substring(5)            |
-| b64                   | byte-array to Base64 text    | model.someKey:b64                     |
-| b64                   | Base64 text to byte-array    | model.someKey:b64                     |
-| uuid                  | generated UUID-4 value       | model.unique_id:uuid                  |
+| Type                  | Match value as                | Example                               |
+|:----------------------|:------------------------------|:--------------------------------------|
+| text                  | text string                   | model.someKey:text                    |
+| binary                | byte array                    | model.someKey:binary                  |
+| int                   | integer or -1 if not numeric  | model.someKey:int                     |
+| long                  | long or -1 if not numeric     | model.someKey:long                    |
+| float                 | float or -1 if not numeric    | model.someKey:float                   |
+| double                | double or -1 if not numeric   | model.someKey:double                  |
+| boolean               | true or false                 | model.someKey:boolean                 |
+| boolean(value)        | true if value matches         | model.someKey:boolean(positive)       |
+| boolean(value=true)   | true if value matches         | model.someKey:boolean(positive=true)  |
+| boolean(value=false)  | false if value matches        | model.someKey:boolean(negative=false) |
+| and(model.key)        | boolean AND of 2 model keys   | model.someKey:and(model.another)      |
+| or(model.key)         | boolean OR of 2 model keys    | model.someKey:or(model.another)       |
+| !model.key            | negate of a model variable    | !model.someKey                        |
+| substring(start, end) | extract a substring           | model.someKey:substring(0, 5)         |
+| substring(start)      | extract a substring           | model.someKey:substring(5)            |
+| concat(vars...)       | concat model variables & text | model.a:concat(model.b, text(!))      |
+| b64                   | byte-array to Base64 text     | model.someKey:b64                     |
+| b64                   | Base64 text to byte-array     | model.someKey:b64                     |
+| uuid                  | generated UUID-4 value        | model.unique_id:uuid                  |
 
 For Base64 type matching, it handles two symmetrical use cases. If the key-value is a text string,
 the system would assume it is a Base64 text string and convert it to a byte-array. If the key-value
@@ -590,6 +591,9 @@ will be updated with a generated UUID value accordingly.
 For simplicity of syntax, each type matching command is a single operation. For more complex
 operation such as multiple AND, OR and NEGATE operators, you can configure multiple steps of
 operation.
+
+For string concatenation, you may concat a model variable with one or more model variables and
+text constants. The latter uses the "text(some value)" format.
 
 An interesting use case is a simple decision task using the built-in no-op function.
 For boolean with value matching, you can test if the key-value in the left-hand-side is a null

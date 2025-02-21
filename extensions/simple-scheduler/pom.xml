@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>simple-scheduler</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.17</version>
+    <version>4.2.18</version>
     <name>Simple Scheduler</name>
 
     <parent>
@@ -49,14 +49,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.2.17</version>
+            <version>4.2.18</version>
         </dependency>
 
         <!-- Optionally, select your cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.2.17</version>
+            <version>4.2.18</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.quartz-scheduler/quartz -->

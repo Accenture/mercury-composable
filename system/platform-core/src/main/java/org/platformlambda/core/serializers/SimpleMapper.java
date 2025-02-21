@@ -95,16 +95,16 @@ public class SimpleMapper {
         // UTC date
         builder.registerTypeAdapter(Date.class, new UtcSerializer());
         builder.registerTypeAdapter(Date.class, new UtcDeserializer());
-        // LocalDate
-        builder.registerTypeAdapter(LocalDate.class, new LocalDateSerializer());
-        builder.registerTypeAdapter(LocalDate.class, new LocalDateDeserializer());
-        // LocalTime
-        builder.registerTypeAdapter(LocalTime.class, new LocalTimeSerializer());
-        builder.registerTypeAdapter(LocalTime.class, new LocalTimeDeserializer());
-        // LocalDateTime
+        // local datetime, date and time
         builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer());
         builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer());
-        // SQL date and time
+        builder.registerTypeAdapter(LocalDate.class, new LocalDateSerializer());
+        builder.registerTypeAdapter(LocalDate.class, new LocalDateDeserializer());
+        builder.registerTypeAdapter(LocalTime.class, new LocalTimeSerializer());
+        builder.registerTypeAdapter(LocalTime.class, new LocalTimeDeserializer());
+        // SQL timestamp, date and time
+        builder.registerTypeAdapter(java.sql.Timestamp.class, new SqlTimestampSerializer());
+        builder.registerTypeAdapter(java.sql.Timestamp.class, new SqlTimestampDeserializer());
         builder.registerTypeAdapter(java.sql.Date.class, new SqlDateSerializer());
         builder.registerTypeAdapter(java.sql.Date.class, new SqlDateDeserializer());
         builder.registerTypeAdapter(java.sql.Time.class, new SqlTimeSerializer());
@@ -219,6 +219,28 @@ public class SimpleMapper {
         @Override
         public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return Utility.getInstance().str2LocalDateTime(json.getAsString());
+        }
+    }
+
+    private static class SqlTimestampSerializer implements JsonSerializer<java.sql.Timestamp> {
+
+        @Override
+        public JsonElement serialize(java.sql.Timestamp date, Type type, JsonSerializationContext context) {
+            return new JsonPrimitive(date.toString());
+        }
+    }
+
+    private static class SqlTimestampDeserializer implements JsonDeserializer<java.sql.Timestamp> {
+
+        @Override
+        public java.sql.Timestamp deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            try {
+                return java.sql.Timestamp.valueOf(json.getAsString());
+            } catch (IllegalArgumentException e) {
+                // parse input as ISO-8601
+                Date date = Utility.getInstance().str2date(json.getAsString());
+                return new java.sql.Timestamp(date.getTime());
+            }
         }
     }
 

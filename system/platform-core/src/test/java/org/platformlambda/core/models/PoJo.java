@@ -20,6 +20,8 @@ package org.platformlambda.core.models;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -38,6 +40,9 @@ public class PoJo {
     private LocalDate localDate;
     private LocalTime localTime;
     private LocalDateTime localDateTime;
+    private Timestamp sqlTimestamp;
+    private java.sql.Date sqlDate;
+    private java.sql.Time sqlTime;
 
     public int getNumber() {
         return number;
@@ -125,5 +130,29 @@ public class PoJo {
 
     public void setBigDecimal(BigDecimal bigDecimal) {
         this.bigDecimal = bigDecimal;
+    }
+
+    public Timestamp getSqlTimestamp() {
+        return sqlTimestamp;
+    }
+
+    public void setSqlTimestamp(Timestamp sqlTimestamp) {
+        this.sqlTimestamp = sqlTimestamp;
+    }
+
+    public java.sql.Date getSqlDate() {
+        return sqlDate;
+    }
+
+    public void setSqlDate(java.sql.Date sqlDate) {
+        this.sqlDate = sqlDate;
+    }
+
+    public Time getSqlTime() {
+        return sqlTime;
+    }
+
+    public void setSqlTime(Time sqlTime) {
+        this.sqlTime = sqlTime;
     }
 }

@@ -120,12 +120,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String UUID_SUFFIX = "uuid";
     private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
+    private static final String CONCAT_TYPE = "concat(";
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
 
     private enum OPERATION {
         SIMPLE_COMMAND,
         SUBSTRING_COMMAND,
+        CONCAT_COMMAND,
         AND_COMMAND,
         OR_COMMAND,
         BOOLEAN_COMMAND
@@ -905,6 +907,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private OPERATION getMappingType(String type) {
         if (type.startsWith(SUBSTRING_TYPE)) {
             return OPERATION.SUBSTRING_COMMAND;
+        } else if (type.startsWith(CONCAT_TYPE)) {
+            return OPERATION.CONCAT_COMMAND;
         } else if (type.startsWith(AND_TYPE)) {
             return OPERATION.AND_COMMAND;
         } else if (type.startsWith(OR_TYPE)) {
@@ -969,9 +973,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                     }
                 }
-                default -> log.error("Unable to do {} of {} - " +
-                        "matching type must be substring(start, end), boolean, !, and, or, text, binary, uuid or b64",
-                        type, path);
+                default -> log.error("Unable to do {} of {} - matching type must be " +
+                                    "substring(start, end), concat, boolean, !, and, or, text, binary, uuid or b64",
+                                    type, path);
             }
         } else {
             String error = "missing close bracket";
@@ -980,6 +984,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 /*
                  * substring(start, end)]
                  * substring(start)
+                 * concat(parameter...) where parameters are model variable or text constant
                  * boolean(value=true)
                  * boolean(value) is same as boolean(value=true)
                  * and(model.anotherKey)
@@ -1002,8 +1007,27 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     } else {
                         error = "invalid syntax";
                     }
+                } else if (selection == OPERATION.CONCAT_COMMAND) {
+                    List<String> parts = tokenizeConcatParameters(command);
+                    if (parts.isEmpty()) {
+                        error = "parameters must be model variables and/or text constants";
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        var str = String.valueOf(value);
+                        sb.append(str);
+                        for (String p: parts) {
+                            if (p.startsWith(TEXT_TYPE)) {
+                                sb.append(p, TEXT_TYPE.length(), p.length()-1);
+                            }
+                            if (p.startsWith(MODEL_NAMESPACE)) {
+                                var v = String.valueOf(data.getElement(p));
+                                sb.append(v);
+                            }
+                        }
+                        return sb.toString();
+                    }
                 } else if (selection == OPERATION.AND_COMMAND || selection == OPERATION.OR_COMMAND) {
-                    if (command.startsWith(MODEL_NAMESPACE)) {
+                    if (command.startsWith(MODEL_NAMESPACE) && command.length() > MODEL_NAMESPACE.length()) {
                         boolean v1 = TRUE.equals(String.valueOf(value));
                         boolean v2 = TRUE.equals(String.valueOf(data.getElement(command)));
                         return selection == OPERATION.AND_COMMAND ? v1 && v2 : v1 || v2;
@@ -1040,6 +1064,44 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return value;
     }
 
+    private List<String> tokenizeConcatParameters(String text) {
+        List<String> result = new ArrayList<>();
+        var command = text.trim();
+        while (!command.isEmpty()) {
+            if (command.startsWith(MODEL_NAMESPACE)) {
+                int sep = command.indexOf(',');
+                if (sep == -1) {
+                    result.add(command);
+                    break;
+                } else {
+                    var token = command.substring(0, sep).trim();
+                    if (token.equals(MODEL_NAMESPACE)) {
+                        return Collections.emptyList();
+                    } else {
+                        result.add(token);
+                        command = command.substring(sep + 1).trim();
+                    }
+                }
+            } else if (command.startsWith(TEXT_TYPE)) {
+                int close = command.indexOf(CLOSE_BRACKET);
+                if (close == 1) {
+                    return Collections.emptyList();
+                } else {
+                    result.add(command.substring(0, close+1));
+                    int sep = command.indexOf(',', close);
+                    if (sep == -1) {
+                        break;
+                    } else {
+                        command = command.substring(sep+1).trim();
+                    }
+                }
+            } else {
+                return Collections.emptyList();
+            }
+        }
+        return result;
+    }
+
     private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
         boolean updated = false;
         int colon = getModelTypeIndex(rhs);
@@ -1059,7 +1121,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         int last = lhs.lastIndexOf(CLOSE_BRACKET);
         if (last > 0) {
             if (lhs.startsWith(TEXT_TYPE)) {
-                return lhs.substring(TEXT_TYPE.length(), last).trim();
+                return lhs.substring(TEXT_TYPE.length(), last);
             }
             if (lhs.startsWith(INTEGER_TYPE)) {
                 return util.str2int(lhs.substring(INTEGER_TYPE.length(), last).trim());

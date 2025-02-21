@@ -34,6 +34,11 @@ tasks:
       - 'text(ok) -> header.demo'
       - 'model.trace -> trace_id'
       - 'model.flow -> flow_id'
+      - 'text( ) -> model.space'
+      - 'text(a) -> model.a'
+      - 'text(b) -> model.b'
+      - 'text(c) -> model.c'
+      - 'model.a:concat(model.space, model.b, text(,), model.c) -> concat_string'
     process: 'greeting.test'
     output:
       - 'text(application/json) -> output.header.content-type'

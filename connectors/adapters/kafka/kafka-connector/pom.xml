@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.17</version>
+    <version>4.2.18</version>
     <name>Cloud connector for Kafka cluster</name>
 
     <parent>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.2.17</version>
+            <version>4.2.18</version>
         </dependency>
 
         <dependency>
