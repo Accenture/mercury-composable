@@ -13,14 +13,14 @@ GET /health
 GET /livenessprobe
 ```
 
-| Endpoint       | Purpose                                                                             | 
-|:---------------|:------------------------------------------------------------------------------------|
-| /info          | Describe the application                                                            |
-| /info/routes   | Show public routing table                                                           |
-| /info/lib      | List libraries packed with this executable                                          |
-| /env           | List all private and public function route names and selected environment variables |
-| /health        | Application health check endpoint                                                   |
-| /livenessprobe | Check if application is running normally                                            |
+| Endpoint       | Purpose                                                        | 
+|:---------------|:---------------------------------------------------------------|
+| /info          | Describe the application                                       |
+| /info/routes   | List all private and public function route names               |
+| /info/lib      | List libraries packed with this executable                     |
+| /env           | Show selected environment variables and application parameters |
+| /health        | Application health check endpoint                              |
+| /livenessprobe | Check if application is running normally                       |
 
 ## System provided REST endpoints
 
@@ -88,6 +88,9 @@ Your custom health service must respond to the following requests:
 1. Info request (type=info) - it should return a map that includes service name and href (protocol, hostname and port)
 2. Health check (type=health) - it should return a text string or a Map of the health check. e.g. read/write test result. 
    If health check fails, you can throw AppException with status code and error message.
+
+> *Note*: The "href" entry in the health service's response should tell the operator about the target URL
+          if the dependency connects to a cloud platform service such as Kafka, Redis, etc.
 
 A sample health service is available in the `DemoHealth` class of the `composable-example` project as follows:
 
