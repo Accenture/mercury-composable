@@ -151,8 +151,8 @@ list.add("b");
 req.setQueryParameter("x2", list);
 req.setTargetHost("http://127.0.0.1:8083");
 EventEnvelope request = new EventEnvelope().setTo("async.http.request").setBody(req);
-EventEnvelope res = po.request(request, 5000);
-// the result is in res.getBody()
+EventEnvelope res = po.request(request, 5000).get();
+// the response is a Java Future and the result is an EventEnvelope
 ```
 
 By default, your user function is running in a virtual thread.
