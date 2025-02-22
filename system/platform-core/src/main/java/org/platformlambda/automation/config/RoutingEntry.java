@@ -21,10 +21,12 @@ package org.platformlambda.automation.config;
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.models.*;
 import org.platformlambda.core.util.ConfigReader;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -316,9 +318,8 @@ public class RoutingEntry {
             Object rest = config.get(REST);
             boolean valid = false;
             if (rest instanceof List) {
-                List<Object> restList = (List<Object>) rest;
-                if (isListOfMap(restList)) {
-                    loadRest(config, restList.size());
+                if (isListOfMap((List<Object>) rest)) {
+                    loadRest(config);
                     valid = true;
                 }
             }
@@ -377,7 +378,12 @@ public class RoutingEntry {
         return true;
     }
 
-    private void loadRest(ConfigReader config, int total) {
+    @SuppressWarnings("unchecked")
+    private void loadRest(ConfigReader config) {
+        addDefaultEndpoints(config);
+        sortEndpoints(config);
+        Object restEntries = config.get(REST);
+        int total = ((List<Object>) restEntries).size();
         for (int i=0; i < total; i++) {
             Object services = config.get(REST+"["+i+"]."+SERVICE);
             Object methods = config.get(REST+"["+i+"]."+METHODS);
@@ -389,6 +395,77 @@ public class RoutingEntry {
                 log.error(SKIP_INVALID_ENTRY, config.get(REST+"["+i+"]"));
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addDefaultEndpoints(ConfigReader config) {
+        try {
+            ConfigReader defaultRest = new ConfigReader();
+            defaultRest.load("/default-rest.yaml");
+            Object defaultRestEntries = defaultRest.get(REST);
+            List<Object> defaultRestList = (List<Object>) defaultRestEntries;
+            int defaultTotal = defaultRestList.size();
+            Map<String, Integer> essentials = new HashMap<>();
+            List<String> configured = new ArrayList<>();
+            for (int i=0; i < defaultTotal; i++) {
+                String methods = defaultRest.getProperty(REST+"["+i+"]."+METHODS);
+                String url = defaultRest.getProperty(REST+"["+i+"]."+URL_LABEL);
+                essentials.put(url+" "+methods, i);
+            }
+            Object restEntries = config.get(REST);
+            List<Object> restList = (List<Object>) restEntries;
+            int total = restList.size();
+            for (int i=0; i < total; i++) {
+                String methods = config.getProperty(REST+"["+i+"]."+METHODS);
+                String url = config.getProperty(REST+"["+i+"]."+URL_LABEL);
+                if (url != null && methods != null) {
+                    configured.add(url+" "+methods);
+                }
+            }
+            // find out if there are missing default entries in the configured list
+            List<String> missing = new ArrayList<>();
+            for (String entry: essentials.keySet()) {
+                if (!configured.contains(entry)) {
+                    missing.add(entry);
+                }
+            }
+            if (!missing.isEmpty()) {
+                MultiLevelMap map = new MultiLevelMap(config.getMap());
+                for (String entry : missing) {
+                    int idx = essentials.get(entry);
+                    map.setElement(REST + "[" + total + "]", defaultRest.get(REST + "[" + idx + "]"));
+                    total++;
+                }
+                config.reload(map.getMap());
+            }
+        } catch (IOException e) {
+            // this does not occur
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void sortEndpoints(ConfigReader config) {
+        Map<String, Object> endpoints = new HashMap<>();
+        Object restEntries = config.get(REST);
+        List<Object> restList = (List<Object>) restEntries;
+        int total = restList.size();
+        for (int i=0; i < total; i++) {
+            Object entry = config.get(REST+"["+i+"]");
+            String methods = config.getProperty(REST+"["+i+"]."+METHODS);
+            String url = config.getProperty(REST+"["+i+"]."+URL_LABEL);
+            if (url != null && methods != null) {
+                endpoints.put(url+" "+methods, entry);
+            }
+        }
+        int n = 0;
+        MultiLevelMap map = new MultiLevelMap(config.getMap());
+        List<String> keys = new ArrayList<>(endpoints.keySet());
+        Collections.sort(keys);
+        for (String k : keys) {
+            map.setElement(REST + "[" + n + "]", endpoints.get(k));
+            n++;
+        }
+        config.reload(map.getMap());
     }
 
     @SuppressWarnings("unchecked")
@@ -595,7 +672,7 @@ public class RoutingEntry {
     @SuppressWarnings("unchecked")
     private List<String> validateServiceList(Object svcList) {
         Utility util = Utility.getInstance();
-        List<String> list = svcList instanceof String slist? Collections.singletonList(slist) : (List<String>) svcList;
+        List<String> list = svcList instanceof String svc? Collections.singletonList(svc) : (List<String>) svcList;
         List<String> result = new ArrayList<>();
         for (String item: list) {
             String service = item.trim().toLowerCase();

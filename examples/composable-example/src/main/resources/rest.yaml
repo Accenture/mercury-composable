@@ -4,46 +4,6 @@
 # for the original URL and path parameters
 #
 rest:
-  #
-  # "event.api.service" accepts an external application making event call to a function in this app instance.
-  # Optionally, you can add "authentication" service to validate incoming request from the external application.
-  #
-  - service: "event.api.service"
-    methods: ['POST']
-    url: "/api/event"
-    timeout: 60s
-    tracing: true
-
-  - service: "info.actuator.service"
-    methods: ['GET']
-    url: "/info"
-    timeout: 10s
-
-  - service: "lib.actuator.service"
-    methods: ['GET']
-    url: "/info/lib"
-    timeout: 10s
-
-  - service: "routes.actuator.service"
-    methods: ['GET']
-    url: "/info/routes"
-    timeout: 10s
-
-  - service: "health.actuator.service"
-    methods: ['GET']
-    url: "/health"
-    timeout: 10s
-
-  - service: "liveness.actuator.service"
-    methods: ['GET']
-    url: "/livenessprobe"
-    timeout: 10s
-
-  - service: "env.actuator.service"
-    methods: ['GET']
-    url: "/env"
-    timeout: 10s 
-
   - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/profile/{profile_id}"

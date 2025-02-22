@@ -1,0 +1,7 @@
+rest:
+  - service: "event.api.service"
+    methods: ['POST']
+    url: "/api/event"
+    timeout: 60s
+    authentication: 'event.api.auth'
+    tracing: true

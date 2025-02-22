@@ -384,6 +384,14 @@ public class ConfigReader implements ConfigBase {
     }
 
     /**
+     * Reload configuration from a map
+     * @param map of key-values
+     */
+    public void reload(Map<String, Object> map) {
+        config.reload(map);
+    }
+
+    /**
      * Render references to base application config, environment variables and system properties.
      * When using the constructor without file path, this allows the resolution to be invoked
      * programmatically or deferred.

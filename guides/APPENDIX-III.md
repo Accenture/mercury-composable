@@ -2,7 +2,7 @@
 
 ## Actuator endpoints
 
-Administrative endpoints include the following:
+The following are actuator endpoints:
 
 ```
 GET /info
@@ -22,11 +22,23 @@ GET /livenessprobe
 | /health        | Application health check endpoint                                                   |
 | /livenessprobe | Check if application is running normally                                            |
 
-When REST automation is turned on, you can configure the administrative endpoints with the following
-entries in the "rest.yaml" configuration file.
+## System provided REST endpoints
+
+When REST automation is turned on, the following essential REST endpoints will be provided if they are
+not configured in rest.yaml. The "POST /api/event" is used for Event-Over-HTTP protocol and the others
+are actuator endpoints.
+
+To override the default parameters such as timeout, tracing and authentication, you can configure them
+in rest.yaml.
 
 ```yaml
 rest:
+  - service: "event.api.service"
+    methods: ['POST']
+    url: "/api/event"
+    timeout: 60s
+    tracing: true
+
   - service: "info.actuator.service"
     methods: ['GET']
     url: "/info"
@@ -58,10 +70,8 @@ rest:
     timeout: 10s
 ```
 
-Therefore, you can selectively enable all or some of these endpoints.
-
-> *Note*: When using the rest-spring-3 library, the adminstrative endpoints are always available from the
-          Spring Boot's HTTP port.
+> *Note*: When using the rest-spring-3 library, the actuator endpoints are always available from the
+          Spring Boot's HTTP port and they cannot be changed.
 
 ## Custom health services
 

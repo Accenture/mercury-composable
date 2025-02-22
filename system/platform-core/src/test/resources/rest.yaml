@@ -5,11 +5,8 @@
 #
 rest:
   #
-  # this entry will override the event-api.yaml in yaml.rest.automation
-  # to add the "authentication" tag
-  #
-  # In the test/resources/application.properties, it tells the system to merge two config files
-  # yaml.rest.automation=classpath:/event-api.yaml, classpath:/rest.yaml
+  # The "POST /api/event" endpoint here will override the default endpoint,
+  # allowing us to add the "authentication" parameter.
   #
   - service: "event.api.service"
     methods: ['POST']
@@ -17,36 +14,6 @@ rest:
     timeout: 60s
     authentication: 'event.api.auth'
     tracing: true
-
-  - service: "info.actuator.service"
-    methods: ['GET']
-    url: "/info"
-    timeout: 10s
-
-  - service: "lib.actuator.service"
-    methods: ['GET']
-    url: "/info/lib"
-    timeout: 10s
-
-  - service: "routes.actuator.service"
-    methods: ['GET']
-    url: "/info/routes"
-    timeout: 10s
-
-  - service: "health.actuator.service"
-    methods: ['GET']
-    url: "/health"
-    timeout: 10s
-
-  - service: "liveness.actuator.service"
-    methods: ['GET']
-    url: "/livenessprobe"
-    timeout: 10s
-
-  - service: "env.actuator.service"
-    methods: ['GET']
-    url: "/env"
-    timeout: 10s
 
   # service should be a target service name or a list of service names
   # If more than one service name is provided, the first one is the primary target
