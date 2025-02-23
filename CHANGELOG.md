@@ -24,7 +24,8 @@ N/A
 
 ### Changed
 
-Sort REST endpoints for orderingly loading
+1. Sort REST endpoints for orderingly loading
+2. Drop "async.http.request" RPC traces to reduce observability noise
 
 ---
 ## Version 4.2.17, 2/20/2025

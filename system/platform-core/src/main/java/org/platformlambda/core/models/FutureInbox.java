@@ -18,7 +18,6 @@
 
 package org.platformlambda.core.models;
 
-import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
@@ -27,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
@@ -104,33 +102,9 @@ public class FutureInbox extends InboxBase {
             reply.clearAnnotations();
             future.complete(reply);
             if (to != null && holder.traceId != null && holder.tracePath != null) {
-                try {
-                    Map<String, Object> payload = new HashMap<>();
-                    Map<String, Object> metrics = new HashMap<>();
-                    metrics.put("origin", Platform.getInstance().getOrigin());
-                    metrics.put("id", holder.traceId);
-                    metrics.put("service", to);
-                    metrics.put("from", holder.from);
-                    metrics.put("exec_time", reply.getExecutionTime());
-                    metrics.put("round_trip", reply.getRoundTrip());
-                    metrics.put("start", start);
-                    metrics.put("path", holder.tracePath);
-                    payload.put("trace", metrics);
-                    if (!annotations.isEmpty()) {
-                        payload.put(ANNOTATIONS, annotations);
-                    }
-                    metrics.put("status", reply.getStatus());
-                    if (reply.getStatus() >= 400) {
-                        metrics.put("success", false);
-                        metrics.put("exception", reply.getError());
-                    } else {
-                        metrics.put("success", true);
-                    }
-                    EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
-                    EventEmitter.getInstance().send(dt.setBody(payload));
-                } catch (Exception e) {
-                    log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
-                }
+                recordRpcTrace(holder.traceId, holder.tracePath, to, holder.from, start,
+                        reply.getStatus(), reply.getError(),
+                        reply.getExecutionTime(), reply.getRoundTrip(), annotations);
             }
         }
     }
