@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.19, 2/26/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Allow developer to load base configuration files from the classpath or from the
+local file system.
+
+---
 ## Version 4.2.18, 2/21/2025
 
 ### Added
