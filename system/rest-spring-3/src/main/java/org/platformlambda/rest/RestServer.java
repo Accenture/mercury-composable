@@ -18,25 +18,26 @@
 
 package org.platformlambda.rest;
 
-import org.platformlambda.core.system.AppStarter;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 
+/**
+ * If you create your own spring boot start up application, please keep the ComponentScan configuration unchanged
+ * because the AppLoader is packaged under the org.platformlambda package path.
+ * <p>
+ * The AppLoader will invoke user written MainApplication classes accordingly.
+ */
 @ServletComponentScan({"org.platformlambda"})
 @ComponentScan({"org.platformlambda", "${web.component.scan}"})
+@ImportAutoConfiguration
 @SpringBootApplication
 public class RestServer extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
-        // Declare as a Spring Boot application so that AppStarter will defer loading main applications
-        AppStarter.runAsSpringBootApp();
-        // Execute BeforeApplication(s)
-        AppStarter.main(args);
-        // Spring Boot will invoke the MainAppLoader to load MainApplication(s)
         SpringApplication.run(RestServer.class, args);
     }
-
 }

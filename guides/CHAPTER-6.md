@@ -15,6 +15,7 @@ and the Spring framework ecosystem. Please make sure you add the following start
 main application like this:
 
 ```java
+@ComponentScan({"org.platformlambda", "${web.component.scan}"})
 @SpringBootApplication
 public class MyMainApp extends SpringBootServletInitializer {
 
@@ -25,27 +26,49 @@ public class MyMainApp extends SpringBootServletInitializer {
 
 }
 ```
+
 We suggest running `AutoStart.main` before the `SpringApplication.run` statement. This would allow the platform-core
 foundation code to load the event-listener functions into memory before Spring Boot starts.
 
 ## Use the rest-spring library in your application
 
-You can add the `rest-spring-3` library in your application and turn it into a pre-configured
-Spring Boot 3 application.
+You can add the `rest-spring-3` library in your application and turn it into a pre-configured Spring Boot 3 application.
+It provides consistent behavior for XML and JSON serializaation and exception handling.
 
-The "rest-spring" library configures Spring Boot's serializers (XML and JSON) to behave consistently as the
-built-in lightweight non-blocking HTTP server.
+The RestServer class in the rest-spring-3 library is used to bootstrap a Spring Boot application.
+
+However, Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
+use cases, please implement your own Spring Boot initializer.
+
+You can add the "spring.boot.main" parameter in the application.properties to point to your Spring Boot initializer
+main class. Note that the default value is "org.platformlambda.rest.RestServer" that points to the system provided
+Spring Boot initializer.
+
+```shell
+spring.boot.main=org.platformlambda.rest.RestServer
+```
+
+The Spring Boot initialization main class must have at least the following annotations:
+
+```java
+@ComponentScan({"org.platformlambda", "${web.component.scan}"})
+@SpringBootApplication
+```
+
+The `ComponentScan` must include the package "org.platformlambda" to allow the system to load the pre-configured
+serializers, actuator endpoints and exception handlers for consistent behavior as the built-in lightweight
+non-blocking HTTP server.
 
 If you want to disable the lightweight HTTP server, you can set `rest.automation=false` in application.properties.
 The REST automation engine and the lightweight HTTP server will be turned off.
 
 > *IMPORTANT*: When using Event Script, you must keep `rest.automation=true` because the HTTP flow adapter
-  depends on the REST automation engine for incoming HTTP requests.
+               depends on the REST automation engine for incoming HTTP requests.
 
 > *Note*: The platform-core library assumes the application configuration files to be either
-  application.yml or application.properties. If you use custom Spring profile, please keep the
-  application.yml or application.properties for the platform-core. If you use default Spring 
-  profile, both platform-core and Spring Boot will use the same configuration files.
+          application.yml or application.properties. If you use custom Spring profile, please keep the
+          application.yml or application.properties for the platform-core. If you use default Spring 
+          profile, both platform-core and Spring Boot will use the same configuration files.
 
 You can customize your error page using the default `errorPage.html` by copying it from the platform-core's or 
 rest-spring's resources folder to your source project. The default page is shown below.

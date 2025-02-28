@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.20, 2/28/2025
+
+### Added
+
+"spring.boot.main=org.platformlambda.rest.RestServer" added to application.properties
+so that developer may override it with their own Spring Boot initializer.
+
+### Removed
+
+property setting for Netty version 4.1.118.Final is no longer required in pom.xml
+because the updated spring boot parent version 3.4.3 will fetch 4.1.118 correctly.
+
+### Changed
+
+upgrade spring boot version 3.4.3
+
+---
 ## Version 4.2.19, 2/26/2025
 
 ### Added
