@@ -697,19 +697,17 @@ public class CompileFlows implements EntryPoint {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
             if (validModel(lhs) && validModel(rhs)) {
-                if (!rhs.isEmpty()) {
-                    if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
-                            lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
-                        return true;
-                    } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-                        return validKeyValues(lhs);
-                    } else {
-                        return (lhs.startsWith(TEXT_TYPE) ||
-                                lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
-                                lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
-                                lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
-                                lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
-                    }
+                if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
+                        lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
+                    return true;
+                } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+                    return validKeyValues(lhs);
+                } else {
+                    return (lhs.startsWith(TEXT_TYPE) ||
+                            lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
+                            lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
+                            lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
+                            lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
                 }
             }
         }

@@ -380,9 +380,9 @@ Subsequent override of the "instances" parameter is ignored. i.e. the first prel
 
 As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 
-> Figure 1 - Hierarchy of flows
-
 ![Hierarchy of flows](./diagrams/parent-namespace.png)
+
+> Figure 1 - Hierarchy of flows
 
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
 
