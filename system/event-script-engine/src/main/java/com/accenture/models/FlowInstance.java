@@ -36,6 +36,7 @@ public class FlowInstance {
     private static final String INSTANCE = "instance";
     private static final String CID = "cid";
     private static final String TRACE = "trace";
+    private static final String PARENT = "parent";
 
     // dataset is the state machine that holds the original input and the latest model
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
@@ -51,7 +52,6 @@ public class FlowInstance {
     private final Flow flow;
     private String traceId;
     private String tracePath;
-
     private boolean responded = false;
     private boolean running = true;
 
@@ -63,8 +63,9 @@ public class FlowInstance {
      * @param cid correlation ID
      * @param replyTo of the caller to a flow adapter
      * @param flow event flow configuration
+     * @param parentId is the parent flow instance ID
      */
-    public FlowInstance(String flowId, String cid, String replyTo, Flow flow) {
+    public FlowInstance(String flowId, String cid, String replyTo, Flow flow, String parentId) {
         this.flow = flow;
         this.cid = cid;
         this.replyTo = replyTo;
@@ -73,6 +74,11 @@ public class FlowInstance {
         model.put(INSTANCE, id);
         model.put(CID, cid);
         model.put(FLOW, flowId);
+        // this is a sub-flow if parent flow instance is available
+        var parent = Flows.getFlowInstance(parentId);
+        if (parent != null) {
+            model.put(PARENT, parent.dataset.get(MODEL));
+        }
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope();

@@ -70,16 +70,25 @@ public class FlowTests extends TestBase {
         assertEquals("Flow no-such-flow not found", data.get("message"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void externalStateMachineTest() throws IOException, InterruptedException, ExecutionException {
+        executeExtStateMachine("/api/ext/state/");
+    }
+
+    @Test
+    public void externalStateMachineFlowTest() throws IOException, InterruptedException, ExecutionException {
+        executeExtStateMachine("/api/ext/state/flow/");
+    }
+
+    @SuppressWarnings("unchecked")
+    public void executeExtStateMachine(String uriPath) throws IOException, InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         var PAYLOAD = Map.of("hello", "world");
         AsyncHttpRequest request1 = new AsyncHttpRequest();
         request1.setTargetHost(HOST).setMethod("PUT").setHeader("accept", "application/json")
-                        .setHeader("content-type", "application/json").setBody(PAYLOAD);
-        request1.setUrl("/api/ext/state/"+USER);
+                .setHeader("content-type", "application/json").setBody(PAYLOAD);
+        request1.setUrl(uriPath+USER);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
         EventEnvelope res1 = po.request(req1, TIMEOUT).get();
@@ -431,6 +440,7 @@ public class FlowTests extends TestBase {
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(USER, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
+        assertEquals("hello", result.get("hello"));
         assertEquals("hello world", result.get("greeting"));
         assertTrue(result.containsKey("original"));
         Map<String, Object> original = (Map<String, Object>) result.get("original");
@@ -702,20 +712,27 @@ public class FlowTests extends TestBase {
         assertEquals(USER, result.get("user"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void forkJoinTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+    public void forkJoinTest() throws IOException, InterruptedException, ExecutionException {
+        forkJoin("/api/fork-n-join/");
+    }
+
+    @Test
+    public void forkJoinFlowTest() throws IOException, InterruptedException, ExecutionException {
+        forkJoin("/api/fork-n-join-flows/");
+    }
+
+    @SuppressWarnings("unchecked")
+    public void forkJoin(String apiPath) throws IOException, InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         int SEQ = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/fork-n-join/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl(apiPath+USER).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        EventEnvelope res = po.request(req, TIMEOUT).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();

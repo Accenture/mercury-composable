@@ -338,7 +338,7 @@ public class MultiLevelMap {
     }
 
     private boolean isComposite(String item) {
-        return item.contains(".") || item.contains("/") || item.contains("[") || item.contains("]");
+        return item.contains(".") || item.contains("[") || item.contains("]");
     }
 
     private boolean isListElement(String item) {
@@ -363,7 +363,7 @@ public class MultiLevelMap {
      */
     public void validateCompositePathSyntax(String path) {
         Utility util = Utility.getInstance();
-        List<String> segments = util.split(path, "./");
+        List<String> segments = util.split(path, ".");
         if (segments.isEmpty()) {
             throw new IllegalArgumentException("Missing composite path");
         }
@@ -412,5 +412,4 @@ public class MultiLevelMap {
     private static class NotFound {
         // this class is intentionally an empty shell
     }
-
 }

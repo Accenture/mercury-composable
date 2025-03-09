@@ -25,7 +25,12 @@ flows:
   - 'while-loop-continue.yml'
   - 'missing-sub-flow.yml'
   - 'type-matching.yml'
+  - 'externalize-put-key-value-flow.yml'
+  - 'ext-state-machine.yml'
   - 'externalize-put-key-value.yml'
   - 'externalize-get-key-value.yml'
+  - 'fork-n-join-flows.yml'
+  - 'children/child-one.yml'
+  - 'children/child-two.yml'
 
 location: 'classpath:/flows/'

@@ -14,6 +14,10 @@ tasks:
     next:
     - 'another.flow'
 
+  #
+  # The input to a sub-flow must include "header" and "body" that will become the "input" to the sub-flow.
+  # The following example constructs the header and body datasets.
+  #
   - name: 'another.flow'
     input:
       - 'input.path_parameter.user -> body.user'
@@ -29,6 +33,8 @@ tasks:
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
+      - 'model.name -> output.body.name'
+      - 'model.hello -> output.body.hello'
       - 'header -> output.header'
       - 'status -> output.status'
     description: 'Hello World'

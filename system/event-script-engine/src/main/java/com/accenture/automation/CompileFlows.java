@@ -61,6 +61,8 @@ public class CompileFlows implements EntryPoint {
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String INPUT_NAMESPACE = "input.";
     private static final String OUTPUT_NAMESPACE = "output.";
+    private static final String MODEL = "model";
+    private static final String PARENT = "parent";
     private static final String MODEL_NAMESPACE = "model.";
     private static final String NEGATE_MODEL = "!model.";
     private static final String RESULT_NAMESPACE = "result.";
@@ -485,7 +487,7 @@ public class CompileFlows implements EntryPoint {
                 if (extFound && entry.externalStateMachine == null) {
                     log.error("Unable to parse {} - flow is missing external.state.machine", name);
                 } else if (incomplete) {
-                    log.error("Unable to parse {} - flow has incomplete data mappings", name);
+                    log.error("Unable to parse {} - flow has invalid data mappings", name);
                 } else {
                     Flows.addFlow(entry);
                 }
@@ -694,22 +696,49 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
-            if (!rhs.isEmpty()) {
-                if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
-                        lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
-                    return true;
-                } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-                    return validKeyValues(lhs);
-                } else {
-                    return (lhs.startsWith(TEXT_TYPE) ||
-                            lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
-                            lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
-                            lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
-                            lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
+            if (validModel(lhs) && validModel(rhs)) {
+                if (!rhs.isEmpty()) {
+                    if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
+                            lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
+                        return true;
+                    } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+                        return validKeyValues(lhs);
+                    } else {
+                        return (lhs.startsWith(TEXT_TYPE) ||
+                                lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
+                                lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
+                                lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
+                                lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
+                    }
                 }
             }
         }
         return false;
+    }
+
+    private boolean validModel(String key) {
+        Utility util = Utility.getInstance();
+        List<String> parts = util.split(key, "!: ()");
+        if (parts.isEmpty()) {
+            return false;
+        } else {
+            // "model" alone to access the whole model dataset is not allowed
+            if (MODEL.equals(parts.getFirst())) {
+                return false;
+            }
+            // model.parent... to access the whole parent namespace is not allowed
+            if (parts.getFirst().startsWith(MODEL_NAMESPACE)) {
+                List<String> segments = util.split(parts.getFirst(), ".");
+                int n = 1;
+                for (int i=1; i < segments.size(); i++) {
+                    if (PARENT.equals(segments.get(i))) {
+                        n++;
+                    }
+                }
+                return n != segments.size();
+            }
+            return true;
+        }
     }
 
     private boolean validKeyValues(String text) {
@@ -738,7 +767,9 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = output.substring(0, sep).trim();
             String rhs = output.substring(sep+2).trim();
-            return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
+            if (validModel(lhs) && validModel(rhs)) {
+                return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
+            }
         }
         return false;
     }

@@ -44,14 +44,12 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     private static final String FIRST_TASK = "first_task";
     private static final String INPUT = "input";
     private static final String FLOW_ID = "flow_id";
+    private static final String PARENT = "parent";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
         EventEmitter po = EventEmitter.getInstance();
         try {
-            if (!headers.containsKey(FLOW_ID)) {
-                throw new IllegalArgumentException("Missing "+FLOW_ID);
-            }
             processRequest(event, headers.get(FLOW_ID));
         } catch (Exception e) {
             log.error("Unable to process request - {}", e.getMessage());
@@ -66,6 +64,9 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     }
 
     private void processRequest(EventEnvelope event, String flowId) throws IOException {
+        if (flowId == null || flowId.isEmpty()) {
+            throw new IllegalArgumentException("Missing "+FLOW_ID);
+        }
         FlowInstance flowInstance = getFlowInstance(event, flowId, Flows.getFlow(flowId));
         Flows.addFlowInstance(flowInstance);
         // Set the input event body into the flow dataset
@@ -89,7 +90,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         String replyTo = event.getReplyTo();
         // Save the original correlation-ID ("cid") from the calling party in a flow instance and
         // return this value to the calling party at the end of flow execution
-        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template);
+        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template, event.getHeader(PARENT));
         // Optional distributed trace
         String traceId = event.getTraceId();
         String tracePath = event.getTracePath();
@@ -98,5 +99,4 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         }
         return flowInstance;
     }
-
 }

@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.21, 3/8/2025
+
+### Added
+
+1. Support flow and function for external state machine
+2. Parent state machine for sub-flow
+3. Validation rules to reject access to the whole model or parent namespace
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.2.20, 2/28/2025
 
 ### Added

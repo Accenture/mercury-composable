@@ -53,10 +53,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Utility util = Utility.getInstance();
     private static final String FIRST_TASK = "first_task";
     private static final String FLOW_ID = "flow_id";
+    private static final String PARENT = "parent";
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String TYPE = "type";
     private static final String PUT = "put";
     private static final String KEY = "key";
+    private static final String DATA = "data";
     private static final String REMOVE = "remove";
     private static final String ERROR = "error";
     private static final String STATUS = "status";
@@ -65,6 +67,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String OUTPUT_STATUS = "output.status";
     private static final String OUTPUT_HEADER = "output.header";
     private static final String MODEL = "model";
+    private static final String MODEL_PARENT = "model.parent";
+    private static final String MODEL_PARENT_NAMESPACE = MODEL_PARENT+".";
     private static final String RESULT = "result";
     private static final String HEADER = "header";
     private static final String CODE = "code";
@@ -738,7 +742,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                 optionalHeaders.put(k, value.toString());
                             }
                         } else {
-                            target.setElement(rhs, value);
+                            setRhsElement(value, rhs, target);
                         }
                         if (!valid) {
                             log.error("Invalid input mapping '{}' - expect: Map, actual: {}",
@@ -799,6 +803,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 target.setElement(HEADER, optionalHeaders);
             }
             EventEnvelope forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
+                    .setHeader(PARENT, flowInstance.id)
                     .setHeader(FLOW_ID, flowId).setBody(target.getMap()).setCorrelationId(util.getUuid());
             PostOffice po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
             po.asyncRequest(forward, subFlow.ttl, false).onSuccess(response -> {
@@ -858,12 +863,28 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String externalStateMachine = flowInstance.getFlow().externalStateMachine;
         PostOffice po = new PostOffice(task.service,
                 flowInstance.getTraceId(), flowInstance.getTracePath());
-        if (value == null) {
-            // tell external state machine to remove key-value
-            po.send(externalStateMachine, new Kv(TYPE, REMOVE), new Kv(KEY, key));
-        } else {
-            // tell external state machine to save key-value
-            po.send(externalStateMachine, value, new Kv(TYPE, PUT), new Kv(KEY, key));
+        if (externalStateMachine != null) {
+            if (externalStateMachine.startsWith(FLOW_PROTOCOL)) {
+                MultiLevelMap dataset = new MultiLevelMap();
+                dataset.setElement("header.key", key);
+                dataset.setElement("header.type", value == null? REMOVE : PUT);
+                if (value != null) {
+                    dataset.setElement("body", Map.of(DATA, value));
+                }
+                String flowId = externalStateMachine.substring(FLOW_PROTOCOL.length());
+                EventEnvelope forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
+                        .setHeader(PARENT, flowInstance.id)
+                        .setHeader(FLOW_ID, flowId).setBody(dataset.getMap()).setCorrelationId(util.getUuid());
+                po.send(forward);
+            } else {
+                if (value == null) {
+                    // tell external state machine to remove key-value
+                    po.send(externalStateMachine, new Kv(TYPE, REMOVE), new Kv(KEY, key));
+                } else {
+                    // tell external state machine to save key-value
+                    po.send(externalStateMachine, Map.of(DATA, value), new Kv(TYPE, PUT), new Kv(KEY, key));
+                }
+            }
         }
     }
 
@@ -889,9 +910,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         Object value = source.getElement(selector);
         if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
-            if (value != null) {
-                return getValueByType(type, value, "LHS '"+lhs+"'", source);
-            }
+            return getValueByType(type, value, "LHS '"+lhs+"'", source);
         }
         return value;
     }

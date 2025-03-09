@@ -378,7 +378,11 @@ Subsequent override of the "instances" parameter is ignored. i.e. the first prel
 
 ## Hierarchy of flows
 
-Inside a flow, you can run one or more sub-flows.
+As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
+
+> Figure 1 - Hierarchy of flows
+
+![Hierarchy of flows](./diagrams/parent-namespace.png)
 
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
 
@@ -403,6 +407,10 @@ If the sub-flow is not available, the system will throw an error stating that it
 Hierarchy of flows would reduce the complexity of a single flow configuration file. The "time-to-live (TTL)"
 value of the parent flow should be set to a value that covers the complete flow including the time used in
 the sub-flows.
+
+In the input/output data mapping sections, the configuration management system can access the parent flow
+state machine using the namespace `model.parent.`. Please keep the level of sub-flows to as few as possible.
+We would recommend using only a single level of sub-flows.
 
 > *Note*: For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
 
@@ -429,10 +437,13 @@ To handle this level of modularity, the system provides configurable input/outpu
 | Function output status code       | `status`                     | left       | output   |
 | Decision value                    | `decision`                   | right      | output   |
 | State machine dataset             | `model.`                     | left/right | I/O      |
+| Parent state machine dataset      | `model.parent.`              | left/right | I/O      |
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
-> *Note*: The external state machine namespace uses the colon character (`:`) to indicate that the key-value
-  is external.
+For state machine (model and model.parent namespaces), the system rejects access to the whole
+namespace. You should only access specific key-values in the model or model.parent namespaces.
+
+The external state machine namespace uses the colon character (`:`) to indicate that the key-value is external.
 
 *Constants for input data mapping*
 
@@ -1163,7 +1174,7 @@ The input interface contract to the external state machine for saving a key-valu
 ```shell
 header.type = 'put'
 header.key = key
-body = value
+body.data = value
 ```
 
 Your function should save the input key-value to a persistent store.
@@ -1196,7 +1207,9 @@ public class ExternalStateMachine implements LambdaFunction {
     private static final String GET = "get";
     private static final String REMOVE = "remove";
     private static final String KEY = "key";
+    private static final String DATA = "data";
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (!headers.containsKey(KEY)) {
@@ -1204,10 +1217,14 @@ public class ExternalStateMachine implements LambdaFunction {
         }
         String type = headers.get(TYPE);
         String key = headers.get(KEY);
-        if (PUT.equals(type) && input != null) {
-            log.info("Saving {} to store", key);
-            store.put(key, input);
-            return true;
+        if (PUT.equals(type) && input instanceof Map) {
+            Map<String, Object> dataset = (Map<String, Object>) input;
+            var data = dataset.get(DATA);
+            if (data != null) {
+                log.info("Saving {} to store", key);
+                store.put(key, data);
+                return true;
+            }
         }
         if (GET.equals(type)) {
             Object v = store.get(key);
@@ -1231,6 +1248,35 @@ public class ExternalStateMachine implements LambdaFunction {
     }
 }
 ```
+
+For more sophisticated operation, you may also configure the external state machine as a "flow" like this:
+
+```yaml
+external.state.machine: 'flow://ext-state-machine'
+```
+
+You can then define the flow for "ext-state-machine" like this:
+
+```yaml
+flow:
+  id: 'ext-state-machine'
+  description: 'Flow to execute an external state machine'
+  ttl: 10s
+
+first.task: 'v1.ext.state.machine'
+
+tasks:
+  - input:
+      - 'input.header.key -> header.key'
+      - 'input.header.type -> header.type'
+      - 'input.body.data -> data'
+    process: 'v1.ext.state.machine'
+    output: []
+    description: 'Execute external state machine'
+    execution: end
+```
+
+> *Note*: By definition, external state machine flow is outside the scope of the calling flow.
 
 ### Future task scheduling
 
