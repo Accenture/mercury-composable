@@ -22,6 +22,7 @@ tasks:
       - 'model.parent.ok -> model.parent.parent'
       - 'model.parent.ok -> model.parent.parent.'
       - 'model.parent.ok:boolean -> model.parent.parent.allowed'
+      - 'model.redundant -> model.redundant'
     description: 'Hello World'
     execution: end
     exception: 'v1.hello.exception'

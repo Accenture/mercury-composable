@@ -696,7 +696,7 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
-            if (validModel(lhs) && validModel(rhs)) {
+            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
                 if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
                         lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     return true;
@@ -765,7 +765,7 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = output.substring(0, sep).trim();
             String rhs = output.substring(sep+2).trim();
-            if (validModel(lhs) && validModel(rhs)) {
+            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
                 return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
             }
         }
