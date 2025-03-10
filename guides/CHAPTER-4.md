@@ -432,12 +432,12 @@ To handle this level of modularity, the system provides configurable input/outpu
 | Flow input dataset                | `input.`                     | left       | input    |
 | Flow output dataset               | `output.`                    | right      | output   |
 | Function input body               | no namespace required        | right      | input    |
-| Function input or output headers  | `header` or `header.`        | right      | I/O      |
+| Function input or output headers  | `header` or `header.`        | both       | I/O      |
 | Function output result set        | `result.`                    | left       | output   |
 | Function output status code       | `status`                     | left       | output   |
 | Decision value                    | `decision`                   | right      | output   |
-| State machine dataset             | `model.`                     | left/right | I/O      |
-| Parent state machine dataset      | `model.parent.`              | left/right | I/O      |
+| State machine dataset             | `model.`                     | both       | I/O      |
+| Parent state machine dataset      | `model.parent.`              | both       | I/O      |
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
 For state machine (model and model.parent namespaces), the system rejects access to the whole
