@@ -32,8 +32,12 @@ tasks:
     description: 'skip input/output data mapping because child-one uses only parent model variables'
     execution: sink
 
+  #
+  # demonstrate passing a key-value in the state machine to the sub-flow "child-two"
+  #
   - name: 'flow.two'
-    input: []
+    input:
+      - 'text(hello-world-) -> model.hello'
     process: 'flow://child-two'
     output: []
     description: 'skip input/output data mapping because child-two uses only parent model variables'
