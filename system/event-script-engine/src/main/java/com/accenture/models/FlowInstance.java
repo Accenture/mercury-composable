@@ -22,6 +22,8 @@ import com.accenture.automation.TaskExecutor;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FlowInstance {
+    private static final Logger log = LoggerFactory.getLogger(FlowInstance.class);
     private static final String MODEL = "model";
     private static final String FLOW = "flow";
     private static final String TIMEOUT = "timeout";
@@ -52,6 +55,7 @@ public class FlowInstance {
     private final Flow flow;
     private String traceId;
     private String tracePath;
+    private String parentId;
     private boolean responded = false;
     private boolean running = true;
 
@@ -75,15 +79,38 @@ public class FlowInstance {
         model.put(CID, cid);
         model.put(FLOW, flowId);
         // this is a sub-flow if parent flow instance is available
-        var parent = Flows.getFlowInstance(parentId);
-        if (parent != null) {
-            model.put(PARENT, parent.dataset.get(MODEL));
+        if (parentId == null) {
+            this.parentId = null;
+        } else {
+            var parent = resolveParent(parentId);
+            if (parent != null) {
+                model.put(PARENT, parent.dataset.get(MODEL));
+                this.parentId = parent.id;
+                log.info("{}:{} extends {}:{}", this.getFlow().id, this.id, parent.getFlow().id, parent.id);
+            }
         }
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope();
         timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
+    }
+
+    private FlowInstance resolveParent(String parentId) {
+        var parent = Flows.getFlowInstance(parentId);
+        if (parent == null) {
+            return null;
+        }
+        var pid = parent.getParentId();
+        if (pid == null) {
+            return parent;
+        } else {
+            return resolveParent(pid);
+        }
+    }
+
+    public String getParentId() {
+        return parentId;
     }
 
     /**

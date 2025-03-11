@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.22, 3/11/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+All sub-flows instantiated from a primary flow can access the same parent state machine
+using the "model.parent" namespace.
+
+---
 ## Version 4.2.21, 3/8/2025
 
 ### Added

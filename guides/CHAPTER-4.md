@@ -409,10 +409,11 @@ value of the parent flow should be set to a value that covers the complete flow 
 the sub-flows.
 
 In the input/output data mapping sections, the configuration management system can access the parent flow
-state machine using the namespace `model.parent.`. Please keep the level of sub-flows to as few as possible.
-We would recommend using only a single level of sub-flows.
+state machine using the namespace `model.parent.`. For ease of configuration, all sub-flows that are
+instantiated from a primary flow will extend the *same* parent state machine.
 
-> *Note*: For simplicity, the input data mapping for a sub-flow should contain only the "header" and "body" arguments.
+> *Note*: The input data mapping for a "sub-flow" task should contain only the "header" and "body" arguments
+          to be mapped in the "input" namespace.
 
 ## Tasks and data mapping
 
@@ -442,6 +443,8 @@ To handle this level of modularity, the system provides configurable input/outpu
 
 For state machine (model and model.parent namespaces), the system rejects access to the whole
 namespace. You should only access specific key-values in the model or model.parent namespaces.
+All sub-flows that are instantiated from a primary flow can access the same parent state machine
+using the `model.parent` namespace.
 
 The external state machine namespace uses the colon character (`:`) to indicate that the key-value is external.
 

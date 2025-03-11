@@ -32,5 +32,6 @@ flows:
   - 'fork-n-join-flows.yml'
   - 'children/child-one.yml'
   - 'children/child-two.yml'
+  - 'children/child-three.yml'
 
 location: 'classpath:/flows/'

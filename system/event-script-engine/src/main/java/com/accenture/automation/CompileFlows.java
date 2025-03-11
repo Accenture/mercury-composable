@@ -724,16 +724,10 @@ public class CompileFlows implements EntryPoint {
             if (MODEL.equals(parts.getFirst())) {
                 return false;
             }
-            // model.parent... to access the whole parent namespace is not allowed
+            // model.parent to access the whole parent namespace is not allowed
             if (parts.getFirst().startsWith(MODEL_NAMESPACE)) {
                 List<String> segments = util.split(parts.getFirst(), ".");
-                int n = 1;
-                for (int i=1; i < segments.size(); i++) {
-                    if (PARENT.equals(segments.get(i))) {
-                        n++;
-                    }
-                }
-                return n != segments.size();
+                return segments.size() != 1 && (segments.size() != 2 || !PARENT.equals(segments.get(1)));
             }
             return true;
         }
