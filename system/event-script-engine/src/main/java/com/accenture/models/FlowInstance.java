@@ -101,16 +101,12 @@ public class FlowInstance {
         if (parent == null) {
             return null;
         }
-        var pid = parent.getParentId();
+        var pid = parent.parentId;
         if (pid == null) {
             return parent;
         } else {
             return resolveParent(pid);
         }
-    }
-
-    public String getParentId() {
-        return parentId;
     }
 
     /**
