@@ -17,6 +17,7 @@ tasks:
       - 'input.body -> *'
       - 'input.header -> header'
       - 'model.parent.key -> model.key2'
+      - 'model.parent.key -> key'
     process: 'no.op'
     output:
       - 'model.key2 -> model.parent.temp'

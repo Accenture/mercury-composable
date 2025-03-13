@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.23, 3/12/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+For security, the parent state machine (namespace "model.parent") is a protected resource.
+It can only be shared by the primary flow and all sub-flow instances that are instantiated from it.
+
+---
 ## Version 4.2.22, 3/11/2025
 
 ### Added

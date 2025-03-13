@@ -47,6 +47,7 @@ public class FlowInstance {
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
     public final ConcurrentLinkedQueue<String> tasks = new ConcurrentLinkedQueue<>();
     public final ConcurrentMap<String, Boolean> pendingTasks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
     public final String id = Utility.getInstance().getUuid();
     public final String cid;
@@ -81,10 +82,11 @@ public class FlowInstance {
         // this is a sub-flow if parent flow instance is available
         if (parentId == null) {
             this.parentId = null;
+            model.put(PARENT, shared);
         } else {
             var parent = resolveParent(parentId);
             if (parent != null) {
-                model.put(PARENT, parent.dataset.get(MODEL));
+                model.put(PARENT, parent.shared);
                 this.parentId = parent.id;
                 log.info("{}:{} extends {}:{}", this.getFlow().id, this.id, parent.getFlow().id, parent.id);
             }

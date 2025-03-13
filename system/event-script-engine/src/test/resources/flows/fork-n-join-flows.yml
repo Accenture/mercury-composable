@@ -37,7 +37,7 @@ tasks:
   #
   - name: 'flow.two'
     input:
-      - 'text(hello-world-) -> model.hello'
+      - 'text(hello-world-) -> model.parent.hello'
     process: 'flow://child-two'
     output: []
     description: 'skip input/output data mapping because child-two uses only parent model variables'
@@ -50,8 +50,8 @@ tasks:
   - name: 'join.task'
     input:
       - 'model.pojo -> *'
-      - 'model.key1 -> key1'
-      - 'model.key2 -> key2'
+      - 'model.parent.key1 -> key1'
+      - 'model.parent.key2 -> key2'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

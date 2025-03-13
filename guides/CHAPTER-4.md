@@ -408,9 +408,9 @@ Hierarchy of flows would reduce the complexity of a single flow configuration fi
 value of the parent flow should be set to a value that covers the complete flow including the time used in
 the sub-flows.
 
-In the input/output data mapping sections, the configuration management system can access the parent flow
-state machine using the namespace `model.parent.`. For ease of configuration, all sub-flows that are
-instantiated from a primary flow will extend the *same* parent state machine.
+In the input/output data mapping sections, the configuration management system provides a parent
+state machine using the namespace `model.parent.` to be shared by the primary flow and all sub-flows that
+are instantiated from it.
 
 > *Note*: The input data mapping for a "sub-flow" task should contain only the "header" and "body" arguments
           to be mapped in the "input" namespace.
@@ -441,10 +441,10 @@ To handle this level of modularity, the system provides configurable input/outpu
 | Parent state machine dataset      | `model.parent.`              | both       | I/O      |
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
-For state machine (model and model.parent namespaces), the system rejects access to the whole
+For state machine (model and model.parent namespaces), the system prohibits access to the whole
 namespace. You should only access specific key-values in the model or model.parent namespaces.
-All sub-flows that are instantiated from a primary flow can access the same parent state machine
-using the `model.parent` namespace.
+
+The namespace `model.parent.` is shared by the primary flow and all sub-flows that are instantiated from it.
 
 The external state machine namespace uses the colon character (`:`) to indicate that the key-value is external.
 
