@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.24, 3/24/2025
+
+### Added
+
+Generic resilience handler with alternative path and backoff features
+
+### Removed
+
+N/A
+
+### Changed
+
+1. The getError() method in EventEnvelope is updated to return encoded error message.
+   This is required for distributed trace processing and proper error handling of subflows.
+2. Delete file when mapping a null value from the LHS to the RHS that is defined as a file,
+   thus allowing clearing of temporary data files in a flow.
+3. OSS update - spring boot parent version 3.4.4 and io.project.reactor bom version 2024.0.4
+
+---
 ## Version 4.2.23, 3/12/2025
 
 ### Added

@@ -23,7 +23,8 @@ tasks:
   - name: 'my.echo.function'
     input:
       - 'text(hello-world-one) -> key1'
-    process: 'no.op'
+      - 'input.query.exception -> header.exception'
+    process: 'exception.simulator'
     output:
       - 'result.key1 -> model.key1'
     description: 'Hello world'

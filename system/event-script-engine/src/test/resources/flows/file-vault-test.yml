@@ -18,5 +18,7 @@ tasks:
       - 'result.binary -> file(/tmp/temp-test-binary.txt)'
       - 'text(text/plain) -> output.header.content-type'
       - 'result.text_resource -> output.body'
+      # if left hand side is null and the right hand side is a file, it will be deleted
+      - 'model.none -> file(/tmp/temp-test-input.txt)'
     description: 'Hello World'
     execution: end

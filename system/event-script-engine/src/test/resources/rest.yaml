@@ -35,7 +35,14 @@ rest:
   - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/circuit/breaker/{accept}"
-    flow: 'circuit-breaker-example'
+    flow: 'simple-circuit-breaker'
+    timeout: 10s
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/resilience"
+    flow: 'resilience-demo'
     timeout: 10s
     tracing: true
 

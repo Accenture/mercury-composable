@@ -1060,26 +1060,25 @@ The exception will be caught by the "v1.circuit.breaker" function.
   - input:
       - 'input.path_parameter.accept -> accept'
       - 'model.attempt -> attempt'
-    process: 'breakable.function'
+    process: 'exception.simulator'
     output:
       - 'int(0) -> model.attempt'
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'This demo function will break until the "accept" number is reached'
     execution: end
-    exception: 'v1.circuit.breaker'
+    exception: 'resilience.handler'
 ```
 
 The configuration for the circuit breaker function may look like this:
 
 ```yaml
   - input:
-      - 'model.attempt -> attempt'
-      - 'int(2) -> max_attempts'
       - 'error.code -> status'
       - 'error.message -> message'
-      - 'error.stack -> stack'
-    process: 'v1.circuit.breaker'
+      - 'model.attempt -> attempt'
+      - 'int(2) -> max_attempts'
+    process: 'resilience.handler'
     output:
       - 'result.attempt -> model.attempt'
       - 'result.decision -> decision'
@@ -1122,6 +1121,96 @@ where it set the status code in the result set so that the system can map the st
 from the result set to the next task or to the HTTP output status code.
 
 ## Advanced features
+
+### No-operation function
+
+A convenient no-operation function with the route name `no.op` is available. It can be used when you want
+to perform some input/output data mapping without executing any business logic.
+
+### Generic resilience handler function
+
+Another useful built-in function is a resilience handler with the route name `resilient.handler`.
+
+It is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
+
+![Resilience Handler](./diagrams/resilience-handler.png)
+
+> Figure 2 - Resilience Handler
+
+The following parameters (input data mapping) define behavior for the handler:
+
+ 1. `max_attempt` - when the handler has used all the attempts, it will abort.
+ 2. `attempts` - this tells the handler how many attempts it has tried
+ 3. `status` - you should map the error status code in this field
+ 4. `message` - you should map the error message in this field
+ 5. `alternate` - the optional codes and range of status codes to tell the handler to reroute
+ 6. `delay` - the delay in milliseconds before exercising retry or reroute. Minimum value is 10 ms.
+              Delay is skipped for the first retry. This slight delay is a protection mechanism.
+ 
+Optional backoff behavior:
+ 
+ 1. `cumulative` - the total number of failures since last success or backoff reset if any
+ 2. `backoff` - the start time of a backoff period (epoch milliseconds) if any
+ 3. `backoff_trigger` - the total number of failures that triggers a backoff
+ 4. `backoff_seconds` - the time to backoff after an abort has occurred.
+    During this period, It will abort without updating attempt.
+    This avoids overwhelming the target service that may result in recovery storm.
+ 
+Return value (output data mapping):
+
+ 1. `result.attempt` - the handler will clear or increment this counter
+ 2. `result.cumulative` - the handler will clear or increment this counter. 
+                          Not set if "backoff_trigger" is not given in input.
+ 3. `result.decision` - 1, 2 or 3 where 1=retry, 2=abort, 3=reroute that corresponds to the next tasks
+ 4. `result.status` - the status code that the handler aborts the retry or reroute. Not set if retry or reroute.
+ 5. `result.message` - the reason that the handler aborts the retry or reroute. Not set if retry or reroute.
+ 6. `result.backoff` - the start time of a backoff period (epoch milliseconds). Not set if not in backoff mode.
+ 
+ > *Note*: "result.attempt" should be saved in the state machine with the "model." namespace.
+           "result.cumulative" and "result.backoff" should be saved in the temporary file system
+           or an external state machine.
+
+For more details, please refer to the event script `resilience-demo.yml` in the event-script-engine's 
+test resources folder and the unit test `resilienceHandlerTest()` under the FlowTests class.
+
+Extract of the task configuration for the resilience handler is shown as follows. 
+In the following example, "my.task" is the function that is configured with the 'resilience.handler' as an exception
+handler. The input data mapping tells the handler to enter into "backoff" period when the cumulative failure count
+reaches the "backoff_trigger" threshold of 3. After that, all requests will be aborted until the backoff period expires.
+
+```yaml
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'model.attempt -> attempt'
+      - 'int(10) -> max_attempts'
+      - 'text(401, 403-404) -> alternate'
+      - 'file(text:/tmp/resilience/cumulative) -> cumulative'
+      - 'file(text:/tmp/resilience/backoff) -> backoff'
+      - 'int(3) -> backoff_trigger'
+      - 'int(2) -> backoff_seconds'
+      - 'int(500) -> delay'
+    process: 'resilience.handler'
+    output:
+      - 'result.status -> model.status'
+      - 'result.message -> model.message'
+      - 'result.attempt -> model.attempt'
+      - 'result.decision -> decision'
+      - 'result.backoff -> file(/tmp/resilience/backoff)'
+      - 'result.cumulative -> file(/tmp/resilience/cumulative)'
+    description: 'Resilience handler with alternative path and backoff features'
+    execution: decision
+    next:
+      - 'my.task'
+      - 'abort.request'
+      - 'alternate.task'
+```
+
+> *Note*: When the "backoff" feature is enabled, you should configure the resilience handler as a gatekeeper
+          to protect your user function. This allows the system to abort requests during the backoff period.
+
+You may also use this resilience handler as a starting point to write your own exception handler for more
+complex recovery use cases.
 
 ### External state machine
 

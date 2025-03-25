@@ -2,6 +2,7 @@ flow:
   id: 'fork-n-join-flows'
   description: 'Test fork-n-join with sub-flows'
   ttl: 5s
+  exception: 'v1.hello.exception'
 
 first.task: 'my.first.task'
 
@@ -10,6 +11,7 @@ tasks:
     input:
       - 'input.path_parameter.user -> user'
       - 'input.query.seq -> sequence'
+      - 'input.query.exception -> model.parent.exception'
     process: 'sequential.one'
     output:
       - 'result -> model.pojo'
@@ -57,4 +59,15 @@ tasks:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Return result'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.hello.exception'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
     execution: end

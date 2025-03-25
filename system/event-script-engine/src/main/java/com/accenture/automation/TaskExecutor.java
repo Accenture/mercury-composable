@@ -67,8 +67,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String OUTPUT_STATUS = "output.status";
     private static final String OUTPUT_HEADER = "output.header";
     private static final String MODEL = "model";
-    private static final String MODEL_PARENT = "model.parent";
-    private static final String MODEL_PARENT_NAMESPACE = MODEL_PARENT+".";
     private static final String RESULT = "result";
     private static final String HEADER = "header";
     private static final String CODE = "code";
@@ -319,65 +317,65 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 } else {
                     value = getConstantValue(lhs, rhs);
                 }
-                if (value != null) {
-                    boolean required = true;
-                    if (rhs.startsWith(FILE_TYPE)) {
-                        required = false;
-                        SimpleFileDescriptor fd = new SimpleFileDescriptor(rhs);
-                        File f = new File(fd.fileName);
-                        // automatically create parent folder
-                        boolean fileNotFound = !f.exists();
-                        if (fileNotFound) {
-                            String parentPath = f.getParent();
-                            if (!("/".equals(parentPath))) {
-                                File parent = f.getParentFile();
-                                if (!parent.exists()) {
-                                    if (parent.mkdirs()) {
-                                        log.info("Folder {} created", parentPath);
-                                    } else {
-                                        log.error("Unable to create folder {} - please check access rights", parentPath);
-                                    }
+                if (rhs.startsWith(FILE_TYPE)) {
+                    SimpleFileDescriptor fd = new SimpleFileDescriptor(rhs);
+                    File f = new File(fd.fileName);
+                    // automatically create parent folder
+                    boolean fileFound = f.exists();
+                    if (!fileFound) {
+                        String parentPath = f.getParent();
+                        if (!("/".equals(parentPath))) {
+                            File parent = f.getParentFile();
+                            if (!parent.exists()) {
+                                if (parent.mkdirs()) {
+                                    log.info("Folder {} created", parentPath);
+                                } else {
+                                    log.error("Unable to create folder {} - please check access rights", parentPath);
                                 }
                             }
                         }
-                        if (fileNotFound || (!f.isDirectory() && f.canWrite())) {
-                            switch (value) {
-                                case byte[] b -> util.bytes2file(f, b);
-                                case String str -> util.str2file(f, str);
-                                case Map map ->
-                                    // best effort to save as a JSON string
-                                    util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map));
-                                default -> util.str2file(f, value.toString());
-                            }
-                        } else {
-                            log.warn("Failed data mapping {} -> {} - Unable to save file", lhs, rhs);
+                    }
+                    if (!fileFound || (!f.isDirectory() && f.canWrite())) {
+                        switch (value) {
+                            // delete the RHS' target file if LHS value is null
+                            case null -> { if (fileFound) f.delete(); }
+                            case byte[] b -> util.bytes2file(f, b);
+                            case String str -> util.str2file(f, str);
+                            // best effort to save as a JSON string
+                            case Map map ->
+                                util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map));
+                            default -> util.str2file(f, value.toString());
                         }
-                    }
-                    if (rhs.equals(OUTPUT_STATUS)) {
-                        int status = value instanceof Integer ? (Integer) value : util.str2int(value.toString());
-                        if (status < 100 || status > 599) {
-                            log.error("Invalid output mapping '{}' - expect: valid HTTP status code, actual: {}",
-                                    entry, status);
-                            required = false;
-                        }
-                    }
-                    if (rhs.equals(OUTPUT_HEADER)) {
-                        if (!(value instanceof Map)) {
-                            log.error("Invalid output mapping '{}' - expect: Map, actual: {}",
-                                    entry, value.getClass().getSimpleName());
-                            required = false;
-                        }
-                    }
-                    if (rhs.startsWith(EXT_NAMESPACE)) {
-                        required = false;
-                        callExternalStateMachine(flowInstance, task, rhs, value);
-                    }
-                    if (required) {
-                        setRhsElement(value, rhs, consolidated);
                     }
                 } else {
-                    if (rhs.startsWith(EXT_NAMESPACE)) {
-                        callExternalStateMachine(flowInstance, task, rhs, null);
+                    boolean required = true;
+                    if (value != null) {
+                        if (rhs.equals(OUTPUT_STATUS)) {
+                            int status = value instanceof Integer ? (Integer) value : util.str2int(value.toString());
+                            if (status < 100 || status > 599) {
+                                log.error("Invalid output mapping '{}' - expect: valid HTTP status code, actual: {}",
+                                        entry, status);
+                                required = false;
+                            }
+                        }
+                        if (rhs.equals(OUTPUT_HEADER)) {
+                            if (!(value instanceof Map)) {
+                                log.error("Invalid output mapping '{}' - expect: Map, actual: {}",
+                                        entry, value.getClass().getSimpleName());
+                                required = false;
+                            }
+                        }
+                        if (rhs.startsWith(EXT_NAMESPACE)) {
+                            required = false;
+                            callExternalStateMachine(flowInstance, task, rhs, value);
+                        }
+                        if (required) {
+                            setRhsElement(value, rhs, consolidated);
+                        }
+                    } else {
+                        if (rhs.startsWith(EXT_NAMESPACE)) {
+                            callExternalStateMachine(flowInstance, task, rhs, null);
+                        }
                     }
                 }
             }
@@ -687,13 +685,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (sep > 0) {
                 String lhs = entry.substring(0, sep).trim();
                 String rhs = entry.substring(sep+2).trim();
-                boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
+                boolean inputLike = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT) ||
+                                    lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE);
                 if (lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
                     lhs = lhs.toLowerCase();
                 }
                 if (rhs.startsWith(EXT_NAMESPACE)) {
                     final Object value;
-                    if (isInput || lhs.startsWith(MODEL_NAMESPACE)) {
+                    if (inputLike) {
                         value = getLhsElement(lhs, source);
                     } else {
                         value = getConstantValue(lhs, rhs);
@@ -704,7 +703,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     Map<String, Object> modelOnly = new HashMap<>();
                     modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
                     MultiLevelMap model = new MultiLevelMap(modelOnly);
-                    if (isInput || lhs.startsWith(MODEL_NAMESPACE)) {
+                    if (inputLike) {
                         Object value = getLhsElement(lhs, source);
                         if (value == null) {
                             removeModelElement(rhs, model);
@@ -714,7 +713,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     } else {
                         setConstantValue(lhs, rhs, model);
                     }
-                } else if (isInput || lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
+                } else if (inputLike) {
                     // normal case to input argument
                     Object value = getLhsElement(lhs, source);
                     // special cases for simple type matching for a non-exist model variable
@@ -810,8 +809,25 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 EventEnvelope event = new EventEnvelope()
                         .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
                         .setCorrelationId(compositeCid).setStatus(response.getStatus())
-                        .setHeaders(response.getHeaders())
-                        .setBody(response.getBody());
+                        .setHeaders(response.getHeaders());
+                // in case of exception, extract error message from response body
+                boolean regular = true;
+                if (response.hasError()) {
+                    if (response.getBody() instanceof Map) {
+                        // extract error message if exists
+                        var map = (Map<String, Object>) response.getBody();
+                        if (map.containsKey(MESSAGE)) {
+                            regular = false;
+                            event.setBody(map.get(MESSAGE));
+                            if (map.containsKey(STACK_TRACE)) {
+                                event.setStackTrace(String.valueOf(map.get(STACK_TRACE)));
+                            }
+                        }
+                    }
+                }
+                if (regular) {
+                    event.setBody(response.getBody());
+                }
                 try {
                     po.send(event);
                 } catch (IOException e) {
@@ -1180,8 +1196,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 File f = new File(fd.fileName);
                 if (f.exists() && !f.isDirectory() && f.canRead()) {
                     return fd.binary? util.file2bytes(f) : util.file2str(f);
-                } else {
-                    log.warn("Failed data mapping {} -> {} - Unable to read file", lhs, rhs);
                 }
             }
             if (lhs.startsWith(CLASSPATH_TYPE)) {
@@ -1189,8 +1203,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 InputStream in = this.getClass().getResourceAsStream(fd.fileName);
                 if (in != null) {
                     return fd.binary? util.stream2bytes(in) : util.stream2str(in);
-                } else {
-                    log.warn("Failed data mapping {} -> {} - Unable to read classpath", lhs, rhs);
                 }
             }
         }
