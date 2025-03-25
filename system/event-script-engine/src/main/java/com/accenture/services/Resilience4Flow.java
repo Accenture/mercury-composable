@@ -42,7 +42,7 @@ import java.util.*;
  * <p>
  * Optional backoff behavior:
  * cumulative - the total number of failures since last success or backoff reset if any
- * backoff - the start time of a backoff period (epoch milliseconds) if any
+ * backoff - the time of a backoff period (epoch milliseconds) if any
  * backoff_trigger - the total number of failures that triggers a backoff
  * backoff_seconds - the time to backoff after an abort has occurred.
  *                   During this period, It will abort without updating attempt.
