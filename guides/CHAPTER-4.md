@@ -1150,7 +1150,7 @@ The following parameters (input data mapping) define behavior for the handler:
 Optional backoff behavior:
  
  1. `cumulative` - the total number of failures since last success or backoff reset if any
- 2. `backoff` - the start time of a backoff period (epoch milliseconds) if any
+ 2. `backoff` - the time of a backoff period (epoch milliseconds) if any
  3. `backoff_trigger` - the total number of failures that triggers a backoff
  4. `backoff_seconds` - the time to backoff after an abort has occurred.
     During this period, It will abort without updating attempt.
@@ -1164,7 +1164,7 @@ Return value (output data mapping):
  3. `result.decision` - 1, 2 or 3 where 1=retry, 2=abort, 3=reroute that corresponds to the next tasks
  4. `result.status` - the status code that the handler aborts the retry or reroute. Not set if retry or reroute.
  5. `result.message` - the reason that the handler aborts the retry or reroute. Not set if retry or reroute.
- 6. `result.backoff` - the start time of a backoff period (epoch milliseconds). Not set if not in backoff mode.
+ 6. `result.backoff` - the time of a backoff period (epoch milliseconds). Not set if not in backoff mode.
  
  > *Note*: "result.attempt" should be saved in the state machine with the "model." namespace.
            "result.cumulative" and "result.backoff" should be saved in the temporary file system

@@ -18,10 +18,14 @@
 
 package com.accenture.services;
 
+import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -54,14 +58,19 @@ import java.util.*;
  *                 Not set if retry or reroute.
  * result.message - the reason that the handler aborts the retry or reroute.
  *                 Not set if retry or reroute.
- * result.backoff - the start time of a backoff period (epoch milliseconds).
+ * result.backoff - the time of a backoff period (epoch milliseconds).
  *                  Not set if not in backoff mode.
  * <p>
  * result.attempt should be saved in the state machine with the "model." namespace
  * result.cumulative and result.backoff should be saved in the temporary file system or an external state machine
+ * <p>
+ *     For non-blocking operation, this function is defined as an EventInterceptor for scheduling of future retries
+ *     that are delayed. While a regular composable function returns a result, an EventInterceptor function must send
+ *     its result programmatically using the PostOffice.
  */
-@PreLoad(route = "resilience.handler", instances=50)
-public class Resilience4Flow implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+@EventInterceptor
+@PreLoad(route = "resilience.handler", instances=100)
+public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Utility util = Utility.getInstance();
     private static final String MAX_ATTEMPTS = "max_attempts";
     private static final String ATTEMPT = "attempt";
@@ -75,83 +84,102 @@ public class Resilience4Flow implements TypedLambdaFunction<Map<String, Object>,
     private static final String BACKOFF_SECONDS = "backoff_seconds";
     private static final String DECISION = "decision";
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
-            throws InterruptedException {
-        int cumulative = Math.max(0, util.str2int(String.valueOf(input.getOrDefault(CUMULATIVE, 0))));
-        long now = System.currentTimeMillis();
-        Map<String, Object> result = new HashMap<>();
-        // Still in the backoff period?
-        if (input.containsKey(BACKOFF)) {
-            long lastBackoff = util.str2long(String.valueOf(input.getOrDefault(BACKOFF, 0)));
-            if (now < lastBackoff) {
-                // tell the system to abort the request and execute the second one in the next task list
-                long diff = Math.max(1, (lastBackoff - now) / 1000);
-                var waitPeriod = diff + (diff == 1? " second" : " seconds");
-                result.put(DECISION, 2);
-                result.put(STATUS, 503);
-                result.put(MESSAGE, "Service temporarily not available - please try again in "+waitPeriod);
-                result.put(BACKOFF, lastBackoff);
-                return result;
-            } else {
-                // reset cumulative counter because backoff period has ended
-                cumulative = 0;
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance)
+            throws InterruptedException, IOException {
+        if (event.getRawBody() instanceof Map && event.getReplyTo() != null && event.getCorrelationId() != null) {
+            PostOffice po = new PostOffice(headers, instance);
+            Map<String, Object> input = (Map<String, Object>) event.getRawBody();
+            int cumulative = Math.max(0, util.str2int(String.valueOf(input.getOrDefault(CUMULATIVE, 0))));
+            long now = System.currentTimeMillis();
+            Map<String, Object> result = new HashMap<>();
+            // Still in the backoff period?
+            if (input.containsKey(BACKOFF)) {
+                long lastBackoff = util.str2long(String.valueOf(input.getOrDefault(BACKOFF, 0)));
+                if (now < lastBackoff) {
+                    // tell the system to abort the request and execute the second one in the next task list
+                    long diff = Math.max(1, (lastBackoff - now) / 1000);
+                    var waitPeriod = diff + (diff == 1? " second" : " seconds");
+                    result.put(DECISION, 2);
+                    result.put(STATUS, 503);
+                    result.put(MESSAGE, "Service temporarily not available - please try again in "+waitPeriod);
+                    result.put(BACKOFF, lastBackoff);
+                    sendResult(po, event.getReplyTo(), event.getCorrelationId(), result, 0);
+                    return null;
+                } else {
+                    // reset cumulative counter because backoff period has ended
+                    cumulative = 0;
+                }
             }
-        }
-        // Not in backoff period - evaluate condition for retry, abort or alternative path
-        int status = Math.max(200, util.str2int(String.valueOf(input.getOrDefault(STATUS, 200))));
-        // When backoff feature is used, you must put the resilient handler as a gatekeeper to the user function.
-        // If status code is 200, it should execute the user function immediately.
-        if (status == 200) {
-            result.put(DECISION, 1);
-            return result;
-        }
-        // Needs to trigger backoff?
-        if (input.containsKey(BACKOFF_TRIGGER) && input.containsKey(BACKOFF_SECONDS)) {
-            int backoffTrigger = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(BACKOFF_TRIGGER, 1))));
-            int backoffSeconds = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(BACKOFF_SECONDS, 1))));
-            cumulative++;
-            if (cumulative > backoffTrigger) {
-                // trigger backoff
-                var waitPeriod = backoffSeconds + (backoffSeconds == 1? " second" : " seconds");
-                result.put(DECISION, 2);
-                result.put(STATUS, 503);
-                result.put(MESSAGE, "Service temporarily not available - please try again in "+waitPeriod);
-                result.put(BACKOFF, now + backoffSeconds * 1000L);
-                return result;
-            }
-        }
-        AlternativePath routing = null;
-        if (input.containsKey(ALTERNATIVE)) {
-            routing = new AlternativePath(String.valueOf(input.get(ALTERNATIVE)));
-        }
-        int maxAttempt = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(MAX_ATTEMPTS, 1))));
-        int attemptCount = Math.max(0, util.str2int(String.valueOf(input.getOrDefault(ATTEMPT, 0))));
-        long delay = Math.max(10L, util.str2long(String.valueOf(input.getOrDefault(DELAY, 10))));
-        // increment attempts
-        attemptCount++;
-        result.put(ATTEMPT, attemptCount);
-        result.put(CUMULATIVE, cumulative);
-        if (attemptCount > maxAttempt) {
-            String message = String.valueOf(input.getOrDefault(MESSAGE, "Runtime exception"));
-            // tell the system to abort the request by executing the 2nd task
-            result.put(DECISION, 2);
-            result.put(STATUS, status);
-            result.put(MESSAGE, message);
-        } else {
-            // It is safe to execute Thread.sleep inside a virtual thread because the thread will be suspended
-            if (attemptCount > 1) {
-                Thread.sleep(delay);
-            }
-            if (routing != null && routing.needReroute(status)) {
-                // tell the system to execute the alternative execution path
-                result.put(DECISION, 3);
-            } else {
-                // otherwise, retry the original task
+            // Not in backoff period - evaluate condition for retry, abort or alternative path
+            int status = Math.max(200, util.str2int(String.valueOf(input.getOrDefault(STATUS, 200))));
+            // When backoff feature is used, you must put the resilient handler as a gatekeeper to the user function.
+            // If status code is 200, it should execute the user function immediately.
+            if (status == 200) {
                 result.put(DECISION, 1);
+                sendResult(po, event.getReplyTo(), event.getCorrelationId(), result, 0);
+                return null;
             }
+            // Needs to trigger backoff?
+            if (input.containsKey(BACKOFF_TRIGGER) && input.containsKey(BACKOFF_SECONDS)) {
+                int backoffTrigger = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(BACKOFF_TRIGGER, 1))));
+                int backoffSeconds = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(BACKOFF_SECONDS, 1))));
+                cumulative++;
+                if (cumulative > backoffTrigger) {
+                    // trigger backoff
+                    var waitPeriod = backoffSeconds + (backoffSeconds == 1? " second" : " seconds");
+                    result.put(DECISION, 2);
+                    result.put(STATUS, 503);
+                    result.put(MESSAGE, "Service temporarily not available - please try again in "+waitPeriod);
+                    result.put(BACKOFF, now + backoffSeconds * 1000L);
+                    sendResult(po, event.getReplyTo(), event.getCorrelationId(), result, 0);
+                    return null;
+                }
+            }
+            AlternativePath routing = null;
+            if (input.containsKey(ALTERNATIVE)) {
+                routing = new AlternativePath(String.valueOf(input.get(ALTERNATIVE)));
+            }
+            int maxAttempt = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(MAX_ATTEMPTS, 1))));
+            int attemptCount = Math.max(0, util.str2int(String.valueOf(input.getOrDefault(ATTEMPT, 0))));
+            long delay = Math.max(10L, util.str2long(String.valueOf(input.getOrDefault(DELAY, 10))));
+            // increment attempts
+            attemptCount++;
+            result.put(ATTEMPT, attemptCount);
+            result.put(CUMULATIVE, cumulative);
+            if (attemptCount > maxAttempt) {
+                delay = 0;
+                String message = String.valueOf(input.getOrDefault(MESSAGE, "Runtime exception"));
+                // tell the system to abort the request by executing the 2nd task
+                result.put(DECISION, 2);
+                result.put(STATUS, status);
+                result.put(MESSAGE, message);
+            } else {
+                if (attemptCount == 1) {
+                    delay = 0;
+                }
+                if (routing != null && routing.needReroute(status)) {
+                    // tell the system to execute the alternative execution path
+                    result.put(DECISION, 3);
+                } else {
+                    // otherwise, retry the original task
+                    result.put(DECISION, 1);
+                }
+            }
+            sendResult(po, event.getReplyTo(), event.getCorrelationId(), result, delay);
         }
-        return result;
+        return null;
+    }
+
+    private void sendResult(PostOffice po, String replyTo, String cid, Map<String, Object> result, long delay)
+            throws IOException {
+        var response = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(result);
+        if (delay > 0) {
+            po.sendLater(response, new Date(System.currentTimeMillis() + delay));
+        } else {
+            po.send(response);
+        }
     }
 
     private static class AlternativePath {

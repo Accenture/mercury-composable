@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.26, 3/25/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Use EventInterceptor pattern for the resilience handler for non-blocking deferred response
+
+---
 ## Version 4.2.25, 3/24/2025
 
 ### Added
