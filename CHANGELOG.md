@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.25, 3/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Rename "alternate" parameter in resilience handler to "alternative"
+
+---
 ## Version 4.2.24, 3/24/2025
 
 ### Added

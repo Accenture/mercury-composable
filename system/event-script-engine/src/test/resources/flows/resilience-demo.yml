@@ -38,14 +38,14 @@ tasks:
   #
   # Backoff is an essential feature to avoid overwhelming a failed target service. It would avoid recovery storm.
   #
-  # Testing alternative path - when return code is 401 or between 403 and 404, the 3rd task "alternate.task"
+  # Testing alternative path - when return code is 401 or between 403 and 404, the 3rd task "alternative.task"
   #                            will be executed.
   - input:
       - 'error.code -> status'
       - 'error.message -> message'
       - 'model.attempt -> attempt'
       - 'int(10) -> max_attempts'
-      - 'text(401, 403-404) -> alternate'
+      - 'text(401, 403-404) -> alternative'
       - 'file(text:/tmp/resilience/cumulative) -> cumulative'
       - 'file(text:/tmp/resilience/backoff) -> backoff'
       - 'int(3) -> backoff_trigger'
@@ -64,7 +64,7 @@ tasks:
     next:
       - 'my.task'
       - 'abort.request'
-      - 'alternate.task'
+      - 'alternative.task'
 
   - input:
       - 'text(error) -> type'
@@ -78,7 +78,7 @@ tasks:
     description: 'This function aborts a request'
     execution: end
 
-  - name: 'alternate.task'
+  - name: 'alternative.task'
     input:
       - 'text(alternative) -> path'
     process: 'no.op'

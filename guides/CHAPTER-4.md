@@ -1143,7 +1143,7 @@ The following parameters (input data mapping) define behavior for the handler:
  2. `attempts` - this tells the handler how many attempts it has tried
  3. `status` - you should map the error status code in this field
  4. `message` - you should map the error message in this field
- 5. `alternate` - the optional codes and range of status codes to tell the handler to reroute
+ 5. `alternative` - the optional codes and range of status codes to tell the handler to reroute
  6. `delay` - the delay in milliseconds before exercising retry or reroute. Minimum value is 10 ms.
               Delay is skipped for the first retry. This slight delay is a protection mechanism.
  
@@ -1184,7 +1184,7 @@ reaches the "backoff_trigger" threshold of 3. After that, all requests will be a
       - 'error.message -> message'
       - 'model.attempt -> attempt'
       - 'int(10) -> max_attempts'
-      - 'text(401, 403-404) -> alternate'
+      - 'text(401, 403-404) -> alternative'
       - 'file(text:/tmp/resilience/cumulative) -> cumulative'
       - 'file(text:/tmp/resilience/backoff) -> backoff'
       - 'int(3) -> backoff_trigger'
@@ -1203,7 +1203,7 @@ reaches the "backoff_trigger" threshold of 3. After that, all requests will be a
     next:
       - 'my.task'
       - 'abort.request'
-      - 'alternate.task'
+      - 'alternative.task'
 ```
 
 > *Note*: When the "backoff" feature is enabled, you should configure the resilience handler as a gatekeeper

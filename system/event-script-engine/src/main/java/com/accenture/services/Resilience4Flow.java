@@ -32,7 +32,7 @@ import java.util.*;
  * attempts - this tells the handler how many attempts it has tried
  * status - you should map the error status code in this field
  * message - you should map the error message in this field
- * alternate (start-end, code, code) - the optional codes and range of status codes to tell the handler to reroute
+ * alternative (start-end, code, code) - the optional codes and range of status codes to tell the handler to reroute
  * delay - the delay in milliseconds before exercising retry or reroute. Minimum valued is 10 ms.
  *         Delay is skipped for the first retry. This slight delay is a protection mechanism.
  * <p>
@@ -67,7 +67,7 @@ public class Resilience4Flow implements TypedLambdaFunction<Map<String, Object>,
     private static final String ATTEMPT = "attempt";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
-    private static final String ALTERNATE = "alternate";
+    private static final String ALTERNATIVE = "alternative";
     private static final String DELAY = "delay";
     private static final String CUMULATIVE = "cumulative";
     private static final String BACKOFF = "backoff";
@@ -121,9 +121,9 @@ public class Resilience4Flow implements TypedLambdaFunction<Map<String, Object>,
                 return result;
             }
         }
-        AlternatePath routing = null;
-        if (input.containsKey(ALTERNATE)) {
-            routing = new AlternatePath(String.valueOf(input.get(ALTERNATE)));
+        AlternativePath routing = null;
+        if (input.containsKey(ALTERNATIVE)) {
+            routing = new AlternativePath(String.valueOf(input.get(ALTERNATIVE)));
         }
         int maxAttempt = Math.max(1, util.str2int(String.valueOf(input.getOrDefault(MAX_ATTEMPTS, 1))));
         int attemptCount = Math.max(0, util.str2int(String.valueOf(input.getOrDefault(ATTEMPT, 0))));
@@ -144,7 +144,7 @@ public class Resilience4Flow implements TypedLambdaFunction<Map<String, Object>,
                 Thread.sleep(delay);
             }
             if (routing != null && routing.needReroute(status)) {
-                // tell the system to execute the alternate execution path
+                // tell the system to execute the alternative execution path
                 result.put(DECISION, 3);
             } else {
                 // otherwise, retry the original task
@@ -154,11 +154,11 @@ public class Resilience4Flow implements TypedLambdaFunction<Map<String, Object>,
         return result;
     }
 
-    private static class AlternatePath {
+    private static class AlternativePath {
         private final Set<Integer> statusCodes = new HashSet<>();
         private final List<Integer[]> statusRanges = new ArrayList<>();
 
-        public AlternatePath(String codes) {
+        public AlternativePath(String codes) {
             List<String> list = util.split(codes, ",");
             for (String item: list) {
                 var s = item.trim();
