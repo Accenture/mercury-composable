@@ -1129,7 +1129,7 @@ to perform some input/output data mapping without executing any business logic.
 
 ### Generic resilience handler function
 
-Another useful built-in function is a resilience handler with the route name `resilient.handler`.
+Another useful built-in function is a resilience handler with the route name `resilience.handler`.
 
 It is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
 
