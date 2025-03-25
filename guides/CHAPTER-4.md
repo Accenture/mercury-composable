@@ -1139,8 +1139,8 @@ It is a generic resilience handler. It will retry, abort, use an alternative pat
 
 The following parameters (input data mapping) define behavior for the handler:
 
- 1. `max_attempt` - when the handler has used all the attempts, it will abort.
- 2. `attempts` - this tells the handler how many attempts it has tried
+ 1. `max_attempts` - when the handler has used all the attempts, it will abort.
+ 2. `attempt` - this tells the handler how many attempts it has tried
  3. `status` - you should map the error status code in this field
  4. `message` - you should map the error message in this field
  5. `alternative` - the optional codes and range of status codes to tell the handler to reroute

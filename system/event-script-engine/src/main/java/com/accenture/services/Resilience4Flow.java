@@ -28,8 +28,8 @@ import java.util.*;
  * This is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
  * <p>
  * The following parameters (input data mapping) define behavior:
- * max_attempt - when the handler has used all the attempts, it will abort.
- * attempts - this tells the handler how many attempts it has tried
+ * max_attempts - when the handler has used all the attempts, it will abort.
+ * attempt - this tells the handler how many attempts it has tried
  * status - you should map the error status code in this field
  * message - you should map the error message in this field
  * alternative (start-end, code, code) - the optional codes and range of status codes to tell the handler to reroute
