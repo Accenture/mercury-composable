@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.27, 3/31/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Streamline error handling in TaskExecutor to sync up with Node.js version
+2. Update developer guide's chapter-4 for the output data mapping paragraph about file
+
+---
 ## Version 4.2.26, 3/25/2025
 
 ### Added

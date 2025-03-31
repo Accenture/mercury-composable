@@ -506,7 +506,8 @@ a hash map of key-values or an array of values.
 | File   | `file(file_path)`                        |
 
 For output data mapping, the "file" content type is used to save some data from the output of a user function
-to a file in the local file system.
+to a file in the local file system. If the left-hand-side (LHS) resolved value is null, the file in the RHS
+will be deleted. This allows you to clean up temporary files before your flow finishes.
 
 *Decision value*
 

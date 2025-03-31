@@ -208,10 +208,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     }
                     String handler = task.getExceptionTask() != null ? task.getExceptionTask() : flowInstance.getFlow().exception;
                     if (handler != null) {
-                        var message = event.getRawBody();
                         Map<String, Object> error = new HashMap<>();
                         error.put(CODE, statusCode);
-                        error.put(MESSAGE, message == null ? NULL : String.valueOf(message));
+                        error.put(MESSAGE, event.getError());
                         String stackTrace = event.getStackTrace();
                         if (stackTrace != null) {
                             error.put(STACK_TRACE, stackTrace);
@@ -315,7 +314,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         removeModelElement(rhs, consolidated);
                     }
                 } else {
-                    value = getConstantValue(lhs, rhs);
+                    value = getConstantValue(lhs);
                 }
                 if (rhs.startsWith(FILE_TYPE)) {
                     SimpleFileDescriptor fd = new SimpleFileDescriptor(rhs);
@@ -348,8 +347,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                     }
                 } else {
-                    boolean required = true;
                     if (value != null) {
+                        boolean required = true;
                         if (rhs.equals(OUTPUT_STATUS)) {
                             int status = value instanceof Integer ? (Integer) value : util.str2int(value.toString());
                             if (status < 100 || status > 599) {
@@ -695,7 +694,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     if (inputLike) {
                         value = getLhsElement(lhs, source);
                     } else {
-                        value = getConstantValue(lhs, rhs);
+                        value = getConstantValue(lhs);
                     }
                     callExternalStateMachine(flowInstance, task, rhs, value);
                 } else if (rhs.startsWith(MODEL_NAMESPACE)) {
@@ -752,7 +751,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     // Assume left hand side is a constant
                     if (rhs.startsWith(HEADER_NAMESPACE)) {
                         String k = rhs.substring(HEADER_NAMESPACE.length());
-                        Object v = getConstantValue(lhs, rhs);
+                        Object v = getConstantValue(lhs);
                         if (!k.isEmpty() && v != null) {
                             optionalHeaders.put(k, v.toString());
                         }
@@ -809,25 +808,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 EventEnvelope event = new EventEnvelope()
                         .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
                         .setCorrelationId(compositeCid).setStatus(response.getStatus())
-                        .setHeaders(response.getHeaders());
-                // in case of exception, extract error message from response body
-                boolean regular = true;
-                if (response.hasError()) {
-                    if (response.getBody() instanceof Map) {
-                        // extract error message if exists
-                        var map = (Map<String, Object>) response.getBody();
-                        if (map.containsKey(MESSAGE)) {
-                            regular = false;
-                            event.setBody(map.get(MESSAGE));
-                            if (map.containsKey(STACK_TRACE)) {
-                                event.setStackTrace(String.valueOf(map.get(STACK_TRACE)));
-                            }
-                        }
-                    }
-                }
-                if (regular) {
-                    event.setBody(response.getBody());
-                }
+                        .setHeaders(response.getHeaders()).setBody(response.getBody());
                 try {
                     po.send(event);
                 } catch (IOException e) {
@@ -1152,7 +1133,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private Object getConstantValue(String lhs, String rhs) {
+    private Object getConstantValue(String lhs) {
         int last = lhs.lastIndexOf(CLOSE_BRACKET);
         if (last > 0) {
             if (lhs.startsWith(TEXT_TYPE)) {
@@ -1210,7 +1191,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void setConstantValue(String lhs, String rhs, MultiLevelMap target) {
-        Object value = getConstantValue(lhs, rhs);
+        Object value = getConstantValue(lhs);
         if (value != null) {
             setRhsElement(value, rhs, target);
         } else {

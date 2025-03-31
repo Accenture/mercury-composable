@@ -297,7 +297,7 @@ public class FlowTests extends TestBase {
         assertTrue(f4.exists());
         String binary = util.file2str(f4);
         assertEquals("binary", binary);
-        // f1 will be deleted by the output data mapping 'model.nothing -> file(/tmp/temp-test-input.txt)'
+        // f1 will be deleted by the output data mapping 'model.none -> file(/tmp/temp-test-input.txt)'
         f2.deleteOnExit();
         f3.deleteOnExit();
         f4.deleteOnExit();

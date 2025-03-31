@@ -38,11 +38,7 @@ public class ExceptionSimulator implements TypedLambdaFunction<Map<String, Objec
         // throw exception as requested
         if (headers.containsKey(EXCEPTION)) {
             int code = Utility.getInstance().str2int(headers.get(EXCEPTION));
-            if (code == -1) {
-                throw new IllegalArgumentException("Simulated Exception");
-            } else {
-                throw new AppException(code, "Simulated Exception");
-            }
+            throw new AppException(code == -1? 400 : code, "Simulated Exception");
         }
         // throw exception when accept != attempt
         if (input.containsKey(ACCEPT)) {

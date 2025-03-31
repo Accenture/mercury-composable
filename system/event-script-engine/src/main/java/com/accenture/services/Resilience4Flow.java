@@ -200,8 +200,8 @@ public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void>
                             range[0] = n1;
                             range[1] = n2;
                         } else {
-                            range[1] = n1;
                             range[0] = n2;
+                            range[1] = n1;
                         }
                         statusRanges.add(range);
                     }
