@@ -35,7 +35,14 @@ rest:
   - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/circuit/breaker/{accept}"
-    flow: 'circuit-breaker-example'
+    flow: 'simple-circuit-breaker'
+    timeout: 10s
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/resilience"
+    flow: 'resilience-demo'
     timeout: 10s
     tracing: true
 
@@ -153,6 +160,15 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/fork-n-join-flows/{user}?seq=_"
+    flow: 'fork-n-join-flows'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/pipeline/{user}?seq=_"
     flow: 'pipeline-test'
     timeout: 10s
@@ -245,6 +261,15 @@ rest:
     methods: ['PUT']
     url: "/api/ext/state/{user}"
     flow: 'externalize-put-key-value'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['PUT']
+    url: "/api/ext/state/flow/{user}"
+    flow: 'externalize-put-key-value-flow'
     timeout: 10s
     cors: cors_1
     headers: header_1

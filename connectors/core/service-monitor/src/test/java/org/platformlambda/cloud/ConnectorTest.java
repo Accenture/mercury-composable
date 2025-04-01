@@ -120,13 +120,12 @@ public class ConnectorTest extends TestBase {
         }
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
-        headers.put("x-app-instance", Platform.getInstance().getOrigin());
         n = 0;
         while (n++ < 30) {
             EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
             assertInstanceOf(Map.class, response.getBody());
             Map<String, Object> map = (Map<String, Object>) response.getBody();
-            Object info = map.get("additional_info");
+            Object info = map.get("more");
             assertInstanceOf(Map.class, info);
             Map<String, Object> infoMap = (Map<String, Object>) info;
             Object tt = infoMap.get("topics");
@@ -173,7 +172,7 @@ public class ConnectorTest extends TestBase {
         response = httpGet("http://127.0.0.1:"+port, "/info", headers);
         assertInstanceOf(Map.class, response.getBody());
         map = (Map<String, Object>) response.getBody();
-        Object info = map.get("additional_info");
+        Object info = map.get("more");
         assertInstanceOf(Map.class, info);
         Map<String, Object> infoMap = (Map<String, Object>) info;
         Object monitorList = infoMap.get("monitors");
@@ -184,5 +183,4 @@ public class ConnectorTest extends TestBase {
         Map<String, WsMetadata> sessions = MonitorService.getSessions();
         assertEquals(1, sessions.size());
     }
-
 }

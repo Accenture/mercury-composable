@@ -49,6 +49,7 @@ public class EventEnvelope {
     private static final String OPTIONAL = "optional";
     private static final String JSON = "json";
     private static final String BROADCAST = "broadcast";
+    private static final String MESSAGE = "message";
     // message-ID
     private static final String ID_FLAG = "0";
     private static final String EXECUTION_FLAG = "1";
@@ -168,14 +169,23 @@ public class EventEnvelope {
         return status != null && status >= 400;
     }
 
+    @SuppressWarnings("rawtypes")
     public String getError() {
         if (hasError()) {
-            if (body == null) {
-                return "null";
-            } else if (body instanceof byte[]) {
-                return "***";
-            } else {
-                return body instanceof String str? str : String.valueOf(body);
+            switch (body) {
+                case null -> {
+                    return "null";
+                }
+                case byte[] ignored -> {
+                    return "***";
+                }
+                case Map error -> {
+                    // extract error message if exists
+                    return error.containsKey(MESSAGE)? String.valueOf(error.get(MESSAGE)) : String.valueOf(body);
+                }
+                default -> {
+                    return body instanceof String str ? str : String.valueOf(body);
+                }
             }
         } else {
             return null;
@@ -478,6 +488,8 @@ public class EventEnvelope {
                 case Date d -> util.date2str(d);
                 default -> String.valueOf(value);
             };
+            // guarantee CR/LF are filtered out
+            v = v.replace("\r", "").replace("\n", " ");
             // null value is transported as an empty string
             if (SET_COOKIE.equalsIgnoreCase(key)) {
                 if (this.headers.containsKey(key)) {
@@ -486,7 +498,6 @@ public class EventEnvelope {
                 } else {
                     this.headers.put(key, v);
                 }
-
             } else {
                 this.headers.put(key, v);
             }

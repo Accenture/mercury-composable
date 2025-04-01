@@ -5,13 +5,10 @@
 #
 rest:
   #
-  # this entry will override the event-api.yaml in yaml.rest.automation
-  # to add the "authentication" tag
+  # The "POST /api/event" endpoint here will override the default endpoint,
+  # allowing us to add the "authentication" parameter.
   #
-  # In the test/resources/application.properties, it tells the system to merge two config files
-  # yaml.rest.automation=classpath:/event-api.yaml, classpath:/rest.yaml
-  #
-  - service: ["event.api.service"]
+  - service: "event.api.service"
     methods: ['POST']
     url: "/api/event"
     timeout: 60s

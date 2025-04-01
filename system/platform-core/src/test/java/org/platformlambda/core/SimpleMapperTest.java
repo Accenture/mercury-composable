@@ -28,7 +28,9 @@ import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -87,13 +89,17 @@ public class SimpleMapperTest {
         Utility util = Utility.getInstance();
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         Date now = new Date();
-        LocalDateTime time = LocalDateTime.now();
+        LocalDateTime localDateTime = LocalDateTime.now();
         String iso8601 = util.date2str(now);
-        String iso8601NoTimeZone = time.toString();
+        String iso8601NoTimeZone = localDateTime.toString();
+        LocalDate localDate = LocalDate.now();
+        LocalTime localTime = LocalTime.now();
         Map<String, Object> map = new HashMap<>();
         map.put("integer", 100);
         map.put("date", now);
-        map.put("time", time);
+        map.put("time", localDateTime);
+        map.put("local_date", localDate);
+        map.put("local_time", localTime);
         map.put("sql_date", new java.sql.Date(now.getTime()));
         map.put("sql_timestamp", new java.sql.Timestamp(now.getTime()));
         Map<String, Object> converted = mapper.readValue(mapper.writeValueAsString(map), Map.class);
@@ -101,26 +107,38 @@ public class SimpleMapperTest {
         assertEquals(iso8601, converted.get("date"));
         // LocalDateTime string will drop the "T" separator
         assertEquals(iso8601NoTimeZone.replace('T', ' '), converted.get("time"));
+        assertEquals(localDate.toString(), converted.get("local_date"));
+        assertEquals(localTime.toString(), converted.get("local_time"));
         // sql date is yyyy-mm-dd
         assertEquals(new java.sql.Date(now.getTime()).toString(), converted.get("sql_date"));
-        assertEquals(iso8601, converted.get("sql_timestamp"));
+        assertEquals(new java.sql.Timestamp(now.getTime()).toString(), converted.get("sql_timestamp"));
         // OK - Integer becomes Long because of GSON's behavior of ToNumberPolicy.LONG_OR_DOUBLE
         assertEquals(Long.class, converted.get("integer").getClass());
         String name = "hello world";
         Map<String, Object> input = new HashMap<>();
         input.put("full_name", name);
         input.put("date", iso8601);
-        input.put("time", iso8601NoTimeZone);
+        input.put("local_date_time", iso8601NoTimeZone);
+        input.put("local_date", localDate.toString());
+        input.put("local_time", localTime.toString());
+        input.put("sql_timestamp", new java.sql.Timestamp(now.getTime()));
+        input.put("sql_date", new java.sql.Date(now.getTime()));
+        input.put("sql_time", new java.sql.Time(now.getTime()));
         PoJo pojo = mapper.readValue(input, PoJo.class);
         // verify that the time is restored correctly
         assertEquals(now.getTime(), pojo.getDate().getTime());
-        assertEquals(time, pojo.getTime());
+        assertEquals(localDateTime, pojo.getLocalDateTime());
+        assertEquals(localDate, pojo.getLocalDate());
+        assertEquals(localTime, pojo.getLocalTime());
         // verify that snake case is deserialized correctly
         assertEquals(name, pojo.getFullName());
         // verify input timestamp can be in milliseconds too
         input.put("date", now.getTime());
         pojo = mapper.readValue(input, PoJo.class);
-        assertEquals(now.getTime(), pojo.getDate().getTime());
+        assertEquals(new Date(now.getTime()).toString(), pojo.getDate().toString());
+        assertEquals(new java.sql.Timestamp(now.getTime()).toString(), pojo.getSqlTimestamp().toString());
+        assertEquals(new java.sql.Date(now.getTime()).toString(), pojo.getSqlDate().toString());
+        assertEquals(new java.sql.Time(now.getTime()).toString(), pojo.getSqlTime().toString());
     }
 
     @Test

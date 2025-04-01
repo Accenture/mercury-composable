@@ -19,7 +19,6 @@
 package org.platformlambda.cloud;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.cloud.reporter.PresenceConnector;
 import org.platformlambda.core.models.EventEnvelope;
@@ -153,9 +152,8 @@ public class ConnectorTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
-        Map<String, Object> info = (Map<String, Object>) response.getBody();
-        MultiLevelMap multi = new MultiLevelMap(info);
-        Object nodes = multi.getElement("routing.nodes");
+        MultiLevelMap multi = new MultiLevelMap((Map<String, Object>) response.getBody());
+        Object nodes = multi.getElement("network.nodes");
         assertInstanceOf(List.class, nodes);
         String nodeList = nodes.toString();
         assertTrue(nodeList.contains("unit-test"));
@@ -167,19 +165,6 @@ public class ConnectorTest extends TestBase {
         queryResult = bench.poll(10, TimeUnit.SECONDS);
         assert queryResult != null;
         assertEquals(true, queryResult.getBody());
-        headers.put("X-App-Instance", Platform.getInstance().getOrigin());
-        response = httpPost("http://127.0.0.1:"+port, "/suspend/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertEquals(200, result.get("status"));
-        assertEquals("suspend", result.get("type"));
-        assertEquals("/suspend/now", result.get("path"));
-        response = httpPost("http://127.0.0.1:"+port, "/resume/now", headers, new HashMap<>());
-        assertInstanceOf(Map.class, response.getBody());
-        result = (Map<String, Object>) response.getBody();
-        assertEquals(200, result.get("status"));
-        assertEquals("resume", result.get("type"));
-        assertEquals("/resume/now", result.get("path"));
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv("type", "leave"), new Kv("origin", origin));
     }
 

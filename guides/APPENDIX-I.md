@@ -34,9 +34,9 @@ precedence.
 | cloud.connector                        | kafka, none, etc.                                               | Optional    |
 | cloud.services                         | e.g. some.interesting.service                                   | Optional    |
 | snake.case.serialization               | true (recommended)                                              | Optional    |
-| protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional    |
 | trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
 | hsts.feature                           | default is true                                                 | Optional*   |
+| protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional*   |
 | application.feature.route.substitution | default is false                                                | Optional    |
 | application.feature.topic.substitution | default is false                                                | Optional    |
 | kafka.replication.factor               | 3                                                               | Kafka       |
@@ -54,8 +54,9 @@ precedence.
 | running.in.cloud                       | Default is false (set to true if containerized)                 | Optional    |
 | deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
+| spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
 
-`*` - when using the "rest-spring" library
+`*` - applies to the "rest-spring" library only
 
 ## Base configuration files
 
@@ -64,18 +65,30 @@ By default, the system assumes the following application configuration files:
 1. application.properties
 2. application.yml
 
+The bootstrap.properties and bootstrap.yml are optional.
+
 You can change this behavior by adding the `app-config-reader.yml` in your project's `resources` folder.
+The default configuration is shown as below.
 
 ```yaml
 resources:
-  - application.properties
-  - application.yml
+  - classpath:/bootstrap.properties
+  - classpath:/bootstrap.yml
+  - classpath:/application.properties
+  - classpath:/application.yml
+
+profiles: 'classpath:/application-'
 ```
 
-You can tell the system to load application configuration from different set of files.
-You can use either PROPERTIES or YAML files. YAML files can use "yml" or "yaml" extension.
+For compatibility with Spring Boot configuration system, keep the default bootstrap and application
+configuration files. You may add more configuration files as needed.
 
-For example, you may use only "application.yml" file without scanning application.properties.
+To load configuration file from the local file system, use "file:/" instead of "classpath:/".
+
+The "profiles" parameter defines the file prefix to load profile related configuration files.
+
+> *Note*: The order of the filenames defines the loading sequence where subsequent configuration
+          parameters will override prior ones.
 
 ## Partial support of Spring Active Profiles
 
@@ -88,7 +101,8 @@ and "application-dev.yml" accordingly.
 When more than one active profile is needed, you can use a comma separated list of profiles in
 "spring.profiles.active".
 
-For Spring Boot compatibility, the filename prefix "application-" is fixed.
+For Spring Boot compatibility, the filename prefix "application-" is fixed. This is defined
+in the app-config-reader.yml file above.
 
 ## Special handling for PROPERTIES file
 

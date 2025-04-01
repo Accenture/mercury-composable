@@ -1,5 +1,5 @@
 flow:
-  id: 'circuit-breaker-example'
+  id: 'simple-circuit-breaker'
   description: 'Demonstrate simple circuit breaker logic'
   ttl: 10s
 
@@ -10,22 +10,21 @@ tasks:
     input:
       - 'input.path_parameter.accept -> accept'
       - 'model.attempt -> attempt'
-    process: 'breakable.function'
+    process: 'exception.simulator'
     output:
       - 'int(0) -> model.attempt'
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'This function will break until the "accept" number is reached'
     execution: end
-    exception: 'v1.circuit.breaker'
+    exception: 'resilience.handler'
 
   - input:
-      - 'model.attempt -> attempt'
-      - 'int(2) -> max_attempts'
       - 'error.code -> status'
       - 'error.message -> message'
-      - 'error.stack -> stack'
-    process: 'v1.circuit.breaker'
+      - 'model.attempt -> attempt'
+      - 'int(2) -> max_attempts'
+    process: 'resilience.handler'
     output:
       - 'result.attempt -> model.attempt'
       - 'result.decision -> decision'

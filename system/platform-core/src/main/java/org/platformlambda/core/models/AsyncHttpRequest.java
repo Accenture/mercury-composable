@@ -18,15 +18,19 @@
 
 package org.platformlambda.core.models;
 
+import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
 public class AsyncHttpRequest {
+    private static final Logger log = LoggerFactory.getLogger(AsyncHttpRequest.class);
     private static final String HTTP_HEADERS = "headers";
     private static final String HTTP_METHOD = "method";
     private static final String IP_ADDRESS = "ip";
@@ -118,7 +122,9 @@ public class AsyncHttpRequest {
     }
 
     public AsyncHttpRequest setHeader(String key, String value) {
-        setNonNullValue(headers, key, value);
+        // filter out CR and LF
+        var v = value == null? "" : value.replace("\r", "").replace("\n", " ");
+        headers.put(key, v);
         return this;
     }
 
@@ -238,7 +244,9 @@ public class AsyncHttpRequest {
     }
 
     public AsyncHttpRequest setSessionInfo(String key, String value) {
-        setNonNullValue(session, key, value);
+        // filter out CR and LF
+        var v = value == null? "" : value.replace("\r", "").replace("\n", " ");
+        session.put(key, v);
         return this;
     }
 
@@ -252,13 +260,18 @@ public class AsyncHttpRequest {
     }
 
     public String getCookie(String key) {
-        String value = caseInsensitiveGet(cookies, key);
-        return value.replace("\r", "").replace("\n", "");
+        return caseInsensitiveGet(cookies, key);
     }
 
     public AsyncHttpRequest setCookie(String key, String value) {
         // avoid CR/LF attack
-        setNonNullValue(cookies, key, value.replace("\r", "").replace("\n", ""));
+        try {
+            ServerCookieEncoder.STRICT.encode(key, value);
+            cookies.put(key, value);
+        } catch(Exception e) {
+            // removing trailing LF if any
+            log.warn("Invalid cookie ignored ({}) - {}", key, e.getMessage().trim());
+        }
         return this;
     }
 
@@ -276,7 +289,9 @@ public class AsyncHttpRequest {
     }
 
     public AsyncHttpRequest setPathParameter(String key, String value) {
-        setNonNullValue(pathParams, key, value);
+        // filter out CR and LF
+        var v = value == null? "" : value.replace("\r", "").replace("\n", " ");
+        pathParams.put(key, v);
         return this;
     }
 
@@ -609,11 +624,4 @@ public class AsyncHttpRequest {
             }
         }
     }
-
-    private void setNonNullValue(Map<String, String> map, String key, String value) {
-        if (key != null) {
-            map.put(key, value != null? value : "");
-        }
-    }
-
 }

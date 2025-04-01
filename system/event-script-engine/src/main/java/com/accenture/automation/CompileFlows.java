@@ -61,6 +61,8 @@ public class CompileFlows implements EntryPoint {
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String INPUT_NAMESPACE = "input.";
     private static final String OUTPUT_NAMESPACE = "output.";
+    private static final String MODEL = "model";
+    private static final String PARENT = "parent";
     private static final String MODEL_NAMESPACE = "model.";
     private static final String NEGATE_MODEL = "!model.";
     private static final String RESULT_NAMESPACE = "result.";
@@ -485,7 +487,7 @@ public class CompileFlows implements EntryPoint {
                 if (extFound && entry.externalStateMachine == null) {
                     log.error("Unable to parse {} - flow is missing external.state.machine", name);
                 } else if (incomplete) {
-                    log.error("Unable to parse {} - flow has incomplete data mappings", name);
+                    log.error("Unable to parse {} - flow has invalid data mappings", name);
                 } else {
                     Flows.addFlow(entry);
                 }
@@ -694,7 +696,7 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
-            if (!rhs.isEmpty()) {
+            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
                 if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
                         lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
                     return true;
@@ -710,6 +712,25 @@ public class CompileFlows implements EntryPoint {
             }
         }
         return false;
+    }
+
+    private boolean validModel(String key) {
+        Utility util = Utility.getInstance();
+        List<String> parts = util.split(key, "!: ()");
+        if (parts.isEmpty()) {
+            return false;
+        } else {
+            // "model" alone to access the whole model dataset is not allowed
+            if (MODEL.equals(parts.getFirst())) {
+                return false;
+            }
+            // model.parent to access the whole parent namespace is not allowed
+            if (parts.getFirst().startsWith(MODEL_NAMESPACE)) {
+                List<String> segments = util.split(parts.getFirst(), ".");
+                return segments.size() != 1 && (segments.size() != 2 || !PARENT.equals(segments.get(1)));
+            }
+            return true;
+        }
     }
 
     private boolean validKeyValues(String text) {
@@ -738,7 +759,9 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = output.substring(0, sep).trim();
             String rhs = output.substring(sep+2).trim();
-            return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
+            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
+                return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
+            }
         }
         return false;
     }

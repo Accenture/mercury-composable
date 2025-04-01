@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,6 +44,8 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
     private static final Logger log = LoggerFactory.getLogger(DistributedTrace.class);
     private static final String DISTRIBUTED_TRACE_FORWARDER = "distributed.trace.forwarder";
     private static final String TRANSACTION_JOURNAL_RECORDER = "transaction.journal.recorder";
+    private static final List<String> ZERO_TRACING_FILTER = List.of(DISTRIBUTED_TRACING,
+                                                        DISTRIBUTED_TRACE_FORWARDER, TRANSACTION_JOURNAL_RECORDER);
     private static final String TRACE = "trace";
     private static final String ANNOTATIONS = "annotations";
     private static final String JOURNAL = "journal";
@@ -61,12 +64,13 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
             if (metrics.isEmpty()) {
                 return null;
             }
-            Map<String, String> annotations = (Map<String, String>) payload.getOrDefault(ANNOTATIONS, Collections.emptyMap());
-            String service = (String) metrics.get(SERVICE);
-            String from = (String) metrics.get(FROM);
-            if (service != null && service.contains("@")) {
-                metrics.put(SERVICE, trimOrigin(service));
+            String service = getPermittedRoute(metrics.get(SERVICE));
+            if (service == null) {
+                return null;
             }
+            metrics.put(SERVICE, service);
+            Map<String, String> annotations = (Map<String, String>) payload.getOrDefault(ANNOTATIONS, Collections.emptyMap());
+            String from = (String) metrics.get(FROM);
             if (from != null && from.contains("@")) {
                 metrics.put(FROM, trimOrigin(from));
             }
@@ -112,6 +116,16 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
             }
         }
         return null;
+    }
+
+    private String getPermittedRoute(Object service) {
+        if (service != null) {
+            var route = String.valueOf(service);
+            var name = route.endsWith(ORIGIN_SUFFIX) ? route.substring(0, route.indexOf('@')) : route;
+            return ZERO_TRACING_FILTER.contains(name) ? null : name;
+        } else {
+            return null;
+        }
     }
 
     private String trimOrigin(String route) {

@@ -7,6 +7,249 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
+
+---
+## Version 4.2.27, 3/31/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Streamline error handling in TaskExecutor to sync up with Node.js version
+2. Update developer guide's chapter-4 for the output data mapping paragraph about file
+
+---
+## Version 4.2.26, 3/25/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Use EventInterceptor pattern for the resilience handler for non-blocking deferred response
+
+---
+## Version 4.2.25, 3/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Rename "alternate" parameter in resilience handler to "alternative"
+
+---
+## Version 4.2.24, 3/24/2025
+
+### Added
+
+Generic resilience handler with alternative path and backoff features
+
+### Removed
+
+N/A
+
+### Changed
+
+1. The getError() method in EventEnvelope is updated to return encoded error message.
+   This is required for distributed trace processing and proper error handling of subflows.
+2. Delete file when mapping a null value from the LHS to the RHS that is defined as a file,
+   thus allowing clearing of temporary data files in a flow.
+3. OSS update - spring boot parent version 3.4.4 and io.project.reactor bom version 2024.0.4
+
+---
+## Version 4.2.23, 3/12/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+For security, the parent state machine (namespace "model.parent") is a protected resource.
+It can only be shared by the primary flow and all sub-flow instances that are instantiated from it.
+
+---
+## Version 4.2.22, 3/11/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+All sub-flows instantiated from a primary flow can access the same parent state machine
+using the "model.parent" namespace.
+
+---
+## Version 4.2.21, 3/8/2025
+
+### Added
+
+1. Support flow and function for external state machine
+2. Parent state machine for sub-flow
+3. Validation rules to reject access to the whole model or parent namespace
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.2.20, 2/28/2025
+
+### Added
+
+"spring.boot.main=org.platformlambda.rest.RestServer" added to application.properties
+so that developer may override it with their own Spring Boot initializer.
+
+### Removed
+
+property setting for Netty version 4.1.118.Final is no longer required in pom.xml
+because the updated spring boot parent version 3.4.3 will fetch 4.1.118 correctly.
+
+### Changed
+
+upgrade spring boot version 3.4.3
+
+---
+## Version 4.2.19, 2/26/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Allow developer to load base configuration files from the classpath or from the
+local file system.
+
+---
+## Version 4.2.18, 2/21/2025
+
+### Added
+
+1. java.sql.Timestamp data type added to SimpleMapper
+2. simple type matching feature is extended with a new string 'concat' method
+3. default REST endpoints for /api/event and actuator services
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Sort REST endpoints for orderly loading
+2. Drop "async.http.request" RPC traces to reduce observability noise
+
+---
+## Version 4.2.17, 2/20/2025
+
+### Added
+
+LocalDate and LocalTime data type added to SimpleMapper
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.2.15, 2/15/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Update actuator output data structures to be consistent with Composable Node.js implementation
+
+---
+## Version 4.2.14, 2/14/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Use different route names for various actuator services to avoid hardcode of URLs
+
+---
+## Version 4.2.13, 2/13/2025
+
+### Added
+
+Actuator REST endpoints are now configurable in rest.yaml
+
+### Removed
+
+The feature to shutdown, suspend and resume of an application instance is retired
+
+### Changed
+
+Update actuator services to serve REST requests directly
+
+---
+## Version 4.2.12, 2/12/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Use ServerCookieEncoder.STRICT.encode() method to detect invalid cookie value
+2. Update vertx to 4.5.13 and Netty to 4.1.118.Final to address security vulnerabilities
+
 ---
 ## Version 4.2.11, 2/11/2025
 

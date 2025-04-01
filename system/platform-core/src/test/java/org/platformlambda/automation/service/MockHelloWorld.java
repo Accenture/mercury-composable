@@ -22,6 +22,7 @@ import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -43,8 +44,15 @@ public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Obj
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws IOException {
         if ("HEAD".equals(input.getMethod())) {
+            var cookies = input.getCookies();
             EventEnvelope result = new EventEnvelope().setHeader("X-Response", "HEAD request received")
                                         .setHeader("Content-Length", 100);
+            if (!cookies.isEmpty()) {
+                result.setHeader("x-cookies", SimpleMapper.getInstance().getCompactGson().toJson(cookies));
+            }
+            if (input.getHeader("x-hello") != null) {
+                result.setHeader("x-hello", input.getHeader("x-hello"));
+            }
             // set multiple cookies
             result.setHeader("Set-Cookie", "first=cookie");
             result.setHeader("Set-Cookie", "second=one");

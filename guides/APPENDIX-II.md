@@ -12,6 +12,12 @@ to avoid breaking the system unintentionally.
 | Route                        | Purpose                               | Modules          |
 |:-----------------------------|:--------------------------------------|:-----------------|
 | actuator.services            | Actuator endpoint services            | platform-core    |
+| info.actuator.service        | Info actuator endpoint                | platform-core    |
+| lib.actuator.service         | Library actuator endpoint             | platform-core    |
+| routes.actuator.service      | Route info actuator endpoint          | platform-core    |
+| env.actuator.service         | Environment actuator endpoint         | platform-core    |
+| health.actuator.service      | Health actuator endpoint              | platform-core    |
+| liveness.actuator.service    | Liveness actuator endpoint            | platform-core    |
 | elastic.queue.cleanup        | Elastic event buffer clean up task    | platform-core    |
 | distributed.tracing          | Distributed tracing logger            | platform-core    |
 | system.ws.server.cleanup     | Websocket server cleanup service      | platform-core    |
@@ -98,11 +104,11 @@ To support traceId that is stored in X-Correlation-Id HTTP header, set this in a
 ```properties
 # list of supported traceId headers where the first one is the default label
 trace.http.header=X-Correlation-Id, X-Trace-Id
+```
 
 ## Transient data store
 
 The system uses a temp folder in "/tmp/composable/java/temp-streams" to hold temporary data blocks for streaming I/O.
-```
 <br/>
 
 |                 Appendix-I                 |                   Home                    |                    Appendix-III                    |

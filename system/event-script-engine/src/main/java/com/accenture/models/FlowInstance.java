@@ -22,6 +22,8 @@ import com.accenture.automation.TaskExecutor;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,12 +32,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FlowInstance {
+    private static final Logger log = LoggerFactory.getLogger(FlowInstance.class);
     private static final String MODEL = "model";
     private static final String FLOW = "flow";
     private static final String TIMEOUT = "timeout";
     private static final String INSTANCE = "instance";
     private static final String CID = "cid";
     private static final String TRACE = "trace";
+    private static final String PARENT = "parent";
 
     // dataset is the state machine that holds the original input and the latest model
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
@@ -43,6 +47,7 @@ public class FlowInstance {
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
     public final ConcurrentLinkedQueue<String> tasks = new ConcurrentLinkedQueue<>();
     public final ConcurrentMap<String, Boolean> pendingTasks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
     public final String id = Utility.getInstance().getUuid();
     public final String cid;
@@ -51,7 +56,7 @@ public class FlowInstance {
     private final Flow flow;
     private String traceId;
     private String tracePath;
-
+    private String parentId;
     private boolean responded = false;
     private boolean running = true;
 
@@ -63,8 +68,9 @@ public class FlowInstance {
      * @param cid correlation ID
      * @param replyTo of the caller to a flow adapter
      * @param flow event flow configuration
+     * @param parentId is the parent flow instance ID
      */
-    public FlowInstance(String flowId, String cid, String replyTo, Flow flow) {
+    public FlowInstance(String flowId, String cid, String replyTo, Flow flow, String parentId) {
         this.flow = flow;
         this.cid = cid;
         this.replyTo = replyTo;
@@ -73,11 +79,36 @@ public class FlowInstance {
         model.put(INSTANCE, id);
         model.put(CID, cid);
         model.put(FLOW, flowId);
+        // this is a sub-flow if parent flow instance is available
+        if (parentId == null) {
+            this.parentId = null;
+            model.put(PARENT, shared);
+        } else {
+            var parent = resolveParent(parentId);
+            if (parent != null) {
+                model.put(PARENT, parent.shared);
+                this.parentId = parent.id;
+                log.info("{}:{} extends {}:{}", this.getFlow().id, this.id, parent.getFlow().id, parent.id);
+            }
+        }
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope();
         timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
+    }
+
+    private FlowInstance resolveParent(String parentId) {
+        var parent = Flows.getFlowInstance(parentId);
+        if (parent == null) {
+            return null;
+        }
+        var pid = parent.parentId;
+        if (pid == null) {
+            return parent;
+        } else {
+            return resolveParent(pid);
+        }
     }
 
     /**

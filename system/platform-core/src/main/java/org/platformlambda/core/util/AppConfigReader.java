@@ -31,9 +31,9 @@ public class AppConfigReader implements ConfigBase {
     private static final Logger log = LoggerFactory.getLogger(AppConfigReader.class);
     private static final String APP_CONFIG_READER_YML = "app-config-reader.yml";
     private static final String RESOURCES = "resources";
+    private static final String PROFILES = "profiles";
     private static final String SPRING_ACTIVE_PROFILES = "spring.profiles.active";
     private static final String ENV_SPRING_ACTIVE_PROFILES = "SPRING_PROFILES_ACTIVE";
-    private static final String APPLICATION_PREFIX = "application-";
     private static final ConfigReader config = new ConfigReader();
     private static final AppConfigReader INSTANCE = new AppConfigReader();
 
@@ -59,15 +59,17 @@ public class AppConfigReader implements ConfigBase {
             String data = util.getUTF(util.stream2bytes(in, false));
             Map<String, Object> m = yaml.load(data.contains("\t")? data.replace("\t", "  ") : data);
             Object fileList = m.get(RESOURCES);
+            String profilePrefix = m.get(PROFILES) instanceof String prefix? prefix : "classpath:/application-";
             if (fileList instanceof List list) {
                 final Map<String, Object> consolidated = new HashMap<>();
+                // load base configuration file(s)
                 list.forEach(filename -> mergeConfig(consolidated, filename.toString()));
-                // check for the parameter spring.profiles.active
+                // load additional configuration file(s) for active profiles
                 List<String> profiles = getActiveProfiles(consolidated);
                 int n = 0;
                 for (String profile: profiles) {
-                    String additionalProp = APPLICATION_PREFIX+profile+".properties";
-                    String additionalYaml = APPLICATION_PREFIX+profile+".yml";
+                    String additionalProp = profilePrefix+profile+".properties";
+                    String additionalYaml = profilePrefix+profile+".yml";
                     n += mergeConfig(consolidated, additionalProp);
                     n += mergeConfig(consolidated, additionalYaml);
                 }
@@ -111,7 +113,7 @@ public class AppConfigReader implements ConfigBase {
              * because the AppConfigReader constructor will resolve references
              * after merging all base configuration files.
              */
-            ConfigReader reader = new ConfigReader().load("/"+filename);
+            ConfigReader reader = new ConfigReader().load(filename);
             Map<String, Object> flat = Utility.getInstance().getFlatMap(reader.getMap());
             if (!flat.isEmpty()) {
                 consolidated.putAll(flat);

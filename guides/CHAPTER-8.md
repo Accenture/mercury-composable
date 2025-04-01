@@ -7,7 +7,7 @@ Service mesh systems require additional administrative containers (PODs) for "co
 
 The additional infrastructure requirements vary among products.
 
-# Using kafka as a minimalist service mesh
+## Using kafka as a minimalist service mesh
 
 We will discuss using Kafka as a minimalist service mesh.
 
@@ -204,7 +204,7 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
     "version": "4.1.8"
   },
   "personality": "RESOURCES",
-  "additional_info": {
+  "more": {
     "total": {
       "topics": 2,
       "virtual_topics": 2,
@@ -250,10 +250,8 @@ You can visit http://127.0.0.1:8080/info and it will show something like this:
       "2023032896b12f9de149459f9c8b71ad8b6b49fa - 2023-03-28T18:08:46Z"
     ]
   },
-  "vm": {
-    "java_vm_version": "18.0.2.1+1",
-    "java_runtime_version": "18.0.2.1+1",
-    "java_version": "18.0.2.1"
+  "java": {
+    "version": "18.0.2.1+1",
   },
   "origin": "2023032896b12f9de149459f9c8b71ad8b6b49fa",
   "time": {

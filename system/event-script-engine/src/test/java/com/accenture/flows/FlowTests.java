@@ -70,16 +70,25 @@ public class FlowTests extends TestBase {
         assertEquals("Flow no-such-flow not found", data.get("message"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void externalStateMachineTest() throws IOException, InterruptedException, ExecutionException {
+        executeExtStateMachine("/api/ext/state/");
+    }
+
+    @Test
+    public void externalStateMachineFlowTest() throws IOException, InterruptedException, ExecutionException {
+        executeExtStateMachine("/api/ext/state/flow/");
+    }
+
+    @SuppressWarnings("unchecked")
+    public void executeExtStateMachine(String uriPath) throws IOException, InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         var PAYLOAD = Map.of("hello", "world");
         AsyncHttpRequest request1 = new AsyncHttpRequest();
         request1.setTargetHost(HOST).setMethod("PUT").setHeader("accept", "application/json")
-                        .setHeader("content-type", "application/json").setBody(PAYLOAD);
-        request1.setUrl("/api/ext/state/"+USER);
+                .setHeader("content-type", "application/json").setBody(PAYLOAD);
+        request1.setUrl(uriPath+USER);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
         EventEnvelope res1 = po.request(req1, TIMEOUT).get();
@@ -288,7 +297,7 @@ public class FlowTests extends TestBase {
         assertTrue(f4.exists());
         String binary = util.file2str(f4);
         assertEquals("binary", binary);
-        f1.deleteOnExit();
+        // f1 will be deleted by the output data mapping 'model.none -> file(/tmp/temp-test-input.txt)'
         f2.deleteOnExit();
         f3.deleteOnExit();
         f4.deleteOnExit();
@@ -326,7 +335,64 @@ public class FlowTests extends TestBase {
         Map<String, Object> output = (Map<String, Object>) result.getBody();
         assertEquals("error", output.get("type"));
         assertEquals(400, output.get("status"));
-        assertEquals("Just a demo exception for circuit breaker to handle", output.get("message"));
+        assertEquals("Demo Exception", output.get("message"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void resilienceHandlerTest() throws IOException, ExecutionException, InterruptedException {
+        final PostOffice po = new PostOffice("unit.test", "100102", "TEST /resilience");
+        final long TIMEOUT = 8000;
+        // Create condition for backoff by forcing it to throw exception over the backoff_trigger (threshold of 3)
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        request.setQueryParameter("exception", 400);
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        assertEquals(503, result.getStatus());
+        assertInstanceOf(Map.class, result.getBody());
+        Map<String, Object> output = (Map<String, Object>) result.getBody();
+        assertEquals(Map.of("type", "error",
+                "message", "Service temporarily not available - please try again in 2 seconds",
+                "status", 503), output);
+        // Let the backoff period expires
+        log.info("Making request during backoff period will throw exception 503");
+        AsyncHttpRequest requestDuringBackoff = new AsyncHttpRequest();
+        requestDuringBackoff.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        requestDuringBackoff.setQueryParameter("exception", 400);
+        EventEnvelope requestBo = new EventEnvelope().setTo(HTTP_CLIENT).setBody(requestDuringBackoff);
+        EventEnvelope resultBo = po.request(requestBo, TIMEOUT).get();
+        assertEquals(503, resultBo.getStatus());
+        assertInstanceOf(Map.class, resultBo.getBody());
+        Map<String, Object> outputBo = (Map<String, Object>) resultBo.getBody();
+        assertTrue(outputBo.containsKey("message"));
+        assertEquals(503, outputBo.get("status"));
+        assertEquals("error", outputBo.get("type"));
+        var message = outputBo.get("message").toString();
+        assertTrue(message.startsWith("Service temporarily not available"));
+        log.info("Waiting for backoff period to expire");
+        Thread.sleep(2000);
+        // Test alternative path using 'text(401, 403-404) -> reroute'
+        // Let exception simulator to throw HTTP-401
+        AsyncHttpRequest request1 = new AsyncHttpRequest();
+        request1.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        request1.setQueryParameter("exception", 401);
+        EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
+        EventEnvelope result1 = po.request(req1, TIMEOUT).get();
+        assertEquals(200, result1.getStatus());
+        assertInstanceOf(Map.class, result1.getBody());
+        Map<String, Object> output1 = (Map<String, Object>) result1.getBody();
+        assertEquals(Map.of("path", "alternative"), output1);
+        // Try again with HTTP-403
+        AsyncHttpRequest request2 = new AsyncHttpRequest();
+        request2.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
+        request2.setQueryParameter("exception", 403);
+        EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
+        EventEnvelope result2 = po.request(req2, TIMEOUT).get();
+        assertEquals(200, result2.getStatus());
+        assertInstanceOf(Map.class, result2.getBody());
+        Map<String, Object> output2 = (Map<String, Object>) result2.getBody();
+        assertEquals(Map.of("path", "alternative"), output2);
     }
 
     @SuppressWarnings("unchecked")
@@ -377,6 +443,8 @@ public class FlowTests extends TestBase {
         assertNotNull(original.get("unique_id2"));
         assertNotEquals(original.get("unique_id1"), original.get("unique_id2"));
         assertEquals(original.get("unique_id2"), original.get("unique_id3"));
+        // demonstrate string concatenation
+        assertEquals("a b,c", original.get("concat_string"));
         // check environment variable substitution
         assertEquals(System.getenv("PATH"), original.get("path"));
         // check metadata for a flow
@@ -429,6 +497,7 @@ public class FlowTests extends TestBase {
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(USER, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
+        assertEquals("hello", result.get("hello"));
         assertEquals("hello world", result.get("greeting"));
         assertTrue(result.containsKey("original"));
         Map<String, Object> original = (Map<String, Object>) result.get("original");
@@ -700,28 +769,57 @@ public class FlowTests extends TestBase {
         assertEquals(USER, result.get("user"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void forkJoinTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+    public void forkJoinTest() throws IOException, InterruptedException, ExecutionException {
+        forkJoin("/api/fork-n-join/", false);
+    }
+
+    @Test
+    public void forkJoinFlowTest() throws IOException, InterruptedException, ExecutionException {
+        forkJoin("/api/fork-n-join-flows/", false);
+    }
+
+    @Test
+    public void forkJoinWithExceptionTest() throws IOException, InterruptedException, ExecutionException {
+        forkJoin("/api/fork-n-join/", true);
+    }
+
+    @Test
+    public void forkJoinFlowWithExceptionTest() throws IOException, InterruptedException, ExecutionException {
+        forkJoin("/api/fork-n-join-flows/", true);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void forkJoin(String apiPath, boolean exception) throws IOException, InterruptedException, ExecutionException {
+        final int UNAUTHORIZED = 401;
         final long TIMEOUT = 8000;
         String USER = "test-user";
         int SEQ = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/fork-n-join/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl(apiPath+USER).setQueryParameter("seq", SEQ);
+        if (exception) {
+            request.setQueryParameter("exception", UNAUTHORIZED);
+        }
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        EventEnvelope res = po.request(req, TIMEOUT).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
-        Map<String, Object> result = (Map<String, Object>) res.getBody();
-        PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
-        assertEquals(SEQ, pw.sequence);
-        assertEquals(USER, pw.user);
-        assertEquals("hello-world-one", pw.key1);
-        assertEquals("hello-world-two", pw.key2);
+        if (exception) {
+            assertEquals(Map.of(
+                    "message", "Simulated Exception",
+                    "type", "error",
+                    "status", UNAUTHORIZED), res.getBody());
+            assertEquals(UNAUTHORIZED, res.getStatus());
+        } else {
+            Map<String, Object> result = (Map<String, Object>) res.getBody();
+            PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
+            assertEquals(SEQ, pw.sequence);
+            assertEquals(USER, pw.user);
+            assertEquals("hello-world-one", pw.key1);
+            assertEquals("hello-world-two", pw.key2);
+        }
     }
 
     @SuppressWarnings("unchecked")

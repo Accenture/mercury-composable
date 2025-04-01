@@ -20,7 +20,11 @@ package org.platformlambda.core.models;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 
 public class PoJo {
@@ -33,8 +37,12 @@ public class PoJo {
     private String address;
     private String fullName;
     private Date date;
-
-    private LocalDateTime time;
+    private LocalDate localDate;
+    private LocalTime localTime;
+    private LocalDateTime localDateTime;
+    private Timestamp sqlTimestamp;
+    private java.sql.Date sqlDate;
+    private java.sql.Time sqlTime;
 
     public int getNumber() {
         return number;
@@ -68,12 +76,28 @@ public class PoJo {
         this.date = date;
     }
 
-    public LocalDateTime getTime() {
-        return time;
+    public LocalDateTime getLocalDateTime() {
+        return localDateTime;
     }
 
-    public void setTime(LocalDateTime time) {
-        this.time = time;
+    public void setLocalDateTime(LocalDateTime localDateTime) {
+        this.localDateTime = localDateTime;
+    }
+
+    public LocalDate getLocalDate() {
+        return localDate;
+    }
+
+    public void setLocalDate(LocalDate date) {
+        this.localDate = date;
+    }
+
+    public LocalTime getLocalTime() {
+        return localTime;
+    }
+
+    public void setLocalTime(LocalTime time) {
+        this.localTime = time;
     }
 
     public String getFullName() {
@@ -106,5 +130,29 @@ public class PoJo {
 
     public void setBigDecimal(BigDecimal bigDecimal) {
         this.bigDecimal = bigDecimal;
+    }
+
+    public Timestamp getSqlTimestamp() {
+        return sqlTimestamp;
+    }
+
+    public void setSqlTimestamp(Timestamp sqlTimestamp) {
+        this.sqlTimestamp = sqlTimestamp;
+    }
+
+    public java.sql.Date getSqlDate() {
+        return sqlDate;
+    }
+
+    public void setSqlDate(java.sql.Date sqlDate) {
+        this.sqlDate = sqlDate;
+    }
+
+    public Time getSqlTime() {
+        return sqlTime;
+    }
+
+    public void setSqlTime(Time sqlTime) {
+        this.sqlTime = sqlTime;
     }
 }

@@ -30,6 +30,16 @@ public class EventEnvelopeTest {
     }
 
     @Test
+    public void headerTest() throws IOException {
+        EventEnvelope event = new EventEnvelope();
+        event.setHeader("hello", "world");
+        event.setHeader("test", "hello\r\nworld");
+        EventEnvelope restored = new EventEnvelope(event.toBytes());
+        assertEquals("hello world", restored.getHeader("test"));
+        assertEquals("world", restored.getHeader("hello"));
+    }
+
+    @Test
     public void booleanTest() throws IOException {
         boolean HELLO = true;
         EventEnvelope source = new EventEnvelope();

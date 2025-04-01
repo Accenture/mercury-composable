@@ -36,7 +36,9 @@ public class ExternalStateMachine implements LambdaFunction {
     private static final String GET = "get";
     private static final String REMOVE = "remove";
     private static final String KEY = "key";
+    private static final String DATA = "data";
 
+    @SuppressWarnings("unchecked")
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (!headers.containsKey(KEY)) {
@@ -44,10 +46,14 @@ public class ExternalStateMachine implements LambdaFunction {
         }
         String type = headers.get(TYPE);
         String key = headers.get(KEY);
-        if (PUT.equals(type) && input != null) {
-            log.info("Saving {} to store", key);
-            store.put(key, input);
-            return true;
+        if (PUT.equals(type) && input instanceof Map) {
+            Map<String, Object> dataset = (Map<String, Object>) input;
+            var data = dataset.get(DATA);
+            if (data != null) {
+                log.info("Saving {} to store", key);
+                store.put(key, data);
+                return true;
+            }
         }
         if (GET.equals(type)) {
             Object v = store.get(key);

@@ -90,24 +90,23 @@ public class AppStarter {
             } else if (COMPACT.equalsIgnoreCase(logFormat)) {
                 reConfigLogger(false);
             }
+            // print application version
+            log.info("Application version {}", Utility.getInstance().getVersion());
             /*
              * Print out basic JVM and memory information before starting app.
              * This helps to check if JVM is configured correctly.
              */
             Runtime runtime = Runtime.getRuntime();
             NumberFormat number = NumberFormat.getInstance();
-            String javaVersion = System.getProperty(JAVA_VERSION);
-            String javaVM = System.getProperty(JAVA_VM_VERSION);
-            String javaRuntime = System.getProperty(JAVA_RUNTIME_VERSION);
-            log.info("Java version = {}", javaVersion);
-            log.info("Java VM = {}", javaVM);
-            log.info("Java Runtime = {}", javaRuntime);
+            log.info("Java version {}", System.getProperty(JAVA_VERSION));
+            log.info("Java VM: {}", System.getProperty(JAVA_VM_VERSION));
+            log.info("Java Runtime: {}", System.getProperty(JAVA_RUNTIME_VERSION));
             String maxMemory = number.format(runtime.maxMemory());
             String allocatedMemory = number.format(runtime.totalMemory());
             String freeMemory = number.format(runtime.freeMemory());
-            log.info("Max memory = {}", maxMemory);
-            log.info("Allocated memory = {}", allocatedMemory);
-            log.info("Free memory = {}", freeMemory);
+            log.info("Max memory: {}", maxMemory);
+            log.info("Allocated memory: {}", allocatedMemory);
+            log.info("Free memory: {}", freeMemory);
             AppStarter.args = args;
             instance = new AppStarter();
             // Run "BeforeApplication" modules
@@ -325,7 +324,7 @@ public class AppStarter {
                     Class<?> cls = Class.forName(serviceName);
                     if (Feature.isRequired(cls)) {
                         PreLoad svc = cls.getAnnotation(PreLoad.class);
-                        List<String> routes = util.split(svc.route(), ", ");
+                        List<String> routes = util.split(svc.route(), "[, ]");
                         if (routes.isEmpty()) {
                             log.error("Unable to preload {} - missing service route(s)", serviceName);
                         } else {

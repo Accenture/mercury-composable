@@ -18,6 +18,8 @@
 
 package org.platformlambda.core.system;
 
+import org.platformlambda.core.util.AppConfigReader;
+
 import java.lang.reflect.Method;
 
 public class AutoStart {
@@ -28,9 +30,15 @@ public class AutoStart {
      * @param args from command line, if any
      */
     public static void main(String[] args) {
+        AppConfigReader config = AppConfigReader.getInstance();
+        var springBoot = config.getProperty("spring.boot.main", "org.platformlambda.rest.RestServer");
         try {
-            Class<?> cls = Class.forName("org.platformlambda.rest.RestServer");
+            Class<?> cls = Class.forName(springBoot);
             Method method = cls.getMethod("main", String[].class);
+            // Declare as a Spring Boot application so that AppStarter will defer loading main applications
+            AppStarter.runAsSpringBootApp();
+            // Execute BeforeApplication(s)
+            AppStarter.main(args);
             method.invoke(null, (Object) args);
         } catch (ReflectiveOperationException e) {
             AppStarter.main(args);

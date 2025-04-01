@@ -39,6 +39,7 @@ public class ModelTest {
         request.setBody(HELLO);
         request.setHeader(HELLO, WORLD);
         request.setCookie(HELLO, WORLD).setMethod(PUT);
+        request.setCookie("hack", "invalid\ncookie");
         request.setFileName("none")
                 .setPathParameter(HELLO, WORLD)
                 .setQueryString(HELLO+"="+WORLD)
@@ -58,6 +59,8 @@ public class ModelTest {
         // header, cookie, path and query's get methods are case-insensitive
         assertEquals(WORLD, restored.getHeader("hElLo"));
         assertEquals(WORLD, restored.getCookie("heLLO"));
+        // prove that the invalid cookie will be pass thru
+        assertEquals(1, restored.getCookies().size());
         assertEquals(WORLD, restored.getPathParameter("Hello"));
         assertEquals(WORLD, restored.getQueryParameter("HellO"));
         assertEquals(PUT, restored.getMethod());

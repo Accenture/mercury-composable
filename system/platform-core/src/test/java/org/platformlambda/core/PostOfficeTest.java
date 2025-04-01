@@ -1581,13 +1581,13 @@ public class PostOfficeTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertTrue(result.containsKey("app"));
-        assertTrue(result.containsKey("memory"));
-        assertTrue(result.containsKey("personality"));
-        assertTrue(result.containsKey("vm"));
-        assertTrue(result.containsKey("streams"));
-        assertTrue(result.containsKey("origin"));
+        var result = new MultiLevelMap((Map<String, Object>) response.getBody());
+        assertTrue(result.exists("app"));
+        assertTrue(result.exists("memory"));
+        assertTrue(result.exists("personality"));
+        assertTrue(result.exists("java.version"));
+        assertTrue(result.exists("streams"));
+        assertTrue(result.exists("origin"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1642,30 +1642,23 @@ public class PostOfficeTest extends TestBase {
     public void envTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
+        // making RPC directly to the actuator service
         EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"env");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
-        Map<String, Object> result = (Map<String, Object>) response.getBody();
-        assertTrue(result.containsKey("app"));
-        assertTrue(result.containsKey("routing"));
-        assertTrue(result.containsKey("env"));
-    }
-
-    @Test
-    public void resumeTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final String USER = "user";
-        final String WHEN = "when";
-        EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope request = new EventEnvelope()
-                .setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"resume")
-                .setHeader(USER, "someone").setHeader(WHEN, "now");
-        po.asyncRequest(request, 5000).onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
-        assertEquals(false, response.getBody());
+        // normalize the map for easy retrieval using MultiLevelMap
+        Map<String, Object> result = util.getFlatMap((Map<String, Object>) response.getBody());
+        MultiLevelMap multi = new MultiLevelMap();
+        result.forEach(multi::setElement);
+        assertEquals("platform-core", multi.getElement("app.name"));
+        assertInstanceOf(Map.class, multi.getElement("env"));
+        assertEquals(System.getenv("PATH"), multi.getElement("env.environment.PATH"));
+        // environment variables that are not found will be shown as empty string
+        assertEquals("", multi.getElement("env.environment.NON_EXIST"));
+        assertEquals("true", multi.getElement("env.properties.rest.automation"));
+        assertEquals("true", multi.getElement("env.properties.snake.case.serialization"));
     }
 
     @Test
@@ -1803,7 +1796,7 @@ public class PostOfficeTest extends TestBase {
         PoJoSubset minimalData = new PoJoSubset();
         minimalData.setName(HELLO_WORLD);
         minimalData.setDate(now);
-        minimalData.setTime(time);
+        minimalData.setLocalDateTime(time);
         EventEnvelope request = new EventEnvelope().setTo(AUTO_MAPPING).setBody(minimalData)
                                 .setTrace(TRACE_ID,TRACE_PATH).setFrom("unit.test");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
@@ -1815,7 +1808,7 @@ public class PostOfficeTest extends TestBase {
         assertEquals(PoJo.class.getName(), response.getType());
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(response.getBody(), PoJo.class);
         assertEquals(now, pojo.getDate());
-        assertEquals(time, pojo.getTime());
+        assertEquals(time, pojo.getLocalDateTime());
         assertEquals(HELLO_WORLD, pojo.getName());
         // default values in PoJo
         assertEquals(0, pojo.getNumber());

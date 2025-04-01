@@ -15,7 +15,8 @@ tasks:
       - 'status -> output.status'
       - 'header -> output.header'
       - 'header.demo -> output.header.x-demo'
-      - 'text(${application.name}) -> output.body.name'
+      - 'text(${application.name}) -> model.parent.name'
+      - 'text(hello) -> model.parent.hello'
     description: 'Hello World'
     execution: end
     exception: 'v1.hello.exception'

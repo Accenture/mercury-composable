@@ -43,7 +43,6 @@ public class AsyncHelloWorld {
         String traceId = Utility.getInstance().getUuid();
         PostOffice po = new PostOffice("hello.world.endpoint", traceId, "GET /api/hello/world");
         Map<String, Object> forward = new HashMap<>();
-
         Enumeration<String> headers = request.getHeaderNames();
         while (headers.hasMoreElements()) {
             String key = headers.nextElement();

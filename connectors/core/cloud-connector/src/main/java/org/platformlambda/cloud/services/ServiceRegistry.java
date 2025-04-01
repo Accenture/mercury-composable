@@ -64,13 +64,7 @@ public class ServiceRegistry implements LambdaFunction {
     private static final String CONNECTED = "connected";
     private static final String DISCONNECTED = "disconnected";
     private static final String LEAVE = "leave";
-    private static final String USER = "user";
     private static final String NAME = "name";
-    private static final String SUSPEND = "suspend";
-    private static final String RESUME = "resume";
-    private static final String ISOLATE = "isolate";
-    private static final String WHEN = "when";
-    private static final String NOW = "now";
     private static final String MONITOR = "monitor-";
     private static final long EXPIRY = 90 * 1000L;
 
@@ -204,34 +198,6 @@ public class ServiceRegistry implements LambdaFunction {
                 } else {
                     // send routing table of this node to the newly joined node
                     sendMyRoutes(true);
-                }
-            }
-        }
-        if (headers.containsKey(USER)) {
-            if (presenceMonitor) {
-                log.warn("{} request from {} ignored because this is a presence monitor",
-                        headers.get(TYPE), headers.get(USER));
-            } else {
-                String user = headers.get(USER);
-                if (RESUME.equals(type) || SUSPEND.equals(type)) {
-                    PresenceConnector connector = PresenceConnector.getInstance();
-                    connector.setActive(myOrigin, user, RESUME.equals(type));
-                    if (NOW.equals(headers.get(WHEN))) {
-                        if (RESUME.equals(type)) {
-                            sendMyRoutes(true);
-                            log.info("Restore {} by {}", myOrigin, user);
-                        } else {
-                            po.send(ServiceDiscovery.SERVICE_REGISTRY + APP_GROUP + closedUserGroup,
-                                    new Kv(TYPE, ISOLATE), new Kv(USER, user), new Kv(ORIGIN, platform.getOrigin()));
-                        }
-                    }
-                }
-                if (ISOLATE.equals(type) && headers.containsKey(ORIGIN)) {
-                    String origin = headers.get(ORIGIN);
-                    if (!origin.equals(myOrigin)) {
-                        log.warn("Isolate {} by {}", origin, user);
-                        removeRoutesFromOrigin(origin);
-                    }
                 }
             }
         }
@@ -487,5 +453,4 @@ public class ServiceRegistry implements LambdaFunction {
             }
         }
     }
-
 }

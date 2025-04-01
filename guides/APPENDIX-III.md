@@ -2,7 +2,7 @@
 
 ## Actuator endpoints
 
-The following admin endpoints are available.
+The following are actuator endpoints:
 
 ```
 GET /info
@@ -11,21 +11,67 @@ GET /info/lib
 GET /env
 GET /health
 GET /livenessprobe
-POST /shutdown
 ```
 
-| Endpoint       | Purpose                                                                             | 
-|:---------------|:------------------------------------------------------------------------------------|
-| /info          | Describe the application                                                            |
-| /info/routes   | Show public routing table                                                           |
-| /info/lib      | List libraries packed with this executable                                          |
-| /env           | List all private and public function route names and selected environment variables |
-| /health        | Application health check endpoint                                                   |
-| /livenessprobe | Check if application is running normally                                            |
-| /shutdown      | Operator may use this endpoint to do a POST command to stop the application         |
+| Endpoint       | Purpose                                                        | 
+|:---------------|:---------------------------------------------------------------|
+| /info          | Describe the application                                       |
+| /info/routes   | List all private and public function route names               |
+| /info/lib      | List libraries packed with this executable                     |
+| /env           | Show selected environment variables and application parameters |
+| /health        | Application health check endpoint                              |
+| /livenessprobe | Check if application is running normally                       |
 
-For the shutdown endpoint, you must provide an `X-App-Instance` HTTP header where the value is the "origin ID"
-of the application. You can get the value from the "/info" endpoint.
+## System provided REST endpoints
+
+When REST automation is turned on, the following essential REST endpoints will be provided if they are
+not configured in rest.yaml. The "POST /api/event" is used for Event-Over-HTTP protocol and the others
+are actuator endpoints.
+
+To override the default parameters such as timeout, tracing and authentication, you can configure them
+in rest.yaml.
+
+```yaml
+rest:
+  - service: "event.api.service"
+    methods: ['POST']
+    url: "/api/event"
+    timeout: 60s
+    tracing: true
+
+  - service: "info.actuator.service"
+    methods: ['GET']
+    url: "/info"
+    timeout: 10s
+
+  - service: "lib.actuator.service"
+    methods: ['GET']
+    url: "/info/lib"
+    timeout: 10s
+
+  - service: "routes.actuator.service"
+    methods: ['GET']
+    url: "/info/routes"
+    timeout: 10s
+
+  - service: "health.actuator.service"
+    methods: ['GET']
+    url: "/health"
+    timeout: 10s
+
+  - service: "liveness.actuator.service"
+    methods: ['GET']
+    url: "/livenessprobe"
+    timeout: 10s
+
+  - service: "env.actuator.service"
+    methods: ['GET']
+    url: "/env"
+    timeout: 10s
+```
+
+> *Note*: When using the rest-spring-3 library, the actuator endpoints are always available from the
+          Spring Boot's HTTP port and they cannot be changed.
 
 ## Custom health services
 
@@ -42,6 +88,9 @@ Your custom health service must respond to the following requests:
 1. Info request (type=info) - it should return a map that includes service name and href (protocol, hostname and port)
 2. Health check (type=health) - it should return a text string or a Map of the health check. e.g. read/write test result. 
    If health check fails, you can throw AppException with status code and error message.
+
+> *Note*: The "href" entry in the health service's response should tell the operator about the target URL
+          if the dependency connects to a cloud platform service such as Kafka, Redis, etc.
 
 A sample health service is available in the `DemoHealth` class of the `composable-example` project as follows:
 
@@ -102,8 +151,8 @@ list.add("b");
 req.setQueryParameter("x2", list);
 req.setTargetHost("http://127.0.0.1:8083");
 EventEnvelope request = new EventEnvelope().setTo("async.http.request").setBody(req);
-EventEnvelope res = po.request(request, 5000);
-// the result is in res.getBody()
+EventEnvelope res = po.request(request, 5000).get();
+// the response is a Java Future and the result is an EventEnvelope
 ```
 
 By default, your user function is running in a virtual thread.

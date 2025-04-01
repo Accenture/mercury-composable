@@ -19,7 +19,7 @@ implementation of a Composable framework to realize the goal of composable archi
 
 Before we take a deep dive of the mercury-composable framework, let's review Composable Methodology first.
 
-# Methodology
+## Methodology
 
 The Composable Methodology takes a different approach in software development that empowers and aligns product owners,
 business analysts, technology architects and software engineers.
@@ -136,7 +136,7 @@ By design, composable functions are granular in nature. They are registered to a
 a function is executed when an event arrives. Without multiple levels of tight coupling, each piece of user code
 consumes memory efficiently. Memory is released to the system as soon as the function finishes execution.
 
-# Composable framework
+## Composable framework
 
 To realize the composable design principles, a low-latency in-memory event system is available at the core
 of the Mercury-Composable framework.

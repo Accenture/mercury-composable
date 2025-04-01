@@ -233,8 +233,7 @@ public class RestEndpointTest extends TestBase {
         req.setMethod("PUT");
         req.setUrl("/api/hello/world");
         req.setTargetHost("http://127.0.0.1:"+port);
-        req.setBody(b);
-        req.setContentLength(len);
+        req.setContentLength(len).setBody(b);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
@@ -669,6 +668,7 @@ public class RestEndpointTest extends TestBase {
         assertNull(map.getElement("body"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void sendHttpHeadWithCID() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -680,6 +680,11 @@ public class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setHeader("x-correlation-id", traceId);
+        // prove that CR and LF will be filtered out
+        req.setHeader("x-hello", "hello\r\nworld");
+        req.setCookie("hello", "world");
+        req.setCookie("another", "one");
+        req.setCookie("invalid", "cookie\nnot\nallowed");
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
@@ -692,6 +697,14 @@ public class RestEndpointTest extends TestBase {
         assertEquals(traceId, response.getHeader("X-Correlation-Id"));
         // multiple "set-cookie" headers are consolidated into one composite value
         assertEquals("first=cookie|second=one", response.getHeader("set-cookie"));
+        var json = response.getHeader("x-cookies");
+        assertInstanceOf(String.class, json);
+        Map<String, String> restoredCookies = SimpleMapper.getInstance().getCompactGson().fromJson(json, Map.class);
+        // prove that multiple cookies from user can be read and transported
+        assertEquals(Map.of("hello", "world", "another", "one"), restoredCookies);
+        var helloWorld = response.getHeader("x-hello");
+        assertInstanceOf(String.class, helloWorld);
+        assertEquals("hello world", helloWorld);
     }
 
     @Test

@@ -45,33 +45,23 @@ import java.util.*;
  * i.e. when user defined websocket server using WebSocketService is found.
  */
 public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
-
     private static final Logger log = LoggerFactory.getLogger(MinimalistHttpHandler.class);
     private static final SimpleXmlWriter xml = new SimpleXmlWriter();
-
     private static final String TYPE = "type";
     private static final String ACCEPT = "Accept";
     private static final String ACCEPT_CONTENT = ACCEPT.toLowerCase();
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "application/xml";
     private static final String GET = "GET";
-    private static final String POST = "POST";
     private static final String DATE = "Date";
-    private static final String APP_INSTANCE = "X-App-Instance";
-    private static final String USER = "user";
-    private static final String WHEN = "when";
-    private static final String NOW = "now";
-    private static final String LATER = "later";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String CONTENT_LENGTH = "Content-Length";
     private static final String TEXT_PLAIN = "text/plain";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
-    private static final String SHUTDOWN = "shutdown";
     private static final String PATH = "path";
     private static final String KEEP_ALIVE = "keep-alive";
     private static final String CONNECTION_HEADER = "Connection";
-    private static final String REGISTRY = "system.service.registry";
     private static final String[] INFO_SERVICE = {"/info", "info"};
     private static final String[] INFO_LIB = {"/info/lib", "lib"};
     private static final String[] INFO_ROUTES = {"/info/routes", "routes"};
@@ -96,17 +86,12 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
         }
         final String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
-        String origin = request.getHeader(APP_INSTANCE);
-        if (origin != null && !po.exists(origin)) {
-            sendError(response, uri, 404, origin+" is not reachable");
-            return;
-        }
         boolean processed = false;
         if (GET.equals(method)) {
             String type = getAdminEndpointType(uri);
             if (type != null) {
                 EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-                event.setTo(origin != null? ActuatorServices.ACTUATOR_SERVICES+"@"+origin : ActuatorServices.ACTUATOR_SERVICES);
+                event.setTo(ActuatorServices.ACTUATOR_SERVICES);
                 String accept = request.getHeader(ACCEPT);
                 event.setHeader(ACCEPT_CONTENT, accept != null? accept : APPLICATION_JSON);
                 try {
@@ -147,18 +132,6 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
                 }
             }
         }
-        if (POST.equals(method)) {
-            if ("/shutdown".equals(uri)) {
-                sendShutdown(response, uri, origin);
-                processed = true;
-            }
-            if (("/suspend").equals(uri) || ("/resume").equals(uri) ||
-                ("/suspend/now").equals(uri) || ("/suspend/later").equals(uri) ||
-                ("/resume/now").equals(uri) || ("/resume/later").equals(uri)) {
-                suspendResume(response, uri, origin);
-                processed = true;
-            }
-        }
         if (!processed) {
             if ("/".equals(uri)) {
                 Map<String, Object> instruction = new HashMap<>();
@@ -175,47 +148,6 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
                 sendError(response, uri, 404, "Resource not found");
             }
         }
-    }
-
-    private void suspendResume(HttpServerResponse response, String uri, String origin) {
-        if (origin == null) {
-            sendError(response, uri, 400, "Missing "+ APP_INSTANCE +" in request header");
-            return;
-        }
-        EventEmitter po = EventEmitter.getInstance();
-        Utility util = Utility.getInstance();
-        List<String> parts = util.split(uri, "/");
-        if (parts.size() == 1) {
-            parts.add(NOW);
-        }
-        String type = parts.getFirst();
-        if (!po.exists(REGISTRY)) {
-            sendError(response, uri, 400, type+" not available in standalone mode");
-            return;
-        }
-        EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-        event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
-        event.setHeader(USER, System.getProperty("user.name"));
-        String when = NOW.equals(parts.get(1)) ? NOW : LATER;
-        event.setHeader(WHEN, when);
-        po.sendLater(event, new Date(System.currentTimeMillis() + GRACE_PERIOD));
-        String message = type+" request sent to " + origin;
-        if (LATER.equals(when)) {
-            message += ". It will take effect in one minute.";
-        }
-        sendResponse(type, response, uri, 200, message);
-    }
-
-    private void sendShutdown(HttpServerResponse response, String uri, String origin) {
-        if (origin == null) {
-            sendError(response, uri, 400, "Missing "+ APP_INSTANCE +" in request header");
-            return;
-        }
-        EventEnvelope event = new EventEnvelope().setHeader(TYPE, SHUTDOWN);
-        event.setTo(ActuatorServices.ACTUATOR_SERVICES+"@"+origin);
-        event.setHeader(USER, System.getProperty("user.name"));
-        EventEmitter.getInstance().sendLater(event, new Date(System.currentTimeMillis() + GRACE_PERIOD));
-        sendResponse(SHUTDOWN, response, uri, 200, origin+" will be shutdown in "+GRACE_PERIOD+" ms");
     }
 
     private void sendError(HttpServerResponse response, String uri, int status, Object message) {

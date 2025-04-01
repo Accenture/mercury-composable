@@ -6,13 +6,13 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.11</version>
+    <version>4.2.27</version>
     <name>Cloud connector for Kafka cluster</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.2</version>
+        <version>3.4.4</version>
         <relativePath/>
     </parent>
 
@@ -37,7 +37,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2024.0.2</version>
+                <version>2024.0.4</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.2.11</version>
+            <version>4.2.27</version>
         </dependency>
 
         <dependency>
