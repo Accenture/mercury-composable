@@ -644,7 +644,7 @@ The outgoing event using the PostOffice will use the custom serializer automatic
 To interpret an event response from a RPC call, you can use the following PostOffice API:
 
 ```java
-MyPoJo result = po.getResponseBodyAsPoJo(responseEvent, MyPoJo.class);
+MyPoJo result = po.getEventBodyAsPoJo(responseEvent, MyPoJo.class);
 ```
 
 ## Minimalist API design
