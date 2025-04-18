@@ -34,5 +34,6 @@ flows:
   - 'children/child-one.yml'
   - 'children/child-two.yml'
   - 'children/child-three.yml'
+  - 'http-client-by-config.yml'
 
 location: 'classpath:/flows/'

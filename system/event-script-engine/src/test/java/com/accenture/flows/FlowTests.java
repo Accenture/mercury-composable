@@ -55,6 +55,27 @@ public class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void httpClientByConfigTest() throws IOException, ExecutionException, InterruptedException {
+        final long TIMEOUT = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST")
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json")
+                .setUrl("/api/http/client/by/config/test");
+        request.setBody(Map.of("hello", "world"));
+        PostOffice po = new PostOffice("unit.test", "10", "TEST /http/client/by/config");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, TIMEOUT).get();
+        assertInstanceOf(Map.class, result.getBody());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals("test", map.getElement("parameters.path.demo"));
+        assertEquals("world", map.getElement("parameters.query.hello"));
+        assertInstanceOf(Map.class, map.getElement("body"));
+        assertEquals(Map.of("hello", "world"), map.getElement("body"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void noSuchFlowTest() throws IOException, ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();

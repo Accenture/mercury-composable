@@ -180,7 +180,7 @@ res.onSuccess(response -> {
 });
 ```
 
-### Send HTTP request body for HTTP PUT, POST and PATCH methods
+## Send HTTP request body for HTTP PUT, POST and PATCH methods
 
 For most cases, you can just set a HashMap into the request body and specify content-type as JSON or XML.
 The system will perform serialization properly.
@@ -270,6 +270,50 @@ of the payload.
 
 *IMPORTANT*: Do not set the "content-length" HTTP header because the system will automatically compute the
 correct content-length for small payload. For large payload, it will use the chunking method.
+
+## Using AsyncHttpClient by configuration
+
+The "async.http.request" service can be used as a task in a flow. The following flow configuration example
+illustrates using it as a task.
+
+```yaml
+flow:
+  id: 'http-client-by-config'
+  description: 'Demonstrate use of the Async HTTP client using configuration means'
+  ttl: 10s
+
+first.task: 'http.client'
+
+tasks:
+  - name: 'http.client'
+    input:
+      - 'text(/api/echo/test) -> url'
+      - 'text(PUT) -> method'
+      - 'text(http://127.0.0.1:${server.port}) -> host'
+      - 'input.body -> body'
+      - 'text(world) -> parameters.query.hello'
+      - 'text(application/json) -> headers.content-type'
+      - 'text(application/json) -> headers.accept'
+    process: 'async.http.request'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Return result'
+    execution: end
+```
+
+The interface contract for the AsyncHttpClient is the AsyncHttpRequest object. The following table lists
+the parameters where parameters.query, body and cookies are optional.
+
+| Parameter        | Usage                                     | Example                               |
+|:-----------------|:------------------------------------------|:--------------------------------------|
+| method           | HTTP method                               | GET                                   |
+| host             | Protocol and domain name (or IP address)  | https://demo.platformlambda.org       |
+| url              | URI path                                  | /api/hello/world                      |
+| parameters.query | Query parameter key-value                 | parameters.query.hello=world          |
+| headers          | HTTP request headers                      | headers.content-type=application/json |
+| body             | HTTP request body for PUT, POST and PATCH | {"hello": "world"}                    |
+| cookies          | Cookie key-value                          | cookies.session-id=12345              |
 
 ## Starting a flow programmatically
 

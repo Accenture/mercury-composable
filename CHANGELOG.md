@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.28, 4/17/2025
+
+### Added
+
+N/A
+
+### Removed
+
+1. default application.properties files in platform-core, rest-spring-3 and event-script-engine
+2. HTML escape characters in URI path handling in AsyncHttpClient
+
+### Changed
+
+N/A
+
+---
 ## Version 4.2.27, 3/31/2025
 
 ### Added
