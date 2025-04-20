@@ -38,11 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class BenchmarkService implements LambdaFunction {
-
+    private static final ConcurrentMap<Integer, BenchmarkResponse> responses = new ConcurrentHashMap<>();
     private static final String BENCHMARK_USERS = "benchmark.users";
     private static final String BENCHMARK_CALLBACK = "benchmark.callback";
-    private static final String NETWORK_ONE_WAY = "network.one.way";
-    private static final String NETWORK_ECHO = "network.echo";
+    private static final String BENCHMARK_ONE_WAY = "benchmark.one.way";
+    private static final String BENCHMARK_ECHO = "benchmark.echo";
     private static final String SENDER = "sender";
     private static final String COMMAND = "command";
     private static final String PAYLOAD = "payload";
@@ -56,10 +56,9 @@ public class BenchmarkService implements LambdaFunction {
     private static final String MS = " ms";
     private static final String BPS = " bps";
     private static final String WARNING = " WARN: ";
-    private static boolean testRunning = false;
-    private static BenchmarkRequest benchmarkRequest;
-    private static String httpTarget;
-    private static final ConcurrentMap<Integer, BenchmarkResponse> responses = new ConcurrentHashMap<>();
+    private boolean testRunning = false;
+    private BenchmarkRequest benchmarkRequest;
+    private String httpTarget;
 
     @SuppressWarnings("unchecked")
     public BenchmarkService() throws IOException {
@@ -230,7 +229,7 @@ public class BenchmarkService implements LambdaFunction {
                 if (benchmarkRequest.size > 2000 * 1000) {
                     throw new IllegalArgumentException("Max payload size is 2,000,000");
                 }
-                String target = ASYNC.equals(benchmarkRequest.type)? NETWORK_ONE_WAY : NETWORK_ECHO;
+                String target = ASYNC.equals(benchmarkRequest.type)? BENCHMARK_ONE_WAY : BENCHMARK_ECHO;
                 int cycles = benchmarkRequest.size / 10;
                 String sb = "123456789.".repeat(cycles);
                 Map<String, Object> data = new HashMap<>();

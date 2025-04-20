@@ -233,7 +233,7 @@ public class TopicManager implements LambdaFunction {
             }
         } catch (Exception e) {
             log.error("Unable to create {} - {}", topic, e.getMessage());
-            throw new IOException(e);
+            throw new IOException(e.getMessage());
         }
     }
 

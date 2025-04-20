@@ -28,9 +28,9 @@ import java.util.Date;
  */
 public class FutureEvent {
 
-    public Date time;
-    public String to;
-    public long taskId;
+    public final String to;
+    public final long taskId;
+    public final Date time;
 
     public FutureEvent(String to, long taskId, Date time) {
         this.to = to;
@@ -41,5 +41,4 @@ public class FutureEvent {
     public String getTime() {
         return Utility.getInstance().date2str(time, true);
     }
-
 }

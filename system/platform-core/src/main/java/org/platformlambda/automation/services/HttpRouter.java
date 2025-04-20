@@ -93,6 +93,7 @@ public class HttpRouter {
     private static final String IF_NONE_MATCH = "If-None-Match";
     private static final int BUFFER_SIZE = 4 * 1024;
     private static final long FILTER_TIMEOUT = 10000;
+    private static final byte[] NOTHING = new byte[0];
     private static final String SIGNATURE = "/" + Utility.getInstance().getUuid();
     private static final File SIGNATURE_FOLDER = new File(SIGNATURE);
     private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
@@ -161,22 +162,22 @@ public class HttpRouter {
         if (holder != null) {
             Utility util = Utility.getInstance();
             HttpServerRequest request = holder.request;
-            String path = util.getDecodedUri(request.path());
+            String uri = util.getDecodedUri(request.path());
             SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
             HttpServerResponse response = request.response();
             if (error != null) {
                 if (GET.equals(request.method().name()) && status == 404) {
-                    EtagFile file = getStaticFile(path);
+                    EtagFile file = getStaticFile(uri);
                     if (file != null) {
                         RoutingEntry restConfig = RoutingEntry.getInstance();
-                        boolean noCache = matchedElement(restConfig.getNoCachePages(), path);
+                        boolean noCache = matchedElement(restConfig.getNoCachePages(), uri);
                         SimpleHttpFilter filter = restConfig.getRequestFilter();
-                        if (filter != null && needFilter(filter, path)) {
+                        if (filter != null && needFilter(filter, uri)) {
                             EventEmitter po = EventEmitter.getInstance();
                             if (po.exists(filter.service)) {
                                 try {
-                                    EventEnvelope event = new EventEnvelope().setTo(filter.service)
-                                            .setBody(createAsyncHttpRequestFromHeaders(request, path));
+                                    var event = new EventEnvelope()
+                                                    .setTo(filter.service).setBody(createHttpRequest(request, uri));
                                     po.asyncRequest(event, FILTER_TIMEOUT, false)
                                         .onSuccess(filtered -> {
                                             // this allows the filter to set HTTP response headers
@@ -187,17 +188,16 @@ public class HttpRouter {
                                                 sendStaticFile(requestId, file, noCache, request, response);
                                             } else {
                                                 response.setStatusCode(filtered.getStatus());
-                                                final byte[] content;
                                                 Object body = filtered.getRawBody();
-                                                content = switch (body) {
-                                                    case null -> null;
+                                                final byte[] content = switch (body) {
+                                                    case null -> NOTHING;
                                                     case String s -> util.getUTF(s);
                                                     case byte[] bytes -> bytes;
-                                                    case Map ignore ->
-                                                            SimpleMapper.getInstance().getMapper().writeValueAsBytes(body);
-                                                    default -> util.getUTF(body.toString());
+                                                    case Map m ->
+                                                            SimpleMapper.getInstance().getMapper().writeValueAsBytes(m);
+                                                    default -> util.getUTF(String.valueOf(body));
                                                 };
-                                                if (content != null) {
+                                                if (content.length > 0) {
                                                     response.write(Buffer.buffer(content));
                                                 }
                                                 closeContext(requestId);
@@ -223,8 +223,6 @@ public class HttpRouter {
                     routeRequest(requestId, route, holder);
                 } catch (AppException e) {
                     httpUtil.sendError(requestId, request, e.getStatus(), e.getMessage());
-                } catch (IOException e) {
-                    httpUtil.sendError(requestId, request, 500, e.getMessage());
                 }
             }
         }
@@ -255,7 +253,7 @@ public class HttpRouter {
         return false;
     }
 
-    private AsyncHttpRequest createAsyncHttpRequestFromHeaders(HttpServerRequest request, String path) {
+    private AsyncHttpRequest createHttpRequest(HttpServerRequest request, String path) {
         AsyncHttpRequest req = new AsyncHttpRequest();
         String queryString = request.query();
         if (queryString != null) {
@@ -343,36 +341,50 @@ public class HttpRouter {
         return APPLICATION_OCTET_STREAM;
     }
 
-    private EtagFile getStaticFile(String path) {
-        // 1. for security, test for "path traversal" attack
-        // 2. trim trailing white space because the normalize() function does not allow that in Windows OS
-        Path testPath = new File(SIGNATURE_FOLDER, path.trim().replace("\\", "/"))
-                            .toPath().normalize();
-        if (!testPath.startsWith(SIGNATURE_FOLDER_PATH)) {
-            log.error("Reject path traversal attack - {}", path);
-            // reject path traversal attempt
+    /**
+     * Retrieve a static file from HTML resource folder
+     * <p>
+     * Since the incoming HTTP request is protected by the util.getDecodedUri(path) method,
+     * the additional "path traversal" guarantees that it can catch such an attack even when
+     * the gatekeeper logic misses it.
+     *
+     * @param uriPath relative to HTML folder
+     * @return file in eTag format
+     */
+    private EtagFile getStaticFile(String uriPath) {
+        // trim trailing white space because the normalize() function does not allow that in Windows OS
+        List<String> parts = Utility.getInstance().split(uriPath.trim(), "/\\");
+        StringBuilder sb = new StringBuilder();
+        if (parts.isEmpty()) {
+            sb.append('/');
+        } else {
+            for (String p : parts) {
+                sb.append('/');
+                sb.append(p);
+            }
+        }
+        String normalized = sb.toString();
+        Path tp = new File(SIGNATURE_FOLDER, normalized).toPath().normalize();
+        if (!tp.startsWith(SIGNATURE_FOLDER_PATH)) {
+            log.error("Reject path traversal attack - {}", uriPath);
             return null;
         }
-        String safePath = testPath.toString().substring(SIGNATURE.length());
-        if (!safePath.startsWith("/")) {
-            safePath = "/" + safePath;
-        }
-        List<String> parts = Utility.getInstance().split(safePath, "/");
+        String path = tp.toString().substring(SIGNATURE.length());
         // assume ".html" if filename does not have a file extension
         String filename = parts.isEmpty()? INDEX_HTML : parts.getLast();
-        if (safePath.endsWith("/")) {
-            safePath += INDEX_HTML;
+        if (normalized.endsWith("/")) {
+            path += INDEX_HTML;
             filename = INDEX_HTML;
         } else if (!filename.contains(".")) {
-            safePath += HTML_EXT;
+            path += HTML_EXT;
             filename += HTML_EXT;
         }
         EtagFile result = null;
         if (resourceFolder != null) {
-            result = getResourceFile(safePath);
+            result = getResourceFile(path);
         }
         if (staticFolder != null) {
-            result = getLocalFile(safePath);
+            result = getLocalFile(path);
         }
         if (result != null) {
             result.name = filename;
@@ -381,8 +393,9 @@ public class HttpRouter {
     }
 
     private EtagFile getResourceFile(String path) {
+        String resPath = resourceFolder + (path.startsWith("/")? path : "/" + path);
         Utility util = Utility.getInstance();
-        InputStream in = this.getClass().getResourceAsStream(resourceFolder+path);
+        InputStream in = this.getClass().getResourceAsStream(resPath);
         if (in != null) {
             byte[] b = Utility.getInstance().stream2bytes(in);
             return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
@@ -412,7 +425,7 @@ public class HttpRouter {
     }
 
     private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder)
-            throws AppException, IOException {
+            throws AppException {
         Utility util = Utility.getInstance();
         HttpServerRequest request = holder.request;
         String uri = util.getDecodedUri(request.path());

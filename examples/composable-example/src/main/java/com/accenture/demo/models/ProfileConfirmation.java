@@ -26,5 +26,4 @@ public class ProfileConfirmation {
     public String type;
     public Map<String, Object> profile;
     public List<String> secure;
-
 }

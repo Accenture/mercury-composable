@@ -29,10 +29,10 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GenericTypeTest {
+class GenericTypeTest {
 
     @Test
-    public void testListOfPoJo() throws IOException {
+    void testListOfPoJo() throws IOException {
         int NUMBER_1 = 100;
         String NAME_1 = "hello world";
         int NUMBER_2 = 200;
@@ -64,7 +64,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void testArrayOfPoJo() throws IOException {
+    void testArrayOfPoJo() throws IOException {
         int NUMBER_1 = 100;
         String NAME_1 = "hello world";
         int NUMBER_2 = 200;
@@ -97,7 +97,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void checkMixedTypes() {
+    void checkMixedTypes() {
         int NUMBER_1 = 100;
         String NAME_1 = "hello world";
         int NUMBER_2 = 200;
@@ -122,7 +122,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void acceptListOfPrimitives() throws IOException {
+    void acceptListOfPrimitives() throws IOException {
         List<Object> list = new ArrayList<>();
         list.add(true);
         list.add(null);
@@ -137,7 +137,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void acceptArrayOfPrimitives() throws IOException {
+    void acceptArrayOfPrimitives() throws IOException {
         Object[] array = new Object[3];
         array[0] = true;
         array[1] = null;
@@ -152,7 +152,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void testEmptyList() throws IOException {
+    void testEmptyList() throws IOException {
         EventEnvelope event = new EventEnvelope();
         event.setBody(Collections.emptyList());
         byte[] b = event.toBytes();
@@ -161,9 +161,9 @@ public class GenericTypeTest {
         assertEquals(Collections.EMPTY_LIST, result.getBody());
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void restoreObjectWithParametric() throws IOException {
+    @Test
+    void restoreObjectWithParametric() throws IOException {
         Utility util = Utility.getInstance();
         int id = 123;
         String name = "hello world";
@@ -190,7 +190,7 @@ public class GenericTypeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void parametricHttpObjectTest() {
+    void parametricHttpObjectTest() {
         int ID = 100;
         String NAME = "hello world";
         ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
@@ -210,7 +210,7 @@ public class GenericTypeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void parametricEnvelopeTest() throws IOException {
+    void parametricEnvelopeTest() throws IOException {
         int ID = 100;
         String NAME = "hello world";
         ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
@@ -232,7 +232,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void remappingEnvelopeTest() throws IOException {
+    void remappingEnvelopeTest() throws IOException {
         int ID = 100;
         String NAME = "hello world";
         PoJo pojo = new PoJo();
@@ -249,7 +249,7 @@ public class GenericTypeTest {
     }
 
     @Test
-    public void primitiveObjectTest() throws IOException {
+    void primitiveObjectTest() throws IOException {
         String MESSAGE = "Unable to convert a primitive into class " + PoJoVariance.class.getName();
         int id = 100;
         EventEnvelope event = new EventEnvelope();

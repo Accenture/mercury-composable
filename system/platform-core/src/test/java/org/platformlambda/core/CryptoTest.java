@@ -35,7 +35,7 @@ import java.security.PublicKey;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CryptoTest {
+class CryptoTest {
     private static final Logger log = LoggerFactory.getLogger(CryptoTest.class);
 
     private static final CryptoApi crypto = new CryptoApi();
@@ -54,7 +54,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void aesEncryptionTest() throws IOException, GeneralSecurityException {
+    void aesEncryptionTest() throws IOException, GeneralSecurityException {
         String input = "hello world";
         byte[] key = crypto.generateAesKey(strongCrypto? 256 : 128);
         byte[] encrypted = crypto.aesEncrypt(input.getBytes(), key);
@@ -73,7 +73,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void rsaEncryptionTest() throws GeneralSecurityException {
+    void rsaEncryptionTest() throws GeneralSecurityException {
         // RSA encryption is usually used to transport symmetric encryption key
         byte[] input = crypto.generateAesKey(256);
         KeyPair kp = crypto.generateRsaKey();
@@ -88,14 +88,14 @@ public class CryptoTest {
     }
 
     @Test
-    public void invalidRsaKeyLength() {
+    void invalidRsaKeyLength() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                             () -> crypto.generateRsaKey(1000));
         assertEquals("Key size must be one of [2048, 3072, 4096]", ex.getMessage());
     }
 
     @Test
-    public void pemReadWriteTest() {
+    void pemReadWriteTest() {
         KeyPair kp = crypto.generateRsaKey();
         byte[] pub = kp.getPublic().getEncoded();
         String pem = crypto.writePem(pub, "PUBLIC KEY");
@@ -105,14 +105,14 @@ public class CryptoTest {
     }
 
     @Test
-    public void randomIntegerTest() {
+    void randomIntegerTest() {
         int n1 = crypto.nextInt(10000);
         int n2 = crypto.nextInt(10000);
         assertNotEquals(n1, n2);
     }
 
     @Test
-    public void publicPrivateKeyEncodingTest() throws GeneralSecurityException {
+    void publicPrivateKeyEncodingTest() throws GeneralSecurityException {
         KeyPair kp = crypto.generateRsaKey();
         byte[] pub = kp.getPublic().getEncoded();
         byte[] pri = kp.getPrivate().getEncoded();
@@ -127,7 +127,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void dsaSignatureTest() throws GeneralSecurityException {
+    void dsaSignatureTest() throws GeneralSecurityException {
         KeyPair kp = crypto.generateDsaKey();
         byte[] pub = kp.getPublic().getEncoded();
         byte[] pri = kp.getPrivate().getEncoded();
@@ -138,7 +138,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void rsaSignatureTest() throws GeneralSecurityException {
+    void rsaSignatureTest() throws GeneralSecurityException {
         KeyPair kp = crypto.generateRsaKey();
         byte[] pub = kp.getPublic().getEncoded();
         byte[] pri = kp.getPrivate().getEncoded();
@@ -149,7 +149,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void hashTest() throws IOException {
+    void hashTest() throws IOException {
         String input = "hello world";
         byte[] hashed = crypto.getSHA256(input.getBytes());
         assertEquals(32, hashed.length);
@@ -166,7 +166,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void hmac256Test() {
+    void hmac256Test() {
         String expected = "f1ac9702eb5faf23ca291a4dc46deddeee2a78ccdaf0a412bed7714cfffb1cc4";
         byte[] key = "hello".getBytes();
         byte[] message = "world".getBytes();
@@ -175,7 +175,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void hmac512Test() {
+    void hmac512Test() {
         String expected = "6668ed2f7d016c5f12d7808fc4f2d1dc4851622d7f15616de947a823b3ee67d76" +
                             "1b953f09560da301f832902020dd1c64f496df37eb7ac4fd2feeeb67d77ba9b";
         byte[] key = "hello".getBytes();

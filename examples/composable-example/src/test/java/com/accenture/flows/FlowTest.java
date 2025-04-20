@@ -35,13 +35,13 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class FlowTest extends TestBase {
+class FlowTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(FlowTest.class);
     private static final String HTTP_CLIENT = "async.http.request";
 
     @SuppressWarnings("unchecked")
     @Test
-    public void endToEndFlowTest() throws IOException, ExecutionException, InterruptedException {
+    void endToEndFlowTest() throws IOException, ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         final int PROFILE_ID = 300;
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /flow/tests");
@@ -107,7 +107,7 @@ public class FlowTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void healthCheck() throws IOException, ExecutionException, InterruptedException {
+    void healthCheck() throws IOException, ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /health/check");
         // try to retrieve a non-exist profile will get HTTP-404

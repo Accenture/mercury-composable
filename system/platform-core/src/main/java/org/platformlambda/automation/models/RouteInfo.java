@@ -25,7 +25,12 @@ public class RouteInfo {
     private final List<String> authHeaders = new ArrayList<>();
     private final Map<String, String> authServices = new HashMap<>();
 
-    public String url, defaultAuthService, corsId, requestTransformId, responseTransformId, primary;
+    public String url;
+    public String defaultAuthService;
+    public String corsId;
+    public String requestTransformId;
+    public String responseTransformId;
+    public String primary;
     public List<String> services;
     public boolean tracing = false;
     public List<String> methods;

@@ -55,10 +55,9 @@ public class EventPublisher {
         long expiry = this.stream.getExpirySeconds() * 1000L;
         this.timer = Platform.getInstance().getVertx().setTimer(expiry, t -> {
             expired.set(true);
-            String outStream = stream.getOutputStreamId();
             EventEnvelope error = new EventEnvelope().setException(new AppException(408, "Event stream expired"));
             try {
-                EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
+                EventEmitter.getInstance().send(stream.getOutputStreamId(), error.toBytes(), new Kv(TYPE, EXCEPTION));
             } catch (IOException ex) {
                 // nothing we can do
             }

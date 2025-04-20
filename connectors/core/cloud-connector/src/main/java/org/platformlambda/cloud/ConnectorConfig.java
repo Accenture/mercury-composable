@@ -97,7 +97,7 @@ public class ConnectorConfig {
             Utility util = Utility.getInstance();
             Map<String, String> result = new HashMap<>();
             AppConfigReader config = AppConfigReader.getInstance();
-            String useStaticTopics = config.getProperty("application.feature.topic.substitution", "false");
+            String useStaticTopics = config.getProperty(TOPIC_SUBSTITUTION, "false");
             if ("true".equalsIgnoreCase(useStaticTopics)) {
                 ConfigReader topicConfig = getConfig("yaml.topic.substitution",
                         "file:/tmp/config/topic-substitution.yaml,classpath:/topic-substitution.yaml");
@@ -108,7 +108,8 @@ public class ConnectorConfig {
                 }
                 log.info("Using pre-allocated topics - virtual topic mapping below:");
                 List<String> normalizedTopics = new ArrayList<>();
-                for (String t : map.keySet()) {
+                for (var entry : map.entrySet()) {
+                    String t = entry.getKey();
                     result.put(t, map.get(t).toString());
                     int dot = t.lastIndexOf(".");
                     if (dot > 0) {

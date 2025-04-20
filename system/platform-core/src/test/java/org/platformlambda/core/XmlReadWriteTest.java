@@ -30,14 +30,13 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class XmlReadWriteTest {
-
+class XmlReadWriteTest {
     private static final SimpleXmlParser parser = new SimpleXmlParser();
     private static final SimpleXmlWriter writer = new SimpleXmlWriter();
 
     @SuppressWarnings("unchecked")
     @Test
-    public void readWriteTest() throws IOException {
+    void readWriteTest() throws IOException {
         Utility util = Utility.getInstance();
         Date now = new Date();
         Map<String, Object> inner = new HashMap<>();
@@ -91,7 +90,7 @@ public class XmlReadWriteTest {
     }
 
     @Test
-    public void adlsWithArrayTest() throws IOException {
+    void adlsWithArrayTest() throws IOException {
         try (InputStream in = this.getClass().getResourceAsStream("/sample_adls_response.xml")) {
             MultiLevelMap mm = new MultiLevelMap(parser.parse(in));
             assertEquals("\"0x8D90F50C8DD6E2A\"",
@@ -104,7 +103,7 @@ public class XmlReadWriteTest {
     }
 
     @Test
-    public void adlsWithoutArrayTest() throws IOException {
+    void adlsWithoutArrayTest() throws IOException {
         try (InputStream in = this.getClass().getResourceAsStream("/sample_adls_with_one_container.xml")) {
             MultiLevelMap mm = new MultiLevelMap(parser.parse(in));
             // an array of one element will be rendered as a regular element instead of an array

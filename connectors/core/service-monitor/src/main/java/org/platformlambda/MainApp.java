@@ -53,7 +53,7 @@ public class MainApp implements EntryPoint {
     private static final String ADDITIONAL_INFO = "additional.info";
     private static final String LOOP_BACK = "loopback";
     private static final String REPLY_TO = "reply_to";
-    private static final String INIT = ServiceLifeCycle.INIT;
+    private static final String INIT = "init";
     private static final String DONE = "done";
     private static final String TYPE = "type";
     private static final String ORIGIN = "origin";

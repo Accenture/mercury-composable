@@ -70,10 +70,8 @@ public class SaveProfile implements TypedLambdaFunction<Map<String, Object>, Voi
         var mapper = SimpleMapper.getInstance().getMapper();
         String json = mapper.writeValueAsString(filtered.getMap());
         File folder = new File(TEMP_DATA_STORE);
-        if (!folder.exists()) {
-            if (folder.mkdirs()) {
-                log.info("Temporary key folder {} created", folder);
-            }
+        if (!folder.exists() && folder.mkdirs()) {
+            log.info("Temporary key folder {} created", folder);
         }
         String id = String.valueOf(input.get("id"));
         File file = new File(folder, id+JSON_EXT);

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MulticastTest extends TestBase {
+class MulticastTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(MulticastTest.class);
     private static final String MY_ROUTE = "my_route";
     private static final int WAIT_INTERVAL = 300;
@@ -54,7 +54,7 @@ public class MulticastTest extends TestBase {
     }
 
     @Test
-    public void routingTest() throws IOException, InterruptedException {
+    void routingTest() throws IOException, InterruptedException {
         final EventEmitter po = EventEmitter.getInstance();
         final String[] targets = {"v1.hello.service.1", "v1.hello.service.2"};
         final String TEXT = "ok";
@@ -86,5 +86,4 @@ public class MulticastTest extends TestBase {
             log.info("Result from {} is correct", kv.getKey());
         }
     }
-
 }

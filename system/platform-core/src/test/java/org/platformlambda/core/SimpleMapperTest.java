@@ -38,11 +38,11 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SimpleMapperTest {
+class SimpleMapperTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void nestPoJoTest() {
+    void nestPoJoTest() {
         // this test validates GSON's behavior of ToNumberPolicy.LONG_OR_DOUBLE
         var child = new ChildPoJo();
         child.number1 = 123L;
@@ -65,7 +65,7 @@ public class SimpleMapperTest {
     }
 
     @Test
-    public void returnOriginalClassIfSameTargetClass() {
+    void returnOriginalClassIfSameTargetClass() {
         PoJo pojo = new PoJo();
         pojo.setName("hello");
         pojo.setNumber(123);
@@ -74,7 +74,7 @@ public class SimpleMapperTest {
     }
 
     @Test
-    public void primitiveDataTest() {
+    void primitiveDataTest() {
         final boolean bol = true;
         Object bolString = SimpleMapper.getInstance().getMapper().writeValueAsString(bol);
         assertEquals("true", bolString);
@@ -83,9 +83,9 @@ public class SimpleMapperTest {
         assertEquals("1", intString);
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void mapperSerializationTest() {
+    @Test
+    void mapperSerializationTest() {
         Utility util = Utility.getInstance();
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         Date now = new Date();
@@ -141,9 +141,9 @@ public class SimpleMapperTest {
         assertEquals(new java.sql.Time(now.getTime()).toString(), pojo.getSqlTime().toString());
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void bigDecimalSerializationTests() {
+    @Test
+    void bigDecimalSerializationTests() {
         SimpleMapper mapper = SimpleMapper.getInstance();
         String NUMBER = "number";
         String ONE  = "0.00000001";
@@ -180,7 +180,7 @@ public class SimpleMapperTest {
     }
 
     @Test
-    public void bigDecimalTests() {
+    void bigDecimalTests() {
         String ZERO = "0.00000000";
         BigDecimal zero = new BigDecimal("0");
         BigDecimal zeroes = new BigDecimal(ZERO);
@@ -198,7 +198,7 @@ public class SimpleMapperTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void caseMappingTest() {
+    void caseMappingTest() {
         SimpleObjectMapper snakeMapper = SimpleMapper.getInstance().getSnakeCaseMapper();
         SimpleObjectMapper camelMapper = SimpleMapper.getInstance().getCamelCaseMapper();
         String NUMBER = "1.234567890";

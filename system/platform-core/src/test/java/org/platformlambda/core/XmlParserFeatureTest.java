@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class XmlParserFeatureTest {
+class XmlParserFeatureTest {
     private static final Logger log = LoggerFactory.getLogger(XmlParserFeatureTest.class);
 
     /*
@@ -60,7 +60,7 @@ public class XmlParserFeatureTest {
     };
 
     @Test
-    public void featureTest() throws ParserConfigurationException {
+    void featureTest() throws ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         for (String feature: FEATURES_TO_ENABLE) {
             assertTrue(setFeature(dbf, feature, true));

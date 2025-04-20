@@ -128,32 +128,30 @@ public class ConfigReader implements ConfigBase {
         if (value == null) {
             return defaultValue;
         }
-        if (value instanceof String result && baseConfig != null) {
-            // start parsing environment variables if it has the signature
-            if (result.lastIndexOf("${") != -1) {
-                List<EnvVarSegment> segments = extractSegments(result);
-                // restore to original order since the text parsing is in reverse order
-                Collections.reverse(segments);
-                int start = 0;
-                StringBuilder sb = new StringBuilder();
-                for (EnvVarSegment s: segments) {
-                    String middle = result.substring(s.start+2, s.end-1).trim();
-                    String evaluated = performEnvVarSubstitution(key, middle, defaultValue, loop);
-                    String heading = result.substring(start, s.start);
-                    if (!heading.isEmpty()) {
-                        sb.append(heading);
-                    }
-                    if (evaluated != null) {
-                        sb.append(evaluated);
-                    }
-                    start = s.end;
+        // start parsing environment variables if it has the signature
+        if (value instanceof String result && baseConfig != null && result.lastIndexOf("${") != -1) {
+            List<EnvVarSegment> segments = extractSegments(result);
+            // restore to original order since the text parsing is in reverse order
+            Collections.reverse(segments);
+            int start = 0;
+            StringBuilder sb = new StringBuilder();
+            for (EnvVarSegment s: segments) {
+                String middle = result.substring(s.start+2, s.end-1).trim();
+                String evaluated = performEnvVarSubstitution(key, middle, defaultValue, loop);
+                String heading = result.substring(start, s.start);
+                if (!heading.isEmpty()) {
+                    sb.append(heading);
                 }
-                String lastSegment = result.substring(start);
-                if (!lastSegment.isEmpty()) {
-                    sb.append(lastSegment);
+                if (evaluated != null) {
+                    sb.append(evaluated);
                 }
-                return sb.isEmpty()? null : sb.toString();
+                start = s.end;
             }
+            String lastSegment = result.substring(start);
+            if (!lastSegment.isEmpty()) {
+                sb.append(lastSegment);
+            }
+            return sb.isEmpty()? null : sb.toString();
         }
         return value;
     }

@@ -154,8 +154,8 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
                  * status range 300: redirection or unchanged content
                  * status ranges 400 and 500: HTTP exceptions
                  */
-                if (status >= 400 && event.getHeaders().isEmpty() && event.getRawBody() instanceof String) {
-                    String message = ((String) event.getRawBody()).trim();
+                if (status >= 400 && event.getHeaders().isEmpty() && event.getRawBody() instanceof String rawBody) {
+                    String message = rawBody.trim();
                     // make sure it does not look like JSON or XML
                     if (!message.startsWith("{") && !message.startsWith("[") && !message.startsWith("<")) {
                         httpUtil.sendError(requestId, holder.request, status, message);

@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RestEndpointTest extends TestBase {
+class RestEndpointTest extends TestBase {
 
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
     private static final long RPC_TIMEOUT = 10000;
@@ -75,7 +75,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void optionsMethodTest() throws IOException, InterruptedException {
+    void optionsMethodTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -99,7 +99,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings(value = "unchecked")
     @Test
-    public void serviceTest() throws IOException, InterruptedException {
+    void serviceTest() throws IOException, InterruptedException {
         final int TTL_SECONDS = 7;
         final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
@@ -136,7 +136,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void invalidUriTest() throws IOException, InterruptedException {
+    void invalidUriTest() throws IOException, InterruptedException {
         // invalid paths will be rejected
         checkInvalidUrl("/api/hello/world moved to https://evil.site?hello world=abc");
         checkInvalidUrl("/api/hello/world <div>test</div>");
@@ -172,7 +172,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void authRoutingTest1() throws IOException, InterruptedException {
+    void authRoutingTest1() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -196,7 +196,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void authRoutingTest2() throws IOException, InterruptedException {
+    void authRoutingTest2() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -217,7 +217,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uploadBytesWithPut() throws IOException, InterruptedException {
+    void uploadBytesWithPut() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -244,7 +244,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uploadSmallBlockWithPut() throws IOException, InterruptedException {
+    void uploadSmallBlockWithPut() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
         final Utility util = Utility.getInstance();
@@ -297,7 +297,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uploadLargePayloadWithPut() throws IOException, InterruptedException {
+    void uploadLargePayloadWithPut() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -329,7 +329,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uploadStreamWithPut() throws IOException, InterruptedException {
+    void uploadStreamWithPut() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
@@ -378,7 +378,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void uploadMultipartWithPost() throws IOException, InterruptedException {
+    void uploadMultipartWithPost() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
@@ -426,7 +426,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void postJson() throws IOException, InterruptedException {
+    void postJson() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -462,7 +462,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void postXmlAsMap() throws IOException, InterruptedException {
+    void postXmlAsMap() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
@@ -498,7 +498,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void postXmlAsText() throws IOException, InterruptedException {
+    void postXmlAsText() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -533,7 +533,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void postJsonMap() throws IOException, InterruptedException {
+    void postJsonMap() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -568,7 +568,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testJsonResultList() throws IOException, InterruptedException {
+    void testJsonResultList() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -606,7 +606,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testXmlResultList() throws IOException, InterruptedException {
+    void testXmlResultList() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
@@ -643,7 +643,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void sendHttpDelete() throws IOException, InterruptedException {
+    void sendHttpDelete() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -670,7 +670,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void sendHttpHeadWithCID() throws IOException, InterruptedException {
+    void sendHttpHeadWithCID() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String traceId = Utility.getInstance().getDateUuid();
         EventEmitter po = EventEmitter.getInstance();
@@ -708,7 +708,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void sendHttpHeadWithTraceId() throws IOException, InterruptedException {
+    void sendHttpHeadWithTraceId() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String traceId = Utility.getInstance().getDateUuid();
         EventEmitter po = EventEmitter.getInstance();
@@ -733,7 +733,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void postXmlMap() throws IOException, InterruptedException {
+    void postXmlMap() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -768,7 +768,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void postList() throws IOException, InterruptedException {
+    void postList() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -803,7 +803,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getIndexHtml() throws IOException, InterruptedException {
+    void getIndexHtml() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -831,7 +831,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getIndexWithoutExtension() throws IOException, InterruptedException {
+    void getIndexWithoutExtension() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -861,7 +861,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getResourceDirectoryNotAllowed() throws IOException, InterruptedException {
+    void getResourceDirectoryNotAllowed() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -878,11 +878,12 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void pathTraversalDetection() throws IOException, InterruptedException {
+    void pathTraversalAvoidance() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
+        // "path traversal" avoidance - "../" in the URI path is dropped
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/test/%2e%2e/%2e%2e/index.html");
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
@@ -895,13 +896,14 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getCssPage() throws IOException, InterruptedException {
+    void getCssPage() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
-        req.setUrl("/assets/another.css");
+        // "path traversal" avoidance - "../" in the URI path is dropped
+        req.setUrl("/assets/../another.css");
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
@@ -921,7 +923,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getJsPage() throws IOException, InterruptedException {
+    void getJsPage() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -945,7 +947,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getXmlPage() throws IOException, InterruptedException {
+    void getXmlPage() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -967,7 +969,7 @@ public class RestEndpointTest extends TestBase {
     }
 
     @Test
-    public void getAssetPage() throws IOException, InterruptedException {
+    void getAssetPage() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -992,7 +994,7 @@ public class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void getAssetJSON() throws IOException, InterruptedException {
+    void getAssetJSON() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>();
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();

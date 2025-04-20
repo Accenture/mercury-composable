@@ -31,13 +31,13 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PayloadMapperTest {
+class PayloadMapperTest {
 
     private static final PayloadMapper converter = PayloadMapper.getInstance();
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void optionalTransport() throws IOException {
+    @Test
+    void optionalTransport() throws IOException {
         String text = "hello world";
         Optional<Object> hello = Optional.of(text);
         EventEnvelope event1 = new EventEnvelope();
@@ -52,7 +52,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void pojoTransport() throws IOException {
+    void pojoTransport() throws IOException {
         String name = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(name);
@@ -67,7 +67,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void pojoInEvent() throws IOException {
+    void pojoInEvent() throws IOException {
         int len1 = pojoInEventUsingMsgPack();
         int len2 = pojoInEventUsingGson();
         // transport size is larger when using JSON
@@ -108,7 +108,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertPoJoUsingMsgPack() {
+    void convertPoJoUsingMsgPack() {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
@@ -123,7 +123,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertPoJoUsingJson() {
+    void convertPoJoUsingJson() {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
@@ -138,7 +138,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void datePayloadTest() throws IOException {
+    void datePayloadTest() throws IOException {
         Utility util = Utility.getInstance();
         Date now = new Date();
         EventEnvelope event = new EventEnvelope();
@@ -152,7 +152,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertMap() {
+    void convertMap() {
         Map<String, Object> input = new HashMap<>();
         input.put("hello", "world");
         TypedPayload typed = converter.encode(input, true);
@@ -163,7 +163,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertString() {
+    void convertString() {
         String input = "hello world";
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
@@ -173,7 +173,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertBytes() {
+    void convertBytes() {
         byte[] input = "hello world".getBytes();
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
@@ -183,7 +183,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertNull() {
+    void convertNull() {
         TypedPayload typed = converter.encode(null, true);
         assertEquals(PayloadMapper.NOTHING, typed.getType());
         assertNull(typed.getPayload());
@@ -192,7 +192,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertBoolean() {
+    void convertBoolean() {
         TypedPayload typed = converter.encode(true, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
         assertEquals(true, typed.getPayload());
@@ -201,7 +201,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertInteger() {
+    void convertInteger() {
         Integer input = 12345;
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
@@ -211,7 +211,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertLong() {
+    void convertLong() {
         Long input = 123456L;
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
@@ -221,7 +221,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertFloat() {
+    void convertFloat() {
         Float input = 12.34f;
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
@@ -231,7 +231,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertDouble() {
+    void convertDouble() {
         Double input = 12.34d;
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
@@ -241,7 +241,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertDate() {
+    void convertDate() {
         Utility util = Utility.getInstance();
         Date input = new Date();
         TypedPayload typed = converter.encode(input, true);
@@ -252,7 +252,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertList() {
+    void convertList() {
         List<String> input = new ArrayList<>();
         input.add("hello");
         input.add("world");
@@ -264,7 +264,7 @@ public class PayloadMapperTest {
     }
 
     @Test
-    public void convertArray() {
+    void convertArray() {
         String[] input = {"hello", "world"};
         TypedPayload typed = converter.encode(input, true);
         assertEquals(PayloadMapper.LIST, typed.getType());

@@ -34,11 +34,11 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class HelloWorldTest extends TestBase {
+class HelloWorldTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void rpcTest() throws IOException, InterruptedException, ExecutionException {
+    void rpcTest() throws IOException, InterruptedException, ExecutionException {
         Utility util = Utility.getInstance();
         String NAME = "hello";
         String ADDRESS = "world";

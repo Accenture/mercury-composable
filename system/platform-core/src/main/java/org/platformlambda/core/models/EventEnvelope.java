@@ -173,9 +173,6 @@ public class EventEnvelope {
     public String getError() {
         if (hasError()) {
             switch (body) {
-                case null -> {
-                    return "null";
-                }
                 case byte[] ignored -> {
                     return "***";
                 }
@@ -523,9 +520,9 @@ public class EventEnvelope {
     public EventEnvelope setBody(Object body) {
         final Object payload;
         switch (body) {
-            case Optional ignored -> {
+            case Optional optionalBody -> {
                 addTag(OPTIONAL);
-                Optional<Object> o = (Optional<Object>) body;
+                Optional<Object> o = (Optional<Object>) optionalBody;
                 payload = o.orElse(null);
             }
             case EventEnvelope nested -> {

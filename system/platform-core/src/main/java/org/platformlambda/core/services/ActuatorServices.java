@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @PreLoad(route=ActuatorServices.SERVICE_NAMES, instances=10)
@@ -89,13 +90,12 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     private static final String JOURNAL = "journal";
     private static final String STREAMS = "streams";
     private static final String ADDITIONAL_INFO = "additional.info";
-    private static final String ERROR_FETCHING_INFO = "Unable to check additional.info - ";
     private static final AtomicBoolean healthStatus = new AtomicBoolean(true);
     private final List<String> requiredServices;
     private final List<String> optionalServices;
     private final String appDescription;
-    private final Boolean isServiceMonitor;
-    private final Boolean hasCloudConnector;
+    private final boolean isServiceMonitor;
+    private final boolean hasCloudConnector;
 
     public ActuatorServices() {
         var config = AppConfigReader.getInstance();
@@ -151,10 +151,10 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         }
         if (LIVENESS_PROBE.equals(type)) {
             if (healthStatus.get()) {
-                return new EventEnvelope().setBody("OK").setHeader("content-type", "text/plain");
+                return new EventEnvelope().setBody("OK").setHeader(CONTENT_TYPE, "text/plain");
             } else {
                 return new EventEnvelope().setBody("Unhealthy. Please check '/health' endpoint.")
-                                        .setStatus(400).setHeader("content-type", "text/plain");
+                                        .setStatus(400).setHeader(CONTENT_TYPE, "text/plain");
             }
         }
         if (HEALTH.equals(type)) {
@@ -166,7 +166,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         throw new AppException(404, "Resource not found");
     }
 
-    private Object handleInfo(Map<String, String> headers) {
+    private Object handleInfo(Map<String, String> headers) throws IOException, ExecutionException, InterruptedException {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         var acceptHeader = headers.getOrDefault(ACCEPT, "?");
@@ -242,16 +242,12 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         return new EventEnvelope().setHeader(CONTENT_TYPE, accept).setBody(result);
     }
 
-    private Object getAdditionalInfo() {
+    private Object getAdditionalInfo() throws IOException, ExecutionException, InterruptedException {
         if (Platform.getInstance().hasRoute(ADDITIONAL_INFO)) {
             var po = EventEmitter.getInstance();
-            try {
-                var req = new EventEnvelope().setTo(ADDITIONAL_INFO).setHeader(TYPE, QUERY);
-                var res = po.request(req, 5000).get();
-                return res.getBody();
-            } catch (Exception e) {
-                return ERROR_FETCHING_INFO + e.getMessage();
-            }
+            var req = new EventEnvelope().setTo(ADDITIONAL_INFO).setHeader(TYPE, QUERY);
+            var res = po.request(req, 5000).get();
+            return res.getBody();
         } else {
             return null;
         }
@@ -282,20 +278,16 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getRoutingTable() {
+    private Map<String, Object> getRoutingTable() throws IOException, ExecutionException, InterruptedException {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         if (hasCloudConnector && (platform.hasRoute(ServiceDiscovery.SERVICE_QUERY) ||
                                   platform.hasRoute(CLOUD_CONNECTOR))) {
-            try {
-                var req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
-                            .setHeader(TYPE, DOWNLOAD).setHeader(ORIGIN, platform.getOrigin());
-                var res = po.request(req, 5000).get();
-                if (res.getRawBody() instanceof Map) {
-                    return (Map<String, Object>) res.getRawBody();
-                }
-            } catch (Exception e) {
-                // ok to ignore
+            var req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
+                        .setHeader(TYPE, DOWNLOAD).setHeader(ORIGIN, platform.getOrigin());
+            var res = po.request(req, 5000).get();
+            if (res.getRawBody() instanceof Map) {
+                return (Map<String, Object>) res.getRawBody();
             }
         }
         return Collections.emptyMap();
@@ -308,12 +300,12 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         result.put("public", publicRoutes);
         result.put("private", privateRoutes);
         var map = Platform.getInstance().getLocalRoutingTable();
-        for (String route: map.keySet()) {
-            var service = map.get(route);
+        for (var entry: map.entrySet()) {
+            var service = entry.getValue();
             if (service.isPrivate()) {
-                privateRoutes.put(route, service.getConcurrency());
+                privateRoutes.put(entry.getKey(), service.getConcurrency());
             } else {
-                publicRoutes.put(route, service.getConcurrency());
+                publicRoutes.put(entry.getKey(), service.getConcurrency());
             }
         }
         return result;

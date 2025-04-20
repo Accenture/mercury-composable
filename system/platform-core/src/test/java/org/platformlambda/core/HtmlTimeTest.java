@@ -25,10 +25,10 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class HtmlTimeTest {
+class HtmlTimeTest {
 
     @Test
-    public void conversionTest() {
+    void conversionTest() {
         Utility util = Utility.getInstance();
         Date now = new Date();
         String timestampWithoutMilli = util.date2str(now, true);

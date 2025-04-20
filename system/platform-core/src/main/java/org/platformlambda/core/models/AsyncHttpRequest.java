@@ -420,9 +420,9 @@ public class AsyncHttpRequest {
         if (key != null) {
             switch (value) {
                 case String ignoredString -> this.queryParams.put(key, value);
-                case List ignoredList -> {
+                case List valueList -> {
                     final var params = new ArrayList<String>();
-                    final var list = (List<Object>) value;
+                    final var list = (List<Object>) valueList;
                     for (Object o : list) {
                         if (o != null) {
                             params.add(o instanceof String text? text : String.valueOf(o));
@@ -590,9 +590,9 @@ public class AsyncHttpRequest {
 
     private String findActualQueryKey(String key) {
         if (key != null) {
-            for (String k : queryParams.keySet()) {
-                if (k.equalsIgnoreCase(key)) {
-                    return k;
+            for (var entry : queryParams.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(key)) {
+                    return entry.getKey();
                 }
             }
         }
@@ -601,9 +601,9 @@ public class AsyncHttpRequest {
 
     private String caseInsensitiveGet(Map<String, String> map, String key) {
         if (key != null) {
-            for (String k : map.keySet()) {
-                if (k.equalsIgnoreCase(key)) {
-                    return map.get(k);
+            for (var entry : map.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(key)) {
+                    return entry.getValue();
                 }
             }
         }
@@ -613,9 +613,9 @@ public class AsyncHttpRequest {
     private void caseInsensitiveDelete(Map<String, String> map, String key) {
         if (key != null) {
             String actualKey = null;
-            for (String k : map.keySet()) {
-                if (k.equalsIgnoreCase(key)) {
-                    actualKey = k;
+            for (var entry : map.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(key)) {
+                    actualKey = entry.getKey();
                     break;
                 }
             }

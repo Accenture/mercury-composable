@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -37,7 +38,7 @@ public class FlowInstance {
     private static final String FLOW = "flow";
     private static final String TIMEOUT = "timeout";
     private static final String INSTANCE = "instance";
-    private static final String CID = "cid";
+    private static final String CID_TAG = "cid";
     private static final String TRACE = "trace";
     private static final String PARENT = "parent";
 
@@ -45,7 +46,7 @@ public class FlowInstance {
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
     public final AtomicInteger pipeCounter = new AtomicInteger(0);
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
-    public final ConcurrentLinkedQueue<String> tasks = new ConcurrentLinkedQueue<>();
+    public final Queue<String> tasks = new ConcurrentLinkedQueue<>();
     public final ConcurrentMap<String, Boolean> pendingTasks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
@@ -77,7 +78,7 @@ public class FlowInstance {
         // initialize the state machine
         ConcurrentMap<String, Object> model = new ConcurrentHashMap<>();
         model.put(INSTANCE, id);
-        model.put(CID, cid);
+        model.put(CID_TAG, cid);
         model.put(FLOW, flowId);
         // this is a sub-flow if parent flow instance is available
         if (parentId == null) {

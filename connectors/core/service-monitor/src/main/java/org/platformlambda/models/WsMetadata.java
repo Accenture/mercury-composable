@@ -20,7 +20,9 @@ package org.platformlambda.models;
 
 public class WsMetadata {
 
-    public String origin, session, txPath;
+    public final String origin;
+    public final String session;
+    public final String txPath;
     public long lastAccess = System.currentTimeMillis();
 
     public WsMetadata(String session, String txPath, String origin) {

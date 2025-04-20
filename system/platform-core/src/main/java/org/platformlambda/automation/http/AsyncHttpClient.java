@@ -562,7 +562,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     try {
                         while (true) {
                             byte[] block = queue.read();
-                            if (block == null) {
+                            if (block.length == 0) {
                                 break;
                             } else {
                                 try {
@@ -633,7 +633,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                         try {
                             while (true) {
                                 byte[] b = queue.read();
-                                if (b == null) {
+                                if (b.length == 0) {
                                     break;
                                 } else {
                                     if (publisher == null) {

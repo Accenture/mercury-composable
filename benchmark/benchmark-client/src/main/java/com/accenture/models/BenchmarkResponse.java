@@ -22,8 +22,8 @@ import java.util.Date;
 
 public class BenchmarkResponse {
 
-    public Date oneTrip;
-    public Date roundTrip;
+    public final Date oneTrip;
+    public final Date roundTrip;
 
     public BenchmarkResponse(Date oneTrip) {
         this.oneTrip = oneTrip;

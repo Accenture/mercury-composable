@@ -217,25 +217,24 @@ public class MsgPack {
             case null ->
                 // preserving null element in an array list
                 packer.packNil();
-            case Map mapObject -> {
+            case Map map -> {
                 // In json, the key may not be a string
-                Map<Object, Object> map = (Map<Object, Object>) mapObject;
                 int mapSize = map.size();
-                for (Map.Entry<Object, Object> kv : map.entrySet()) {
+                List<Object> keys = new ArrayList<>(map.keySet());
+                for (var k : keys) {
                     // reduce map size if null value
-                    if (kv.getValue() == null) {
+                    if (map.get(k) == null) {
                         mapSize--;
                     }
                 }
                 packer.packMapHeader(mapSize);
                 if (mapSize > 0) {
-                    for (Map.Entry<Object, Object> kv : map.entrySet()) {
+                    for (var k : keys) {
                         // ignore null value
-                        Object key = kv.getKey();
-                        Object value = kv.getValue();
+                        Object value = map.get(k);
                         if (value != null) {
                             // convert key to string
-                            packer.packString(key instanceof String str ? str : String.valueOf(key));
+                            packer.packString(k instanceof String str ? str : String.valueOf(k));
                             pack(packer, value);
                         }
                     }

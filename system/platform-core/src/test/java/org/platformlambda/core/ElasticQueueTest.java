@@ -28,10 +28,10 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ElasticQueueTest {
+class ElasticQueueTest {
 
     @Test
-    public void peeking() throws IOException {
+    void peeking() throws IOException {
         String firstItem = "hello world 1";
         String secondItem = "hello world 2";
         ElasticQueue spooler = new ElasticQueue("unit.test");
@@ -52,8 +52,8 @@ public class ElasticQueueTest {
         EventEnvelope second = new EventEnvelope();
         second.load(b);
         assertEquals(secondItem, second.getBody());
-        assertNull(spooler.peek());
-        assertNull(spooler.read());
+        assertEquals(0, spooler.peek().length);
+        assertEquals(0, spooler.read().length);
         // elastic queue should be automatically closed when all messages are consumed
         assertTrue(spooler.isClosed());
         // close elastic queue
@@ -61,12 +61,12 @@ public class ElasticQueueTest {
     }
 
     @Test
-    public void normalPayload() throws IOException {
+    void normalPayload() throws IOException {
         readWrite("normal.payload.test", 10);
     }
 
     @Test
-    public void largePayload() throws IOException {
+    void largePayload() throws IOException {
         readWrite("large.payload.test", 90000);
     }
 
@@ -83,7 +83,7 @@ public class ElasticQueueTest {
             event.setBody(input);
             spooler.write(event.toBytes());
             byte[] b = spooler.read();
-            assertNotNull(b);
+            assertNotEquals(0, b.length);
             EventEnvelope data = new EventEnvelope();
             data.load(b);
             assertEquals(input, data.getBody());
@@ -118,14 +118,14 @@ public class ElasticQueueTest {
         spooler.close();
         // it should return null when there are no more messages to be read
         byte[] nothing = spooler.read();
-        assertNull(nothing);
+        assertEquals(0, nothing.length);
         assertTrue(spooler.isClosed());
         // closing again has no effect
         spooler.close();
     }
 
     @Test
-    public void cleanupTest() throws IOException {
+    void cleanupTest() throws IOException {
         String HELLO_WORLD = "hello world ";
         try (ElasticQueue spooler = new ElasticQueue("unread.test")) {
             for (int i = 0; i < ElasticQueue.MEMORY_BUFFER * 3; i++) {

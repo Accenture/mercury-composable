@@ -41,9 +41,7 @@ public class EchoService implements TypedLambdaFunction<EventEnvelope, Void> {
         // scan all inboxes for any loop back signal
         List<EchoInbox> allInbox = EchoInbox.getInboxes();
         for (EchoInbox inbox: allInbox) {
-            Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                inbox.handleEvent(input);
-            });
+            Platform.getInstance().getVirtualThreadExecutor().submit(() -> inbox.handleEvent(input));
         }
         return null;
     }

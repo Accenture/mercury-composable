@@ -27,10 +27,10 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class ModelTest {
+class ModelTest {
 
     @Test
-    public void asyncHttpRequestModel() {
+    void asyncHttpRequestModel() {
         final String HELLO = "hello";
         final String WORLD = "world";
         final String PUT = "PUT";

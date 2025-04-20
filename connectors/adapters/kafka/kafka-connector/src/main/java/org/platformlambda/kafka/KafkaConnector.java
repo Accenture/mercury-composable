@@ -75,8 +75,8 @@ public class KafkaConnector implements CloudSetup {
                 System.exit(-1);
             }
             Map<String, Object> kv = config.getCompositeKeyValues();
-            for (String k : kv.keySet()) {
-                properties.setProperty(k, String.valueOf(kv.get(k)));
+            for (var entry : kv.entrySet()) {
+                properties.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
             }
             String brokerUrls = properties.getProperty(BROKER_URL);
             List<String> brokers = Utility.getInstance().split(brokerUrls, ",");
@@ -101,7 +101,7 @@ public class KafkaConnector implements CloudSetup {
                 System.exit(-1);
             }
             ConnectorConfig.setServiceName("kafka");
-            ConnectorConfig.setDisplayUrl(brokers.get(0));
+            ConnectorConfig.setDisplayUrl(brokers.getFirst());
             allProperties.put(location, properties);
         }
         return properties;

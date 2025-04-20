@@ -34,13 +34,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MsgPackTest {
+class MsgPackTest {
 
     private static final MsgPack msgPack = new MsgPack();
 
     @SuppressWarnings("unchecked")
     @Test
-    public void dataIsMap() throws IOException {
+    void dataIsMap() throws IOException {
         PoJo pojo = new PoJo();
         pojo.setName("hello world");
         String[] HELLO_WORLD = {"hello", "world"};
@@ -77,7 +77,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsAtomicInteger() throws IOException {
+    void dataIsAtomicInteger() throws IOException {
         AtomicInteger input = new AtomicInteger(10000);
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -85,7 +85,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsAtomicLong() throws IOException {
+    void dataIsAtomicLong() throws IOException {
         AtomicLong input = new AtomicLong(10000);
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -94,7 +94,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsSmallInteger() throws IOException {
+    void dataIsSmallInteger() throws IOException {
         int input = 10000;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -102,7 +102,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void smallLongBecomesInteger() throws IOException {
+    void smallLongBecomesInteger() throws IOException {
         // msgpack compresses number and data type information will be lost
         Long input = 10L;
         byte[] b = msgPack.pack(input);
@@ -112,7 +112,7 @@ public class MsgPackTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void dataIsBigLong() throws IOException {
+    void dataIsBigLong() throws IOException {
         long input = -5106534569952410475L;
         Map<String, Object> map = new HashMap<>();
         map.put("number", input);
@@ -125,7 +125,7 @@ public class MsgPackTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void dataIsBorderLineLong() throws IOException {
+    void dataIsBorderLineLong() throws IOException {
         Long input = Integer.MAX_VALUE + 1L;
         List<Long> value = new ArrayList<>();
         value.add(input);
@@ -137,7 +137,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsBigInteger() throws IOException {
+    void dataIsBigInteger() throws IOException {
         BigInteger input = new BigInteger("10");
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -145,7 +145,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsBigDecimal() throws IOException {
+    void dataIsBigDecimal() throws IOException {
         BigDecimal input = new BigDecimal("0.0000000000012345");
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -153,21 +153,21 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsNull() throws IOException {
+    void dataIsNull() throws IOException {
         byte[] b = msgPack.pack(null);
         Object o = msgPack.unpack(b);
         assertNull(o);
     }
 
     @Test
-    public void dataIsBoolean() throws IOException {
+    void dataIsBoolean() throws IOException {
         byte[] b = msgPack.pack(true);
         Object o = msgPack.unpack(b);
         assertEquals(true, o);
     }
 
     @Test
-    public void dataIsFloat() throws IOException {
+    void dataIsFloat() throws IOException {
         Float input = 3.2f;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -175,7 +175,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsSmallDouble() throws IOException {
+    void dataIsSmallDouble() throws IOException {
         Double input = 3.2d;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -183,7 +183,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsDouble() throws IOException {
+    void dataIsDouble() throws IOException {
         Double input = Float.MAX_VALUE + 1.0d;
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -191,7 +191,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsDate() throws IOException {
+    void dataIsDate() throws IOException {
         Date input = new Date();
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -200,7 +200,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsList() throws IOException {
+    void dataIsList() throws IOException {
         List<String> input = new ArrayList<>();
         input.add("hello");
         input.add("world");
@@ -213,7 +213,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsArray() throws IOException {
+    void dataIsArray() throws IOException {
         String[] input = {"hello", "world", null, "1"};
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -221,7 +221,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsShortNumber() throws IOException {
+    void dataIsShortNumber() throws IOException {
         Short number = 10;
         byte[] b = msgPack.pack(number);
         Object o = msgPack.unpack(b);
@@ -229,7 +229,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsByte() throws IOException {
+    void dataIsByte() throws IOException {
         byte number = 10;
         byte[] b = msgPack.pack(number);
         Object o = msgPack.unpack(b);
@@ -238,7 +238,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsPoJo() throws IOException {
+    void dataIsPoJo() throws IOException {
         PoJo input = new PoJo();
         input.setName("testing Integer transport");
         input.setNumber(12345);
@@ -254,7 +254,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsPoJoWithLong() throws IOException {
+    void dataIsPoJoWithLong() throws IOException {
         PoJo input = new PoJo();
         input.setName("testing Long number transport");
         input.setLongNumber(10L);
@@ -270,7 +270,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsPoJoWithBigInteger() throws IOException {
+    void dataIsPoJoWithBigInteger() throws IOException {
         PoJo input = new PoJo();
         input.setName("testing BigInteger transport");
         input.setBigInteger(new BigInteger("10"));
@@ -286,7 +286,7 @@ public class MsgPackTest {
     }
 
     @Test
-    public void dataIsPoJoWithBigDecimal() throws IOException {
+    void dataIsPoJoWithBigDecimal() throws IOException {
         PoJo input = new PoJo();
         input.setName("testing BigInteger transport");
         input.setBigDecimal(new BigDecimal("0.00000012345"));

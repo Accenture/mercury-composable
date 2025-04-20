@@ -141,17 +141,15 @@ public class FluxConsumer<T> {
                         completeConsumer.run();
                     }
                 }
-                if (DATA.equals(type) && body != null) {
-                    if (consumer != null) {
-                        if (body instanceof Map && pojoClass != null) {
-                            if (serializer != null) {
-                                consumer.accept(serializer.toPoJo(body, pojoClass));
-                            } else {
-                                consumer.accept(mapper.readValue(body, pojoClass));
-                            }
+                if (DATA.equals(type) && body != null && consumer != null) {
+                    if (body instanceof Map && pojoClass != null) {
+                        if (serializer != null) {
+                            consumer.accept(serializer.toPoJo(body, pojoClass));
                         } else {
-                            consumer.accept((T) body);
+                            consumer.accept(mapper.readValue(body, pojoClass));
                         }
+                    } else {
+                        consumer.accept((T) body);
                     }
                 }
                 if (EXCEPTION.equals(type) && body instanceof byte[] b) {

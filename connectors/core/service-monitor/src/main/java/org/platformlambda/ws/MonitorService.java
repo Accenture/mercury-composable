@@ -301,15 +301,15 @@ public class MonitorService implements LambdaFunction {
 
     private void updateInfo(Map<String, Object> info, Map<String, String> headers) {
         Utility util = Utility.getInstance();
-        for (String key : headers.keySet()) {
+        for (var entry : headers.entrySet()) {
+            String key = entry.getKey();
             if (!ID.equals(key) && !MONITOR.equals(key)) {
                 // normalize numbers
-                String value = headers.get(key);
+                String value = entry.getValue();
                 if (util.isNumeric(value)) {
-                    long v = util.str2long(value);
-                    info.put(key, v >= Integer.MAX_VALUE? v : (int) v);
+                    info.put(key, util.str2long(value));
                 } else {
-                    info.put(key, headers.get(key));
+                    info.put(key, value);
                 }
             }
         }
@@ -322,9 +322,10 @@ public class MonitorService implements LambdaFunction {
         if (info.containsKey(TOPIC)) {
             String myTopic = info.get(TOPIC).toString();
             Map<String, Object> allConnections = getConnections();
-            for (String peer : allConnections.keySet()) {
+            for (var entry : allConnections.entrySet()) {
+                String peer = entry.getKey();
                 if (!origin.equals(peer)) {
-                    Object o = allConnections.get(peer);
+                    Object o = entry.getValue();
                     if (o instanceof Map) {
                         Map<String, Object> map = (Map<String, Object>) o;
                         if (map.containsKey(TOPIC)) {

@@ -26,6 +26,7 @@ import org.platformlambda.core.util.Utility;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -58,7 +59,7 @@ public class HttpErrorHandler implements ErrorController {
     private static final String SET_WARNING = "${warning}";
     private static String templateFile;
 
-    @RequestMapping(ERROR_PATH)
+    @RequestMapping(path = ERROR_PATH, method= RequestMethod.GET)
     public void handlerError(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String message = getError(request);
         Integer status = (Integer) request.getAttribute(STATUS_CODE);

@@ -27,12 +27,12 @@ import java.util.Map;
 
 public class ScheduledJob {
 
-    public String name;
+    public final String name;
+    public final String service;
+    public final Date created = new Date();
+    public final String cronSchedule;
     public String description;
-    public String cronSchedule;
-    public String service;
     public Map<String, String> parameters = new HashMap<>();
-    public Date created;
     public Date startTime;
     public int count = 0;
     public Date stopTime;
@@ -40,7 +40,6 @@ public class ScheduledJob {
     public JobDetail job;
 
     public ScheduledJob(String name, String service, String cronSchedule) {
-        this.created = new Date();
         this.name = name;
         this.service = service;
         this.cronSchedule = cronSchedule;
@@ -48,18 +47,12 @@ public class ScheduledJob {
 
     public ScheduledJob addParameter(String key, Object value) {
         if (key != null) {
-            String v;
-            // null value is transported as an empty string
-            if (value == null) {
-                v = "";
-            } else if (value instanceof String) {
-                v = (String) value;
-            } else if (value instanceof Date) {
-                v = Utility.getInstance().date2str((Date) value);
-            } else {
-                v = value.toString();
-            }
-
+            String v = switch (value) {
+                case null -> "";
+                case String s -> s;
+                case Date date -> Utility.getInstance().date2str(date);
+                default -> String.valueOf(value);
+            };
             this.parameters.put(key, v);
         }
         return this;
@@ -79,5 +72,4 @@ public class ScheduledJob {
         result.put("iterations", count);
         return result;
     }
-
 }

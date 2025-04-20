@@ -42,13 +42,14 @@ public class ElasticQueue implements AutoCloseable {
     private static final AtomicInteger generation = new AtomicInteger(0);
     private static final ReentrantLock lock = new ReentrantLock();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
+    public static final int MEMORY_BUFFER = 20;
+    private static final byte[] NOTHING = new byte[0];
     private static final long ONE_SECOND = 1000L;
     private static final long ONE_MINUTE = 60 * ONE_SECOND;
     private static final long ONE_HOUR = 60 * ONE_MINUTE;
     private static final long ONE_DAY = 24 * ONE_HOUR;
     private static final long KEEP_ALIVE_INTERVAL = 20 * ONE_SECOND;
     private static final long HOUSEKEEPING_INTERVAL = 10 * ONE_MINUTE;
-    public static final int MEMORY_BUFFER = 20;
     private static final String RUNNING = "RUNNING";
     private static final String CLEAN_UP_TASK = "elastic.queue.cleanup";
     private static final String SLASH = "/";
@@ -61,7 +62,7 @@ public class ElasticQueue implements AutoCloseable {
     private long readCounter;
     private long writeCounter;
     private boolean empty = false;
-    private byte[] peeked = null;
+    private byte[] peeked = NOTHING;
     private int currentVersion = generation.get();
     private final String id;
     private final ConcurrentLinkedQueue<byte[]> memory = new ConcurrentLinkedQueue<>();
@@ -255,22 +256,27 @@ public class ElasticQueue implements AutoCloseable {
     }
 
     public void write(byte[] event) {
-        if (writeCounter < MEMORY_BUFFER) {
-            // for highest performance, save to memory for the first few blocks
-            memory.add(event);
-        } else {
-            // otherwise, save to disk
-            String key = id + SLASH + currentVersion + SLASH + util.zeroFill(writeCounter, MAX_EVENTS);
-            DatabaseEntry k = new DatabaseEntry(util.getUTF(key));
-            DatabaseEntry v = new DatabaseEntry(event);
-            getDatabase().put(null, k, v);
+        if (event != null && event.length > 0) {
+            if (writeCounter < MEMORY_BUFFER) {
+                // for highest performance, save to memory for the first few blocks
+                memory.add(event);
+            } else {
+                // otherwise, save to disk
+                String key = id + SLASH + currentVersion + SLASH + util.zeroFill(writeCounter, MAX_EVENTS);
+                DatabaseEntry k = new DatabaseEntry(util.getUTF(key));
+                DatabaseEntry v = new DatabaseEntry(event);
+                Database database = getDatabase();
+                if (database != null) {
+                    database.put(null, k, v);
+                }
+            }
+            writeCounter++;
+            empty = false;
         }
-        writeCounter++;
-        empty = false;
     }
 
     public byte[] peek() {
-        if (peeked != null) {
+        if (peeked.length > 0) {
             return peeked;
         }
         peeked = read();
@@ -278,15 +284,15 @@ public class ElasticQueue implements AutoCloseable {
     }
 
     public byte[] read() {
-        if (peeked != null) {
+        if (peeked.length > 0) {
             byte[] result = peeked;
-            peeked = null;
+            peeked = NOTHING;
             return result;
         }
         if (readCounter >= writeCounter) {
             // catch up with writes and thus nothing to read
             close();
-            return null;
+            return NOTHING;
         }
         if (readCounter < MEMORY_BUFFER) {
             byte[] event = memory.poll();
@@ -299,25 +305,28 @@ public class ElasticQueue implements AutoCloseable {
         String key = id + SLASH + currentVersion + SLASH + util.zeroFill(readCounter, MAX_EVENTS);
         DatabaseEntry k = new DatabaseEntry(util.getUTF(key));
         DatabaseEntry v = new DatabaseEntry();
-        try {
-            OperationStatus status = getDatabase().get(null, k, v, LockMode.DEFAULT);
-            if (status == OperationStatus.SUCCESS) {
-                // must be an exact match
-                String ks = util.getUTF(k.getData());
-                if (ks.equals(key)) {
-                    hasRecord = true;
-                    readCounter++;
-                    return v.getData();
-                } else {
-                    log.error("Expected {}, Actual: {}", key, ks);
+        Database database = getDatabase();
+        if (database != null) {
+            try {
+                OperationStatus status = database.get(null, k, v, LockMode.DEFAULT);
+                if (status == OperationStatus.SUCCESS) {
+                    // must be an exact match
+                    String ks = util.getUTF(k.getData());
+                    if (ks.equals(key)) {
+                        hasRecord = true;
+                        readCounter++;
+                        return v.getData();
+                    } else {
+                        log.error("Expected {}, Actual: {}", key, ks);
+                    }
+                }
+            } finally {
+                if (hasRecord) {
+                    database.delete(null, k);
                 }
             }
-            return null;
-        } finally {
-            if (hasRecord) {
-                db.delete(null, k);
-            }
         }
+        return NOTHING;
     }
 
     private void scanExpiredStores(File tmpRoot) {

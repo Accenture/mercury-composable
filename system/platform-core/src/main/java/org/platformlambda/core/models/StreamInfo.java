@@ -24,8 +24,8 @@ package org.platformlambda.core.models;
  */
 public class StreamInfo {
     public final long created = System.currentTimeMillis();
-    public long updated = created;
     public final long expiryMills;
+    public long updated = created;
 
     public StreamInfo(long expirySeconds) {
         this.expiryMills = expirySeconds * 1000;

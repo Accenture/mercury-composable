@@ -25,19 +25,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class BenchmarkRequest {
 
-    public String type;
-    public int count;
-    public int size;
-    public Date start;
-    public String cid;
+    public final String type;
+    public final int count;
+    public final int size;
+    public final Date start = new Date();
+    public final String cid = Utility.getInstance().getUuid();
+    public final AtomicInteger received = new AtomicInteger(0);
     public long timeSpendPublishing = 0;
-    public AtomicInteger received = new AtomicInteger(0);
 
     public BenchmarkRequest(String type, int count, int size) {
         this.type = type;
         this.count = Math.max(1, count);
         this.size = Math.max(10, (size / 10) * 10); // rounded to the nearest 10
-        this.start = new Date();
-        this.cid = Utility.getInstance().getUuid();
     }
 }

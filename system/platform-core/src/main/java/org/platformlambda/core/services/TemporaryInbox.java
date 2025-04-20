@@ -23,9 +23,7 @@ public class TemporaryInbox implements TypedLambdaFunction<EventEnvelope, Void> 
             var cid = sep == -1? compositeCid : compositeCid.substring(0, sep);
             var inbox = InboxBase.getHolder(cid);
             if (inbox != null) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                    inbox.handleEvent(input);
-                });
+                Platform.getInstance().getVirtualThreadExecutor().submit(() -> inbox.handleEvent(input));
             }
         }
         return null;

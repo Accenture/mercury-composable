@@ -94,35 +94,31 @@ public class SimpleHttpUtility {
         if (headerInfo.keepHeaders != null && !headerInfo.keepHeaders.isEmpty()) {
             // drop all headers except those to be kept
             Map<String, String> toBeKept = new HashMap<>();
-            for (String h: headers.keySet()) {
-                if (headerInfo.keepHeaders.contains(h)) {
-                    toBeKept.put(h, headers.get(h));
+            for (var entry: headers.entrySet()) {
+                if (headerInfo.keepHeaders.contains(entry.getKey())) {
+                    toBeKept.put(entry.getKey(), entry.getValue());
                 }
             }
             result = toBeKept;
         } else if (headerInfo.dropHeaders != null && !headerInfo.dropHeaders.isEmpty()) {
             // drop the headers according to "drop" list
             Map<String, String> toBeKept = new HashMap<>();
-            for (String h: headers.keySet()) {
-                if (!headerInfo.dropHeaders.contains(h)) {
-                    toBeKept.put(h, headers.get(h));
+            for (var entry: headers.entrySet()) {
+                if (!headerInfo.dropHeaders.contains(entry.getKey())) {
+                    toBeKept.put(entry.getKey(), entry.getValue());
                 }
             }
             result = toBeKept;
         }
         if (headerInfo.additionalHeaders != null && !headerInfo.additionalHeaders.isEmpty()) {
-            for (String h: headerInfo.additionalHeaders.keySet()) {
-                result.put(h, headerInfo.additionalHeaders.get(h));
-            }
+            result.putAll(headerInfo.additionalHeaders);
         }
         return result;
     }
 
     public String normalizeUrl(String url, List<String> urlRewrite) {
-        if (urlRewrite != null && urlRewrite.size() == 2) {
-            if (url.startsWith(urlRewrite.get(0))) {
-                return urlRewrite.get(1) + url.substring(urlRewrite.get(0).length());
-            }
+        if (urlRewrite != null && urlRewrite.size() == 2 && url.startsWith(urlRewrite.get(0))) {
+            return urlRewrite.get(1) + url.substring(urlRewrite.get(0).length());
         }
         return url;
     }

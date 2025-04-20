@@ -35,20 +35,18 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class PayloadSegmentationTest extends TestBase {
+class PayloadSegmentationTest extends TestBase {
     private static final String TEST_STRING = "123456789.";
     private static final int CYCLE = 30000;
 
     @Test
-    public void multiPart() throws IOException, InterruptedException {
+    void multiPart() throws IOException, InterruptedException {
         /*
          * Generate large payload of over 64 KB
          * (for this test, we generate 500,000 bytes)
          */
         StringBuilder sb = new StringBuilder();
-        for (int i=0; i < CYCLE; i++) {
-            sb.append(TEST_STRING);
-        }
+        sb.append(TEST_STRING.repeat(CYCLE));
         BlockingQueue<Integer> bench = new ArrayBlockingQueue<>(1);
         MultipartPayload multipart = MultipartPayload.getInstance();
         String RECEIVER = "large.payload.receiver";
@@ -82,5 +80,4 @@ public class PayloadSegmentationTest extends TestBase {
         assertNotNull(size);
         assertEquals((int) size, sb.length());
     }
-
 }

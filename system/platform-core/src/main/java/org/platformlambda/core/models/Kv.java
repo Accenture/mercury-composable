@@ -24,8 +24,8 @@ import java.util.Date;
 
 public class Kv {
 
-    public String key;
-    public String value;
+    public final String key;
+    public final String value;
 
     /**
      * Key-Value Pair

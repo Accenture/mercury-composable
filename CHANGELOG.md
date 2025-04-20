@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.29, 4/20/2025
+
+### Added
+
+Perform "path traversal" avoidance when decoding incoming HTTP requests
+
+### Removed
+
+Remove "public" qualifier from unit tests since JUnit version 5 does not need it
+
+### Changed
+
+Minor refactoring to remove majority of code smells as per SonarQube static code analysis
+
+---
 ## Version 4.2.28, 4/17/2025
 
 ### Added

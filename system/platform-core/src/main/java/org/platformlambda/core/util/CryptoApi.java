@@ -51,7 +51,7 @@ public class CryptoApi {
     private static final int DSA_2048 = 2048;
     private static final int[] PUBLIC_KEY_SIZES = {2048, 3072, 4096};
     private static final String SHA_256_WITH_DSA = "SHA256withDSA";
-    private static final String SHA_1_WITH_RSA = "SHA1withRSA";
+    private static final String SHA_256_WITH_RSA = "SHA256withRSA";
     private static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
     private static final String RSA_PADDING = "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
     private static final String CORRUPTED_IV = "Corrupted IV";
@@ -158,10 +158,10 @@ public class CryptoApi {
      */
     public byte[] rsaSign(byte[] data, byte[] privateKey) throws GeneralSecurityException {
         PrivateKey key = getPrivate(privateKey, true);
-        Signature dsa = Signature.getInstance(SHA_1_WITH_RSA);
-        dsa.initSign(key);
-        dsa.update(data);
-        return dsa.sign();
+        Signature rsa = Signature.getInstance(SHA_256_WITH_RSA);
+        rsa.initSign(key);
+        rsa.update(data);
+        return rsa.sign();
     }
 
     /**
@@ -190,10 +190,10 @@ public class CryptoApi {
      */
     public boolean rsaVerify(byte[] data, byte[] signature, byte[] publicKey) throws GeneralSecurityException {
         PublicKey key = getPublic(publicKey, true);
-        Signature dsa = Signature.getInstance(SHA_1_WITH_RSA);
-        dsa.initVerify(key);
-        dsa.update(data);
-        return dsa.verify(signature);
+        Signature rsa = Signature.getInstance(SHA_256_WITH_RSA);
+        rsa.initVerify(key);
+        rsa.update(data);
+        return rsa.verify(signature);
     }
 
     /////////////////////////
