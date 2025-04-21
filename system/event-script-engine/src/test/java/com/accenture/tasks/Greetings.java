@@ -38,16 +38,19 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Objec
     private static final String EXCEPTION = "exception";
     private static final String ORIGINAL = "original";
     private static final String TIMEOUT = "timeout";
+    private static final String CUSTOM = "custom";
     private static final String DEMO = "demo";
     private static final String X_FLOW_ID = "x-flow-id";
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws InterruptedException {
-        String optionalException = (String) input.get(EXCEPTION);
-        if (optionalException != null) {
-            if (TIMEOUT.equals(optionalException)) {
+        String exceptionTag = (String) input.get(EXCEPTION);
+        if (exceptionTag != null) {
+            if (TIMEOUT.equals(exceptionTag)) {
                 Thread.sleep(2000);
+            } else if (CUSTOM.equals(exceptionTag)) {
+                return new EventEnvelope().setStatus(400).setBody(Map.of("error", "non-standard-format"));
             } else {
                 // just testing throwing an exception through a Mono reactive response
                 return Mono.create(emitter -> emitter.error(new AppException(403, "just a test")));

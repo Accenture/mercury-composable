@@ -94,7 +94,7 @@ public class HelloPoJoEventOverHttp {
                 if (response.getBody() instanceof SamplePoJo result) {
                     callback.success(result);
                 } else {
-                    callback.error(new AppException(response.getStatus(), response.getError()));
+                    callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
                 }
             } catch (IOException | ExecutionException | InterruptedException e) {
                 callback.error(e);
@@ -209,7 +209,7 @@ public class HelloPoJoEventOverHttpByConfig {
                 if (response.getBody() instanceof SamplePoJo result) {
                     callback.success(result);
                 } else {
-                    callback.error(new AppException(response.getStatus(), response.getError()));
+                    callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
                 }
             } catch (IOException | ExecutionException | InterruptedException e) {
                 callback.error(e);

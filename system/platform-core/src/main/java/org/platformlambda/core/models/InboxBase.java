@@ -42,6 +42,7 @@ public abstract class InboxBase {
     protected static final ConcurrentMap<String, InboxBase> inboxes = new ConcurrentHashMap<>();
     protected static final String RPC = "rpc";
     protected static final String ANNOTATIONS = "annotations";
+    private static final String MESSAGE = "message";
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
     private static final List<String> ZERO_TRACING_FILTER = List.of(ASYNC_HTTP_CLIENT);
 
@@ -70,7 +71,7 @@ public abstract class InboxBase {
     }
 
     protected void recordRpcTrace(String traceId, String tracePath, String to, String from, String start,
-                                  int status, String error, float execTime, float roundTrip,
+                                  int status, Object error, float execTime, float roundTrip,
                                   Map<String, Object> annotations) {
         var service = trimOrigin(to);
         if (!ZERO_TRACING_FILTER.contains(service)) {
@@ -94,7 +95,8 @@ public abstract class InboxBase {
                 metrics.put("status", status);
                 if (status >= 400) {
                     metrics.put("success", false);
-                    metrics.put("exception", error);
+                    // for data privacy, only shown error message from recognized standard error dataset format
+                    metrics.put("exception", error instanceof String message? message : "***");
                 } else {
                     metrics.put("success", true);
                 }

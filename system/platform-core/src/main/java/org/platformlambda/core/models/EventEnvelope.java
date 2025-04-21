@@ -170,18 +170,26 @@ public class EventEnvelope {
     }
 
     @SuppressWarnings("rawtypes")
-    public String getError() {
+    public Object getError() {
         if (hasError()) {
             switch (body) {
+                case null -> {
+                    return "null";
+                }
+                case String str -> {
+                    return str;
+                }
+                case Map error -> {
+                    // extract error message if error message signature is found
+                    return "error".equals(error.get("type")) &&
+                            error.containsKey(STATUS_FIELD) && error.containsKey(MESSAGE)?
+                            String.valueOf(error.get(MESSAGE)) : body;
+                }
                 case byte[] ignored -> {
                     return "***";
                 }
-                case Map error -> {
-                    // extract error message if exists
-                    return error.containsKey(MESSAGE)? String.valueOf(error.get(MESSAGE)) : String.valueOf(body);
-                }
                 default -> {
-                    return body instanceof String str ? str : String.valueOf(body);
+                    return body;
                 }
             }
         } else {

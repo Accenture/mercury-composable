@@ -68,6 +68,24 @@ class PostOfficeTest extends TestBase {
     private static final String X_TTL = "x-ttl";
 
     @Test
+    void getNonStandardErrorResponse() throws IOException, ExecutionException, InterruptedException {
+        AppConfigReader config = AppConfigReader.getInstance();
+        String port = config.getProperty("server.port");
+        var data = Map.of("message", "non-standard");
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setTargetHost("http://127.0.0.1:"+port).setUrl("/api/hello/error")
+                .setMethod("POST").setBody(data)
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json");
+        PostOffice po = new PostOffice("unit.test", "10", "TEST /api/test/error");
+        EventEnvelope res = po.request(new EventEnvelope().setTo("async.http.request")
+                            .setBody(req.toMap()), 5000).get();
+        assertEquals(400, res.getStatus());
+        // demonstrate that non-standard error result can be transported
+        assertEquals(Map.of("error", data), res.getBody());
+    }
+
+    @Test
     void testEventManagementOptimization() throws IOException, InterruptedException {
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();

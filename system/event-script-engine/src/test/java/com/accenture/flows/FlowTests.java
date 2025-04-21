@@ -581,6 +581,27 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void nonStandardExceptionTest() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", "custom");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(400, res.getStatus());
+        assertEquals(400, result.get("status"));
+        assertEquals(Map.of("error", "non-standard-format"), result.get("message"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void flowTimeoutTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;

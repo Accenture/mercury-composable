@@ -22,7 +22,8 @@ Remove "public" qualifier from unit tests since JUnit version 5 does not need it
 
 ### Changed
 
-Minor refactoring to remove majority of code smells as per SonarQube static code analysis
+1. Minor refactoring to remove majority of code smells as per SonarQube static code analysis
+2. Add non-standard error response body to transport custom error message in EventEnvelope
 
 ---
 ## Version 4.2.28, 4/17/2025

@@ -79,6 +79,14 @@ rest:
     cors: cors_1
     headers: header_1
 
+  - service: "non.standard.error"
+    methods: ['POST']
+    url: "/api/hello/error"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
   #
   # When service is a URL, it will relay the HTTP or HTTPS requests.
   # "trust_all_cert" and "url_rewrite" are optional.

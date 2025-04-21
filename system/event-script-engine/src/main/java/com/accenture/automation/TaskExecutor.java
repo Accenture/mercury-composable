@@ -232,7 +232,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return null;
     }
 
-    private void abortFlow(FlowInstance flowInstance, int status, String message) throws IOException {
+    private void abortFlow(FlowInstance flowInstance, int status, Object message) throws IOException {
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
             Map<String, Object> result = new HashMap<>();

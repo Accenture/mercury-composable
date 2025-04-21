@@ -55,7 +55,7 @@ public class HelloPoJoEventOverHttp {
                     SamplePoJo pojo = response.getBody(SamplePoJo.class);
                     callback.success(pojo);
                 } else {
-                    callback.error(new AppException(response.getStatus(), response.getError()));
+                    callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
                 }
             } catch (IOException | ExecutionException | InterruptedException e) {
                 callback.error(e);
