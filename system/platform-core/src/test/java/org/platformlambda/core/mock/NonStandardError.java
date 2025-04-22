@@ -16,27 +16,20 @@
 
  */
 
-package com.accenture.tasks;
+package org.platformlambda.core.mock;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.AsyncHttpRequest;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-@PreLoad(route="begin.parallel.test", instances=10)
-public class PrepareParallelTest implements TypedLambdaFunction<Map<String, Object>, Void> {
-    private static final Logger log = LoggerFactory.getLogger(PrepareParallelTest.class);
-
-    private static final String COUNT = "count";
-
+@PreLoad(route = "non.standard.error", instances=10)
+public class NonStandardError implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
+    
     @Override
-    public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        if (input.containsKey(COUNT)) {
-            log.info("Reset parallel task counter");
-            ParallelTask.counter.set(0);
-        }
-        return null;
+    public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws Exception {
+        return new EventEnvelope().setBody(Map.of("error", input.getBody())).setStatus(400);
     }
 }

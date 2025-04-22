@@ -61,14 +61,13 @@ public class EventProducer implements LambdaFunction {
  
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
-        if (headers.containsKey(TO) && input instanceof byte[]) {
+        if (headers.containsKey(TO) && input instanceof byte[] payload) {
             List<String> destinations = getDestinations(headers);
             if (!destinations.isEmpty()) {
                 PubSub ps = PubSub.getInstance();
                 Utility util = Utility.getInstance();
-                byte[] payload = (byte[]) input;
-                for (String dest : destinations) {
-                    String topicPartition = ServiceRegistry.getTopic(dest);
+                for (String target : destinations) {
+                    String topicPartition = ServiceRegistry.getTopic(target);
                     if (topicPartition != null) {
                         final String topic;
                         int partition = -1;
@@ -81,7 +80,7 @@ public class EventProducer implements LambdaFunction {
                         }
                         Map<String, String> parameters = new HashMap<>();
                         parameters.put(EMBED_EVENT, "1");
-                        parameters.put(RECIPIENT, dest);
+                        parameters.put(RECIPIENT, target);
                         ps.publish(topic, partition, parameters, payload);
                     }
                 }
@@ -165,8 +164,8 @@ public class EventProducer implements LambdaFunction {
             Map<String, Long> load = new HashMap<>();
             for (String target: available) {
                 Object o = workLoad.get(target);
-                if (o instanceof Long) {
-                    load.put(target, (Long) o);
+                if (o instanceof Long n) {
+                    load.put(target, n);
                 }
             }
             // if new member(s) discovered, reset counts

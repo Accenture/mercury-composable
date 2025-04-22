@@ -188,7 +188,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                 WsEnvelope md = connections.get(conn);
                 if (md != null) {
                     connections.remove(conn);
-                    log.warn("Websocket {} expired ({}, {})", md.getPath(), md.getRxPath(), md.getTxPath());
+                    log.warn("Websocket {} expired ({}, {})", md.getUriPath(), md.getRxPath(), md.getTxPath());
                     // drop connection due to inactivity
                     if (!md.getWebSocket().isClosed()) {
                         md.getWebSocket().close((short) 1003, "Idle for " + timeout + " seconds");

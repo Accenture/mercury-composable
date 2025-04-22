@@ -70,7 +70,6 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
     private static final String[] LIVENESSPROBE = {"/livenessprobe", "livenessprobe"};
     private static final String[][] ADMIN_ENDPOINTS = {INFO_SERVICE, INFO_LIB, INFO_ROUTES,
             HEALTH_SERVICE, ENV_SERVICE, LIVENESSPROBE};
-    private static final long GRACE_PERIOD = 5000;
 
     @Override
     public void handle(HttpServerRequest request) {

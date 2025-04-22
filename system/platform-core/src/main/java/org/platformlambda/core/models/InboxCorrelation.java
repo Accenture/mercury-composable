@@ -19,8 +19,8 @@
 package org.platformlambda.core.models;
 
 public class InboxCorrelation {
-    public String to;
-    public String cid;
+    public final String to;
+    public final String cid;
 
     public InboxCorrelation(String to, String cid) {
         this.to = to;

@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ConnectorTest extends TestBase {
+class ConnectorTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(ConnectorTest.class);
 
     private static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
@@ -89,7 +89,7 @@ public class ConnectorTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void connectivityTest() throws IOException, InterruptedException {
+    void connectivityTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String origin = "unit-test";
         Platform platform = Platform.getInstance();
@@ -169,7 +169,7 @@ public class ConnectorTest extends TestBase {
     }
 
     @Test
-    public void checkTopicNameWithoutDot() throws IOException {
+    void checkTopicNameWithoutDot() throws IOException {
         String name = "hello.world";
         ConnectorConfig.validateTopicName(name);
         String invalid = "helloworld";
@@ -179,14 +179,14 @@ public class ConnectorTest extends TestBase {
     }
 
     @Test
-    public void checkEmptyTopic() {
+    void checkEmptyTopic() {
         IOException ex = assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(""));
         assertEquals("Invalid route name - use 0-9, a-z, A-Z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
     @Test
-    public void reservedExtension() {
+    void reservedExtension() {
         IOException ex = assertThrows(IOException.class, () ->
                 ConnectorConfig.validateTopicName("hello.com"));
         assertEquals("Invalid route hello.com which is a reserved extension",
@@ -194,7 +194,7 @@ public class ConnectorTest extends TestBase {
     }
 
     @Test
-    public void reservedName() {
+    void reservedName() {
         IOException ex = assertThrows(IOException.class, () ->
                 ConnectorConfig.validateTopicName("Thumbs.db"));
         assertEquals("Invalid route Thumbs.db which is a reserved Windows filename",
@@ -203,7 +203,7 @@ public class ConnectorTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void healthTest() throws IOException, InterruptedException {
+    void healthTest() throws IOException, InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);

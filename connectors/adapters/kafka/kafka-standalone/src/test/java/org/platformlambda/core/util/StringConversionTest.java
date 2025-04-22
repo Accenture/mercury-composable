@@ -24,11 +24,11 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class StringConversionTest {
+class StringConversionTest {
     private static final Utility util = Utility.getInstance();
 
     @Test
-    public void base64() {
+    void base64() {
         String input = "hello world";
         String base64 = util.bytesToBase64(input.getBytes());
         byte[] b = util.base64ToBytes(base64);
@@ -36,7 +36,7 @@ public class StringConversionTest {
     }
 
     @Test
-    public void hex() throws IOException {
+    void hex() throws IOException {
         String input = "hello world";
         String hexString = util.bytes2hex(input.getBytes());
         byte[] b = util.hex2bytes(hexString);

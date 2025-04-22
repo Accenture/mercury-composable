@@ -33,4 +33,5 @@ public class ServiceDiscovery {
     public static final String FIND = "find";
     public static final String SEARCH = "search";
 
+    private ServiceDiscovery() {};
 }

@@ -39,10 +39,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class EventHttpTest extends TestBase {
+class EventHttpTest extends TestBase {
 
     @Test
-    public void configTest() {
+    void configTest() {
         String ROUTE = "event.http.test";
         AppConfigReader config = AppConfigReader.getInstance();
         String serverPort = config.getProperty("server.port");
@@ -55,7 +55,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void declarativeEventOverHttpTest() throws IOException, ExecutionException, InterruptedException {
+    void declarativeEventOverHttpTest() throws IOException, ExecutionException, InterruptedException {
         /*
          * This test illustrates automatic forwarding of events to a peer using "event over HTTP" configuration.
          * The rest of the tests in this class use programmatic "Event over HTTP" API.
@@ -93,7 +93,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiAuthTest() throws IOException, InterruptedException {
+    void remoteEventApiAuthTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
@@ -114,7 +114,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiWithLargePayloadTest() throws IOException, InterruptedException {
+    void remoteEventApiWithLargePayloadTest() throws IOException, InterruptedException {
         // create a large payload of 100 KB
         String PAYLOAD = "123456789.".repeat(10000);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -139,7 +139,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiWithLargePayloadKotlinTest() throws IOException, InterruptedException {
+    void remoteEventApiWithLargePayloadKotlinTest() throws IOException, InterruptedException {
         // create a large payload of 100 KB
         String PAYLOAD = "123456789.".repeat(10000);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -164,7 +164,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiOneWayTest() throws IOException, InterruptedException {
+    void remoteEventApiOneWayTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
@@ -189,7 +189,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiOneWayKotlinTest() throws IOException, InterruptedException {
+    void remoteEventApiOneWayKotlinTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
@@ -215,7 +215,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiKotlinTest() throws IOException, InterruptedException {
+    void remoteEventApiKotlinTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
@@ -238,7 +238,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiKotlinAuthTest() throws IOException, InterruptedException {
+    void remoteEventApiKotlinAuthTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
@@ -259,7 +259,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiMissingRouteTest() {
+    void remoteEventApiMissingRouteTest() {
         String TRACE_ID = "123";
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
@@ -274,7 +274,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiNullEventTest() {
+    void remoteEventApiNullEventTest() {
         String TRACE_ID = "123";
         long TIMEOUT = 3000;
         Map<String, String> securityHeaders = new HashMap<>();
@@ -287,7 +287,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiRouteNotFoundTest() throws IOException, InterruptedException {
+    void remoteEventApiRouteNotFoundTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String TRACE_ID = "123";
         long TIMEOUT = 3000;
@@ -307,7 +307,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiAccessControlTest() throws IOException, InterruptedException {
+    void remoteEventApiAccessControlTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         String DEMO_FUNCTION = "demo.private.function";
@@ -329,7 +329,7 @@ public class EventHttpTest extends TestBase {
     }
 
     @Test
-    public void remoteEventApiAccessControlFutureTest() throws IOException, InterruptedException, ExecutionException {
+    void remoteEventApiAccessControlFutureTest() throws IOException, InterruptedException, ExecutionException {
         long TIMEOUT = 3000;
         String DEMO_FUNCTION = "demo.private.function";
         LambdaFunction f = (headers, input, instance) -> true;
@@ -350,7 +350,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiFutureTest() throws IOException, InterruptedException, ExecutionException {
+    void remoteEventApiFutureTest() throws IOException, InterruptedException, ExecutionException {
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;
         Map<String, String> securityHeaders = new HashMap<>();
@@ -373,7 +373,7 @@ public class EventHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void remoteEventApiTest() throws IOException, InterruptedException {
+    void remoteEventApiTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long TIMEOUT = 3000;
         int NUMBER_THREE = 3;

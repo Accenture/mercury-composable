@@ -6,7 +6,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>lambda-example</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.27</version>
+    <version>4.2.29</version>
     <name>Lambda example using platform-core</name>
 
     <parent>
@@ -48,14 +48,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.2.27</version>
+            <version>4.2.29</version>
         </dependency>
 
         <!-- Optionally, select your optional cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.2.27</version>
+            <version>4.2.29</version>
         </dependency>
 
         <dependency>

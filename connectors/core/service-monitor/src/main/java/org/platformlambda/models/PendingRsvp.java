@@ -20,18 +20,17 @@ package org.platformlambda.models;
 
 public class PendingRsvp {
 
-    public String origin;
-    public long created, lastSeen;
+    public final String origin;
+    public final long created;
+    public long lastSeen = System.currentTimeMillis();
 
     public PendingRsvp(String origin, long created) {
         this.origin = origin;
         this.created = created;
-        this.lastSeen = System.currentTimeMillis();
     }
 
     public PendingRsvp touch() {
         this.lastSeen = System.currentTimeMillis();
         return this;
     }
-
 }

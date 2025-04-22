@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LocalPubSubTest extends TestBase {
+class LocalPubSubTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(LocalPubSubTest.class);
     private static final String MY_ROUTE = "my_route";
     private static final String TEST_TOPIC_ONE = "test.topic.one";
@@ -25,7 +25,7 @@ public class LocalPubSubTest extends TestBase {
     private static final String SUBSCRIBER_TWO = "subscriber.two";
 
     @Test
-    public void subscriptionTest() throws IOException, InterruptedException {
+    void subscriptionTest() throws IOException, InterruptedException {
         LocalPubSub ps = LocalPubSub.getInstance();
         ps.createTopic(TEST_TOPIC_ONE);
         // you can subscribe before you create the subscriber services

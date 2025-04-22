@@ -80,8 +80,9 @@ public class PresenceHandler implements LambdaFunction {
                     String monitorOrigin = headers.get(ORIGIN);
                     if (!myOrigin.equals(monitorOrigin)) {
                         Map<String, Map<String, Object>> connections = (Map<String, Map<String, Object>>) input;
-                        for (String appOrigin: connections.keySet()) {
-                            Map<String, Object> metadata = connections.get(appOrigin);
+                        for (var entry: connections.entrySet()) {
+                            String appOrigin = entry.getKey();
+                            Map<String, Object> metadata = entry.getValue();
                             MonitorService.updateNodeInfo(appOrigin, metadata);
                             if (metadata.containsKey(TOPIC)) {
                                 po.send(MainApp.TOPIC_CONTROLLER, new Kv(TYPE, ALIVE), new Kv(NAME, metadata.get(NAME)),

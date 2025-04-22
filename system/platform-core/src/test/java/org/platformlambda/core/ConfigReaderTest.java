@@ -36,7 +36,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ConfigReaderTest {
+class ConfigReaderTest {
     private static final Logger log = LoggerFactory.getLogger(ConfigReaderTest.class);
 
     @BeforeAll
@@ -48,7 +48,7 @@ public class ConfigReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void envVarRenderingAppConfigReaderTest() {
+    void envVarRenderingAppConfigReaderTest() {
         AppConfigReader config = AppConfigReader.getInstance();
         assertInstanceOf(Map.class, config.get("system"));
         String path = System.getenv("PATH");
@@ -59,7 +59,7 @@ public class ConfigReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void envVarRenderingConfigReaderTest() throws IOException {
+    void envVarRenderingConfigReaderTest() throws IOException {
         // system will automatically find test.yaml if test.yml does not exist
         ConfigReader config = new ConfigReader("classpath:/test.yml");
         assertInstanceOf(Map.class, config.get("hello"));
@@ -71,20 +71,20 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void environmentVarSubstitution() throws IOException {
+    void environmentVarSubstitution() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
         String path = System.getenv("PATH");
         assertEquals("path is "+path, reader.getProperty("hello.world"));
     }
 
     @Test
-    public void defaultValueForNonExistEnvVar() throws IOException {
+    void defaultValueForNonExistEnvVar() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         assertEquals("text(http://127.0.0.1:8100) -> test", reader.getProperty("hello.no_env_var"));
     }
 
     @Test
-    public void systemPropertySubstitution() throws IOException {
+    void systemPropertySubstitution() throws IOException {
         final String HELLO = "HELLO";
         System.setProperty("sample.system.property", HELLO);
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
@@ -92,7 +92,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void systemPropertyIsAlwaysAvailable() {
+    void systemPropertyIsAlwaysAvailable() {
         final String NON_EXIST_PROPERTY = "parameter.not.found.in.application.properties";
         final String HELLO = "HELLO";
         System.setProperty(NON_EXIST_PROPERTY, HELLO);
@@ -101,7 +101,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void getValueFromParent() throws IOException {
+    void getValueFromParent() throws IOException {
         AppConfigReader parent = AppConfigReader.getInstance();
         String parentValue = parent.getProperty("cloud.connector");
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
@@ -110,14 +110,14 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void getDefaultValue() throws IOException {
+    void getDefaultValue() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
         String value = reader.getProperty("another.key");
         assertEquals("12345", value);
     }
 
     @Test
-    public void getNonExistEnvVariable() throws IOException {
+    void getNonExistEnvVariable() throws IOException {
         String TEXT = "hello";
         String ONE_HUNDRED = "100";
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
@@ -136,7 +136,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void getDefaultValueWithControlCharacters() throws IOException {
+    void getDefaultValueWithControlCharacters() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
         String value = reader.getProperty("property.three");
         assertEquals("someDefaultValue/{test1}/{test2}", value);
@@ -144,7 +144,7 @@ public class ConfigReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void dotFormatterTest() throws IOException {
+    void dotFormatterTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         Object o = reader.get("hello.world");
         assertEquals("some value", o);
@@ -168,7 +168,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void flattenMapTest() throws IOException {
+    void flattenMapTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yml");
         Map<String, Object> map = Utility.getInstance().getFlatMap(reader.getMap());
         assertEquals("some value", map.get("hello.world"));
@@ -185,7 +185,7 @@ public class ConfigReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void appConfigTest() {
+    void appConfigTest() {
         // AppConfigReader will combine both application.properties and application.yml
         AppConfigReader reader = AppConfigReader.getInstance();
         // application.name is stored in "application.properties"
@@ -203,7 +203,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void parameterSubstitutionTest() throws IOException {
+    void parameterSubstitutionTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         assertEquals("platform-core", reader.getProperty("hello.name"));
         AppConfigReader config = AppConfigReader.getInstance();
@@ -219,7 +219,7 @@ public class ConfigReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void dotFormatterSetTest() throws IOException {
+    void dotFormatterSetTest() throws IOException {
         // generate random top level key
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String goodDay = uuid+".great.day";
@@ -245,19 +245,19 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void resourceNotFound() {
+    void resourceNotFound() {
         IOException ex = assertThrows(IOException.class, () -> new ConfigReader("classpath:/not-found.yaml"));
         assertEquals("classpath:/not-found.yaml not found", ex.getMessage());
     }
 
     @Test
-    public void fileNotFound() {
+    void fileNotFound() {
         IOException ex = assertThrows(IOException.class, () -> new ConfigReader("file:/not-found.yaml"));
         assertEquals("file:/not-found.yaml not found", ex.getMessage());
     }
 
     @Test
-    public void jsonReadTest() throws IOException {
+    void jsonReadTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.json");
         assertEquals(2, reader.getMap().size());
         assertEquals("world", reader.get("hello"));
@@ -265,7 +265,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void getPropertyFromEnv() {
+    void getPropertyFromEnv() {
         AppConfigReader config = AppConfigReader.getInstance();
         String value = config.getProperty("system.path");
         String path = System.getenv("PATH");
@@ -273,7 +273,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void getPropertyFromEnvFromAnotherConfig() throws IOException {
+    void getPropertyFromEnvFromAnotherConfig() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         Object value = reader.get("hello.path");
         String path = System.getenv("PATH");
@@ -281,7 +281,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void singleLevelLoopErrorTest() throws IOException {
+    void singleLevelLoopErrorTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
         String value = reader.getProperty("recursive.key");
         // In case of config loop, the system will not resolve a parameter value.
@@ -289,7 +289,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void multiLevelLoopErrorTest() {
+    void multiLevelLoopErrorTest() {
         AppConfigReader config = AppConfigReader.getInstance();
         Object value1 = config.get("looping.test.1");
         assertEquals("1000", value1);
@@ -299,20 +299,20 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void defaultValueTest() throws IOException {
+    void defaultValueTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         String value = reader.getProperty("test.no.value", "hello world");
         assertEquals("hello world", value);
     }
     @Test
-    public void defaultValueInRefTest() throws IOException {
+    void defaultValueInRefTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         String value = reader.getProperty("test.default");
         assertEquals("hello 1000", value);
     }
 
     @Test
-    public void noDefaultValueInRefTest() throws IOException {
+    void noDefaultValueInRefTest() throws IOException {
         ConfigReader reader = new ConfigReader("classpath:/test.yaml");
         String value = reader.getProperty("test.no_default");
         // when there is no default value in the reference, it will return empty string as the default value.
@@ -320,7 +320,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void compositeKeyValueTest() throws IOException {
+    void compositeKeyValueTest() throws IOException {
         AppConfigReader config = AppConfigReader.getInstance();
         // prove that the configuration key-values are fully resolved from system properties and environment variables
         Map<String, Object> raw = config.getMap();
@@ -341,7 +341,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void activeProfileTest() {
+    void activeProfileTest() {
         AppConfigReader config = AppConfigReader.getInstance();
         String testPara = config.getProperty("test.parameter");
         Object testYaml = config.get("test.yaml");
@@ -350,7 +350,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void multiEnvVarTest() throws IOException {
+    void multiEnvVarTest() throws IOException {
         AppConfigReader config = AppConfigReader.getInstance();
         String cloudConnector = config.getProperty("cloud.connector");
         String serverPort = config.getProperty("server.port");
@@ -363,7 +363,7 @@ public class ConfigReaderTest {
     }
 
     @Test
-    public void multiEnvVarWithErrorTest() throws IOException {
+    void multiEnvVarWithErrorTest() throws IOException {
         AppConfigReader config = AppConfigReader.getInstance();
         String cloudConnector = config.getProperty("cloud.connector");
         String componentScan = config.getProperty("web.component.scan");

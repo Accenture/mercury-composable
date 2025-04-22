@@ -21,5 +21,4 @@ package org.platformlambda.core.models;
 public interface EntryPoint {
 
     void start(String[] args) throws Exception;
-
 }

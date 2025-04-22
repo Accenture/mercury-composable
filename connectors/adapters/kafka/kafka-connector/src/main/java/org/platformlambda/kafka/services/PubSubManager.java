@@ -146,8 +146,8 @@ public class PubSubManager implements PubSubProvider {
                 .setHeader(TOPIC, topic).setHeader(PARTITIONS, partitions);
         try {
             EventEnvelope res = EventEmitter.getInstance().request(req, timeout).get();
-            if (res != null && res.getBody() instanceof Boolean) {
-                return (Boolean) res.getBody();
+            if (res != null && res.getBody() instanceof Boolean status) {
+                return status;
             } else {
                 return false;
             }
@@ -183,8 +183,8 @@ public class PubSubManager implements PubSubProvider {
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, EXISTS).setHeader(TOPIC, topic);
         try {
             EventEnvelope res = EventEmitter.getInstance().request(req, timeout).get();
-            if (res != null && res.getBody() instanceof Boolean) {
-                return (Boolean) res.getBody();
+            if (res != null && res.getBody() instanceof Boolean status) {
+                return status;
             } else {
                 return false;
             }
@@ -199,8 +199,8 @@ public class PubSubManager implements PubSubProvider {
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, PARTITIONS).setHeader(TOPIC, topic);
         try {
             EventEnvelope res = EventEmitter.getInstance().request(req, timeout).get();
-            if (res != null && res.getBody() instanceof Integer) {
-                return (Integer) res.getBody();
+            if (res != null && res.getBody() instanceof Integer count) {
+                return count;
             } else {
                 return -1;
             }
@@ -274,16 +274,16 @@ public class PubSubManager implements PubSubProvider {
         Utility util = Utility.getInstance();
         Map<String, String> eventHeaders = headers == null? new HashMap<>() : headers;
         List<Header> headerList = new ArrayList<>();
-        if (eventHeaders.containsKey(EventProducer.EMBED_EVENT) && body instanceof byte[]) {
+        if (eventHeaders.containsKey(EventProducer.EMBED_EVENT) && body instanceof byte[] bytes) {
             headerList.add(new RecordHeader(EventProducer.EMBED_EVENT, util.getUTF("1")));
             String recipient = eventHeaders.get(EventProducer.RECIPIENT);
             if (recipient != null) {
                 headerList.add(new RecordHeader(EventProducer.RECIPIENT, util.getUTF(recipient)));
             }
-            sendEvent(topic, partition, headerList, (byte[]) body);
+            sendEvent(topic, partition, headerList, bytes);
         } else {
-            for (String h: eventHeaders.keySet()) {
-                headerList.add(new RecordHeader(h, util.getUTF(eventHeaders.get(h))));
+            for (var entry: eventHeaders.entrySet()) {
+                headerList.add(new RecordHeader(entry.getKey(), util.getUTF(entry.getValue())));
             }
             final byte[] payload;
             switch (body) {
@@ -295,12 +295,12 @@ public class PubSubManager implements PubSubProvider {
                     payload = util.getUTF(s);
                     headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.TEXT_DATA)));
                 }
-                case Map ignoredMap -> {
-                    payload = msgPack.pack(body);
+                case Map m -> {
+                    payload = msgPack.pack(m);
                     headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.MAP_DATA)));
                 }
-                case List ignoredList -> {
-                    payload = msgPack.pack(body);
+                case List data -> {
+                    payload = msgPack.pack(data);
                     headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.LIST_DATA)));
                 }
                 case null, default -> {
@@ -371,8 +371,8 @@ public class PubSubManager implements PubSubProvider {
 
     private void shutdown() {
         closeProducer();
-        for (String topic: subscribers.keySet()) {
-            EventConsumer consumer = subscribers.get(topic);
+        for (var entry: subscribers.entrySet()) {
+            EventConsumer consumer = entry.getValue();
             consumer.shutdown();
         }
     }

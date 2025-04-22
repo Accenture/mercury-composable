@@ -147,8 +147,8 @@ public class SimpleXmlParser {
          * Extract root node if any
          */
         if (result.size() == 1) {
-            for (String key : result.keySet()) {
-                Object rootNode = result.get(key);
+            for (var entry : result.entrySet()) {
+                Object rootNode = entry.getValue();
                 if (rootNode instanceof Map) {
                     return (Map<String, Object>) rootNode;
                 }

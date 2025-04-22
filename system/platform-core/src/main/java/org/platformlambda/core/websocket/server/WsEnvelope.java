@@ -30,7 +30,6 @@ public class WsEnvelope {
     public static final String CLOSE = "close";
     public static final String BYTES = "bytes";
     public static final String STRING = "string";
-    public static final String MAP = "map";
     public static final String ROUTE = "route";
     public static final String TX_PATH = "tx_path";
     public static final String IP = "ip";
@@ -39,13 +38,15 @@ public class WsEnvelope {
     public static final String TOKEN = "token";
     public static final String CLOSE_CODE = "close_code";
     public static final String CLOSE_REASON = "close_reason";
-    private final String path, rxPath, txPath;
+    private final String uriPath;
+    private final String rxPath;
+    private final String txPath;
     private final ServerWebSocket ws;
     private long lastAccess = System.currentTimeMillis();
 
-    public WsEnvelope(ServerWebSocket ws, String path, String rxPath, String txPath) {
+    public WsEnvelope(ServerWebSocket ws, String uriPath, String rxPath, String txPath) {
         this.ws = ws;
-        this.path = path;
+        this.uriPath = uriPath;
         this.rxPath = rxPath;
         this.txPath = txPath;
     }
@@ -58,8 +59,8 @@ public class WsEnvelope {
         return lastAccess;
     }
 
-    public String getPath() {
-        return path;
+    public String getUriPath() {
+        return uriPath;
     }
 
     public String getRxPath() {

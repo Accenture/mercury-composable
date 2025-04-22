@@ -32,10 +32,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PoJoTest extends TestBase {
+class PoJoTest extends TestBase {
 
     @Test
-    public void pojoRpcTest() throws IOException, InterruptedException {
+    void pojoRpcTest() throws IOException, InterruptedException {
         Integer ID = 1;
         String NAME = "Simple PoJo class";
         String ADDRESS = "100 World Blvd, Planet Earth";
@@ -51,5 +51,4 @@ public class PoJoTest extends TestBase {
         assertEquals(NAME, pojo.getName());
         assertEquals(ADDRESS, pojo.getAddress());
     }
-
 }

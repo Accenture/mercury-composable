@@ -13,11 +13,11 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GreetingTest extends TestBase {
+class GreetingTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void helloWorld() throws IOException, InterruptedException, ExecutionException {
+    void helloWorld() throws IOException, InterruptedException, ExecutionException {
         PostOffice po = new PostOffice("unit.test", "12345", "TEST /helloworld");
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -34,7 +34,7 @@ public class GreetingTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void helloUser() throws IOException, InterruptedException, ExecutionException {
+    void helloUser() throws IOException, InterruptedException, ExecutionException {
         PostOffice po = new PostOffice("unit.test", "24680", "TEST /helloworld");
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -49,5 +49,4 @@ public class GreetingTest extends TestBase {
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Hello, user", map.getElement("content.greeting"));
     }
-
 }

@@ -24,13 +24,13 @@ import org.platformlambda.core.util.SimpleCache;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CacheTest {
+class CacheTest {
     // note that the cache expiry has a minimum value of 1000 ms
     private static final ManagedCache cache1 = ManagedCache.createCache("hello.world", 1000, 100);
     private static final SimpleCache cache2 = SimpleCache.createCache("simple.cache", 500);
 
     @Test
-    public void cacheBehavior() throws InterruptedException {
+    void cacheBehavior() throws InterruptedException {
         String KEY = "key1";
         String DATA = "hello";
         cache1.put(KEY, DATA);
@@ -57,7 +57,7 @@ public class CacheTest {
      * Please DO NOT use it at application level
      */
     @Test
-    public void simpleCacheTest() throws InterruptedException {
+    void simpleCacheTest() throws InterruptedException {
         String KEY = "key1";
         String DATA = "hello";
         long expiry = cache2.getExpiry();
@@ -87,5 +87,4 @@ public class CacheTest {
         // test clear cache
         cache2.clear();
     }
-
 }

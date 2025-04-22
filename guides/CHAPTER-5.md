@@ -250,7 +250,7 @@ when the test finishes.
 ```java
     @SuppressWarnings("unchecked")
     @Test
-    public void pipelineForLoopTest() throws IOException, InterruptedException {
+    void pipelineForLoopTest() throws IOException, InterruptedException {
         Platform platform = Platform.getInstance();
         // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
         // We want to override no.op with my.mock.function to demonstrate mocking a function

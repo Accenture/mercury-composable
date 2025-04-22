@@ -579,8 +579,8 @@ public class EventEmitter {
      */
     public List<String> getAllFutureEvents() {
         List<String> result = new ArrayList<>();
-        for (String id: futureEvents.keySet()) {
-            String to = futureEvents.get(id).to;
+        for (var entry: futureEvents.entrySet()) {
+            String to = entry.getValue().to;
             if (!result.contains(to)) {
                 result.add(to);
             }
@@ -599,10 +599,10 @@ public class EventEmitter {
             throw new IllegalArgumentException("Missing 'to'");
         }
         List<String> result = new ArrayList<>();
-        for (String id: futureEvents.keySet()) {
-            FutureEvent event = futureEvents.get(id);
+        for (var entry: futureEvents.entrySet()) {
+            FutureEvent event = entry.getValue();
             if (event.to.equals(to)) {
-                result.add(id);
+                result.add(entry.getKey());
             }
         }
         return result;

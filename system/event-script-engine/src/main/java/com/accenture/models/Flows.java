@@ -27,6 +27,7 @@ public class Flows {
     private static final ConcurrentMap<String, Flow> allFlows = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, FlowInstance> flowInstances = new ConcurrentHashMap<>();
 
+    private Flows() {}
     /**
      * This is reserved for system use.
      * DO NOT use this directly in your application code.

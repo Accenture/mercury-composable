@@ -26,14 +26,14 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class StringConversionTest {
+class StringConversionTest {
 
     private static final Utility util = Utility.getInstance();
 
     private static final String INPUT = "hello world 012345678901234567890123456789012345678901234567890123456789";
 
     @Test
-    public void base64() {
+    void base64() {
         String base64 = util.bytesToBase64(INPUT.getBytes(), true, false);
         // verify that it is a pretty-print output
         assertTrue(base64.contains("\r\n"));
@@ -42,14 +42,14 @@ public class StringConversionTest {
     }
 
     @Test
-    public void hex() throws IOException {
+    void hex() throws IOException {
         String hexString = util.bytes2hex(INPUT.getBytes());
         byte[] b = util.hex2bytes(hexString);
         assertEquals(INPUT, new String(b));
     }
 
     @Test
-    public void normalizeUtcTimestamp() {
+    void normalizeUtcTimestamp() {
         Utility util = Utility.getInstance();
         String expected = "2020-07-09T01:02:03.123Z";
         String timestamp = "2020-07-09T01:02:03.12345678Z";
@@ -64,5 +64,4 @@ public class StringConversionTest {
         timestamp = "2020-07-09T01:02:03.000Z";
         assertEquals(expected, util.date2str(util.str2date(timestamp)));
     }
-
 }

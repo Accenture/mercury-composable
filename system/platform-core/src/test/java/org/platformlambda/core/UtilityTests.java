@@ -39,7 +39,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class UtilityTests {
+class UtilityTests {
     private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
     private static final String HELLO_WORLD = "hello.world";
@@ -65,7 +65,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void setServerPersonality() {
+    void setServerPersonality() {
         ServerPersonality personality = ServerPersonality.getInstance();
         String MESSAGE = "Personality cannot be null";
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -74,7 +74,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void mockPubSub() throws IOException {
+    void mockPubSub() throws IOException {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
         ps.createTopic(HELLO_WORLD);
@@ -97,7 +97,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void mockPubSubCreateQueue() {
+    void mockPubSubCreateQueue() {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
         String MESSAGE = "Not implemented";
@@ -107,7 +107,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void mockPubSubDeleteQueue() throws IOException {
+    void mockPubSubDeleteQueue() throws IOException {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -116,7 +116,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void timestampTest() {
+    void timestampTest() {
         Utility util = Utility.getInstance();
         String EXACT_SECOND = ".000";
         Date now = new Date();
@@ -142,7 +142,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void exactSecondTimestampTest() {
+    void exactSecondTimestampTest() {
         Utility util = Utility.getInstance();
         String EXACT_SECOND = ".000";
         String exact = util.date2str(new Date(), true);
@@ -156,7 +156,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void base64Test() {
+    void base64Test() {
         Utility util = Utility.getInstance();
         String text = "hello world & good day";
         String b64 = util.bytesToBase64(util.getUTF(text));
@@ -168,7 +168,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void dateConversion() {
+    void dateConversion() {
         Utility util = Utility.getInstance();
         Date now = new Date();
         String s = util.date2str(now);
@@ -177,7 +177,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void ioTest() {
+    void ioTest() {
         Utility util = Utility.getInstance();
         File temp = new File("/tmp");
         File tempFile = new File(temp, "dummy");
@@ -192,7 +192,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void splitTest() {
+    void splitTest() {
         Utility util = Utility.getInstance();
         String TEST = "hello world this is | a |      test";
         List<String> parts = util.split(TEST, " |");
@@ -202,7 +202,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void numberConversionTest() {
+    void numberConversionTest() {
         Utility util = Utility.getInstance();
         // test integer value
         int n1 = 12345;
@@ -235,7 +235,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void numberTest() {
+    void numberTest() {
         Utility util = Utility.getInstance();
         // digits
         String CORRECT_DIGITS = "12345";
@@ -250,7 +250,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void utfTest() {
+    void utfTest() {
         Utility util = Utility.getInstance();
         String HELLO_WORLD = "hello world";
         byte[] b = util.getUTF(HELLO_WORLD);
@@ -259,7 +259,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void zeroFillTest() {
+    void zeroFillTest() {
         Utility util = Utility.getInstance();
         int n = 20;
         String result = util.zeroFill(n, 10000);
@@ -267,7 +267,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void multiLevelMapTest() {
+    void multiLevelMapTest() {
         String HELLO = "hello";
         String WORLD = "world";
         String HELLO_WORLD = "hello.world";
@@ -294,7 +294,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void defaultValueTest() {
+    void defaultValueTest() {
         String HELLO = "hello";
         MultiLevelMap mm = new MultiLevelMap();
         Object value = mm.getElement("no.such.key", HELLO);
@@ -302,7 +302,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void flatMapTest() {
+    void flatMapTest() {
         Utility util = Utility.getInstance();
         Map<String, Object> map = new HashMap<>();
         Map<String, Object> inner = new HashMap<>();
@@ -366,7 +366,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void intranetIpTest() {
+    void intranetIpTest() {
         final Utility util = Utility.getInstance();
         String[] IP_ADDRESSES = {"127.0.0.1:8080", "127.0.0.1", "10.1.2.3", "172.16.1.2", "192.168.1.30"};
         for (String ip: IP_ADDRESSES) {
@@ -380,7 +380,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void elapsedTimeTest() {
+    void elapsedTimeTest() {
         long time = ONE_DAY + 40 * ONE_HOUR + 5 * ONE_MINUTE + 6 * ONE_SECOND;
         String expected = "2 days 16 hours 5 minutes 6 seconds";
         final Utility util = Utility.getInstance();
@@ -388,7 +388,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void simpleHttpDecodeTest() {
+    void simpleHttpDecodeTest() {
         SimpleHttpUtility http = SimpleHttpUtility.getInstance();
         Map<String, String> result = http.decodeQueryString("a=b&x=y");
         assertEquals("b", result.get("a"));
@@ -396,7 +396,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void urlRewriteTest() {
+    void urlRewriteTest() {
         SimpleHttpUtility http = SimpleHttpUtility.getInstance();
         List<String> rewrite = new ArrayList<>();
         rewrite.add("/api/");
@@ -406,7 +406,7 @@ public class UtilityTests {
     }
 
     @Test
-    public void uuid4test() {
+    void uuid4test() {
         final Utility util = Utility.getInstance();
         var id1 = util.getUuid4();
         var id2 = util.getUuid4();

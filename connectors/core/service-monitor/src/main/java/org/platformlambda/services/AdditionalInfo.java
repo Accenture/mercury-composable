@@ -36,7 +36,8 @@ public class AdditionalInfo implements LambdaFunction {
     private static final String NAME = "name";
     private static final String VERSION = "version";
     private static final String ORIGIN = "origin";
-    private final String appPrefix, monitorPrefix;
+    private final String appPrefix;
+    private final String monitorPrefix;
     private final boolean topicSubstitution;
     private final Map<String, String> preAllocatedTopics;
 
@@ -104,8 +105,9 @@ public class AdditionalInfo implements LambdaFunction {
         Map<String, Map<String, Object>> normalized = new HashMap<>();
         List<Map<String, Object>> result = new ArrayList<>();
         List<String> labels = new ArrayList<>();
-        for (String origin: connections.keySet()) {
-            Map<String, Object> entry = new HashMap<>((Map<String, Object>) connections.get(origin));
+        for (var conn: connections.entrySet()) {
+            String origin = conn.getKey();
+            Map<String, Object> entry = new HashMap<>((Map<String, Object>) conn.getValue());
             entry.put(ORIGIN, origin);
             String composite = entry.get(NAME)+"-"+entry.get(VERSION)+"|"+origin;
             normalized.put(composite, entry);
@@ -123,8 +125,8 @@ public class AdditionalInfo implements LambdaFunction {
     private List<String> getMonitorList() {
         List<String> result = new ArrayList<>();
         Map<String, String> monitors = HouseKeeper.getMonitors();
-        for (String origin: monitors.keySet()) {
-            result.add(origin+" - "+monitors.get(origin));
+        for (var entry: monitors.entrySet()) {
+            result.add(entry.getKey()+" - "+entry.getValue());
         }
         return result;
     }
@@ -133,8 +135,9 @@ public class AdditionalInfo implements LambdaFunction {
     private List<String> getVirtualTopics(Map<String, Object> connections) {
         Map<String, String> topics = TopicController.getAssignedTopics();
         Map<String, List<String>> members = new HashMap<>();
-        for (String t: topics.keySet()) {
-            String member = topics.get(t);
+        for (var entry: topics.entrySet()) {
+            String t = entry.getKey();
+            String member = entry.getValue();
             List<String> memberTopics = members.getOrDefault(member, new ArrayList<>());
             String topicName = t;
             if (topicSubstitution) {
@@ -147,8 +150,9 @@ public class AdditionalInfo implements LambdaFunction {
             members.put(member, memberTopics);
         }
         List<String> vTopics = new ArrayList<>();
-        for (String m: members.keySet()) {
-            String topicList = list2str(members.get(m));
+        for (var entry: members.entrySet()) {
+            String m = entry.getKey();
+            String topicList = list2str(entry.getValue());
             String signature = m;
             Object c = connections.get(m);
             if (c instanceof Map) {
@@ -173,7 +177,7 @@ public class AdditionalInfo implements LambdaFunction {
             return "?";
         }
         if (list.size() == 1) {
-            return list.get(0);
+            return list.getFirst();
         }
         Collections.sort(list);
         StringBuilder sb = new StringBuilder();
@@ -186,9 +190,10 @@ public class AdditionalInfo implements LambdaFunction {
 
     private Map<String, Object> filterInfo(Map<String, Object> info) {
         Map<String, Object> result = new HashMap<>();
-        for (String key : info.keySet()) {
+        for (var entry : info.entrySet()) {
+            String key = entry.getKey();
             if (!ID.equals(key)) {
-                result.put(key, info.get(key));
+                result.put(key, entry.getValue());
             }
         }
         return result;

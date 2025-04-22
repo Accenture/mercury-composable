@@ -29,15 +29,14 @@ import java.util.Map;
  * DO NOT use this directly in your application code.
  */
 public class TraceInfo {
-    public String route;
-    public String id;
-    public String path;
-    public String startTime;
-    public Map<String, Object> annotations = new HashMap<>();
+    public final String route;
+    public final String id;
+    public final String path;
+    public final String startTime = Utility.getInstance().date2str(new Date());
+    public final Map<String, Object> annotations = new HashMap<>();
 
     public TraceInfo(String route, String id, String path) {
         this.route = route;
-        this.startTime = Utility.getInstance().date2str(new Date());
         if (id == null) {
             this.id = null;
             this.path = null;

@@ -149,8 +149,8 @@ public class MainScheduler implements EntryPoint {
                     j.description = desc == null? name : desc;
                     if (parameters instanceof Map) {
                         Map<String, Object> map = (Map<String, Object>) parameters;
-                        for (String k: map.keySet()) {
-                            j.addParameter(k, map.get(k));
+                        for (var entry: map.entrySet()) {
+                            j.addParameter(entry.getKey(), entry.getValue());
                         }
                     }
                     j.addParameter(SCHEDULER, origin);
@@ -165,8 +165,9 @@ public class MainScheduler implements EntryPoint {
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         schedulerService = schedulerFactory.getScheduler();
         // load jobs
-        for (String id: scheduledJobs.keySet()) {
-            ScheduledJob j = scheduledJobs.get(id);
+        for (var entry: scheduledJobs.entrySet()) {
+            String id = entry.getKey();
+            ScheduledJob j = entry.getValue();
             j.job = JobBuilder.newJob(JobExecutor.class).storeDurably(true)
                               .usingJobData(JOB_ID, id).withIdentity(id, GLOBAL_GROUP).build();
             schedulerService.addJob(j.job, true);

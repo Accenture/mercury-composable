@@ -26,7 +26,6 @@ import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.LocalPubSub;
 import org.platformlambda.core.system.Platform;
-import org.platformlambda.core.util.AppConfigReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +38,8 @@ public class MainApp implements EntryPoint {
 
     private static final String BENCHMARK_USERS = "benchmark.users";
     private static final String BENCHMARK_SERVICE = "benchmark.service";
+    private static final String BENCHMARK_ONE_WAY = "benchmark.one.way";
+    private static final String BENCHMARK_ECHO = "benchmark.echo";
 
     /**
      * This main class is only used when testing the app from the IDE.
@@ -52,17 +53,12 @@ public class MainApp implements EntryPoint {
     @Override
     public void start(String[] args) throws IOException {
         Platform platform = Platform.getInstance();
-        AppConfigReader config = AppConfigReader.getInstance();
-        // if there is no network connector, the benchmark will be conducted during the in-memory event system
-        if ("none".equals(config.getProperty("cloud.connector", "none"))) {
-            platform.register("network.echo", new Echo(), 200);
-            platform.register("network.one.way", new ReceiveOnly(), 200);
-        }
+        platform.registerPrivate(BENCHMARK_ECHO, new Echo(), 200);
+        platform.registerPrivate(BENCHMARK_ONE_WAY, new ReceiveOnly(), 200);
         platform.registerPrivate(BENCHMARK_SERVICE, new BenchmarkService(), 10);
         // use local pub/sub to broadcast benchmark result to all users
         LocalPubSub ps = LocalPubSub.getInstance();
         ps.createTopic(BENCHMARK_USERS);
         log.info("Started");
     }
-
 }

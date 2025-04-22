@@ -16,18 +16,19 @@
 
  */
 
-package com.accenture.models;
+package com.accenture.service;
 
-import java.util.Date;
+import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.AsyncHttpRequest;
+import org.platformlambda.core.models.TypedLambdaFunction;
 
-public class BenchmarkResponse {
+import java.util.Map;
 
-    public final Date oneTrip;
-    public final Date roundTrip;
+@PreLoad(route="echo.endpoint", instances=10)
+public class EchoEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
-    public BenchmarkResponse(Date oneTrip) {
-        this.oneTrip = oneTrip;
-        this.roundTrip = new Date();
+    @Override
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws Exception {
+        return input.toMap();
     }
-
 }

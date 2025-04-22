@@ -381,7 +381,7 @@ public class WorkerHandler {
             case AppException ex -> ex.getStatus();
             case TimeoutException ignored -> 408;
             case IllegalArgumentException ignored -> 400;
-            case null, default -> 500;
+            default -> 500;
         };
     }
 

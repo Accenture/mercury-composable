@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ExceptionTransportTest extends TestBase {
+class ExceptionTransportTest extends TestBase {
 
     private static final String ROUTE = "exception.test";
     private static final String CALLBACK = "callback.function";
@@ -34,7 +34,7 @@ public class ExceptionTransportTest extends TestBase {
     }
 
     @Test
-    public void transportTest() throws IOException, InterruptedException {
+    void transportTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(ROUTE).setBody("demo");
@@ -47,7 +47,7 @@ public class ExceptionTransportTest extends TestBase {
     }
 
     @Test
-    public void callbackExceptionTest() throws IOException, InterruptedException {
+    void callbackExceptionTest() throws IOException, InterruptedException {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(CALLBACK, new MyCallBack(), 1);
         EventEnvelope request = new EventEnvelope();

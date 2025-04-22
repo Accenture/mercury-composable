@@ -21,8 +21,6 @@ package org.platformlambda.core.models;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -35,7 +33,6 @@ import java.util.concurrent.TimeoutException;
  * DO NOT use this directly in your application code.
  */
 public class FutureInbox extends InboxBase {
-    private static final Logger log = LoggerFactory.getLogger(FutureInbox.class);
     private final String start = Utility.getInstance().date2str(new Date());
     private final long begin = System.nanoTime();
     private final CompletableFuture<EventEnvelope> future = new CompletableFuture<>();

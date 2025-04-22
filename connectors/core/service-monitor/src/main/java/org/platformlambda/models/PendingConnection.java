@@ -24,9 +24,10 @@ public class PendingConnection {
         CONNECTED, HANDSHAKE
     }
 
+    public final String origin;
+    public final String session;
+    public final long created = System.currentTimeMillis();
     public PendingType type;
-    public String origin, session;
-    public long created = System.currentTimeMillis();
 
     public PendingConnection(String origin, String session) {
         this.origin = origin;
@@ -38,5 +39,4 @@ public class PendingConnection {
         this.type = type;
         return this;
     }
-
 }

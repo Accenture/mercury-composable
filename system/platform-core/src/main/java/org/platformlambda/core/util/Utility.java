@@ -25,6 +25,8 @@ import io.github.classgraph.ScanResult;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.websocket.server.WsEnvelope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -37,6 +39,7 @@ import java.time.format.DateTimeParseException;
 import java.util.*;
 
 public class Utility {
+    private static final Logger log = LoggerFactory.getLogger(Utility.class);
     public static final String ISO_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     public static final String ISO_MS_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ofPattern(ISO_DATE_FORMAT);
@@ -312,9 +315,9 @@ public class Utility {
 
     @SuppressWarnings("unchecked")
     private void getFlatMap(String prefix, Map<String, Object> src, Map<String, Object> target) {
-        for (String k: src.keySet()) {
-            String key = prefix == null? k : prefix+"."+k;
-            Object v = src.get(k);
+        for (var entry: src.entrySet()) {
+            String key = prefix == null? entry.getKey() : prefix + "." + entry.getKey();
+            Object v = entry.getValue();
             if (v instanceof Map) {
                 getFlatMap(key, (Map<String, Object>) v, target);
             } else if (v instanceof List) {
@@ -521,12 +524,16 @@ public class Utility {
                     if (f.isDirectory()) {
                         cleanupDir(f, false);
                     } else {
-                        f.delete();
+                        if (f.delete()) {
+                            log.debug("File {} deleted", f);
+                        }
                     }
                 }
             }
             if (!keep) {
-                dir.delete();
+                if (dir.delete()) {
+                    log.debug("Folder {} deleted", dir);
+                }
             }
         }
     }
@@ -1141,10 +1148,20 @@ public class Utility {
                                               new Kv(STATUS, status), new Kv(MESSAGE, message));
     }
 
-    public String getDecodedUri(String uri) {
-        if (uri != null && uri.contains("%")) {
-            return URLDecoder.decode(uri, StandardCharsets.UTF_8);
+    /**
+     * Decode URI path
+     *
+     * @param uriPath of a HTTP request
+     * @return decoded URI
+     */
+    public String getDecodedUri(String uriPath) {
+        if (uriPath == null) {
+            return "/";
+        } else {
+            // Decode URI escape characters
+            var uri = uriPath.contains("%")? URLDecoder.decode(uriPath, StandardCharsets.UTF_8) : uriPath;
+            // Avoid "path traversal" attack
+            return uri.replace("\\", "/").replaceAll("\\.\\./", "");
         }
-        return uri;
     }
 }

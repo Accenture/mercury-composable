@@ -29,7 +29,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SimpleCookieTest {
+class SimpleCookieTest {
 
     private static final String SET_COOKIE = "Set-Cookie";
 
@@ -43,7 +43,7 @@ public class SimpleCookieTest {
     }
 
     @Test
-    public void validateCookie() {
+    void validateCookie() {
         String cookie = createCookie("hello", "world").toString();
         assertTrue(cookie.contains("Path=/;"));
         assertTrue(cookie.contains("HttpOnly"));
@@ -54,7 +54,7 @@ public class SimpleCookieTest {
     }
 
     @Test
-    public void cookieInEnvelope() {
+    void cookieInEnvelope() {
         EventEnvelope event = new EventEnvelope();
         // "Set-Cookie" is the only header that supports multiple values
         event.setHeader(SET_COOKIE, createCookie("key1", "value1"));

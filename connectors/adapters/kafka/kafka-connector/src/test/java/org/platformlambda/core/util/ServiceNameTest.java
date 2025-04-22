@@ -22,12 +22,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ServiceNameTest {
+class ServiceNameTest {
 
     private static final Utility util = Utility.getInstance();
 
     @Test
-    public void filterName() {
+    void filterName() {
         String valid = "hello.world";
         String invalid = "hello.wor?ld";
         String dotted = "..."+invalid;
@@ -38,7 +38,7 @@ public class ServiceNameTest {
     }
 
     @Test
-    public void validName() {
+    void validName() {
         String windowsMetafile = "thumbs.db";
         String windowsExt = "hello.com";
         String valid = "com.hello";

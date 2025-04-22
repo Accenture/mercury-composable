@@ -24,9 +24,9 @@ import java.util.List;
 
 public class EtagFile {
 
-    public String eTag;
+    public final String eTag;
+    public final byte[] content;
     public String name;
-    public byte[] content;
 
     public EtagFile(String eTag, byte[] content) {
         this.eTag = "\""+ eTag +"\"";

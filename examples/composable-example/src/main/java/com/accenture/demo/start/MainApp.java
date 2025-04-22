@@ -49,10 +49,8 @@ public class MainApp implements EntryPoint {
     public void start(String[] args) {
         // Create a demo encryption key if not exists
         File folder = new File(TEMP_KEY_STORE);
-        if (!folder.exists()) {
-            if (folder.mkdirs()) {
-                log.info("Folder {} created", folder);
-            }
+        if (!folder.exists() && folder.mkdirs()) {
+            log.info("Folder {} created", folder);
         }
         File f = new File(folder, DEMO_MASTER_KEY);
         if (!f.exists()) {

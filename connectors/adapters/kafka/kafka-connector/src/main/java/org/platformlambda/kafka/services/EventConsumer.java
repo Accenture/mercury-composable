@@ -49,19 +49,20 @@ public class EventConsumer extends Thread {
     private static final Logger log = LoggerFactory.getLogger(EventConsumer.class);
 
     private static final MsgPack msgPack = new MsgPack();
-    private static final String OFFSET = "_offset_";
-    private static final String PARTITION = "_partition_";
-    private static final String KEY = "_key_";
-    private static final String TIMESTAMP = "_timestamp_";
-    private static final String TYPE = ServiceLifeCycle.TYPE;
-    private static final String INIT = ServiceLifeCycle.INIT;
+    private static final String OFFSET_TAG = "_offset_";
+    private static final String PARTITION_TAG = "_partition_";
+    private static final String KEY_TAG = "_key_";
+    private static final String TIMESTAMP_TAG = "_timestamp_";
+    private static final String TYPE = "type";
+    private static final String INIT = "init";
     private static final String DONE = "done";
-    private static final String TOKEN = ServiceLifeCycle.TOKEN;
+    private static final String TOKEN = "token";
     private static final long INITIALIZE = ServiceLifeCycle.INITIALIZE;
     private static final String MONITOR = "monitor";
     private static final String TO_MONITOR = "@"+MONITOR;
-    private final String INIT_TOKEN = UUID.randomUUID().toString();
-    private final String topic, realTopic;
+    private final String initToken = UUID.randomUUID().toString();
+    private final String topic;
+    private final String realTopic;
     private final int partition;
     private int realPartition;
     private final KafkaConsumer<String, byte[]> consumer;
@@ -140,7 +141,7 @@ public class EventConsumer extends Thread {
             if (ConnectorConfig.topicSubstitutionEnabled() && realPartition < 0) {
                 realPartition = 0;
             }
-            ServiceLifeCycle initialLoad = new ServiceLifeCycle(topic, partition, INIT_TOKEN);
+            ServiceLifeCycle initialLoad = new ServiceLifeCycle(topic, partition, initToken);
             initialLoad.start();
         }
         final int INVALID_EVENT_THRESHOLD = 150;
@@ -204,8 +205,8 @@ public class EventConsumer extends Thread {
                         }
                     }
                 }
-                for (ConsumerRecord<String, byte[]> record : records) {
-                    Map<String, String> originalHeaders = getSimpleHeaders(record.headers());
+                for (ConsumerRecord<String, byte[]> rec : records) {
+                    Map<String, String> originalHeaders = getSimpleHeaders(rec.headers());
                     String dataType = originalHeaders.getOrDefault(EventProducer.DATA_TYPE, EventProducer.BYTES_DATA);
                     boolean embedEvent = originalHeaders.containsKey(EventProducer.EMBED_EVENT);
                     String recipient = originalHeaders.get(EventProducer.RECIPIENT);
@@ -214,13 +215,13 @@ public class EventConsumer extends Thread {
                          * this is an error case when two consumers listen to the same partition
                          * or when READ offset is incorrect
                          */
-                        log.error("Skipping record {} because it belongs to {}", record.offset(), recipient);
+                        log.error("Skipping record {} because it belongs to {}", rec.offset(), recipient);
                         if (++invalidEvents > INVALID_EVENT_THRESHOLD) {
                             throw new IOException("Too many outdated events - likely to be a READ offset error");
                         }
                         continue;
                     }
-                    byte[] data = record.value();
+                    byte[] data = rec.value();
                     EventEnvelope message = new EventEnvelope();
                     if (embedEvent) {
                         // payload is an embedded event
@@ -248,7 +249,7 @@ public class EventConsumer extends Thread {
                     } else {
                         if (offset == INITIALIZE) {
                             if (INIT.equals(originalHeaders.get(TYPE)) &&
-                                    INIT_TOKEN.equals(originalHeaders.get(TOKEN))) {
+                                    initToken.equals(originalHeaders.get(TOKEN))) {
                                 offset = -1;
                                 if (skipped > 0) {
                                     log.info("Skipped {} outdated event{}", skipped, skipped == 1 ? "" : "s");
@@ -275,10 +276,10 @@ public class EventConsumer extends Thread {
                              * For direct pub/sub use, kafka specific metadata are encoded in:
                              * _key_, _timestamp_, _partition_ and _offset_
                              */
-                            message.setHeader(KEY, record.key());
-                            message.setHeader(TIMESTAMP, record.timestamp());
-                            message.setHeader(PARTITION, record.partition());
-                            message.setHeader(OFFSET, record.offset());
+                            message.setHeader(KEY_TAG, rec.key());
+                            message.setHeader(TIMESTAMP_TAG, rec.timestamp());
+                            message.setHeader(PARTITION_TAG, rec.partition());
+                            message.setHeader(OFFSET_TAG, rec.offset());
 
                             po.send(message.setTo(virtualTopic));
 

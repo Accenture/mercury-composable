@@ -152,7 +152,7 @@ public class ServiceQueue {
                         });
                         if (buffering) {
                             byte[] event = elasticQueue.read();
-                            if (event == null) {
+                            if (event.length == 0) {
                                 // Close elastic queue when all messages are cleared
                                 buffering = false;
                                 elasticQueue.close();

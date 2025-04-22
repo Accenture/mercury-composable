@@ -24,10 +24,10 @@ import org.platformlambda.core.system.Platform;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PreloadOverrideTest extends TestBase {
+class PreloadOverrideTest extends TestBase {
 
     @Test
-    public void validateOverrideResult() {
+    void validateOverrideResult() {
         // check the route names after the preloading process at start-up
         Platform platform = Platform.getInstance();
         // v1.dummy.one is kept in addition to v1.dummy.one.1 and v1.dummy.one.2

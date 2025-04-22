@@ -29,13 +29,13 @@ public class HttpRequestEvent {
 
     private static final String REQUEST_ID = "1";
     private static final String HTTP_REQUEST = "2";
-    private static final String PRIMARY = "3";
+    private static final String PRIMARY_TAG = "3";
     private static final String AUTH_SERVICE = "4";
     private static final String TRACE_ID = "5";
     private static final String TRACE_PATH = "6";
-    private static final String SERVICES = "7";
-    private static final String TIMEOUT = "8";
-    private static final String TRACING = "9";
+    private static final String SERVICES_TAG = "7";
+    private static final String TIMEOUT_TAG = "8";
+    private static final String TRACING_TAG = "9";
 
     public String requestId;
     public String primary;
@@ -52,14 +52,14 @@ public class HttpRequestEvent {
         if (data instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) data;
             this.requestId = (String) map.get(REQUEST_ID);
-            this.primary = (String) map.get(PRIMARY);
+            this.primary = (String) map.get(PRIMARY_TAG);
             this.httpRequest = (Map<String, Object>) map.get(HTTP_REQUEST);
             this.authService = (String) map.get(AUTH_SERVICE);
             this.traceId = (String) map.get(TRACE_ID);
             this.tracePath = (String) map.get(TRACE_PATH);
-            this.services = (List<String>) map.get(SERVICES);
-            this.timeout = Utility.getInstance().str2long(map.get(TIMEOUT).toString());
-            this.tracing = (boolean) map.get(TRACING);
+            this.services = (List<String>) map.get(SERVICES_TAG);
+            this.timeout = Utility.getInstance().str2long(map.get(TIMEOUT_TAG).toString());
+            this.tracing = (boolean) map.get(TRACING_TAG);
         }
     }
 
@@ -84,14 +84,14 @@ public class HttpRequestEvent {
     public Map<String, Object> toMap() {
         Map<String, Object> result = new HashMap<>();
         result.put(REQUEST_ID, requestId);
-        result.put(PRIMARY, primary);
+        result.put(PRIMARY_TAG, primary);
         result.put(HTTP_REQUEST, httpRequest);
         result.put(AUTH_SERVICE, authService);
         result.put(TRACE_ID, traceId);
         result.put(TRACE_PATH, tracePath);
-        result.put(SERVICES, services);
-        result.put(TIMEOUT, timeout);
-        result.put(TRACING, tracing);
+        result.put(SERVICES_TAG, services);
+        result.put(TIMEOUT_TAG, timeout);
+        result.put(TRACING_TAG, tracing);
         return result;
     }
 

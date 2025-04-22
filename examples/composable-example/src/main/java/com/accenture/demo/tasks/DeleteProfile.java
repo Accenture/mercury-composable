@@ -24,6 +24,8 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +40,7 @@ public class DeleteProfile implements TypedLambdaFunction<Map<String, Object>, M
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
-            throws AppException {
+            throws AppException, IOException {
         if (!headers.containsKey(PROFILE_ID)) {
             throw new AppException(400, "Missing profile_id");
         }
@@ -47,11 +49,11 @@ public class DeleteProfile implements TypedLambdaFunction<Map<String, Object>, M
         if (!f.exists()) {
             throw new AppException(404, "Profile "+profileId+" not found");
         }
+        Files.delete(f.toPath());
         Utility util = Utility.getInstance();
         Map<String, Object> result = new HashMap<>();
         result.put(ID, util.isDigits(profileId)? util.str2int(profileId) : profileId);
-        result.put(DELETED, f.delete());
+        result.put(DELETED, true);
         return result;
     }
-
 }

@@ -67,8 +67,6 @@ public class ServiceRegistry implements LambdaFunction {
     private static final String NAME = "name";
     private static final String MONITOR = "monitor-";
     private static final long EXPIRY = 90 * 1000L;
-
-    // static because this is a shared lambda function
     private final boolean presenceMonitor;
     private final int closedUserGroup;
     /*
@@ -84,9 +82,8 @@ public class ServiceRegistry implements LambdaFunction {
     private static final ConcurrentMap<String, Boolean> lifeCycleSubscribers = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Boolean> pmSubscribers = new ConcurrentHashMap<>();
     private static final ManagedCache cache = ManagedCache.createCache("member.life.cycle.events", 5000);
-
-    private static String monitorTopic;
     private long lastBroadcastAdd = 0;
+    private static String monitorTopic;
 
     public ServiceRegistry() {
         Utility util = Utility.getInstance();

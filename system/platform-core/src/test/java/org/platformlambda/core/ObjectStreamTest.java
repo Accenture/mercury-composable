@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ObjectStreamTest extends TestBase {
+class ObjectStreamTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamTest.class);
     private static final String TYPE = "type";
     private static final String DATA = "data";
@@ -50,7 +50,7 @@ public class ObjectStreamTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void streamConsumerTest() throws IOException, InterruptedException, ExecutionException {
+    void streamConsumerTest() throws IOException, InterruptedException, ExecutionException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -108,7 +108,7 @@ public class ObjectStreamTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void fluxProducerConsumerTest() throws IOException, InterruptedException {
+    void fluxProducerConsumerTest() throws IOException, InterruptedException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -146,7 +146,7 @@ public class ObjectStreamTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void fluxProducerConsumerExceptionTest() throws IOException, InterruptedException {
+    void fluxProducerConsumerExceptionTest() throws IOException, InterruptedException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -188,7 +188,7 @@ public class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    public void eventPublisherFluxConsumerCompatibilityTest() throws IOException, InterruptedException {
+    void eventPublisherFluxConsumerCompatibilityTest() throws IOException, InterruptedException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -220,7 +220,7 @@ public class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    public void eventPublisherExpiryTest() throws IOException, InterruptedException {
+    void eventPublisherExpiryTest() throws IOException, InterruptedException {
         final long TIME_TO_LIVE = 1000;
         EventPublisher publisher = new EventPublisher(TIME_TO_LIVE);
         Thread.sleep(1100);
@@ -241,7 +241,7 @@ public class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    public void fluxPublisherExpiryTest() throws IOException, InterruptedException {
+    void fluxPublisherExpiryTest() throws IOException, InterruptedException {
         final long TIME_TO_LIVE = 1000;
         Flux<String> source = Flux.create(emitter -> {
             emitter.next("hello world");
@@ -267,7 +267,7 @@ public class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    public void expiryTest() throws InterruptedException, IOException {
+    void expiryTest() throws InterruptedException, IOException {
         final BlockingQueue<String> dataBench = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Throwable> exceptionBench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
@@ -305,7 +305,7 @@ public class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    public void asyncReadWrite() throws InterruptedException, IOException {
+    void asyncReadWrite() throws InterruptedException, IOException {
         int CYCLES = 10;
         String TEXT = "hello world";
         EventPublisher publisher = new EventPublisher(10000);

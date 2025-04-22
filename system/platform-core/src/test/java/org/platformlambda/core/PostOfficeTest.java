@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PostOfficeTest extends TestBase {
+class PostOfficeTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(PostOfficeTest.class);
     private static final Utility util = Utility.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
@@ -69,7 +69,25 @@ public class PostOfficeTest extends TestBase {
     private static final String X_TTL = "x-ttl";
 
     @Test
-    public void testEventManagementOptimization() throws IOException, InterruptedException {
+    void getNonStandardErrorResponse() throws IOException, ExecutionException, InterruptedException {
+        AppConfigReader config = AppConfigReader.getInstance();
+        String port = config.getProperty("server.port");
+        var data = Map.of("message", "non-standard");
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setTargetHost("http://127.0.0.1:"+port).setUrl("/api/hello/error")
+                .setMethod("POST").setBody(data)
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json");
+        PostOffice po = new PostOffice("unit.test", "10", "TEST /api/test/error");
+        EventEnvelope res = po.request(new EventEnvelope().setTo("async.http.request")
+                            .setBody(req.toMap()), 5000).get();
+        assertEquals(400, res.getStatus());
+        // demonstrate that non-standard error result can be transported
+        assertEquals(Map.of("error", data), res.getBody());
+    }
+
+    @Test
+    void testEventManagementOptimization() throws IOException, InterruptedException {
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
         final String UNKNOWN = "unknown";
@@ -132,7 +150,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
+    void testMonoFunction() throws IOException, ExecutionException, InterruptedException {
         // test multiple times to validate worker flow control
         for (int i=0; i < 12; i++) {
             testMonoFunction(REACTIVE_MONO);
@@ -140,7 +158,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testMonoKotlinFunction() throws IOException, ExecutionException, InterruptedException {
+    void testMonoKotlinFunction() throws IOException, ExecutionException, InterruptedException {
         // test multiple times to validate worker flow control
         for (int i=0; i < 8; i++) {
             testMonoFunction(REACTIVE_MONO_KOTLIN);
@@ -157,12 +175,12 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testMonoFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
+    void testMonoFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
         testMonoFunctionWithNullPayload(REACTIVE_MONO);
     }
 
     @Test
-    public void testMonoKotlinFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
+    void testMonoKotlinFunctionWithNullPayload() throws IOException, ExecutionException, InterruptedException {
         testMonoFunctionWithNullPayload(REACTIVE_MONO_KOTLIN);
     }
 
@@ -175,12 +193,12 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testMonoFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+    void testMonoFunctionWithException() throws IOException, ExecutionException, InterruptedException {
         testMonoFunctionWithException(REACTIVE_MONO);
     }
 
     @Test
-    public void testMonoKotlinFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+    void testMonoKotlinFunctionWithException() throws IOException, ExecutionException, InterruptedException {
         testMonoFunctionWithException(REACTIVE_MONO_KOTLIN);
     }
 
@@ -197,7 +215,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testFluxFunction() throws IOException, ExecutionException, InterruptedException {
+    void testFluxFunction() throws IOException, ExecutionException, InterruptedException {
         final var first = new PoJo();
         first.setName("first_one");
         final var data = new PoJo();
@@ -223,7 +241,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testFluxWithCustomSerializer() throws IOException, ExecutionException, InterruptedException {
+    void testFluxWithCustomSerializer() throws IOException, ExecutionException, InterruptedException {
         var customSerializer = new JacksonSerializer();
         // the first pojo is inserted by the user function for test purpose
         final var first = new PoJo();
@@ -262,7 +280,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testFluxKotlinFunction() throws IOException, ExecutionException, InterruptedException {
+    void testFluxKotlinFunction() throws IOException, ExecutionException, InterruptedException {
         final var first = Map.of("first", "message");
         final var data = Map.of("hello", "world");
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX_KOTLIN).setBody(data);
@@ -308,12 +326,12 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testFluxFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+    void testFluxFunctionWithException() throws IOException, ExecutionException, InterruptedException {
         testFluxFunctionWithException(REACTIVE_FLUX);
     }
 
     @Test
-    public void testFluxKotlinFunctionWithException() throws IOException, ExecutionException, InterruptedException {
+    void testFluxKotlinFunctionWithException() throws IOException, ExecutionException, InterruptedException {
         testFluxFunctionWithException(REACTIVE_FLUX_KOTLIN);
     }
 
@@ -345,7 +363,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void httpClientRenderSmallPayloadAsBytes() throws IOException, ExecutionException, InterruptedException {
+    void httpClientRenderSmallPayloadAsBytes() throws IOException, ExecutionException, InterruptedException {
         final String HELLO = "hello world 0123456789";
         final AppConfigReader config = AppConfigReader.getInstance();
         String port = config.getProperty("server.port");
@@ -365,7 +383,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void httpClientDetectStreamingContent() throws IOException, ExecutionException, InterruptedException {
+    void httpClientDetectStreamingContent() throws IOException, ExecutionException, InterruptedException {
         final String HELLO = "hello world 0123456789";
         final AppConfigReader config = AppConfigReader.getInstance();
         String port = config.getProperty("server.port");
@@ -406,7 +424,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void concurrentEventTest() throws InterruptedException {
+    void concurrentEventTest() throws InterruptedException {
         final BlockingQueue<Boolean> wait = new ArrayBlockingQueue<>(1);
         final AppConfigReader config = AppConfigReader.getInstance();
         int poolSize = Math.max(32, util.str2int(config.getProperty("kernel.thread.pool", "100")));
@@ -457,7 +475,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void aliasRouteTest() throws IOException, InterruptedException {
+    void aliasRouteTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 5000;
         EventEmitter po = EventEmitter.getInstance();
@@ -473,7 +491,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void aliasRouteFutureTest() throws IOException, InterruptedException, ExecutionException {
+    void aliasRouteFutureTest() throws IOException, InterruptedException, ExecutionException {
         final long TIMEOUT = 5000;
         EventEmitter po = EventEmitter.getInstance();
         final String MESSAGE = "test message";
@@ -486,7 +504,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void nullRouteListTest() {
+    void nullRouteListTest() {
         EventEmitter po = EventEmitter.getInstance();
         assertFalse(po.exists((String[]) null));
         assertFalse(po.exists((String) null));
@@ -494,7 +512,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void rpcTagTest() throws IOException, InterruptedException {
+    void rpcTagTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final PostOffice po = new PostOffice("unit.test", "8011", "TEST /rpc1/timeout/tag");
         final long TIMEOUT = 5000;
@@ -512,7 +530,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void rpcTagFutureTest() throws IOException, InterruptedException, ExecutionException {
+    void rpcTagFutureTest() throws IOException, InterruptedException, ExecutionException {
         final PostOffice po = new PostOffice("unit.test", "8012", "TEST /rpc1/timeout/tag");
         final long TIMEOUT = 5000;
         final int BODY = 100;
@@ -528,7 +546,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void parallelRpcTagTest() throws IOException, InterruptedException {
+    void parallelRpcTagTest() throws IOException, InterruptedException {
         final BlockingQueue<List<EventEnvelope>> bench = new ArrayBlockingQueue<>(1);
         final PostOffice po = new PostOffice("unit.test", "8021", "TEST /rpc2/timeout/tag");
         final int CYCLE = 3;
@@ -557,7 +575,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void parallelRpcTagFutureTest() throws IOException, InterruptedException, ExecutionException {
+    void parallelRpcTagFutureTest() throws IOException, InterruptedException, ExecutionException {
         final PostOffice po = new PostOffice("unit.test", "8022", "TEST /rpc2/timeout/tag");
         final int CYCLE = 3;
         final long TIMEOUT = 5500;
@@ -583,7 +601,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void serviceTimeoutFutureTest() throws IOException, ExecutionException, InterruptedException {
+    void serviceTimeoutFutureTest() throws IOException, ExecutionException, InterruptedException {
         final long TIMEOUT = 500;
         final PostOffice po = new PostOffice("unit.test", "28001", "Future /timeout");
         // simulate timeout
@@ -605,7 +623,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void wsTest() throws InterruptedException {
+    void wsTest() throws InterruptedException {
         final AppConfigReader config = AppConfigReader.getInstance();
         final int PORT = util.str2int(config.getProperty("websocket.server.port",
                                         config.getProperty("server.port", "8085")));
@@ -658,7 +676,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testExceptionTransport() throws IOException, InterruptedException {
+    void testExceptionTransport() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 5000;
         String EXCEPTION = "exception";
@@ -686,7 +704,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testNestedExceptionTransport() throws IOException, InterruptedException {
+    void testNestedExceptionTransport() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 5000;
         String NEST_EXCEPTION = "nested_exception";
@@ -715,7 +733,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void findProviderThatExists() throws InterruptedException {
+    void findProviderThatExists() throws InterruptedException {
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         Future<Boolean> status = platform.waitForProvider("cloud.connector", 10);
@@ -725,7 +743,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void findProviderThatDoesNotExists() throws InterruptedException {
+    void findProviderThatDoesNotExists() throws InterruptedException {
         BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         Future<Boolean> status = platform.waitForProvider("no.such.service", 1);
@@ -735,7 +753,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void findProviderThatIsPending() throws IOException, InterruptedException {
+    void findProviderThatIsPending() throws IOException, InterruptedException {
         final BlockingQueue<Boolean> bench1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<EventEnvelope> bench2 = new ArrayBlockingQueue<>(1);
         String NO_OP = "no.op";
@@ -765,7 +783,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void deriveOriginIdFromAppId() {
+    void deriveOriginIdFromAppId() {
         /*
          * Usually you do not need to set application-ID
          * When you set it, the origin-ID will be generated from the app-ID
@@ -785,7 +803,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void registerInvalidRoute() {
+    void registerInvalidRoute() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -795,7 +813,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void registerNullRoute() {
+    void registerNullRoute() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -804,7 +822,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void registerNullService() {
+    void registerNullService() {
         Platform platform = Platform.getInstance();
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("no.service", null, 1));
@@ -812,7 +830,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void reservedExtensionNotAllowed() {
+    void reservedExtensionNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -821,7 +839,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void reservedFilenameNotAllowed() {
+    void reservedFilenameNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -830,7 +848,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void reloadPublicServiceAsPrivate() throws IOException, InterruptedException {
+    void reloadPublicServiceAsPrivate() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String SERVICE = "reloadable.service";
         long TIMEOUT = 5000;
@@ -856,7 +874,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void emptyRouteNotAllowed() {
+    void emptyRouteNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -866,14 +884,14 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void checkLocalRouting() {
+    void checkLocalRouting() {
         Platform platform = Platform.getInstance();
         ConcurrentMap<String, ServiceDef> routes = platform.getLocalRoutingTable();
         assertFalse(routes.isEmpty());
     }
 
     @Test
-    public void testExists() throws InterruptedException {
+    void testExists() throws InterruptedException {
         BlockingQueue<List<String>> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -895,7 +913,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testNonExistRoute() {
+    void testNonExistRoute() {
         EventEmitter po = EventEmitter.getInstance();
         IOException ex = assertThrows(IOException.class, () ->
                 po.send("undefined.route", "OK"));
@@ -903,7 +921,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void cancelFutureEventTest() {
+    void cancelFutureEventTest() {
         long FIVE_SECONDS = 5000;
         long now = System.currentTimeMillis();
         String TRACE_ID = util.getUuid();
@@ -932,7 +950,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void journalYamlTest() {
+    void journalYamlTest() {
         String MY_FUNCTION = "my.test.function";
         String ANOTHER_FUNCTION = "another.function";
         EventEmitter po = EventEmitter.getInstance();
@@ -944,7 +962,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void journalTest() throws IOException, InterruptedException {
+    void journalTest() throws IOException, InterruptedException {
         String TRANSACTION_JOURNAL_RECORDER = "transaction.journal.recorder";
         BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
@@ -988,7 +1006,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void rpcJournalTest() throws IOException, InterruptedException {
+    void rpcJournalTest() throws IOException, InterruptedException {
         String TRANSACTION_JOURNAL_RECORDER = "transaction.journal.recorder";
         BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
@@ -1038,7 +1056,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void telemetryTest() throws IOException, InterruptedException {
+    void telemetryTest() throws IOException, InterruptedException {
         String DISTRIBUTED_TRACE_FORWARDER = "distributed.trace.forwarder";
         BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
@@ -1080,7 +1098,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void rpcTelemetryTest() throws IOException, InterruptedException {
+    void rpcTelemetryTest() throws IOException, InterruptedException {
         String DISTRIBUTED_TRACE_FORWARDER = "distributed.trace.forwarder";
         BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
@@ -1127,7 +1145,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void traceHeaderTest() throws IOException, ExecutionException, InterruptedException {
+    void traceHeaderTest() throws IOException, ExecutionException, InterruptedException {
         String TRACE_DETECTOR = "trace.detector";
         String TRACE_ID = "101";
         String TRACE_PATH = "GET /api/trace";
@@ -1150,7 +1168,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void coroutineTraceHeaderTest() throws IOException, InterruptedException, ExecutionException {
+    void coroutineTraceHeaderTest() throws IOException, InterruptedException, ExecutionException {
         String COROUTINE_TRACE_DETECTOR = "coroutine.trace.detector";
         String TRACE_ID = "102";
         String TRACE_PATH = "GET /api/trace";
@@ -1162,7 +1180,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void broadcastTest() throws IOException, InterruptedException {
+    void broadcastTest() throws IOException, InterruptedException {
         BlockingQueue<String> bench = new ArrayBlockingQueue<>(1);
         String CALLBACK = "my.callback";
         String MESSAGE = "test";
@@ -1195,7 +1213,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void eventHasFromAddress() throws IOException, InterruptedException {
+    void eventHasFromAddress() throws IOException, InterruptedException {
         String FIRST = "hello.world.one";
         String SECOND = "hello.world.two";
         Platform platform = Platform.getInstance();
@@ -1215,7 +1233,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void singleRequestWithTimeout() throws IOException, InterruptedException {
+    void singleRequestWithTimeout() throws IOException, InterruptedException {
         BlockingQueue<Throwable> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(2);
@@ -1227,7 +1245,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void singleRequestWithException() throws IOException, InterruptedException {
+    void singleRequestWithException() throws IOException, InterruptedException {
         BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setFrom("unit.test")
@@ -1241,9 +1259,9 @@ public class PostOfficeTest extends TestBase {
         assertEquals(AppException.class, response.getException().getClass());
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void singleRequest() throws IOException, InterruptedException {
+    @Test
+    void singleRequest() throws IOException, InterruptedException {
         BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         int input = 111;
         EventEmitter po = EventEmitter.getInstance();
@@ -1257,7 +1275,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void asyncRequestTest() throws IOException, InterruptedException {
+    void asyncRequestTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> success = new ArrayBlockingQueue<>(1);
         final String SERVICE = "hello.future.1";
         final String TEXT = "hello world";
@@ -1279,7 +1297,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void futureExceptionAsResult() throws IOException, InterruptedException {
+    void futureExceptionAsResult() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> completion = new ArrayBlockingQueue<>(1);
         int STATUS = 400;
         String ERROR = "some exception";
@@ -1303,7 +1321,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void asyncForkJoinTest() throws IOException, InterruptedException {
+    void asyncForkJoinTest() throws IOException, InterruptedException {
         final BlockingQueue<List<EventEnvelope>> success = new ArrayBlockingQueue<>(1);
         final String from = "unit.test";
         final String traceId = "1020";
@@ -1338,7 +1356,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void asyncForkJoinTimeoutTest() throws IOException, InterruptedException {
+    void asyncForkJoinTimeoutTest() throws IOException, InterruptedException {
         final long TIMEOUT = 500;
         final BlockingQueue<Throwable> exception = new ArrayBlockingQueue<>(1);
         final String SERVICE = "hello.future.4";
@@ -1368,7 +1386,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void asyncForkJoinPartialResultTest() throws IOException, InterruptedException {
+    void asyncForkJoinPartialResultTest() throws IOException, InterruptedException {
         final long TIMEOUT = 800;
         final BlockingQueue<List<EventEnvelope>> result = new ArrayBlockingQueue<>(1);
         final String SERVICE = "hello.future.5";
@@ -1403,7 +1421,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void nonBlockingRpcTest() throws IOException, InterruptedException, ExecutionException {
+    void nonBlockingRpcTest() throws IOException, InterruptedException, ExecutionException {
         final PostOffice po = new PostOffice("unit.test", "10000", "POST /api/slow/rpc");
         final String HELLO_WORLD = "hello world";
         // the target service will simulate a one-second delay
@@ -1417,7 +1435,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void nonBlockingRpcTimeoutTest() throws IOException, InterruptedException {
+    void nonBlockingRpcTimeoutTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final String HELLO_WORLD = "hello world";
         EventEnvelope request = new EventEnvelope().setTo("slow.rpc.function").setBody(HELLO_WORLD)
@@ -1436,7 +1454,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void nonBlockingForkAndJoinTest() throws IOException, InterruptedException {
+    void nonBlockingForkAndJoinTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final String FORK_N_JOIN = "fork-n-join";
         final String HELLO_WORLD = "hello world";
@@ -1467,7 +1485,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void nonBlockingForkAndJoinTimeoutTest() throws IOException, InterruptedException {
+    void nonBlockingForkAndJoinTimeoutTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final String FORK_N_JOIN = "fork-n-join";
         final String HELLO_WORLD = "hello world";
@@ -1491,9 +1509,9 @@ public class PostOfficeTest extends TestBase {
         assertEquals("true", map.getElement("cid-3.headers." + FORK_N_JOIN));
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void multilevelTrace() throws IOException, InterruptedException {
+    @Test
+    void multilevelTrace() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final String ROUTE_ONE = "hello.level.1";
         final String ROUTE_TWO = "hello.level.2";
@@ -1527,9 +1545,9 @@ public class PostOfficeTest extends TestBase {
         assertEquals(ROUTE_ONE, map.getElement("route_one"));
     }
 
-    @Test
     @SuppressWarnings("unchecked")
-    public void routeSubstitution() throws IOException, InterruptedException {
+    @Test
+    void routeSubstitution() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         int input = 111;
         EventEmitter po = EventEmitter.getInstance();
@@ -1547,7 +1565,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void healthTest() throws IOException, InterruptedException {
+    void healthTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -1573,7 +1591,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void infoTest() throws IOException, InterruptedException {
+    void infoTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         PostOffice po = new PostOffice("unit.test", "201", "TEST /info/test");
         EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"info");
@@ -1592,7 +1610,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void libTest() throws IOException, InterruptedException {
+    void libTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES).setHeader("type" ,"lib");
@@ -1607,7 +1625,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void infoRouteTest() throws IOException, InterruptedException {
+    void infoRouteTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String MY_FUNCTION = "my.test.function";
         String ANOTHER_FUNCTION = "another.function";
@@ -1626,7 +1644,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void livenessProbeTest() throws IOException, InterruptedException {
+    void livenessProbeTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(ActuatorServices.ACTUATOR_SERVICES)
@@ -1639,7 +1657,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void envTest() throws IOException, InterruptedException {
+    void envTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         // making RPC directly to the actuator service
@@ -1662,7 +1680,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void envelopeAsResponseTest() throws IOException, InterruptedException {
+    void envelopeAsResponseTest() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String TARGET = "test.route.1";
         String MESSAGE = "hello world";
@@ -1676,7 +1694,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void threadPoolTest() throws IOException, InterruptedException {
+    void threadPoolTest() throws IOException, InterruptedException {
         final int CYCLES = 200;
         final int WORKER_POOL = 50;
         final ConcurrentMap<Long, Boolean> threads = new ConcurrentHashMap<>();
@@ -1704,11 +1722,12 @@ public class PostOfficeTest extends TestBase {
         Boolean result = bench.poll(10, TimeUnit.SECONDS);
         long diff = last.get() - t1;
         log.info("{} cycles done? {}, {} workers consumed {} threads in {} ms",
-                CYCLES, result != null && result, WORKER_POOL, threads.size(), diff);
+                CYCLES, result, WORKER_POOL, threads.size(), diff);
+        assertTrue(counter.get() > WORKER_POOL);
     }
 
     @Test
-    public void testCallBackEventHandler() throws IOException, InterruptedException {
+    void testCallBackEventHandler() throws IOException, InterruptedException {
         final BlockingQueue<Object> bench = new ArrayBlockingQueue<>(1);
         String TRACE_ID = "10000";
         String HELLO = "hello";
@@ -1734,7 +1753,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testMapToPoJoCasting() throws IOException, InterruptedException {
+    void testMapToPoJoCasting() throws IOException, InterruptedException {
         final BlockingQueue<Object> bench = new ArrayBlockingQueue<>(1);
         var TRACE_ID = "30000";
         var TEXT = "test";
@@ -1758,7 +1777,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testCallBackCastingException() throws IOException, InterruptedException {
+    void testCallBackCastingException() throws IOException, InterruptedException {
         final BlockingQueue<Object> bench = new ArrayBlockingQueue<>(1);
         String TRACE_ID = "30000";
         String HELLO = "hello";
@@ -1783,7 +1802,7 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testInputObjectMapping() throws IOException, InterruptedException {
+    void testInputObjectMapping() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String TRACE_ID = "101010";
         String TRACE_PATH = "TEST /api/hello/input/mapping";
@@ -1830,7 +1849,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testPrimitiveTransport() throws IOException, InterruptedException {
+    void testPrimitiveTransport() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String HELLO_WORLD = "hello.world";
         int number = 101;
@@ -1852,7 +1871,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testCustomSerializer() throws IOException, ExecutionException, InterruptedException {
+    void testCustomSerializer() throws IOException, ExecutionException, InterruptedException {
         PostOffice po = new PostOffice("custom.serializer.test",
                 "10108", "/custom/serializer", new JacksonSerializer());
         SimplePoJo pojo = new SimplePoJo();
@@ -1892,12 +1911,12 @@ public class PostOfficeTest extends TestBase {
     }
 
     @Test
-    public void testInputAsListOfPoJoJava() throws IOException, ExecutionException, InterruptedException {
+    void testInputAsListOfPoJoJava() throws IOException, ExecutionException, InterruptedException {
         testInputAsListOfPoJo("input.list.of.pojo.java", "10201");
     }
 
     @Test
-    public void testInputAsListOfPoJoKotlin() throws IOException, ExecutionException, InterruptedException {
+    void testInputAsListOfPoJoKotlin() throws IOException, ExecutionException, InterruptedException {
         testInputAsListOfPoJo("input.list.of.pojo.kotlin", "10202");
     }
 
@@ -1926,7 +1945,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInputAsPoJoUntyped() throws IOException, ExecutionException, InterruptedException {
+    void testInputAsPoJoUntyped() throws IOException, ExecutionException, InterruptedException {
         PostOffice po = new PostOffice("untyped.pojo.test", "10300", "GET /untyped/pojo");
         PoJo pojo = new PoJo();
         pojo.setName("hello");
@@ -1941,7 +1960,7 @@ public class PostOfficeTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInputAsPoJoListUntyped() throws IOException, ExecutionException, InterruptedException {
+    void testInputAsPoJoListUntyped() throws IOException, ExecutionException, InterruptedException {
         PostOffice po = new PostOffice("untyped.pojo.test", "10301", "GET /untyped/pojo");
         PoJo pojo = new PoJo();
         pojo.setName("hello");

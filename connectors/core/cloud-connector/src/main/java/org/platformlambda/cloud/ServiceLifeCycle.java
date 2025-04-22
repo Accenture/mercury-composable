@@ -38,10 +38,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ServiceLifeCycle extends Thread {
     private static final Logger log = LoggerFactory.getLogger(ServiceLifeCycle.class);
 
-    public static final String TYPE = "type";
-    public static final String INIT = "init";
-    public static final String TOKEN = "token";
     public static final long INITIALIZE = -100;
+    private static final String TYPE = "type";
+    private static final String INIT_TAG = "init";
+    private static final String TOKEN_TAG = "token";
     private static final String SEQUENCE = "seq";
     private static final long FIRST_POLL = 1500;
     private static final long INTERVAL = 3000;
@@ -70,22 +70,22 @@ public class ServiceLifeCycle extends Thread {
         final EventEmitter po = EventEmitter.getInstance();
         final Utility util = Utility.getInstance();
         final PubSub ps = PubSub.getInstance();
-        final String INIT_HANDLER = INIT + "." + (partition < 0? topic : topic + "." + partition);
+        final String INIT_HANDLER = INIT_TAG + "." + (partition < 0? topic : topic + "." + partition);
         final List<String> task = new ArrayList<>();
         final AtomicBoolean done = new AtomicBoolean(false);
         LambdaFunction f = (headers, input, instance) -> {
             if (!done.get()) {
-                if (INIT.equals(input)) {
+                if (INIT_TAG.equals(input)) {
                     int n = util.str2int(headers.get(SEQUENCE));
                     try {
                         Map<String, String> event = new HashMap<>();
-                        event.put(TYPE, INIT);
-                        event.put(TOKEN, token);
+                        event.put(TYPE, INIT_TAG);
+                        event.put(TOKEN_TAG, token);
                         event.put(SEQUENCE, String.valueOf(n));
                         log.info("Contacting {}, partition {}, sequence {}", topic, partition, n);
-                        ps.publish(topic, partition, event, INIT);
+                        ps.publish(topic, partition, event, INIT_TAG);
                         task.clear();
-                        String handle = po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT)
+                        String handle = po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT_TAG)
                                 .setHeader(SEQUENCE, n + 1), new Date(System.currentTimeMillis() + INTERVAL));
                         task.add(handle);
                     } catch (IOException e) {
@@ -104,7 +104,7 @@ public class ServiceLifeCycle extends Thread {
         };
         try {
             platform.registerPrivate(INIT_HANDLER, f, 1);
-            po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT).setHeader(SEQUENCE, 1),
+            po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT_TAG).setHeader(SEQUENCE, 1),
                     new Date(System.currentTimeMillis() + FIRST_POLL));
         } catch (IOException e) {
             log.error("Unable to register {} - {}", INIT_HANDLER, e.getMessage());

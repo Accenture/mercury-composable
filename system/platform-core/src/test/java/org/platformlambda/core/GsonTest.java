@@ -33,11 +33,11 @@ import org.platformlambda.core.util.Utility;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GsonTest {
+class GsonTest {
 
     @SuppressWarnings("rawtypes")
     @Test
-    public void objectToMap() {
+    void objectToMap() {
         // test custom map serializer
         SimplePoJo obj = getSample();
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
@@ -60,7 +60,7 @@ public class GsonTest {
     }
 
     @Test
-    public void twoWayConversion() {
+    void twoWayConversion() {
         SimplePoJo obj = getSample();
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         String s = mapper.writeValueAsString(obj);
@@ -94,7 +94,7 @@ public class GsonTest {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
-    public void nestedUntypedMapInPoJo() {
+    void nestedUntypedMapInPoJo() {
         SimplePoJo sample = new SimplePoJo();
         sample.map.put("number", 10);
         Map map = SimpleMapper.getInstance().getMapper().readValue(sample, Map.class);

@@ -23,8 +23,6 @@ import io.vertx.core.Promise;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * DO NOT use this directly in your application code.
  */
 public class AsyncMultiInbox extends InboxBase {
-    private static final Logger log = LoggerFactory.getLogger(AsyncMultiInbox.class);
     private final AtomicInteger total = new AtomicInteger(1);
     private final Map<String, InboxCorrelation> correlations = new HashMap<>();
     private final String start = Utility.getInstance().date2str(new Date());

@@ -22,14 +22,14 @@ import io.vertx.core.http.HttpServerRequest;
 
 public class AsyncContextHolder {
 
-    public HttpServerRequest request;
+    public final HttpServerRequest request;
     public long timeout;
     public long lastAccess;
     public String url, resHeaderId, accept, method;
 
     public AsyncContextHolder(HttpServerRequest request) {
         this.request = request;
-        this.timeout = 30 * 1000;
+        this.timeout = 30 * 1000L;
         this.touch();
     }
 
@@ -67,5 +67,4 @@ public class AsyncContextHolder {
     public void touch() {
         this.lastAccess = System.currentTimeMillis();
     }
-
 }

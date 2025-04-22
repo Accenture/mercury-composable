@@ -116,7 +116,7 @@ public class AppStarter {
             // Setup REST automation and websocket server if needed
             try {
                 instance.startHttpServerIfAny();
-            } catch (IOException | InterruptedException e) {
+            } catch (InterruptedException e) {
                 log.error("Unable to start HTTP server", e);
             }
             // Run "MainApplication" modules
@@ -238,16 +238,17 @@ public class AppStarter {
                     if (result.isEmpty()) {
                         result.putAll(tasks);
                     } else {
-                        for (String route : tasks.keySet()) {
+                        for (var entry : tasks.entrySet()) {
+                            String route = entry.getKey();
+                            PreLoadInfo info = entry.getValue();
                             if (result.containsKey(route)) {
-                                PreLoadInfo info = tasks.get(route);
                                 PreLoadInfo prior = result.get(route);
                                 prior.routes.addAll(info.routes);
                                 if (prior.instances == -1) {
                                     prior.instances = info.instances;
                                 }
                             } else {
-                                result.put(route, tasks.get(route));
+                                result.put(route, info);
                             }
                         }
                     }
@@ -424,7 +425,7 @@ public class AppStarter {
         }
     }
 
-    private void startHttpServerIfAny() throws IOException, InterruptedException {
+    private void startHttpServerIfAny() throws InterruptedException {
         // find and execute optional preparation modules
         final SimpleClassScanner scanner = SimpleClassScanner.getInstance();
         final Set<String> packages = scanner.getPackages(true);

@@ -16,12 +16,12 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class EventEnvelopeTest {
+class EventEnvelopeTest {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelopeTest.class);
     private static final String SET_COOKIE = "set-cookie";
 
     @Test
-    public void cookieTest() {
+    void cookieTest() {
         EventEnvelope event = new EventEnvelope();
         event.setHeader(SET_COOKIE, "a=100");
         event.setHeader(SET_COOKIE, "b=200");
@@ -30,7 +30,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void headerTest() throws IOException {
+    void headerTest() throws IOException {
         EventEnvelope event = new EventEnvelope();
         event.setHeader("hello", "world");
         event.setHeader("test", "hello\r\nworld");
@@ -40,7 +40,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void booleanTest() throws IOException {
+    void booleanTest() throws IOException {
         boolean HELLO = true;
         EventEnvelope source = new EventEnvelope();
         source.setBody(HELLO);
@@ -51,7 +51,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void integerTest() throws IOException {
+    void integerTest() throws IOException {
         int VALUE = 100;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -62,7 +62,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void longTest() throws IOException {
+    void longTest() throws IOException {
         Long VALUE = 100L;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -74,7 +74,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void floatTest() throws IOException {
+    void floatTest() throws IOException {
         float VALUE = 1.23f;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -85,7 +85,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void doubleTest() throws IOException {
+    void doubleTest() throws IOException {
         double VALUE = 1.23d;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -96,7 +96,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void bigDecimalTest() throws IOException {
+    void bigDecimalTest() throws IOException {
         String VALUE = "1.23";
         BigDecimal HELLO = new BigDecimal(VALUE);
         EventEnvelope source = new EventEnvelope();
@@ -109,7 +109,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void dateTest() throws IOException {
+    void dateTest() throws IOException {
         Utility util = Utility.getInstance();
         Date NOW = new Date();
         EventEnvelope source = new EventEnvelope();
@@ -122,7 +122,7 @@ public class EventEnvelopeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void pojoTest() throws IOException {
+    void pojoTest() throws IOException {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -139,7 +139,7 @@ public class EventEnvelopeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void pojoListTest() throws IOException {
+    void pojoListTest() throws IOException {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -164,7 +164,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void taggingTest() {
+    void taggingTest() {
         final String HELLO = "hello";
         final String WORLD = "world";
         final String ROUTING = "routing";
@@ -185,7 +185,7 @@ public class EventEnvelopeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void mapSerializationTest() throws IOException {
+    void mapSerializationTest() throws IOException {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -248,7 +248,7 @@ public class EventEnvelopeTest {
 
     @SuppressWarnings("rawtypes")
     @Test
-    public void numberInMapTest() throws IOException {
+    void numberInMapTest() throws IOException {
         Map<String, Object> map = new HashMap<>();
         map.put("float", 12.345f);
         map.put("double", 10.101d);
@@ -262,7 +262,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void optionalTransportTest() {
+    void optionalTransportTest() {
         EventEnvelope source = new EventEnvelope();
         source.setBody(Optional.of("hello"));
         EventEnvelope target = new EventEnvelope(source.toMap());
@@ -299,7 +299,7 @@ public class EventEnvelopeTest {
     }
 
     @Test
-    public void testBestEffortToRestoreException() throws IOException {
+    void testBestEffortToRestoreException() throws IOException {
         String message = "hello world";
         String stack = "hello\nworld";
         // this emulates how Node.js Composable application sets exception

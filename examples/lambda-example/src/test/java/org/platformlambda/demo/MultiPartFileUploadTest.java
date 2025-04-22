@@ -27,7 +27,6 @@ import org.platformlambda.core.util.Utility;
 import org.platformlambda.demo.common.TestBase;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,11 +36,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MultiPartFileUploadTest extends TestBase {
+class MultiPartFileUploadTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void uploadTest() throws IOException, InterruptedException {
+    void uploadTest() throws IOException, InterruptedException {
         String FILENAME = "unit-test-data.txt";
         BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();

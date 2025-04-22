@@ -34,10 +34,9 @@ import java.util.*;
 
 @RestController
 public class AdminEndpoint {
-
     private static final String JOB_ID = MainScheduler.JOB_ID;
     private static final String SCHEDULER_SERVICE = MainScheduler.SCHEDULER_SERVICE;
-    private static final String TYPE = MainScheduler.TYPE;;
+    private static final String TYPE = MainScheduler.TYPE;
     private static final String START = MainScheduler.START_COMMAND;
     private static final String STOP = MainScheduler.STOP_COMMAND;
     private static final String ORIGIN = MainScheduler.ORIGIN;

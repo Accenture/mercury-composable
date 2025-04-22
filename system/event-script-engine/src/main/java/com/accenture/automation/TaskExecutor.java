@@ -65,6 +65,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String MESSAGE = "message";
     private static final String INPUT = "input";
     private static final String OUTPUT_STATUS = "output.status";
+    private static final String OUTPUT_BODY = "output.body";
     private static final String OUTPUT_HEADER = "output.header";
     private static final String MODEL = "model";
     private static final String RESULT = "result";
@@ -231,7 +232,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return null;
     }
 
-    private void abortFlow(FlowInstance flowInstance, int status, String message) throws IOException {
+    private void abortFlow(FlowInstance flowInstance, int status, Object message) throws IOException {
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
             Map<String, Object> result = new HashMap<>();
@@ -272,7 +273,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         metrics.put("exec_time", diff);
         metrics.put("start", util.date2str(new Date(flowInstance.getStartMillis())));
         metrics.put("path", flowInstance.getTracePath());
-        metrics.put("status", normal? 200 : 400);
+        metrics.put(STATUS, normal? 200 : 400);
         metrics.put("success", normal);
         if (!normal) {
             metrics.put("exception", "Flow aborted");
@@ -337,32 +338,34 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     if (!fileFound || (!f.isDirectory() && f.canWrite())) {
                         switch (value) {
                             // delete the RHS' target file if LHS value is null
-                            case null -> { if (fileFound) f.delete(); }
+                            case null ->    {
+                                                if (fileFound && f.delete()) {
+                                                    log.debug("File {} deleted", f);
+                                                }
+                                            }
                             case byte[] b -> util.bytes2file(f, b);
                             case String str -> util.str2file(f, str);
                             // best effort to save as a JSON string
                             case Map map ->
                                 util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map));
-                            default -> util.str2file(f, value.toString());
+                            default -> util.str2file(f, String.valueOf(value));
                         }
                     }
                 } else {
                     if (value != null) {
                         boolean required = true;
                         if (rhs.equals(OUTPUT_STATUS)) {
-                            int status = value instanceof Integer ? (Integer) value : util.str2int(value.toString());
+                            int status = value instanceof Integer v? v : util.str2int(String.valueOf(value));
                             if (status < 100 || status > 599) {
                                 log.error("Invalid output mapping '{}' - expect: valid HTTP status code, actual: {}",
                                         entry, status);
                                 required = false;
                             }
                         }
-                        if (rhs.equals(OUTPUT_HEADER)) {
-                            if (!(value instanceof Map)) {
-                                log.error("Invalid output mapping '{}' - expect: Map, actual: {}",
-                                        entry, value.getClass().getSimpleName());
-                                required = false;
-                            }
+                        if (rhs.equals(OUTPUT_HEADER) && !(value instanceof Map)) {
+                            log.error("Invalid output mapping '{}' - expect: Map, actual: {}",
+                                    entry, value.getClass().getSimpleName());
+                            required = false;
                         }
                         if (rhs.startsWith(EXT_NAMESPACE)) {
                             required = false;
@@ -623,9 +626,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 EventEnvelope result = new EventEnvelope();
                 // restore the original correlation-ID to the calling party
                 result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid);
-                Object headers = map.getElement("output.header");
-                Object body = map.getElement("output.body");
-                Object status = map.getElement("output.status");
+                Object headers = map.getElement(OUTPUT_HEADER);
+                Object body = map.getElement(OUTPUT_BODY);
+                Object status = map.getElement(OUTPUT_STATUS);
                 if (status != null) {
                     int value = util.str2int(status.toString());
                     if (value > 0) {
@@ -813,7 +816,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     po.send(event);
                 } catch (IOException e) {
                     // this should not occur
-                    throw new RuntimeException(e);
+                    throw new IllegalArgumentException(e.getMessage());
                 }
             });
         } else {
@@ -1200,8 +1203,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private static class SimpleFileDescriptor {
-        final public String fileName;
-        final public boolean binary;
+        public final String fileName;
+        public final boolean binary;
 
         public SimpleFileDescriptor(String value) {
             int last = value.lastIndexOf(CLOSE_BRACKET);

@@ -48,8 +48,9 @@ public class HouseKeeper implements LambdaFunction {
     public static Map<String, String> getMonitors() {
         Utility util = Utility.getInstance();
         Map<String, String> result = new HashMap<>();
-        for (String m: monitors.keySet()) {
-            MonitorInstance monitor = monitors.get(m);
+        for (var entry: monitors.entrySet()) {
+            String m = entry.getKey();
+            MonitorInstance monitor = entry.getValue();
             result.put(m, m.equals(monitor.instance) ? util.getLocalTimestamp(monitor.updated) :
                         monitor.instance+", "+util.getLocalTimestamp(monitor.updated));
         }
@@ -120,8 +121,9 @@ public class HouseKeeper implements LambdaFunction {
     private void removeExpiredMonitors() {
         long now = System.currentTimeMillis();
         List<String> expired = new ArrayList<>();
-        for (String k: monitors.keySet()) {
-            MonitorInstance monitor = monitors.get(k);
+        for (var entry: monitors.entrySet()) {
+            String k = entry.getKey();
+            MonitorInstance monitor = entry.getValue();
             if (now - monitor.updated > ONE_MINUTE) {
                 expired.add(k);
             }
@@ -143,5 +145,4 @@ public class HouseKeeper implements LambdaFunction {
             this.updated = updated;
         }
     }
-
 }

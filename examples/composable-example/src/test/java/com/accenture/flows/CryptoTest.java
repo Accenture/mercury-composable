@@ -30,11 +30,11 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CryptoTest extends TestBase {
+class CryptoTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void encryptAndDecryptTest() throws IOException, ExecutionException, InterruptedException {
+    void encryptAndDecryptTest() throws IOException, ExecutionException, InterruptedException {
         byte[] key = crypto.generateAesKey(strongCrypto? 256 : 128);
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /crypto");
         String KEY1 = "k1";
