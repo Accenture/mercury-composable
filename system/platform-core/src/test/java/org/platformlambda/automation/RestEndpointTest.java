@@ -139,10 +139,27 @@ class RestEndpointTest extends TestBase {
         checkHttpRouting("/api/hello/world > something");
         checkHttpRouting("/api/hello/world &nbsp;");
         /*
-         * this is a valid URL with matrix parameters
+         * This is a valid URL with matrix parameters
          *
          * It will return HTTP-404 to prove that it has passed thru to the REST endpoint.
          * If the URL format is invalid, the system will return HTTP-400 with empty HTTP response body.
+         *
+         * Matrix parameter feature may not be supported in some REST application server.
+         * Please check documentation for your application server framework being using it.
+         *
+         * REST automation supports it as follows
+         * --------------------------------------
+         * When using matrix parameters, the URI segment containing the parameters can be configured
+         * as a "path parameter" in the "rest.yaml" endpoint configuration file. Your application
+         * can retrieve and parse the URI segments containing the matrix parameters for processing.
+         * e.g.
+         *
+         * Endpoint in rest.yaml:
+         * url: "/api/hello/{base}/{option}"
+         *
+         * would return:
+         * base="world;a=b 2;c$=d$3"
+         * option=";feature=12 3"
          */
         checkHttpRouting("/api/hello/world;a=b 2;c$=d$3/;feature=12 3");
     }
