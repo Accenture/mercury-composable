@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.30, 4/22/2025
+
+### Added
+
+1. Support "matrix parameters" and "hash parameters" in HTTP request URI in platform-core
+2. "classpath" in LHS of output data mapping for event script
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.2.29, 4/20/2025
 
 ### Added

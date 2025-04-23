@@ -166,6 +166,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
     @SuppressWarnings("unchecked")
     private String queryParametersToString(AsyncHttpRequest request) {
+        Utility util = Utility.getInstance();
         StringBuilder sb = new StringBuilder();
         Map<String, Object> params = request.getQueryParameters();
         if (params.isEmpty()) {
@@ -174,10 +175,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         for (Map.Entry<String, Object> kv: params.entrySet()) {
             String k = kv.getKey();
             Object v = kv.getValue();
-            if (v instanceof String) {
+            if (v instanceof String value) {
                 sb.append(k);
                 sb.append('=');
-                sb.append(v);
+                sb.append(value);
                 sb.append('&');
             }
             if (v instanceof List) {
@@ -274,42 +275,43 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             throw new IllegalArgumentException("Target host must not contain URI path");
         }
         // normalize URI and query string
-        final String uri;
-        if (request.getUrl().contains("?")) {
-            // when there are more than one query separator, drop the middle portion.
-            int sep1 = request.getUrl().indexOf('?');
-            int sep2 = request.getUrl().lastIndexOf('?');
-            uri = encodeUri(decodeUri(request.getUrl().substring(0, sep1)));
-            String q = request.getUrl().substring(sep2+1).trim();
-            if (!q.isEmpty()) {
-                request.setQueryString(q);
-            }
+        final String rawUri;
+        final String uri = util.getEncodedUri(request.getUrl());
+        int hashMark = uri.lastIndexOf('#');
+        final String uriWithoutHash = hashMark == -1? uri : uri.substring(0, hashMark);
+        final String hashParams = hashMark == -1? null : uri.substring(hashMark+1);
+        String queryString = null;
+        int questionMark = uriWithoutHash.lastIndexOf('?');
+        if (questionMark == -1) {
+            rawUri = uriWithoutHash;
         } else {
-            uri = encodeUri(decodeUri(request.getUrl()));
+            rawUri = uriWithoutHash.substring(0, questionMark);
+            queryString = decodeUri(uriWithoutHash.substring(questionMark+1));
+            request.setQueryString(queryString);
         }
         // construct target URL
-        String qs = request.getQueryString();
-        String queryParams = queryParametersToString(request);
+        final String queryParams = queryParametersToString(request);
+        // combine query parameters from query string and query parameters
         if (queryParams != null) {
-            qs = qs == null? queryParams : qs + "&" + queryParams;
+            queryString = queryString == null? queryParams : queryString + "&" + queryParams;
         }
-        String uriWithQuery = uri + (qs == null? "" : "?" + qs);
-        po.annotateTrace(DESTINATION, url.getScheme() + "://" + url.getHost() + ":" + port + uriWithQuery);
+        final String uriWithHash = rawUri + (hashParams == null? "" : "#" + hashParams);
+        po.annotateTrace(DESTINATION, url.getScheme() + "://" + url.getHost() + ":" + port + rawUri);
         WebClient client = getWebClient(instance, request.isTrustAllCert());
-        HttpRequest<Buffer> http = client.request(httpMethod, port, host, uri).ssl(secure);
-        if (qs != null) {
+        HttpRequest<Buffer> http = client.request(httpMethod, port, host, uriWithHash).ssl(secure);
+        if (queryString != null) {
             Set<String> keys = new HashSet<>();
-            List<String> parts = util.split(qs, "&");
-            for (String kv: parts) {
-                int eq = kv.indexOf('=');
+            List<String> parts = util.split(queryString, "&");
+            for (String p: parts) {
+                int eq = p.indexOf('=');
                 final String k;
                 final String v;
-                if (eq > 0) {
-                    k = kv.substring(0, eq);
-                    v = kv.substring(eq+1);
-                } else {
-                    k = kv;
+                if (eq == -1) {
+                    k = p;
                     v = "";
+                } else {
+                    k = p.substring(0, eq);
+                    v = p.substring(eq+1);
                 }
                 if (keys.contains(k)) {
                     http.addQueryParam(k, v);

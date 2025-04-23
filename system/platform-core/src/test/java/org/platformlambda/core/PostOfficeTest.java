@@ -1925,7 +1925,6 @@ class PostOfficeTest extends TestBase {
         var event = new EventEnvelope().setTo("input.pojo.untyped").setBody(pojo);
         var result = po.request(event, 5000).get();
         assertInstanceOf(Map.class, result.getBody());
-        System.out.println(result.getBody());
         var map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals(pojo.getName(), map.getElement("map.name"));
     }

@@ -37,10 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -106,7 +103,7 @@ class RestEndpointTest extends TestBase {
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
         req.setHeader("accept", "application/json");
-        req.setUrl("/api/hello/world?hello world=abc");
+        req.setUrl("/api/hello/world?hello world=abc#hello&test=message");
         req.setQueryParameter("x1", "y");
         List<String> list = new ArrayList<>();
         list.add("a");
@@ -136,32 +133,28 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void invalidUriTest() throws IOException, InterruptedException {
-        // invalid paths will be rejected
-        checkInvalidUrl("/api/hello/world moved to https://evil.site?hello world=abc");
+    void invalidUriTest() throws IOException, InterruptedException, ExecutionException {
+        checkInvalidUrl("/api/hello/../world &moved to https://evil.site?hello world=abc");
         checkInvalidUrl("/api/hello/world <div>test</div>");
         checkInvalidUrl("/api/hello/world > something");
         checkInvalidUrl("/api/hello/world &nbsp;");
     }
 
     @SuppressWarnings("unchecked")
-    private void checkInvalidUrl(String uri) throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+    private void checkInvalidUrl(String uri) throws IOException, InterruptedException, ExecutionException {
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
         req.setHeader("accept", "application/json");
         req.setUrl(uri);
-        req.setQueryParameter("x1", "y%20");
+        req.setQueryParameter("x1", "y");
         List<String> list = new ArrayList<>();
         list.add("a");
         list.add("b");
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
         assertEquals(404, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
