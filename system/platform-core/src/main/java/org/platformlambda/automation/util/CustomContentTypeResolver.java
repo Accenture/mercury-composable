@@ -80,10 +80,10 @@ public class CustomContentTypeResolver {
         });
     }
 
-    public String getContentType(String ext) {
-        if (ext != null) {
-            int sep = ext.indexOf(';');
-            String type = sep == -1? ext.trim() : ext.substring(0, sep).trim();
+    public String getContentType(String contentType) {
+        if (contentType != null) {
+            int sep = contentType.indexOf(';');
+            String type = sep == -1? contentType.trim() : contentType.substring(0, sep).trim();
             return customContentTypes.get(type);
         } else {
             return null;
