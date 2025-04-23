@@ -426,8 +426,9 @@ class UtilityTests {
         final Utility util = Utility.getInstance();
         var s1 = "/api/hello/world;y;k=1 1/;a=b/?x=2 2";
         assertEquals("/api/hello/world;y;k=1%201/;a=b/?x=2%202", util.getEncodedUri(s1));
-        var s2 = "/api/hello/world;k=1 1?x=2 2&y=2#abc";
-        assertEquals("/api/hello/world;k=1%201?x=2%202&y=2#abc", util.getEncodedUri(s2));
+        var s2 = "/api/hello/world;k=1 1;z1=2 0;another=one/option;one=more?x=2 2&y=2#abc";
+        assertEquals("/api/hello/world;k=1%201;z1=2%200;another=one/option;one=more?x=2%202&y=2#abc",
+                        util.getEncodedUri(s2));
         var s3 = "/api/hello/@.(world)";
         assertEquals("/api/hello/%40.%28world%29", util.getEncodedUri(s3));
         var s4 = "/api/hello/world &nbsp;";

@@ -133,15 +133,22 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void invalidUriTest() throws IOException, InterruptedException, ExecutionException {
-        checkInvalidUrl("/api/hello/../world &moved to https://evil.site?hello world=abc");
-        checkInvalidUrl("/api/hello/world <div>test</div>");
-        checkInvalidUrl("/api/hello/world > something");
-        checkInvalidUrl("/api/hello/world &nbsp;");
+    void nonExistUrlTest() throws IOException, InterruptedException, ExecutionException {
+        checkHttpRouting("/api/hello/../world &moved to https://evil.site?hello world=abc");
+        checkHttpRouting("/api/hello/world <div>test</div>");
+        checkHttpRouting("/api/hello/world > something");
+        checkHttpRouting("/api/hello/world &nbsp;");
+        /*
+         * this is a valid URL with matrix parameters
+         *
+         * It will return HTTP-404 to prove that it has passed thru to the REST endpoint.
+         * If the URL format is invalid, the system will return HTTP-400 with empty HTTP response body.
+         */
+        checkHttpRouting("/api/hello/world;a=b 2;c$=d$3/;feature=12 3");
     }
 
     @SuppressWarnings("unchecked")
-    private void checkInvalidUrl(String uri) throws IOException, InterruptedException, ExecutionException {
+    private void checkHttpRouting(String uri) throws IOException, InterruptedException, ExecutionException {
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");

@@ -166,7 +166,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
     @SuppressWarnings("unchecked")
     private String queryParametersToString(AsyncHttpRequest request) {
-        Utility util = Utility.getInstance();
         StringBuilder sb = new StringBuilder();
         Map<String, Object> params = request.getQueryParameters();
         if (params.isEmpty()) {
@@ -402,17 +401,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
     public String decodeUri(String uri) {
         return uri != null && uri.contains("%")? URLDecoder.decode(uri, StandardCharsets.UTF_8) : uri;
-    }
-
-    private String encodeUri(String uri) {
-        Utility util = Utility.getInstance();
-        List<String> parts = util.split(uri, "/");
-        StringBuilder sb = new StringBuilder();
-        for (String p: parts) {
-            sb.append('/');
-            sb.append(URLEncoder.encode(p, StandardCharsets.UTF_8).replace("+", "%20"));
-        }
-        return sb.isEmpty() ? "/" : sb.toString();
     }
 
     private void handleUpload(EventEnvelope input, OutputStreamQueue queue,
