@@ -1176,7 +1176,7 @@ public class Utility {
             // Decode URI escape characters
             var uri = uriPath.contains("%")? URLDecoder.decode(uriPath, StandardCharsets.UTF_8) : uriPath;
             // Avoid "path traversal" attack
-            return uri.replace("\\", "/").replaceAll("\\.\\./", "");
+            return uri.replace("\\", "/").replace("../", "");
         }
     }
 
@@ -1209,7 +1209,7 @@ public class Utility {
                 queryParams.putAll(getUriParams(qs));
             }
             // filter out protocol identifier
-            uri = uri.replaceAll("://", "/");
+            uri = uri.replace("://", "/");
             // encode matrix parameters if any
             StringBuilder sb = new StringBuilder();
             List<String> segments = split(uri, "/");

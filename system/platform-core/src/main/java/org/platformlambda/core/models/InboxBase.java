@@ -42,7 +42,6 @@ public abstract class InboxBase {
     protected static final ConcurrentMap<String, InboxBase> inboxes = new ConcurrentHashMap<>();
     protected static final String RPC = "rpc";
     protected static final String ANNOTATIONS = "annotations";
-    private static final String MESSAGE = "message";
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
     private static final List<String> ZERO_TRACING_FILTER = List.of(ASYNC_HTTP_CLIENT);
 
