@@ -521,7 +521,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private class HttpResponseHandler implements Handler<HttpResponse<Void>> {
-
+        private final Utility util = Utility.getInstance();
+        private final CustomContentTypeResolver resolver = CustomContentTypeResolver.getInstance();
         private final EventEnvelope input;
         private final AsyncHttpRequest request;
         private final OutputStreamQueue queue;
@@ -537,13 +538,12 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
         @Override
         public void handle(HttpResponse<Void> res) {
-            Utility util = Utility.getInstance();
             EventEnvelope response = new EventEnvelope();
             response.setStatus(res.statusCode());
             MultiMap headers = res.headers();
             headers.forEach(kv -> response.setHeader(kv.getKey(), kv.getValue()));
             if (input.getReplyTo() != null) {
-                String resContentType = getContentType(res.getHeader(CONTENT_TYPE));
+                String resContentType = resolver.getContentType(res.getHeader(CONTENT_TYPE));
                 String contentLen = res.getHeader(CONTENT_LENGTH);
                 boolean renderAsBytes = "true".equals(request.getHeader(X_NO_STREAM));
                 if (renderAsBytes || contentLen != null || isTextResponse(resContentType)) {
@@ -646,16 +646,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     });
                 }
             }
-        }
-
-        private String getContentType(String type) {
-            if (type != null) {
-                String customType = CustomContentTypeResolver.getInstance().getContentType(type);
-                if (customType != null) {
-                    return customType;
-                }
-            }
-            return type;
         }
 
         private boolean isTextResponse(String contentType) {

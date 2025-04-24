@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HttpRouter {
     private static final Logger log = LoggerFactory.getLogger(HttpRouter.class);
-
+    private static final CustomContentTypeResolver resolver = CustomContentTypeResolver.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
@@ -413,17 +413,6 @@ public class HttpRouter {
         return null;
     }
 
-    private String getContentType(HttpServerRequest request) {
-        String type = request.getHeader(CONTENT_TYPE);
-        if (type != null) {
-            String customType = CustomContentTypeResolver.getInstance().getContentType(type);
-            if (customType != null) {
-                return customType;
-            }
-        }
-        return type;
-    }
-
     private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder)
             throws AppException {
         Utility util = Utility.getInstance();
@@ -581,7 +570,7 @@ public class HttpRouter {
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             final AtomicBoolean inputComplete = new AtomicBoolean(false);
             final ByteArrayOutputStream requestBody = new ByteArrayOutputStream();
-            String contentType = getContentType(request);
+            String contentType = resolver.getContentType(request.getHeader(CONTENT_TYPE));
             if (contentType == null) {
                 contentType = "?";
             }

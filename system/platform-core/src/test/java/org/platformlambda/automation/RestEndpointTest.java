@@ -96,9 +96,8 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings(value = "unchecked")
     @Test
-    void serviceTest() throws IOException, InterruptedException {
+    void serviceTest() throws IOException, InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;
-        final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -112,13 +111,11 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setTimeoutSeconds(TTL_SECONDS);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         // validate custom content type
-        assertEquals("application/vnd.my.org+json; charset=utf-8", response.getHeader("content-type"));
+        assertEquals("application/vnd.my.org-v2.1+json; charset=utf-8", response.getHeader("content-type"));
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.accept"));
         assertEquals(false, map.getElement("https"));

@@ -38,7 +38,7 @@ public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Obj
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
     private static final String CONTENT_TYPE = "content-type";
-    private static final String CUSTOM_JSON = "application/vnd.my.org+json; charset=utf-8";
+    private static final String CUSTOM_JSON = "application/vnd.my.org-v2.1+json; charset=utf-8";
     private static final String APPLICATION_XML = "application/xml";
 
     @Override

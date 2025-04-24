@@ -83,8 +83,9 @@ public class CustomContentTypeResolver {
     public String getContentType(String contentType) {
         if (contentType != null) {
             int sep = contentType.indexOf(';');
-            String type = sep == -1? contentType.trim() : contentType.substring(0, sep).trim();
-            return customContentTypes.get(type);
+            String ct = sep == -1? contentType.trim() : contentType.substring(0, sep).trim();
+            String customType = customContentTypes.get(ct.toLowerCase());
+            return customType != null? customType : ct;
         } else {
             return null;
         }
