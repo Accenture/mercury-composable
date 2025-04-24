@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.33, 4/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+Removed SimpleScheduler from the build script at root because SimpleScheduler has not reached
+production quality
+
+### Changed
+
+1. Rename variable as per SonarCube quality gate
+2. OSS version update - revert Kafka client to version 3.9.0 for compatibility with Confluent Kafka
+
+---
 ## Version 4.2.32, 4/24/2025
 
 ### Added

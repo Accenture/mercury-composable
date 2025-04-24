@@ -28,15 +28,15 @@ import java.util.*;
 
 public class ConnectorConfig {
     private static final Logger log = LoggerFactory.getLogger(ConnectorConfig.class);
-
     private static final String INVALID_ROUTE = "Invalid route ";
-
     private static Map<String, String> topicReplacements;
-    private static String serviceName, displayUrl;
-
+    private static String serviceName;
+    private static String displayUrl;
     private static final AppConfigReader config = AppConfigReader.getInstance();
     private static final String TOPIC_SUBSTITUTION = "application.feature.topic.substitution";
     private static final boolean FEATURE_ENABLED = "true".equalsIgnoreCase(config.getProperty(TOPIC_SUBSTITUTION));
+
+    private ConnectorConfig() {}
 
     public static boolean topicSubstitutionEnabled() {
         return FEATURE_ENABLED;
@@ -152,5 +152,4 @@ public class ConnectorConfig {
             throw new IOException(INVALID_ROUTE+route+" which is a reserved Windows filename");
         }
     }
-
 }

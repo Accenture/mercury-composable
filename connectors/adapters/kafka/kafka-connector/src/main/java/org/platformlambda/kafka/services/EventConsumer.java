@@ -290,21 +290,19 @@ public class EventConsumer extends Thread {
                     }
                 }
             }
+        } catch(WakeupException e) {
+            log.info("Stopping listener for {}", virtualTopic);
         } catch (Exception e) {
-            if (e instanceof WakeupException) {
-                log.info("Stopping listener for {}", virtualTopic);
-            } else {
-                // when this happens, it is better to shut down so that infrastructure can restart the app instance.
-                log.error("Event stream error for {} - {} {}", topicPartition, e.getClass(), e.getMessage());
-                System.exit(10);
-            }
+            // when this happens, it is better to shut down so that infrastructure can restart the app instance.
+            log.error("Event stream error for {} - {} {}", topicPartition, e.getClass(), e.getMessage());
+            System.exit(10);
         } finally {
             consumer.close();
             log.info("Unsubscribed {}", topicPartition);
-            String INIT_HANDLER = INIT + "." + (partition < 0 ? topic : topic + "." + partition);
-            if (requireInitialization && platform.hasRoute(INIT_HANDLER)) {
+            String initHandler = INIT + "." + (partition < 0 ? topic : topic + "." + partition);
+            if (requireInitialization && platform.hasRoute(initHandler)) {
                 try {
-                    po.send(INIT_HANDLER, DONE);
+                    po.send(initHandler, DONE);
                 } catch (IOException e) {
                     // ok to ignore
                 }
