@@ -26,7 +26,7 @@ N/A
 2. OSS version update
 
 ```
-vertx 4.1.14
+vertx 4.5.14
 guava 33.4.8-jre 
 junit5-bom 5.12.2
 kotlin 2.1.20
