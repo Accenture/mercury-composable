@@ -196,8 +196,26 @@ rest:
 
   - service: "http.flow.adapter"
     methods: ['GET']
+    url: "/api/for-loop-single/{user}?seq=_"
+    flow: 'for-loop-test-single-task'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
     url: "/api/for-loop-break/{user}?seq=_"
     flow: 'for-loop-break'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/for-loop-break-single/{user}?seq=_"
+    flow: 'for-loop-break-single-task'
     timeout: 10s
     cors: cors_1
     headers: header_1

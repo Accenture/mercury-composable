@@ -415,7 +415,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                             flowInstance.getFlow().id, flowInstance.id, seq, n + 1, pipeline.getTaskName(n));
                 }
                 if (pipelineTask.conditions.isEmpty()) {
-                    executeTask(flowInstance, pipeline.getTaskName(n), seq);
+                    if (pipeline.isCompleted() && pipeline.isSingleton()) {
+                        pipelineCompletion(flowInstance, pipeline, consolidated, seq);
+                    } else {
+                        executeTask(flowInstance, pipeline.getTaskName(n), seq);
+                    }
                 } else {
                     String action = null;
                     for (List<String> condition: pipelineTask.conditions) {
@@ -439,7 +443,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     } else if (CONTINUE.equals(action)) {
                         pipelineCompletion(flowInstance, pipeline, consolidated, seq);
                     } else {
-                        executeTask(flowInstance, pipeline.getTaskName(n), seq);
+                        if (pipeline.isCompleted() && pipeline.isSingleton()) {
+                            pipelineCompletion(flowInstance, pipeline, consolidated, seq);
+                        } else {
+                            executeTask(flowInstance, pipeline.getTaskName(n), seq);
+                        }
                     }
                 }
                 return;
@@ -503,10 +511,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         if (iterate) {
             pipeline.resetPointer();
-            log.debug("Flow {}:{} pipeline #{} first {}",
+            log.debug("Flow {}:{} pipeline #{} loop {}",
                     flowInstance.getFlow().id, flowInstance.id, seq, pipeline.getTaskName(0));
             executeTask(flowInstance, pipeline.getTaskName(0), seq);
-
         } else {
             flowInstance.pipeMap.remove(seq);
             executeTask(flowInstance, pipeline.getExitTask());
@@ -530,12 +537,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (decisionValue instanceof Boolean) {
             decisionNumber = Boolean.TRUE.equals(decisionValue) ? 1 : 2;
         } else if (decisionValue != null) {
-            decisionNumber = Math.max(1, util.str2int(decisionValue.toString()));
+            decisionNumber = Math.max(1, util.str2int(String.valueOf(decisionValue)));
         } else {
-            // decision number is null
-            decisionNumber = nextTasks.size() + 1;
+            // decision number is not given
+            decisionNumber = 0;
         }
-        if (decisionNumber > nextTasks.size()) {
+        if (decisionNumber < 1 || decisionNumber > nextTasks.size()) {
             log.error("Flow {}:{} {} returned invalid decision ({})",
                     flowInstance.getFlow().id, flowInstance.id, task.service, decisionValue);
             abortFlow(flowInstance, 500,

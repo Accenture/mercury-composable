@@ -932,6 +932,51 @@ class FlowTests extends TestBase {
         platform.release(MOCK_FUNCTION);
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void pipelineForLoopTestSingleTask() throws IOException, InterruptedException {
+        Platform platform = Platform.getInstance();
+        // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
+        // We want to override no.op with my.mock.function to demonstrate mocking a function
+        // for a flow.
+        var ECHO_ONE = "echo.one";
+        var MOCK_FUNCTION = "my.mock.function.single";
+        var iteration = new AtomicInteger(0);
+        LambdaFunction f = (headers, body, instance) -> {
+            var n = iteration.incrementAndGet();
+            log.info("Iteration-{} for single-task pipeline {}", n, body);
+            return body;
+        };
+        platform.registerPrivate(MOCK_FUNCTION, f, 1);
+        // override the function for the task "echo.one" to the mock function
+        var mock = new EventScriptMock("for-loop-test-single-task");
+        var previousRoute = mock.getFunctionRoute(ECHO_ONE);
+        var currentRoute = mock.assignFunctionRoute(ECHO_ONE, MOCK_FUNCTION).getFunctionRoute(ECHO_ONE);
+        assertEquals("no.op", previousRoute);
+        assertEquals(MOCK_FUNCTION, currentRoute);
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        int SEQ = 100;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/for-loop-single/"+USER).setQueryParameter("seq", SEQ);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertTrue(result.containsKey("data"));
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(3, result.get("n"));
+        assertEquals(3, iteration.get());
+        platform.release(MOCK_FUNCTION);
+    }
+
     @Test
     void mockHelperTest() {
         assertThrows(IllegalArgumentException.class, () -> new EventScriptMock(null));
@@ -984,6 +1029,30 @@ class FlowTests extends TestBase {
         assertEquals(SEQ, pojo.sequence);
         assertEquals(USER, pojo.user);
         assertEquals(2, result.get("n"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void pipelineForLoopBreakConditionTestSingleTask() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        int SEQ = 100;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/for-loop-break-single/"+USER).setQueryParameter("seq", SEQ).setQueryParameter("none", 2);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertTrue(result.containsKey("data"));
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(0, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")
