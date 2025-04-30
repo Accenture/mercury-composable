@@ -69,51 +69,6 @@
    <build>
         <plugins>
             <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>2.44.4</version>
-                <configuration>
-                    <ratchetFrom>origin/main</ratchetFrom>
-                    <formats>
-                        <format>
-                            <includes>
-                                <include>.gitattributes</include>
-                                <include>.gitignore</include>
-                                <include>src/**/*.java</include>
-                            </includes>
-                            <trimTrailingWhitespace/>
-                            <endWithNewline/>
-                            <indent>
-                                <tabs>true</tabs>
-                                <spacesPerTab>4</spacesPerTab>
-                            </indent>
-                        </format>
-                    </formats>
-                    <java>
-                        <includes>
-                            <include>src/main/java/**/*.java</include>
-                            <include>src/test/java/**/*.java</include>
-                        </includes>
-                        <importOrder />
-                        <removeUnusedImports />
-                        <googleJavaFormat>
-                            <version>1.26.0</version>
-                            <style>AOSP</style>
-                            <reflowLongStrings>true</reflowLongStrings>
-                            <formatJavadoc>false</formatJavadoc>
-                        </googleJavaFormat>
-                    </java>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>compile</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <version>${kotlin.version}</version>
