@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.37, 4/29/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Windows compatibility in static file handling - convert Windows file path to Unix path
+
+---
 ## Version 4.2.35, 4/24/2025
 
 ### Added

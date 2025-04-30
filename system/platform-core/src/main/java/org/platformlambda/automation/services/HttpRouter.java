@@ -46,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -364,27 +365,33 @@ public class HttpRouter {
             }
         }
         String normalized = sb.toString();
-        Path tp = new File(SIGNATURE_FOLDER, normalized).toPath().normalize();
+        final Path tp;
+        try {
+            tp = new File(SIGNATURE_FOLDER, normalized).toPath().normalize();
+        } catch(InvalidPathException e) {
+            return null;
+        }
         if (!tp.startsWith(SIGNATURE_FOLDER_PATH)) {
             log.error("Reject path traversal attack - {}", uriPath);
             return null;
         }
-        String path = tp.toString().substring(SIGNATURE.length());
+        // convert Windows path to regular Unix path
+        String relativePath = tp.toString().substring(SIGNATURE.length()).replace("\\", "/");
         // assume ".html" if filename does not have a file extension
         String filename = parts.isEmpty()? INDEX_HTML : parts.getLast();
         if (normalized.endsWith("/")) {
-            path += INDEX_HTML;
+            relativePath += INDEX_HTML;
             filename = INDEX_HTML;
         } else if (!filename.contains(".")) {
-            path += HTML_EXT;
+            relativePath += HTML_EXT;
             filename += HTML_EXT;
         }
         EtagFile result = null;
         if (resourceFolder != null) {
-            result = getResourceFile(path);
+            result = getResourceFile(relativePath);
         }
         if (staticFolder != null) {
-            result = getLocalFile(path);
+            result = getLocalFile(relativePath);
         }
         if (result != null) {
             result.name = filename;
@@ -392,8 +399,8 @@ public class HttpRouter {
         return result;
     }
 
-    private EtagFile getResourceFile(String path) {
-        String resPath = resourceFolder + (path.startsWith("/")? path : "/" + path);
+    private EtagFile getResourceFile(String relativePath) {
+        String resPath = resourceFolder + (relativePath.startsWith("/")? relativePath : "/" + relativePath);
         Utility util = Utility.getInstance();
         InputStream in = this.getClass().getResourceAsStream(resPath);
         if (in != null) {
@@ -403,9 +410,9 @@ public class HttpRouter {
         return null;
     }
 
-    private EtagFile getLocalFile(String path) {
+    private EtagFile getLocalFile(String relativePath) {
         Utility util = Utility.getInstance();
-        File f = new File(staticFolder, path);
+        File f = new File(staticFolder, relativePath);
         if (f.exists() && !f.isDirectory()) {
             byte[] b = Utility.getInstance().file2bytes(f);
             return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
