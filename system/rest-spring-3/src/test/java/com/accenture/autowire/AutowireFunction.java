@@ -16,29 +16,24 @@
 
  */
 
-package com.accenture.rest;
+package com.accenture.autowire;
 
-import org.platformlambda.core.annotations.MainApplication;
-import org.platformlambda.core.models.EntryPoint;
+import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.LambdaFunction;
-import org.platformlambda.core.system.Platform;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.Map;
 
-@MainApplication
-public class MainApp implements EntryPoint {
+@PreLoad(route = "v1.autowire.test")
+public class AutowireFunction implements LambdaFunction {
+    @Autowired
+    TestBean testBean;
+
+    @Value("${value.injection.test}")
+    String injectedValue;
 
     @Override
-    public void start(String[] args) throws IOException {
-        LambdaFunction f = (headers, input, instance) -> {
-            Map<String, Object> result = new HashMap<>();
-            result.put("time", new Date());
-            result.put("greeting", input);
-            return result;
-        };
-        Platform.getInstance().registerPrivate("hello.world", f, 10);
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+        return Map.of("success", testBean != null && "someValue".equals(injectedValue));
     }
 }

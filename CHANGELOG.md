@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.38, 4/30/2025
+
+### Added
+
+Spring auto-wiring of composable functions when leveraging the rest-spring-3 module
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.2.37, 4/29/2025
 
 ### Added

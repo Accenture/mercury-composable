@@ -32,7 +32,10 @@ foundation code to load the event-listener functions into memory before Spring B
 
 ## Use the rest-spring library in your application
 
-You can add the `rest-spring-3` library in your application and turn it into a pre-configured Spring Boot 3 application.
+The `rest-spring-3` subproject is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
+HTTP servlet engine.
+
+You can add it to your application and turn it into a pre-configured Spring Boot 3 application.
 It provides consistent behavior for XML and JSON serializaation and exception handling.
 
 The RestServer class in the rest-spring-3 library is used to bootstrap a Spring Boot application.
@@ -112,6 +115,36 @@ rest.automation=true
 ```
 
 The platform-core and Spring Boot will use `rest.server.port` and `server.port` respectively.
+
+## Spring Autowiring
+ 
+When using the `rest-spring-3` module, bean and value injection may be used:
+ 
+```java
+@PreLoad(route = "v1.demo.function")
+public class DemoFunction implements LambdaFunction {
+ 
+    @Autowired
+    LegacyBean legacyBean;
+ 
+    @Value("${injected.value}")
+    String injectedValue;
+ 
+    @Override
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+       // ...
+    }
+}
+```
+
+> *Note*: This should be done judiciously - Composable functions should have very few dependencies
+          and each injected dependency is a violation of that principle.  
+ 
+### Limitations
+ 
+* Only applies to `LambdaFunction` and `TypedLambdaFunction`.
+* Only applies to instances loaded with `@PreLoad` - Functions registered programmatically will not undergo injection.
+* Constructor injection is not viable - these instances are constructed before the Spring context is created.
 
 ## The rest-spring-3-example demo application
 
@@ -243,10 +276,6 @@ annotation.
 
 To try out the demo websocket server, visit http://127.0.0.1:8083 and select "Websocket demo".
 
-# Spring Boot version 3
-
-The `rest-spring-3` subproject is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
-HTTP servlet engine.
 <br/>
 
 |               Chapter-5                |                   Home                    |            Chapter-7            |
