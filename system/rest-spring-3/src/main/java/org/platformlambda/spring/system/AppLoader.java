@@ -57,10 +57,9 @@ public class AppLoader {
             var context = ready.getApplicationContext();
             var autowireCapableBeanFactory = context.getAutowireCapableBeanFactory();
             var platform = Platform.getInstance();
-            var servicesDefs = platform.getLocalRoutingTable().values();servicesDefs.stream()
-                    .map(ServiceDef::getFunction)
-                    .filter(Objects::nonNull)
-                    .forEach(autowireCapableBeanFactory::autowireBean);
+            var servicesDefs = platform.getLocalRoutingTable().values();
+            servicesDefs.stream().map(ServiceDef::getFunction).filter(Objects::nonNull)
+                        .forEach(autowireCapableBeanFactory::autowireBean);
             AppStarter.runMainApp();
         }
         if (event instanceof ServletWebServerInitializedEvent init) {
