@@ -391,6 +391,11 @@ If you write your own Kafka flow adapter, the dataset should contain headers and
 
 For other flow adapters, you may use different set of key-values.
 
+## Writing your own Flow Adapters
+
+Please browse the csv-flow-adapter and csv-flow-demo subprojects in the examples project folder for hints in
+writing your own flow adapters to address your specific requirements.
+
 ## Application log format
 
 The system supports 3 types of log formats. You can set "log.format" parameter in application.properties to change

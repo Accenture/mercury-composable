@@ -489,11 +489,16 @@ public class Utility {
     }
 
     public boolean bytes2file(File f, byte[] b) {
-        try (FileOutputStream out = new FileOutputStream(f)) {
-            out.write(b);
+        byte[] content = file2bytes(f);
+        if (Arrays.equals(b, content)) {
             return true;
-        } catch (IOException e) {
-            return false;
+        } else {
+            try (FileOutputStream out = new FileOutputStream(f)) {
+                out.write(b);
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
         }
     }
 

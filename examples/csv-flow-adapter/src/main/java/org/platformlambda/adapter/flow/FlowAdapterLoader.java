@@ -21,7 +21,6 @@ package org.platformlambda.adapter.flow;
 import org.platformlambda.adapter.flow.services.CsvFlowAdapter;
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
-import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.slf4j.Logger;
@@ -36,10 +35,6 @@ public class FlowAdapterLoader implements EntryPoint {
 
     private static final String CSV_FLOW_ADAPTER = "adapter.flow.csv";
     private static final String FILE_PROTOCOL = "file:/";
-
-    public static void main(String[] args) {
-        AutoStart.main(args);
-    }
 
     @SuppressWarnings("unchecked")
     @Override

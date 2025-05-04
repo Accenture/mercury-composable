@@ -362,6 +362,16 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void resilienceHandlerTest() throws IOException, ExecutionException, InterruptedException {
+        // delete control files before running test
+        File f1 = new File("/tmp/resilience/cumulative");
+        File f2 = new File("/tmp/resilience/backoff");
+        if (f1.exists()) {
+            f1.delete();
+        }
+        if (f2.exists()) {
+            f2.delete();
+        }
+        // run test
         final PostOffice po = new PostOffice("unit.test", "100102", "TEST /resilience");
         final long TIMEOUT = 8000;
         // Create condition for backoff by forcing it to throw exception over the backoff_trigger (threshold of 3)
@@ -369,10 +379,14 @@ class FlowTests extends TestBase {
         request.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
         request.setQueryParameter("exception", 400);
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
-        assertEquals(503, result.getStatus());
-        assertInstanceOf(Map.class, result.getBody());
-        Map<String, Object> output = (Map<String, Object>) result.getBody();
+        EventEnvelope first = po.request(req, TIMEOUT).get();
+        // after 3 attempts, it aborts and returns error 400
+        assertEquals(400, first.getStatus());
+        EventEnvelope second = po.request(req, TIMEOUT).get();
+        // the system will enter into backoff mode when the cumulative attempt reaches 5
+        assertEquals(503, second.getStatus());
+        assertInstanceOf(Map.class, second.getBody());
+        Map<String, Object> output = (Map<String, Object>) second.getBody();
         assertEquals(Map.of("type", "error",
                 "message", "Service temporarily not available - please try again in 2 seconds",
                 "status", 503), output);

@@ -54,6 +54,7 @@ precedence.
 | running.in.cloud                       | Default is false (set to true if containerized)                 | Optional    |
 | deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
+| modules.autostart                      | list of composable functions to start                           | Optional    |
 | spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
 
 `*` - applies to the "rest-spring" library only

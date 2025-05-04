@@ -24,3 +24,6 @@ mime.types:
 
 custom.content.types:
   - 'application/vnd.my.org+json -> application/json'
+
+modules.autostart:
+  - 'demo.main.app'

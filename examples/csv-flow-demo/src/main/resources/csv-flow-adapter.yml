@@ -1,0 +1,19 @@
+#
+# CSV flow adapter configuration
+#
+# Each entry contains a map of staging, archive and flow ID
+#
+# When a new file is detected in the staging area, the corresponding
+# flow with the given flow-ID will run.
+#
+# The first row of a CSV file contains the headers or "labels".
+# Each subsequent row will trigger an event flow.
+#
+adapter.flow.csv:
+  - staging: 'file:/tmp/staging'
+    archive: 'file:/tmp/archive'
+    flow: 'csv-flow-demo'
+
+  - staging: 's3:/bucket1'
+    archive: 's3:/bucket2'
+    flow: 's3-csv-flow'

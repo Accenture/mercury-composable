@@ -25,9 +25,7 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -54,6 +52,7 @@ public class CsvFlowAdapter extends Thread {
 
     @Override
     public void run() {
+        Utility util = Utility.getInstance();
         File archiveDir = new File(archive);
         File dataDir = new File(folder);
         if (dataDir.exists() && dataDir.isDirectory() && archiveDir.exists() && archiveDir.isDirectory()) {
@@ -61,37 +60,43 @@ public class CsvFlowAdapter extends Thread {
             while (running) {
                 List<File> files = getCsvFiles(dataDir);
                 for (File f: files) {
-                    try (BufferedReader br = new BufferedReader(new FileReader(f))) {
-                        List<String> headers = new ArrayList<>();
-                        int count = 0;
-                        int processed = 0;
-                        int failed = 0;
-                        boolean firstLine = true;
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            if (firstLine) {
-                                firstLine = false;
-                                headers.addAll(getHeaders(line));
-                            } else {
-                                count++;
+                    // This is a demo to illustrate the concept and it handles only simple case of CSV encoding.
+                    // (The CSV is created by Excel's CSV export feature)
+                    //
+                    // In your production code, you should use a proper CSV parser.
+                    String content = util.file2str(f);
+                    List<String> lines = util.split(content, "\r\n");
+                    List<String> headers = new ArrayList<>();
+                    int count = 0;
+                    int processed = 0;
+                    int failed = 0;
+                    boolean firstLine = true;
+                    for (String line: lines) {
+                        if (firstLine) {
+                            firstLine = false;
+                            // filter out Unicode BOM control character if any
+                            String text = (int) line.charAt(0) > 127? line.substring(1) : line;
+                            headers.addAll(getHeaders(text));
+                        } else {
+                            count++;
+                            try {
                                 EventEnvelope result = executeFlow(count, getRecord(headers, line), f, archiveDir);
                                 if (result.hasError()) {
                                     failed++;
                                 } else {
                                     processed++;
                                 }
+                            } catch (Exception e) {
+                                log.error("Unable to process row {} of {} - {}", count, f, e.getMessage());
                             }
                         }
-                        if (processed == count) {
-                            saveToArchive(archiveDir, f, "done");
-                            log.warn("Processed {} rows from {}", processed, f);
-                        } else {
-                            saveToArchive(archiveDir, f, "error");
-                            log.warn("Processed {}, failed {} from {}", processed, failed, f);
-                        }
-                    } catch (Exception e) {
-                        saveToArchive(archiveDir, f, "exception");
-                        log.error("Unable to process {} - {}", f, e.getMessage());
+                    }
+                    if (processed == count) {
+                        saveToArchive(archiveDir, f, "done");
+                        log.warn("Processed {} rows from {}", processed, f);
+                    } else {
+                        saveToArchive(archiveDir, f, "error");
+                        log.warn("Processed {}, failed {} from {}", processed, failed, f);
                     }
                 }
                 /*

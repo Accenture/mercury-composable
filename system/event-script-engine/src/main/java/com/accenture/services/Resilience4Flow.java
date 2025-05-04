@@ -118,6 +118,7 @@ public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void>
             // If status code is 200, it should execute the user function immediately.
             if (status == 200) {
                 result.put(DECISION, 1);
+                result.put(CUMULATIVE, cumulative);
                 sendResult(po, event.getReplyTo(), event.getCorrelationId(), result, 0);
                 return null;
             }

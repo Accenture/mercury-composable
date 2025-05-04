@@ -1,6 +1,6 @@
 flow:
-  id: 'file-csv-flow'
-  description: 'Get a user profile using profile ID'
+  id: 'csv-flow-demo'
+  description: 'Demonstrate the use of the CSV flow adapter'
   ttl: 10s
 
 first.task: 'v1.csv.processor'
@@ -12,5 +12,5 @@ tasks:
     process: 'v1.csv.processor'
     output:
       - 'result -> output.body'
-    description: 'Retrieve user profile from database using profile_id'
+    description: 'Process one row of key-values from a file in the staging area'
     execution: end

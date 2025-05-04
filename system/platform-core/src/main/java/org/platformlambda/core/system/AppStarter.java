@@ -65,6 +65,9 @@ public class AppStarter {
     private static final String BEFORE_APP_PHASE = " during BeforeApplication phase";
     private static final String PRELOAD_PHASE = " during PreLoad phase";
     private static final String SERVER_STARTUP = " during HTTP server startup";
+    private static final String MODULES_AUTOSTART = "modules.autostart";
+    private static final String TYPE = "type";
+    private static final String START = "start";
     private static final String TEXT = "text";
     private static final String JSON = "json";
     private static final String COMPACT = "compact";
@@ -154,6 +157,7 @@ public class AppStarter {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void doApps(String[] args, boolean main) {
         // find and execute optional preparation modules
         Utility util = Utility.getInstance();
@@ -180,6 +184,29 @@ public class AppStarter {
             }
         }
         executeOrderly(steps, args, main);
+        // run additional "startup" composable functions asynchronously
+        if (main) {
+            AppConfigReader config = AppConfigReader.getInstance();
+            Object o = config.get(MODULES_AUTOSTART);
+            List<String> modules = new ArrayList<>();
+            if (o instanceof String text) {
+                modules.addAll(util.split(text, ", "));
+            } else if (o instanceof List) {
+                List<Object> items = (List<Object>) o;
+                for (int i = 0; i < items.size(); i++) {
+                    modules.add(config.getProperty(MODULES_AUTOSTART + "[" + i + "]"));
+                }
+            }
+            EventEmitter po = EventEmitter.getInstance();
+            for (String svc : modules) {
+                try {
+                    log.info("Starting module '{}'", svc);
+                    po.send(svc, new Kv(TYPE, START));
+                } catch (IOException e) {
+                    log.error("Unable to start module '{}' - {}", svc, e.getMessage());
+                }
+            }
+        }
     }
 
     private int getSequence(Class<?> cls, boolean main) {

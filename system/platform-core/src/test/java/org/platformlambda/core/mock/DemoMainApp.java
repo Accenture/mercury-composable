@@ -16,26 +16,25 @@
 
  */
 
-package org.platformlambda.adapter.flow.services;
+package org.platformlambda.core.mock;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-@PreLoad(route="v1.csv.processor")
-public class DemoCsvProcessor implements TypedLambdaFunction<Map<String, Object>, Object> {
-    private static final Logger log = LoggerFactory.getLogger(DemoCsvProcessor.class);
+@PreLoad(route="demo.main.app")
+public class DemoMainApp implements TypedLambdaFunction<EventEnvelope, Void> {
+    private static final Logger log = LoggerFactory.getLogger(DemoMainApp.class);
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        String filename = headers.get("filename");
-        String row = headers.get("row");
-        if (filename != null && row != null) {
-            log.info("Received row-{} of file '{}' - {}", row, filename, input);
+    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
+        if ("start".equals(headers.get("type"))) {
+            log.info("Demo startup module is running");
         }
-        return "done";
+        return null;
     }
 }

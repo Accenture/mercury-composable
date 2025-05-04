@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.39, 5/4/2025
+
+### Added
+
+1. Code example to illustrate how to write your own Flow Adapters
+2. "modules.autostart" feature to invoke composable functions and libaries at start up.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.2.38, 4/30/2025
 
 ### Added

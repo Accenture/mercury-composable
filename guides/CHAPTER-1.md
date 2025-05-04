@@ -346,7 +346,7 @@ DistributedTrace:76 - trace={path=GET /api/profile/100, service=async.http.respo
                             exec_time=0.214, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
 ```
 
-### Main module
+### Main application entry point
 
 Every application has an entry point. The MainApp in the example app contains the entry point like this:
 
@@ -369,6 +369,47 @@ example. However, this is a good place to put application initialization code if
 
 There is also a "BeforeApplication" annotation if you want to run some start up code before the event system
 is started.
+
+## Writing composable libraries
+
+If your software module is intended to be a composable library for other applications to use, you may use
+the MainApplication method to automatically initialize your library. For example, obtaining authentication
+and security credentials for a platform component or database that your library uses.
+
+Alternatively, you may use the "autostart module" method that would automatically send start command to
+some composable functions in your library.
+
+```java
+@PreLoad(route="demo.library.setup")
+public class DemoLibSetup implements TypedLambdaFunction<EventEnvelope, Void> {
+    private static final Logger log = LoggerFactory.getLogger(DemoLibSetup.class);
+
+    @Override
+    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
+        // check the signature of the start command
+        if ("start".equals(headers.get("type"))) {
+            log.info("Demo library is starting");
+            // put your setup business logic here
+        }
+        return null;
+    }
+}
+```
+
+The above composable function is labeled as `demo.library.setup`, you would need to add this to the
+application.properties of the application that uses this library:
+
+```shell
+# comma separated list of composable module route names
+modules.autostart=demo.library.setup
+```
+
+If you use application.yml, it will be a list like this:
+
+```yaml
+modules.autostart:
+  - 'demo.library.setup'
+```
 
 ## Dependency management
 
