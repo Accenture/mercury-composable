@@ -54,6 +54,7 @@ precedence.
 | running.in.cloud                       | Default is false (set to true if containerized)                 | Optional    |
 | deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
+| modules.autostart                      | list of composable functions to start                           | Optional    |
 | spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
 
 `*` - applies to the "rest-spring" library only
@@ -148,9 +149,11 @@ either web.socket.enabled or rest.automation is true.
 You can place static HTML files (e.g. the HTML bundle for a UI program) in the "resources/public" folder or
 in the local file system using the "static.html.folder" parameter.
 
-The system supports a bare minimal list of file extensions to MIME types. If your use case requires additional
-MIME type mapping, you may define them in the `application.yml` configuration file under the `mime.types` 
-section like this:
+## MIME types
+
+The system supports a bare minimal list of file extensions to MIME types in the `mime-types.yml` configuration
+file in the platform-core's resources folder. If your use case requires additional MIME type mapping, you may
+define them in the `application.yml` configuration file under the `mime.types` section like this:
 
 ```yaml
 mime.types:
@@ -158,8 +161,34 @@ mime.types:
   doc: 'application/msword'
 ```
 
-Note that application.properties file cannot be used for the "mime.types" section because it only supports text
-key-values.
+> *Note*: application.properties file cannot be used for the "mime.types" section because it only supports text
+  key-values.
+
+You may also provide a mime.types section in the `mime-types.yml` configuration under the resources folder
+to override the default configuration in the platform-core library.
+
+## Custom content types
+
+If you use custom content types in your application, you may add the following section in the application.yml
+configuration file. For example,
+
+```yaml
+custom.content.types:
+  - 'application/vnd.my.org-v2.0+json -> application/json'
+  - 'application/vnd.my.org-v2.1+xml -> application/xml'
+```
+
+In the "custom.content.types" section, you can configure a list of content-type mappings.
+The left-hand-side is the custom content-type and the right-hand-side is a standard content-type.
+
+The content-type mapping tells the system to treat the custom content type as if it is the standard content
+type.
+
+In the above example, the HTTP payload with the custom content type "application/vnd.my.org-v2.0+json" is
+treated as a regular JSON content.
+
+If you want to put the custom content types in a separate configuration file, please put them in a file named
+`custom-content-types.yml` under your application `resources` folder.
 
 ## HTTP and websocket port assignment
 
@@ -253,26 +282,6 @@ request header.
 X-Raw-Xml=true
 ```
 
-## Custom content types
-
-If you use custom content types in your application, you may add the following section in the application.yml
-configuration file:
-
-```yaml
-custom.content.types:
-  - 'application/vnd.my.org-v2.0+json -> application/json'
-```
-
-In the "custom.content.types" section, you can configure a list of content-type mappings.
-The left-hand-side is the custom content-type and the right-hand-side is a standard content-type.
-
-The content-type mapping tells the system to treat the custom content type as if it is the standard content
-type.
-
-In the above example, the HTTP payload with the custom content type is treated as a regular JSON content.
-
-If you want to put the custom content types in a separate configuration file, please put them in a file named
-"custom-content-type.yml" under the "resources" folder.
 <br/>
 
 |          Chapter-9           |                   Home                    |                 Appendix-II                  |

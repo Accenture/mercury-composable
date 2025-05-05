@@ -71,7 +71,7 @@ public class PipelineInfo extends PipeInfo {
      * @return route name
      */
     public String getTaskName(int n) {
-        return task.pipelineSteps.get(n);
+        return task.pipelineSteps.get(Math.min(n, task.pipelineSteps.size()-1));
     }
 
     /**
@@ -101,6 +101,16 @@ public class PipelineInfo extends PipeInfo {
      */
     public void setCompleted() {
         this.completed = true;
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return true if there is one and only one task
+     */
+    public boolean isSingleton() {
+        return task.pipelineSteps.size() == 1;
     }
 
     /**

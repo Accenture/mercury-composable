@@ -54,7 +54,7 @@ public class FlowInstance {
     public final String cid;
     public final String replyTo;
     private final String timeoutWatcher;
-    private final Flow flow;
+    private final Flow template;
     private String traceId;
     private String tracePath;
     private String parentId;
@@ -68,11 +68,11 @@ public class FlowInstance {
      * @param flowId of the event flow configuration
      * @param cid correlation ID
      * @param replyTo of the caller to a flow adapter
-     * @param flow event flow configuration
+     * @param template event flow configuration
      * @param parentId is the parent flow instance ID
      */
-    public FlowInstance(String flowId, String cid, String replyTo, Flow flow, String parentId) {
-        this.flow = flow;
+    public FlowInstance(String flowId, String cid, String replyTo, Flow template, String parentId) {
+        this.template = template;
         this.cid = cid;
         this.replyTo = replyTo;
         // initialize the state machine
@@ -96,7 +96,7 @@ public class FlowInstance {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope();
         timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
-        this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + flow.ttl));
+        this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + template.ttl));
     }
 
     private FlowInstance resolveParent(String parentId) {
@@ -216,6 +216,6 @@ public class FlowInstance {
      * @return event flow configuration
      */
     public Flow getFlow() {
-        return flow;
+        return template;
     }
 }

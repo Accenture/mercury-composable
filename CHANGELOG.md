@@ -10,6 +10,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.39, 5/4/2025
+
+### Added
+
+1. Code example to illustrate how to write your own Flow Adapters
+2. "modules.autostart" feature to invoke composable functions and libaries at start up.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.2.38, 4/30/2025
+
+### Added
+
+Spring auto-wiring of composable functions when leveraging the rest-spring-3 module
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.2.37, 4/29/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Windows compatibility in static file handling - convert Windows file path to Unix path
+
+---
+## Version 4.2.35, 4/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix for pipeline that contains only one task
+
+---
+## Version 4.2.33, 4/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+Removed SimpleScheduler from the build script at root because SimpleScheduler has not reached
+production quality
+
+### Changed
+
+1. Rename variable as per SonarCube quality gate
+2. OSS version update - revert Kafka client to version 3.9.0 for compatibility with Confluent Kafka
+
+---
+## Version 4.2.32, 4/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Improvement in custom content-type resolver
+2. OSS version update
+
+```
+vertx 4.5.14
+guava 33.4.8-jre 
+junit5-bom 5.12.2
+kotlin 2.1.20
+Kafka client 4.0.0
+gson 2.13.0
+```
+---
+## Version 4.2.31, 4/23/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Minor update to address code smells reported by SonarCube analyzer
+
+---
+## Version 4.2.30, 4/22/2025
+
+### Added
+
+1. Support "matrix parameters" and "hash parameters" in HTTP request URI in platform-core
+2. "classpath" in LHS of output data mapping for event script
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.2.29, 4/20/2025
 
 ### Added
@@ -23,7 +156,7 @@ Remove "public" qualifier from unit tests since JUnit version 5 does not need it
 ### Changed
 
 1. Minor refactoring to remove majority of code smells as per SonarQube static code analysis
-2. Add non-standard error response body to transport custom error message in EventEnvelope
+2. Support custom error message in EventEnvelope
 
 ---
 ## Version 4.2.28, 4/17/2025

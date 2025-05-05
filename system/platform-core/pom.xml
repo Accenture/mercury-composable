@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.29</version>
+    <version>4.2.39</version>
     <name>Mercury platform-core module</name>
 
     <!-- Use Spring Boot as a parent to fetch OSS modules -->
@@ -20,8 +20,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kafka.version>3.9.0</kafka.version>
-        <gson.version>2.11.0</gson.version>
-        <kotlin.version>2.1.0</kotlin.version>
+        <gson.version>2.13.0</gson.version>
+        <kotlin.version>2.1.20</kotlin.version>
         <java.version>21</java.version>
     </properties>
 
@@ -67,19 +67,19 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-lang-kotlin-coroutines</artifactId>
-            <version>4.5.13</version>
+            <version>4.5.14</version>
         </dependency>
 
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-client</artifactId>
-            <version>4.5.13</version>
+            <version>4.5.14</version>
         </dependency>
 
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-            <version>4.5.13</version>
+            <version>4.5.14</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -97,7 +97,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.4.0-jre</version>
+            <version>33.4.8-jre</version>
         </dependency>
 
         <dependency>
@@ -145,7 +145,7 @@
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
-            <version>5.11.4</version>
+            <version>5.12.2</version>
             <type>pom</type>
             <scope>test</scope>
         </dependency>

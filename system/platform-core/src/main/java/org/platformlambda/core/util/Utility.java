@@ -32,6 +32,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -488,11 +489,16 @@ public class Utility {
     }
 
     public boolean bytes2file(File f, byte[] b) {
-        try (FileOutputStream out = new FileOutputStream(f)) {
-            out.write(b);
+        byte[] content = file2bytes(f);
+        if (Arrays.equals(b, content)) {
             return true;
-        } catch (IOException e) {
-            return false;
+        } else {
+            try (FileOutputStream out = new FileOutputStream(f)) {
+                out.write(b);
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
         }
     }
 
@@ -1148,10 +1154,24 @@ public class Utility {
                                               new Kv(STATUS, status), new Kv(MESSAGE, message));
     }
 
+    //////////////////////////////////////////////////////
+    // Convenient utilities to encode and decode URI path
+    //////////////////////////////////////////////////////
+
+    /**
+     * Encode text as a URI
+     *
+     * @param text to be encoded
+     * @return encoded uri
+     */
+    public String encodeUri(String text) {
+        return URLEncoder.encode(text, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
     /**
      * Decode URI path
      *
-     * @param uriPath of a HTTP request
+     * @param uriPath of an HTTP request
      * @return decoded URI
      */
     public String getDecodedUri(String uriPath) {
@@ -1161,7 +1181,112 @@ public class Utility {
             // Decode URI escape characters
             var uri = uriPath.contains("%")? URLDecoder.decode(uriPath, StandardCharsets.UTF_8) : uriPath;
             // Avoid "path traversal" attack
-            return uri.replace("\\", "/").replaceAll("\\.\\./", "");
+            return uri.replace("\\", "/").replace("../", "");
         }
+    }
+
+    /**
+     * Encode uri path with matrix, query and hash parameters
+     *
+     * @param uriPath to be encoded
+     * @return encoded uri
+     */
+    public String getEncodedUri(String uriPath) {
+        if (uriPath.contains("%")) {
+            // no need to encode if the path is already encoded
+            return uriPath;
+        } else {
+            final Map<String, List<String>> hashTags = new HashMap<>();
+            final Map<String, List<String>> queryParams = new HashMap<>();
+            var uri = uriPath;
+            // encode hash parameters if any
+            int hashMark = uri.lastIndexOf('#');
+            if (hashMark != -1) {
+                String qs = uri.substring(hashMark+1);
+                uri = uri.substring(0, hashMark);
+                hashTags.putAll(getUriParams(qs));
+            }
+            // encode query parameters if any
+            int questionMark = uri.lastIndexOf('?');
+            if (questionMark != -1) {
+                String qs = uri.substring(questionMark+1);
+                uri = uri.substring(0, questionMark);
+                queryParams.putAll(getUriParams(qs));
+            }
+            // filter out protocol identifier
+            uri = uri.replace("://", "/");
+            // encode matrix parameters if any
+            StringBuilder sb = new StringBuilder();
+            List<String> segments = split(uri, "/");
+            if (uri.contains(";")) {
+                for (String s: segments) {
+                    sb.append('/');
+                    int semiColon = s.indexOf(';');
+                    if (semiColon == -1) {
+                        sb.append(encodeUri(s));
+                    } else {
+                        var pathPortion = s.substring(0, semiColon);
+                        sb.append(encodeUri(pathPortion));
+                        // matrix parameters
+                        List<String> parts = split(s.substring(semiColon+1), ";");
+                        for (String p: parts) {
+                            sb.append(';');
+                            int eq = p.indexOf('=');
+                            if (eq == -1) {
+                                sb.append(encodeUri(p));
+                            } else {
+                                sb.append(encodeUri(p.substring(0, eq)));
+                                sb.append('=');
+                                sb.append(encodeUri(p.substring(eq+1)));
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (String s: segments) {
+                    sb.append('/');
+                    sb.append(encodeUri(s));
+                }
+            }
+            if (uri.endsWith("/")) {
+                sb.append('/');
+            }
+            uri = sb.toString();
+            uri = queryParams.isEmpty()? uri : buildUriParams(uri, queryParams, true);
+            return hashTags.isEmpty()? uri : buildUriParams(uri, hashTags, false);
+        }
+    }
+
+    private Map<String, List<String>> getUriParams(String qs) {
+        final Map<String, List<String>> query = new HashMap<>();
+        List<String> parts = split(qs, "&");
+        for (String p: parts) {
+            int eq = p.indexOf('=');
+            final String key = encodeUri(eq == -1? p : p.substring(0, eq));
+            final String value = eq == -1? "" : encodeUri(p.substring(eq+1));
+            List<String> params = query.getOrDefault(key, new ArrayList<>());
+            params.add(value);
+            query.put(key, params);
+        }
+        return query;
+    }
+
+    private static String buildUriParams(String uri, Map<String, List<String>> query, boolean isQuery) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(uri);
+        sb.append(isQuery? '?' : '#');
+        for (var entry: query.entrySet()) {
+            String key = entry.getKey();
+            List<String> values = entry.getValue();
+            for (String v: values) {
+                sb.append(key);
+                if (isQuery || !v.isEmpty()) {
+                    sb.append('=');
+                    sb.append(v);
+                }
+                sb.append('&');
+            }
+        }
+        return sb.substring(0, sb.length()-1);
     }
 }

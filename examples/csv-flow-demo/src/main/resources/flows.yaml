@@ -1,0 +1,4 @@
+flows:
+  - 'csv-flow-demo.yml'
+
+location: 'classpath:/flows/'

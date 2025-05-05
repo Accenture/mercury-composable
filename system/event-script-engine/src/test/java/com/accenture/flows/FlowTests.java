@@ -362,6 +362,16 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void resilienceHandlerTest() throws IOException, ExecutionException, InterruptedException {
+        // delete control files before running test
+        File f1 = new File("/tmp/resilience/cumulative");
+        File f2 = new File("/tmp/resilience/backoff");
+        if (f1.exists()) {
+            f1.delete();
+        }
+        if (f2.exists()) {
+            f2.delete();
+        }
+        // run test
         final PostOffice po = new PostOffice("unit.test", "100102", "TEST /resilience");
         final long TIMEOUT = 8000;
         // Create condition for backoff by forcing it to throw exception over the backoff_trigger (threshold of 3)
@@ -369,10 +379,14 @@ class FlowTests extends TestBase {
         request.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
         request.setQueryParameter("exception", 400);
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
-        assertEquals(503, result.getStatus());
-        assertInstanceOf(Map.class, result.getBody());
-        Map<String, Object> output = (Map<String, Object>) result.getBody();
+        EventEnvelope first = po.request(req, TIMEOUT).get();
+        // after 3 attempts, it aborts and returns error 400
+        assertEquals(400, first.getStatus());
+        EventEnvelope second = po.request(req, TIMEOUT).get();
+        // the system will enter into backoff mode when the cumulative attempt reaches 5
+        assertEquals(503, second.getStatus());
+        assertInstanceOf(Map.class, second.getBody());
+        Map<String, Object> output = (Map<String, Object>) second.getBody();
         assertEquals(Map.of("type", "error",
                 "message", "Service temporarily not available - please try again in 2 seconds",
                 "status", 503), output);
@@ -932,6 +946,51 @@ class FlowTests extends TestBase {
         platform.release(MOCK_FUNCTION);
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void pipelineForLoopTestSingleTask() throws IOException, InterruptedException {
+        Platform platform = Platform.getInstance();
+        // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
+        // We want to override no.op with my.mock.function to demonstrate mocking a function
+        // for a flow.
+        var ECHO_ONE = "echo.one";
+        var MOCK_FUNCTION = "my.mock.function.single";
+        var iteration = new AtomicInteger(0);
+        LambdaFunction f = (headers, body, instance) -> {
+            var n = iteration.incrementAndGet();
+            log.info("Iteration-{} for single-task pipeline {}", n, body);
+            return body;
+        };
+        platform.registerPrivate(MOCK_FUNCTION, f, 1);
+        // override the function for the task "echo.one" to the mock function
+        var mock = new EventScriptMock("for-loop-test-single-task");
+        var previousRoute = mock.getFunctionRoute(ECHO_ONE);
+        var currentRoute = mock.assignFunctionRoute(ECHO_ONE, MOCK_FUNCTION).getFunctionRoute(ECHO_ONE);
+        assertEquals("no.op", previousRoute);
+        assertEquals(MOCK_FUNCTION, currentRoute);
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        int SEQ = 100;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/for-loop-single/"+USER).setQueryParameter("seq", SEQ);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertTrue(result.containsKey("data"));
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(3, result.get("n"));
+        assertEquals(3, iteration.get());
+        platform.release(MOCK_FUNCTION);
+    }
+
     @Test
     void mockHelperTest() {
         assertThrows(IllegalArgumentException.class, () -> new EventScriptMock(null));
@@ -984,6 +1043,30 @@ class FlowTests extends TestBase {
         assertEquals(SEQ, pojo.sequence);
         assertEquals(USER, pojo.user);
         assertEquals(2, result.get("n"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void pipelineForLoopBreakConditionTestSingleTask() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        int SEQ = 100;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/for-loop-break-single/"+USER).setQueryParameter("seq", SEQ).setQueryParameter("none", 2);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertTrue(result.containsKey("data"));
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(0, result.get("n"));
     }
 
     @SuppressWarnings("unchecked")

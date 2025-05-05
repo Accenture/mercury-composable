@@ -37,10 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,14 +96,13 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings(value = "unchecked")
     @Test
-    void serviceTest() throws IOException, InterruptedException {
+    void serviceTest() throws IOException, InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;
-        final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
         req.setHeader("accept", "application/json");
-        req.setUrl("/api/hello/world?hello world=abc");
+        req.setUrl("/api/hello/world?hello world=abc#hello&test=message");
         req.setQueryParameter("x1", "y");
         List<String> list = new ArrayList<>();
         list.add("a");
@@ -115,13 +111,11 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setTimeoutSeconds(TTL_SECONDS);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         // validate custom content type
-        assertEquals("application/vnd.my.org+json; charset=utf-8", response.getHeader("content-type"));
+        assertEquals("application/vnd.my.org-v2.1+json; charset=utf-8", response.getHeader("content-type"));
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.accept"));
         assertEquals(false, map.getElement("https"));
@@ -136,32 +130,52 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void invalidUriTest() throws IOException, InterruptedException {
-        // invalid paths will be rejected
-        checkInvalidUrl("/api/hello/world moved to https://evil.site?hello world=abc");
-        checkInvalidUrl("/api/hello/world <div>test</div>");
-        checkInvalidUrl("/api/hello/world > something");
-        checkInvalidUrl("/api/hello/world &nbsp;");
+    void nonExistUrlTest() throws IOException, InterruptedException, ExecutionException {
+        checkHttpRouting("/api/hello/../world &moved to https://evil.site?hello world=abc");
+        checkHttpRouting("/api/hello/world <div>test</div>");
+        checkHttpRouting("/api/hello/world > something");
+        checkHttpRouting("/api/hello/world &nbsp;");
+        /*
+         * This is a valid URL with matrix parameters
+         *
+         * It will return HTTP-404 to prove that it has passed thru to the REST endpoint.
+         * If the URL format is invalid, the system will return HTTP-400 with empty HTTP response body.
+         *
+         * Matrix parameter feature may not be supported in some REST application server.
+         * Please check documentation for your application server framework being using it.
+         *
+         * REST automation supports it as follows
+         * --------------------------------------
+         * When using matrix parameters, the URI segment containing the parameters can be configured
+         * as a "path parameter" in the "rest.yaml" endpoint configuration file. Your application
+         * can retrieve and parse the URI segments containing the matrix parameters for processing.
+         * e.g.
+         *
+         * Endpoint in rest.yaml:
+         * url: "/api/hello/{base}/{option}"
+         *
+         * would return:
+         * base="world;a=b 2;c$=d$3"
+         * option=";feature=12 3"
+         */
+        checkHttpRouting("/api/hello/world;a=b 2;c$=d$3/;feature=12 3");
     }
 
     @SuppressWarnings("unchecked")
-    private void checkInvalidUrl(String uri) throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+    private void checkHttpRouting(String uri) throws IOException, InterruptedException, ExecutionException {
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
         req.setHeader("accept", "application/json");
         req.setUrl(uri);
-        req.setQueryParameter("x1", "y%20");
+        req.setQueryParameter("x1", "y");
         List<String> list = new ArrayList<>();
         list.add("a");
         list.add("b");
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench::add);
-        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
         assertEquals(404, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());

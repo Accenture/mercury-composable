@@ -420,4 +420,44 @@ class UtilityTests {
         assertEquals(4, parts.get(3).length());
         assertEquals(12, parts.get(4).length());
     }
+
+    @Test
+    void uriEncodingTest() {
+        final Utility util = Utility.getInstance();
+        var s1 = "/api/hello/world;y;k=1 1/;a=b/?x=2 2";
+        assertEquals("/api/hello/world;y;k=1%201/;a=b/?x=2%202", util.getEncodedUri(s1));
+        var s2 = "/api/hello/world;k=1 1;z1=2 0;another=one/option;one=more?x=2 2&y=2#abc";
+        assertEquals("/api/hello/world;k=1%201;z1=2%200;another=one/option;one=more?x=2%202&y=2#abc",
+                        util.getEncodedUri(s2));
+        var s3 = "/api/hello/@.(world)";
+        assertEquals("/api/hello/%40.%28world%29", util.getEncodedUri(s3));
+        var s4 = "/api/hello/world &nbsp;";
+        assertEquals("/api/hello/world%20%26nbsp", util.getEncodedUri(s4));
+    }
+
+    @Test
+    void localTimestampTest() {
+        final Utility util = Utility.getInstance();
+        Date now = new Date();
+        String local1 = util.getLocalTimestamp();
+        String local2 = util.getLocalTimestamp(now.getTime());
+        assertEquals(local1.substring(0, 10), local2.substring(0, 10));
+    }
+
+    @Test
+    void dirCleaningTest() throws InterruptedException {
+        final Utility util = Utility.getInstance();
+        File dir = new File("/tmp/cleanup-test");
+        if (!dir.exists() && dir.mkdirs()) {
+            log.info("Test folder {} created", dir);
+        }
+        File f = new File(dir, "test");
+        if (util.str2file(f, "hello world")) {
+            log.info("Test file {} created", f);
+        }
+        util.cleanupDir(dir);
+        if (!dir.exists()) {
+            log.info("Test folder {} removed", dir);
+        }
+    }
 }

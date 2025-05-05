@@ -19,6 +19,8 @@
 package org.platformlambda.spring.system;
 
 import org.platformlambda.core.system.AppStarter;
+import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.system.ServiceDef;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.Set;
 
 @Component
@@ -50,6 +53,13 @@ public class AppLoader {
             } else {
                 log.info("Loading user application with {}", profiles);
             }
+            // Autowire composable functions
+            var context = ready.getApplicationContext();
+            var autowireCapableBeanFactory = context.getAutowireCapableBeanFactory();
+            var platform = Platform.getInstance();
+            var servicesDefs = platform.getLocalRoutingTable().values();
+            servicesDefs.stream().map(ServiceDef::getFunction).filter(Objects::nonNull)
+                        .forEach(autowireCapableBeanFactory::autowireBean);
             AppStarter.runMainApp();
         }
         if (event instanceof ServletWebServerInitializedEvent init) {

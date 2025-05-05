@@ -1,0 +1,16 @@
+flow:
+  id: 'csv-flow-demo'
+  description: 'Demonstrate the use of the CSV flow adapter'
+  ttl: 10s
+
+first.task: 'v1.csv.processor'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header -> header'
+    process: 'v1.csv.processor'
+    output:
+      - 'result -> output.body'
+    description: 'Process one row of key-values from a file in the staging area'
+    execution: end

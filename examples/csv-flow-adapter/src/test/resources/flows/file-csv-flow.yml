@@ -1,0 +1,26 @@
+flow:
+  id: 'file-csv-flow'
+  description: 'CSV Flow demo'
+  ttl: 10s
+
+first.task: 'csv.processor.demo'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header -> header'
+    process: 'csv.processor.demo'
+    output:
+      - 'result -> model.data'
+    description: 'Process a row of CSV record from a file in the staging area'
+    execution: sequential
+    next:
+      - 'test.data.receiver'
+
+  - input:
+      - 'model.data -> *'
+    process: 'test.data.receiver'
+    output:
+      - 'text(ok) -> output.body'
+    description: 'This function is created programmatically in the unit test to validate data'
+    execution: end
