@@ -43,6 +43,12 @@ tasks:
       # this tells the system to set boolean value of true when value is null
       - 'model.none -> model.null:boolean(null=true)'
       - 'file(text:/tmp/no-such-file) -> model.has-file:boolean(null=false)'
+      - 'text(item1) -> model.x[0]'
+      - 'text(item2) -> model.x[1]'
+      - 'text(item3) -> model.x[2]'
+      - 'model.x:length -> list_size'
+      - 'int(1000) -> model.x1'
+      - 'model.x1:length -> number_length'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

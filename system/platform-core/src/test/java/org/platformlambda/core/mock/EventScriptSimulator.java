@@ -26,13 +26,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-@PreLoad(route="demo.main.app")
-public class DemoMainApp implements TypedLambdaFunction<EventEnvelope, Void> {
-    private static final Logger log = LoggerFactory.getLogger(DemoMainApp.class);
+@PreLoad(route="event.script.manager")
+public class EventScriptSimulator implements TypedLambdaFunction<EventEnvelope, Void> {
+    private static final Logger log = LoggerFactory.getLogger(EventScriptSimulator.class);
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        log.info("Demo startup module is running");
+        log.info("Received {}, {}, {}", headers, input.getCorrelationId(), input.getBody());
         return null;
     }
 }

@@ -121,6 +121,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
     private static final String UUID_SUFFIX = "uuid";
+    private static final String LENGTH_SUFFIX = "length";
     private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
     private static final String CONCAT_TYPE = "concat(";
@@ -506,8 +507,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 consolidated.setElement(pipelineTask.sequencer.getFirst(), v - 1);
             }
             // evaluate for-condition
-            iterate = evaluateForCondition(consolidated.getElement(pipelineTask.comparator.getFirst()),
-                    pipelineTask.comparator.get(1), util.str2int(pipelineTask.comparator.get(2)));
+            iterate = evaluateForCondition(consolidated, pipelineTask.comparator.getFirst(),
+                                            pipelineTask.comparator.get(1), pipelineTask.comparator.get(2));
         }
         if (iterate) {
             pipeline.resetPointer();
@@ -580,13 +581,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private boolean evaluateForCondition(Object modelValue, String comparator, int value) {
-        int v = modelValue instanceof Integer? (int) modelValue : util.str2int(modelValue.toString());
+    private boolean evaluateForCondition(MultiLevelMap mm, String modelVar1, String comparator, String modelVar2) {
+        Object value1 = modelVar1.startsWith(MODEL_NAMESPACE)? mm.getElement(modelVar1) : modelVar1;
+        Object value2 = modelVar2.startsWith(MODEL_NAMESPACE)? mm.getElement(modelVar2) : modelVar2;
+        int v1 = value1 instanceof Integer? (int) value1 : util.str2int(String.valueOf(value1));
+        int v2 = value2 instanceof Integer? (int) value2 : util.str2int(String.valueOf(value2));
         return switch (comparator) {
-            case "<" -> v < value;
-            case "<=" -> v <= value;
-            case ">" -> v > value;
-            case ">=" -> v >= value;
+            case "<" -> v1 < v2;
+            case "<=" -> v1 <= v2;
+            case ">" -> v1 > v2;
+            case ">=" -> v1 >= v2;
             case null, default -> false;
         };
     }
@@ -606,8 +610,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         map.setElement(task.init.getFirst(), n);
                     }
                 }
-                valid = evaluateForCondition(map.getElement(task.comparator.getFirst()),
-                                                        task.comparator.get(1), util.str2int(task.comparator.get(2)));
+                valid = evaluateForCondition(map,
+                            task.comparator.getFirst(), task.comparator.get(1), task.comparator.get(2));
             }
             if (valid) {
                 int seq = flowInstance.pipeCounter.incrementAndGet();
@@ -987,6 +991,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
                 case UUID_SUFFIX -> {
                     return util.getUuid4();
+                }
+                case LENGTH_SUFFIX -> {
+                    return switch (value) {
+                        case null -> 0;
+                        case byte[] b -> b.length;
+                        case String str -> str.length();
+                        case List item -> item.size();
+                        default -> String.valueOf(value).length();
+                    };
                 }
                 case B64_SUFFIX -> {
                     if (value instanceof byte[] b) {

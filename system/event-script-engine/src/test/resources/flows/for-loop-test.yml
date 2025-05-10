@@ -9,6 +9,7 @@ tasks:
   - input:
       - 'input.path_parameter.user -> user'
       - 'input.query.seq -> sequence'
+      - 'int(3) -> model.iteration'
     process: 'sequential.one'
     output:
       - 'result -> model.pojo'
@@ -23,7 +24,7 @@ tasks:
     # 3. The condition is a 'if' statement to evaluate a model value to decide to break or continue
     #
     loop:
-      statement: 'for (model.n = 0; model.n < 3; model.n++)'
+      statement: 'for (model.n = 0; model.n < model.iteration; model.n++)'
     pipeline:
       - 'echo.one'
       - 'echo.two'

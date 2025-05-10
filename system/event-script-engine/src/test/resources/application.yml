@@ -5,3 +5,6 @@ test.map:
 
 test.map3:
   good: day
+
+modules.autostart:
+  - 'flow://autostart'

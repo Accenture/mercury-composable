@@ -386,11 +386,8 @@ public class DemoLibSetup implements TypedLambdaFunction<EventEnvelope, Void> {
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        // check the signature of the start command
-        if ("start".equals(headers.get("type"))) {
-            log.info("Demo library is starting");
-            // put your setup business logic here
-        }
+        log.info("Demo library is starting");
+        // put your startup business logic here
         return null;
     }
 }
@@ -401,7 +398,7 @@ application.properties of the application that uses this library:
 
 ```shell
 # comma separated list of composable module route names
-modules.autostart=demo.library.setup
+modules.autostart=demo.library.setup, flow://my-startup-flow
 ```
 
 If you use application.yml, it will be a list like this:
@@ -409,7 +406,14 @@ If you use application.yml, it will be a list like this:
 ```yaml
 modules.autostart:
   - 'demo.library.setup'
+  - 'flow://my-startup-flow'
 ```
+
+For more complex startup procedure, you can use a flow to execute multiple tasks. The second item in the
+`modules.autostart` illustrates this use case.
+
+> *Note*: autostart modules or flows should assume there is no input dataset. Startup modules usually take
+          input parameters from the environment variables or a secret manager.
 
 ## Dependency management
 

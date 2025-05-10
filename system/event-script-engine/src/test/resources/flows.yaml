@@ -37,5 +37,6 @@ flows:
   - 'children/child-two.yml'
   - 'children/child-three.yml'
   - 'http-client-by-config.yml'
+  - 'autostart.yml'
 
 location: 'classpath:/flows/'

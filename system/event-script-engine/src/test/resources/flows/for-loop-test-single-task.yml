@@ -13,6 +13,10 @@ tasks:
     output:
       - 'result -> model.pojo'
       - 'int(5) -> model.n'
+      - 'text(item1) -> model.list[0]'
+      - 'text(item2) -> model.list[1]'
+      - 'text(item3) -> model.list[2]'
+      - 'model.list:length -> model.iteration'
     description: 'Pass a pojo to another task'
     execution: pipeline
     #
@@ -23,20 +27,22 @@ tasks:
     # 3. The condition is a 'if' statement to evaluate a model value to decide to break or continue
     #
     loop:
-      statement: 'for (model.n = 0; model.n < 3; model.n++)'
+      statement: 'for (model.n = 0; model.n < model.iteration; model.n++)'
     pipeline:
-      - 'echo.one'
+      - 'item.picker'
     next:
       - 'echo.four'
 
   # you can remove a model key-value by passing a non-exist model. e.g. "model.none"
-  - name: 'echo.one'
+  - name: 'item.picker'
     input:
       - 'model.n -> n'
+      - 'model.n -> header.idx'
       - 'model.pojo -> data'
+      - 'model.list -> items'
     process: 'no.op'
     output:
-      - 'result.data -> model.pojo'
+      - 'result -> model.latest'
     description: 'first step of a pipeline'
     execution: sink
 
@@ -44,6 +50,7 @@ tasks:
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
+      - 'model.latest -> latest'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

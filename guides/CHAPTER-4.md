@@ -594,6 +594,7 @@ The syntax is `model.somekey:type` where "type" is one of the following:
 | b64                   | byte-array to Base64 text     | model.someKey:b64                     |
 | b64                   | Base64 text to byte-array     | model.someKey:b64                     |
 | uuid                  | generated UUID-4 value        | model.unique_id:uuid                  |
+| length                | length of model list variable | model.someList:length                 |
 
 For Base64 type matching, it handles two symmetrical use cases. If the key-value is a text string,
 the system would assume it is a Base64 text string and convert it to a byte-array. If the key-value

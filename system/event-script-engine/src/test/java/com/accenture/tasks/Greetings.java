@@ -30,7 +30,6 @@ import java.util.Map;
 
 @PreLoad(route="greeting.test", instances=10, isPrivate = false)
 public class Greetings implements TypedLambdaFunction<Map<String, Object>, Object> {
-
     private static final String USER = "user";
     private static final String GREETING = "greeting";
     private static final String MESSAGE = "message";

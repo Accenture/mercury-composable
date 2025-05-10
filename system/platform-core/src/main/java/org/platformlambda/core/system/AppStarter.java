@@ -66,6 +66,11 @@ public class AppStarter {
     private static final String PRELOAD_PHASE = " during PreLoad phase";
     private static final String SERVER_STARTUP = " during HTTP server startup";
     private static final String MODULES_AUTOSTART = "modules.autostart";
+    private static final String EVENT_SCRIPT_MANAGER = "event.script.manager";
+    private static final String FLOW_PROTOCOL = "flow://";
+    private static final String FLOW_ID = "flow_id";
+    private static final String BODY_TYPE = "body.type";
+    private static final String HEADER_TYPE = "header.type";
     private static final String TYPE = "type";
     private static final String START = "start";
     private static final String TEXT = "text";
@@ -197,11 +202,22 @@ public class AppStarter {
                     modules.add(config.getProperty(MODULES_AUTOSTART + "[" + i + "]"));
                 }
             }
-            EventEmitter po = EventEmitter.getInstance();
+            PostOffice po = new PostOffice("modules.autostart", util.getUuid(), "START /modules");
             for (String svc : modules) {
                 try {
-                    log.info("Starting module '{}'", svc);
-                    po.send(svc, new Kv(TYPE, START));
+                    log.info("Starting module: {}", svc);
+                    if (svc.startsWith(FLOW_PROTOCOL) && svc.length() > FLOW_PROTOCOL.length()) {
+                        String flowId = svc.substring(FLOW_PROTOCOL.length());
+                        var dataset = new MultiLevelMap();
+                        dataset.setElement(BODY_TYPE, START);
+                        dataset.setElement(HEADER_TYPE, START);
+                        EventEnvelope flowService = new EventEnvelope();
+                        flowService.setTo(EVENT_SCRIPT_MANAGER).setHeader(FLOW_ID, flowId);
+                        flowService.setCorrelationId(util.getUuid()).setBody(dataset.getMap());
+                        po.send(flowService);
+                    } else {
+                        po.send(svc, new Kv(TYPE, START));
+                    }
                 } catch (IOException e) {
                     log.error("Unable to start module '{}' - {}", svc, e.getMessage());
                 }

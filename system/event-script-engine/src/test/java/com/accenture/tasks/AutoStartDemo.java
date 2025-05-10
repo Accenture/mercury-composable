@@ -16,23 +16,22 @@
 
  */
 
-package org.platformlambda.core.mock;
+package com.accenture.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-@PreLoad(route="demo.main.app")
-public class DemoMainApp implements TypedLambdaFunction<EventEnvelope, Void> {
-    private static final Logger log = LoggerFactory.getLogger(DemoMainApp.class);
+@PreLoad(route="auto.start.demo", instances=10)
+public class AutoStartDemo implements TypedLambdaFunction<Map<String, Object>, Void> {
+    private static final Logger log = LoggerFactory.getLogger(AutoStartDemo.class);
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        log.info("Demo startup module is running");
+    public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        log.info("Running {} {}", headers, input);
         return null;
     }
 }

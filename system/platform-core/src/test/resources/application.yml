@@ -27,3 +27,4 @@ custom.content.types:
 
 modules.autostart:
   - 'demo.main.app'
+  - 'flow://my-unit-test'

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -40,10 +41,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -211,6 +209,10 @@ class FlowTests extends TestBase {
          * 'model.positive:and(nothing) -> output.body.nothing'
          */
         assertEquals(true, mm.getElement("nothing"));
+        // type matching to get size of a list
+        assertEquals(3, mm.getElement("source.list_size"));
+        // type matching to get length of the number 1000
+        assertEquals(4, mm.getElement("source.number_length"));
     }
 
     private void equalsMap(Map<String, Object> a, Map<String, Object> b) {
@@ -950,22 +952,40 @@ class FlowTests extends TestBase {
     @Test
     void pipelineForLoopTestSingleTask() throws IOException, InterruptedException {
         Platform platform = Platform.getInstance();
-        // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
-        // We want to override no.op with my.mock.function to demonstrate mocking a function
-        // for a flow.
-        var ECHO_ONE = "echo.one";
-        var MOCK_FUNCTION = "my.mock.function.single";
+        /*
+         * In this pipeline test, there is only one task in the pipeline.
+         *
+         * we will mock the pipeline task that will take a list of strings and an index.
+         * It will return UPPER case of the selected item in the list and save it in the listStore.
+         *
+         * This demonstrates that the system can pass the index (from model.n) and
+         * the list (from model.list).
+         */
+        var ITEM_PICKER = "item.picker";
+        var MOCK_FUNCTION = "mock.item.picker";
         var iteration = new AtomicInteger(0);
-        LambdaFunction f = (headers, body, instance) -> {
+        final List<String> listStore = new ArrayList<>();
+        TypedLambdaFunction<Map<String, Object>, String> f =
+                (headers, input, instance) -> {
             var n = iteration.incrementAndGet();
-            log.info("Iteration-{} for single-task pipeline {}", n, body);
-            return body;
+            log.info("Running {} iteration", n);
+            Utility util = Utility.getInstance();
+            int idx = util.str2int(headers.getOrDefault("idx", "0"));
+            Object items = input.get("items");
+            if (items instanceof List) {
+                List<String> itemList = (List<String>) items;
+                String itemValue = itemList.get(idx).toUpperCase();
+                listStore.add(itemValue);
+                return itemValue;
+            } else {
+                throw new IllegalArgumentException("Input items must be a list");
+            }
         };
         platform.registerPrivate(MOCK_FUNCTION, f, 1);
-        // override the function for the task "echo.one" to the mock function
+        // mock the pipeline task
         var mock = new EventScriptMock("for-loop-test-single-task");
-        var previousRoute = mock.getFunctionRoute(ECHO_ONE);
-        var currentRoute = mock.assignFunctionRoute(ECHO_ONE, MOCK_FUNCTION).getFunctionRoute(ECHO_ONE);
+        var previousRoute = mock.getFunctionRoute(ITEM_PICKER);
+        var currentRoute = mock.assignFunctionRoute(ITEM_PICKER, MOCK_FUNCTION).getFunctionRoute(ITEM_PICKER);
         assertEquals("no.op", previousRoute);
         assertEquals(MOCK_FUNCTION, currentRoute);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -988,7 +1008,9 @@ class FlowTests extends TestBase {
         assertEquals(USER, pojo.user);
         assertEquals(3, result.get("n"));
         assertEquals(3, iteration.get());
+        assertEquals("ITEM3", result.get("latest"));
         platform.release(MOCK_FUNCTION);
+        assertEquals(List.of("ITEM1", "ITEM2", "ITEM3"), listStore);
     }
 
     @Test
