@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 1. support of "flows" in the "modules.autostart" feature
 2. "length" type matching feature
-3. pipeline for-loop handles model variable in comparator's right hand side
+3. "dynamic model variables in for-loop" - model variable in comparator's left and/or right hand sides
 
 ### Removed
 
