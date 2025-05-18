@@ -33,28 +33,38 @@ tasks:
     next:
       - 'echo.four'
 
-  # you can remove a model key-value by passing a non-exist model. e.g. "model.none"
+  # show that the system can read a list element using dynamic model variable (model.n)
   - name: 'item.picker'
     input:
       - 'model.n -> n'
       - 'model.n -> header.idx'
       - 'model.pojo -> data'
-      - 'model.list -> items'
+      - 'model.list[model.n] -> item'
     process: 'no.op'
     output:
       - 'result -> model.latest'
     description: 'first step of a pipeline'
     execution: sink
 
+  # demonstrate setting list element using dynamic model variable (model.n)
+  # model.n = 3 at this step so we add 3 values to fill the gap for unit test
+  # the following validates input and output data mapping
   - name: 'echo.four'
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
-      - 'model.latest -> latest'
+      - 'model.latest -> latest[model.n]'
+      - 'text(x) -> latest[0]'
+      - 'text(y) -> latest[1]'
+      - 'text(z) -> latest[2]'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
+      - 'model.latest -> output.body.items[model.n]'
+      - 'text(c) -> output.body.items[2]'
+      - 'text(a) -> output.body.items[0]'
+      - 'text(b) -> output.body.items[1]'
       - 'model.none -> model.pojo'
     description: 'Final step to take result from the pipeline'
     execution: end

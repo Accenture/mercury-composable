@@ -55,6 +55,7 @@ precedence.
 | deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
 | modules.autostart                      | list of composable functions to start                           | Optional    |
+| max.model.array.size                   | max size of a dynamic model variable as index<br>default 1000   | Optional    |
 | spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
 
 `*` - applies to the "rest-spring" library only
@@ -90,6 +91,27 @@ The "profiles" parameter defines the file prefix to load profile related configu
 
 > *Note*: The order of the filenames defines the loading sequence where subsequent configuration
           parameters will override prior ones.
+
+## Configuration management
+
+The configuration management system will discover configuration files with the following order of precedence:
+
+```shell
+test/resources
+src/resources
+(library-1)/src/resources
+(library-2)/src/resources
+(library-n)/src/resources
+```
+
+For example, if a config file is not found in the test/resources folder in a unit test, it will search
+the "src/resources" folder. If still not found, it will search the list of libraries for their resources
+folders.
+
+> *Note*: The search order for libraries is non-deterministic. Therefore, please use unique filenames
+          for resource files in a library that may be used by an application.
+
+This discovery mechanism applies to all types of files including config files.
 
 ## Partial support of Spring Active Profiles
 

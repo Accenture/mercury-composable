@@ -75,6 +75,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DECISION = "decision";
     private static final String INPUT_NAMESPACE = "input.";
     private static final String MODEL_NAMESPACE = "model.";
+    private static final String DYNAMIC_MODEL_INDEX = "[model.";
     private static final String RESULT_NAMESPACE = "result.";
     private static final String ERROR_NAMESPACE = "error.";
     private static final String EXT_NAMESPACE = "ext:";
@@ -127,6 +128,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String CONCAT_TYPE = "concat(";
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
+    private final int maxModelArraySize;
 
     private enum OPERATION {
         SIMPLE_COMMAND,
@@ -135,6 +137,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         AND_COMMAND,
         OR_COMMAND,
         BOOLEAN_COMMAND
+    }
+
+    public TaskExecutor() {
+        AppConfigReader config = AppConfigReader.getInstance();
+        maxModelArraySize = util.str2int(config.getProperty("max.model.array.size", "1000"));
     }
 
     @Override
@@ -303,10 +310,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         for (String entry: mapping) {
             int sep = entry.indexOf(MAP_TO);
             if (sep > 0) {
-                String lhs = entry.substring(0, sep).trim();
+                String lhs = substituteDynamicIndex(entry.substring(0, sep).trim(), consolidated, false);
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
                 final Object value;
-                String rhs = entry.substring(sep+2).trim();
+                String rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), consolidated, true);
                 if (isInput || lhs.startsWith(MODEL_NAMESPACE)
                         || lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)
                         || lhs.equals(STATUS)
@@ -696,8 +703,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         for (String entry: mapping) {
             int sep = entry.indexOf(MAP_TO);
             if (sep > 0) {
-                String lhs = entry.substring(0, sep).trim();
-                String rhs = entry.substring(sep+2).trim();
+                String lhs = substituteDynamicIndex(entry.substring(0, sep).trim(), source, false);
+                String rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), source, true);
                 boolean inputLike = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT) ||
                                     lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE);
                 if (lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
@@ -924,6 +931,44 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             return getValueByType(type, value, "LHS '"+lhs+"'", source);
         }
         return value;
+    }
+
+    private String substituteDynamicIndex(String text, MultiLevelMap source, boolean isRhs) {
+        if (text.contains(DYNAMIC_MODEL_INDEX)) {
+            StringBuilder sb = new StringBuilder();
+            int start = 0;
+            while (start < text.length()) {
+                int open = text.indexOf('[', start);
+                int close = text.indexOf(']', start);
+                if (open != -1 && close > open) {
+                    sb.append(text, start, open+1);
+                    var idx = text.substring(open+1, close).trim();
+                    if (idx.startsWith(MODEL_NAMESPACE)) {
+                        int ptr = util.str2int(String.valueOf(source.getElement(idx)));
+                        if (isRhs) {
+                            if (ptr > maxModelArraySize) {
+                                throw new IllegalArgumentException("Cannot set RHS to index > " + ptr
+                                        + " that exceeds max "+maxModelArraySize+" - "+text);
+                            }
+                            if (ptr < 0) {
+                                throw new IllegalArgumentException("Cannot set RHS to negative index - " + text);
+                            }
+                        }
+                        sb.append(ptr);
+                    } else {
+                        sb.append(idx);
+                    }
+                    sb.append(']');
+                    start = close + 1;
+                } else {
+                    sb.append(text, start, text.length());
+                    break;
+                }
+            }
+            return sb.toString();
+        } else {
+            return text;
+        }
     }
 
     private int getModelTypeIndex(String text) {

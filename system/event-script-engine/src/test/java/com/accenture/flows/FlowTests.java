@@ -965,20 +965,21 @@ class FlowTests extends TestBase {
         var MOCK_FUNCTION = "mock.item.picker";
         var iteration = new AtomicInteger(0);
         final List<String> listStore = new ArrayList<>();
+        final List<Integer> indexes = new ArrayList<>();
         TypedLambdaFunction<Map<String, Object>, String> f =
                 (headers, input, instance) -> {
             var n = iteration.incrementAndGet();
             log.info("Running {} iteration", n);
             Utility util = Utility.getInstance();
             int idx = util.str2int(headers.getOrDefault("idx", "0"));
-            Object items = input.get("items");
-            if (items instanceof List) {
-                List<String> itemList = (List<String>) items;
-                String itemValue = itemList.get(idx).toUpperCase();
-                listStore.add(itemValue);
-                return itemValue;
+            indexes.add(idx);
+            Object item = input.get("item");
+            if (item instanceof String text) {
+                var upperText = text.toUpperCase();
+                listStore.add(upperText);
+                return upperText;
             } else {
-                throw new IllegalArgumentException("Input items must be a list");
+                throw new IllegalArgumentException("Input item must be a String");
             }
         };
         platform.registerPrivate(MOCK_FUNCTION, f, 1);
@@ -1008,9 +1009,11 @@ class FlowTests extends TestBase {
         assertEquals(USER, pojo.user);
         assertEquals(3, result.get("n"));
         assertEquals(3, iteration.get());
-        assertEquals("ITEM3", result.get("latest"));
+        assertEquals(List.of("x", "y", "z", "ITEM3"), result.get("latest"));
         platform.release(MOCK_FUNCTION);
         assertEquals(List.of("ITEM1", "ITEM2", "ITEM3"), listStore);
+        assertEquals(List.of(0, 1, 2), indexes);
+        assertEquals(List.of("a", "b", "c", "ITEM3"), result.get("items"));
     }
 
     @Test
@@ -1304,5 +1307,4 @@ class FlowTests extends TestBase {
                 flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
                         new HashMap<>(), null, TIMEOUT).get());
     }
-
 }
