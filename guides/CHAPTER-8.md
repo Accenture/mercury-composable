@@ -11,8 +11,12 @@ The additional infrastructure requirements vary among products.
 
 We will discuss using Kafka as a minimalist service mesh.
 
-> *Note*: Service mesh is optional. You can use "event over HTTP" for inter-container
-  communication if service mesh is not suitable.
+> *Important*: Always design your application system in an event-driven manner to decouple application services
+          from each other. You should avoid using service mesh to tightly couple application services together
+          because it would lead to the creation of a "distributed monolith". Minimalist service mesh
+          is designed as a service discovery mechanism so that you can detect the presence of
+          other application instances. You can use it for operation control mechanism and "leader selection"
+          in writing resilient distributed application.
 
 Typically, a service mesh system uses a "side-car" to sit next to the application container in the same POD to provide
 service discovery and network proxy services.

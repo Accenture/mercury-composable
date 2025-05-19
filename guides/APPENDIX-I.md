@@ -36,26 +36,26 @@ precedence.
 | snake.case.serialization               | true (recommended)                                              | Optional    |
 | trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
 | hsts.feature                           | default is true                                                 | Optional*   |
-| protect.info.endpoints                 | true to disable actuators. Default: true                        | Optional*   |
+| protect.info.endpoints                 | true to disable actuators. (Default: true)                      | Optional*   |
 | application.feature.route.substitution | default is false                                                | Optional    |
 | application.feature.topic.substitution | default is false                                                | Optional    |
 | kafka.replication.factor               | 3                                                               | Kafka       |
 | cloud.client.properties                | e.g. classpath:/kafka.properties                                | Connector   |
 | user.cloud.client.properties           | e.g. classpath:/second-kafka.properties                         | Connector   |
-| default.app.group.id                   | groupId for the app instance.<br/>Default: appGroup             | Connector   |
-| default.monitor.group.id               | groupId for the presence-monitor.<br/>Default: monitorGroup     | Connector   |
-| monitor.topic                          | topic for the presence-monitor.<br/>Default: service.monitor    | Connector   |
+| default.app.group.id                   | groupId for the app instance.<br/>(Default: appGroup)           | Connector   |
+| default.monitor.group.id               | groupId for the presence-monitor.<br/>(Default: monitorGroup)   | Connector   |
+| monitor.topic                          | topic for the presence-monitor.<br/>(Default: service.monitor)  | Connector   |
 | app.topic.prefix                       | Default: multiplex (DO NOT change)                              | Connector   |
-| app.partitions.per.topic               | Max Kafka partitions per topic.<br/>Default: 32                 | Connector   |
-| max.virtual.topics                     | Max virtual topics = partitions * topics.<br/> Default: 288     | Connector   |
-| max.closed.user.groups                 | Number of closed user groups. <br/>Default: 10, range: 3 - 30   | Connector   |
-| closed.user.group                      | Closed user group. Default: 1                                   | Connector   |
+| app.partitions.per.topic               | Max Kafka partitions per topic.<br/>(Default: 32)               | Connector   |
+| max.virtual.topics                     | Max virtual topics = partitions * topics.<br/>(Default: 288)    | Connector   |
+| max.closed.user.groups                 | Number of closed user groups. <br/>(Default: 10, range: 3 - 30) | Connector   |
+| closed.user.group                      | Closed user group. (Default: 1)                                 | Connector   |
 | transient.data.store                   | Default is "/tmp/reactive"                                      | Optional    |
 | running.in.cloud                       | Default is false (set to true if containerized)                 | Optional    |
 | deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
 | modules.autostart                      | list of composable functions to start                           | Optional    |
-| max.model.array.size                   | max size of a dynamic model variable as index<br>default 1000   | Optional    |
+| max.model.array.size                   | max size of a dynamic model variable as index<br>(Default 1000) | Optional    |
 | spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
 
 `*` - applies to the "rest-spring" library only
@@ -99,18 +99,20 @@ The configuration management system will discover configuration files with the f
 ```shell
 test/resources
 src/resources
-(library-1)/src/resources
-(library-2)/src/resources
-(library-n)/src/resources
+(library-1)/resources
+(library-2)/resources
+(library-n)/resources
 ```
 
 For example, if a config file is not found in the test/resources folder in a unit test, it will search
 the "src/resources" folder. If still not found, it will search the list of libraries for their resources
 folders.
 
-> *Note*: The search order for libraries is non-deterministic. Therefore, please use unique filenames
-          for resource files in a library that may be used by an application.
+> *Note*: The search order for libraries is non-deterministic using the JVM class search path.
+          Therefore, please use unique filenames for resource files in a library that may be used
+          by an application.
 
+The resource file path must be prefixed with the keyword `classpath:`.
 This discovery mechanism applies to all types of files including config files.
 
 ## Partial support of Spring Active Profiles

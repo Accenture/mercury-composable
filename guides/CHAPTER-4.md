@@ -559,7 +559,7 @@ The "decision" value is also saved to the state machine (`model`) for subsequent
 
 ### Handling arrays in a dataset
 
-An array of data elements is expressed as a list. It is addressed using the bracket format.
+An array of data elements is expressed as a list.
 
 ```json
 { "numbers":  [100, 200] }
@@ -568,7 +568,7 @@ An array of data elements is expressed as a list. It is addressed using the brac
 As discussed earlier, an array element can be retrieved using a number as index. For example, to take
 the second element with value 200 above, you can use this data mapping like this:
 
-```json
+```yaml
 'input.body.numbers[1] -> second_number'
 ```
 
@@ -578,14 +578,14 @@ input argument "second_number" to a composable function.
 For-loop feature is supported in pipeline in an event flow. It would be convenient to use the
 iterator value as an index to map an input argument. We can do something like this:
 
-```json
+```yaml
 'input.body.numbers[model.n] -> second_number'
 ```
 where `model.n` is the iterator value in a for-loop.
 
 Similarly, it is possible to do output data mapping. For example,
 
-```json
+```yaml
 'result.computed -> model.list[model.n]'
 ```
 
@@ -596,7 +596,7 @@ The model variable must resolved to a number.
           of a data mapping is a GET operation. The right-hand-side is a SET operation. If the model
           variable is non-numeric, the GET operation will return null and SET operation will throw
           exception. To avoid setting an arbitrary high index, the size of the index is limited by
-          the parameter "max.model.array.size" in application.yml
+          the parameter "max.model.array.size" in application.properties or application.yml
 
 ### Simple type matching and conversion
 
