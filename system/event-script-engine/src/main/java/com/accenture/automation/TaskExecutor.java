@@ -75,7 +75,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DECISION = "decision";
     private static final String INPUT_NAMESPACE = "input.";
     private static final String MODEL_NAMESPACE = "model.";
-    private static final String DYNAMIC_MODEL_INDEX = "[model.";
     private static final String RESULT_NAMESPACE = "result.";
     private static final String ERROR_NAMESPACE = "error.";
     private static final String EXT_NAMESPACE = "ext:";
@@ -934,7 +933,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private String substituteDynamicIndex(String text, MultiLevelMap source, boolean isRhs) {
-        if (text.contains(DYNAMIC_MODEL_INDEX)) {
+        if (text.contains("[") && text.contains("]")) {
             StringBuilder sb = new StringBuilder();
             int start = 0;
             while (start < text.length()) {
@@ -956,6 +955,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                         sb.append(ptr);
                     } else {
+                        if (isRhs) {
+                            int ptr = util.str2int(idx);
+                            if (ptr < 0) {
+                                throw new IllegalArgumentException("Cannot set RHS to negative index - " + text);
+                            }
+                        }
                         sb.append(idx);
                     }
                     sb.append(']');
