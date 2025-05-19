@@ -657,7 +657,7 @@ public class EventEnvelope {
      * @return event envelope
      */
     public EventEnvelope setExecutionTime(float milliseconds) {
-        this.executionTime = Float.parseFloat(String.format("%.3f", milliseconds));
+        this.executionTime = Math.max(0, Float.parseFloat(String.format("%.3f", milliseconds)));
         return this;
     }
 
@@ -668,7 +668,7 @@ public class EventEnvelope {
      * @return event envelope
      */
     public EventEnvelope setRoundTrip(float milliseconds) {
-        this.roundTrip = Float.parseFloat(String.format("%.3f", milliseconds));
+        this.roundTrip = Math.max(0, Float.parseFloat(String.format("%.3f", milliseconds)));
         return this;
     }
 
@@ -736,8 +736,8 @@ public class EventEnvelope {
         event.body = this.body;
         event.stackTrace = this.stackTrace;
         event.exceptionBytes = this.exceptionBytes;
-        event.executionTime = this.executionTime;
-        event.roundTrip = this.roundTrip;
+        event.executionTime = Math.max(0f, this.executionTime);
+        event.roundTrip = Math.max(0f, this.roundTrip);
         event.tags.putAll(this.tags);
         event.annotations.putAll(this.annotations);
         return event;
@@ -808,10 +808,10 @@ public class EventEnvelope {
                 type = (String) message.get(OBJ_TYPE_FLAG);
             }
             if (message.containsKey(EXECUTION_FLAG)) {
-                executionTime = Math.max(0, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
+                executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
             }
             if (message.containsKey(ROUND_TRIP_FLAG)) {
-                roundTrip = Math.max(0, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
+                roundTrip = Math.max(0f, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
             }
         }
     }
@@ -870,10 +870,10 @@ public class EventEnvelope {
             message.put(OBJ_TYPE_FLAG, type);
         }
         if (executionTime != null) {
-            message.put(EXECUTION_FLAG, executionTime);
+            message.put(EXECUTION_FLAG, Math.max(0f, executionTime));
         }
         if (roundTrip != null) {
-            message.put(ROUND_TRIP_FLAG, roundTrip);
+            message.put(ROUND_TRIP_FLAG, Math.max(0f, roundTrip));
         }
         return msgPack.pack(message);
     }
@@ -937,7 +937,7 @@ public class EventEnvelope {
             executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FIELD))));
         }
         if (message.containsKey(ROUND_TRIP_FIELD)) {
-            roundTrip = Math.max(0, util.str2float(String.valueOf(message.get(ROUND_TRIP_FIELD))));
+            roundTrip = Math.max(0f, util.str2float(String.valueOf(message.get(ROUND_TRIP_FIELD))));
         }
     }
 
@@ -989,10 +989,10 @@ public class EventEnvelope {
             message.put(OBJ_TYPE_FIELD, type);
         }
         if (executionTime != null) {
-            message.put(EXECUTION_FIELD, executionTime);
+            message.put(EXECUTION_FIELD, Math.max(0f, executionTime));
         }
         if (roundTrip != null) {
-            message.put(ROUND_TRIP_FIELD, roundTrip);
+            message.put(ROUND_TRIP_FIELD, Math.max(0f, roundTrip));
         }
         return message;
     }
