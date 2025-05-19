@@ -736,8 +736,8 @@ public class EventEnvelope {
         event.body = this.body;
         event.stackTrace = this.stackTrace;
         event.exceptionBytes = this.exceptionBytes;
-        event.executionTime = Math.max(0f, this.executionTime);
-        event.roundTrip = Math.max(0f, this.roundTrip);
+        event.executionTime = this.executionTime;
+        event.roundTrip = this.roundTrip;
         event.tags.putAll(this.tags);
         event.annotations.putAll(this.annotations);
         return event;
