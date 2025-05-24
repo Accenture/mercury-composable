@@ -20,8 +20,11 @@ package org.platformlambda.core.system;
 
 import io.github.classgraph.ClassInfo;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.platformlambda.automation.config.RoutingEntry;
 import org.platformlambda.automation.http.AsyncHttpClient;
@@ -66,16 +69,12 @@ public class AppStarter {
     private static final String PRELOAD_PHASE = " during PreLoad phase";
     private static final String SERVER_STARTUP = " during HTTP server startup";
     private static final String MODULES_AUTOSTART = "modules.autostart";
-    private static final String EVENT_SCRIPT_MANAGER = "event.script.manager";
-    private static final String FLOW_PROTOCOL = "flow://";
-    private static final String FLOW_ID = "flow_id";
-    private static final String BODY_TYPE = "body.type";
-    private static final String HEADER_TYPE = "header.type";
     private static final String TYPE = "type";
     private static final String START = "start";
     private static final String TEXT = "text";
     private static final String JSON = "json";
     private static final String COMPACT = "compact";
+    private static final String FILEPATH = "file:";
     private static final String CLASSPATH = "classpath:";
     private static final String COMPACT_LOG4J = "log4j2-compact.xml";
     private static final String JSON_LOG4J = "log4j2-json.xml";
@@ -202,22 +201,11 @@ public class AppStarter {
                     modules.add(config.getProperty(MODULES_AUTOSTART + "[" + i + "]"));
                 }
             }
-            PostOffice po = new PostOffice("modules.autostart", util.getUuid(), "START /modules");
+            EventEmitter po = EventEmitter.getInstance();
             for (String svc : modules) {
                 try {
-                    log.info("Starting module: {}", svc);
-                    if (svc.startsWith(FLOW_PROTOCOL) && svc.length() > FLOW_PROTOCOL.length()) {
-                        String flowId = svc.substring(FLOW_PROTOCOL.length());
-                        var dataset = new MultiLevelMap();
-                        dataset.setElement(BODY_TYPE, START);
-                        dataset.setElement(HEADER_TYPE, START);
-                        EventEnvelope flowService = new EventEnvelope();
-                        flowService.setTo(EVENT_SCRIPT_MANAGER).setHeader(FLOW_ID, flowId);
-                        flowService.setCorrelationId(util.getUuid()).setBody(dataset.getMap());
-                        po.send(flowService);
-                    } else {
-                        po.send(svc, new Kv(TYPE, START));
-                    }
+                    log.info("Starting module '{}'", svc);
+                    po.send(svc, new Kv(TYPE, START));
                 } catch (IOException e) {
                     log.error("Unable to start module '{}' - {}", svc, e.getMessage());
                 }
@@ -502,12 +490,16 @@ public class AppStarter {
             final int port = util.str2int(config.getProperty("websocket.server.port",
                                     config.getProperty("rest.server.port",
                                     config.getProperty("server.port", "8085"))));
+            final boolean sslEnabled = "true".equals(config.getProperty("rest.server.ssl-enabled", "false"));
             if (port > 0) {
                 final BlockingQueue<Boolean> serverStatus = new ArrayBlockingQueue<>(1);
                 final ConcurrentMap<String, AsyncContextHolder> contexts;
                 // create a dedicated vertx event loop instance for the HTTP server
                 final Vertx vertx = Vertx.vertx();
-                final HttpServer server = vertx.createHttpServer(new HttpServerOptions().setTcpKeepAlive(true));
+                final String sslCertPath = config.getProperty("rest.server.ssl.cert");
+                final String sslKeyPath = config.getProperty("rest.server.ssl.key");
+                final HttpServerOptions options = getHttpServerOptions(sslEnabled, sslCertPath, sslKeyPath);
+                final HttpServer server = vertx.createHttpServer(options);
                 if (enableRest) {
                     // Compile endpoints to be used by the REST automation system
                     renderRestEndpoints();
@@ -769,5 +761,44 @@ public class AppStarter {
                 }
             }
         }
+    }
+
+    private HttpServerOptions getHttpServerOptions(boolean sslEnabled, String sslCertPath, String sslKeyPath) throws RuntimeException {
+        if (!sslEnabled) {
+            return new HttpServerOptions().setTcpKeepAlive(true);
+        }
+
+        HttpServerOptions httpServerOptions = new HttpServerOptions().setTcpKeepAlive(true).setSsl(true);
+        if (sslCertPath.startsWith(CLASSPATH) && sslKeyPath.startsWith(CLASSPATH)) {
+            httpServerOptions.setKeyCertOptions(buildKeyCertOptionsFromResource(sslCertPath, sslKeyPath));
+        } else {
+            httpServerOptions.setKeyCertOptions(buildKeyCertOptionsFromFile(sslCertPath, sslKeyPath));
+        }
+        return httpServerOptions;
+    }
+
+    private KeyCertOptions buildKeyCertOptionsFromResource(String sslCertPath, String sslKeyPath) throws RuntimeException {
+        String sslCertResourcePath = sslCertPath.substring(CLASSPATH.length());
+        String sslKeyResourcePath = sslKeyPath.substring(CLASSPATH.length());
+        try(InputStream sslCertIn = AppStarter.class.getResourceAsStream(sslCertResourcePath);
+            InputStream sslKeyIn = AppStarter.class.getResourceAsStream(sslKeyResourcePath)) {
+            if (sslCertIn == null) {
+                throw new RuntimeException("Unable to load SSL certificate from resource %s".formatted(sslCertPath));
+            }
+            if (sslKeyIn == null) {
+                throw new RuntimeException("Unable to load SSL private key from resource %s".formatted(sslKeyPath));
+            }
+            Buffer sslCertBuff = Buffer.buffer(sslCertIn.readAllBytes());
+            Buffer sslKeyBuff = Buffer.buffer(sslKeyIn.readAllBytes());
+            return new PemKeyCertOptions().addCertValue(sslCertBuff).addKeyValue(sslKeyBuff);
+        } catch (IOException e) {
+            throw new RuntimeException ("SSL option initiation failed - %s".formatted(e.getMessage()));
+        }
+    }
+
+    private KeyCertOptions buildKeyCertOptionsFromFile(String sslCertPath, String sslKeyPath) throws RuntimeException {
+        String sslCertFilePath = sslCertPath.startsWith(FILEPATH)? sslCertPath.substring(FILEPATH.length()) : sslCertPath;
+        String sslKeyFilePath = sslKeyPath.startsWith(FILEPATH)? sslKeyPath.substring(FILEPATH.length()) : sslKeyPath;
+        return new PemKeyCertOptions().addCertPath(sslCertFilePath).addKeyPath(sslKeyFilePath);
     }
 }
