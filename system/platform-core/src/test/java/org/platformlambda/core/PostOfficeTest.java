@@ -62,6 +62,7 @@ class PostOfficeTest extends TestBase {
     private static final String HELLO_ALIAS = "hello.alias";
     private static final String REACTIVE_MONO = "v1.reactive.mono.function";
     private static final String REACTIVE_FLUX = "v1.reactive.flux.function";
+    private static final String REACTIVE_LIST_OF_POJO_FLUX = "v1.reactive.pojo.flux.function";
     private static final String REACTIVE_MONO_KOTLIN = "v1.reactive.mono.kotlin";
     private static final String REACTIVE_FLUX_KOTLIN = "v1.reactive.flux.kotlin";
     private static final String X_STREAM_ID = "x-stream-id";
@@ -274,6 +275,11 @@ class PostOfficeTest extends TestBase {
     }
 
     @Test
+    public void testListOfPojoFluxFunction() throws IOException, ExecutionException, InterruptedException {
+        testListOfPojoFluxFunction(REACTIVE_LIST_OF_POJO_FLUX);
+    }
+
+    @Test
     void testFluxKotlinFunction() throws IOException, ExecutionException, InterruptedException {
         final var first = Map.of("first", "message");
         final var data = Map.of("hello", "world");
@@ -295,6 +301,28 @@ class PostOfficeTest extends TestBase {
         assertEquals(2, messages.size());
         assertEquals(first, messages.getFirst());
         assertEquals(data, messages.get(1));
+    }
+
+    private void testListOfPojoFluxFunction(String target) throws IOException, ExecutionException, InterruptedException {
+        final var pojo = new PoJo();
+        pojo.setName("test");
+        final var data = List.of(pojo);
+        EventEnvelope request = new EventEnvelope().setTo(target).setBody(data);
+        PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
+        EventEnvelope response = po.request(request, 5000).get();
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getHeader(X_STREAM_ID));
+        assertNotNull(response.getHeader(X_TTL));
+        long ttl = util.str2long(response.getHeader(X_TTL));
+        String streamId = response.getHeader(X_STREAM_ID);
+        final List<PoJo> messages = new ArrayList<>();
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
+        FluxConsumer<PoJo> fc = new FluxConsumer<>(streamId, ttl);
+        fc.consume(messages::add, err -> log.error("Error ", err), () -> bench.add(true));
+        Object done = bench.poll(5, TimeUnit.SECONDS);
+        assertEquals(true, done);
+        assertEquals(1, messages.size());
+        assertEquals(pojo, messages.getFirst());
     }
 
     @Test
