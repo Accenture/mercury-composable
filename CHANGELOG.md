@@ -9,8 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
+
 ---
-## Version 4.2.41, 5/17/2025
+## Version 4.2.42, 5/24/2025
+
+### Added
+
+1. SSL http server options
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.2.42, 5/17/2025
 
 ### Added
 
