@@ -13,7 +13,7 @@ precedence.
 | info.app.version                       | major.minor.build (e.g. 1.0.0)                                           | Yes         |
 | info.app.description                   | Something about your application                                         | Yes         |
 | web.component.scan                     | your own package path or parent path                                     | Yes         |
-| server.port                            | e.g. 8083                                                                | Yes*1       |
+| server.port                            | e.g. 8083                                                                | Yes*        |
 | rest.server.port                       | e.g. 8085                                                                | Optional    |
 | websocket.server.port                  | Alias for rest.server.port                                               | Optional    |
 | rest.automation                        | true if you want to enable automation                                    | Optional    |
