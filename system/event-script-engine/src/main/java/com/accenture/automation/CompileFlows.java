@@ -52,6 +52,7 @@ public class CompileFlows implements EntryPoint {
     private static final String OUTPUT = "output";
     private static final String DESCRIPTION = "description";
     private static final String EXECUTION = "execution";
+    private static final String DATA_TYPE = "datatype";
     private static final String RESULT = "result";
     private static final String STATUS = "status";
     private static final String DECISION = "decision";
@@ -767,12 +768,11 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean validOutputLhs(String lhs) {
-        if (lhs.equals(INPUT)
-                || lhs.startsWith(INPUT_NAMESPACE)
-                || lhs.startsWith(MODEL_NAMESPACE)
-                || lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE)
-                || lhs.equals(STATUS)
-                || lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)) {
+        if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
+                lhs.startsWith(MODEL_NAMESPACE) || lhs.equals(DATA_TYPE) ||
+                lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE) ||
+                lhs.equals(STATUS) ||
+                lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)) {
             return true;
         } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
             return validKeyValues(lhs);

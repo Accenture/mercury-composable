@@ -32,9 +32,11 @@ import java.util.Date;
  * DO NOT use this directly in your application code.
  */
 public class ServiceDef {
-
     private enum RunnerType {
         KERNEL_THREAD, VIRTUAL_THREAD, STREAM_FUNCTION, SUSPEND_FUNCTION
+    }
+    public enum SerializationStrategy {
+        SNAKE, CAMEL, DEFAULT
     }
     private static final String HANDLE_EVENT = "handleEvent";
     private static final int MAX_INSTANCES = 1000;
@@ -54,6 +56,8 @@ public class ServiceDef {
     private Class<?> inputClass;
     private Class<?> pojoClass;
     private CustomSerializer serializer = null;
+    private SerializationStrategy inputSerializationStrategy = SerializationStrategy.DEFAULT;
+    private SerializationStrategy outputSerializationStrategy = SerializationStrategy.DEFAULT;
     private int instances = 1;
 
     @SuppressWarnings("rawtypes")
@@ -194,18 +198,16 @@ public class ServiceDef {
         this.manager = manager;
     }
 
-    public ServiceDef setCustomSerializer(CustomSerializer serializer) {
+    public void setCustomSerializer(CustomSerializer serializer) {
         this.serializer = serializer;
-        return this;
     }
 
     public CustomSerializer getCustomSerializer() {
         return this.serializer;
     }
 
-    public ServiceDef setPoJoClass(Class<?> cls) {
+    public void setPoJoClass(Class<?> cls) {
         this.pojoClass = cls;
-        return this;
     }
 
     public Class<?> getPoJoClass() {
@@ -220,4 +222,19 @@ public class ServiceDef {
         return inputClass;
     }
 
+    public SerializationStrategy getInputSerializationStrategy() {
+        return this.inputSerializationStrategy;
+    }
+
+    public void setInputSerializationStrategy(SerializationStrategy strategy) {
+        this.inputSerializationStrategy = strategy;
+    }
+
+    public SerializationStrategy getOutputSerializationStrategy() {
+        return this.outputSerializationStrategy;
+    }
+
+    public void setOutputSerializationStrategy(SerializationStrategy strategy) {
+        this.outputSerializationStrategy = strategy;
+    }
 }

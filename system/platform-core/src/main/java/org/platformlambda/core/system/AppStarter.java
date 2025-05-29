@@ -206,7 +206,7 @@ public class AppStarter {
                     modules.add(config.getProperty(MODULES_AUTOSTART + "[" + i + "]"));
                 }
             }
-            PostOffice po = new PostOffice("modules.autostart", util.getUuid(), "START /modules");
+            PostOffice po = new PostOffice(MODULES_AUTOSTART, util.getUuid(), "START /modules");
             for (String svc : modules) {
                 try {
                     log.info("Starting module: {}", svc);
@@ -392,7 +392,6 @@ public class AppStarter {
                                     log.info("Preload [{}] as {}", svc.route(), routes);
                                 }
                             }
-                            boolean isPrivate = svc.isPrivate();
                             Object o = cls.getDeclaredConstructor().newInstance();
                             Class<?> pojoClass = null;
                             CustomSerializer mapper = null;
@@ -413,39 +412,32 @@ public class AppStarter {
                                             ce.getClass().getSimpleName(), ce.getMessage());
                                 }
                             }
-                            if (o instanceof TypedLambdaFunction f) {
-                                for (String r : routes) {
-                                    if (isPrivate) {
-                                        platform.registerPrivate(r, f, instances);
-                                    } else {
-                                        platform.register(r, f, instances);
-                                    }
-                                    if (mapper != null) {
-                                        platform.setCustomSerializer(r, mapper);
-                                    }
-                                    if (pojoClass != null) {
-                                        platform.setPoJoClass(r, pojoClass);
+                            switch (o) {
+                                case TypedLambdaFunction f -> {
+                                    for (String r : routes) {
+                                        if (svc.isPrivate()) {
+                                            platform.registerPrivate(r, f, instances);
+                                        } else {
+                                            platform.register(r, f, instances);
+                                        }
+                                        updateServiceDef(r, mapper, pojoClass, svc);
                                     }
                                 }
-                            } else if (o instanceof KotlinLambdaFunction f) {
-                                for (String r : routes) {
-                                    if (isPrivate) {
-                                        platform.registerKotlinPrivate(r, f, instances);
-                                    } else {
-                                        platform.registerKotlin(r, f, instances);
-                                    }
-                                    if (mapper != null) {
-                                        platform.setCustomSerializer(r, mapper);
-                                    }
-                                    if (pojoClass != null) {
-                                        platform.setPoJoClass(r, pojoClass);
+                                case KotlinLambdaFunction f -> {
+                                    for (String r : routes) {
+                                        if (svc.isPrivate()) {
+                                            platform.registerKotlinPrivate(r, f, instances);
+                                        } else {
+                                            platform.registerKotlin(r, f, instances);
+                                        }
+                                        updateServiceDef(r, mapper, pojoClass, svc);
                                     }
                                 }
-                            } else {
-                                log.error("Unable to preload {} - {} must implement {} or {}",
-                                        serviceName, o.getClass(),
-                                        TypedLambdaFunction.class.getSimpleName(),
-                                        KotlinLambdaFunction.class.getSimpleName());
+                                default ->
+                                    log.error("Unable to preload {} - {} must implement {} or {}",
+                                            serviceName, o.getClass(),
+                                            TypedLambdaFunction.class.getSimpleName(),
+                                            KotlinLambdaFunction.class.getSimpleName());
                             }
                         }
                     } else {
@@ -459,6 +451,17 @@ public class AppStarter {
             }
         }
         log.info("Preloading completed");
+    }
+
+    private static void updateServiceDef(String route, CustomSerializer mapper, Class<?> pojoClass, PreLoad service) {
+        Platform platform = Platform.getInstance();
+        if (mapper != null) {
+            platform.setCustomSerializer(route, mapper);
+        }
+        if (pojoClass != null) {
+            platform.setPoJoClass(route, pojoClass);
+        }
+        platform.setSerializationStrategy(route, service.inputStrategy(), service.outputStrategy());
     }
 
     private static int getInstancesFromEnv(String envInstances, int instances) {
@@ -779,42 +782,43 @@ public class AppStarter {
         }
     }
 
-    private HttpServerOptions getHttpServerOptions(boolean sslEnabled, String sslCertPath, String sslKeyPath) throws RuntimeException {
+    private HttpServerOptions getHttpServerOptions(boolean sslEnabled, String sslCertPath, String sslKeyPath) {
         if (!sslEnabled) {
             return new HttpServerOptions().setTcpKeepAlive(true);
         }
-
         HttpServerOptions httpServerOptions = new HttpServerOptions().setTcpKeepAlive(true).setSsl(true);
         if (sslCertPath.startsWith(CLASSPATH) && sslKeyPath.startsWith(CLASSPATH)) {
             httpServerOptions.setKeyCertOptions(buildKeyCertOptionsFromResource(sslCertPath, sslKeyPath));
-        } else {
+        } else if (sslCertPath.startsWith(FILEPATH) && sslKeyPath.startsWith(FILEPATH)) {
             httpServerOptions.setKeyCertOptions(buildKeyCertOptionsFromFile(sslCertPath, sslKeyPath));
+        } else {
+            throw new IllegalArgumentException("SSL cert and key files must prefix with either classpath: or file:");
         }
         return httpServerOptions;
     }
 
-    private KeyCertOptions buildKeyCertOptionsFromResource(String sslCertPath, String sslKeyPath) throws RuntimeException {
+    private KeyCertOptions buildKeyCertOptionsFromResource(String sslCertPath, String sslKeyPath) {
         String sslCertResourcePath = sslCertPath.substring(CLASSPATH.length());
         String sslKeyResourcePath = sslKeyPath.substring(CLASSPATH.length());
         try(InputStream sslCertIn = AppStarter.class.getResourceAsStream(sslCertResourcePath);
             InputStream sslKeyIn = AppStarter.class.getResourceAsStream(sslKeyResourcePath)) {
             if (sslCertIn == null) {
-                throw new RuntimeException("Unable to load SSL certificate from resource %s".formatted(sslCertPath));
+                throw new IllegalArgumentException("Unable to load SSL certificate from resource %s".formatted(sslCertPath));
             }
             if (sslKeyIn == null) {
-                throw new RuntimeException("Unable to load SSL private key from resource %s".formatted(sslKeyPath));
+                throw new IllegalArgumentException("Unable to load SSL private key from resource %s".formatted(sslKeyPath));
             }
             Buffer sslCertBuff = Buffer.buffer(sslCertIn.readAllBytes());
             Buffer sslKeyBuff = Buffer.buffer(sslKeyIn.readAllBytes());
             return new PemKeyCertOptions().addCertValue(sslCertBuff).addKeyValue(sslKeyBuff);
         } catch (IOException e) {
-            throw new RuntimeException ("SSL option initiation failed - %s".formatted(e.getMessage()));
+            throw new IllegalArgumentException("SSL option initiation failed - %s".formatted(e.getMessage()));
         }
     }
 
-    private KeyCertOptions buildKeyCertOptionsFromFile(String sslCertPath, String sslKeyPath) throws RuntimeException {
-        String sslCertFilePath = sslCertPath.startsWith(FILEPATH)? sslCertPath.substring(FILEPATH.length()) : sslCertPath;
-        String sslKeyFilePath = sslKeyPath.startsWith(FILEPATH)? sslKeyPath.substring(FILEPATH.length()) : sslKeyPath;
+    private KeyCertOptions buildKeyCertOptionsFromFile(String sslCertPath, String sslKeyPath) {
+        String sslCertFilePath = sslCertPath.substring(FILEPATH.length());
+        String sslKeyFilePath = sslKeyPath.substring(FILEPATH.length());
         return new PemKeyCertOptions().addCertPath(sslCertFilePath).addKeyPath(sslKeyFilePath);
     }
 }

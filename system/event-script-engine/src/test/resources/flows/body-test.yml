@@ -3,7 +3,7 @@ flow:
   description: 'Test input data mapping of body and headers'
   ttl: 10s
 
-first.task: 'no.op'
+first.task: 'pojo.echo'
 
 tasks:
   - input:
@@ -12,7 +12,7 @@ tasks:
       # input header is case-insensitive
       - 'input.header.User-Agent -> header.agent'
       - 'text(AAA) -> header.tag'
-    process: 'no.op'
+    process: 'pojo.echo'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
@@ -20,5 +20,6 @@ tasks:
       - 'header.tag -> output.header.x-tag'
       - 'header.sequence -> output.header.x-sequence'
       - 'header.agent -> output.header.x-agent'
+      - 'datatype -> output.header.x-datatype'
     description: 'Return result'
     execution: end

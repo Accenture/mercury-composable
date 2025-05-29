@@ -18,6 +18,8 @@
 
 package org.platformlambda.core.annotations;
 
+import org.platformlambda.core.system.ServiceDef.SerializationStrategy;
+
 import java.lang.annotation.*;
 
 /**
@@ -40,16 +42,26 @@ import java.lang.annotation.*;
  * <p>
  * Note that Event Script's Input/Output Data Mapping does not support list of PoJo because it would be
  * more intuitive to map key-values to input arguments of a user function.
+ * <p>
+ * inputStrategy and outputStrategy are default, snake or camel.
+ * This allows you to adjust serialization case strategy for a composable function that interfaces with
+ * an external system or entity. When it is set to "default", the system will use the serialization case
+ * strategy stated in "snake.case.serialization = true or false" of application.properties.
+ * The system will apply snake case or camel case serialization strategy for input and output
+ * when it is "snake" or "camel" accordingly.
+ * <p>
+ * inputStrategy and outputStrategy have no effect when customSerializer if configured.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface PreLoad {
-
     String route();
     Class<?> customSerializer() default Void.class;
     Class<?> inputPojoClass() default Void.class;
     int instances() default 1;
     String envInstances() default "";
     boolean isPrivate() default true;
+    SerializationStrategy inputStrategy() default SerializationStrategy.DEFAULT;
+    SerializationStrategy outputStrategy() default SerializationStrategy.DEFAULT;
 }

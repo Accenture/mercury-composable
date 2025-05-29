@@ -17,6 +17,7 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +78,7 @@ public class EventEnvelope {
     private static final String OBJ_TYPE_FLAG = "O";
     // special header for setting HTTP cookie for rest-automation
     private static final String SET_COOKIE = "set-cookie";
+    private static int maxStackTraceLines = -1;
     private final Map<String, String> headers = new HashMap<>();
     private final Map<String, String> tags = new HashMap<>();
     private final Map<String, Object> annotations = new HashMap<>();
@@ -90,6 +92,7 @@ public class EventEnvelope {
     // type: Map = "M", List = "L", Primitive = "P", Nothing = "N" or body class name
     private String type;
     private Integer status;
+    private Object originalPayload;
     private Object body;
     private byte[] exceptionBytes;
     private Throwable exception;
@@ -216,6 +219,10 @@ public class EventEnvelope {
      */
     public Object getRawBody() {
         return body;
+    }
+
+    public Object getOriginalBody() {
+        return originalPayload;
     }
 
     /**
@@ -530,8 +537,7 @@ public class EventEnvelope {
         switch (body) {
             case Optional optionalBody -> {
                 addTag(OPTIONAL);
-                Optional<Object> o = (Optional<Object>) optionalBody;
-                payload = o.orElse(null);
+                payload = optionalBody.orElse(null);
             }
             case EventEnvelope nested -> {
                 log.warn("Setting body from nested EventEnvelope is discouraged - system will remove the outer envelope");
@@ -543,8 +549,22 @@ public class EventEnvelope {
             case Date d -> payload = util.date2str(d);
             case null, default -> payload = body;
         }
+        this.originalPayload = payload;
+        this.body = payload;
+        return this;
+    }
+
+    /**
+     * This method is designed for backward compatibility.
+     * (Since version 4.2.43, default serialization is deferred to the WorkerHandler to reduce overheads)
+     *
+     * @param body Usually a PoJo, a Map or Java primitive
+     * @return event envelope
+     */
+    public EventEnvelope setBodyWithDefaultSerialization(Object body) {
+        setBody(body);
         // encode body and save object type
-        TypedPayload typed = converter.encode(payload, isBinary());
+        TypedPayload typed = converter.encode(this.body, isBinary());
         this.body = typed.getPayload();
         this.type = typed.getType();
         return this;
@@ -636,18 +656,28 @@ public class EventEnvelope {
      * @return stack trace trimmed
      */
     private String getStackTrace(Throwable ex) {
+        int len = getMaxStackSize();
         String stack = util.getStackTrace(ex);
         // limit stack trace to 10 lines
         List<String> lines = util.split(stack, "\r\n");
         StringBuilder sb = new StringBuilder();
-        for (int i=0; i < 10 && i < lines.size(); i++) {
+        for (int i=0; i < len && i < lines.size(); i++) {
             sb.append(lines.get(i).trim());
             sb.append('\n');
         }
-        if (lines.size() > 10) {
+        if (lines.size() > len) {
             sb.append("...(").append(lines.size()).append(")");
         }
         return sb.toString();
+    }
+
+    private static int getMaxStackSize() {
+        if (maxStackTraceLines < 0) {
+            var config = AppConfigReader.getInstance();
+            maxStackTraceLines = Math.max(3,
+                                    util.str2int(config.getProperty("stack.trace.transport.size", "10")));
+        }
+        return maxStackTraceLines;
     }
 
     /**

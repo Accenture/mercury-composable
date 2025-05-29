@@ -16,22 +16,19 @@
 
  */
 
-package com.accenture.models;
+package com.accenture.tasks;
 
-import java.util.Date;
+import com.accenture.models.PoJo;
+import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TypedLambdaFunction;
 
-public class PoJo {
+import java.util.Map;
 
-    public String user;
-    public Date date;
-    public int sequence;
-
-    public String key1;
-    public String key2;
-
-    public PoJo(String user, int sequence) {
-        this.user = user;
-        this.sequence = sequence;
-        date = new Date();
+@PreLoad(route = "pojo.echo", instances=10)
+public class PoJoEcho implements TypedLambdaFunction<PoJo, EventEnvelope> {
+    @Override
+    public EventEnvelope handleEvent(Map<String, String> headers, PoJo input, int instance) throws Exception {
+        return new EventEnvelope().setHeaders(headers).setBody(input);
     }
 }

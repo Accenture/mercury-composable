@@ -21,6 +21,7 @@ package org.platformlambda.core.system;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.Utility;
@@ -174,6 +175,7 @@ public class WorkerHandler {
              * we will pass the original event envelope instead of the message body.
              */
             var serializer = def.getCustomSerializer();
+            final SimpleObjectMapper inputMapper = getMapper(true);
             final Object inputBody;
             var cls = def.getInputClass() != null? def.getInputClass() : def.getPoJoClass();
             if (useEnvelope || (interceptor && cls == null)) {
@@ -185,7 +187,8 @@ public class WorkerHandler {
                         inputBody = new AsyncHttpRequest(event.getRawBody());
                     } else {
                         // convert Map to PoJo
-                        inputBody = serializer != null? serializer.toPoJo(event.getRawBody(), cls) : event.getBody(cls);
+                        var o = event.getRawBody();
+                        inputBody = serializer != null? serializer.toPoJo(o, cls) : inputMapper.readValue(o, cls);
                     }
                 } else if (event.getRawBody() instanceof List && cls != null) {
                     // check if the input is a list of map
@@ -199,13 +202,12 @@ public class WorkerHandler {
                     }
                     if (n == inputList.size()) {
                         List<Object> updatedList = new ArrayList<>();
-                        var mapper = SimpleMapper.getInstance().getMapper();
                         for (Object o: inputList) {
                             final Object pojo;
                             if (o == null) {
                                 pojo = null;
                             } else {
-                                pojo = serializer != null? serializer.toPoJo(o, cls) : mapper.readValue(o, cls);
+                                pojo = serializer != null? serializer.toPoJo(o, cls) : inputMapper.readValue(o, cls);
                             }
                             updatedList.add(pojo);
                         }
@@ -328,7 +330,8 @@ public class WorkerHandler {
                     ps.setUnDelivery(e2.getMessage());
                 }
             } else {
-                EventEnvelope response = new EventEnvelope().setBody(result);
+                EventEnvelope response = new EventEnvelope();
+                updateResponse(response, result);
                 output.put(BODY, response.getRawBody() == null? "null" : response.getRawBody());
                 output.put(STATUS, response.getStatus());
                 output.put(ASYNC, true);
@@ -374,6 +377,20 @@ public class WorkerHandler {
             inputOutput.put(OUTPUT, output);
             return ps.setException(status, error).setExecutionTime(diff).setInputOutput(inputOutput);
         }
+    }
+
+    private SimpleObjectMapper getMapper(boolean isInput) {
+        final ServiceDef.SerializationStrategy strategy = isInput? def.getInputSerializationStrategy() :
+                                                            def.getOutputSerializationStrategy();
+        final SimpleObjectMapper mapper;
+        if (ServiceDef.SerializationStrategy.CAMEL == strategy) {
+            mapper = SimpleMapper.getInstance().getCamelCaseMapper();
+        } else if (ServiceDef.SerializationStrategy.SNAKE == strategy) {
+            mapper = SimpleMapper.getInstance().getSnakeCaseMapper();
+        } else {
+            mapper = SimpleMapper.getInstance().getMapper();
+        }
+        return mapper;
     }
 
     private int getStatusFromException(Throwable e) {
@@ -422,13 +439,7 @@ public class WorkerHandler {
                  * 1. payload
                  * 2. key-values (as headers)
                  */
-                Object body = resultEvent.getRawBody();
-                if (serializer != null && util.isPoJo(body)) {
-                    response.setBody(serializer.toMap(body));
-                } else {
-                    response.setBody(body);
-                }
-                response.setType(resultEvent.getType());
+                renderOutputBody(resultEvent.getOriginalBody(), serializer, response);
                 for (Map.Entry<String, String> kv: headers.entrySet()) {
                     String k = kv.getKey();
                     if (!MY_ROUTE.equals(k) && !MY_TRACE_ID.equals(k) && !MY_TRACE_PATH.equals(k)) {
@@ -438,14 +449,44 @@ public class WorkerHandler {
                 response.setStatus(resultEvent.getStatus());
             }
         } else {
-            // when using custom serializer, the result will be converted to a Map
-            if (serializer != null && util.isPoJo(result)) {
-                response.setBody(serializer.toMap(result));
-            } else {
-                response.setBody(result);
-            }
+            renderOutputBody(result, serializer, response);
         }
         return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void renderOutputBody(Object result, CustomSerializer serializer, EventEnvelope response) {
+        if (result instanceof List) {
+            Set<String> names = new HashSet<>();
+            List<Object> normalized = new ArrayList<>();
+            List<Object> items = (List<Object>) result;
+            for (Object o: items) {
+                if (util.isPoJo(o)) {
+                    normalized.add(outputPojoToMap(o, serializer));
+                    names.add(o.getClass().getName());
+                } else {
+                    normalized.add(o);
+                }
+            }
+            response.setBody(normalized);
+            if (names.size() == 1) {
+                response.setType(names.stream().toList().getFirst());
+            }
+        } else if (util.isPoJo(result)) {
+            response.setBody(outputPojoToMap(result, serializer));
+            response.setType(result.getClass().getName());
+        } else {
+            response.setBody(result);
+        }
+    }
+
+    private Object outputPojoToMap(Object result, CustomSerializer serializer) {
+        if (serializer != null) {
+            return serializer.toMap(result);
+        } else {
+            final SimpleObjectMapper outputMapper = getMapper(false);
+            return outputMapper.readValue(result, Map.class);
+        }
     }
 
     private float getExecTime(long begin) {

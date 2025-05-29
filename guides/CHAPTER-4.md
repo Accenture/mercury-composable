@@ -231,10 +231,10 @@ Regular API uses JSON and XML and they will be converted to a hash map in the ev
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
 the binary payload. Please refer to [Appendix-III](../guides/APPENDIX-III.md)
 
-## Task and its corresponding function
+## Task is a composable function
 
-Each task in a flow must have a corresponding function. You can assign a task name to the function using the
-`Preload` annotation like this.
+Each task in a flow must have a corresponding composable function. You can assign a task name to the function
+using the `Preload` annotation like this.
 
 ```java
 @PreLoad(route="greeting.demo", instances=10)
@@ -253,6 +253,49 @@ and CPU resources until an event arrives.
 
 You may also define concurrency using environment variable. You can replace the "instances" with `envInstances` using
 standard environment variable syntax like `${SOME_ENV_VARIABLE:default_value}`.
+
+## PoJo serialization strategies
+
+The default serialization strategy is defined in application.properties as the `snake.case.serialization` parameter.
+Snake case serialization will be used when this parameter is set to true. Otherwise, camel case serialization will be
+used.
+
+You can override the default serialization strategy in 2 ways in the PreLoad annotation.
+
+1. Configure input / output serialization strategies
+2. Implement your own custom serializer using the CustomSerializer interface
+
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface PreLoad {
+    String route();
+    Class<?> customSerializer() default Void.class;
+    Class<?> inputPojoClass() default Void.class;
+    int instances() default 1;
+    String envInstances() default "";
+    boolean isPrivate() default true;
+    SerializationStrategy inputStrategy() default SerializationStrategy.DEFAULT;
+    SerializationStrategy outputStrategy() default SerializationStrategy.DEFAULT;
+}
+```
+
+To instruct the composable function to deserialize input as a PoJo and serialize output PoJo, you can set the "inputStrategy" 
+and/or "outputStrategy" parameters in the PreLoad annotation.
+
+For example, when you set the inputStrategy to SerializationStrategy.CAMEL, it will override the default snake case
+serialization. This is useful when your function receives input from an external source that you have no control of the
+serialization strategy.
+
+Similarly, when you are using default snake case serialization, you can set outputStrategy to SerializationStrategy.CAMEL
+in the last function in a flow so that camel case output will be delivered to an external target.
+
+If your PoJo requires special treatment and the built-in preconfigured serializer does not handle your use case, you can
+implement your own custom serializer. In this case, the inputStrategy and outputStrategy will be ignored.
+
+> *Note*: The "inputStrategy" and "outputStrategy" parameters are applicable only to TypedLambdaFunction.
+          They are not supported in KotlinLambdaFunction.
 
 ## Unique task naming
 
@@ -436,6 +479,7 @@ To handle this level of modularity, the system provides configurable input/outpu
 | Function input or output headers  | `header` or `header.`        | both       | I/O      |
 | Function output result set        | `result.`                    | left       | output   |
 | Function output status code       | `status`                     | left       | output   |
+| Function output pojo class name   | `datatype`                   | left       | output   |
 | Decision value                    | `decision`                   | right      | output   |
 | State machine dataset             | `model.`                     | both       | I/O      |
 | Parent state machine dataset      | `model.parent.`              | both       | I/O      |
@@ -446,7 +490,12 @@ namespace. You should only access specific key-values in the model or model.pare
 
 The namespace `model.parent.` is shared by the primary flow and all sub-flows that are instantiated from it.
 
-The external state machine namespace uses the colon character (`:`) to indicate that the key-value is external.
+When your function returns a PoJo, the `datatype` field in the left-hand-side will contain
+the class name of the PoJo. This allows you to save the class name in the state machine and
+pass it to another task that needs to reconstruct the PoJo class. This is used when your
+function may return different PoJo classes for different scenarios.
+
+The external state machine namespace uses the namespace `ext:` to indicate that the key-value is external.
 
 *Constants for input data mapping*
 

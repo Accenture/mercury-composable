@@ -17,6 +17,9 @@ precedence.
 | rest.server.port                       | e.g. 8085                                                       | Optional    |
 | websocket.server.port                  | Alias for rest.server.port                                      | Optional    |
 | rest.automation                        | true if you want to enable automation                           | Optional    |
+| rest.server.ssl-enabled                | Enable SSL for reactive HTTP server (Default: false)            | Optional    |
+| rest.server.ssl.cert                   | X.509 certificate in PEM format (path in classpath: or file:)   | Optional    |
+| rest.server.ssl.key                    | Private key in PEM format (path in classpath: or file:)         | Optional    |
 | yaml.rest.automation                   | Config location e.g. classpath:/rest.yaml                       | Optional    |
 | yaml.event.over.http                   | Config location classpath:/event-over-http.yaml                 | Optional    |
 | yaml.multicast                         | Config location classpath:/multicast.yaml                       | Optional    |
@@ -33,7 +36,7 @@ precedence.
 | show.application.properties            | comma separated list of property names                          | Optional    |
 | cloud.connector                        | kafka, none, etc.                                               | Optional    |
 | cloud.services                         | e.g. some.interesting.service                                   | Optional    |
-| snake.case.serialization               | true (recommended)                                              | Optional    |
+| snake.case.serialization               | Default: true (recommended)                                     | Optional    |
 | trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
 | hsts.feature                           | default is true                                                 | Optional*   |
 | protect.info.endpoints                 | true to disable actuators. (Default: true)                      | Optional*   |
@@ -56,6 +59,7 @@ precedence.
 | kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
 | modules.autostart                      | list of composable functions to start                           | Optional    |
 | max.model.array.size                   | max size of a dynamic model variable as index<br>(Default 1000) | Optional    |
+| stack.trace.transport.size             | Depth of stack trace in EventEnvelope (Default 10)              | Optional    |
 | spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
 
 `*` - applies to the "rest-spring" library only
@@ -114,6 +118,18 @@ folders.
 
 The resource file path must be prefixed with the keyword `classpath:`.
 This discovery mechanism applies to all types of files including config files.
+
+## Enabling HTTPS transport
+
+Optionally, TLS (SSL) transport can be enabled by setting the parameter `rest.server.ssl-enabled` 
+to true and adding the `rest.server.ssl.cert` and `rest.server.ssl.key` to point to the certificate
+and private key files.
+
+Setting up TLS/SSL transport at application level is not recommended. It is provided as a convenient
+feature in case you need it for some use cases.
+
+For cloud native applications, the best practice is using a TLS/SSL API gateway as a gatekeeper
+to your applications.
 
 ## Partial support of Spring Active Profiles
 

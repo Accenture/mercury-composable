@@ -267,6 +267,7 @@ class FlowTests extends TestBase {
         assertEquals(SEQ, util.str2int(result.getHeader("X-Sequence")));
         assertEquals("AAA", result.getHeader("X-Tag"));
         assertEquals("async-http-client", result.getHeader("x-agent"));
+        assertEquals("com.accenture.models.PoJo", result.getHeader("x-datatype"));
     }
 
     @SuppressWarnings("unchecked")
@@ -577,22 +578,38 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void exceptionTest() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+    void exceptionTest() throws IOException, InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", true);
+        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", "403");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        EventEnvelope res = po.request(req, TIMEOUT).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertEquals(403, result.get("status"));
         assertEquals("just a test", result.get("message"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void exceptionLoopTest() throws IOException, InterruptedException, ExecutionException {
+        final long TIMEOUT = 8000;
+        String USER = "test-user";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
+        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", "409");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, TIMEOUT).get();
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(400, result.get("status"));
+        assertEquals("Demonstrate throwing exception at top level", result.get("message"));
     }
 
     @SuppressWarnings("unchecked")

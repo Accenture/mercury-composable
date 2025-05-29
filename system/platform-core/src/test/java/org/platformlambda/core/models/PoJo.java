@@ -28,7 +28,6 @@ import java.time.LocalTime;
 import java.util.Date;
 
 public class PoJo {
-
     private int number;
     private long longNumber;
     private BigInteger bigInteger;

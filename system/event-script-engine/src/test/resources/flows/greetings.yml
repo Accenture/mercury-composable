@@ -2,6 +2,7 @@ flow:
   id: 'greetings'
   description: 'Simplest flow of one task'
   ttl: 10s
+  exception: 'v1.hello.exception'
 
 first.task: 'my.greeting.task'
 
@@ -57,7 +58,6 @@ tasks:
       - 'model.bool -> !model.bool -> output.body.positive'
     description: 'Hello World'
     execution: end
-    exception: 'v1.hello.exception'
 
   - input:
       - 'error.code -> status'

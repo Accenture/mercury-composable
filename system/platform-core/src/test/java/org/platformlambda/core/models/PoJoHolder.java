@@ -16,22 +16,21 @@
 
  */
 
-package com.accenture.models;
+package org.platformlambda.core.models;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
-public class PoJo {
+public class PoJoHolder {
+    private List<PoJo> pojos = new ArrayList<>();
 
-    public String user;
-    public Date date;
-    public int sequence;
+    public PoJoHolder(PoJo source, int counter) {
+        while (counter-- > 0) {
+            pojos.add(source);
+        }
+    }
 
-    public String key1;
-    public String key2;
-
-    public PoJo(String user, int sequence) {
-        this.user = user;
-        this.sequence = sequence;
-        date = new Date();
+    public List<PoJo> getPoJo() {
+        return pojos;
     }
 }

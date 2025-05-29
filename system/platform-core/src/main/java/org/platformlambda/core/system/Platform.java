@@ -464,6 +464,20 @@ public class Platform {
         }
     }
 
+    public void setSerializationStrategy(String route,
+                                         ServiceDef.SerializationStrategy inputStrategy,
+                                         ServiceDef.SerializationStrategy outputStrategy) {
+        if (!hasRoute(route)) {
+            throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
+        }
+        ServiceDef service = registry.get(route);
+        if (service == null) {
+            throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
+        }
+        service.setInputSerializationStrategy(inputStrategy);
+        service.setOutputSerializationStrategy(outputStrategy);
+    }
+
     /**
      * Check the route registered in this application instance
      *

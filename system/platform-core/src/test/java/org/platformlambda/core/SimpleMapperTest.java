@@ -145,18 +145,18 @@ class SimpleMapperTest {
     @Test
     void bigDecimalSerializationTests() {
         SimpleMapper mapper = SimpleMapper.getInstance();
-        String NUMBER = "number";
-        String ONE  = "0.00000001";
-        String ZERO = "0.00000000";
-        SimpleNumber one  = new SimpleNumber(ONE);
-        SimpleNumber zero = new SimpleNumber(ZERO);
+        String testNumber = "number";
+        String testValueOne  = "0.00000001";
+        String testValueZero = "0.00000000";
+        SimpleNumber one  = new SimpleNumber(testValueOne);
+        SimpleNumber zero = new SimpleNumber(testValueZero);
         // verify hash map result
         Map<String, Object> mapOne = mapper.getMapper().readValue(one, Map.class);
         // numeric value is preserved
-        assertEquals(ONE, mapOne.get(NUMBER));
+        assertEquals(testValueOne, mapOne.get(testNumber));
         // ensure that ZERO is converted to "0"
         Map<String, Object> mapZero = mapper.getMapper().readValue(zero, Map.class);
-        assertEquals("0", mapZero.get(NUMBER));
+        assertEquals("0", mapZero.get(testNumber));
         // verify PoJo class conversion behavior - this will return the original object because the class is the same
         SimpleNumber numberOne = mapper.getMapper().readValue(one, SimpleNumber.class);
         assertEquals(numberOne.number, one.number);
@@ -165,7 +165,7 @@ class SimpleMapperTest {
         SimpleNumber numberZero = mapper.getMapper().readValue(zeroValue, SimpleNumber.class);
         // the original number has the zero number with many zeros after the decimal
         assertEquals("0E-8", zero.number.toString());
-        assertEquals(ZERO, zero.number.toPlainString());
+        assertEquals(testValueZero, zero.number.toPlainString());
         // the converted BigDecimal gets a zero number without zeros after the decimal
         assertEquals("0", numberZero.number.toString());
         // verify map to PoJo serialization behavior
@@ -181,13 +181,13 @@ class SimpleMapperTest {
 
     @Test
     void bigDecimalTests() {
-        String ZERO = "0.00000000";
+        String testValueZero = "0.00000000";
         BigDecimal zero = new BigDecimal("0");
-        BigDecimal zeroes = new BigDecimal(ZERO);
+        BigDecimal zeroes = new BigDecimal(testValueZero);
         BigDecimal result = zero.multiply(zeroes);
         // precision is preserved after multiplication
         assertEquals(zeroes, result);
-        assertEquals(ZERO, result.toPlainString());
+        assertEquals(testValueZero, result.toPlainString());
         // test zero values
         assertTrue(SimpleMapper.getInstance().isZero(zero));
         assertTrue(SimpleMapper.getInstance().isZero(zeroes));
@@ -201,16 +201,16 @@ class SimpleMapperTest {
     void caseMappingTest() {
         SimpleObjectMapper snakeMapper = SimpleMapper.getInstance().getSnakeCaseMapper();
         SimpleObjectMapper camelMapper = SimpleMapper.getInstance().getCamelCaseMapper();
-        String NUMBER = "1.234567890";
-        CaseDemo sn = new CaseDemo(NUMBER);
+        String testNumber = "1.234567890";
+        CaseDemo sn = new CaseDemo(testNumber);
         Map<String, Object> snakeMap = snakeMapper.readValue(sn, Map.class);
-        assertEquals(NUMBER, snakeMap.get("case_demo"));
+        assertEquals(testNumber, snakeMap.get("case_demo"));
         Map<String, Object> camelMap = camelMapper.readValue(sn, Map.class);
-        assertEquals(NUMBER, camelMap.get("caseDemo"));
+        assertEquals(testNumber, camelMap.get("caseDemo"));
         CaseDemo restoredFromSnake = snakeMapper.readValue(snakeMap, CaseDemo.class);
-        assertEquals(NUMBER, restoredFromSnake.caseDemo.toPlainString());
+        assertEquals(testNumber, restoredFromSnake.caseDemo.toPlainString());
         CaseDemo restoredFromCamel = camelMapper.readValue(camelMap, CaseDemo.class);
-        assertEquals(NUMBER, restoredFromCamel.caseDemo.toPlainString());
+        assertEquals(testNumber, restoredFromCamel.caseDemo.toPlainString());
     }
 
     private static class SimpleNumber {

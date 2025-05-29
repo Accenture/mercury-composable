@@ -23,14 +23,14 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.system.ServiceDef;
 
+import java.util.List;
 import java.util.Map;
 
-@PreLoad(route="hello.input.mapping", instances = 10)
+@PreLoad(route="hello.input.mapping", instances = 10, inputStrategy = ServiceDef.SerializationStrategy.CAMEL)
 public class HelloInputMapping implements TypedLambdaFunction<PoJo, EventEnvelope> {
-
     private static final String SERVICE_NAME = "hello.input.mapping";
-
     private static final String MY_ROUTE = "my_route";
     private static final String MY_TRACE_ID = "my_trace_id";
     private static final String MY_TRACE_PATH = "my_trace_path";
@@ -50,9 +50,10 @@ public class HelloInputMapping implements TypedLambdaFunction<PoJo, EventEnvelop
         boolean isInterceptor = platform.isInterceptor(SERVICE_NAME);
         boolean isTrackable = platform.isTrackable(SERVICE_NAME);
         /*
-         * trace_id and trace_path are READ only metadata
+         * 1. trace_id and trace_path are READ only metadata
+         * 2. intentionally set response body as a list of PoJo
          */
-        return new EventEnvelope().setBody(input)
+        return new EventEnvelope().setBody(List.of(input))
                 // the system will filter out reserved metadata
                 .setHeader(MY_ROUTE, headers.get(MY_ROUTE))
                 .setHeader(MY_TRACE_ID, headers.get(MY_TRACE_ID))

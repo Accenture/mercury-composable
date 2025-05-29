@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
+---
+## Version 4.2.43, 5/28/2025
+
+### Added
+
+1. Introduce "datatype" in output data mapping of event script
+2. Snake case and camel case selection in PreLoad annotation to override default serialization case strategy
+
+### Removed
+
+N/A
+
+### Changed
+
+Event Script improvement - avoid endless loop when top-level exception handler throws exception itself
 
 ---
 ## Version 4.2.42, 5/24/2025

@@ -672,7 +672,12 @@ class PostOfficeTest extends TestBase {
                 relevantItems.add(line);
             }
         });
-        log.info("{}", Map.of("stack", relevantItems));
+        assertFalse(relevantItems.isEmpty());
+        var stackTrace = response.getStackTrace();
+        List<String> records = util.split(stackTrace, "\n");
+        // since max.stack.trace.size=5, the number of lines is 6 where the last line indicates the actual stack size.
+        assertEquals(6, records.size());
+        assertTrue(records.get(5).startsWith("...("));
     }
 
     @Test
@@ -1773,6 +1778,7 @@ class PostOfficeTest extends TestBase {
         platform.release(SIMPLE_CALLBACK);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void testInputObjectMapping() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
@@ -1788,16 +1794,21 @@ class PostOfficeTest extends TestBase {
         minimalData.setName(HELLO_WORLD);
         minimalData.setDate(now);
         minimalData.setLocalDateTime(time);
-        EventEnvelope request = new EventEnvelope().setTo(AUTO_MAPPING).setBody(minimalData)
+        // the function "hello.input.mapping" is configured with input serialization strategy = camel
+        // and output serialization strategy = default
+        var camelCaseData = SimpleMapper.getInstance().getCamelCaseMapper().readValue(minimalData, Map.class);
+        EventEnvelope request = new EventEnvelope().setTo(AUTO_MAPPING).setBody(camelCaseData)
                                 .setTrace(TRACE_ID,TRACE_PATH).setFrom("unit.test");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         // for security, automatic PoJo class restore is disabled
-        assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals(ArrayList.class, response.getBody().getClass());
         // original PoJo class name is transported by the event envelope
         assertEquals(PoJo.class.getName(), response.getType());
-        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(response.getBody(), PoJo.class);
+        List<Object> listOfMaps = (List<Object>) response.getBody();
+        assertEquals(1, listOfMaps.size());
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(listOfMaps.getFirst(), PoJo.class);
         assertEquals(now, pojo.getDate());
         assertEquals(time, pojo.getLocalDateTime());
         assertEquals(HELLO_WORLD, pojo.getName());
@@ -1865,8 +1876,7 @@ class PostOfficeTest extends TestBase {
         assertEquals(pojo.fullName, responsePoJo1.fullName);
         assertEquals(pojo.address, responsePoJo1.address);
         assertEquals(pojo.telephone, responsePoJo1.telephone);
-        // result event envelope is encoded as Map ("M") because the custom serializer is external to the function
-        assertEquals("M", result1.getType());
+        assertEquals("org.platformlambda.core.models.SimplePoJo", result1.getType());
         // test kotlin user function
         var event2 = new EventEnvelope().setTo("custom.serializer.service.kotlin");
         po.setEventBodyAsPoJo(event2, pojo);

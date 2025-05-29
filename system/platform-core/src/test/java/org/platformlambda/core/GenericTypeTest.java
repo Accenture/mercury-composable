@@ -113,7 +113,8 @@ class GenericTypeTest {
         list.add(2);
         list.add(pojo2);
         EventEnvelope event = new EventEnvelope();
-        event.setBody(list);
+        var raw = event.setBodyWithDefaultSerialization(list).getBody();
+        assertInstanceOf(List.class, raw);
         List<PoJo> pojoList = event.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(PoJo.class, pojoList.getFirst().getClass());
         // non-PoJo is converted to null

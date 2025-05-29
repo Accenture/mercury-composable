@@ -58,6 +58,7 @@ public class FlowInstance {
     private String traceId;
     private String tracePath;
     private String parentId;
+    private boolean topLevelException = false;
     private boolean responded = false;
     private boolean running = true;
 
@@ -208,6 +209,14 @@ public class FlowInstance {
      */
     public void setTracePath(String tracePath) {
         this.tracePath = tracePath;
+    }
+
+    public boolean topLevelExceptionHappened() {
+        return topLevelException;
+    }
+
+    public void setExceptionAtTopLevel(boolean state) {
+        this.topLevelException = state;
     }
 
     /**

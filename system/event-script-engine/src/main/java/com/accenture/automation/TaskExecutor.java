@@ -69,6 +69,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String OUTPUT_HEADER = "output.header";
     private static final String MODEL = "model";
     private static final String RESULT = "result";
+    private static final String DATA_TYPE = "datatype";
     private static final String HEADER = "header";
     private static final String CODE = "code";
     private static final String STACK_TRACE = "stack";
@@ -214,8 +215,18 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                             flowInstance.pipeMap.clear();
                         }
                     }
-                    String handler = task.getExceptionTask() != null ? task.getExceptionTask() : flowInstance.getFlow().exception;
-                    if (handler != null) {
+                    boolean isTaskLevel = task.getExceptionTask() != null;
+                    String handler = isTaskLevel? task.getExceptionTask() : flowInstance.getFlow().exception;
+                    /*
+                     * Top level exception handler catches all unhandled exceptions.
+                     *
+                     * To exception loops at the top level exception handler,
+                     * abort the flow if top level exception handler throws exception.
+                     */
+                    if (handler != null && !flowInstance.topLevelExceptionHappened()) {
+                        if (!isTaskLevel) {
+                            flowInstance.setExceptionAtTopLevel(true);
+                        }
                         Map<String, Object> error = new HashMap<>();
                         error.put(CODE, statusCode);
                         error.put(MESSAGE, event.getError());
@@ -230,6 +241,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     }
                     return null;
                 }
+                // clear top level exception state
+                flowInstance.setExceptionAtTopLevel(false);
                 handleCallback(from, flowInstance, task, event, seq);
             }
         } catch (Exception e) {
@@ -302,6 +315,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         combined.put(STATUS, event.getStatus());
         combined.put(HEADER, event.getHeaders());
         combined.put(RESULT, event.getRawBody());
+        if (event.getType() != null) {
+            combined.put(DATA_TYPE, event.getType());
+        }
         // consolidated dataset includes input, model and task result set
         MultiLevelMap consolidated = new MultiLevelMap(combined);
         // perform output data mapping //
@@ -313,10 +329,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
                 final Object value;
                 String rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), consolidated, true);
-                if (isInput || lhs.startsWith(MODEL_NAMESPACE)
-                        || lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)
-                        || lhs.equals(STATUS)
-                        || lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE)) {
+                if (isInput || lhs.startsWith(MODEL_NAMESPACE) ||
+                        lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE) ||
+                        lhs.equals(STATUS) || lhs.equals(DATA_TYPE) ||
+                        lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE)) {
                     value = getLhsElement(lhs, consolidated);
                     if (value == null) {
                         removeModelElement(rhs, consolidated);
@@ -705,6 +721,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 String lhs = substituteDynamicIndex(entry.substring(0, sep).trim(), source, false);
                 String rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), source, true);
                 boolean inputLike = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT) ||
+                                    lhs.equals(DATA_TYPE) ||
                                     lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE);
                 if (lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
                     lhs = lhs.toLowerCase();

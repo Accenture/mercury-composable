@@ -145,7 +145,7 @@ class EventEnvelopeTest {
         pojo.setName(HELLO);
         List<PoJo> list = Collections.singletonList(pojo);
         EventEnvelope source = new EventEnvelope();
-        source.setBody(list);
+        source.setBodyWithDefaultSerialization(list);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         // when transporting list of PoJo, the PoJo class is saved as "type"
