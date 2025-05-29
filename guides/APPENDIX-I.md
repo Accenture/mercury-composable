@@ -6,61 +6,61 @@ application.yml file.
 When you use both application.properties and application.yml, the parameters in application.properties will take
 precedence.
 
-| Key                                    | Value (example)                                                 | Required    |
-|:---------------------------------------|:----------------------------------------------------------------|:------------|
-| application.name                       | Application name                                                | Yes         |
-| spring.application.name                | Alias for application name                                      | Yes*1       |
-| info.app.version                       | major.minor.build (e.g. 1.0.0)                                  | Yes         |
-| info.app.description                   | Something about your application                                | Yes         |
-| web.component.scan                     | your own package path or parent path                            | Yes         |
-| server.port                            | e.g. 8083                                                       | Yes*1       |
-| rest.server.port                       | e.g. 8085                                                       | Optional    |
-| websocket.server.port                  | Alias for rest.server.port                                      | Optional    |
-| rest.automation                        | true if you want to enable automation                           | Optional    |
-| rest.server.ssl-enabled                | Enable SSL for reactive HTTP server (Default: false)            | Optional    |
-| rest.server.ssl.cert                   | X.509 certificate in PEM format (path in classpath: or file:)   | Optional    |
-| rest.server.ssl.key                    | Private key in PEM format (path in classpath: or file:)         | Optional    |
-| yaml.rest.automation                   | Config location e.g. classpath:/rest.yaml                       | Optional    |
-| yaml.event.over.http                   | Config location classpath:/event-over-http.yaml                 | Optional    |
-| yaml.multicast                         | Config location classpath:/multicast.yaml                       | Optional    |
-| yaml.journal                           | Config location classpath:/journal.yaml                         | Optional    |
-| yaml.route.substitution                | Config location                                                 | Optional    |
-| yaml.topic.substitution                | Config location                                                 | Optional    |
-| yaml.cron                              | Config location                                                 | Optional    |
-| yaml.flow.automation                   | Config location. e.g. classpath:/flows.yaml                     | EventScript |
-| static.html.folder                     | classpath:/public/                                              | Yes         |
-| spring.web.resources.static-locations  | (alias for static.html.folder)                                  | Yes*1       |
-| mime.types                             | Map of file extensions to MIME types<br/>(application.yml only) | Optional    |
-| spring.mvc.static-path-pattern         | /**                                                             | Yes*1       |
-| show.env.variables                     | comma separated list of variable names                          | Optional    |
-| show.application.properties            | comma separated list of property names                          | Optional    |
-| cloud.connector                        | kafka, none, etc.                                               | Optional    |
-| cloud.services                         | e.g. some.interesting.service                                   | Optional    |
-| snake.case.serialization               | Default: true (recommended)                                     | Optional    |
-| trace.http.header                      | comma separated list. Default "X-Trace-Id"                      | Optional    |
-| hsts.feature                           | default is true                                                 | Optional*   |
-| protect.info.endpoints                 | true to disable actuators. (Default: true)                      | Optional*   |
-| application.feature.route.substitution | default is false                                                | Optional    |
-| application.feature.topic.substitution | default is false                                                | Optional    |
-| kafka.replication.factor               | 3                                                               | Kafka       |
-| cloud.client.properties                | e.g. classpath:/kafka.properties                                | Connector   |
-| user.cloud.client.properties           | e.g. classpath:/second-kafka.properties                         | Connector   |
-| default.app.group.id                   | groupId for the app instance.<br/>(Default: appGroup)           | Connector   |
-| default.monitor.group.id               | groupId for the presence-monitor.<br/>(Default: monitorGroup)   | Connector   |
-| monitor.topic                          | topic for the presence-monitor.<br/>(Default: service.monitor)  | Connector   |
-| app.topic.prefix                       | Default: multiplex (DO NOT change)                              | Connector   |
-| app.partitions.per.topic               | Max Kafka partitions per topic.<br/>(Default: 32)               | Connector   |
-| max.virtual.topics                     | Max virtual topics = partitions * topics.<br/>(Default: 288)    | Connector   |
-| max.closed.user.groups                 | Number of closed user groups. <br/>(Default: 10, range: 3 - 30) | Connector   |
-| closed.user.group                      | Closed user group. (Default: 1)                                 | Connector   |
-| transient.data.store                   | Default is "/tmp/reactive"                                      | Optional    |
-| running.in.cloud                       | Default is false (set to true if containerized)                 | Optional    |
-| deferred.commit.log                    | Default is false (for unit tests only)                          | Optional    |
-| kernel.thread.pool                     | Default 100. Not more than 200.                                 | Optional    |
-| modules.autostart                      | list of composable functions to start                           | Optional    |
-| max.model.array.size                   | max size of a dynamic model variable as index<br>(Default 1000) | Optional    |
-| stack.trace.transport.size             | Depth of stack trace in EventEnvelope (Default 10)              | Optional    |
-| spring.boot.main                       | Default "org.platformlambda.rest.RestServer"                    | Spring Boot |
+| Key                                    | Value (example)                                                         | Required    |
+|:---------------------------------------|:------------------------------------------------------------------------|:------------|
+| application.name                       | Application name                                                        | Yes         |
+| spring.application.name                | Alias for application name                                              | Yes*        |
+| info.app.version                       | major.minor.build (e.g. 1.0.0)                                          | Yes         |
+| info.app.description                   | Something about your application                                        | Yes         |
+| web.component.scan                     | your own package path or parent path                                    | Yes         |
+| server.port                            | e.g. 8083                                                               | Yes*1       |
+| rest.server.port                       | e.g. 8085                                                               | Optional    |
+| websocket.server.port                  | Alias for rest.server.port                                              | Optional    |
+| rest.automation                        | true if you want to enable automation                                   | Optional    |
+| rest.server.ssl-enabled                | Enable SSL for reactive HTTP server<br/>(Default: false)                | Optional    |
+| rest.server.ssl.cert                   | X.509 certificate in PEM format<br/>filepath prefix classpath: or file: | Optional    |
+| rest.server.ssl.key                    | Private key in PEM format<br/>filepath prefix classpath: or file:       | Optional    |
+| yaml.rest.automation                   | Config location e.g. classpath:/rest.yaml                               | Optional    |
+| yaml.event.over.http                   | Config location classpath:/event-over-http.yaml                         | Optional    |
+| yaml.multicast                         | Config location classpath:/multicast.yaml                               | Optional    |
+| yaml.journal                           | Config location classpath:/journal.yaml                                 | Optional    |
+| yaml.route.substitution                | Config location                                                         | Optional    |
+| yaml.topic.substitution                | Config location                                                         | Optional    |
+| yaml.cron                              | Config location                                                         | Optional    |
+| yaml.flow.automation                   | Config location. e.g. classpath:/flows.yaml                             | EventScript |
+| static.html.folder                     | classpath:/public/                                                      | Yes         |
+| spring.web.resources.static-locations  | (alias for static.html.folder)                                          | Yes*        |
+| spring.mvc.static-path-pattern         | /**                                                                     | Yes*        |
+| show.env.variables                     | comma separated list of variable names                                  | Optional    |
+| show.application.properties            | comma separated list of property names                                  | Optional    |
+| cloud.connector                        | kafka, none, etc.                                                       | Optional    |
+| cloud.services                         | e.g. some.interesting.service                                           | Optional    |
+| mime.types                             | Map of file extensions to MIME types<br/>(application.yml only)         | Optional    |
+| snake.case.serialization               | Default: true (recommended)                                             | Optional    |
+| trace.http.header                      | comma separated list. Default: "X-Trace-Id"                             | Optional    |
+| hsts.feature                           | Default: true                                                           | Optional*   |
+| protect.info.endpoints                 | true to disable actuators<br/>(Default: false)                          | Optional*   |
+| application.feature.route.substitution | Default: false                                                          | Optional    |
+| application.feature.topic.substitution | Default: false                                                          | Optional    |
+| kafka.replication.factor               | 3                                                                       | Kafka       |
+| cloud.client.properties                | e.g. classpath:/kafka.properties                                        | Connector   |
+| user.cloud.client.properties           | e.g. classpath:/second-kafka.properties                                 | Connector   |
+| default.app.group.id                   | groupId for an app instance<br/>(Default: appGroup)                     | Connector   |
+| default.monitor.group.id               | groupId for presence-monitor<br/>(Default: monitorGroup)                | Connector   |
+| monitor.topic                          | topic for presence-monitor.<br/>(Default: service.monitor)              | Connector   |
+| app.topic.prefix                       | Default: multiplex (DO NOT change)                                      | Connector   |
+| app.partitions.per.topic               | Max Kafka partitions per topic<br/>(Default: 32)                        | Connector   |
+| max.virtual.topics                     | Max virtual topics = partitions * topics<br/>(Default: 288)             | Connector   |
+| max.closed.user.groups                 | Number of closed user groups<br/>(Default: 10, range: 3 - 30)           | Connector   |
+| closed.user.group                      | Closed user group. (Default: 1)                                         | Connector   |
+| transient.data.store                   | Default: "/tmp/reactive"                                                | Optional    |
+| running.in.cloud                       | Default: false (set to true if containerized)                           | Optional    |
+| deferred.commit.log                    | Default: false (for unit tests only)                                    | Optional    |
+| kernel.thread.pool                     | Default: 100. Not more than 200.                                        | Optional    |
+| modules.autostart                      | list of composable functions to start                                   | Optional    |
+| max.model.array.size                   | max size of a dynamic model variable as index<br/>(Default: 1000)       | Optional    |
+| stack.trace.transport.size             | Depth of stack trace in EventEnvelope<br/>(Default: 10)                 | Optional    |
+| spring.boot.main                       | Default: org.platformlambda.rest.RestServer                             | Spring Boot |
 
 `*` - applies to the "rest-spring" library only
 
