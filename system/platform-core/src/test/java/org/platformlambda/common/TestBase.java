@@ -130,11 +130,9 @@ public class TestBase {
                 final String sslCertPath = config.getProperty("rest.server.ssl.cert");
                 final String sslKeyPath = config.getProperty("rest.server.ssl.key");
                 HttpServer httpsServer = vertx.createHttpServer(AppStarter.getHttpServerOptions(true, sslCertPath, sslKeyPath));
-                httpsServer.requestHandler(request -> {
-                    request.response()
-                            .putHeader("Content-Type", "text/plain")
-                            .end("Hello from HTTPS server");
-                });
+                httpsServer.requestHandler(request -> request.response()
+                        .putHeader("Content-Type", "text/plain")
+                        .end("Hello from HTTPS server"));
                 httpsServer.listen(8443)
                         .onSuccess(service -> {
                             try {
