@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Add unit test for https server
+
+---
+## Version 4.2.43, 5/28/2025
+
+### Added
+
 1. Introduce "datatype" in output data mapping of event script
 2. Snake case and camel case selection in PreLoad annotation to override default serialization case strategy
 

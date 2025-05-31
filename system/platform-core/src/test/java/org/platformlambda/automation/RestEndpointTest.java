@@ -49,7 +49,7 @@ class RestEndpointTest extends TestBase {
     private static final SimpleXmlParser xml = new SimpleXmlParser();
 
     @BeforeAll
-    public static void setupAuthenticator() throws IOException {
+    static void setupAuthenticator() throws IOException {
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute("v1.api.auth")) {
             LambdaFunction f = (headers, input, instance) -> {

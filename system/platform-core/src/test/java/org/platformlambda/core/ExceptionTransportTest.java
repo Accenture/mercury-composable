@@ -25,7 +25,7 @@ class ExceptionTransportTest extends TestBase {
     private static final BlockingQueue<EventEnvelope> callbackBench = new ArrayBlockingQueue<>(1);
 
     @BeforeAll
-    public static void setup() throws IOException {
+    static void setup() throws IOException {
         Platform platform = Platform.getInstance();
         LambdaFunction f = (headers, input, instance) -> {
             throw new IllegalArgumentException("demo");
