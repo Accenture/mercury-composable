@@ -13,9 +13,10 @@ tasks:
     output:
       - 'result -> model.pojo'
       - 'int(5) -> model.n'
-      - 'text(item1) -> model.list[0]'
-      - 'text(item2) -> model.list[1]'
-      - 'text(item3) -> model.list[2]'
+      # the empty index syntax '[]' tells the system to append an element to a list
+      - 'text(item1) -> model.list[]'
+      - 'text(item2) -> model.list[]'
+      - 'text(item3) -> model.list[]'
       - 'model.list:length -> model.iteration'
     description: 'Pass a pojo to another task'
     execution: pipeline
@@ -53,18 +54,19 @@ tasks:
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
+      - 'text(x) -> latest[]'
+      - 'text(y) -> latest[]'
+      - 'text(z) -> latest[]'
       - 'model.latest -> latest[model.n]'
-      - 'text(x) -> latest[0]'
-      - 'text(y) -> latest[1]'
-      - 'text(z) -> latest[2]'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
+      - 'text(a) -> output.body.items[]'
+      # text constant supports special characters including the mapping control signature "->"
+      - 'text(b -> x(b)) -> output.body.items[]'
+      - 'text(c) -> output.body.items[]'
       - 'model.latest -> output.body.items[model.n]'
-      - 'text(c) -> output.body.items[2]'
-      - 'text(a) -> output.body.items[0]'
-      - 'text(b) -> output.body.items[1]'
       - 'model.none -> model.pojo'
     description: 'Final step to take result from the pipeline'
     execution: end

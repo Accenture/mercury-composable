@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MultiLevelMap {
+    private static final NotFound NOT_FOUND = NotFound.createNotFound();
     private final Map<String, Object> multiLevels = new HashMap<>();
 
     /**
@@ -140,20 +141,20 @@ public class MultiLevelMap {
                 break;
             }
         }
-        return null;
+        return NOT_FOUND;
     }
 
     @SuppressWarnings("unchecked")
     private Object getElement(String path, Map<String, Object> map) {
-        if (path == null || map == null || map.isEmpty()) return null;
+        if (path == null || map == null || map.isEmpty()) return NOT_FOUND;
         if (map.containsKey(path)) {
             return map.get(path);
         }
         if (!isComposite(path)) {
-            return null;
+            return NOT_FOUND;
         }
         Utility util = Utility.getInstance();
-        List<String> list = util.split(path, "./");
+        List<String> list = util.split(path, ".");
         Map<String, Object> current = map;
         int len = list.size();
         int n = 0;
@@ -194,11 +195,16 @@ public class MultiLevelMap {
             // item not found
             break;
         }
-        return new NotFound();
+        return NOT_FOUND;
     }
 
     /**
      * Set a key-value
+     * <p>
+     * Note: you may append a new list element using the empty index syntax.
+     *  e.g. this will set element "hello.world[0]" automatically:
+     * <p>
+     *          setElement("hello.world[]", "test");
      *
      * @param compositePath using dot-bracket format
      * @param value to be inserted
@@ -206,8 +212,29 @@ public class MultiLevelMap {
      */
     public MultiLevelMap setElement(String compositePath, Object value) {
         validateCompositePathSyntax(compositePath);
-        setElement(compositePath, value, multiLevels, false);
+        var normalizedPath = compositePath.contains("[]")? appendIndex(compositePath) : compositePath;
+        setElement(normalizedPath, value, multiLevels, false);
         return this;
+    }
+
+    private String appendIndex(String compositePath) {
+        int emptyIndex = compositePath.indexOf("[]");
+        if (emptyIndex != -1) {
+            String parent = compositePath.substring(0, emptyIndex);
+            var result = compositePath.substring(0, emptyIndex) + "[" + findLastIndex(parent) + "]" +
+                            compositePath.substring(emptyIndex+2);
+            return appendIndex(result);
+        }
+        return compositePath;
+    }
+
+    @SuppressWarnings("unchecked")
+    private int findLastIndex(String key) {
+        if (keyExists(key + "[0]")) {
+            return ((List<Object>) getElement(key)).size();
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -226,7 +253,7 @@ public class MultiLevelMap {
     @SuppressWarnings("unchecked")
     private void setElement(String path, Object value, Map<String, Object> map, boolean delete) {
         Utility util = Utility.getInstance();
-        List<String> segments = util.split(path, "./");
+        List<String> segments = util.split(path, ".");
         if (segments.isEmpty()) {
             return;
         }
@@ -367,6 +394,9 @@ public class MultiLevelMap {
         if (segments.isEmpty()) {
             throw new IllegalArgumentException("Missing composite path");
         }
+        if (segments.getFirst().trim().startsWith("[")) {
+            throw new IllegalArgumentException("Invalid composite path - missing first element");
+        }
         for (String s: segments) {
             if (s.contains("[") || s.contains("]")) {
                 if (!s.contains("[")) {
@@ -410,6 +440,10 @@ public class MultiLevelMap {
     }
 
     private static class NotFound {
-        // this class is intentionally an empty shell
+        private NotFound() { }
+
+        private static NotFound createNotFound() {
+            return new NotFound();
+        }
     }
 }

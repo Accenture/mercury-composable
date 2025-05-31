@@ -10,7 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
-## Version 4.2.43, 5/28/2025
+## Version 4.2.45, 5/31/2025
+
+### Added
+
+1. "Empty array index" syntax in data mapping to append an element to an array in a dataset
+2. Allow text constant in data mapping to contain any characters including the mapping signature "->"
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix for certain edge cases in detecting a non-exist key in a MultiLevelMap
+
+---
+## Version 4.2.44, 5/28/2025
 
 ### Added
 

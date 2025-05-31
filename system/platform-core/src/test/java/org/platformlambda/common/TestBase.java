@@ -81,7 +81,7 @@ public class TestBase {
     private static final AtomicInteger startCounter = new AtomicInteger(0);
 
     @BeforeAll
-    static void setup() throws IOException, InterruptedException {
+    static void baseSetup() throws IOException, InterruptedException {
         if (startCounter.incrementAndGet() == 1) {
             Platform.setAppId(APP_ID);
             Utility util = Utility.getInstance();

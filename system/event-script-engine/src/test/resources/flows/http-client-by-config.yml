@@ -9,7 +9,8 @@ tasks:
   - name: 'http.client'
     input:
       - 'input.path_parameter.demo -> model.demo'
-      - 'text(/api/echo/) -> model.uri:concat(model.demo) -> url'
+      - 'text(/api/echo/) -> model.uri'
+      - 'model.uri:concat(model.demo)-> url'
       - 'text(PUT) -> method'
       - 'text(http://127.0.0.1:${server.port}) -> host'
       - 'input.body -> body'

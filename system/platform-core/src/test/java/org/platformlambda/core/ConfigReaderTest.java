@@ -40,7 +40,7 @@ class ConfigReaderTest {
     private static final Logger log = LoggerFactory.getLogger(ConfigReaderTest.class);
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         // guarantee base configuration is loaded
         AppConfigReader config = AppConfigReader.getInstance();
         log.info("Loaded {} key-values in base configuration", config.getCompositeKeyValues().size());

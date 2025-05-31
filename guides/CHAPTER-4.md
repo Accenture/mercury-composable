@@ -618,7 +618,7 @@ As discussed earlier, an array element can be retrieved using a number as index.
 the second element with value 200 above, you can use this data mapping like this:
 
 ```yaml
-'input.body.numbers[1] -> second_number'
+- 'input.body.numbers[1] -> second_number'
 ```
 
 In the above example, it is an "input data mapping". It maps the second element of value 200 as the
@@ -628,14 +628,14 @@ For-loop feature is supported in pipeline in an event flow. It would be convenie
 iterator value as an index to map an input argument. We can do something like this:
 
 ```yaml
-'input.body.numbers[model.n] -> second_number'
+- 'input.body.numbers[model.n] -> second_number'
 ```
 where `model.n` is the iterator value in a for-loop.
 
 Similarly, it is possible to do output data mapping. For example,
 
 ```yaml
-'result.computed -> model.list[model.n]'
+- 'result.computed -> model.list[model.n]'
 ```
 
 To address an array element, we can use a number or a "dynamic model variable" as an index.
@@ -646,6 +646,25 @@ The model variable must resolved to a number.
           variable is non-numeric, the GET operation will return null and SET operation will throw
           exception. To avoid setting an arbitrary high index, the size of the index is limited by
           the parameter "max.model.array.size" in application.properties or application.yml
+
+### Append an element to an array
+
+An empty array index in the right hand side tells the system to append an element to an array.
+For example, the value resolved from the left hand side "result.item1" and "result.item2" will be appended
+to the model.items array in the state machine.
+
+```yaml
+- 'result.item1 -> model.items[]'
+- 'result.item2 -> model.items[]'
+```
+
+If model.items does not exist, the first element will be set as array index "0". Therefore, the above output
+data mapping statements are the same as:
+
+```yaml
+- 'result.item1 -> model.items[0]'
+- 'result.item2 -> model.items[1]'
+```
 
 ### Simple type matching and conversion
 
@@ -767,6 +786,9 @@ set the number as input argument. The configuration syntax can be simplified as 
 
 The above 3-part data mapping entry will be expanded into two entries internally. This extra processing is done
 at the "CompileFlows" step and thus there is no impact to the task execution speed.
+
+Please note that the 3-part data mapping format is not supported when the left-hand-side is a text constant.
+It is because a text constant may contain any special characters including the mapping signature `->`.
 
 ### Metadata for each flow instance
 

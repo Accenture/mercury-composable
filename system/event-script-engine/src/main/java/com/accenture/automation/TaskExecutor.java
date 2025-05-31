@@ -323,7 +323,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         // perform output data mapping //
         List<String> mapping = task.output;
         for (String entry: mapping) {
-            int sep = entry.indexOf(MAP_TO);
+            int sep = entry.lastIndexOf(MAP_TO);
             if (sep > 0) {
                 String lhs = substituteDynamicIndex(entry.substring(0, sep).trim(), consolidated, false);
                 boolean isInput = lhs.startsWith(INPUT_NAMESPACE) || lhs.equalsIgnoreCase(INPUT);
@@ -716,7 +716,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         // perform input data mapping //
         List<String> mapping = task.input;
         for (String entry: mapping) {
-            int sep = entry.indexOf(MAP_TO);
+            int sep = entry.lastIndexOf(MAP_TO);
             if (sep > 0) {
                 String lhs = substituteDynamicIndex(entry.substring(0, sep).trim(), source, false);
                 String rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), source, true);
@@ -972,7 +972,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                         sb.append(ptr);
                     } else {
-                        if (isRhs) {
+                        if (isRhs && !idx.isEmpty()) {
                             int ptr = util.str2int(idx);
                             if (ptr < 0) {
                                 throw new IllegalArgumentException("Cannot set RHS to negative index - " + text);

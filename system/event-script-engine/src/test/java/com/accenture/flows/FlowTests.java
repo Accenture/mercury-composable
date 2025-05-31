@@ -978,8 +978,8 @@ class FlowTests extends TestBase {
          * This demonstrates that the system can pass the index (from model.n) and
          * the list (from model.list).
          */
-        var ITEM_PICKER = "item.picker";
-        var MOCK_FUNCTION = "mock.item.picker";
+        var itemPicker = "item.picker";
+        var mockFunction = "mock.item.picker";
         var iteration = new AtomicInteger(0);
         final List<String> listStore = new ArrayList<>();
         final List<Integer> indexes = new ArrayList<>();
@@ -999,13 +999,13 @@ class FlowTests extends TestBase {
                 throw new IllegalArgumentException("Input item must be a String");
             }
         };
-        platform.registerPrivate(MOCK_FUNCTION, f, 1);
+        platform.registerPrivate(mockFunction, f, 1);
         // mock the pipeline task
         var mock = new EventScriptMock("for-loop-test-single-task");
-        var previousRoute = mock.getFunctionRoute(ITEM_PICKER);
-        var currentRoute = mock.assignFunctionRoute(ITEM_PICKER, MOCK_FUNCTION).getFunctionRoute(ITEM_PICKER);
+        var previousRoute = mock.getFunctionRoute(itemPicker);
+        var currentRoute = mock.assignFunctionRoute(itemPicker, mockFunction).getFunctionRoute(itemPicker);
         assertEquals("no.op", previousRoute);
-        assertEquals(MOCK_FUNCTION, currentRoute);
+        assertEquals(mockFunction, currentRoute);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1027,10 +1027,10 @@ class FlowTests extends TestBase {
         assertEquals(3, result.get("n"));
         assertEquals(3, iteration.get());
         assertEquals(List.of("x", "y", "z", "ITEM3"), result.get("latest"));
-        platform.release(MOCK_FUNCTION);
+        platform.release(mockFunction);
         assertEquals(List.of("ITEM1", "ITEM2", "ITEM3"), listStore);
         assertEquals(List.of(0, 1, 2), indexes);
-        assertEquals(List.of("a", "b", "c", "ITEM3"), result.get("items"));
+        assertEquals(List.of("a", "b -> x(b)", "c", "ITEM3"), result.get("items"));
     }
 
     @Test

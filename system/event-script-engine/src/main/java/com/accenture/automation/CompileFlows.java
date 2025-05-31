@@ -425,7 +425,7 @@ public class CompileFlows implements EntryPoint {
                     List<String> filteredInputMapping = filterDataMapping(inputList);
                     for (String line: filteredInputMapping) {
                         if (validInput(line)) {
-                            int sep = line.indexOf(MAP_TO);
+                            int sep = line.lastIndexOf(MAP_TO);
                             String rhs = line.substring(sep+2).trim();
                             if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
                                 log.warn("Task {} in {} uses input namespace in right-hand-side - {}", uniqueTaskName, name, line);
@@ -637,26 +637,31 @@ public class CompileFlows implements EntryPoint {
     private List<String> filterDataMapping(List<String> entries) {
         List<String> result = new ArrayList<>();
         for (String line: entries) {
-            List<String> parts = new ArrayList<>();
-            var entry = line;
-            while (entry.contains(MAP_TO)) {
-                var sep = entry.indexOf(MAP_TO);
-                var first = entry.substring(0, sep).trim();
-                parts.add(first);
-                entry = entry.substring(sep+2).trim();
-            }
-            parts.add(entry);
-            if (parts.size() == 2) {
-                result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
-            } else if (parts.size() == 3) {
-                if (parts.get(1).startsWith(MODEL_NAMESPACE) || parts.get(1).startsWith(NEGATE_MODEL)) {
-                    result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
-                    result.add(removeNegate(parts.get(1)) + " " + MAP_TO + " " + parts.get(2));
-                } else {
-                    result.add("3-part data mapping must have model variable as the middle part");
-                }
+            var entry = line.trim();
+            if (entry.startsWith(TEXT_TYPE)) {
+                // text constant supports 2-part mapping format only because text constant can include any characters
+                result.add(filterMapping(entry));
             } else {
-                result.add("Syntax must be (LHS -> RHS) or (LHS -> model.variable -> RHS)");
+                List<String> parts = new ArrayList<>();
+                while (entry.contains(MAP_TO)) {
+                    var sep = entry.indexOf(MAP_TO);
+                    var first = entry.substring(0, sep).trim();
+                    parts.add(first);
+                    entry = entry.substring(sep + 2).trim();
+                }
+                parts.add(entry);
+                if (parts.size() == 2) {
+                    result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
+                } else if (parts.size() == 3) {
+                    if (parts.get(1).startsWith(MODEL_NAMESPACE) || parts.get(1).startsWith(NEGATE_MODEL)) {
+                        result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
+                        result.add(removeNegate(parts.get(1)) + " " + MAP_TO + " " + parts.get(2));
+                    } else {
+                        result.add("3-part data mapping must have model variable as the middle part");
+                    }
+                } else {
+                    result.add("Syntax must be (LHS -> RHS) or (LHS -> model.variable -> RHS)");
+                }
             }
         }
         return result;
@@ -664,7 +669,7 @@ public class CompileFlows implements EntryPoint {
 
     private String filterMapping(String mapping) {
         var text = mapping.trim();
-        int sep = text.indexOf(MAP_TO);
+        int sep = text.lastIndexOf(MAP_TO);
         if (sep == -1) {
             return mapping;
         }
@@ -756,7 +761,7 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean validOutput(String output, boolean isDecision) {
-        int sep = output.indexOf(MAP_TO);
+        int sep = output.lastIndexOf(MAP_TO);
         if (sep > 0) {
             String lhs = output.substring(0, sep).trim();
             String rhs = output.substring(sep+2).trim();

@@ -49,7 +49,7 @@ class UtilityTests {
     private static final long ONE_DAY = 24 * ONE_HOUR;
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         // temp directory should be available from the OS without access right restriction
         File temp = new File("/tmp");
         if (!temp.exists()) {
@@ -271,7 +271,7 @@ class UtilityTests {
         String HELLO = "hello";
         String WORLD = "world";
         String HELLO_WORLD = "hello.world";
-        String NULL_KEY_VALUE = "this.is.nil";
+        String NULL_KEY_VALUE = "this.is.null";
         String NOT_EXIST_KEY = "key.not.exist";
         MultiLevelMap mm = new MultiLevelMap();
         mm.setElement(HELLO, WORLD);
