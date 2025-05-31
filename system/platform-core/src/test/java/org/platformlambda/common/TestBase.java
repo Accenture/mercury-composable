@@ -19,11 +19,9 @@
 package org.platformlambda.common;
 
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -32,6 +30,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.service.MockHelloWorld;
@@ -45,6 +44,7 @@ import org.platformlambda.core.websocket.server.MinimalistHttpHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -81,7 +81,7 @@ public class TestBase {
     private static final AtomicInteger startCounter = new AtomicInteger(0);
 
     @BeforeAll
-    public static void setup() throws IOException, InterruptedException {
+    static void setup() throws IOException, InterruptedException {
         if (startCounter.incrementAndGet() == 1) {
             Platform.setAppId(APP_ID);
             Utility util = Utility.getInstance();
@@ -131,8 +131,6 @@ public class TestBase {
                 final String sslKeyPath = config.getProperty("rest.server.ssl.key");
                 HttpServer httpsServer = vertx.createHttpServer(AppStarter.getHttpServerOptions(true, sslCertPath, sslKeyPath));
                 httpsServer.requestHandler(request -> {
-                    System.out.println("Received request: " + request.uri());
-
                     request.response()
                             .putHeader("Content-Type", "text/plain")
                             .end("Hello from HTTPS server");
@@ -151,7 +149,6 @@ public class TestBase {
                             System.exit(-1);
                         });
             }
-
             blockingWait(SERVICE_LOADED, 20);
             blockingWait(HTTPS_SERVICE_LOADED, 20);
             EventEmitter po = EventEmitter.getInstance();
@@ -174,6 +171,18 @@ public class TestBase {
             AppStarter.renderRestEndpoints();
             System.setProperty("yaml.rest.automation", "classpath:/rest.yaml");
             AppStarter.renderRestEndpoints();
+        }
+    }
+
+    @AfterAll
+    static void cleanUp() {
+        File cert = new File(CERTIFICATE_PATH);
+        File key = new File(PRIVATE_KEY_PATH);
+        if (cert.exists()) {
+            cert.deleteOnExit();
+        }
+        if (key.exists()) {
+            key.deleteOnExit();
         }
     }
 
@@ -203,69 +212,39 @@ public class TestBase {
         return bench.poll(10, TimeUnit.SECONDS);
     }
 
-    protected EventEnvelope httpPost(String host, String path,
-                                     Map<String, String> headers, Map<String, Object> body)
-            throws IOException, InterruptedException {
-        // BlockingQueue should only be used in unit test
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        EventEmitter po = EventEmitter.getInstance();
-        AsyncHttpRequest req = new AsyncHttpRequest().setMethod("POST")
-                                    .setTargetHost(host).setUrl(path).setBody(body);
-        if (headers != null) {
-            for (Map.Entry<String, String> kv: headers.entrySet()) {
-                req.setHeader(kv.getKey(), kv.getValue());
-            }
-        }
-        EventEnvelope event = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(event, 10000);
-        res.onSuccess(bench::add);
-        return bench.poll(10, TimeUnit.SECONDS);
-    }
-
-    static boolean generatePrivateKeyAndCert() {
-
+    private static boolean generatePrivateKeyAndCert() {
         try {
             // Add BouncyCastle provider
             Security.addProvider(new BouncyCastleProvider());
-
             // Generate RSA key pair
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             keyGen.initialize(2048);
             KeyPair keyPair = keyGen.generateKeyPair();
-
             // Certificate details
             X500Name issuer = new X500Name("CN=MySelfSigned");
             BigInteger serial = BigInteger.valueOf(System.currentTimeMillis());
             Date notBefore = new Date(System.currentTimeMillis() - 1000L * 60);
             Date notAfter = new Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000); // 1 year validity
-
             // Build certificate
             X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
                     issuer, serial, notBefore, notAfter, issuer, keyPair.getPublic());
-
             ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate());
-
             X509Certificate cert = new JcaX509CertificateConverter()
                     .setProvider("BC").getCertificate(certBuilder.build(signer));
-
             cert.verify(keyPair.getPublic());
-
             // Write certificate to PEM file
             try (JcaPEMWriter certWriter = new JcaPEMWriter(new FileWriter(CERTIFICATE_PATH))) {
                 certWriter.writeObject(cert);
             }
-
             // Write private key to PEM file
             try (JcaPEMWriter keyWriter = new JcaPEMWriter(new FileWriter(PRIVATE_KEY_PATH))) {
                 keyWriter.writeObject(keyPair.getPrivate());
             }
-
             log.info("Private key and certificate saved as 'key.pem' and 'cert.pem'");
             return true;
         } catch (Exception e) {
             log.warn("Unable to generate private key and certificate {}", e.getMessage());
             return false;
         }
-
     }
 }
