@@ -782,7 +782,7 @@ public class AppStarter {
         }
     }
 
-    private HttpServerOptions getHttpServerOptions(boolean sslEnabled, String sslCertPath, String sslKeyPath) {
+    public static HttpServerOptions getHttpServerOptions(boolean sslEnabled, String sslCertPath, String sslKeyPath) {
         if (!sslEnabled) {
             return new HttpServerOptions().setTcpKeepAlive(true);
         }
@@ -797,7 +797,7 @@ public class AppStarter {
         return httpServerOptions;
     }
 
-    private KeyCertOptions buildKeyCertOptionsFromResource(String sslCertPath, String sslKeyPath) {
+    private static KeyCertOptions buildKeyCertOptionsFromResource(String sslCertPath, String sslKeyPath) {
         String sslCertResourcePath = sslCertPath.substring(CLASSPATH.length());
         String sslKeyResourcePath = sslKeyPath.substring(CLASSPATH.length());
         try(InputStream sslCertIn = AppStarter.class.getResourceAsStream(sslCertResourcePath);
@@ -816,7 +816,7 @@ public class AppStarter {
         }
     }
 
-    private KeyCertOptions buildKeyCertOptionsFromFile(String sslCertPath, String sslKeyPath) {
+    private static KeyCertOptions buildKeyCertOptionsFromFile(String sslCertPath, String sslKeyPath) {
         String sslCertFilePath = sslCertPath.substring(FILEPATH.length());
         String sslKeyFilePath = sslKeyPath.substring(FILEPATH.length());
         return new PemKeyCertOptions().addCertPath(sslCertFilePath).addKeyPath(sslKeyFilePath);
