@@ -221,7 +221,7 @@ headers:
       # headers to be inserted
       #    add: ["hello-world: nice"]
       #
-      # keep and drop are mutually exclusive where keep has precedent over drop
+      # keep and drop are mutually exclusive where keep has precedence over drop
       # i.e. when keep is not empty, it will drop all headers except those to be kept
       # when keep is empty and drop is not, it will drop only the headers in the drop list
       # e.g.
