@@ -57,6 +57,8 @@ tasks:
       - 'text(x) -> latest[]'
       - 'text(y) -> latest[]'
       - 'text(z) -> latest[]'
+      # testing control character in text constant of input data mapping
+      - 'text(x -> y) -> formula'
       - 'model.latest -> latest[model.n]'
     process: 'no.op'
     output:

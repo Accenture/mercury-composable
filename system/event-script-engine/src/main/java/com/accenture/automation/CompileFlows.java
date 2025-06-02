@@ -698,7 +698,7 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean validInput(String input) {
-        int sep = input.indexOf(MAP_TO);
+        int sep = input.lastIndexOf(MAP_TO);
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();

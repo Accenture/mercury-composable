@@ -1031,6 +1031,7 @@ class FlowTests extends TestBase {
         assertEquals(List.of("ITEM1", "ITEM2", "ITEM3"), listStore);
         assertEquals(List.of(0, 1, 2), indexes);
         assertEquals(List.of("a", "b -> x(b)", "c", "ITEM3"), result.get("items"));
+        assertEquals("x -> y", result.get("formula"));
     }
 
     @Test
