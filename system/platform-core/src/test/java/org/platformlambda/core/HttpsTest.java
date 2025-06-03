@@ -59,14 +59,7 @@ class HttpsTest extends TestBase {
         WebClientOptions options = new WebClientOptions().setSsl(true).setTrustAll(true).setVerifyHost(false);
         WebClient client = WebClient.create(Vertx.vertx(), options);
         client.get(8443, "localhost", "/")
-                .send(event -> {
-                    if (event.succeeded()) {
-                        String body = event.result().bodyAsString();
-                        bench.add(body);
-                    } else {
-                        throw new RuntimeException(event.cause());
-                    }
-                });
+                .send().onSuccess(data -> bench.add(data.bodyAsString()));
         String response = bench.poll(20, TimeUnit.SECONDS);
         assertEquals("Hello from HTTPS server", response);
     }

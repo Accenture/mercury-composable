@@ -82,6 +82,7 @@ public class CompileFlows implements EntryPoint {
     private static final String MAP_TYPE = "map(";
     private static final String CLOSE_BRACKET = ")";
     private static final String MAP_TO = "->";
+    private static final String SPACED_MAP_TO = " -> ";
     private static final String TASKS = "tasks";
     private static final String NEXT = "next";
     private static final String END = "end";
@@ -651,11 +652,26 @@ public class CompileFlows implements EntryPoint {
                 }
                 parts.add(entry);
                 if (parts.size() == 2) {
-                    result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
+                    result.add(filterMapping(parts.getFirst() + SPACED_MAP_TO + parts.get(1)));
                 } else if (parts.size() == 3) {
+                    /*
+                     * 3-part mapping format handling:
+                     * 1. The middle part must be a model variable
+                     * 2. It will decompose into two entries of 2-part mappings
+                     * 3. Any type information of the LHS of the second entry will be dropped
+                     *
+                     * For example,
+                     *
+                     * BEFORE
+                     * - 'boolean(true) -> !model.bool -> negate_value'
+                     * AFTER
+                     * - 'boolean(true) -> model.bool:!'
+                     * - 'model.bool -> negate_value'
+                     */
                     if (parts.get(1).startsWith(MODEL_NAMESPACE) || parts.get(1).startsWith(NEGATE_MODEL)) {
-                        result.add(filterMapping(parts.getFirst() + " " + MAP_TO + " " + parts.get(1)));
-                        result.add(removeNegate(parts.get(1)) + " " + MAP_TO + " " + parts.get(2));
+                        result.add(filterMapping(parts.getFirst() + SPACED_MAP_TO + parts.get(1)));
+                        var secondLhs = trimTypeQualifier(parts.get(1));
+                        result.add(filterMapping(secondLhs + SPACED_MAP_TO + parts.get(2)));
                     } else {
                         result.add("3-part data mapping must have model variable as the middle part");
                     }
@@ -675,25 +691,25 @@ public class CompileFlows implements EntryPoint {
         }
         var lhs = text.substring(0, sep).trim();
         var rhs = text.substring(sep+2).trim();
-        // Detect and reformat "negate" of a model value in LHS and RHS
-        // !model.key becomes model.key:! for consistent processing by TaskExecutor
         if (lhs.startsWith(NEGATE_MODEL)) {
-            lhs = normalizedTypeMapping(lhs);
+            lhs = normalizedNegateTypeMapping(lhs);
         }
         if (rhs.startsWith(NEGATE_MODEL)) {
-            rhs = normalizedTypeMapping(rhs);
+            rhs = normalizedNegateTypeMapping(rhs);
         }
-        return lhs + " " + MAP_TO + " " + rhs;
+        return lhs + SPACED_MAP_TO + rhs;
     }
 
-    private String normalizedTypeMapping(String negate) {
-        // convert the leading negate character with a trailing colon format
-        // e.g. !model.something becomes model.something:!
+    private String normalizedNegateTypeMapping(String negate) {
+        /*
+         * Convert convenient negate (!) to internal format (:!)
+         * e.g. !model.something becomes model.something:!
+         */
         return (negate.contains(":")? negate.substring(1, negate.indexOf(':')) : negate.substring(1)) + ":!";
     }
 
-    private String removeNegate(String negate) {
-        var step1 = negate.startsWith("!")? negate.substring(1) : negate;
+    private String trimTypeQualifier(String lhs) {
+        var step1 = lhs.startsWith("!")? lhs.substring(1) : lhs;
         return step1.contains(":")? step1.substring(0, step1.indexOf(':')) : step1;
     }
 

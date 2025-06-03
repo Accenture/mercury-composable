@@ -10,6 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.2.46, 6/2/2025
+
+### Added
+
+N/A
+
+### Removed
+
+AcknowledgeResult is not required in Vertx 5.0
+
+### Changed
+
+1. Improved negate type mapping logic
+2. Updated OutputStreamQueue to use new API for Vertx WriteStream 
+3. Refactor HttpsTest to use Vertx 5.0 web client API
+4. OSS version updates as follows
+
+Spring Boot 3.5.0
+Vertx 5.0.0
+netty 4.2.1.Final
+Kotlin 2.1.21
+reactor-bom 2024.0.6
+junit-bom 5.13.0
+
+---
 ## Version 4.2.45, 5/31/2025
 
 ### Added
