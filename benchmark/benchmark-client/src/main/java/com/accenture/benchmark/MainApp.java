@@ -30,8 +30,6 @@ import org.platformlambda.core.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 @MainApplication
 public class MainApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
@@ -51,7 +49,7 @@ public class MainApp implements EntryPoint {
     }
 
     @Override
-    public void start(String[] args) throws IOException {
+    public void start(String[] args) {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(BENCHMARK_ECHO, new Echo(), 200);
         platform.registerPrivate(BENCHMARK_ONE_WAY, new ReceiveOnly(), 200);

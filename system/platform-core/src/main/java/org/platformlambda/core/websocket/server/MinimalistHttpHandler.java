@@ -31,7 +31,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import io.vertx.core.buffer.Buffer;
 
 import java.util.*;
@@ -93,42 +92,38 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
                 event.setTo(ActuatorServices.ACTUATOR_SERVICES);
                 String accept = request.getHeader(ACCEPT);
                 event.setHeader(ACCEPT_CONTENT, accept != null? accept : APPLICATION_JSON);
-                try {
-                    po.asyncRequest(event, 30000)
-                        .onSuccess(result -> {
-                            final String contentType = result.getHeaders()
-                                                        .getOrDefault(CONTENT_TYPE.toLowerCase(), APPLICATION_JSON);
-                            final Object data = result.getRawBody();
-                            final byte[] b;
-                            if (TEXT_PLAIN.equals(contentType) && data instanceof String str) {
-                                response.putHeader(CONTENT_TYPE, TEXT_PLAIN);
-                                b = util.getUTF(str);
-                            } else {
-                                if (APPLICATION_XML.equals(contentType)) {
-                                    response.putHeader(CONTENT_TYPE, APPLICATION_XML);
-                                    if (data instanceof Map) {
-                                        b = util.getUTF(xml.write(data));
-                                    } else {
-                                        b = util.getUTF(data == null? "" : data.toString());
-                                    }
+                po.asyncRequest(event, 30000)
+                    .onSuccess(result -> {
+                        final String contentType = result.getHeaders()
+                                                    .getOrDefault(CONTENT_TYPE.toLowerCase(), APPLICATION_JSON);
+                        final Object data = result.getRawBody();
+                        final byte[] b;
+                        if (TEXT_PLAIN.equals(contentType) && data instanceof String str) {
+                            response.putHeader(CONTENT_TYPE, TEXT_PLAIN);
+                            b = util.getUTF(str);
+                        } else {
+                            if (APPLICATION_XML.equals(contentType)) {
+                                response.putHeader(CONTENT_TYPE, APPLICATION_XML);
+                                if (data instanceof Map) {
+                                    b = util.getUTF(xml.write(data));
                                 } else {
-                                    if (data instanceof Map) {
-                                        b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(data);
-                                    } else {
-                                        b = util.getUTF(data == null? "" : data.toString());
-                                    }
+                                    b = util.getUTF(data == null? "" : data.toString());
+                                }
+                            } else {
+                                if (data instanceof Map) {
+                                    b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(data);
+                                } else {
+                                    b = util.getUTF(data == null? "" : data.toString());
                                 }
                             }
-                            response.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                            response.setStatusCode(result.getStatus());
-                            response.write(Buffer.buffer(b));
-                            response.end();
-                        })
-                        .onFailure(e -> sendError(response, uri, 408, e.getMessage()));
-                    processed = true;
-                } catch (IOException e) {
-                    log.error("Unable to load {} - {}", uri, e.getMessage());
-                }
+                        }
+                        response.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                        response.setStatusCode(result.getStatus());
+                        response.write(Buffer.buffer(b));
+                        response.end();
+                    })
+                    .onFailure(e -> sendError(response, uri, 408, e.getMessage()));
+                processed = true;
             }
         }
         if (!processed) {

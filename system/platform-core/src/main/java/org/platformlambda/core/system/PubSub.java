@@ -24,7 +24,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -196,9 +195,9 @@ public class PubSub {
      *
      * @param topic for a store-n-forward pub/sub channel
      * @return true when topic is successfully created
-     * @throws IOException in case the topic cannot be created
+     * @throws IllegalArgumentException in case the topic cannot be created
      */
-    public boolean createTopic(String topic) throws IOException {
+    public boolean createTopic(String topic) {
         checkFeature();
         return provider.createTopic(topic);
     }
@@ -208,9 +207,9 @@ public class PubSub {
      *
      * @param queue in case the messaging system is an enterprise service bus
      * @return true when queue is successfully created
-     * @throws IOException in case the queue cannot be created
+     * @throws IllegalArgumentException in case the queue cannot be created
      */
-    public boolean createQueue(String queue) throws IOException {
+    public boolean createQueue(String queue) {
         checkFeature();
         return provider.createQueue(queue);
     }
@@ -221,9 +220,9 @@ public class PubSub {
      * @param topic for a store-n-forward pub/sub channel
      * @param partitions to be created for this topic
      * @return true when topic is successfully created
-     * @throws IOException in case the topic cannot be created
+     * @throws IllegalArgumentException in case the topic cannot be created
      */
-    public boolean createTopic(String topic, int partitions) throws IOException {
+    public boolean createTopic(String topic, int partitions) {
         checkFeature();
         return provider.createTopic(topic, partitions);
     }
@@ -232,9 +231,9 @@ public class PubSub {
      * Delete a topic
      *
      * @param topic for a store-n-forward pub/sub channel
-     * @throws IOException in case the topic cannot be deleted
+     * @throws IllegalArgumentException in case the topic cannot be deleted
      */
-    public void deleteTopic(String topic) throws IOException {
+    public void deleteTopic(String topic) {
         checkFeature();
         provider.deleteTopic(topic);
     }
@@ -243,9 +242,9 @@ public class PubSub {
      * Delete a queue
      *
      * @param queue in case the messaging system is an enterprise service bus
-     * @throws IOException in case the topic cannot be deleted
+     * @throws IllegalArgumentException in case the topic cannot be deleted
      */
-    public void deleteQueue(String queue) throws IOException {
+    public void deleteQueue(String queue) {
         checkFeature();
         provider.deleteQueue(queue);
     }
@@ -256,9 +255,9 @@ public class PubSub {
      * @param topic for a store-n-forward pub/sub channel
      * @param headers key-value pairs
      * @param body PoJo, Java primitive (Boolean, Integer, Long, String), Map, List of Strings,
-     * @throws IOException in case the event cannot be published or the topic is not found
+     * @throws IllegalArgumentException in case the event cannot be published or the topic is not found
      */
-    public void publish(String topic, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, Map<String, String> headers, Object body) {
         checkFeature();
         provider.publish(topic, headers, body);
     }
@@ -270,9 +269,9 @@ public class PubSub {
      * @param partition to publish
      * @param headers key-value pairs
      * @param body PoJo, Java primitive (Boolean, Integer, Long, String), Map, List of Strings,
-     * @throws IOException in case the event cannot be published or the topic is not found
+     * @throws IllegalArgumentException in case the event cannot be published or the topic is not found
      */
-    public void publish(String topic, int partition, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, int partition, Map<String, String> headers, Object body) {
         checkFeature();
         provider.publish(topic, partition, headers, body);
     }
@@ -298,9 +297,9 @@ public class PubSub {
      * @param topic for a store-n-forward pub/sub channel
      * @param listener function to collect event events
      * @param parameters optional parameters that are cloud connector specific
-     * @throws IOException in case topic is not yet created
+     * @throws IllegalArgumentException in case topic is not yet created
      */
-    public void subscribe(String topic, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, LambdaFunction listener, String... parameters) {
         checkFeature();
         provider.subscribe(topic, listener, parameters);
         int partition = -1;
@@ -329,9 +328,9 @@ public class PubSub {
      * @param partition to be subscribed
      * @param listener function to collect event events
      * @param parameters optional parameters that are cloud connector specific
-     * @throws IOException in case topic is not yet created
+     * @throws IllegalArgumentException in case topic is not yet created
      */
-    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) {
         checkFeature();
         provider.subscribe(topic, partition, listener, parameters);
         currentSubscribers.put(getTopicRef(topic, partition), new SubscriberDetails(listener, parameters));
@@ -342,9 +341,9 @@ public class PubSub {
      * @param queue name
      * @param headers are optional
      * @param body is the message payload, most likely in text
-     * @throws IOException in case the queue is not available
+     * @throws IllegalArgumentException in case the queue is not available
      */
-    public void send(String queue, Map<String, String> headers, Object body) throws IOException {
+    public void send(String queue, Map<String, String> headers, Object body) {
         checkFeature();
         provider.send(queue, headers, body);
     }
@@ -354,9 +353,9 @@ public class PubSub {
      * @param queue name
      * @param listener function to receive messages from the queue
      * @param parameters are optional as per ESB implementation
-     * @throws IOException in case the queue is not available
+     * @throws IllegalArgumentException in case the queue is not available
      */
-    public void listen(String queue, LambdaFunction listener, String... parameters) throws IOException {
+    public void listen(String queue, LambdaFunction listener, String... parameters) {
         checkFeature();
         provider.listen(queue, listener, parameters);
     }
@@ -365,9 +364,9 @@ public class PubSub {
      * Unsubscribe from a topic (or queue). This will detach the registered lambda function
      *
      * @param topic for a store-n-forward pub/sub channel
-     * @throws IOException in case topic was not subscribed
+     * @throws IllegalArgumentException in case topic was not subscribed
      */
-    public void unsubscribe(String topic) throws IOException {
+    public void unsubscribe(String topic) {
         checkFeature();
         provider.unsubscribe(topic);
         currentSubscribers.remove(getTopicRef(topic, -1));
@@ -377,9 +376,9 @@ public class PubSub {
      * Unsubscribe from a topic (or queue). This will detach the registered lambda function
      * @param topic for a store-n-forward pub/sub channel
      * @param partition to be unsubscribed
-     * @throws IOException in case topic was not subscribed
+     * @throws IllegalArgumentException in case topic was not subscribed
      */
-    public void unsubscribe(String topic, int partition) throws IOException {
+    public void unsubscribe(String topic, int partition) {
         checkFeature();
         provider.unsubscribe(topic, partition);
         currentSubscribers.remove(getTopicRef(topic, partition));
@@ -390,14 +389,14 @@ public class PubSub {
      *
      * @param topic name
      * @return true if topic exists
-     * @throws IOException in case feature is not enabled
+     * @throws IllegalArgumentException in case feature is not enabled
      */
-    public boolean exists(String topic) throws IOException {
+    public boolean exists(String topic) {
         checkFeature();
         return provider.exists(topic);
     }
 
-    public int partitionCount(String topic) throws IOException {
+    public int partitionCount(String topic) {
         checkFeature();
         return provider.partitionCount(topic);
     }
@@ -406,9 +405,9 @@ public class PubSub {
      * Obtain list of all pub/sub topics
      *
      * @return list of topics
-     * @throws IOException in case feature is not enabled
+     * @throws IllegalArgumentException in case feature is not enabled
      */
-    public List<String> list() throws IOException {
+    public List<String> list() {
         checkFeature();
         return provider.list();
     }
@@ -447,7 +446,5 @@ public class PubSub {
                 this.parameters = parameters;
             }
         }
-
     }
-
 }

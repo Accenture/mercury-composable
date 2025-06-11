@@ -24,7 +24,6 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.demo.common.TestBase;
 import org.platformlambda.models.SamplePoJo;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -35,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class PoJoTest extends TestBase {
 
     @Test
-    void pojoRpcTest() throws IOException, InterruptedException {
+    void pojoRpcTest() throws InterruptedException {
         Integer ID = 1;
         String NAME = "Simple PoJo class";
         String ADDRESS = "100 World Blvd, Planet Earth";

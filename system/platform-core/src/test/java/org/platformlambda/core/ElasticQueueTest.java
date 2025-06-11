@@ -23,7 +23,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.util.ElasticQueue;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ElasticQueueTest {
 
     @Test
-    void peeking() throws IOException {
+    void peeking() {
         String firstItem = "hello world 1";
         String secondItem = "hello world 2";
         ElasticQueue spooler = new ElasticQueue("unit.test");
@@ -61,16 +60,16 @@ class ElasticQueueTest {
     }
 
     @Test
-    void normalPayload() throws IOException {
+    void normalPayload() {
         readWrite("normal.payload.test", 10);
     }
 
     @Test
-    void largePayload() throws IOException {
+    void largePayload() {
         readWrite("large.payload.test", 90000);
     }
 
-    private void readWrite(String path, int size) throws IOException {
+    private void readWrite(String path, int size) {
         String target = "hello.world";
         // create input
         String baseText = "0123456789".repeat(Math.max(0, size)) + ": ";
@@ -125,7 +124,7 @@ class ElasticQueueTest {
     }
 
     @Test
-    void cleanupTest() throws IOException {
+    void cleanupTest() {
         String HELLO_WORLD = "hello world ";
         try (ElasticQueue spooler = new ElasticQueue("unread.test")) {
             for (int i = 0; i < ElasticQueue.MEMORY_BUFFER * 3; i++) {

@@ -222,7 +222,7 @@ public class AppStarter {
                     } else {
                         po.send(svc, new Kv(TYPE, START));
                     }
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.error("Unable to start module '{}' - {}", svc, e.getMessage());
                 }
             }
@@ -299,7 +299,7 @@ public class AppStarter {
                             }
                         }
                     }
-                } catch (IOException | IllegalArgumentException e) {
+                } catch (IllegalArgumentException e) {
                     log.error("Unable to load PreLoad entries from {} - {}", p, e.getMessage());
                 }
             }
@@ -412,32 +412,18 @@ public class AppStarter {
                                             ce.getClass().getSimpleName(), ce.getMessage());
                                 }
                             }
-                            switch (o) {
-                                case TypedLambdaFunction f -> {
-                                    for (String r : routes) {
-                                        if (svc.isPrivate()) {
-                                            platform.registerPrivate(r, f, instances);
-                                        } else {
-                                            platform.register(r, f, instances);
-                                        }
-                                        updateServiceDef(r, mapper, pojoClass, svc);
+                            if (o instanceof TypedLambdaFunction f) {
+                                for (String r : routes) {
+                                    if (svc.isPrivate()) {
+                                        platform.registerPrivate(r, f, instances);
+                                    } else {
+                                        platform.register(r, f, instances);
                                     }
+                                    updateServiceDef(r, mapper, pojoClass, svc);
                                 }
-                                case KotlinLambdaFunction f -> {
-                                    for (String r : routes) {
-                                        if (svc.isPrivate()) {
-                                            platform.registerKotlinPrivate(r, f, instances);
-                                        } else {
-                                            platform.registerKotlin(r, f, instances);
-                                        }
-                                        updateServiceDef(r, mapper, pojoClass, svc);
-                                    }
-                                }
-                                default ->
-                                    log.error("Unable to preload {} - {} must implement {} or {}",
-                                            serviceName, o.getClass(),
-                                            TypedLambdaFunction.class.getSimpleName(),
-                                            KotlinLambdaFunction.class.getSimpleName());
+                            } else {
+                                log.error("Unable to preload {} - {} must implement {}", serviceName, o.getClass(),
+                                            TypedLambdaFunction.class.getSimpleName());
                             }
                         }
                     } else {
@@ -445,7 +431,7 @@ public class AppStarter {
                     }
 
                 } catch (ClassNotFoundException | InvocationTargetException | InstantiationException |
-                         IllegalAccessException | NoSuchMethodException | IOException e) {
+                         IllegalAccessException | NoSuchMethodException | IllegalArgumentException e) {
                     log.error("Unable to preload {} - {}", serviceName, e.getMessage());
                 }
             }
@@ -544,12 +530,8 @@ public class AppStarter {
                     serverStatus.add(true);
                     if (contexts != null) {
                         Platform platform = Platform.getInstance();
-                        try {
-                            platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE,
+                        platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE,
                                                         new AsyncHttpResponse(contexts), 200);
-                        } catch (IOException e) {
-                            log.error("Unable to register HTTP request/response handlers - {}", e.getMessage());
-                        }
                         // start timeout handler
                         Housekeeper housekeeper = new Housekeeper(contexts);
                         platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL,
@@ -631,7 +613,7 @@ public class AppStarter {
             try {
                 config = new ConfigReader(p);
                 log.info("Loading config from {}", p);
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.warn("Unable to load REST entries from {} - {}", p, e.getMessage());
                 continue;
             }

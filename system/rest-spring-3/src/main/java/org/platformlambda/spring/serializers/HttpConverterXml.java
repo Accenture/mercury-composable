@@ -18,7 +18,6 @@
 
 package org.platformlambda.spring.serializers;
 
-import org.jetbrains.annotations.NotNull;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
@@ -48,26 +47,24 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
     private static final List<MediaType> types = Collections.singletonList(XML_TYPE);
 
     @Override
-    public boolean canRead(@NotNull Class<?> clazz, @Nullable MediaType mediaType) {
+    public boolean canRead(Class<?> clazz, @Nullable MediaType mediaType) {
         return mediaType != null && XML_TYPE.getType().equals(mediaType.getType())
                 && XML_TYPE.getSubtype().equals(mediaType.getSubtype());
     }
 
     @Override
-    public boolean canWrite(@NotNull Class<?> clazz, MediaType mediaType) {
+    public boolean canWrite(Class<?> clazz, MediaType mediaType) {
         return mediaType != null && XML_TYPE.getType().equals(mediaType.getType())
                 && XML_TYPE.getSubtype().equals(mediaType.getSubtype());
     }
 
-    @NotNull
     @Override
     public List<MediaType> getSupportedMediaTypes() {
         return types;
     }
 
-    @NotNull
     @Override
-    public Object read(@NotNull Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
+    public Object read(Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
         try {
             return xml.parse(inputMessage.getBody());
         } catch (IOException e) {
@@ -104,5 +101,4 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
             out.write(util.getUTF(result));
         }
     }
-
 }

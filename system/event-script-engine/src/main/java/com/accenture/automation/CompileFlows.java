@@ -30,7 +30,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -142,12 +141,12 @@ public class CompileFlows implements EntryPoint {
                     for (String f: ordered) {
                         try {
                             createFlow(f, new ConfigReader(prefix + f));
-                        } catch (IOException e) {
+                        } catch (IllegalArgumentException e) {
                             log.error("Ignored {} - {}", f, e.getMessage());
                         }
                     }
                 }
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.warn("Unable to load Event Scripts from {} - {}", p, e.getMessage());
             }
         }

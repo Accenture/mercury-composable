@@ -137,11 +137,7 @@ public class HttpRouter {
             MimeTypeResolver.getInstance().init();
             CustomContentTypeResolver.getInstance().init();
             // register authentication handler
-            try {
-                platform.registerPrivate(AUTH_HANDLER, new HttpAuth(), 200);
-            } catch (IOException e) {
-                log.error("Unable to load {} - {}", AUTH_HANDLER, e.getMessage());
-            }
+            platform.registerPrivate(AUTH_HANDLER, new HttpAuth(), 200);
         }
     }
 
@@ -206,7 +202,7 @@ public class HttpRouter {
                                             }
                                         });
                                     return;
-                                } catch (IOException e) {
+                                } catch (IllegalArgumentException e) {
                                     log.error("Unable to filter static content HTTP-GET {} - {}",
                                             filter.service, e.getMessage());
                                 }
@@ -717,7 +713,7 @@ public class HttpRouter {
         if (requestEvent.authService != null) {
             try {
                 po.send(AUTH_HANDLER, requestEvent.toMap());
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 httpUtil.sendError(requestEvent.requestId, request,400, e.getMessage());
             }
         } else {
@@ -744,7 +740,7 @@ public class HttpRouter {
                         }
                     }
                 }
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 httpUtil.sendError(requestEvent.requestId, request, 400, e.getMessage());
             }
         }
@@ -828,7 +824,7 @@ class HttpAuth implements LambdaFunction {
     private static final String HTTP_REQUEST = "http.request";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (input instanceof EventEnvelope incomingEvent) {
             EventEmitter po = EventEmitter.getInstance();
             HttpRequestEvent evt = new HttpRequestEvent(incomingEvent.getBody());
@@ -881,7 +877,7 @@ class HttpAuth implements LambdaFunction {
                                             }
                                         }
                                     }
-                                } catch (IOException e) {
+                                } catch (IllegalArgumentException e) {
                                     sendError(evt, 400, e.getMessage());
                                 }
                             } else {
@@ -907,11 +903,7 @@ class HttpAuth implements LambdaFunction {
             event.setFrom(evt.authService);
             event.setTrace(evt.traceId, evt.tracePath);
         }
-        try {
-            po.send(event);
-        } catch (IOException e) {
-            log.error("Unable to send error to {} - {}", AsyncHttpClient.ASYNC_HTTP_RESPONSE, e.getMessage());
-        }
+        po.send(event);
     }
 
     private void sendToSecondaryTarget(EventEnvelope event) {

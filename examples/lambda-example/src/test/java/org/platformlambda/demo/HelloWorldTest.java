@@ -25,7 +25,6 @@ import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.demo.common.TestBase;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +37,7 @@ class HelloWorldTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void rpcTest() throws IOException, InterruptedException, ExecutionException {
+    void rpcTest() throws InterruptedException, ExecutionException {
         Utility util = Utility.getInstance();
         String NAME = "hello";
         String ADDRESS = "world";
@@ -78,5 +77,4 @@ class HelloWorldTest extends TestBase {
             return result;
         }
     }
-
 }

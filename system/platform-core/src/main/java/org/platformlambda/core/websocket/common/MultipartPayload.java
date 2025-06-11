@@ -62,7 +62,7 @@ public class MultipartPayload {
         return instance;
     }
 
-    public void incoming(EventEnvelope message) throws IOException {
+    public void incoming(EventEnvelope message) {
         EventEmitter po = EventEmitter.getInstance();
         Map<String, String> control = message.getHeaders();
         if (message.getTo() != null) {
@@ -110,14 +110,14 @@ public class MultipartPayload {
         return control.size() == n;
     }
 
-    public void outgoing(String target, EventEnvelope event) throws IOException {
+    public void outgoing(String target, EventEnvelope event) {
         Platform platform = Platform.getInstance();
         if (platform.hasRoute(target)) {
             outgoing(platform.getManager(target), event);
         }
     }
 
-    public void outgoing(ServiceQueue target, EventEnvelope event) throws IOException {
+    public void outgoing(ServiceQueue target, EventEnvelope event) {
         if (target != null && event != null) {
             byte[] payload = event.toBytes();
             EventBus system = Platform.getInstance().getEventSystem();
@@ -132,7 +132,12 @@ public class MultipartPayload {
                                             .setHeader(MultipartPayload.COUNT, count)
                                             .setHeader(MultipartPayload.TOTAL, total);
                     byte[] segment = new byte[maxPayload];
-                    int size = in.read(segment);
+                    final int size;
+                    try {
+                        size = in.read(segment);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException(e.getMessage());
+                    }
                     blk.setBody(size == maxPayload ? segment : Arrays.copyOfRange(segment, 0, size));
                     /*
                      * To guarantee that the cloud connector can deliver blocks of the same event
@@ -164,5 +169,4 @@ public class MultipartPayload {
             }
         }
     }
-
 }

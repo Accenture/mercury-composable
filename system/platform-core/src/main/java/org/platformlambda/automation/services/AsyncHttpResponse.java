@@ -34,7 +34,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +72,7 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
     }
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
         Utility util = Utility.getInstance();
         SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
         String requestId = event.getCorrelationId();

@@ -10,6 +10,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.0, 6/10/2025
+
+In this version, we have retired the support of Kotlin suspend functiond. Therefore, 
+the project is 100% pure Java.
+
+In addition to dropping Kotlin dependency, it also streamlines exception handling by
+replacing IOExceptin with IllegalArgumentException.
+
+Your applications may need minor refactoring of try-catch that uses the ConfigReader, 
+PostOffice and Platform APIs. 
+
+In most cases, you can just remove the try-catch block. In some cases, you can change 
+the IOException to IllegalArgumentException in the try-catch block for best compatibility 
+with your original code.
+
+Composable applications using Event Script should not be affected because composable functions
+are self-contained and independent. They usually do not invoke low level PostOffice and Platform
+APIs.
+
+### Added
+
+N/A
+
+### Removed
+
+1. TypedKotlinFunction and kotlin dependency
+2. Serial ID for AppException
+
+### Changed
+
+1. Update AppException to extend RuntimeException
+2. Replace IOException with IllegalArgumentException for ConfigReader, PostOffice and Platform APIs. 
+
+The above changes remove the requirement to do explicit try-catch in normal use cases, thus 
+simplifying application code. 
+
+It is a best practice to let run-time exception throw through the chain.
+
+---
 ## Version 4.2.46, 6/2/2025
 
 ### Added

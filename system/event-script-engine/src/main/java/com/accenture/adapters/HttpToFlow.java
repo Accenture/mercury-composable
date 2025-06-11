@@ -26,7 +26,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.PostOffice;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,11 +42,11 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String MESSAGE = "message";
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws Exception {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
         PostOffice po = new PostOffice(headers, instance);
         try {
             processRequest(po, event);
-        } catch (AppException | IOException e) {
+        } catch (Exception e) {
             if (event.getReplyTo() != null && event.getCorrelationId() != null) {
                 int status = e instanceof AppException appEx? appEx.getStatus() : 500;
                 Map<String, Object> result = new HashMap<>();
@@ -63,7 +62,7 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
         return null;
     }
 
-    private void processRequest(PostOffice po, EventEnvelope event) throws AppException, IOException {
+    private void processRequest(PostOffice po, EventEnvelope event) throws AppException {
         AsyncHttpRequest request = new AsyncHttpRequest(event.getBody());
         String flowId = request.getHeader("x-flow-id");
         if (flowId == null) {

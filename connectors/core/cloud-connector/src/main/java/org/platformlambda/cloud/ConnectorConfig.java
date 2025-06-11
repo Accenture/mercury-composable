@@ -23,7 +23,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 public class ConnectorConfig {
@@ -42,7 +41,7 @@ public class ConnectorConfig {
         return FEATURE_ENABLED;
     }
 
-    public static int substitutionCount() throws IOException {
+    public static int substitutionCount() {
         return getTopicSubstitution().size();
     }
 
@@ -72,7 +71,7 @@ public class ConnectorConfig {
         return displayUrl;
     }
 
-    public static ConfigReader getConfig(String key, String defaultValue) throws IOException {
+    public static ConfigReader getConfig(String key, String defaultValue) {
         AppConfigReader reader = AppConfigReader.getInstance();
         String location = reader.getProperty(key);
         if (location == null) {
@@ -85,14 +84,14 @@ public class ConnectorConfig {
                 ConfigReader config = new ConfigReader(p);
                 log.info("Loaded config from {}", p);
                 return config;
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.warn("Skipping {} - {}", p, e.getMessage());
             }
         }
-        throw new IOException("Endpoint configuration not found in "+paths);
+        throw new IllegalArgumentException("Endpoint configuration not found in "+paths);
     }
 
-    public static Map<String, String> getTopicSubstitution() throws IOException {
+    public static Map<String, String> getTopicSubstitution() {
         if (topicReplacements == null) {
             Utility util = Utility.getInstance();
             Map<String, String> result = new HashMap<>();
@@ -131,25 +130,25 @@ public class ConnectorConfig {
         return topicReplacements;
     }
 
-    public static void validateTopicName(String route) throws IOException {
+    public static void validateTopicName(String route) {
         // topic name can be upper case or lower case
         String name = route.toLowerCase();
         Utility util = Utility.getInstance();
         if (!util.validServiceName(name)) {
-            throw new IOException("Invalid route name - use 0-9, a-z, A-Z, period, hyphen or underscore characters");
+            throw new IllegalArgumentException("Invalid route name - use 0-9, a-z, A-Z, period, hyphen or underscore characters");
         }
         String path = util.filteredServiceName(name);
         if (path.isEmpty()) {
-            throw new IOException("Invalid route name");
+            throw new IllegalArgumentException("Invalid route name");
         }
         if (!path.contains(".")) {
-            throw new IOException(INVALID_ROUTE+route+" because it is missing dot separator(s). e.g. hello.world");
+            throw new IllegalArgumentException(INVALID_ROUTE+route+" because it is missing dot separator(s). e.g. hello.world");
         }
         if (util.reservedExtension(path)) {
-            throw new IOException(INVALID_ROUTE+route+" which is a reserved extension");
+            throw new IllegalArgumentException(INVALID_ROUTE+route+" which is a reserved extension");
         }
         if (util.reservedFilename(path)) {
-            throw new IOException(INVALID_ROUTE+route+" which is a reserved Windows filename");
+            throw new IllegalArgumentException(INVALID_ROUTE+route+" which is a reserved Windows filename");
         }
     }
 }

@@ -27,7 +27,6 @@ import org.platformlambda.services.MonitorAlive;
 import org.platformlambda.ws.MonitorService;
 import org.platformlambda.services.TopicController;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,7 @@ public class PresenceHandler implements LambdaFunction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         EventEmitter po = EventEmitter.getInstance();
         String myOrigin = Platform.getInstance().getOrigin();
         if (headers.containsKey(ORIGIN) && headers.containsKey(TYPE)) {

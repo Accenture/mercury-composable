@@ -2,7 +2,7 @@ flow:
   id: 'fork-n-join-flows'
   description: 'Test fork-n-join with sub-flows'
   ttl: 5s
-  exception: 'v1.hello.exception'
+  exception: 'simple.exception.handler'
 
 first.task: 'my.first.task'
 
@@ -65,7 +65,7 @@ tasks:
       - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'
-    process: 'v1.hello.exception'
+    process: 'simple.exception.handler'
     output:
       - 'result.status -> output.status'
       - 'result -> output.body'

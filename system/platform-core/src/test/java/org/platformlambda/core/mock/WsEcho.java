@@ -26,7 +26,6 @@ import org.platformlambda.core.websocket.server.WsEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 
 @WebSocketService("hello")
@@ -43,11 +42,10 @@ public class WsEcho implements LambdaFunction {
      * @param input can be string or byte array as per websocket specification
      * @param instance is always 1 because the service is a singleton for each websocket connection
      * @return null because there is nothing to return
-     * @throws IOException in case there are errors in routing
+     * @throws IllegalArgumentException in case there are errors in routing
      */
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
-
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         EventEmitter po = EventEmitter.getInstance();
         String route;
         String token;

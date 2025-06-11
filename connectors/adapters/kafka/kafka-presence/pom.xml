@@ -5,7 +5,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-presence</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.46</version>
+    <version>4.3.0</version>
     <name>Presence monitor for Kafka</name>
 
     <parent>
@@ -20,7 +20,6 @@
         <netty.version>4.2.1.Final</netty.version>
         <kafka.version>3.9.0</kafka.version>
         <gson.version>2.13.0</gson.version>
-        <kotlin.version>2.1.21</kotlin.version>
         <java.version>21</java.version>
     </properties>
 
@@ -29,7 +28,6 @@
             <id>central</id>
             <url>https://repo1.maven.org/maven2/</url>
         </repository>
-        <!-- add your corporate artifactory here -->
     </repositories>
 
     <dependencyManagement>
@@ -48,13 +46,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>service-monitor</artifactId>
-            <version>4.2.46</version>
+            <version>4.3.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.2.46</version>
+            <version>4.3.0</version>
         </dependency>
 
         <dependency>
@@ -146,8 +144,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <!-- DO NOT CHANGE THIS
-                     AutoStart will find your Main Application(s) -->
+                <!-- AutoStart will find your Main Application(s) -->
                 <configuration>
                     <mainClass>org.platformlambda.core.system.AutoStart</mainClass>
                 </configuration>

@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -34,7 +33,7 @@ class CryptoTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void encryptAndDecryptTest() throws IOException, ExecutionException, InterruptedException {
+    void encryptAndDecryptTest() throws ExecutionException, InterruptedException {
         byte[] key = crypto.generateAesKey(strongCrypto? 256 : 128);
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /crypto");
         String KEY1 = "k1";

@@ -145,7 +145,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
         String compositeCid = event.getCorrelationId();
         if (compositeCid == null) {
             log.error("Event {} dropped - missing correlation ID", event.getId());
@@ -252,7 +252,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return null;
     }
 
-    private void abortFlow(FlowInstance flowInstance, int status, Object message) throws IOException {
+    private void abortFlow(FlowInstance flowInstance, int status, Object message) {
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
             Map<String, Object> result = new HashMap<>();
@@ -270,7 +270,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         endFlow(flowInstance, false);
     }
 
-    private void endFlow(FlowInstance flowInstance, boolean normal) throws IOException {
+    private void endFlow(FlowInstance flowInstance, boolean normal) {
         flowInstance.close();
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
@@ -307,8 +307,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     @SuppressWarnings("rawtypes")
-    private void handleCallback(String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq)
-                                throws IOException {
+    private void handleCallback(String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq) {
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -511,7 +510,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void pipelineCompletion(FlowInstance flowInstance, PipelineInfo pipeline,
-                                    MultiLevelMap consolidated, int seq) throws IOException {
+                                    MultiLevelMap consolidated, int seq) {
         Task pipelineTask = pipeline.getTask();
         boolean iterate = false;
         if (WHILE.equals(pipelineTask.getLoopType()) && pipelineTask.getWhileModelKey() != null) {
@@ -543,17 +542,17 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void handleResponseTask(FlowInstance flowInstance, Task task, MultiLevelMap map) throws IOException {
+    private void handleResponseTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
         sendResponse(flowInstance, task, map);
         queueSequentialTask(flowInstance, task);
     }
 
-    private void handleEndTask(FlowInstance flowInstance, Task task, MultiLevelMap map) throws IOException {
+    private void handleEndTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
         sendResponse(flowInstance, task, map);
         endFlow(flowInstance, true);
     }
 
-    private void handleDecisionTask(FlowInstance flowInstance, Task task, MultiLevelMap map) throws IOException {
+    private void handleDecisionTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
         Object decisionValue = map.getElement(DECISION);
         List<String> nextTasks = task.nextSteps;
         final int decisionNumber;
@@ -575,14 +574,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void queueSequentialTask(FlowInstance flowInstance, Task task) throws IOException {
+    private void queueSequentialTask(FlowInstance flowInstance, Task task) {
         List<String> nextTasks = task.nextSteps;
         if (!nextTasks.isEmpty()) {
             executeTask(flowInstance, nextTasks.getFirst());
         }
     }
 
-    private void queueParallelTasks(FlowInstance flowInstance, Task task) throws IOException {
+    private void queueParallelTasks(FlowInstance flowInstance, Task task) {
         List<String> nextTasks = task.nextSteps;
         if (!nextTasks.isEmpty()) {
             for (String next: nextTasks) {
@@ -591,7 +590,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void handleForkAndJoin(FlowInstance flowInstance, Task task) throws IOException {
+    private void handleForkAndJoin(FlowInstance flowInstance, Task task) {
         List<String> steps = task.nextSteps;
         if (!steps.isEmpty() && task.getJoinTask() != null) {
             int seq = flowInstance.pipeCounter.incrementAndGet();
@@ -617,7 +616,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         };
     }
 
-    private void handlePipelineTask(FlowInstance flowInstance, Task task, MultiLevelMap map) throws IOException {
+    private void handlePipelineTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
         if (!task.pipelineSteps.isEmpty()) {
             // evaluate initial condition
             boolean valid = true;
@@ -650,7 +649,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     @SuppressWarnings("unchecked")
-    private void sendResponse(FlowInstance flowInstance, Task task, MultiLevelMap map) throws IOException {
+    private void sendResponse(FlowInstance flowInstance, Task task, MultiLevelMap map) {
         PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME, flowInstance.getTraceId(), flowInstance.getTracePath());
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
@@ -683,17 +682,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName) throws IOException {
+    private void executeTask(FlowInstance flowInstance, String processName) {
         executeTask(flowInstance, processName, -1, null);
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName, int seq) throws IOException {
+    private void executeTask(FlowInstance flowInstance, String processName, int seq) {
         executeTask(flowInstance, processName, seq, null);
     }
 
     @SuppressWarnings("unchecked")
-    private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error)
-            throws IOException {
+    private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error) {
         Task task = flowInstance.getFlow().tasks.get(processName);
         if (task == null) {
             log.error("Unable to process flow {}:{} - missing task '{}'",
@@ -846,12 +844,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
                         .setCorrelationId(compositeCid).setStatus(response.getStatus())
                         .setHeaders(response.getHeaders()).setBody(response.getBody());
-                try {
-                    po.send(event);
-                } catch (IOException e) {
-                    // this should not occur
-                    throw new IllegalArgumentException(e.getMessage());
-                }
+                po.send(event);
             });
         } else {
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
@@ -891,8 +884,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return null;
     }
 
-    private void callExternalStateMachine(FlowInstance flowInstance, Task task, String rhs, Object value)
-            throws IOException {
+    private void callExternalStateMachine(FlowInstance flowInstance, Task task, String rhs, Object value) {
         String key = rhs.substring(EXT_NAMESPACE.length()).trim();
         String externalStateMachine = flowInstance.getFlow().externalStateMachine;
         PostOffice po = new PostOffice(task.service,

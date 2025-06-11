@@ -28,7 +28,6 @@ import org.platformlambda.core.websocket.server.WsEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,7 +48,7 @@ public class QueryHandler implements LambdaFunction {
     private static final String COMMAND = "command";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object body, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object body, int instance) {
         // use local pub/sub so all websocket client gets the same response for monitoring the benchmark progress
         LocalPubSub ps = LocalPubSub.getInstance();
         // EventEmitter can be used instead of PostOffice when tracing is not required

@@ -182,7 +182,6 @@ public class AsyncHelloWorld {
     EventEnvelope req = new EventEnvelope();
     req.setTo("hello.world").setBody(forward).setHeader("seq", n);
     return Mono.create(callback -> {
-      try {
         po.asyncRequest(req, 3000)
                 .onSuccess(event -> {
                   Map<String, Object> result = new HashMap<>();
@@ -194,9 +193,6 @@ public class AsyncHelloWorld {
                   callback.success(result);
                 })
                 .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
-      } catch (IOException e) {
-        callback.error(e);
-      }
     });
   }
 }

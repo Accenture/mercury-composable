@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,21 +25,17 @@ public class FileUploadDemo implements TypedLambdaFunction<AsyncHttpRequest, Obj
             return Mono.create(emitter -> {
                 AtomicInteger length = new AtomicInteger(0);
                 FluxConsumer<byte[]> consumer = new FluxConsumer<>(streamId, 5000);
-                try {
-                    consumer.consume(data -> {
-                        var n = length.addAndGet(data.length);
-                        log.info("Received {} bytes", n);
-                    }, emitter::error, () -> {
-                        var result = new HashMap<String, Object>();
-                        result.put("filename", filename);
-                        result.put("expected_size", size);
-                        result.put("actual_size", length.get());
-                        result.put("message", "Upload completed");
-                        emitter.success(result);
-                    });
-                } catch (IOException e) {
-                    emitter.error(e);
-                }
+                consumer.consume(data -> {
+                    var n = length.addAndGet(data.length);
+                    log.info("Received {} bytes", n);
+                }, emitter::error, () -> {
+                    var result = new HashMap<String, Object>();
+                    result.put("filename", filename);
+                    result.put("expected_size", size);
+                    result.put("actual_size", length.get());
+                    result.put("message", "Upload completed");
+                    emitter.success(result);
+                });
             });
         }
         throw new IllegalArgumentException("Input is not a multi-part file upload");

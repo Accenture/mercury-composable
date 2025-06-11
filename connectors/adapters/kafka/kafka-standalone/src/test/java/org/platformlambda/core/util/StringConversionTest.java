@@ -20,8 +20,6 @@ package org.platformlambda.core.util;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StringConversionTest {
@@ -36,7 +34,7 @@ class StringConversionTest {
     }
 
     @Test
-    void hex() throws IOException {
+    void hex() {
         String input = "hello world";
         String hexString = util.bytes2hex(input.getBytes());
         byte[] b = util.hex2bytes(hexString);

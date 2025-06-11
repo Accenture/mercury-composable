@@ -26,7 +26,6 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +36,7 @@ class PayloadMapperTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void optionalTransport() throws IOException {
+    void optionalTransport() {
         String text = "hello world";
         Optional<Object> hello = Optional.of(text);
         EventEnvelope event1 = new EventEnvelope();
@@ -52,7 +51,7 @@ class PayloadMapperTest {
     }
 
     @Test
-    void pojoTransport() throws IOException {
+    void pojoTransport() {
         String name = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(name);
@@ -67,14 +66,14 @@ class PayloadMapperTest {
     }
 
     @Test
-    void pojoInEvent() throws IOException {
+    void pojoInEvent() {
         int len1 = pojoInEventUsingMsgPack();
         int len2 = pojoInEventUsingGson();
         // transport size is larger when using JSON
         assertTrue(len2 > len1);
     }
 
-    private int pojoInEventUsingMsgPack() throws IOException {
+    private int pojoInEventUsingMsgPack() {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
@@ -90,7 +89,7 @@ class PayloadMapperTest {
         return b.length;
     }
 
-    private int pojoInEventUsingGson() throws IOException {
+    private int pojoInEventUsingGson() {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
@@ -138,7 +137,7 @@ class PayloadMapperTest {
     }
 
     @Test
-    void datePayloadTest() throws IOException {
+    void datePayloadTest() {
         Utility util = Utility.getInstance();
         Date now = new Date();
         EventEnvelope event = new EventEnvelope();

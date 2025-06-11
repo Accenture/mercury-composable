@@ -324,26 +324,26 @@ Examples of some APIs are as follows:
 ```java
 // launch a flow asychronously
 public void launch(String originator, String flowId, Map<String, Object> dataset,
-                       String correlationId) throws IOException;
+                       String correlationId);
 // launch a flow asychronously with tracing
 public void launch(String originator, String traceId, String tracePath, String flowId,
-                       Map<String, Object> dataset, String correlationId) throws IOException
+                       Map<String, Object> dataset, String correlationId);
 // launch a flow asychronously and tracing
 public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
-                        String correlationId) throws IOException;
+                        String correlationId);
 // launch a flow with callback and tracing
 public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
-                        String replyTo, String correlationId) throws IOException;
+                        String replyTo, String correlationId);
 // launch a flow and expect a future response
 public Future<EventEnvelope> request(PostOffice po, String flowId, Map<String, Object> dataset,
-                                     String correlationId, long timeout) throws IOException;
+                                     String correlationId, long timeout);
 ```
 
 The following unit test emulates a HTTP request to the flow named "header-test".
 
 ```java
 @Test
-public void internalFlowTest() throws IOException, ExecutionException, InterruptedException {
+public void internalFlowTest() throws ExecutionException, InterruptedException {
     final long TIMEOUT = 8000;
     String traceId = Utility.getInstance().getUuid();
     String cid = Utility.getInstance().getUuid();

@@ -31,7 +31,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -55,7 +54,7 @@ public class TopicManager implements LambdaFunction {
     private int processed = 0;
     private int seq = 0;
 
-    public TopicManager(Properties baseProperties, String cloudManager) throws IOException {
+    public TopicManager(Properties baseProperties, String cloudManager) {
         this.baseProperties = baseProperties;
         this.topicSubstitution = ConnectorConfig.topicSubstitutionEnabled();
         this.preAllocatedTopics = ConnectorConfig.getTopicSubstitution();
@@ -92,7 +91,7 @@ public class TopicManager implements LambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (headers.containsKey(TYPE)) {
             if (LIST.equals(headers.get(TYPE))) {
                 return listTopics();
@@ -190,7 +189,7 @@ public class TopicManager implements LambdaFunction {
         return replicationFactor;
     }
 
-    private void createTopic(String topic, int partitions) throws IOException {
+    private void createTopic(String topic, int partitions) {
         if (topicSubstitution) {
             if (preAllocatedTopics.get(topic) == null) {
                 throw new IllegalArgumentException("Missing topic substitution for "+topic);
@@ -233,7 +232,7 @@ public class TopicManager implements LambdaFunction {
             }
         } catch (Exception e) {
             log.error("Unable to create {} - {}", topic, e.getMessage());
-            throw new IOException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -305,11 +304,7 @@ public class TopicManager implements LambdaFunction {
                 final long idle = 60 * 1000L;
                 final long now = System.currentTimeMillis();
                 if (admin != null && now - lastAccess > idle) {
-                    try {
-                        EventEmitter.getInstance().send(cloudManager, new Kv(TYPE, STOP));
-                    } catch (IOException e) {
-                        // ok to ignore
-                    }
+                    EventEmitter.getInstance().send(cloudManager, new Kv(TYPE, STOP));
                 }
             });
         }

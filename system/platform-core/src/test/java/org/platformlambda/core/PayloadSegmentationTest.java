@@ -40,7 +40,7 @@ class PayloadSegmentationTest extends TestBase {
     private static final int CYCLE = 30000;
 
     @Test
-    void multiPart() throws IOException, InterruptedException {
+    void multiPart() throws InterruptedException {
         /*
          * Generate large payload of over 64 KB
          * (for this test, we generate 500,000 bytes)

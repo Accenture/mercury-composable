@@ -22,7 +22,6 @@ import com.accenture.automation.EventScriptManager;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -48,10 +47,10 @@ public class FlowExecutor {
      * @param flowId of the event flow configuration script
      * @param dataset is a Map containing at least headers and body
      * @param correlationId must be a unique ID (e.g. UUID)
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void launch(String originator, String flowId, Map<String, Object> dataset,
-                       String correlationId) throws IOException {
+                       String correlationId) {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
@@ -69,10 +68,10 @@ public class FlowExecutor {
      * @param flowId of the event flow configuration script
      * @param dataset is a Map containing at least headers and body
      * @param correlationId must be a unique ID (e.g. UUID)
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void launch(String originator, String traceId, String tracePath, String flowId,
-                       Map<String, Object> dataset, String correlationId) throws IOException {
+                       Map<String, Object> dataset, String correlationId) {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
@@ -89,10 +88,10 @@ public class FlowExecutor {
      * @param dataset is a Map containing at least headers and body
      * @param callback is the route of a composable function
      * @param correlationId must be a unique ID (e.g. UUID)
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void launch(String originator, String flowId, Map<String, Object> dataset,
-                       String callback, String correlationId) throws IOException {
+                       String callback, String correlationId) {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
@@ -111,10 +110,10 @@ public class FlowExecutor {
      * @param callback is the route of a composable function
      * @param dataset is a Map containing at least headers and body
      * @param correlationId must be a unique ID (e.g. UUID)
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void launch(String originator, String traceId, String tracePath, String flowId,
-                       String callback, Map<String, Object> dataset, String correlationId) throws IOException {
+                       String callback, Map<String, Object> dataset, String correlationId) {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
@@ -132,10 +131,10 @@ public class FlowExecutor {
      * @param flowId of the event flow configuration script
      * @param dataset is a Map containing at least headers and body
      * @param correlationId must be a unique ID (e.g. UUID)
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
-                       String correlationId) throws IOException {
+                       String correlationId) {
         launch(po, flowId, dataset, null, correlationId);
     }
 
@@ -152,10 +151,10 @@ public class FlowExecutor {
      * @param dataset is a Map containing at least headers and body
      * @param callback is the route of a composable function
      * @param correlationId must be a unique ID (e.g. UUID)
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void launch(PostOffice po, String flowId, Map<String, Object> dataset,
-                       String callback, String correlationId) throws IOException {
+                       String callback, String correlationId) {
         if (flowId == null) {
             throw new IllegalArgumentException("Missing flowId");
         }
@@ -186,10 +185,10 @@ public class FlowExecutor {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @param timeout in milliseconds for the response to come back
      * @return future response
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public Future<EventEnvelope> request(String originator, String flowId, Map<String, Object> dataset,
-                                         String correlationId, long timeout) throws IOException {
+                                         String correlationId, long timeout) {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
@@ -211,11 +210,11 @@ public class FlowExecutor {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @param timeout in milliseconds for the response to come back
      * @return future response
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public Future<EventEnvelope> request(String originator, String traceId, String tracePath,
                                          String flowId, Map<String, Object> dataset,
-                                         String correlationId, long timeout) throws IOException {
+                                         String correlationId, long timeout) {
         if (originator == null) {
             throw new IllegalArgumentException("Missing originator's route name");
         }
@@ -233,10 +232,10 @@ public class FlowExecutor {
      * @param correlationId must be a unique ID (e.g. UUID)
      * @param timeout in milliseconds for the response to come back
      * @return future response
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public Future<EventEnvelope> request(PostOffice po, String flowId, Map<String, Object> dataset,
-                                         String correlationId, long timeout) throws IOException {
+                                         String correlationId, long timeout) {
         if (flowId == null) {
             throw new IllegalArgumentException("Missing flowId");
         }

@@ -24,7 +24,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TraceInfo;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -254,9 +253,9 @@ public class PostOffice {
      *
      * @param to target route
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void broadcast(String to, Kv... parameters) throws IOException {
+    public void broadcast(String to, Kv... parameters) {
         send(touch(po.asEnvelope(to, null, parameters)).setBroadcastLevel(1));
     }
 
@@ -267,9 +266,9 @@ public class PostOffice {
      *
      * @param to target route
      * @param body message payload
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void broadcast(String to, Object body) throws IOException {
+    public void broadcast(String to, Object body) {
         if (body instanceof Kv kv) {
             // in case if a single KV is sent
             Kv[] keyValue = new Kv[1];
@@ -288,9 +287,9 @@ public class PostOffice {
      * @param to target route
      * @param body message payload
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void broadcast(String to, Object body, Kv... parameters) throws IOException {
+    public void broadcast(String to, Object body, Kv... parameters) {
         send(touch(po.asEnvelope(to, body, parameters)).setBroadcastLevel(1));
     }
 
@@ -299,9 +298,9 @@ public class PostOffice {
      *
      * @param to target route
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void send(String to, Kv... parameters) throws IOException {
+    public void send(String to, Kv... parameters) {
         send(touch(po.asEnvelope(to, null, parameters)));
     }
 
@@ -310,9 +309,9 @@ public class PostOffice {
      *
      * @param to target route
      * @param body message payload
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void send(String to, Object body) throws IOException {
+    public void send(String to, Object body) {
         if (body instanceof Kv kv) {
             // in case if a single KV is sent
             Kv[] keyValue = new Kv[1];
@@ -329,9 +328,9 @@ public class PostOffice {
      * @param to target route
      * @param body message payload
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void send(String to, Object body, Kv... parameters) throws IOException {
+    public void send(String to, Object body, Kv... parameters) {
         send(touch(po.asEnvelope(to, body, parameters)));
     }
 
@@ -339,9 +338,9 @@ public class PostOffice {
      * Send an event to a target service
      *
      * @param event to the target
-     * @throws IOException if invalid route or missing parameters
+     * @throws IllegalArgumentException if invalid route or missing parameters
      */
-    public void send(final EventEnvelope event) throws IOException {
+    public void send(final EventEnvelope event) {
         po.send(touch(event));
     }
 
@@ -360,9 +359,9 @@ public class PostOffice {
      * Broadcast to multiple target services
      *
      * @param event to the target
-     * @throws IOException if invalid route or missing parameters
+     * @throws IllegalArgumentException if invalid route or missing parameters
      */
-    public void broadcast(final EventEnvelope event) throws IOException {
+    public void broadcast(final EventEnvelope event) {
         po.broadcast(touch(event));
     }
 
@@ -381,11 +380,11 @@ public class PostOffice {
      * @param rpc if true, the target service will return a response.
      *            Otherwise, a response with status=202 will be returned to indicate that the event will be delivered.
      * @return response event
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout,
                                               Map<String, String> headers,
-                                              String eventEndpoint, boolean rpc) throws IOException {
+                                              String eventEndpoint, boolean rpc) {
         return po.asyncRequest(touch(event), timeout, headers, eventEndpoint, rpc);
     }
 
@@ -401,11 +400,11 @@ public class PostOffice {
      * @param rpc if true, the target service will return a response.
      *            Otherwise, a response with status=202 will be returned to indicate that the event will be delivered.
      * @return response event
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
                                               Map<String, String> headers,
-                                              String eventEndpoint, boolean rpc) throws IOException {
+                                              String eventEndpoint, boolean rpc) {
         return po.request(touch(event), timeout, headers, eventEndpoint, rpc);
     }
 
@@ -421,9 +420,9 @@ public class PostOffice {
      * @param event to the target
      * @param timeout in milliseconds
      * @return future results
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout) throws IOException {
+    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout) {
         return asyncRequest(touch(event), timeout, true);
     }
 
@@ -440,10 +439,9 @@ public class PostOffice {
      * @param timeout in milliseconds
      * @param timeoutException if true, return TimeoutException in onFailure method. Otherwise, return timeout event.
      * @return future result
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout, boolean timeoutException)
-            throws IOException {
+    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout, boolean timeoutException) {
         return po.asyncRequest(touch(event), timeout, timeoutException);
     }
 
@@ -455,10 +453,9 @@ public class PostOffice {
      * @param event to the target
      * @param timeout in milliseconds
      * @return future results
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout)
-            throws IOException {
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout) {
         return request(touch(event), timeout, true);
     }
 
@@ -472,10 +469,10 @@ public class PostOffice {
      * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
      *                         Otherwise, return timeout as a regular event.
      * @return future result
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
-                                                              boolean timeoutException) throws IOException {
+                                                              boolean timeoutException) {
         return po.request(touch(event), timeout, timeoutException);
     }
 
@@ -491,10 +488,9 @@ public class PostOffice {
      * @param events list of envelopes
      * @param timeout in milliseconds
      * @return future list of results
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
-    public Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> events, long timeout)
-                                                    throws IOException {
+    public Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> events, long timeout) {
         return asyncRequest(events, timeout, true);
     }
 
@@ -512,10 +508,10 @@ public class PostOffice {
      * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
      *                         Otherwise, return timeout as a regular event.
      * @return future list of results
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
     public Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> events, long timeout,
-                                                    boolean timeoutException) throws IOException {
+                                                    boolean timeoutException) {
         events.forEach(this::touch);
         return po.asyncRequest(events, timeout, timeoutException);
     }
@@ -528,10 +524,9 @@ public class PostOffice {
      * @param events list of envelopes
      * @param timeout in milliseconds
      * @return future list of results
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
-    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events,
-                                                                    long timeout) throws IOException {
+    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
         return request(events, timeout, true);
     }
 
@@ -545,10 +540,10 @@ public class PostOffice {
      * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
      *                         Otherwise, return timeout as a regular event.
      * @return future list of results
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
     public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
-                                                    boolean timeoutException) throws IOException {
+                                                    boolean timeoutException) {
         events.forEach(this::touch);
         return po.request(events, timeout, timeoutException);
     }

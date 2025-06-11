@@ -25,7 +25,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -58,8 +57,8 @@ public class EventPublisher {
             EventEnvelope error = new EventEnvelope().setException(new AppException(408, "Event stream expired"));
             try {
                 EventEmitter.getInstance().send(stream.getOutputStreamId(), error.toBytes(), new Kv(TYPE, EXCEPTION));
-            } catch (IOException ex) {
-                // nothing we can do
+            } catch (IllegalArgumentException e) {
+                // ok to ignore
             }
         });
     }
@@ -75,17 +74,17 @@ public class EventPublisher {
     public void publish(Object data) {
         try {
             EventEmitter.getInstance().send(outStream, data, new Kv(TYPE, DATA));
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unable to publish data to {} - {}",
-                    Utility.getInstance().getSimpleRoute(outStream), e.getMessage());
+                        Utility.getInstance().getSimpleRoute(outStream), e.getMessage());
         }
     }
 
-    public void publish(byte[] payload, int start, int end) throws IOException {
+    public void publish(byte[] payload, int start, int end) {
         if (start > end) {
-            publishException(new IOException("Invalid byte range. Actual: start/end=" + start + "/" + end));
+            publishException(new IllegalArgumentException("Invalid byte range. Actual: start/end=" + start + "/" + end));
         } else if (end > payload.length) {
-            publishException(new IOException("end pointer must not be larger than payload buffer size"));
+            publishException(new IllegalArgumentException("end pointer must not be larger than payload buffer size"));
         } else {
             // always create a new byte array
             byte[] b = start == end ? new byte[0] : Arrays.copyOfRange(payload, start, end);
@@ -97,9 +96,9 @@ public class EventPublisher {
         try {
             var error = new EventEnvelope().setException(e);
             EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
-        } catch (IOException ex) {
+        } catch (IllegalArgumentException ex) {
             log.error("Unable to publish exception to {} - {}",
-                    Utility.getInstance().getSimpleRoute(outStream), ex.getMessage());
+                        Utility.getInstance().getSimpleRoute(outStream), ex.getMessage());
         }
         publishCompletion();
     }
@@ -109,9 +108,9 @@ public class EventPublisher {
             eof.set(true);
             try {
                 EventEmitter.getInstance().send(outStream, new Kv(TYPE, END_OF_STREAM));
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.error("Unable to publish completion signal to {} - {}",
-                        Utility.getInstance().getSimpleRoute(outStream), e.getMessage());
+                            Utility.getInstance().getSimpleRoute(outStream), e.getMessage());
             }
         }
         if (!expired.get()) {

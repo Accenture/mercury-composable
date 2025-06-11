@@ -29,7 +29,6 @@ import org.platformlambda.core.system.ServerPersonality;
 import org.platformlambda.core.system.ServiceDiscovery;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -132,15 +131,10 @@ public class MockCloud implements CloudSetup {
          * where cloudRoutes is the routing store.
          */
         LambdaFunction registry = (headers, input, instance) -> true;
-        try {
-            platform.registerPrivate(EventEmitter.CLOUD_CONNECTOR, connector, 1);
-            platform.registerPrivate(ServiceDiscovery.SERVICE_QUERY, query, 10);
-            platform.registerPrivate(ServiceDiscovery.SERVICE_REGISTRY, registry, 10);
-            platform.registerPrivate(CLOUD_CONNECTOR_HEALTH, health, 2);
-        } catch (IOException e) {
-            // nothing to worry
-        }
-
+        platform.registerPrivate(EventEmitter.CLOUD_CONNECTOR, connector, 1);
+        platform.registerPrivate(ServiceDiscovery.SERVICE_QUERY, query, 10);
+        platform.registerPrivate(ServiceDiscovery.SERVICE_REGISTRY, registry, 10);
+        platform.registerPrivate(CLOUD_CONNECTOR_HEALTH, health, 2);
     }
 
 }

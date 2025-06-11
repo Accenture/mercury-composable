@@ -29,7 +29,6 @@ import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 
@@ -75,15 +74,10 @@ public class JobExecutor implements Job {
                     }
                     if (me.equals(selected)) {
                         if (po.exists(job.service)) {
-                            try {
-                                po.send(event);
-                                job.lastExecution = new Date();
-                                job.count++;
-                                log.info("Execute service {} with parameters {}", job.service, job.parameters);
-                            } catch (IOException e) {
-                                log.error("Unable to execute service {} with parameters {} - {}",
-                                        job.service, job.parameters, e.getMessage());
-                            }
+                            po.send(event);
+                            job.lastExecution = new Date();
+                            job.count++;
+                            log.info("Execute service {} with parameters {}", job.service, job.parameters);
                         } else {
                             log.error("Unable to execute service {} with parameters {} - route {} not found",
                                     job.service, job.parameters, job.service);

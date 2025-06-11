@@ -165,8 +165,8 @@ and its result set will be delivered to the user.
 
 ## Underlying Event System
 
-The Event Script system uses platform-core as the event system where it encapsulates Java Virtual Threads,
-Eclipse Vertx, Kotlin coroutine and suspend function.
+The Event Script system uses platform-core as the event system where it encapsulates Java Virtual Threads and
+Eclipse Vertx.
 
 The integration points are intentionally minimalist. For most use cases, the user application does not need
 to make any API calls to the underlying event system.
@@ -293,9 +293,6 @@ in the last function in a flow so that camel case output will be delivered to an
 
 If your PoJo requires special treatment and the built-in preconfigured serializer does not handle your use case, you can
 implement your own custom serializer. In this case, the inputStrategy and outputStrategy will be ignored.
-
-> *Note*: The "inputStrategy" and "outputStrategy" parameters are applicable only to TypedLambdaFunction.
-          They are not supported in KotlinLambdaFunction.
 
 ## Unique task naming
 

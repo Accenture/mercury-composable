@@ -25,7 +25,6 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.ws.MonitorService;
 
-import java.io.IOException;
 import java.util.*;
 
 public class AdditionalInfo implements LambdaFunction {
@@ -41,7 +40,7 @@ public class AdditionalInfo implements LambdaFunction {
     private final boolean topicSubstitution;
     private final Map<String, String> preAllocatedTopics;
 
-    public AdditionalInfo() throws IOException {
+    public AdditionalInfo() {
         AppConfigReader config = AppConfigReader.getInstance();
         appPrefix = config.getProperty("app.topic.prefix", "multiplex") + ".";
         monitorPrefix = config.getProperty("monitor.topic", "service.monitor") + ".";
@@ -51,7 +50,7 @@ public class AdditionalInfo implements LambdaFunction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (QUERY.equals(headers.get(TYPE))) {
             Map<String, Object> result = new HashMap<>();
             // connection list
@@ -199,7 +198,7 @@ public class AdditionalInfo implements LambdaFunction {
         return result;
     }
 
-    private List<String> getTopics() throws IOException {
+    private List<String> getTopics() {
         Utility util = Utility.getInstance();
         PubSub ps = PubSub.getInstance();
         List<String> topics = ps.list();

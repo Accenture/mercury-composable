@@ -9,7 +9,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -30,7 +29,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void headerTest() throws IOException {
+    void headerTest() {
         EventEnvelope event = new EventEnvelope();
         event.setHeader("hello", "world");
         event.setHeader("test", "hello\r\nworld");
@@ -40,7 +39,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void booleanTest() throws IOException {
+    void booleanTest() {
         boolean HELLO = true;
         EventEnvelope source = new EventEnvelope();
         source.setBody(HELLO);
@@ -51,7 +50,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void integerTest() throws IOException {
+    void integerTest() {
         int VALUE = 100;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -62,7 +61,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void longTest() throws IOException {
+    void longTest() {
         Long VALUE = 100L;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -74,7 +73,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void floatTest() throws IOException {
+    void floatTest() {
         float VALUE = 1.23f;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -85,7 +84,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void doubleTest() throws IOException {
+    void doubleTest() {
         double VALUE = 1.23d;
         EventEnvelope source = new EventEnvelope();
         source.setBody(VALUE);
@@ -96,7 +95,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void bigDecimalTest() throws IOException {
+    void bigDecimalTest() {
         String VALUE = "1.23";
         BigDecimal HELLO = new BigDecimal(VALUE);
         EventEnvelope source = new EventEnvelope();
@@ -109,7 +108,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void dateTest() throws IOException {
+    void dateTest() {
         Utility util = Utility.getInstance();
         Date NOW = new Date();
         EventEnvelope source = new EventEnvelope();
@@ -122,7 +121,7 @@ class EventEnvelopeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pojoTest() throws IOException {
+    void pojoTest() {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -139,7 +138,7 @@ class EventEnvelopeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pojoListTest() throws IOException {
+    void pojoListTest() {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -185,7 +184,7 @@ class EventEnvelopeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void mapSerializationTest() throws IOException {
+    void mapSerializationTest() {
         String HELLO = "hello";
         PoJo pojo = new PoJo();
         pojo.setName(HELLO);
@@ -248,7 +247,7 @@ class EventEnvelopeTest {
 
     @SuppressWarnings("rawtypes")
     @Test
-    void numberInMapTest() throws IOException {
+    void numberInMapTest() {
         Map<String, Object> map = new HashMap<>();
         map.put("float", 12.345f);
         map.put("double", 10.101d);
@@ -269,7 +268,7 @@ class EventEnvelopeTest {
         assertEquals(Optional.of("hello"), target.getBody());
     }
 
-    @Test void exceptionTransportTest() throws IOException {
+    @Test void exceptionTransportTest() {
         AppException ex = new AppException(400, "hello world");
         EventEnvelope source = new EventEnvelope().setException(ex);
         byte[] b = source.toBytes();
@@ -282,7 +281,7 @@ class EventEnvelopeTest {
         assertEquals(400, target.getStatus());
     }
 
-    @Test void stackTraceTransportTest() throws IOException {
+    @Test void stackTraceTransportTest() {
         String stack = "hello\nworld";
         // transport by byte array
         EventEnvelope source = new EventEnvelope().setStackTrace(stack);
@@ -299,7 +298,7 @@ class EventEnvelopeTest {
     }
 
     @Test
-    void testBestEffortToRestoreException() throws IOException {
+    void testBestEffortToRestoreException() {
         String message = "hello world";
         String stack = "hello\nworld";
         // this emulates how Node.js Composable application sets exception

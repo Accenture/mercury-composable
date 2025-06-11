@@ -5,7 +5,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>service-monitor</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.46</version>
+    <version>4.3.0</version>
     <name>Presence monitor module</name>
 
     <parent>
@@ -20,7 +20,6 @@
         <netty.version>4.2.1.Final</netty.version>
         <kafka.version>3.9.0</kafka.version>
         <gson.version>2.13.0</gson.version>
-        <kotlin.version>2.1.21</kotlin.version>
         <java.version>21</java.version>
     </properties>
 
@@ -29,7 +28,6 @@
             <id>central</id>
             <url>https://repo1.maven.org/maven2/</url>
         </repository>
-        <!-- add your corporate artifactory here -->
     </repositories>
 
     <dependencyManagement>
@@ -48,13 +46,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.2.46</version>
+            <version>4.3.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.2.46</version>
+            <version>4.3.0</version>
         </dependency>
 
         <dependency>
@@ -158,25 +156,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-repository-metadata</artifactId>
                 <version>3.9.9</version>
-            </plugin>
-            <plugin>
-                <groupId>org.jetbrains.dokka</groupId>
-                <artifactId>dokka-maven-plugin</artifactId>
-                <version>1.7.20</version>
-                <executions>
-                    <execution>
-                        <phase>pre-site</phase>
-                        <goals>
-                            <goal>dokka</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <sourceDirectories>
-                        <sourceDir>${project.basedir}/src/main/java</sourceDir>
-                        <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                    </sourceDirectories>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

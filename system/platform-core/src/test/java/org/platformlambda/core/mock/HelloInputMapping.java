@@ -38,7 +38,6 @@ public class HelloInputMapping implements TypedLambdaFunction<PoJo, EventEnvelop
     private static final String TRACE_ID = "trace_id";
     private static final String TRACE_PATH = "trace_path";
     private static final String COROUTINE = "coroutine";
-    private static final String SUSPEND = "suspend";
     private static final String INTERCEPTOR = "interceptor";
     private static final String TRACING = "tracing";
 
@@ -46,7 +45,6 @@ public class HelloInputMapping implements TypedLambdaFunction<PoJo, EventEnvelop
     public EventEnvelope handleEvent(Map<String, String> headers, PoJo input, int instance) {
         Platform platform = Platform.getInstance();
         boolean isCoroutine = platform.isCoroutine(SERVICE_NAME);
-        boolean isKotlin = platform.isSuspendFunction(SERVICE_NAME);
         boolean isInterceptor = platform.isInterceptor(SERVICE_NAME);
         boolean isTrackable = platform.isTrackable(SERVICE_NAME);
         /*
@@ -64,7 +62,6 @@ public class HelloInputMapping implements TypedLambdaFunction<PoJo, EventEnvelop
                 .setHeader(TRACE_PATH, headers.get(MY_TRACE_PATH))
                 // return the service attributes for unit test to validate
                 .setHeader(COROUTINE, isCoroutine)
-                .setHeader(SUSPEND, isKotlin)
                 .setHeader(INTERCEPTOR, isInterceptor)
                 .setHeader(TRACING, isTrackable);
     }

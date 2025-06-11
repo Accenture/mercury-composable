@@ -26,7 +26,6 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
@@ -61,7 +60,7 @@ public class BenchmarkService implements LambdaFunction {
     private String httpTarget;
 
     @SuppressWarnings("unchecked")
-    public BenchmarkService() throws IOException {
+    public BenchmarkService() {
         LambdaFunction callback = (headers, input, instance) -> {
             Utility util = Utility.getInstance();
             EventEmitter po = EventEmitter.getInstance();
@@ -87,7 +86,7 @@ public class BenchmarkService implements LambdaFunction {
         Platform.getInstance().registerPrivate(BENCHMARK_CALLBACK, callback,1);
     }
 
-    private void calculateBenchmark() throws IOException {
+    private void calculateBenchmark() {
         NumberFormat number = NumberFormat.getInstance();
         int count = benchmarkRequest.count;
         int size = benchmarkRequest.size;
@@ -161,7 +160,7 @@ public class BenchmarkService implements LambdaFunction {
         }
     }
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         String me = Platform.getInstance().getOrigin();
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -252,10 +251,10 @@ public class BenchmarkService implements LambdaFunction {
                                 try {
                                     po.send(new EventEnvelope().setTo(BENCHMARK_CALLBACK)
                                             .setBody(res.getBody()).setCorrelationId(benchmarkRequest.cid));
-                                } catch (IOException e) {
+                                } catch (IllegalArgumentException e) {
                                     try {
                                         po.send(sender, util.getLocalTimestamp()+WARNING+e.getMessage());
-                                    } catch (IOException ex) {
+                                    } catch (IllegalArgumentException ex) {
                                         // ok to ignore
                                     }
                                 }

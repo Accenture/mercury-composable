@@ -18,7 +18,6 @@
 
 package org.platformlambda.core.models;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -29,37 +28,37 @@ import java.util.Map;
  */
 public interface PubSubProvider {
 
-    boolean createTopic(String topic) throws IOException;
+    boolean createTopic(String topic);
 
-    boolean createTopic(String topic, int partitions) throws IOException;
+    boolean createTopic(String topic, int partitions);
 
-    void deleteTopic(String topic) throws IOException;
+    void deleteTopic(String topic);
 
-    boolean createQueue(String queue) throws IOException;
+    boolean createQueue(String queue);
 
-    void deleteQueue(String queue) throws IOException;
+    void deleteQueue(String queue);
 
-    void publish(String topic, Map<String, String> headers, Object body) throws IOException;
+    void publish(String topic, Map<String, String> headers, Object body);
 
-    void publish(String topic, int partition, Map<String, String> headers, Object body) throws IOException;
+    void publish(String topic, int partition, Map<String, String> headers, Object body);
 
-    void subscribe(String topic, LambdaFunction listener, String... parameters) throws IOException;
+    void subscribe(String topic, LambdaFunction listener, String... parameters);
 
-    void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) throws IOException;
+    void subscribe(String topic, int partition, LambdaFunction listener, String... parameters);
 
-    void send(String queue, Map<String, String> headers, Object body) throws IOException;
+    void send(String queue, Map<String, String> headers, Object body);
 
-    void listen(String queue, LambdaFunction listener, String... parameters) throws IOException;
+    void listen(String queue, LambdaFunction listener, String... parameters);
 
-    void unsubscribe(String topic) throws IOException;
+    void unsubscribe(String topic);
 
-    void unsubscribe(String topic, int partition) throws IOException;
+    void unsubscribe(String topic, int partition);
 
-    boolean exists(String topic) throws IOException;
+    boolean exists(String topic);
 
-    int partitionCount(String topic) throws IOException;
+    int partitionCount(String topic);
 
-    List<String> list() throws IOException;
+    List<String> list();
 
     boolean isStreamingPubSub();
 

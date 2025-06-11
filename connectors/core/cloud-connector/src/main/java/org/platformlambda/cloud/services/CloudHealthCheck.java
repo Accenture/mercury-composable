@@ -32,7 +32,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +138,7 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
                 }
             });
             res.onFailure(ex -> sendError(input, 408, ex.getMessage()));
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             sendError(input, 500, e.getMessage());
         }
     }
@@ -165,7 +164,7 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
                 .setTrace(input.getTraceId(), input.getTracePath());
         try {
             EventEmitter.getInstance().send(response);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unable to deliver response to {} - {}", input.getReplyTo(), e.getMessage());
         }
     }
@@ -177,7 +176,7 @@ public class CloudHealthCheck implements TypedLambdaFunction<EventEnvelope, Void
                 .setTrace(input.getTraceId(), input.getTracePath());
         try {
             EventEmitter.getInstance().send(response);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unable to deliver response to {} - {}", input.getReplyTo(), e.getMessage());
         }
     }

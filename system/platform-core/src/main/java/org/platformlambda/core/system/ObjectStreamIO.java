@@ -25,7 +25,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -97,16 +96,11 @@ public class ObjectStreamIO {
         this.outputStreamId = out + "@" + platform.getOrigin();
         StreamPublisher publisher = new StreamPublisher();
         StreamConsumer consumer = new StreamConsumer(publisher, in, out);
-        try {
-            platform.registerPrivate(in, consumer, 1);
-            streams.put(in, new StreamInfo(expirySeconds));
-            platform.registerPrivateStream(out, publisher);
-            String timer = util.elapsedTime(expirySeconds * 1000L);
-            log.info("Stream {} created, idle expiry {}", id, timer);
-        } catch (IOException e) {
-            // this should not happen
-            log.error("Unable to create stream {} - {}", id, e.getMessage());
-        }
+        platform.registerPrivate(in, consumer, 1);
+        streams.put(in, new StreamInfo(expirySeconds));
+        platform.registerPrivateStream(out, publisher);
+        String timer = util.elapsedTime(expirySeconds * 1000L);
+        log.info("Stream {} created, idle expiry {}", id, timer);
     }
 
     /**
@@ -229,12 +223,8 @@ public class ObjectStreamIO {
         }
 
         private void sendReply(CallBackReference ref, Object input, String type) {
-            try {
-                EventEmitter.getInstance().send(new EventEnvelope().setTo(ref.cb)
+            EventEmitter.getInstance().send(new EventEnvelope().setTo(ref.cb)
                         .setCorrelationId(ref.cid).setHeader(TYPE, type).setBody(input));
-            } catch(IOException e) {
-                log.error("Unable to callback - {}", e.getMessage());
-            }
         }
     }
 
@@ -252,7 +242,7 @@ public class ObjectStreamIO {
         }
 
         @Override
-        public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+        public Object handleEvent(Map<String, String> headers, Object input, int instance) {
             Platform platform = Platform.getInstance();
             EventEmitter po = EventEmitter.getInstance();
             EventEnvelope event = (EventEnvelope) input;
@@ -285,5 +275,4 @@ public class ObjectStreamIO {
             this.cid = cid;
         }
     }
-
 }

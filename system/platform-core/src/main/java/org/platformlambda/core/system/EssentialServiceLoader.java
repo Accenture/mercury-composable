@@ -24,8 +24,6 @@ import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.services.DistributedTrace;
 import org.platformlambda.core.services.TemporaryInbox;
 
-import java.io.IOException;
-
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
@@ -37,7 +35,7 @@ import java.io.IOException;
 public class EssentialServiceLoader implements EntryPoint {
 
     @Override
-    public void start(String[] args) throws IOException {
+    public void start(String[] args) {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 100);
         platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_REQUEST, new AsyncHttpClient(), 100);

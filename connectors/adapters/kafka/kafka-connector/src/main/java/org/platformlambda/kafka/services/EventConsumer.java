@@ -40,7 +40,6 @@ import org.platformlambda.core.websocket.common.MultipartPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,7 +69,7 @@ public class EventConsumer extends Thread {
     private int skipped = 0;
     private long offset = -1;
 
-    public EventConsumer(Properties base, String topic, int partition, String... parameters) throws IOException {
+    public EventConsumer(Properties base, String topic, int partition, String... parameters) {
         Utility util = Utility.getInstance();
         boolean substitute = ConnectorConfig.topicSubstitutionEnabled();
         Map<String, String> preAllocatedTopics = ConnectorConfig.getTopicSubstitution();
@@ -217,7 +216,7 @@ public class EventConsumer extends Thread {
                          */
                         log.error("Skipping record {} because it belongs to {}", rec.offset(), recipient);
                         if (++invalidEvents > INVALID_EVENT_THRESHOLD) {
-                            throw new IOException("Too many outdated events - likely to be a READ offset error");
+                            throw new IllegalArgumentException("Too many outdated events - likely to be a READ offset error");
                         }
                         continue;
                     }
@@ -301,11 +300,7 @@ public class EventConsumer extends Thread {
             log.info("Unsubscribed {}", topicPartition);
             String initHandler = INIT + "." + (partition < 0 ? topic : topic + "." + partition);
             if (requireInitialization && platform.hasRoute(initHandler)) {
-                try {
-                    po.send(initHandler, DONE);
-                } catch (IOException e) {
-                    // ok to ignore
-                }
+                po.send(initHandler, DONE);
             }
         }
     }
@@ -325,5 +320,4 @@ public class EventConsumer extends Thread {
             consumer.wakeup();
         }
     }
-
 }

@@ -28,7 +28,6 @@ import org.platformlambda.mock.TestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -44,7 +43,7 @@ class AdminEndpointTest extends TestBase {
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
     @BeforeEach
-    public void waitForMockCloud() throws InterruptedException {
+    void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
             final int WAIT = 20;
@@ -83,7 +82,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoEndpointTest() throws IOException, InterruptedException {
+    void infoEndpointTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info", headers);
@@ -98,7 +97,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void libEndpointTest() throws IOException, InterruptedException {
+    void libEndpointTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/lib", headers);
@@ -111,7 +110,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void routeEndpointHasLocalRoutingTest() throws IOException, InterruptedException {
+    void routeEndpointHasLocalRoutingTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/info/routes", headers);
@@ -129,7 +128,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void healthEndpointTest() throws IOException, InterruptedException {
+    void healthEndpointTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);
@@ -142,7 +141,7 @@ class AdminEndpointTest extends TestBase {
     }
 
     @Test
-    void livenessEndpointTest() throws IOException, InterruptedException {
+    void livenessEndpointTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "text/plain");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/livenessprobe", headers);
@@ -152,7 +151,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void envEndpointTest() throws IOException, InterruptedException {
+    void envEndpointTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/env", headers);

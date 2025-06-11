@@ -32,7 +32,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -63,11 +62,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
         IdleCheck idle = new IdleCheck();
         platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> idle.removeExpiredConnections());
         log.info("Housekeeper started");
-        try {
-            platform.registerPrivate(HOUSEKEEPER, new WsHousekeeper(), 1);
-        } catch (IOException e) {
-            log.error("Unable to register {} - {}", HOUSEKEEPER, e.getMessage());
-        }
+        platform.registerPrivate(HOUSEKEEPER, new WsHousekeeper(), 1);
     }
 
     @Override
@@ -90,19 +85,15 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
             WsEnvelope md = new WsEnvelope(ws, path, rxPath, txPath);
             connections.put(session, md);
             log.info("Session {} connected", session);
-            try {
-                platform.registerPrivate(rxPath, lambdas.get(path), 1);
-                platform.registerPrivate(txPath, new WsServerTransmitter(ws), 1);
-            } catch (IOException e) {
-                log.error("Unable to register websocket session", e);
-            }
+            platform.registerPrivate(rxPath, lambdas.get(path), 1);
+            platform.registerPrivate(txPath, new WsServerTransmitter(ws), 1);
             try {
                 po.send(rxPath, new Kv(WsEnvelope.TYPE, WsEnvelope.OPEN),
                         new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath),
                         new Kv(WsEnvelope.IP, ip), new Kv(WsEnvelope.PATH, path),
                         new Kv(WsEnvelope.QUERY, query),
                         new Kv(WsEnvelope.TOKEN, token));
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.error("Unable to send open signal to {} - {}", rxPath, e.getMessage());
             }
             ws.binaryMessageHandler(b -> {
@@ -110,7 +101,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                 try {
                     po.send(rxPath, b.getBytes(), new Kv(WsEnvelope.TYPE, WsEnvelope.BYTES),
                             new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to send binary message to {} - {}", rxPath, e.getMessage());
                 }
             });
@@ -119,7 +110,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                 try {
                     po.send(rxPath, text, new Kv(WsEnvelope.TYPE, WsEnvelope.STRING),
                             new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to send text message to {} - {}", rxPath, e.getMessage());
                 }
             });
@@ -137,7 +128,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
                             .setReplyTo(HOUSEKEEPER).setCorrelationId(session);
                 try {
                     po.send(closeSignal);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     platform.release(rxPath);
                     platform.release(txPath);
                     log.error("Unable to send close signal to {} - {}", rxPath, e.getMessage());

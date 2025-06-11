@@ -25,8 +25,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
@@ -47,14 +45,8 @@ public class StreamQueue extends WorkerQueues {
         @Override
         public void handle(Message<byte[]> message) {
             if (!stopped) {
-                try {
-                    EventEnvelope event = new EventEnvelope(message.body());
-                    vThreadExecutor.submit(()-> processEvent(event));
-
-                } catch (IOException e) {
-                    log.error("Unable to decode event - {}", e.getMessage());
-                }
-
+                EventEnvelope event = new EventEnvelope(message.body());
+                vThreadExecutor.submit(()-> processEvent(event));
             }
         }
 
@@ -62,9 +54,8 @@ public class StreamQueue extends WorkerQueues {
             try {
                 def.getStreamFunction().handleEvent(event.getHeaders(), event.getBody());
             } catch (Exception e) {
-                log.error("Unhandled exception for "+route, e);
+                log.error("Unhandled exception for {}", route, e);
             }
         }
-
     }
 }

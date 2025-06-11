@@ -36,7 +36,6 @@ import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.service.MockHelloWorld;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.services.LongRunningRpcSimulator;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -46,7 +45,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -81,7 +79,7 @@ public class TestBase {
     private static final AtomicInteger startCounter = new AtomicInteger(0);
 
     @BeforeAll
-    static void baseSetup() throws IOException, InterruptedException {
+    static void baseSetup() throws InterruptedException {
         if (startCounter.incrementAndGet() == 1) {
             Platform.setAppId(APP_ID);
             Utility util = Utility.getInstance();
@@ -99,9 +97,7 @@ public class TestBase {
             log.info("Mock cloud ready");
             Platform platform = Platform.getInstance();
             platform.registerPrivate(HELLO_MOCK, new MockHelloWorld(), 10);
-            platform.registerKotlinPrivate(LONG_RUNNING_RPC, new LongRunningRpcSimulator(), 15);
             // test registering the same function with an alias route name
-            platform.registerKotlin(SLOW_RPC_FUNCTION, new LongRunningRpcSimulator(), 10);
             // hello.list is a special function to test returning result set as a list
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->
                     Collections.singletonList(input), 5);
@@ -113,11 +109,7 @@ public class TestBase {
             server.requestHandler(new MinimalistHttpHandler());
             server.listen(MINIMALIST_HTTP_PORT)
                     .onSuccess(service -> {
-                        try {
-                            platform.registerPrivate(SERVICE_LOADED, (headers, input, instance) -> true, 1);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        platform.registerPrivate(SERVICE_LOADED, (headers, input, instance) -> true, 1);
                     })
                     .onFailure(ex -> {
                         log.error("Unable to start - {}", ex.getMessage());
@@ -135,12 +127,8 @@ public class TestBase {
                         .end("Hello from HTTPS server"));
                 httpsServer.listen(8443)
                         .onSuccess(service -> {
-                            try {
-                                platform.registerPrivate(HTTPS_SERVICE_LOADED, (headers, input, instance) -> true, 1);
-                                log.info("HTTPS server started");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
+                            platform.registerPrivate(HTTPS_SERVICE_LOADED, (headers, input, instance) -> true, 1);
+                            log.info("HTTPS server started");
                         })
                         .onFailure(ex -> {
                             log.error("Unable to start https - {}", ex.getMessage());
@@ -194,7 +182,7 @@ public class TestBase {
     }
 
     protected EventEnvelope httpGet(String host, String path, Map<String, String> headers)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
         // BlockingQueue should only be used in unit test
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();

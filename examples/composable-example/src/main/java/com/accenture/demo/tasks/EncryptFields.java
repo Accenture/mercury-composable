@@ -41,7 +41,8 @@ public class EncryptFields implements TypedLambdaFunction<Map<String, Object>, M
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws Exception {
+    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
+            throws Exception {
         if (!input.containsKey(PROTECTED_FIELDS)) {
             throw new IllegalArgumentException(MISSING+PROTECTED_FIELDS);
         }

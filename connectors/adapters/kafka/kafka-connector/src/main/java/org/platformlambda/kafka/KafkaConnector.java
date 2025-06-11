@@ -38,7 +38,6 @@ import org.platformlambda.cloud.ConnectorConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +69,7 @@ public class KafkaConnector implements CloudSetup {
             try {
                 config = ConnectorConfig.getConfig(location,
                         "file:/tmp/config/kafka.properties,classpath:/kafka.properties");
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.error("Unable to find kafka properties - {}", e.getMessage());
                 System.exit(-1);
             }
@@ -94,9 +93,9 @@ public class KafkaConnector implements CloudSetup {
             try {
                 // try 2 times to check if kafka cluster is available
                 if (!kafkaReachable(brokers, 2)) {
-                    throw new IOException("Unreachable");
+                    throw new IllegalArgumentException("Unreachable");
                 }
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.error("Kafka cluster failure {} - {}", brokers, e.getMessage());
                 System.exit(-1);
             }
@@ -138,7 +137,7 @@ public class KafkaConnector implements CloudSetup {
         }
     }
 
-    private static boolean kafkaReachable(List<String> brokers, int tries) throws IOException {
+    private static boolean kafkaReachable(List<String> brokers, int tries) {
         for (String dest: brokers) {
             if (dest.contains(":")) {
                 Utility util = Utility.getInstance();
@@ -146,13 +145,13 @@ public class KafkaConnector implements CloudSetup {
                 String host = dest.substring(0, colon);
                 int port = util.str2int(dest.substring(colon+1));
                 if (port == -1) {
-                    throw new IOException("Invalid configuration for "+BROKER_URL);
+                    throw new IllegalArgumentException("Invalid configuration for "+BROKER_URL);
                 }
                 if (util.portReady(host, port, 8000)) {
                     return true;
                 }
             } else {
-                throw new IOException("Invalid configuration for "+BROKER_URL);
+                throw new IllegalArgumentException("Invalid configuration for "+BROKER_URL);
             }
         }
         int n = tries - 1;
@@ -162,5 +161,4 @@ public class KafkaConnector implements CloudSetup {
         }
         return false;
     }
-
 }

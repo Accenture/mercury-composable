@@ -49,7 +49,7 @@ class RestEndpointTest extends TestBase {
     private static final SimpleXmlParser xml = new SimpleXmlParser();
 
     @BeforeAll
-    public static void setupAuthenticator() throws IOException {
+    public static void setupAuthenticator() {
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute("v1.api.auth")) {
             LambdaFunction f = (headers, input, instance) -> {
@@ -72,7 +72,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void optionsMethodTest() throws IOException, InterruptedException {
+    void optionsMethodTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -96,7 +96,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings(value = "unchecked")
     @Test
-    void serviceTest() throws IOException, InterruptedException, ExecutionException {
+    void serviceTest() throws InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -130,7 +130,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void nonExistUrlTest() throws IOException, InterruptedException, ExecutionException {
+    void nonExistUrlTest() throws InterruptedException, ExecutionException {
         checkHttpRouting("/api/hello/../world &moved to https://evil.site?hello world=abc");
         checkHttpRouting("/api/hello/world <div>test</div>");
         checkHttpRouting("/api/hello/world > something");
@@ -162,7 +162,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @SuppressWarnings("unchecked")
-    private void checkHttpRouting(String uri) throws IOException, InterruptedException, ExecutionException {
+    private void checkHttpRouting(String uri) throws InterruptedException, ExecutionException {
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -186,7 +186,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void authRoutingTest1() throws IOException, InterruptedException {
+    void authRoutingTest1() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -210,7 +210,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void authRoutingTest2() throws IOException, InterruptedException {
+    void authRoutingTest2() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -440,7 +440,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void postJson() throws IOException, InterruptedException {
+    void postJson() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -476,7 +476,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void postXmlAsMap() throws IOException, InterruptedException {
+    void postXmlAsMap() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
@@ -512,7 +512,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void postXmlAsText() throws IOException, InterruptedException {
+    void postXmlAsText() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -547,7 +547,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void postJsonMap() throws IOException, InterruptedException {
+    void postJsonMap() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -582,7 +582,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testJsonResultList() throws IOException, InterruptedException {
+    void testJsonResultList() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -620,7 +620,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testXmlResultList() throws IOException, InterruptedException {
+    void testXmlResultList() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
@@ -657,7 +657,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void sendHttpDelete() throws IOException, InterruptedException {
+    void sendHttpDelete() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -684,7 +684,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void sendHttpHeadWithCID() throws IOException, InterruptedException {
+    void sendHttpHeadWithCID() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String traceId = Utility.getInstance().getDateUuid();
         EventEmitter po = EventEmitter.getInstance();
@@ -722,7 +722,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void sendHttpHeadWithTraceId() throws IOException, InterruptedException {
+    void sendHttpHeadWithTraceId() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String traceId = Utility.getInstance().getDateUuid();
         EventEmitter po = EventEmitter.getInstance();
@@ -747,7 +747,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void postXmlMap() throws IOException, InterruptedException {
+    void postXmlMap() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -782,7 +782,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void postList() throws IOException, InterruptedException {
+    void postList() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -817,7 +817,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getIndexHtml() throws IOException, InterruptedException {
+    void getIndexHtml() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -845,7 +845,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getIndexWithoutExtension() throws IOException, InterruptedException {
+    void getIndexWithoutExtension() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -875,7 +875,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getResourceDirectoryNotAllowed() throws IOException, InterruptedException {
+    void getResourceDirectoryNotAllowed() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -892,7 +892,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void pathTraversalAvoidance() throws IOException, InterruptedException {
+    void pathTraversalAvoidance() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -910,7 +910,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getCssPage() throws IOException, InterruptedException {
+    void getCssPage() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -937,7 +937,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getJsPage() throws IOException, InterruptedException {
+    void getJsPage() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -961,7 +961,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getXmlPage() throws IOException, InterruptedException {
+    void getXmlPage() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -983,7 +983,7 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void getAssetPage() throws IOException, InterruptedException {
+    void getAssetPage() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -1008,7 +1008,7 @@ class RestEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void getAssetJSON() throws IOException, InterruptedException {
+    void getAssetJSON() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new LinkedBlockingQueue<>();
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();

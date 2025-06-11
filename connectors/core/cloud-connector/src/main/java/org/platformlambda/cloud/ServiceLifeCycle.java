@@ -27,7 +27,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -88,7 +87,7 @@ public class ServiceLifeCycle extends Thread {
                         String handle = po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT_TAG)
                                 .setHeader(SEQUENCE, n + 1), new Date(System.currentTimeMillis() + INTERVAL));
                         task.add(handle);
-                    } catch (IOException e) {
+                    } catch (IllegalArgumentException e) {
                         log.error("Unable to send initToken to consumer - {}", e.getMessage());
                     }
                 } else {
@@ -102,12 +101,8 @@ public class ServiceLifeCycle extends Thread {
             }
             return true;
         };
-        try {
-            platform.registerPrivate(INIT_HANDLER, f, 1);
-            po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT_TAG).setHeader(SEQUENCE, 1),
-                    new Date(System.currentTimeMillis() + FIRST_POLL));
-        } catch (IOException e) {
-            log.error("Unable to register {} - {}", INIT_HANDLER, e.getMessage());
-        }
+        platform.registerPrivate(INIT_HANDLER, f, 1);
+        po.sendLater(new EventEnvelope().setTo(INIT_HANDLER).setBody(INIT_TAG).setHeader(SEQUENCE, 1),
+                new Date(System.currentTimeMillis() + FIRST_POLL));
     }
 }

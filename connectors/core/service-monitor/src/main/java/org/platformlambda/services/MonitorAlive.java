@@ -26,7 +26,6 @@ import org.platformlambda.ws.MonitorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,23 +55,19 @@ public class MonitorAlive {
         String appId = platform.getAppId();
         String origin = platform.getOrigin();
         if (ready) {
-            try {
-                // broadcast to all presence monitors
-                List<String> payload = new ArrayList<>(MonitorService.getConnections().keySet());
-                EventEnvelope event = new EventEnvelope().setBody(payload)
-                        .setTo(MainApp.PRESENCE_HOUSEKEEPER + MONITOR_PARTITION)
-                        .setHeader(TYPE, MONITOR_ALIVE).setHeader(ORIGIN, origin);
-                /*
-                 * Optional app instance ID (e.g. Kubernetes' pod-ID)
-                 * can be set using Platform.setAppId(uniqueAppInstanceId) before the app starts.
-                 */
-                if (appId != null) {
-                    event.setHeader(INSTANCE, appId);
-                }
-                po.send(event);
-            } catch (IOException e) {
-                log.error("Unable to send keep-alive - {}", e.getMessage());
+            // broadcast to all presence monitors
+            List<String> payload = new ArrayList<>(MonitorService.getConnections().keySet());
+            EventEnvelope event = new EventEnvelope().setBody(payload)
+                    .setTo(MainApp.PRESENCE_HOUSEKEEPER + MONITOR_PARTITION)
+                    .setHeader(TYPE, MONITOR_ALIVE).setHeader(ORIGIN, origin);
+            /*
+             * Optional app instance ID (e.g. Kubernetes' pod-ID)
+             * can be set using Platform.setAppId(uniqueAppInstanceId) before the app starts.
+             */
+            if (appId != null) {
+                event.setHeader(INSTANCE, appId);
             }
+            po.send(event);
         }
     }
 

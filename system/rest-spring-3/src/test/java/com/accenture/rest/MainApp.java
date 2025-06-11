@@ -23,7 +23,6 @@ import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.Platform;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +31,7 @@ import java.util.Map;
 public class MainApp implements EntryPoint {
 
     @Override
-    public void start(String[] args) throws IOException {
+    public void start(String[] args) {
         LambdaFunction f = (headers, input, instance) -> {
             Map<String, Object> result = new HashMap<>();
             result.put("time", new Date());

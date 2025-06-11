@@ -149,7 +149,7 @@ class CryptoTest {
     }
 
     @Test
-    void hashTest() throws IOException {
+    void hashTest() {
         String input = "hello world";
         byte[] hashed = crypto.getSHA256(input.getBytes());
         assertEquals(32, hashed.length);

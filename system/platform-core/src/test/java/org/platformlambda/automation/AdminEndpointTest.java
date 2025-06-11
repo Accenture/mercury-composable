@@ -26,7 +26,6 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +36,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoEndpointTest() throws IOException, InterruptedException {
+    void infoEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -51,7 +50,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoEndpointXmlTest() throws IOException, InterruptedException {
+    void infoEndpointXmlTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/xml");
         EventEnvelope response = httpGet(localHost, "/info", headers);
@@ -67,7 +66,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void libEndpointTest() throws IOException, InterruptedException {
+    void libEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info/lib", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -79,7 +78,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void routeEndpointTest() throws IOException, InterruptedException {
+    void routeEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info/routes", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -96,7 +95,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void healthEndpointTest() throws IOException, InterruptedException {
+    void healthEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/health", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -114,7 +113,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void simulateHealthCheckFailureTest() throws IOException, InterruptedException {
+    void simulateHealthCheckFailureTest() throws InterruptedException {
         MockCloud.setSimulateException(true);
         EventEnvelope response = httpGet(localHost, "/health", null);
         assert response != null;
@@ -143,7 +142,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void envEndpointTest() throws IOException, InterruptedException {
+    void envEndpointTest() throws InterruptedException {
         Utility util = Utility.getInstance();
         EventEnvelope response = httpGet(localHost, "/env", null);
         assert response != null;
@@ -162,7 +161,7 @@ class AdminEndpointTest extends TestBase {
     }
 
     @Test
-    void getIndexPage() throws IOException, InterruptedException {
+    void getIndexPage() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/index.html", null);
         assert response != null;
         assertEquals("text/html", response.getHeader("content-type"));
@@ -175,7 +174,7 @@ class AdminEndpointTest extends TestBase {
     }
 
     @Test
-    void getCssPage() throws IOException, InterruptedException {
+    void getCssPage() throws InterruptedException {
         // test path traversal protection that "../" and "..\" will be removed
         EventEnvelope response = httpGet(localHost, "/../..\\sample.css", null);
         assert response != null;
@@ -189,7 +188,7 @@ class AdminEndpointTest extends TestBase {
     }
 
     @Test
-    void getTextPage() throws IOException, InterruptedException {
+    void getTextPage() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.txt", null);
         assert response != null;
         assertEquals("text/plain", response.getHeader("content-type"));
@@ -201,7 +200,7 @@ class AdminEndpointTest extends TestBase {
     }
 
     @Test
-    void getJsPage() throws IOException, InterruptedException {
+    void getJsPage() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.js", null);
         assert response != null;
         assertEquals("text/javascript", response.getHeader("content-type"));
@@ -214,7 +213,7 @@ class AdminEndpointTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pageNotExists() throws IOException, InterruptedException {
+    void pageNotExists() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/no_such_page", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());

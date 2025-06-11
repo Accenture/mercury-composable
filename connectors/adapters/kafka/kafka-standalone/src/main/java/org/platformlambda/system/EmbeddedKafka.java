@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -39,11 +38,11 @@ public class EmbeddedKafka extends Thread {
     public void run() {
         try (InputStream stream = EmbeddedKafka.class.getResourceAsStream("/server.properties")) {
             if (stream == null) {
-                throw new IOException("server.properties is not available as resource");
+                throw new IllegalArgumentException("server.properties is not available as resource");
             }
             InputStream md = EmbeddedKafka.class.getResourceAsStream("/meta.properties");
             if (md == null) {
-                throw new IOException("meta.properties is not available as resource");
+                throw new IllegalArgumentException("meta.properties is not available as resource");
             }
             Utility util = Utility.getInstance();
             String metadata = util.stream2str(md);
@@ -65,8 +64,7 @@ public class EmbeddedKafka extends Thread {
             kafka = new KafkaRaftServer(new KafkaConfig(p), Time.SYSTEM);
             kafka.startup();
             Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Unable to start Kafka kafka - {}", e.getMessage());
             System.exit(-1);
         }
@@ -77,5 +75,4 @@ public class EmbeddedKafka extends Thread {
         log.info("Shutting down");
         kafka.shutdown();
     }
-
 }

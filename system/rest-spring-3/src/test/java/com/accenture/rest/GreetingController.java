@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -64,19 +63,15 @@ public class GreetingController {
 			// make async RPC call to the "hello.world" function
 			PostOffice po = new PostOffice("greeting.controller", id, "GET /greeting"+query);
 			EventEnvelope req = new EventEnvelope().setTo("hello.world").setBody(value);
-			try {
-				po.asyncRequest(req, 5000)
-					.onSuccess(event -> {
-						if (event.getBody() instanceof Map map) {
-							Greeting data = new Greeting(counter.incrementAndGet(), map);
-							callback.success(ResponseEntity.status(event.getStatus()).body(data));
-						}
-					})
-					.onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
-			} catch (IOException e) {
-				callback.error(e);
-			}
-		});
+            po.asyncRequest(req, 5000)
+                .onSuccess(event -> {
+                    if (event.getBody() instanceof Map map) {
+                        Greeting data = new Greeting(counter.incrementAndGet(), map);
+                        callback.success(ResponseEntity.status(event.getStatus()).body(data));
+                    }
+                })
+                .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
+        });
 	}
 
 }

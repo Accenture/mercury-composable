@@ -27,7 +27,6 @@ import org.platformlambda.core.system.EventEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -98,21 +97,13 @@ public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void
              *    in the same application executable.
              */
             if (platform.hasRoute(DISTRIBUTED_TRACE_FORWARDER)) {
-                try {
-                    po.send(new EventEnvelope().setTo(DISTRIBUTED_TRACE_FORWARDER).setBody(dataset));
-                } catch (IOException e) {
-                    log.warn("Unable to relay trace to {} - {}", DISTRIBUTED_TRACE_FORWARDER, e.getMessage());
-                }
+                po.send(new EventEnvelope().setTo(DISTRIBUTED_TRACE_FORWARDER).setBody(dataset));
             }
             if (payload.containsKey(JOURNAL) && platform.hasRoute(TRANSACTION_JOURNAL_RECORDER)) {
                 EventEnvelope event = new EventEnvelope().setTo(TRANSACTION_JOURNAL_RECORDER);
                 var forward = new HashMap<>(dataset);
                 forward.put(JOURNAL, payload.get(JOURNAL));
-                try {
-                    po.send(event.setBody(forward));
-                } catch (IOException e) {
-                    log.warn("Unable to relay journal to {} - {}", TRANSACTION_JOURNAL_RECORDER, e.getMessage());
-                }
+                po.send(event.setBody(forward));
             }
         }
         return null;

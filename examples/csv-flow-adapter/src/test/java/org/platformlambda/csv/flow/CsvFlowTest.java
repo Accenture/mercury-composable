@@ -46,6 +46,18 @@ public class CsvFlowTest {
 
     @BeforeAll
     static void setup() {
+        File staging = new File("/tmp/staging");
+        File archive = new File("/tmp/archive");
+        if (!staging.exists()) {
+            if (staging.mkdirs()) {
+                log.info("Staging area {} created", staging);
+            }
+        }
+        if (!archive.exists()) {
+            if (archive.mkdirs()) {
+                log.info("Archive area {} created", archive);
+            }
+        }
         AutoStart.main(new String[0]);
     }
 
@@ -64,16 +76,6 @@ public class CsvFlowTest {
             String text = util.stream2str(in);
             File staging = new File("/tmp/staging");
             File archive = new File("/tmp/archive");
-            if (!staging.exists()) {
-                if (staging.mkdirs()) {
-                    log.info("Staging area {} created", staging);
-                }
-            }
-            if (!archive.exists()) {
-                if (archive.mkdirs()) {
-                    log.info("Archive area {} created", archive);
-                }
-            }
             util.cleanupDir(archive, true);
             util.str2file(new File(staging, SAMPLE_DATA_CSV), text);
             for (int i=0; i < 3; i++) {

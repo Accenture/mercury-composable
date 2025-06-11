@@ -75,7 +75,7 @@ certificate, and save it in the "/tmp" folder before your main application start
 
 ## Event envelope
 
-Mercury is an event engine that encapsulates Eclipse Vertx and Kotlin coroutine and suspend function.
+Mercury is an event engine that encapsulates Eclipse Vertx and Java 21 virtual thread technology.
 
 A composable application is a collection of functions that communicate with each other in events.
 Each event is transported by an event envelope. Let's examine the envelope.
@@ -203,26 +203,9 @@ the input and output classes.
 The system will map the event body into the `input` argument and the event headers into the `headers` argument.
 The `instance` argument informs your function which worker is serving the current request.
 
-Similarly, you can also write a "suspend function" in Kotlin like this:
-
-```java
-@PreLoad(route = "hello.world", instances = 10, isPrivate = false, 
-         envInstances = "instances.hello.world")
-class HelloWorld : KotlinLambdaFunction<Any?, Map<String, Any>> {
-
-    @Throws(Exception::class)
-    override suspend fun handleEvent(headers: Map<String, String>, input: Any?, 
-                                     instance: Int): Map<String, Any> {
-        // business logic here
-        return result;
-    }
-}
-```
-
-In the suspend function example above, you may notice the optional `envInstances` parameter. This tells the system
-to use a parameter from the application.properties (or application.yml) to configure the number of workers for the
-function. When the parameter defined in "envInstances" is not found, the "instances" parameter is used as the
-default value.
+Optionally, you can specify an `envInstances` parameter. This tells the system to use a parameter from the 
+application.properties (or application.yml) to configure the number of workers for the function. When the parameter
+defined in "envInstances" is not found, the "instances" parameter is used as the default value.
 
 ## Inspect event metadata
 
@@ -254,8 +237,7 @@ and whether the function is public or private.
 In some use cases where you want to create and destroy functions on demand, you can register them programmatically.
 
 In the following example, it registers "my.function" using the MyFunction class as a public function and 
-"another.function" with the AnotherFunction class as a private function. It then registers two kotlin functions
-in public and private scope respectively.
+"another.function" with the AnotherFunction class as a private function.
 
 ```java
 Platform platform = Platform.getInstance();
@@ -265,12 +247,6 @@ platform.register("my.function", new MyFunction(), 10);
 
 // register a private function
 platform.registerPrivate("another.function", new AnotherFunction(), 20);
-
-// register a public suspend function
-platform.registerKoltin("my.suspend.function", new MySuspendFunction(), 10);
-
-// register a private suspend function
-platform.registerKoltinPrivate("another.suspend.function", new AnotherSuspendFunction(), 10);
 ```
 
 ### What is a public function?
@@ -668,8 +644,8 @@ Please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md)
 ## Co-existence with other development frameworks
 
 Mercury libraries are designed to co-exist with your favorite frameworks and tools. Inside a class implementing
-the `LambdaFunction`, `TypedLambdaFunction` or `KotlinLambdaFunction`, you can use any coding style and frameworks
-as you like, including sequential, object-oriented and reactive programming styles.
+the `LambdaFunction` or `TypedLambdaFunction`, you can use any coding style and frameworks as you like, including
+sequential, object-oriented and reactive programming styles.
 
 The core-engine has a built-in lightweight non-blocking HTTP server, but you can also use Spring Boot and other
 application server framework with it.
@@ -687,7 +663,7 @@ convert them into event scripts that carry out event choreography for your self-
 For more information, please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md).
 
 If you prefer to do low-level event-driven programming, you can use the `lambda-example` project as a template.
-It is preconfigured to support kernel threads, coroutine and suspend function.
+It is preconfigured to support kernel threads and virtual threads.
 
 ## Source code update frequency
 

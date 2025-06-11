@@ -25,7 +25,6 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -86,8 +85,7 @@ public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void>
 
     @SuppressWarnings("unchecked")
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance)
-            throws InterruptedException, IOException {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws InterruptedException {
         if (event.getRawBody() instanceof Map && event.getReplyTo() != null && event.getCorrelationId() != null) {
             PostOffice po = new PostOffice(headers, instance);
             Map<String, Object> input = (Map<String, Object>) event.getRawBody();
@@ -173,8 +171,7 @@ public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void>
         return null;
     }
 
-    private void sendResult(PostOffice po, String replyTo, String cid, Map<String, Object> result, long delay)
-            throws IOException {
+    private void sendResult(PostOffice po, String replyTo, String cid, Map<String, Object> result, long delay) {
         var response = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(result);
         if (delay > 0) {
             po.sendLater(response, new Date(System.currentTimeMillis() + delay));

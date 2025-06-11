@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -58,28 +57,24 @@ public class AsyncHelloConcurrent {
             parallelEvents.add(event);
         }
         return Mono.create(callback -> {
-            try {
-                po.asyncRequest(parallelEvents, 3000)
-                    .onSuccess(events -> {
-                        Map<String, Object> results = new HashMap<>();
-                        int n = 0;
-                        for (EventEnvelope evt: events) {
-                            n++;
-                            Map<String, Object> singleResult = new HashMap<>();
-                            singleResult.put("status", evt.getStatus());
-                            singleResult.put("headers", evt.getHeaders());
-                            singleResult.put("body", evt.getBody());
-                            singleResult.put("seq", evt.getCorrelationId());
-                            singleResult.put("execution_time", evt.getExecutionTime());
-                            singleResult.put("round_trip", evt.getRoundTrip());
-                            results.put("result-"+n, singleResult);
-                        }
-                        callback.success(results);
-                    })
-                    .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
-            } catch (IOException e) {
-                callback.error(e);
-            }
+            po.asyncRequest(parallelEvents, 3000)
+                .onSuccess(events -> {
+                    Map<String, Object> results = new HashMap<>();
+                    int n = 0;
+                    for (EventEnvelope evt: events) {
+                        n++;
+                        Map<String, Object> singleResult = new HashMap<>();
+                        singleResult.put("status", evt.getStatus());
+                        singleResult.put("headers", evt.getHeaders());
+                        singleResult.put("body", evt.getBody());
+                        singleResult.put("seq", evt.getCorrelationId());
+                        singleResult.put("execution_time", evt.getExecutionTime());
+                        singleResult.put("round_trip", evt.getRoundTrip());
+                        results.put("result-"+n, singleResult);
+                    }
+                    callback.success(results);
+                })
+                .onFailure(ex -> callback.error(new AppException(408, ex.getMessage())));
         });
     }
 }

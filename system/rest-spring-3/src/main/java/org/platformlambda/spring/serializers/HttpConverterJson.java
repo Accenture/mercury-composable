@@ -18,7 +18,6 @@
 
 package org.platformlambda.spring.serializers;
 
-import org.jetbrains.annotations.NotNull;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.util.Utility;
@@ -43,26 +42,24 @@ public class HttpConverterJson implements HttpMessageConverter<Object> {
     private static final List<MediaType> types = Collections.singletonList(JSON);
 
     @Override
-    public boolean canRead(@NotNull Class<?> clazz, @Nullable MediaType mediaType) {
+    public boolean canRead(Class<?> clazz, @Nullable MediaType mediaType) {
         return mediaType != null && JSON.getType().equals(mediaType.getType())
                 && JSON.getSubtype().equals(mediaType.getSubtype());
     }
 
     @Override
-    public boolean canWrite(@NotNull Class<?> clazz, @Nullable MediaType mediaType) {
+    public boolean canWrite(Class<?> clazz, @Nullable MediaType mediaType) {
         return mediaType != null && JSON.getType().equals(mediaType.getType())
                 && JSON.getSubtype().equals(mediaType.getSubtype());
     }
 
-    @NotNull
     @Override
     public List<MediaType> getSupportedMediaTypes() {
         return types;
     }
 
-    @NotNull
     @Override
-    public Object read(@NotNull Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
+    public Object read(Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
         try {
             SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
             String input = util.stream2str(inputMessage.getBody());
@@ -86,5 +83,4 @@ public class HttpConverterJson implements HttpMessageConverter<Object> {
             out.write(mapper.writeValueAsBytes(o));
         }
     }
-
 }

@@ -26,7 +26,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -399,47 +398,43 @@ public class RoutingEntry {
 
     @SuppressWarnings("unchecked")
     private void addDefaultEndpoints(ConfigReader config) {
-        try {
-            ConfigReader defaultRest = new ConfigReader();
-            defaultRest.load("/default-rest.yaml");
-            Object defaultRestEntries = defaultRest.get(REST);
-            List<Object> defaultRestList = (List<Object>) defaultRestEntries;
-            int defaultTotal = defaultRestList.size();
-            Map<String, Integer> essentials = new HashMap<>();
-            List<String> configured = new ArrayList<>();
-            for (int i=0; i < defaultTotal; i++) {
-                String methods = defaultRest.getProperty(REST+"["+i+"]."+METHODS);
-                String url = defaultRest.getProperty(REST+"["+i+"]."+URL_LABEL);
-                essentials.put(url+" "+methods, i);
+        ConfigReader defaultRest = new ConfigReader();
+        defaultRest.load("/default-rest.yaml");
+        Object defaultRestEntries = defaultRest.get(REST);
+        List<Object> defaultRestList = (List<Object>) defaultRestEntries;
+        int defaultTotal = defaultRestList.size();
+        Map<String, Integer> essentials = new HashMap<>();
+        List<String> configured = new ArrayList<>();
+        for (int i=0; i < defaultTotal; i++) {
+            String methods = defaultRest.getProperty(REST+"["+i+"]."+METHODS);
+            String url = defaultRest.getProperty(REST+"["+i+"]."+URL_LABEL);
+            essentials.put(url+" "+methods, i);
+        }
+        Object restEntries = config.get(REST);
+        List<Object> restList = (List<Object>) restEntries;
+        int total = restList.size();
+        for (int i=0; i < total; i++) {
+            String methods = config.getProperty(REST+"["+i+"]."+METHODS);
+            String url = config.getProperty(REST+"["+i+"]."+URL_LABEL);
+            if (url != null && methods != null) {
+                configured.add(url+" "+methods);
             }
-            Object restEntries = config.get(REST);
-            List<Object> restList = (List<Object>) restEntries;
-            int total = restList.size();
-            for (int i=0; i < total; i++) {
-                String methods = config.getProperty(REST+"["+i+"]."+METHODS);
-                String url = config.getProperty(REST+"["+i+"]."+URL_LABEL);
-                if (url != null && methods != null) {
-                    configured.add(url+" "+methods);
-                }
+        }
+        // find out if there are missing default entries in the configured list
+        List<String> missing = new ArrayList<>();
+        for (String entry: essentials.keySet()) {
+            if (!configured.contains(entry)) {
+                missing.add(entry);
             }
-            // find out if there are missing default entries in the configured list
-            List<String> missing = new ArrayList<>();
-            for (String entry: essentials.keySet()) {
-                if (!configured.contains(entry)) {
-                    missing.add(entry);
-                }
+        }
+        if (!missing.isEmpty()) {
+            MultiLevelMap map = new MultiLevelMap(config.getMap());
+            for (String entry : missing) {
+                int idx = essentials.get(entry);
+                map.setElement(REST + "[" + total + "]", defaultRest.get(REST + "[" + idx + "]"));
+                total++;
             }
-            if (!missing.isEmpty()) {
-                MultiLevelMap map = new MultiLevelMap(config.getMap());
-                for (String entry : missing) {
-                    int idx = essentials.get(entry);
-                    map.setElement(REST + "[" + total + "]", defaultRest.get(REST + "[" + idx + "]"));
-                    total++;
-                }
-                config.reload(map.getMap());
-            }
-        } catch (IOException e) {
-            // this does not occur
+            config.reload(map.getMap());
         }
     }
 

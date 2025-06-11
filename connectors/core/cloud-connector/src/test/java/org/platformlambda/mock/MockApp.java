@@ -25,14 +25,12 @@ import org.platformlambda.core.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 @MainApplication
 public class MockApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MockApp.class);
 
     @Override
-    public void start(String[] args) throws IOException {
+    public void start(String[] args) {
         Platform platform = Platform.getInstance();
         LambdaFunction mock = (headers, input, instance) -> {
             log.info("Received {} {}", headers.isEmpty()? "*" : headers, input);

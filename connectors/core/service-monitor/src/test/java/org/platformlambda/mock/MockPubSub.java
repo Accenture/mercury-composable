@@ -26,7 +26,6 @@ import org.platformlambda.core.models.PubSubProvider;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.ConfigReader;
-import java.io.IOException;
 import java.util.*;
 
 public class MockPubSub implements PubSubProvider {
@@ -34,63 +33,59 @@ public class MockPubSub implements PubSubProvider {
     private static final Map<String, LambdaFunction> subscriptions = new HashMap<>();
 
     public MockPubSub() {
-        try {
-            ConfigReader reader = new ConfigReader("classpath:/topic-substitution.yaml");
-            Map<String, Object> map = reader.getCompositeKeyValues();
-            for (String item: map.keySet()) {
-                topicStore.put(item, 1);
-            }
-        } catch (IOException e) {
-            // this should not happen
+        ConfigReader reader = new ConfigReader("classpath:/topic-substitution.yaml");
+        Map<String, Object> map = reader.getCompositeKeyValues();
+        for (String item: map.keySet()) {
+            topicStore.put(item, 1);
         }
 
     }
 
     @Override
-    public boolean createTopic(String topic) throws IOException {
+    public boolean createTopic(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         topicStore.put(topic, 1);
         return true;
     }
 
     @Override
-    public boolean createTopic(String topic, int partitions) throws IOException {
+    public boolean createTopic(String topic, int partitions) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         topicStore.put(topic, partitions);
         return true;
     }
 
     @Override
-    public void deleteTopic(String topic) throws IOException {
+    public void deleteTopic(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         topicStore.remove(topic);
     }
 
     @Override
-    public boolean createQueue(String queue) throws IOException {
+    public boolean createQueue(String queue) {
         return false;
     }
 
     @Override
-    public void deleteQueue(String queue) throws IOException {
+    public void deleteQueue(String queue) {
         // no-op
     }
 
     @Override
-    public void publish(String topic, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, Map<String, String> headers, Object body) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
     }
 
     @Override
-    public void publish(String topic, int partition, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, int partition, Map<String, String> headers, Object body) {
         String route = topic+"."+partition;
         EventEmitter po = EventEmitter.getInstance();
         Map<String, String> eventHeaders = headers == null? new HashMap<>() : headers;
@@ -106,15 +101,15 @@ public class MockPubSub implements PubSubProvider {
     }
 
     @Override
-    public void subscribe(String topic, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, LambdaFunction listener, String... parameters) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         subscriptions.put(topic, listener);
     }
 
     @Override
-    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) {
         String route = topic+"."+partition;
         EventEmitter po = EventEmitter.getInstance();
         Platform platform = Platform.getInstance();
@@ -127,49 +122,49 @@ public class MockPubSub implements PubSubProvider {
     }
 
     @Override
-    public void send(String queue, Map<String, String> headers, Object body) throws IOException {
+    public void send(String queue, Map<String, String> headers, Object body) {
         // no-op
     }
 
     @Override
-    public void listen(String queue, LambdaFunction listener, String... parameters) throws IOException {
+    public void listen(String queue, LambdaFunction listener, String... parameters) {
         // no-op
     }
 
     @Override
-    public void unsubscribe(String topic) throws IOException {
+    public void unsubscribe(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         subscriptions.remove(topic);
     }
 
     @Override
-    public void unsubscribe(String topic, int partition) throws IOException {
+    public void unsubscribe(String topic, int partition) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         subscriptions.remove(topic);
     }
 
     @Override
-    public boolean exists(String topic) throws IOException {
+    public boolean exists(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         return topicStore.containsKey(topic);
     }
 
     @Override
-    public int partitionCount(String topic) throws IOException {
+    public int partitionCount(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         return topicStore.getOrDefault(topic, -1);
     }
 
     @Override
-    public List<String> list() throws IOException {
+    public List<String> list() {
         return new ArrayList<>(topicStore.keySet());
     }
 

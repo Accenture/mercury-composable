@@ -30,7 +30,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -144,7 +143,7 @@ public class ServiceRegistry implements LambdaFunction {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         Platform platform = Platform.getInstance();
         String myOrigin = platform.getOrigin();
         String type = headers.get(TYPE);
@@ -320,7 +319,7 @@ public class ServiceRegistry implements LambdaFunction {
         return true;
     }
 
-    private void sendMyRoutes(boolean exchange) throws IOException {
+    private void sendMyRoutes(boolean exchange) {
         long now = System.currentTimeMillis();
         if (!exchange && now - lastBroadcastAdd < 100) {
             log.debug("Duplicated broadcast add ignored");
@@ -403,7 +402,7 @@ public class ServiceRegistry implements LambdaFunction {
         }
     }
 
-    private void removeStalledPeers() throws IOException {
+    private void removeStalledPeers() {
         long now = System.currentTimeMillis();
         String myOrigin = Platform.getInstance().getOrigin();
         List<String> peers = new ArrayList<>(cloudOrigins.keySet());
@@ -428,7 +427,7 @@ public class ServiceRegistry implements LambdaFunction {
                         event.setHeader(kv.key, kv.value);
                     }
                     po.send(event);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to inform Member Life Cycle subscriber {} - {}", subscriber, e.getMessage());
                 }
             }
@@ -444,7 +443,7 @@ public class ServiceRegistry implements LambdaFunction {
                         event.setHeader(kv.key, kv.value);
                     }
                     po.send(event);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to inform PM Status subscriber {} - {}", subscriber, e.getMessage());
                 }
             }

@@ -39,30 +39,17 @@ java -jar target/lambda-example-4.0.16.jar
 ```
 
 The lambda-example is a sample application that you can use as a template to write your own code. Please review
-the pom.xml and the source directory structure. The pom.xml is pre-configured to support Java and Kotlin.
+the pom.xml and the source directory structure.
 
 In the lambda-example project root, you will find the following directories:
 
 ```shell
 src/main/java
-src/main/kotlin
 src/test/java
 ```
 
-> *Note*: The kotlin unit test directory is not included because you can test all functions in Java unit tests.
-
 Since all functions are connected using the in-memory event bus, you can test any function by sending events
-from a unit test module in Java. If you are comfortable with the Kotlin language, you may also set up Kotlin 
-unit tests accordingly. There is no harm having both types of unit tests in the same project.
-
-## Source code documentation
-
-Since the source project contains both Java and Kotlin, we have replaced javadoc maven plugin with Jetbrains "dokka"
-documentation engine for both Java and Kotlin. Javadoc is useful if you want to write and publish your own libraries.
-
-To generate Java and Kotlin source documentation, please run "mvn dokka:dokka". You may "cd" to the platform-core
-project to try the maven dokka command to generate some source documentation. The home page will be available
-in "target/dokka/index.html"
+from a unit test.
 
 ## Writing your functions
 
@@ -137,7 +124,7 @@ A typical unit test may look like this:
 ```java
 @SuppressWarnings("unchecked")
 @Test
-public void rpcTest() throws IOException, InterruptedException, ExecutionException {
+public void rpcTest() throws InterruptedException, ExecutionException {
     Utility util = Utility.getInstance();
     String NAME = "hello";
     String ADDRESS = "world";
@@ -196,7 +183,7 @@ mock value.
 
 ```java
 @Test
-public void pojoRpcTest() throws IOException, InterruptedException {
+public void pojoRpcTest() throws InterruptedException {
     Integer ID = 1;
     String NAME = "Simple PoJo class";
     String ADDRESS = "100 World Blvd, Planet Earth";
@@ -250,7 +237,7 @@ when the test finishes.
 ```java
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineForLoopTest() throws IOException, InterruptedException {
+    void pipelineForLoopTest() throws InterruptedException {
         Platform platform = Platform.getInstance();
         // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
         // We want to override no.op with my.mock.function to demonstrate mocking a function

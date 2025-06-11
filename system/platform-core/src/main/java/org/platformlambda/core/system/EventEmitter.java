@@ -31,7 +31,6 @@ import org.platformlambda.core.websocket.common.MultipartPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -97,7 +96,7 @@ public class EventEmitter {
                     loadMulticast(multicast, reader);
                     multicastEnabled = true;
                     log.info("Loaded multicast config from {}", multicast);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.error("Unable to load multicast config - {}", e.getMessage());
                 }
             });
@@ -110,7 +109,7 @@ public class EventEmitter {
                     loadJournalRoutes(reader);
                     journalEnabled = true;
                     log.info("Loaded journal config from {}", journal);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.error("Unable to load journal config - {}", e.getMessage());
                 }
             });
@@ -123,7 +122,7 @@ public class EventEmitter {
                     loadHttpRoutes(eventHttpConfig, reader);
                     eventHttpEnabled = true;
                     log.info("Loaded event-over-http config from {}", eventHttpConfig);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.error("Unable to load event-over-http config - {}", e.getMessage());
                 }
 
@@ -205,13 +204,9 @@ public class EventEmitter {
                                 source, targets, source, members);
                     }
                     LocalPubSub ps = LocalPubSub.getInstance();
-                    try {
-                        ps.createTopic(source);
-                        for (String member: members) {
-                            ps.subscribe(source, member);
-                        }
-                    } catch (IOException e) {
-                        log.error("Unable to register multicast {} -> {}, - {}", source, members, e.getMessage());
+                    ps.createTopic(source);
+                    for (String member: members) {
+                        ps.subscribe(source, member);
                     }
                 }
             }
@@ -284,9 +279,9 @@ public class EventEmitter {
                         }
                     }
                 } else {
-                    throw new IOException("route.substitution should be a list of strings");
+                    throw new IllegalArgumentException("route.substitution should be a list of strings");
                 }
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.error("Unable to load route substitution entries - {}", e.getMessage());
             }
         } else {
@@ -327,18 +322,18 @@ public class EventEmitter {
         }
     }
 
-    private ConfigReader getRouteSubstitutionConfig(String location) throws IOException {
+    private ConfigReader getRouteSubstitutionConfig(String location) {
         List<String> paths = Utility.getInstance().split(location, ", ");
         for (String p: paths) {
             try {
                 ConfigReader config = new ConfigReader(p);
                 log.info("Loaded route substitutions from {}", p);
                 return config;
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.warn("Skipping {} - {}", p, e.getMessage());
             }
         }
-        throw new IOException("Route substitutions not found in "+paths);
+        throw new IllegalArgumentException("Route substitutions not found in "+paths);
     }
 
     /**
@@ -392,9 +387,9 @@ public class EventEmitter {
      *
      * @param to destination
      * @return actor, websocket txPaths or null
-     * @throws IOException in case route is not found
+     * @throws IllegalArgumentException in case route is not found
      */
-    public TargetRoute discover(String to) throws IOException {
+    public TargetRoute discover(String to) {
         Platform platform = Platform.getInstance();
         if (to.contains("@")) {
             int at = to.indexOf('@');
@@ -420,7 +415,7 @@ public class EventEmitter {
                 }
             }
         }
-        throw new IOException("Route "+to+" not found");
+        throw new IllegalArgumentException("Route "+to+" not found");
     }
 
     public TargetRoute getCloudRoute() {
@@ -436,9 +431,9 @@ public class EventEmitter {
      *
      * @param to target route
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void broadcast(String to, Kv... parameters) throws IOException {
+    public void broadcast(String to, Kv... parameters) {
         broadcast(asEnvelope(to, null, parameters));
     }
 
@@ -447,9 +442,9 @@ public class EventEmitter {
      *
      * @param to target route
      * @param body message payload
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void broadcast(String to, Object body) throws IOException {
+    public void broadcast(String to, Object body) {
         if (body instanceof Kv kv) {
             // in case if a single KV is sent
             Kv[] keyValue = new Kv[1];
@@ -466,9 +461,9 @@ public class EventEmitter {
      * @param to target route
      * @param body message payload
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void broadcast(String to, Object body, Kv... parameters) throws IOException {
+    public void broadcast(String to, Object body, Kv... parameters) {
         broadcast(asEnvelope(to, body, parameters));
     }
 
@@ -477,9 +472,9 @@ public class EventEmitter {
      *
      * @param to target route
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void send(String to, Kv... parameters) throws IOException {
+    public void send(String to, Kv... parameters) {
         send(asEnvelope(to, null, parameters));
     }
 
@@ -488,9 +483,9 @@ public class EventEmitter {
      *
      * @param to target route
      * @param body message payload
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void send(String to, Object body) throws IOException {
+    public void send(String to, Object body) {
         if (body instanceof Kv kv) {
             // in case if a single KV is sent
             Kv[] keyValue = new Kv[1];
@@ -507,9 +502,9 @@ public class EventEmitter {
      * @param to target route
      * @param body message payload
      * @param parameters for the event
-     * @throws IOException in case of invalid route
+     * @throws IllegalArgumentException in case of invalid route
      */
-    public void send(String to, Object body, Kv... parameters) throws IOException {
+    public void send(String to, Object body, Kv... parameters) {
         send(asEnvelope(to, body, parameters));
     }
 
@@ -547,11 +542,7 @@ public class EventEmitter {
         Vertx vertx = Platform.getInstance().getVertx();
         long taskId = vertx.setTimer(interval, id -> {
             futureEvents.remove(event.getId());
-            try {
-                EventEmitter.getInstance().send(event);
-            } catch (IOException e) {
-                log.error("Deferred delivery to {} failed - {}", event.getTo(), e.getMessage());
-            }
+            EventEmitter.getInstance().send(event);
         });
         futureEvents.put(event.getId(), new FutureEvent(event.getTo(), taskId, future));
         return event.getId();
@@ -623,9 +614,9 @@ public class EventEmitter {
      * Broadcast to multiple target services
      *
      * @param event to the target
-     * @throws IOException if invalid route or missing parameters
+     * @throws IllegalArgumentException if invalid route or missing parameters
      */
-    public void broadcast(EventEnvelope event) throws IOException {
+    public void broadcast(EventEnvelope event) {
         send(event.setBroadcastLevel(1));
     }
 
@@ -662,9 +653,9 @@ public class EventEmitter {
      * Send an event to a target service
      *
      * @param input event to the target
-     * @throws IOException if invalid route or missing parameters
+     * @throws IllegalArgumentException if invalid route or missing parameters
      */
-    public void send(final EventEnvelope input) throws IOException {
+    public void send(final EventEnvelope input) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -688,7 +679,7 @@ public class EventEmitter {
                         .setCorrelationId(event.getCorrelationId());
                     try {
                         send(evt);
-                    } catch (IOException e) {
+                    } catch (IllegalArgumentException e) {
                         log.error("Error in sending callback event {} from {} to {} - {}",
                                 to, targetHttp, callback, e.getMessage());
                     }
@@ -781,12 +772,12 @@ public class EventEmitter {
      * @param rpc if true, the target service will return a response.
      *            Otherwise, the response has a status of 202 to indicate that the event is delivered.
      * @return response event
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     @SuppressWarnings("unchecked")
     public Future<EventEnvelope> asyncRequest(final EventEnvelope input, long timeout,
                                               Map<String, String> headers,
-                                              String eventEndpoint, boolean rpc) throws IOException {
+                                              String eventEndpoint, boolean rpc) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -842,7 +833,7 @@ public class EventEmitter {
                         try {
                             EventEnvelope response = new EventEnvelope((byte[]) evt.getBody());
                             promise.complete(response);
-                        } catch (IOException e) {
+                        } catch (IllegalArgumentException e) {
                             // response is not a packed EventEnvelope
                             promise.complete(new EventEnvelope()
                                     .setStatus(400).setBody("Did you configure rest.yaml correctly? " +
@@ -869,9 +860,6 @@ public class EventEmitter {
             } catch (IllegalArgumentException e) {
                 Platform.getInstance().getVirtualThreadExecutor().submit(() ->
                         promise.complete(new EventEnvelope().setStatus(400).setBody(e.getMessage())));
-            } catch (IOException e) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
-                        promise.complete(new EventEnvelope().setStatus(500).setBody(e.getMessage())));
             }
         });
     }
@@ -890,12 +878,12 @@ public class EventEmitter {
      * @param rpc if true, the target service will return a response.
      *            Otherwise, the response has a status of 202 to indicate that the event is delivered.
      * @return response event
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     @SuppressWarnings("unchecked")
     public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
                                               Map<String, String> headers,
-                                              String eventEndpoint, boolean rpc) throws IOException {
+                                              String eventEndpoint, boolean rpc) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -952,7 +940,7 @@ public class EventEmitter {
                 try {
                     EventEnvelope response = new EventEnvelope((byte[]) evt.getBody());
                     future.complete(response);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     // response is not a packed EventEnvelope
                     future.complete(new EventEnvelope()
                             .setStatus(400).setBody("Did you configure rest.yaml correctly? " +
@@ -1014,9 +1002,9 @@ public class EventEmitter {
      * @param event to the target
      * @param timeout in milliseconds
      * @return future results
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout) throws IOException {
+    public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout) {
         return asyncRequest(event, timeout, true);
     }
 
@@ -1034,10 +1022,9 @@ public class EventEmitter {
      * @param timeout in milliseconds
      * @param timeoutException if true, return TimeoutException in onFailure method. Otherwise, return timeout event.
      * @return future result
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public Future<EventEnvelope> asyncRequest(final EventEnvelope input, long timeout, boolean timeoutException)
-            throws IOException {
+    public Future<EventEnvelope> asyncRequest(final EventEnvelope input, long timeout, boolean timeoutException) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -1073,10 +1060,9 @@ public class EventEmitter {
      * @param event to the target
      * @param timeout in milliseconds
      * @return future results
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout)
-            throws IOException {
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout) {
         return request(event, timeout, true);
     }
 
@@ -1090,10 +1076,10 @@ public class EventEmitter {
      * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
      *                         Otherwise, return timeout as a regular event.
      * @return future result
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
-                                                              boolean timeoutException) throws IOException {
+                                                              boolean timeoutException) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -1134,9 +1120,9 @@ public class EventEmitter {
      * @param events list of envelopes
      * @param timeout in milliseconds
      * @return future list of results
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
-    public Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> events, long timeout) throws IOException {
+    public Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> events, long timeout) {
         return asyncRequest(events, timeout, true);
     }
 
@@ -1154,10 +1140,10 @@ public class EventEmitter {
      * @param timeout in milliseconds
      * @param timeoutException if true, send timeout exception to onFailure method when some services do not respond.
      * @return future list of results (partial or complete)
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
     public Future<List<EventEnvelope>> asyncRequest(final List<EventEnvelope> events, long timeout,
-                                                    boolean timeoutException) throws IOException {
+                                                    boolean timeoutException) {
         if (events == null || events.isEmpty()) {
             throw new IllegalArgumentException(MISSING_EVENT);
         }
@@ -1206,10 +1192,9 @@ public class EventEmitter {
      * @param timeout in milliseconds. If timeout, throws TimeoutException
      *                wrapped in an ExecutionException with future.get().
      * @return future list of results (partial or complete)
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
-    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout)
-            throws IOException {
+    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
         return request(events, timeout, true);
     }
 
@@ -1223,10 +1208,10 @@ public class EventEmitter {
      * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
      *                         Otherwise, return partial results that are successful.
      * @return future list of results (partial or complete)
-     * @throws IOException in case of error
+     * @throws IllegalArgumentException in case of error
      */
     public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
-                                                    boolean timeoutException) throws IOException {
+                                                    boolean timeoutException) {
         if (events == null || events.isEmpty()) {
             throw new IllegalArgumentException(MISSING_EVENT);
         }
@@ -1360,7 +1345,7 @@ public class EventEmitter {
                         });
                         response.onFailure(promise::fail);
                     }
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     platform.getVirtualThreadExecutor().submit(() -> promise.fail(e));
                 }
             } else {

@@ -21,8 +21,6 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,7 +31,7 @@ class StringConversionTest {
     private static final String INPUT = "hello world 012345678901234567890123456789012345678901234567890123456789";
 
     @Test
-    void base64() {
+    void base64Test() {
         String base64 = util.bytesToBase64(INPUT.getBytes(), true, false);
         // verify that it is a pretty-print output
         assertTrue(base64.contains("\r\n"));
@@ -42,7 +40,7 @@ class StringConversionTest {
     }
 
     @Test
-    void hex() throws IOException {
+    void hexTest() {
         String hexString = util.bytes2hex(INPUT.getBytes());
         byte[] b = util.hex2bytes(hexString);
         assertEquals(INPUT, new String(b));

@@ -32,7 +32,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -276,11 +275,7 @@ public class WorkerHandler {
                         if (e instanceof Throwable ex) {
                             completed.set(true);
                             final EventEnvelope errorResponse = prepareErrorResponse(event, ex);
-                            try {
-                                po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
-                            } catch (IOException e2) {
-                                log.error("Unable to deliver exception from {} - {}", route, e2.getMessage());
-                            }
+                            po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
                         }
                     }, () -> {
                           // When the Mono emitter sends a null payload, Mono will not return any result.
@@ -383,12 +378,10 @@ public class WorkerHandler {
         final ServiceDef.SerializationStrategy strategy = isInput? def.getInputSerializationStrategy() :
                                                             def.getOutputSerializationStrategy();
         final SimpleObjectMapper mapper;
-        if (ServiceDef.SerializationStrategy.CAMEL == strategy) {
-            mapper = SimpleMapper.getInstance().getCamelCaseMapper();
-        } else if (ServiceDef.SerializationStrategy.SNAKE == strategy) {
-            mapper = SimpleMapper.getInstance().getSnakeCaseMapper();
-        } else {
-            mapper = SimpleMapper.getInstance().getMapper();
+        switch(strategy) {
+            case ServiceDef.SerializationStrategy.CAMEL -> mapper = SimpleMapper.getInstance().getCamelCaseMapper();
+            case ServiceDef.SerializationStrategy.SNAKE -> mapper = SimpleMapper.getInstance().getSnakeCaseMapper();
+            default -> mapper = SimpleMapper.getInstance().getMapper();
         }
         return mapper;
     }
@@ -405,11 +398,7 @@ public class WorkerHandler {
     private void sendMonoResponse(EventEnvelope response, Object data, long begin) {
         EventEmitter po = EventEmitter.getInstance();
         updateResponse(response, data);
-        try {
-            po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
-        } catch (IOException e1) {
-            log.error("Unable to deliver async response from {} - {}", route, e1.getMessage());
-        }
+        po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
     }
 
     private EventEnvelope prepareErrorResponse(EventEnvelope event, Throwable e) {

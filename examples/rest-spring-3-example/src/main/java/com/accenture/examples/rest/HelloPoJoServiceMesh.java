@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -48,7 +47,7 @@ public class HelloPoJoServiceMesh {
                 } else {
                     callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
                 }
-            } catch (IOException | ExecutionException | InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 callback.error(e);
             }
         });

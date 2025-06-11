@@ -74,7 +74,7 @@ class UtilityTests {
     }
 
     @Test
-    void mockPubSub() throws IOException {
+    void mockPubSub() {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
         ps.createTopic(HELLO_WORLD);
@@ -107,7 +107,7 @@ class UtilityTests {
     }
 
     @Test
-    void mockPubSubDeleteQueue() throws IOException {
+    void mockPubSubDeleteQueue() {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,

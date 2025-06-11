@@ -18,12 +18,7 @@
 
 package org.platformlambda.core.exception;
 
-import java.io.Serial;
-
-public class AppException extends Exception {
-
-	@Serial
-    private static final long serialVersionUID = -2731574164489831608L;
+public class AppException extends RuntimeException {
 	
 	private final int status;
 

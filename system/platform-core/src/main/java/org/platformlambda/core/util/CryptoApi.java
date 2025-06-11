@@ -359,7 +359,7 @@ public class CryptoApi {
         return getHash(data, SHA256);
     }
 
-    public byte[] getSHA256(InputStream in) throws IOException {
+    public byte[] getSHA256(InputStream in) {
         return getHash(in, SHA256);
     }
 
@@ -367,7 +367,7 @@ public class CryptoApi {
         return getHash(data, SHA512);
     }
 
-    public byte[] getSHA512(InputStream in) throws IOException {
+    public byte[] getSHA512(InputStream in) {
         return getHash(in, SHA512);
     }
 
@@ -381,7 +381,7 @@ public class CryptoApi {
         }
     }
 
-    private byte[] getHash(InputStream in, String algorithm) throws IOException {
+    private byte[] getHash(InputStream in, String algorithm) {
         try {
             MessageDigest hash = MessageDigest.getInstance(algorithm);
             int len;
@@ -393,6 +393,8 @@ public class CryptoApi {
         } catch (NoSuchAlgorithmException e) {
             // this should not happen
             return new byte[0];
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 

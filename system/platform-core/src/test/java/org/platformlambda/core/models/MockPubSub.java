@@ -30,27 +30,27 @@ public class MockPubSub implements PubSubProvider {
     private static final Map<String, LambdaFunction> subscriptions = new HashMap<>();
 
     @Override
-    public boolean createTopic(String topic) throws IOException {
+    public boolean createTopic(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         topicStore.put(topic, 1);
         return true;
     }
 
     @Override
-    public boolean createTopic(String topic, int partitions) throws IOException {
+    public boolean createTopic(String topic, int partitions) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         topicStore.put(topic, partitions);
         return true;
     }
 
     @Override
-    public void deleteTopic(String topic) throws IOException {
+    public void deleteTopic(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         topicStore.remove(topic);
     }
@@ -66,79 +66,79 @@ public class MockPubSub implements PubSubProvider {
     }
 
     @Override
-    public void publish(String topic, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, Map<String, String> headers, Object body) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
     }
 
     @Override
-    public void publish(String topic, int partition, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, int partition, Map<String, String> headers, Object body) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
     }
 
     @Override
-    public void subscribe(String topic, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, LambdaFunction listener, String... parameters) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
-        }
-        subscriptions.put(topic, listener);
-    }
-
-    @Override
-    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) throws IOException {
-        if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         subscriptions.put(topic, listener);
     }
 
     @Override
-    public void send(String queue, Map<String, String> headers, Object body) throws IOException {
-        throw new IllegalArgumentException("Not implemented");
-    }
-
-    @Override
-    public void listen(String queue, LambdaFunction listener, String... parameters) throws IOException {
-        throw new IllegalArgumentException("Not implemented");
-    }
-
-    @Override
-    public void unsubscribe(String topic) throws IOException {
+    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
+        }
+        subscriptions.put(topic, listener);
+    }
+
+    @Override
+    public void send(String queue, Map<String, String> headers, Object body) {
+        throw new IllegalArgumentException("Not implemented");
+    }
+
+    @Override
+    public void listen(String queue, LambdaFunction listener, String... parameters) {
+        throw new IllegalArgumentException("Not implemented");
+    }
+
+    @Override
+    public void unsubscribe(String topic) {
+        if (topic.equals("exception")) {
+            throw new IllegalArgumentException("demo");
         }
         subscriptions.remove(topic);
     }
 
     @Override
-    public void unsubscribe(String topic, int partition) throws IOException {
+    public void unsubscribe(String topic, int partition) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         subscriptions.remove(topic);
     }
 
     @Override
-    public boolean exists(String topic) throws IOException {
+    public boolean exists(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         return topicStore.containsKey(topic);
     }
 
     @Override
-    public int partitionCount(String topic) throws IOException {
+    public int partitionCount(String topic) {
         if (topic.equals("exception")) {
-            throw new IOException("demo");
+            throw new IllegalArgumentException("demo");
         }
         return topicStore.getOrDefault(topic, -1);
     }
 
     @Override
-    public List<String> list() throws IOException {
+    public List<String> list() {
         return new ArrayList<>(topicStore.keySet());
     }
 

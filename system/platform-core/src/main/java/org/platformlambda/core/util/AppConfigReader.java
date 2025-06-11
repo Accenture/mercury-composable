@@ -120,7 +120,7 @@ public class AppConfigReader implements ConfigBase {
                 log.info("Loaded {}", filename);
             }
             return flat.size();
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             // ok to ignore
             return 0;
         }

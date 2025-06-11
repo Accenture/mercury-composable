@@ -25,7 +25,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -35,7 +34,7 @@ class GreetingTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void helloWorld() throws IOException, InterruptedException, ExecutionException {
+    void helloWorld() throws InterruptedException, ExecutionException {
         PostOffice po = new PostOffice("unit.test", "12345", "TEST /helloworld");
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");
@@ -52,7 +51,7 @@ class GreetingTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void helloUser() throws IOException, InterruptedException, ExecutionException {
+    void helloUser() throws InterruptedException, ExecutionException {
         PostOffice po = new PostOffice("unit.test", "24680", "TEST /helloworld");
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("GET");

@@ -26,7 +26,6 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,7 +44,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void homePageTest() throws IOException, InterruptedException {
+    void homePageTest() throws InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -64,7 +63,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void infoEndpointTest() throws IOException, InterruptedException {
+    void infoEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -77,7 +76,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void libEndpointTest() throws IOException, InterruptedException {
+    void libEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/info/lib", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
@@ -89,7 +88,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void healthEndpointTest() throws IOException, InterruptedException {
+    void healthEndpointTest() throws InterruptedException {
         MockCloud.setSimulateException(false);
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/health", null);
         assert response != null;
@@ -104,7 +103,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void simulateHealthCheckFailureTest() throws IOException, InterruptedException {
+    void simulateHealthCheckFailureTest() throws InterruptedException {
         MockCloud.setSimulateException(true);
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/health", null);
         assert response != null;
@@ -134,7 +133,7 @@ class MinimalistHttpTest extends TestBase {
     }
 
     @Test
-    void livenessEndpointTest() throws IOException, InterruptedException {
+    void livenessEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/livenessprobe", null);
         assert response != null;
         assertEquals("OK", response.getBody());
@@ -142,7 +141,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void envEndpointTest() throws IOException, InterruptedException {
+    void envEndpointTest() throws InterruptedException {
         Utility util = Utility.getInstance();
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/env", null);
         assert response != null;
@@ -162,7 +161,7 @@ class MinimalistHttpTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pageNotExists() throws IOException, InterruptedException {
+    void pageNotExists() throws InterruptedException {
         EventEnvelope response = httpGet("http://127.0.0.1:"+ HTTP_PORT, "/no_such_page", null);
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());

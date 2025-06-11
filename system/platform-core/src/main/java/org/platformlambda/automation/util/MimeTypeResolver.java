@@ -23,7 +23,6 @@ import org.platformlambda.core.util.ConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -47,7 +46,7 @@ public class MimeTypeResolver {
             } else if (types != null) {
                 log.error("Unable to parse {} - mime.types should be a Map of key-values", CONFIG_FILE);
             }
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unable to load mime-types.yml - {}", e.getMessage());
         }
         Object mTypes = config.get("mime.types");

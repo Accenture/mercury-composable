@@ -64,16 +64,11 @@ public class PubSubManager implements PubSubProvider {
     public PubSubManager(String domain, Properties baseProperties, String cloudManager) {
         this.baseProperties = baseProperties;
         this.cloudManager = cloudManager;
-        try {
-            // start Kafka Topic Manager
-            log.info("Starting {} pub/sub manager - {}", domain, cloudManager);
-            Platform.getInstance().registerPrivate(cloudManager,
-                    new TopicManager(baseProperties, cloudManager), 1);
-            preAllocatedTopics = ConnectorConfig.getTopicSubstitution();
-        } catch (IOException e) {
-            log.error("Unable to start - {}", e.getMessage());
-            System.exit(-1);
-        }
+        // start Kafka Topic Manager
+        log.info("Starting {} pub/sub manager - {}", domain, cloudManager);
+        Platform.getInstance().registerPrivate(cloudManager,
+                new TopicManager(baseProperties, cloudManager), 1);
+        preAllocatedTopics = ConnectorConfig.getTopicSubstitution();
         // clean up subscribers when application stops
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
@@ -134,12 +129,12 @@ public class PubSubManager implements PubSubProvider {
     }
 
     @Override
-    public boolean createTopic(String topic) throws IOException {
+    public boolean createTopic(String topic) {
         return createTopic(topic, 1);
     }
 
     @Override
-    public boolean createTopic(String topic, int partitions) throws IOException {
+    public boolean createTopic(String topic, int partitions) {
         ConnectorConfig.validateTopicName(topic);
         final long timeout = 20 * 1000L;
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, CREATE)
@@ -157,7 +152,7 @@ public class PubSubManager implements PubSubProvider {
     }
 
     @Override
-    public void deleteTopic(String topic) throws IOException {
+    public void deleteTopic(String topic) {
         final long timeout = 20 * 1000L;
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, DELETE).setHeader(TOPIC, topic);
         try {
@@ -168,17 +163,17 @@ public class PubSubManager implements PubSubProvider {
     }
 
     @Override
-    public boolean createQueue(String queue) throws IOException {
-        throw new IOException("Not implemented");
+    public boolean createQueue(String queue) {
+        throw new IllegalArgumentException("Not implemented");
     }
 
     @Override
-    public void deleteQueue(String queue) throws IOException {
-        throw new IOException("Not implemented");
+    public void deleteQueue(String queue) {
+        throw new IllegalArgumentException("Not implemented");
     }
 
     @Override
-    public boolean exists(String topic) throws IOException {
+    public boolean exists(String topic) {
         final long timeout = 20 * 1000L;
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, EXISTS).setHeader(TOPIC, topic);
         try {
@@ -194,7 +189,7 @@ public class PubSubManager implements PubSubProvider {
     }
 
     @Override
-    public int partitionCount(String topic) throws IOException {
+    public int partitionCount(String topic) {
         final long timeout = 20 * 1000L;
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, PARTITIONS).setHeader(TOPIC, topic);
         try {
@@ -211,7 +206,7 @@ public class PubSubManager implements PubSubProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<String> list() throws IOException {
+    public List<String> list() {
         long timeout = 20 * 1000L;
         EventEnvelope req = new EventEnvelope().setTo(cloudManager).setHeader(TYPE, LIST);
         try {
@@ -263,13 +258,13 @@ public class PubSubManager implements PubSubProvider {
     }
 
     @Override
-    public void publish(String topic, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, Map<String, String> headers, Object body) {
         publish(topic, -1, headers, body);
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void publish(String topic, int partition, Map<String, String> headers, Object body) throws IOException {
+    public void publish(String topic, int partition, Map<String, String> headers, Object body) {
         ConnectorConfig.validateTopicName(topic);
         Utility util = Utility.getInstance();
         Map<String, String> eventHeaders = headers == null? new HashMap<>() : headers;
@@ -296,11 +291,19 @@ public class PubSubManager implements PubSubProvider {
                     headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.TEXT_DATA)));
                 }
                 case Map m -> {
-                    payload = msgPack.pack(m);
+                    try {
+                        payload = msgPack.pack(m);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException(e);
+                    }
                     headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.MAP_DATA)));
                 }
                 case List data -> {
-                    payload = msgPack.pack(data);
+                    try {
+                        payload = msgPack.pack(data);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException(e);
+                    }
                     headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.LIST_DATA)));
                 }
                 case null, default -> {
@@ -314,48 +317,48 @@ public class PubSubManager implements PubSubProvider {
     }
 
     @Override
-    public void subscribe(String topic, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, LambdaFunction listener, String... parameters) {
         subscribe(topic, -1, listener, parameters);
     }
 
     @Override
-    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) throws IOException {
+    public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) {
         ConnectorConfig.validateTopicName(topic);
         String topicPartition = (topic + (partition < 0? "" : "." + partition)).toLowerCase();
         if (parameters.length == 2 || parameters.length == 3) {
             if (parameters.length == 3 && !Utility.getInstance().isNumeric(parameters[2])) {
-                throw new IOException("topic offset must be numeric");
+                throw new IllegalArgumentException("topic offset must be numeric");
             }
             if (subscribers.containsKey(topicPartition) || Platform.getInstance().hasRoute(topicPartition)) {
                 String tp = (topic + (partition < 0? "" : " partition " + partition)).toLowerCase();
-                throw new IOException(tp+" is already subscribed");
+                throw new IllegalArgumentException(tp+" is already subscribed");
             }
             EventConsumer consumer = new EventConsumer(getProperties(), topic, partition, parameters);
             consumer.start();
             Platform.getInstance().registerPrivate(topicPartition.toLowerCase(), listener, 1);
             subscribers.put(topicPartition, consumer);
         } else {
-            throw new IOException("Check parameters: clientId, groupId and optional offset pointer");
+            throw new IllegalArgumentException("Check parameters: clientId, groupId and optional offset pointer");
         }
     }
 
     @Override
-    public void send(String queue, Map<String, String> headers, Object body) throws IOException {
-        throw new IOException("Not implemented");
+    public void send(String queue, Map<String, String> headers, Object body) {
+        throw new IllegalArgumentException("Not implemented");
     }
 
     @Override
-    public void listen(String queue, LambdaFunction listener, String... parameters) throws IOException {
-        throw new IOException("Not implemented");
+    public void listen(String queue, LambdaFunction listener, String... parameters) {
+        throw new IllegalArgumentException("Not implemented");
     }
 
     @Override
-    public void unsubscribe(String topic) throws IOException {
+    public void unsubscribe(String topic) {
         unsubscribe(topic, -1);
     }
 
     @Override
-    public void unsubscribe(String topic, int partition) throws IOException {
+    public void unsubscribe(String topic, int partition) {
         String topicPartition = (topic + (partition < 0? "" : "." + partition)).toLowerCase();
         Platform platform = Platform.getInstance();
         if (platform.hasRoute(topicPartition) && subscribers.containsKey(topicPartition)) {
@@ -365,7 +368,7 @@ public class PubSubManager implements PubSubProvider {
             consumer.shutdown();
         } else {
             String tp = (topic + (partition < 0? "" : " partition " + partition)).toLowerCase();
-            throw new IOException("No subscription found for " + tp);
+            throw new IllegalArgumentException("No subscription found for " + tp);
         }
     }
 
@@ -376,5 +379,4 @@ public class PubSubManager implements PubSubProvider {
             consumer.shutdown();
         }
     }
-
 }

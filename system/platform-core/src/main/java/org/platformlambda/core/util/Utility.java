@@ -1003,11 +1003,11 @@ public class Utility {
         }
     }
 
-    public byte[] hex2bytes(String hex) throws IOException {
+    public byte[] hex2bytes(String hex) {
         char[] data = hex.toLowerCase().toCharArray();
         int len = data.length;
         if (len % 2 != 0) {
-            throw new IOException(INVALID_HEX);
+            throw new IllegalArgumentException(INVALID_HEX);
         }
         byte[] out = new byte[len >> 1];
         for (int i = 0, j = 0; j < len; i++) {
@@ -1030,10 +1030,10 @@ public class Utility {
         return String.valueOf(out);
     }
 
-    private int getNumericValue(char c) throws IOException {
+    private int getNumericValue(char c) {
         int result = Character.digit(c, 16);
         if (result == -1) {
-            throw new IOException(INVALID_HEX);
+            throw new IllegalArgumentException(INVALID_HEX);
         }
         return result;
     }
@@ -1150,7 +1150,7 @@ public class Utility {
     //////////////////////////////////////////////////////////////////
     // Convenient utility to close a connection of a WebSocketService
     //////////////////////////////////////////////////////////////////
-    public void closeConnection(String txPath, int status, String message) throws IOException {
+    public void closeConnection(String txPath, int status, String message) {
         EventEmitter.getInstance().send(txPath, new Kv(WsEnvelope.TYPE, WsEnvelope.CLOSE),
                                               new Kv(STATUS, status), new Kv(MESSAGE, message));
     }

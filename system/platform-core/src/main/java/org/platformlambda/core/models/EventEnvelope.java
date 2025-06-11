@@ -101,14 +101,24 @@ public class EventEnvelope {
     private Float roundTrip;
     private boolean exRestored = false;
 
+    /**
+     * Create a new EventEnvelope
+     */
     public EventEnvelope() {
         this.id = util.getUuid();
     }
 
-    public EventEnvelope(byte[] event) throws IOException {
+    /*
+     * Create an EventEnvelope from an encoded event envelope's byte array
+     */
+    public EventEnvelope(byte[] event) {
         load(event);
     }
 
+    /**
+     * Create an EventEnvelope from a map of key-values exported from another event envelope
+     * @param map of key-values
+     */
     public EventEnvelope(Map<String, Object> map) {
         fromMap(map);
     }
@@ -777,72 +787,76 @@ public class EventEnvelope {
      * DeSerialize the EventEnvelope from a byte array
      *
      * @param bytes encoded payload
-     * @throws IOException in case of decoding errors
+     * @throws IllegalArgumentException in case of decoding errors
      */
     @SuppressWarnings("unchecked")
-    public void load(byte[] bytes) throws IOException {
-        Object o = msgPack.unpack(bytes);
-        if (o instanceof Map) {
-            Map<String, Object> message = (Map<String, Object>) o;
-            if (message.containsKey(ID_FLAG)) {
-                id = (String) message.get(ID_FLAG);
-            }
-            if (message.containsKey(TO_FLAG)) {
-                to = (String) message.get(TO_FLAG);
-            }
-            if (message.containsKey(FROM_FLAG)) {
-                from = (String) message.get(FROM_FLAG);
-            }
-            if (message.containsKey(REPLY_TO_FLAG)) {
-                replyTo = (String) message.get(REPLY_TO_FLAG);
-            }
-            if (message.containsKey(TRACE_ID_FLAG)) {
-                traceId = (String) message.get(TRACE_ID_FLAG);
-            }
-            if (message.containsKey(TRACE_PATH_FLAG)) {
-                tracePath = (String) message.get(TRACE_PATH_FLAG);
-            }
-            if (message.containsKey(CID_FLAG)) {
-                cid = (String) message.get(CID_FLAG);
-            }
-            if (message.containsKey(TAG_FLAG)) {
-                Object tf = message.get(TAG_FLAG);
-                if (tf instanceof Map) {
-                    Map<String, String> map = (Map<String, String>) tf;
-                    tags.putAll(map);
+    public void load(byte[] bytes) {
+        try {
+            Object o = msgPack.unpack(bytes);
+            if (o instanceof Map) {
+                Map<String, Object> message = (Map<String, Object>) o;
+                if (message.containsKey(ID_FLAG)) {
+                    id = (String) message.get(ID_FLAG);
+                }
+                if (message.containsKey(TO_FLAG)) {
+                    to = (String) message.get(TO_FLAG);
+                }
+                if (message.containsKey(FROM_FLAG)) {
+                    from = (String) message.get(FROM_FLAG);
+                }
+                if (message.containsKey(REPLY_TO_FLAG)) {
+                    replyTo = (String) message.get(REPLY_TO_FLAG);
+                }
+                if (message.containsKey(TRACE_ID_FLAG)) {
+                    traceId = (String) message.get(TRACE_ID_FLAG);
+                }
+                if (message.containsKey(TRACE_PATH_FLAG)) {
+                    tracePath = (String) message.get(TRACE_PATH_FLAG);
+                }
+                if (message.containsKey(CID_FLAG)) {
+                    cid = (String) message.get(CID_FLAG);
+                }
+                if (message.containsKey(TAG_FLAG)) {
+                    Object tf = message.get(TAG_FLAG);
+                    if (tf instanceof Map) {
+                        Map<String, String> map = (Map<String, String>) tf;
+                        tags.putAll(map);
+                    }
+                }
+                if (message.containsKey(ANNOTATION_FLAG)) {
+                    Object tf = message.get(ANNOTATION_FLAG);
+                    if (tf instanceof Map) {
+                        Map<String, Object> map = (Map<String, Object>) tf;
+                        annotations.putAll(map);
+                    }
+                }
+                if (message.containsKey(STATUS_FLAG)) {
+                    status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FLAG))));
+                }
+                if (message.containsKey(HEADERS_FLAG)) {
+                    setHeaders((Map<String, String>) message.get(HEADERS_FLAG));
+                }
+                if (message.containsKey(BODY_FLAG)) {
+                    body = message.get(BODY_FLAG);
+                }
+                if (message.containsKey(EXCEPTION_FLAG)) {
+                    exceptionBytes = (byte[]) message.get(EXCEPTION_FLAG);
+                }
+                if (message.containsKey(STACK_FLAG)) {
+                    stackTrace = (String) message.get(STACK_FLAG);
+                }
+                if (message.containsKey(OBJ_TYPE_FLAG)) {
+                    type = (String) message.get(OBJ_TYPE_FLAG);
+                }
+                if (message.containsKey(EXECUTION_FLAG)) {
+                    executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
+                }
+                if (message.containsKey(ROUND_TRIP_FLAG)) {
+                    roundTrip = Math.max(0f, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
                 }
             }
-            if (message.containsKey(ANNOTATION_FLAG)) {
-                Object tf = message.get(ANNOTATION_FLAG);
-                if (tf instanceof Map) {
-                    Map<String, Object> map = (Map<String, Object>) tf;
-                    annotations.putAll(map);
-                }
-            }
-            if (message.containsKey(STATUS_FLAG)) {
-                status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FLAG))));
-            }
-            if (message.containsKey(HEADERS_FLAG)) {
-                setHeaders((Map<String, String>) message.get(HEADERS_FLAG));
-            }
-            if (message.containsKey(BODY_FLAG)) {
-                body = message.get(BODY_FLAG);
-            }
-            if (message.containsKey(EXCEPTION_FLAG)) {
-                exceptionBytes = (byte[]) message.get(EXCEPTION_FLAG);
-            }
-            if (message.containsKey(STACK_FLAG)) {
-                stackTrace = (String) message.get(STACK_FLAG);
-            }
-            if (message.containsKey(OBJ_TYPE_FLAG)) {
-                type = (String) message.get(OBJ_TYPE_FLAG);
-            }
-            if (message.containsKey(EXECUTION_FLAG)) {
-                executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
-            }
-            if (message.containsKey(ROUND_TRIP_FLAG)) {
-                roundTrip = Math.max(0f, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
-            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -850,9 +864,9 @@ public class EventEnvelope {
      * Serialize the EventEnvelope as a byte array
      *
      * @return byte array
-     * @throws IOException in case of encoding errors
+     * @throws IllegalArgumentException in case of encoding errors
      */
-    public byte[] toBytes() throws IOException {
+    public byte[] toBytes() {
         Map<String, Object> message = new HashMap<>();
         if (id != null) {
             message.put(ID_FLAG, id);
@@ -905,7 +919,11 @@ public class EventEnvelope {
         if (roundTrip != null) {
             message.put(ROUND_TRIP_FLAG, Math.max(0f, roundTrip));
         }
-        return msgPack.pack(message);
+        try {
+            return msgPack.pack(message);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -13,7 +13,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -166,7 +165,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         throw new AppException(404, "Resource not found");
     }
 
-    private Object handleInfo(Map<String, String> headers) throws IOException, ExecutionException, InterruptedException {
+    private Object handleInfo(Map<String, String> headers) throws ExecutionException, InterruptedException {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         var acceptHeader = headers.getOrDefault(ACCEPT, "?");
@@ -242,7 +241,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         return new EventEnvelope().setHeader(CONTENT_TYPE, accept).setBody(result);
     }
 
-    private Object getAdditionalInfo() throws IOException, ExecutionException, InterruptedException {
+    private Object getAdditionalInfo() throws ExecutionException, InterruptedException {
         if (Platform.getInstance().hasRoute(ADDITIONAL_INFO)) {
             var po = EventEmitter.getInstance();
             var req = new EventEnvelope().setTo(ADDITIONAL_INFO).setHeader(TYPE, QUERY);
@@ -278,7 +277,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getRoutingTable() throws IOException, ExecutionException, InterruptedException {
+    private Map<String, Object> getRoutingTable() throws ExecutionException, InterruptedException {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         if (hasCloudConnector && (platform.hasRoute(ServiceDiscovery.SERVICE_QUERY) ||
@@ -311,7 +310,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         return result;
     }
     
-    private Object handleHealth(Map<String, String> headers) throws IOException {
+    private Object handleHealth(Map<String, String> headers) {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         var up = true;

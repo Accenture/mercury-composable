@@ -36,5 +36,4 @@ public class MainApp implements EntryPoint {
     public void start(String[] args) {
         log.info("Started");
     }
-
 }

@@ -33,7 +33,7 @@ import java.util.Date;
  */
 public class ServiceDef {
     private enum RunnerType {
-        KERNEL_THREAD, VIRTUAL_THREAD, STREAM_FUNCTION, SUSPEND_FUNCTION
+        KERNEL_THREAD, VIRTUAL_THREAD, STREAM_FUNCTION
     }
     public enum SerializationStrategy {
         SNAKE, CAMEL, DEFAULT
@@ -44,8 +44,6 @@ public class ServiceDef {
     @SuppressWarnings("rawtypes")
     private final TypedLambdaFunction lambda;
     private final StreamFunction stream;
-    @SuppressWarnings("rawtypes")
-    private final KotlinLambdaFunction suspendFunction;
     private final String id;
     private final boolean trackable;
     private final RunnerType rType;
@@ -73,7 +71,6 @@ public class ServiceDef {
         this.route = route;
         this.lambda = lambda;
         this.stream = null;
-        this.suspendFunction = null;
         Method[] methods = lambda.getClass().getDeclaredMethods();
         for (Method m: methods) {
             Class<?>[] arguments = m.getParameterTypes();
@@ -95,31 +92,6 @@ public class ServiceDef {
         this.route = route;
         this.stream = lambda;
         this.lambda = null;
-        this.suspendFunction = null;
-    }
-
-    @SuppressWarnings("rawtypes")
-    public ServiceDef(String route, KotlinLambdaFunction lambda) {
-        this.trackable = lambda.getClass().getAnnotation(ZeroTracing.class) == null;
-        this.interceptor = lambda.getClass().getAnnotation(EventInterceptor.class) != null;
-        this.rType = RunnerType.SUSPEND_FUNCTION;
-        this.id = Utility.getInstance().getUuid();
-        this.route = route;
-        this.lambda = null;
-        this.stream = null;
-        this.suspendFunction = lambda;
-        Method[] methods = lambda.getClass().getDeclaredMethods();
-        for (Method m: methods) {
-            Class<?>[] arguments = m.getParameterTypes();
-            // HANDLE_EVENT method may be found more than once
-            // KotlinLambdaFunction is a "suspend" function and thus the last argument is the "Continuation" class
-            if (HANDLE_EVENT.equals(m.getName()) && arguments.length == 4) {
-                String clsName = arguments[1].getName();
-                if (clsName.contains(".") && !clsName.startsWith("java.")) {
-                    inputClass = arguments[1];
-                }
-            }
-        }
     }
 
     public String getId() {
@@ -143,11 +115,6 @@ public class ServiceDef {
         return stream;
     }
 
-    @SuppressWarnings("rawtypes")
-    public KotlinLambdaFunction getSuspendFunction() {
-        return suspendFunction;
-    }
-
     public boolean isPrivate() {
         return isPrivateFunction;
     }
@@ -166,10 +133,6 @@ public class ServiceDef {
 
     public boolean isStream() {
         return rType == RunnerType.STREAM_FUNCTION;
-    }
-
-    public boolean isKotlin() {
-        return rType == RunnerType.SUSPEND_FUNCTION;
     }
 
     public boolean isInterceptor() {

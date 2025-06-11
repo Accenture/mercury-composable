@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>benchmark-client</artifactId>
     <packaging>jar</packaging>
-    <version>4.2.46</version>
+    <version>4.3.0</version>
     <name>Benchmark client</name>
 
     <parent>
@@ -21,7 +21,6 @@
         <netty.version>4.2.1.Final</netty.version>
         <kafka.version>3.9.0</kafka.version>
         <gson.version>2.13.0</gson.version>
-        <kotlin.version>2.1.21</kotlin.version>
         <java.version>21</java.version>
     </properties>
 
@@ -30,10 +29,6 @@
             <id>central</id>
             <url>https://repo1.maven.org/maven2/</url>
         </repository>
-        <!--        <repository>-->
-        <!--            <id>your-repo</id>-->
-        <!--            <url>https://your_repo_here/artifactory/libs-release</url>-->
-        <!--        </repository>-->
     </repositories>
 
     <dependencyManagement>
@@ -52,14 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.2.46</version>
-        </dependency>
-
-        <!-- Optionally select your cloud connector -->
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>kafka-connector</artifactId>
-            <version>4.2.46</version>
+            <version>4.3.0</version>
         </dependency>
 
         <dependency>
@@ -80,37 +68,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/main/java</sourceDir>
-                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>${project.basedir}/src/test/java</sourceDir>
-                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -182,8 +139,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <!-- DO NOT CHANGE THIS
-                     AutoStart will find your Main Application(s) -->
+                <!-- AutoStart will find your Main Application(s) -->
                 <configuration>
                     <mainClass>org.platformlambda.core.system.AutoStart</mainClass>
                 </configuration>

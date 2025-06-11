@@ -9,7 +9,6 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -25,7 +24,7 @@ class ExceptionTransportTest extends TestBase {
     private static final BlockingQueue<EventEnvelope> callbackBench = new ArrayBlockingQueue<>(1);
 
     @BeforeAll
-    static void setup() throws IOException {
+    static void setup() {
         Platform platform = Platform.getInstance();
         LambdaFunction f = (headers, input, instance) -> {
             throw new IllegalArgumentException("demo");
@@ -34,7 +33,7 @@ class ExceptionTransportTest extends TestBase {
     }
 
     @Test
-    void transportTest() throws IOException, InterruptedException {
+    void transportTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope request = new EventEnvelope().setTo(ROUTE).setBody("demo");
@@ -47,7 +46,7 @@ class ExceptionTransportTest extends TestBase {
     }
 
     @Test
-    void callbackExceptionTest() throws IOException, InterruptedException {
+    void callbackExceptionTest() throws InterruptedException {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(CALLBACK, new MyCallBack(), 1);
         EventEnvelope request = new EventEnvelope();

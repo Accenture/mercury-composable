@@ -38,7 +38,7 @@ public class MainApp implements EntryPoint {
     }
 
     @Override
-    public void start(String[] args) throws Exception {
+    public void start(String[] args) {
         // Obtain the platform singleton instance
         Platform platform = Platform.getInstance();
         // You can create a microservice as a lambda function inline or write it as a regular Java class

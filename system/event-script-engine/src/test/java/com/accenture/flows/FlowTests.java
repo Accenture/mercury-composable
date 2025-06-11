@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
@@ -53,7 +52,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void httpClientByConfigTest() throws IOException, ExecutionException, InterruptedException {
+    void httpClientByConfigTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
@@ -74,7 +73,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void noSuchFlowTest() throws IOException, ExecutionException, InterruptedException {
+    void noSuchFlowTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
@@ -90,17 +89,17 @@ class FlowTests extends TestBase {
     }
 
     @Test
-    void externalStateMachineTest() throws IOException, InterruptedException, ExecutionException {
+    void externalStateMachineTest() throws InterruptedException, ExecutionException {
         executeExtStateMachine("/api/ext/state/");
     }
 
     @Test
-    void externalStateMachineFlowTest() throws IOException, InterruptedException, ExecutionException {
+    void externalStateMachineFlowTest() throws InterruptedException, ExecutionException {
         executeExtStateMachine("/api/ext/state/flow/");
     }
 
     @SuppressWarnings("unchecked")
-    void executeExtStateMachine(String uriPath) throws IOException, InterruptedException, ExecutionException {
+    void executeExtStateMachine(String uriPath) throws InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         var PAYLOAD = Map.of("hello", "world");
@@ -136,7 +135,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void typeMatchingTest() throws IOException, ExecutionException, InterruptedException {
+    void typeMatchingTest() throws ExecutionException, InterruptedException {
         Utility util = Utility.getInstance();
         final String HELLO_WORLD = "hello world";
         final String HELLO = "hello";
@@ -231,7 +230,7 @@ class FlowTests extends TestBase {
     }
 
     @Test
-    void bodyTest() throws IOException, ExecutionException, InterruptedException {
+    void bodyTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         final String HELLO = "hello world";
         final String VALUE_A = "A";
@@ -272,7 +271,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void headerTest() throws IOException, ExecutionException, InterruptedException {
+    void headerTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
@@ -290,7 +289,7 @@ class FlowTests extends TestBase {
     }
 
     @Test
-    void fileVaultTest() throws IOException, ExecutionException, InterruptedException {
+    void fileVaultTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         final String HELLO = "hello world";
         File f1 = new File("/tmp/temp-test-input.txt");
@@ -329,7 +328,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void circuitBreakerRetryTest() throws IOException, ExecutionException, InterruptedException {
+    void circuitBreakerRetryTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
@@ -345,7 +344,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void circuitBreakerAbortTest() throws IOException, ExecutionException, InterruptedException {
+    void circuitBreakerAbortTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
@@ -364,7 +363,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void resilienceHandlerTest() throws IOException, ExecutionException, InterruptedException {
+    void resilienceHandlerTest() throws ExecutionException, InterruptedException {
         // delete control files before running test
         File f1 = new File("/tmp/resilience/cumulative");
         File f2 = new File("/tmp/resilience/backoff");
@@ -435,7 +434,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void greetingTest() throws IOException, InterruptedException {
+    void greetingTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         final String TRACE_ID = "1001";
@@ -521,7 +520,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void parentGreetingTest() throws IOException, InterruptedException, ExecutionException {
+    void parentGreetingTest() throws InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -555,7 +554,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void missingSubFlow() throws IOException, InterruptedException, ExecutionException {
+    void missingSubFlow() throws InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -578,7 +577,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void exceptionTest() throws IOException, InterruptedException, ExecutionException {
+    void exceptionTest() throws InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         String USER = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -596,12 +595,12 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void exceptionLoopTest() throws IOException, InterruptedException, ExecutionException {
+    void exceptionLoopTest() throws InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
-        String USER = "test-user";
+        String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", "409");
+        request.setUrl("/api/greetings/"+user).setQueryParameter("ex", "409");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope res = po.request(req, TIMEOUT).get();
@@ -614,7 +613,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void nonStandardExceptionTest() throws IOException, InterruptedException {
+    void nonStandardExceptionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -635,7 +634,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void flowTimeoutTest() throws IOException, InterruptedException {
+    void flowTimeoutTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -655,7 +654,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void simpleDecisionTest() throws IOException, InterruptedException {
+    void simpleDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -686,7 +685,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void noOpDecisionTest() throws IOException, InterruptedException {
+    void noOpDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -718,7 +717,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void numericDecisionTest() throws IOException, InterruptedException {
+    void numericDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -749,7 +748,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void invalidNumericDecisionTest() throws IOException, InterruptedException {
+    void invalidNumericDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -772,7 +771,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void sequentialTest() throws IOException, InterruptedException {
+    void sequentialTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -801,7 +800,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void responseTest() throws InterruptedException, IOException {
+    void responseTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -825,7 +824,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void delayedResponseTest() throws IOException, InterruptedException {
+    void delayedResponseTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -845,27 +844,27 @@ class FlowTests extends TestBase {
     }
 
     @Test
-    void forkJoinTest() throws IOException, InterruptedException, ExecutionException {
+    void forkJoinTest() throws InterruptedException, ExecutionException {
         forkJoin("/api/fork-n-join/", false);
     }
 
     @Test
-    void forkJoinFlowTest() throws IOException, InterruptedException, ExecutionException {
+    void forkJoinFlowTest() throws InterruptedException, ExecutionException {
         forkJoin("/api/fork-n-join-flows/", false);
     }
 
     @Test
-    void forkJoinWithExceptionTest() throws IOException, InterruptedException, ExecutionException {
+    void forkJoinWithExceptionTest() throws InterruptedException, ExecutionException {
         forkJoin("/api/fork-n-join/", true);
     }
 
     @Test
-    void forkJoinFlowWithExceptionTest() throws IOException, InterruptedException, ExecutionException {
+    void forkJoinFlowWithExceptionTest() throws InterruptedException, ExecutionException {
         forkJoin("/api/fork-n-join-flows/", true);
     }
 
     @SuppressWarnings("unchecked")
-    void forkJoin(String apiPath, boolean exception) throws IOException, InterruptedException, ExecutionException {
+    void forkJoin(String apiPath, boolean exception) throws InterruptedException, ExecutionException {
         final int UNAUTHORIZED = 401;
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -899,7 +898,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineTest() throws IOException, InterruptedException {
+    void pipelineTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -922,7 +921,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineForLoopTest() throws IOException, InterruptedException {
+    void pipelineForLoopTest() throws InterruptedException {
         Platform platform = Platform.getInstance();
         // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
         // We want to override no.op with my.mock.function to demonstrate mocking a function
@@ -967,7 +966,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineForLoopTestSingleTask() throws IOException, InterruptedException {
+    void pipelineForLoopTestSingleTask() throws InterruptedException {
         Platform platform = Platform.getInstance();
         /*
          * In this pipeline test, there is only one task in the pipeline.
@@ -1056,17 +1055,17 @@ class FlowTests extends TestBase {
     }
 
     @Test
-    void pipelineForLoopBreakConditionOne() throws IOException, InterruptedException {
+    void pipelineForLoopBreakConditionOne() throws InterruptedException {
         pipelineForLoopBreakConditionTest("break");
     }
 
     @Test
-    void pipelineForLoopBreakConditionTwo() throws IOException, InterruptedException {
+    void pipelineForLoopBreakConditionTwo() throws InterruptedException {
         pipelineForLoopBreakConditionTest("jump");
     }
 
     @SuppressWarnings("unchecked")
-    void pipelineForLoopBreakConditionTest(String type) throws IOException, InterruptedException {
+    void pipelineForLoopBreakConditionTest(String type) throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1090,7 +1089,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineForLoopBreakConditionTestSingleTask() throws IOException, InterruptedException {
+    void pipelineForLoopBreakConditionTestSingleTask() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1114,7 +1113,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineForLoopContinueTest() throws IOException, InterruptedException {
+    void pipelineForLoopContinueTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1138,7 +1137,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineWhileLoopTest() throws IOException, InterruptedException {
+    void pipelineWhileLoopTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1162,7 +1161,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineWhileLoopBreakTest() throws IOException, InterruptedException {
+    void pipelineWhileLoopBreakTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1186,7 +1185,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineWhileLoopContinueTest() throws IOException, InterruptedException {
+    void pipelineWhileLoopContinueTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1210,7 +1209,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void pipelineExceptionTest() throws IOException, InterruptedException {
+    void pipelineExceptionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -1231,7 +1230,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void parallelTest() throws IOException, InterruptedException, ExecutionException {
+    void parallelTest() throws InterruptedException, ExecutionException {
         final long TIMEOUT = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
@@ -1248,7 +1247,7 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
-    void internalFlowTest() throws IOException, ExecutionException, InterruptedException {
+    void internalFlowTest() throws ExecutionException, InterruptedException {
         final String ORIGINATOR = "unit.test";
         final long TIMEOUT = 8000;
         Utility util = Utility.getInstance();

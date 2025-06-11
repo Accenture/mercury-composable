@@ -32,7 +32,6 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.websocket.client.PersistentWsClient;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,16 +59,12 @@ public class MockCloud implements CloudSetup {
         monitors.add(url2);
         ws = new PersistentWsClient(PresenceConnector.getInstance(), monitors);
         ws.start();
-        try {
-            platform.registerPrivate(EventEmitter.CLOUD_CONNECTOR, new EventProducer(), 1);
-            platform.registerPrivate(ServiceDiscovery.SERVICE_QUERY, new ServiceQuery(), 10);
-            platform.registerPrivate(ServiceDiscovery.SERVICE_REGISTRY, new ServiceRegistry(), 10);
-            platform.registerPrivate(CLOUD_MANAGER, new MockTopicManager(), 1);
-            platform.registerPrivate(CLOUD_CONNECTOR_HEALTH, new MockCloudHealth(), 2);
-            platform.startCloudServices();
-        } catch (IOException e) {
-            // nothing to worry
-        }
+        platform.registerPrivate(EventEmitter.CLOUD_CONNECTOR, new EventProducer(), 1);
+        platform.registerPrivate(ServiceDiscovery.SERVICE_QUERY, new ServiceQuery(), 10);
+        platform.registerPrivate(ServiceDiscovery.SERVICE_REGISTRY, new ServiceRegistry(), 10);
+        platform.registerPrivate(CLOUD_MANAGER, new MockTopicManager(), 1);
+        platform.registerPrivate(CLOUD_CONNECTOR_HEALTH, new MockCloudHealth(), 2);
+        platform.startCloudServices();
     }
 
 }

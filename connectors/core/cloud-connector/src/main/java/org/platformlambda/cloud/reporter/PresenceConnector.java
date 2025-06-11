@@ -28,7 +28,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -102,11 +101,7 @@ public class PresenceConnector implements LambdaFunction {
             }
             return true;
         };
-        try {
-            Platform.getInstance().registerPrivate(FAST_KEEP_ALIVE, fastKeepAlive, 1);
-        } catch (IOException e) {
-            // ok to ignore
-        }
+        Platform.getInstance().registerPrivate(FAST_KEEP_ALIVE, fastKeepAlive, 1);
     }
 
     public static PresenceConnector getInstance() {
@@ -130,7 +125,7 @@ public class PresenceConnector implements LambdaFunction {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         Platform platform  = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
         String route;
@@ -246,13 +241,13 @@ public class PresenceConnector implements LambdaFunction {
                             new Kv(VERSION, util.getVersion()),
                             new Kv(ORIGIN, platform.getOrigin()));
                 }
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.debug("Unable to send application info to presence monitor - {}", e.getMessage());
             }
         }
     }
 
-    private void startConsumers() throws IOException {
+    private void startConsumers() {
         if (topicPartition != null && topicPartition.contains("-")) {
             AppConfigReader config = AppConfigReader.getInstance();
             Platform platform = Platform.getInstance();
@@ -312,7 +307,7 @@ public class PresenceConnector implements LambdaFunction {
         });
     }
 
-    private void closeConsumers() throws IOException {
+    private void closeConsumers() {
         if (topicPartition != null && topicPartition.contains("-")) {
             PubSub ps = PubSub.getInstance();
             Utility util = Utility.getInstance();

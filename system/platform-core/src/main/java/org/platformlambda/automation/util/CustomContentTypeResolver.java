@@ -23,7 +23,6 @@ import org.platformlambda.core.util.ConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -51,7 +50,7 @@ public class CustomContentTypeResolver {
             } else if (types != null) {
                 log.error("Unable to parse {} - custom.content.types should be a List of type mappings", CONFIG_FILE);
             }
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             // ok to ignore because custom content type feature is optional
         }
         Object ct = config.get("custom.content.types");

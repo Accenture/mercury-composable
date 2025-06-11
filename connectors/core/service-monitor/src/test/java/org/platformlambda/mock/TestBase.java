@@ -27,7 +27,6 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -51,30 +50,11 @@ public class TestBase {
     }
 
     protected EventEnvelope httpGet(String host, String path, Map<String, String> headers)
-            throws IOException, InterruptedException {
+            throws InterruptedException {
         // BlockingQueue should only be used in unit test
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         AsyncHttpRequest req = new AsyncHttpRequest().setMethod("GET").setTargetHost(host).setUrl(path);
-        if (headers != null) {
-            for (Map.Entry<String, String> kv: headers.entrySet()) {
-                req.setHeader(kv.getKey(), kv.getValue());
-            }
-        }
-        EventEnvelope event = new EventEnvelope().setTo(HTTP_CLIENT).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(event, 10000);
-        res.onSuccess(bench::add);
-        return bench.poll(10, TimeUnit.SECONDS);
-    }
-
-    protected EventEnvelope httpPost(String host, String path,
-                                          Map<String, String> headers, Map<String, Object> body)
-            throws IOException, InterruptedException {
-        // BlockingQueue should only be used in unit test
-        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        EventEmitter po = EventEmitter.getInstance();
-        AsyncHttpRequest req = new AsyncHttpRequest().setMethod("POST")
-                .setTargetHost(host).setUrl(path).setBody(body);
         if (headers != null) {
             for (Map.Entry<String, String> kv: headers.entrySet()) {
                 req.setHeader(kv.getKey(), kv.getValue());

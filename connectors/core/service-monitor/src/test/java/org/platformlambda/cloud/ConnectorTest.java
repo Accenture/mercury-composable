@@ -34,7 +34,6 @@ import org.platformlambda.ws.MonitorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -102,7 +101,7 @@ class ConnectorTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void connectivityTest() throws IOException, InterruptedException {
+    void connectivityTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         EventEmitter po = EventEmitter.getInstance();
         int n = 0;

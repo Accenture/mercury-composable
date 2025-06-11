@@ -35,7 +35,6 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -100,13 +99,9 @@ public class MainScheduler implements EntryPoint {
         if (j != null && j.stopTime == null) {
             EventEnvelope event = new EventEnvelope().setTo(j.service);
             event.setHeaders(j.parameters);
-            try {
-                EventEmitter.getInstance().send(event);
-                j.lastExecution = new Date();
-                j.count++;
-            } catch (IOException e) {
-                log.error("Unable to execute service {} with parameters {}", j.service, j.parameters);
-            }
+            EventEmitter.getInstance().send(event);
+            j.lastExecution = new Date();
+            j.count++;
         } else {
             throw new IllegalArgumentException("Job "+id+" has not started");
         }
@@ -114,7 +109,7 @@ public class MainScheduler implements EntryPoint {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void start(String[] args) throws Exception {
+    public void start(String[] args) throws SchedulerException {
         Platform platform = Platform.getInstance();
         String origin = platform.getOrigin();
         // create service for leader election and synchronization of job start/stop status
@@ -191,7 +186,7 @@ public class MainScheduler implements EntryPoint {
         platform.connectToCloud();
     }
 
-    private ConfigReader getConfig() throws IOException {
+    private ConfigReader getConfig() {
         AppConfigReader reader = AppConfigReader.getInstance();
         List<String> paths = Utility.getInstance().split(reader.getProperty("yaml.cron",
                 "file:/tmp/config/cron.yaml, classpath:/cron.yaml"), ", ");
@@ -200,11 +195,10 @@ public class MainScheduler implements EntryPoint {
                 ConfigReader config = new ConfigReader(p);
                 log.info("Loaded config from {}", p);
                 return config;
-            } catch (IOException e) {
+            } catch (IllegalArgumentException e) {
                 log.warn("Skipping {} - {}", p, e.getMessage());
             }
         }
-        throw new IOException("Scheduler configuration not found in "+paths);
+        throw new IllegalArgumentException("Scheduler configuration not found in "+paths);
     }
-
 }

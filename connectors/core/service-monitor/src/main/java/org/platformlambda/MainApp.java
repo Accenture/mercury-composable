@@ -36,7 +36,6 @@ import org.platformlambda.services.TopicController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,7 +85,7 @@ public class MainApp implements EntryPoint {
 
     }
 
-    private void setup() throws IOException {
+    private void setup() {
         Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
         PubSub ps = PubSub.getInstance();

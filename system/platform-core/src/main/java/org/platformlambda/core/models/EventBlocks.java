@@ -49,15 +49,19 @@ public class EventBlocks {
         return buffer.size();
     }
 
-    public byte[] toBytes() throws IOException {
+    public byte[] toBytes() {
         List<Integer> indexes = new ArrayList<>(buffer.keySet());
         Collections.sort(indexes);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (Integer i: indexes) {
-            out.write(buffer.get(i));
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            for (Integer i : indexes) {
+                out.write(buffer.get(i));
+            }
+            buffer.clear();
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
-        buffer.clear();
-        return out.toByteArray();
     }
 
 }

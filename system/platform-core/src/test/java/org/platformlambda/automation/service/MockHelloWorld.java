@@ -24,7 +24,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -42,7 +41,7 @@ public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Obj
     private static final String APPLICATION_XML = "application/xml";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         if ("HEAD".equals(input.getMethod())) {
             var cookies = input.getCookies();
             EventEnvelope result = new EventEnvelope().setHeader("X-Response", "HEAD request received")

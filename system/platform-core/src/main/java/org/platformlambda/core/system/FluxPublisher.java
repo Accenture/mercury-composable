@@ -29,7 +29,6 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -64,11 +63,11 @@ public class FluxPublisher<T> {
         this.timer = Platform.getInstance().getVertx().setTimer(expiry, t -> {
             expired.set(true);
             String outStream = stream.getOutputStreamId();
+            var error = new EventEnvelope().setException(new AppException(408, "Event stream expired"));
             try {
-                var error = new EventEnvelope().setException(new AppException(408, "Event stream expired"));
                 EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
-            } catch (IOException ex) {
-                // nothing we can do
+            } catch (IllegalArgumentException e) {
+                // ok to ignore
             }
             if (disposable != null && !disposable.isDisposed()) {
                 Utility util = Utility.getInstance();
@@ -106,7 +105,7 @@ public class FluxPublisher<T> {
                         eof.set(true);
                         try {
                             EventEmitter.getInstance().send(outStream, new Kv(TYPE, END_OF_STREAM));
-                        } catch (IOException e) {
+                        } catch (IllegalArgumentException e) {
                             log.error("Unable to publish completion signal to {} - {}",
                                     util.getSimpleRoute(outStream), e.getMessage());
                         }
@@ -116,14 +115,14 @@ public class FluxPublisher<T> {
                     try {
                         Object payload = serializer == null? data : serializer.toMap(data);
                         EventEmitter.getInstance().send(outStream, payload, new Kv(TYPE, DATA));
-                    } catch (IOException e) {
+                    } catch (IllegalArgumentException e) {
                         log.error("Unable to publish data to {} - {}", util.getSimpleRoute(outStream), e.getMessage());
                     }
                 }, e -> {
                     try {
                         var error = new EventEnvelope().setException(e);
                         EventEmitter.getInstance().send(outStream, error.toBytes(), new Kv(TYPE, EXCEPTION));
-                    } catch (IOException ex) {
+                    } catch (IllegalArgumentException ex) {
                         log.error("Unable to publish exception to {} - {}",
                                 util.getSimpleRoute(outStream), ex.getMessage());
                     }

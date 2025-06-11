@@ -65,6 +65,12 @@ for details.
 The "no.op" function is used as a placeholder for building skeleton or simple decision function for
 an event flow use case.
 
+## Simple exception handler
+
+The "simple.exception.handler" is a placeholder for a user defined exception handler for rapid prototyping.
+For more sophisticated error handling, please use the "resilience.handler" or write your own composable function
+as an exception handler. For more details, refer to [Chapter 4](CHAPTER-4.md)
+
 ## Reserved event header names
 
 The following event headers are injected by the system as READ only metadata. They are available from the

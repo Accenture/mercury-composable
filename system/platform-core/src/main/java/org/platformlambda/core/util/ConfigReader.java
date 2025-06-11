@@ -58,9 +58,9 @@ public class ConfigReader implements ConfigBase {
      * environment variables and system properties.
      *
      * @param path in classpath or file convention
-     * @throws IOException if file not found
+     * @throws IllegalArgumentException if file not found
      */
-    public ConfigReader(String path) throws IOException {
+    public ConfigReader(String path) {
         this.load(path);
         this.resolveReferences();
     }
@@ -301,10 +301,10 @@ public class ConfigReader implements ConfigBase {
      * Load a configuration file into a config reader
      *
      * @param path of the configuration file prefix with "classpath:/" or "file:/"
-     * @throws IOException if file not found
+     * @throws IllegalArgumentException if file not found
      */
     @SuppressWarnings("unchecked")
-    public ConfigReader load(String path) throws IOException {
+    public ConfigReader load(String path) {
         resolved = false;
         boolean isYaml = path.endsWith(YML) || path.endsWith(YAML);
         // ".yaml" and ".yml" can be used interchangeably
@@ -339,7 +339,7 @@ public class ConfigReader implements ConfigBase {
             }
         }
         if (in == null) {
-            throw new IOException(path + " not found");
+            throw new IllegalArgumentException(path + " not found");
         }
         try {
             if (isYaml) {
@@ -353,7 +353,11 @@ public class ConfigReader implements ConfigBase {
                 config.reload(enforceKeysAsText(m));
             } else if (path.endsWith(DOT_PROPERTIES)) {
                 Properties p = new Properties();
-                p.load(in);
+                try {
+                    p.load(in);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(e.getMessage());
+                }
                 Map<String, Object> map = new HashMap<>();
                 p.forEach((k,v) -> map.put(String.valueOf(k), v));
                 List<String> keys = new ArrayList<>(map.keySet());

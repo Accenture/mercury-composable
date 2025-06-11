@@ -32,7 +32,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -84,11 +83,7 @@ public class PersistentWsClient extends Thread {
         Platform platform = Platform.getInstance();
         sessionId = Utility.getInstance().getUuid().substring(0, 8);
         session = PC+sessionId+IN;
-        try {
-            platform.registerPrivate(session, connector, 1);
-        } catch (IOException e) {
-            log.error("Unable to setup service {} - {}", session, e.getMessage());
-        }
+        platform.registerPrivate(session, connector, 1);
     }
 
     @Override
@@ -160,18 +155,9 @@ public class PersistentWsClient extends Thread {
             connected.set(true);
             log.info("Session {} connected to {}", session, options.getURI());
             WsClientTransmitter tx = new WsClientTransmitter(ws);
-            try {
-                platform.registerPrivate(txPath, tx, 1);
-            } catch (IOException e1) {
-                // this should never happen
-                log.error("Unable to setup session {} - {}", session, e1.getMessage());
-            }
-            try {
-                po.send(session, new Kv(TYPE, OPEN), new Kv(IP, target.getHost()+":"+options.getPort()),
+            platform.registerPrivate(txPath, tx, 1);
+            po.send(session, new Kv(TYPE, OPEN), new Kv(IP, target.getHost()+":"+options.getPort()),
                         new Kv(PATH, options.getURI()), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-            } catch (IOException e) {
-                log.error("Unable to send open signal to {} - {}", session, e.getMessage());
-            }
             long poll = Math.max(10000, idleSeconds * 1000L / 2 - 3000);
             long keepAlive = vertx.setPeriodic(poll, n -> {
                 Map<String, Object> data = new HashMap<>();
@@ -183,7 +169,7 @@ public class PersistentWsClient extends Thread {
                     po.send(session, data, new Kv(TYPE, MAP), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
                     // send keep-alive to the remote websocket server
                     po.send(txPath, data);
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to send keep-alive to {} - {}", session, e.getMessage());
                 }
             });
@@ -191,7 +177,7 @@ public class PersistentWsClient extends Thread {
                 try {
                     po.send(session, text, new Kv(TYPE, STRING),
                             new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to send text message to {} - {}", session, e.getMessage());
                 }
             });
@@ -199,7 +185,7 @@ public class PersistentWsClient extends Thread {
                 try {
                     po.send(session, b.getBytes(), new Kv(TYPE, BYTES),
                             new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     log.warn("Unable to send binary message to {} - {}", session, e.getMessage());
                 }
             });
@@ -211,9 +197,8 @@ public class PersistentWsClient extends Thread {
                 log.info("Session {} closed ({}, {})", session, ws.closeStatusCode(), reason);
                 try {
                     po.send(session, new Kv(TYPE, CLOSE), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                } catch (IOException e) {
-                    // this happens when PersistentWsClient is closed
-                    log.info("Client {} stopped", session);
+                } catch (IllegalArgumentException e) {
+                    // ok to ignore
                 }
                 platform.release(txPath);
                 vertx.setTimer(RETRY_TIMER, n -> makeConnection(idleSeconds));

@@ -34,7 +34,6 @@ import org.platformlambda.ws.MonitorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -79,7 +78,7 @@ public class TopicController implements LambdaFunction {
     private final boolean topicSubstitution;
     private final Map<String, String> preAllocatedTopics;
 
-    public TopicController() throws IOException {
+    public TopicController() {
         topicSubstitution = ConnectorConfig.topicSubstitutionEnabled();
         preAllocatedTopics = ConnectorConfig.getTopicSubstitution();
         Utility util = Utility.getInstance();
@@ -255,7 +254,7 @@ public class TopicController implements LambdaFunction {
         return false;
     }
 
-    private String nextTopic(String appOrigin) throws IOException {
+    private String nextTopic(String appOrigin) {
         for (String t: allTopics) {
             String value = topicStore.get(t);
             if (AVAILABLE.equals(value)) {
@@ -263,7 +262,7 @@ public class TopicController implements LambdaFunction {
                 return t;
             }
         }
-        throw new IOException("All virtual topics ("+ maxVirtualTopics +") are busy");
+        throw new IllegalArgumentException("All virtual topics ("+ maxVirtualTopics +") are busy");
     }
 
     public static Map<String, String> getAssignedTopics() {
@@ -300,7 +299,7 @@ public class TopicController implements LambdaFunction {
                 try {
                     po.send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION,
                             new Kv(TYPE, RSVP_START), new Kv(MONITOR, myOrigin));
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     // ok to ignore
                 }
                 for (String appOrigin: requests) {
@@ -315,7 +314,7 @@ public class TopicController implements LambdaFunction {
                             int partition = util.str2int(topicPartition.substring(hyphen+1));
                             String virtualTopic = topic + "." + partition;
                             if (!preAllocatedTopics.containsKey(virtualTopic)) {
-                                throw new IOException("Missing topic substitution for "+virtualTopic);
+                                throw new IllegalArgumentException("Missing topic substitution for "+virtualTopic);
                             }
                         }
                         if (!currentTopics.contains(topic)) {
@@ -328,7 +327,7 @@ public class TopicController implements LambdaFunction {
                                                 topic, partitionCount, actualPartitions);
                                         log.error("SYSTEM NOT OPERATIONAL. Please setup topic {} and restart",
                                                 topic);
-                                        throw new IOException("Insufficient partitions in " + topic);
+                                        throw new IllegalArgumentException("Insufficient partitions in " + topic);
                                     }
                                 } else {
                                     ps.createTopic(topic, partitionCount);
@@ -344,19 +343,15 @@ public class TopicController implements LambdaFunction {
                                 .setHeader(VERSION, util.getVersion()).toBytes());
                         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, JOIN),
                                 new Kv(ORIGIN, appOrigin), new Kv(TOPIC, topicPartition));
-                    } catch (IOException e) {
-                        try {
-                            MonitorService.closeConnection(txPath, TRY_AGAIN_LATER, e.getMessage());
-                        } catch (IOException ioe) {
-                            // ok to ignore
-                        }
+                    } catch (IllegalArgumentException e) {
+                        MonitorService.closeConnection(txPath, TRY_AGAIN_LATER, e.getMessage());
                     }
                 }
                 // finished RSVP
                 try {
                     po.send(MainApp.TOPIC_CONTROLLER + MONITOR_PARTITION,
                             new Kv(TYPE, RSVP_COMPLETE), new Kv(MONITOR, myOrigin));
-                } catch (IOException e) {
+                } catch (IllegalArgumentException e) {
                     // ok to ignore
                 }
             }
@@ -381,7 +376,5 @@ public class TopicController implements LambdaFunction {
                 }
             }
         }
-
     }
-
 }

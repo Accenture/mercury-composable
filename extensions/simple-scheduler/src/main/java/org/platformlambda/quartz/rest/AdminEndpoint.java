@@ -29,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.*;
 
 @RestController
@@ -94,7 +93,7 @@ public class AdminEndpoint {
                         } catch (SchedulerException e) {
                             callback.error(new AppException(400, e.getMessage()));
                         }
-                    } catch (IOException e) {
+                    } catch (IllegalArgumentException e) {
                         callback.error(new AppException(400, e.getMessage()));
                     }
                 }
@@ -126,7 +125,7 @@ public class AdminEndpoint {
                         } catch (SchedulerException e) {
                             callback.error(new AppException(400, e.getMessage()));
                         }
-                    } catch (IOException e) {
+                    } catch (IllegalArgumentException e) {
                         callback.error(new AppException(400, e.getMessage()));
                     }
                 }
@@ -150,5 +149,4 @@ public class AdminEndpoint {
             }
         });
     }
-
 }

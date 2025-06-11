@@ -96,7 +96,7 @@ public class HelloPoJoEventOverHttp {
                 } else {
                     callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
                 }
-            } catch (IOException | ExecutionException | InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 callback.error(e);
             }
         });
@@ -112,7 +112,7 @@ The method signatures of the Event API is shown as follows:
 // io.vertx.core.Future
 public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeout,
                                           Map<String, String> headers,
-                                          String eventEndpoint, boolean rpc) throws IOException;
+                                          String eventEndpoint, boolean rpc);
 ```
 
 ### Sequential non-blocking API (virtual thread function)
@@ -121,16 +121,7 @@ public Future<EventEnvelope> asyncRequest(final EventEnvelope event, long timeou
 // java.util.concurrent.Future
 public Future<EventEnvelope> request(final EventEnvelope event, long timeout,
                                           Map<String, String> headers,
-                                          String eventEndpoint, boolean rpc) throws IOException;
-```
-
-### Sequential non-blocking API (Kotlin suspend function)
-
-```java
-suspend fun awaitRequest(request: EventEnvelope?, timeout: Long, 
-                          headers: Map<String, String>,
-                          eventEndpoint: String, rpc: Boolean): EventEnvelope
-}
+                                          String eventEndpoint, boolean rpc);
 ```
 
 Optionally, you may add security headers in the "headers" argument. e.g. the "Authorization" header.
@@ -211,7 +202,7 @@ public class HelloPoJoEventOverHttpByConfig {
                 } else {
                     callback.error(new AppException(response.getStatus(), String.valueOf(response.getError())));
                 }
-            } catch (IOException | ExecutionException | InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 callback.error(e);
             }
         });

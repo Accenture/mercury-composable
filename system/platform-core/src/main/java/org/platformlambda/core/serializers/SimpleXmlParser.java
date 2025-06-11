@@ -89,12 +89,12 @@ public class SimpleXmlParser {
         }
     }
 
-    public Map<String, Object> parse(String xml) throws IOException {
+    public Map<String, Object> parse(String xml) {
         return parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> parse(InputStream res) throws IOException {
+    public Map<String, Object> parse(InputStream res) {
         Map<String, Object> result = new HashMap<>();
         Document doc;
         try {
@@ -111,9 +111,9 @@ public class SimpleXmlParser {
             dBuilder.setErrorHandler(null);
             doc = dBuilder.parse(res);
             doc.getDocumentElement().normalize();
-        } catch (ParserConfigurationException | SAXException e) {
-            // Simplify by converting to IOException
-            throw new IOException(e);
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            // Simplify by converting to IllegalArgumentException
+            throw new IllegalArgumentException(e);
         }
         Element root = doc.getDocumentElement();
         Map<String, Object> seed = new HashMap<>();

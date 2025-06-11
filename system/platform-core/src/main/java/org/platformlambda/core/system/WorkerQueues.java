@@ -57,5 +57,4 @@ public abstract class WorkerQueues {
             log.debug("{} stopped", route);
         }
     }
-
 }

@@ -64,7 +64,7 @@ public class ServiceQueue {
         consumer = system.localConsumer(route, new ServiceHandler());
         if (service.isStream()) {
             streamRoute = route + HASH + 1;
-            StreamQueue worker = new StreamQueue(service, streamRoute);
+            var worker = new StreamQueue(service, streamRoute);
             workers.add(worker);
             log.info("{} {} started as stream function", service.isPrivate() ? PRIVATE : PUBLIC, route);
         } else {
@@ -72,17 +72,10 @@ public class ServiceQueue {
             int instances = service.getConcurrency();
             for (int i = 0; i < instances; i++) {
                 int n = i + 1;
-                WorkerQueue worker = new WorkerQueue(service, route + HASH + n, n);
+                var worker = new WorkerDispatcher(service, route + HASH + n, n);
                 workers.add(worker);
             }
-            if (service.isKotlin()) {
-                if (instances == 1) {
-                    log.info("{} {} started as suspend function", service.isPrivate() ? PRIVATE : PUBLIC, route);
-                } else {
-                    log.info("{} {} with {} instances started as suspend function",
-                            service.isPrivate() ? PRIVATE : PUBLIC, route, instances);
-                }
-            } else if (service.isKernelThread()) {
+            if (service.isKernelThread()) {
                 if (instances == 1) {
                     log.info("{} {} started as kernel thread", service.isPrivate() ? PRIVATE : PUBLIC, route);
                 } else {

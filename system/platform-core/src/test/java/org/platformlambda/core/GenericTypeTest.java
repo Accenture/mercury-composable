@@ -24,7 +24,6 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericTypeTest {
 
     @Test
-    void testListOfPoJo() throws IOException {
+    void testListOfPoJo() {
         int NUMBER_1 = 100;
         String NAME_1 = "hello world";
         int NUMBER_2 = 200;
@@ -64,7 +63,7 @@ class GenericTypeTest {
     }
 
     @Test
-    void testArrayOfPoJo() throws IOException {
+    void testArrayOfPoJo() {
         int NUMBER_1 = 100;
         String NAME_1 = "hello world";
         int NUMBER_2 = 200;
@@ -123,7 +122,7 @@ class GenericTypeTest {
     }
 
     @Test
-    void acceptListOfPrimitives() throws IOException {
+    void acceptListOfPrimitives() {
         List<Object> list = new ArrayList<>();
         list.add(true);
         list.add(null);
@@ -138,7 +137,7 @@ class GenericTypeTest {
     }
 
     @Test
-    void acceptArrayOfPrimitives() throws IOException {
+    void acceptArrayOfPrimitives() {
         Object[] array = new Object[3];
         array[0] = true;
         array[1] = null;
@@ -153,7 +152,7 @@ class GenericTypeTest {
     }
 
     @Test
-    void testEmptyList() throws IOException {
+    void testEmptyList() {
         EventEnvelope event = new EventEnvelope();
         event.setBody(Collections.emptyList());
         byte[] b = event.toBytes();
@@ -164,7 +163,7 @@ class GenericTypeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void restoreObjectWithParametric() throws IOException {
+    void restoreObjectWithParametric() {
         Utility util = Utility.getInstance();
         int id = 123;
         String name = "hello world";
@@ -211,7 +210,7 @@ class GenericTypeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void parametricEnvelopeTest() throws IOException {
+    void parametricEnvelopeTest() {
         int ID = 100;
         String NAME = "hello world";
         ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
@@ -233,7 +232,7 @@ class GenericTypeTest {
     }
 
     @Test
-    void remappingEnvelopeTest() throws IOException {
+    void remappingEnvelopeTest() {
         int ID = 100;
         String NAME = "hello world";
         PoJo pojo = new PoJo();
@@ -250,7 +249,7 @@ class GenericTypeTest {
     }
 
     @Test
-    void primitiveObjectTest() throws IOException {
+    void primitiveObjectTest() {
         String MESSAGE = "Unable to convert a primitive into class " + PoJoVariance.class.getName();
         int id = 100;
         EventEnvelope event = new EventEnvelope();
@@ -262,5 +261,4 @@ class GenericTypeTest {
                                                 () -> restored.getBody(PoJoVariance.class));
         assertEquals(MESSAGE, ex.getMessage());
     }
-
 }

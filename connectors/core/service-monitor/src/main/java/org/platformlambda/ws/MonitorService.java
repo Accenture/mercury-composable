@@ -35,7 +35,6 @@ import org.platformlambda.models.WsMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -158,18 +157,14 @@ public class MonitorService implements LambdaFunction {
 
     private static void closeStalledConnection(WsMetadata md, String reason) {
         if (md != null) {
-            try {
-                log.info("Closing connection {} because {}", md.session, reason);
-                pendingConnections.remove(md.session);
-                closeConnection(md.txPath, TRY_AGAIN_LATER, reason);
-            } catch (IOException e) {
-                // ok to ignore
-            }
+            log.info("Closing connection {} because {}", md.session, reason);
+            pendingConnections.remove(md.session);
+            closeConnection(md.txPath, TRY_AGAIN_LATER, reason);
         }
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (headers.containsKey(WsEnvelope.TYPE)) {
             String type = headers.get(WsEnvelope.TYPE);
             if (WsEnvelope.OPEN.equals(type)) {
@@ -185,7 +180,7 @@ public class MonitorService implements LambdaFunction {
         }
     }
 
-    private void handleOpen(Map<String, String> headers) throws IOException {
+    private void handleOpen(Map<String, String> headers) {
         String route = headers.get(WsEnvelope.ROUTE);
         String txPath = headers.get(WsEnvelope.TX_PATH);
         String token = headers.get(WsEnvelope.TOKEN);
@@ -212,7 +207,7 @@ public class MonitorService implements LambdaFunction {
         }
     }
 
-    private void handleBytes(Map<String, String> headers, byte[] payload) throws IOException {
+    private void handleBytes(Map<String, String> headers, byte[] payload) {
         String route = headers.get(WsEnvelope.ROUTE);
         EventEmitter po = EventEmitter.getInstance();
         WsMetadata md = connections.get(route);
@@ -257,7 +252,7 @@ public class MonitorService implements LambdaFunction {
     }
 
     @SuppressWarnings("unchecked")
-    private void handleClose(Map<String, String> headers) throws IOException {
+    private void handleClose(Map<String, String> headers) {
         String route = headers.get(WsEnvelope.ROUTE);
         EventEmitter po = EventEmitter.getInstance();
         WsMetadata md = connections.get(route);
@@ -342,7 +337,7 @@ public class MonitorService implements LambdaFunction {
         return false;
     }
 
-    public static void closeConnection(String txPath, int status, String message) throws IOException {
+    public static void closeConnection(String txPath, int status, String message) {
         if (txPath != null && message != null) {
             EventEnvelope error = new EventEnvelope();
             error.setTo(txPath);
@@ -352,5 +347,4 @@ public class MonitorService implements LambdaFunction {
             EventEmitter.getInstance().send(error);
         }
     }
-
 }

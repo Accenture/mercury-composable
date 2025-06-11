@@ -30,7 +30,6 @@ import org.platformlambda.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -129,9 +128,6 @@ public class Platform {
 
     /**
      * Internal API - This vertx instance must be used exclusively by the platform-core
-     * <p>
-     * This is used for running kotlin coroutines in the event loop
-     * and spinning up worker threads for blocking code on demand.
      * <p>
      * Please do not use it at user application level to avoid blocking the event loop.
      * <p>
@@ -347,10 +343,10 @@ public class Platform {
      * @param route path
      * @param lambda function must be written in Java that implements the TypedLambdaFunction interface
      * @param instances for concurrent processing of events
-     * @throws IOException in case of duplicated registration
+     * @throws IllegalArgumentException in case of duplicated registration
      */
     @SuppressWarnings("rawtypes")
-    public void register(String route, TypedLambdaFunction lambda, int instances) throws IOException {
+    public void register(String route, TypedLambdaFunction lambda, int instances) {
         register(route, lambda, false, instances);
     }
 
@@ -362,50 +358,20 @@ public class Platform {
      * @param route path
      * @param lambda function must be written in Java that implements the TypedLambdaFunction interface
      * @param instances for concurrent processing of events
-     * @throws IOException in case of duplicated registration
+     * @throws IllegalArgumentException in case of duplicated registration
      */
     @SuppressWarnings("rawtypes")
-    public void registerPrivate(String route, TypedLambdaFunction lambda, int instances) throws IOException {
+    public void registerPrivate(String route, TypedLambdaFunction lambda, int instances) {
         register(route, lambda, true, instances);
-    }
-
-    /**
-     * Register a public non-blocking lambda function with one or more concurrent instances.
-     * Its routing path will be published to the global service registry.
-     *
-     * @param route path
-     * @param lambda function must be written in Kotlin that implements the KotlinLambdaFunction interface
-     * @param instances for concurrent processing of events
-     * @throws IOException in case of duplicated registration
-     */
-    @SuppressWarnings("rawtypes")
-    public void registerKotlin(String route, KotlinLambdaFunction lambda, int instances) throws IOException {
-        registerAsync(route, lambda, false, instances);
-    }
-
-    /**
-     * Register a private non-blocking lambda function with one or more concurrent instances.
-     * Private function is only visible within a single execution unit.
-     * Its routing path will not be published to the global service registry.
-     *
-     * @param route path
-     * @param lambda function must be written in Kotlin that implements the KotlinLambdaFunction interface
-     * @param instances for concurrent processing of events
-     * @throws IOException in case of validation errors
-     */
-    @SuppressWarnings("rawtypes")
-    public void registerKotlinPrivate(String route, KotlinLambdaFunction lambda, int instances) throws IOException {
-        registerAsync(route, lambda, true, instances);
     }
 
     /**
      * Convert a private function into public
      *
      * @param route name of a service
-     * @throws IllegalArgumentException if the route is not found
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
-    public void makePublic(String route) throws IOException {
+    public void makePublic(String route) {
         if (!hasRoute(route)) {
             throw new IllegalArgumentException(ROUTE+route+NOT_FOUND);
         }
@@ -529,17 +495,6 @@ public class Platform {
     }
 
     /**
-     * Check if the route is a suspend function
-     *
-     * @param route name of a function
-     * @return true or false
-     */
-    public boolean isSuspendFunction(String route) {
-        ServiceDef service = registry.get(route);
-        return service != null && service.isKotlin();
-    }
-
-    /**
      * Retrieve the number of instances for a given function
      * @param route name of a function
      * @return number of instances if found, otherwise -1
@@ -556,11 +511,10 @@ public class Platform {
      * @param lambda function
      * @param isPrivate if true, it indicates the function is not visible outside this app instance
      * @param instances number of workers for this function
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     @SuppressWarnings("rawtypes")
-    private void register(String route, TypedLambdaFunction lambda, boolean isPrivate, int instances)
-            throws IOException {
+    private void register(String route, TypedLambdaFunction lambda, boolean isPrivate, int instances) {
         if (lambda == null) {
             throw new IllegalArgumentException("Missing LambdaFunction instance");
         }
@@ -579,35 +533,14 @@ public class Platform {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private void registerAsync(String route, KotlinLambdaFunction lambda, boolean isPrivate, int instances)
-            throws IOException {
-        if (lambda == null) {
-            throw new IOException("Missing KotlinLambdaFunction instance");
-        }
-        String path = getValidatedRoute(route);
-        if (registry.containsKey(path)) {
-            log.warn("{} KotlinLambdaFunction {}", RELOADING, path);
-            release(path);
-        }
-        ServiceDef service = new ServiceDef(path, lambda).setConcurrency(instances).setPrivate(isPrivate);
-        ServiceQueue manager = new ServiceQueue(service);
-        service.setManager(manager);
-        // save into local registry
-        registry.put(path, service);
-        if (!isPrivate) {
-            advertiseRoute(route);
-        }
-    }
-
     /**
      * Register a public stream function
      *
      * @param route name of the service
      * @param lambda function
-     * @throws IOException if the route name is invalid
+     * @throws IllegalArgumentException if the route name is invalid
      */
-    public void registerStream(String route, StreamFunction lambda) throws IOException {
+    public void registerStream(String route, StreamFunction lambda) {
         registerStream(route, lambda, false);
     }
 
@@ -616,15 +549,15 @@ public class Platform {
      *
      * @param route name of the service
      * @param lambda function
-     * @throws IOException if the route name is invalid
+     * @throws IllegalArgumentException if the route name is invalid
      */
-    public void registerPrivateStream(String route, StreamFunction lambda) throws IOException {
+    public void registerPrivateStream(String route, StreamFunction lambda) {
         registerStream(route, lambda, true);
     }
 
-    private void registerStream(String route, StreamFunction lambda, boolean isPrivate) throws IOException {
+    private void registerStream(String route, StreamFunction lambda, boolean isPrivate) {
         if (lambda == null) {
-            throw new IOException("Missing StreamFunction instance");
+            throw new IllegalArgumentException("Missing StreamFunction instance");
         }
         String path = getValidatedRoute(route);
         if (registry.containsKey(path)) {
@@ -666,7 +599,7 @@ public class Platform {
         return path;
     }
 
-    private void advertiseRoute(String route) throws IOException {
+    private void advertiseRoute(String route) {
         TargetRoute cloud = EventEmitter.getInstance().getCloudRoute();
         if (cloud != null) {
             String personality = Platform.getInstance().getName()+", "+ServerPersonality.getInstance().getType().name();
@@ -695,7 +628,7 @@ public class Platform {
                                 new Kv(ServiceDiscovery.ROUTE, route),
                                 new Kv(ServiceDiscovery.ORIGIN, getOrigin()),
                                 new Kv(ServiceDiscovery.TYPE, ServiceDiscovery.UNREGISTER));
-                    } catch (IOException e) {
+                    } catch (IllegalArgumentException e) {
                         // ok to ignore
                     }
                 }
@@ -807,5 +740,4 @@ public class Platform {
             log.info(message);
         }
     }
-
 }

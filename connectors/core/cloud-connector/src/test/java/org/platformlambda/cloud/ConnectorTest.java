@@ -31,7 +31,6 @@ import org.platformlambda.mock.TestBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +88,7 @@ class ConnectorTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void connectivityTest() throws IOException, InterruptedException {
+    void connectivityTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String origin = "unit-test";
         Platform platform = Platform.getInstance();
@@ -169,25 +168,25 @@ class ConnectorTest extends TestBase {
     }
 
     @Test
-    void checkTopicNameWithoutDot() throws IOException {
+    void checkTopicNameWithoutDot() {
         String name = "hello.world";
         ConnectorConfig.validateTopicName(name);
         String invalid = "helloworld";
-        IOException ex = assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(invalid));
+        var ex = assertThrows(IllegalArgumentException.class, () -> ConnectorConfig.validateTopicName(invalid));
         assertEquals("Invalid route helloworld because it is missing dot separator(s). e.g. hello.world",
                 ex.getMessage());
     }
 
     @Test
     void checkEmptyTopic() {
-        IOException ex = assertThrows(IOException.class, () -> ConnectorConfig.validateTopicName(""));
+        var ex = assertThrows(IllegalArgumentException.class, () -> ConnectorConfig.validateTopicName(""));
         assertEquals("Invalid route name - use 0-9, a-z, A-Z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
 
     @Test
     void reservedExtension() {
-        IOException ex = assertThrows(IOException.class, () ->
+        var ex = assertThrows(IllegalArgumentException.class, () ->
                 ConnectorConfig.validateTopicName("hello.com"));
         assertEquals("Invalid route hello.com which is a reserved extension",
                 ex.getMessage());
@@ -195,7 +194,7 @@ class ConnectorTest extends TestBase {
 
     @Test
     void reservedName() {
-        IOException ex = assertThrows(IOException.class, () ->
+        var ex = assertThrows(IllegalArgumentException.class, () ->
                 ConnectorConfig.validateTopicName("Thumbs.db"));
         assertEquals("Invalid route Thumbs.db which is a reserved Windows filename",
                 ex.getMessage());
@@ -203,7 +202,7 @@ class ConnectorTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void healthTest() throws IOException, InterruptedException {
+    void healthTest() throws InterruptedException {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         EventEnvelope response = httpGet("http://127.0.0.1:"+port, "/health", headers);

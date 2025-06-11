@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +72,7 @@ public class AsyncHelloWorld {
                 result.put("execution_time", response.getExecutionTime());
                 result.put("round_trip", response.getRoundTrip());
                 callback.success(result);
-            } catch (ExecutionException | IOException | InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 callback.error(new AppException(500, e.getMessage()));
             }
         });

@@ -7,9 +7,8 @@ In a composable application, each function is self-contained with zero dependenc
 Only flow adapter, data adapter, notification function or gateway has a single external dependency such as
 a network event system, a database or an external REST resource.
 
-A "task" or "function" is a class that implements the LambdaFunction, TypedLambdaFunction or
-KotlinLambdaFunction interface. Within each function boundary, it may have private methods that are fully
-contained within the class.
+A "task" or "function" is a class that implements the LambdaFunction or TypedLambdaFunction interface. 
+Within each function boundary, it may have private methods that are fully contained within the class.
 
 As discussed in Chapter-1, a function may look like this:
 
@@ -50,7 +49,7 @@ degradation of application performance. We therefore recommend your user functio
 or reactive styles.
 
 When you are using a reactive library in your function, your function can return a "Mono" or "Flux" reactive
-response object using the Project-Reactor Core library. This feature is supported in Java and Kotlin.
+response object using the Project-Reactor Core library.
 
 For simplicity, we support only the Mono and Flux reactive response objects. If you use other types of reactive APIs,
 please convert them into a Mono or Flux accordingly.
@@ -148,18 +147,18 @@ The API signatures for FluxConsumer are as follows:
 // Consume the event stream when the payload is not a PoJo
 public void consume(Consumer<T> consumer,
                     Consumer<Throwable> errorConsumer,
-                    Runnable completeConsumer) throws IOException;
+                    Runnable completeConsumer);
 
 // Consume the event stream when the payload can be mapped as PoJo
 public void consume(Consumer<T> consumer,
                     Consumer<Throwable> errorConsumer,
-                    Runnable completeConsumer, Class<T> pojoClass) throws IOException;
+                    Runnable completeConsumer, Class<T> pojoClass);
 
 // Consume the event stream when the payload can be mapped as PoJo using a custom serializer
 public void consume(Consumer<T> consumer,
                     Consumer<Throwable> errorConsumer,
                     Runnable completeConsumer,
-                    Class<T> pojoClass, CustomSerializer serializer) throws IOException;                                       
+                    Class<T> pojoClass, CustomSerializer serializer);                                       
 ```
 
 ## Serialization consideration
@@ -248,11 +247,10 @@ Let's review the strategies for function execution.
 
 A function is executed when an event arrives. There are three function execution strategies.
 
-| Strategy         | Advantage                                                                                           | Disadvantage                                                                   |
-|:-----------------|:----------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------|
-| Virtual thread   | Higher throughput in terms of<br/>concurrent users. Functionally<br/>similar to a suspend function. | N/A                                                                            |
-| Suspend function | Coroutine for high concurrency                                                                      | Requires coding in Kotlin language                                             |
-| Kernel threads   | Higher performance in terms of<br/>operations per seconds                                           | Lower number of concurrent threads<br/>due to high context switching overheads |
+| Strategy         | Advantage                                                 | Disadvantage                                                                   |
+|:-----------------|:----------------------------------------------------------|:-------------------------------------------------------------------------------|
+| Virtual thread   | Higher throughput in terms of<br/>concurrent users        | N/A                                                                            |
+| Kernel threads   | Higher performance in terms of<br/>operations per seconds | Lower number of concurrent threads<br/>due to high context switching overheads |
 
 ### Virtual thread
 
@@ -276,34 +274,6 @@ EventEnvelope result = po.request(requestEvent, timeout).get();
 
 > *Note*: The PostOffice API is used when you want to do orchestration by code. If you are using Event Script, you can
   manage event flows using one or more configuration files.
-
-### Suspend function
-
-If you prefer writing business logic in Kotlin, you may use suspend function.
-
-Similar to virtual thread, a suspend function is a coroutine that can be suspended and resumed. The best use case
-for a suspend function is for handling of "sequential non-blocking" request-response. This is the same as "async/await"
-in node.js and other programming language.
-
-To implement a "suspend function", you must implement the KotlinLambdaFunction interface and write code in Kotlin.
-
-In a suspend function, you can use a set of "await" methods to make non-blocking request-response calls.
-
-You can also use the Mono/Reactive return object to mix reactive programming with a suspend function.
-
-Suspend function will be "suspended" when it is waiting for a response. When it is suspended, it does not
-consume CPU resources, thus your application can handle a larger number of concurrent users and requests.
-
-Coroutines run in a "cooperative multitasking" manner. Technically, each function is running sequentially.
-However, when many functions are suspended during waiting, it appears that all functions are running concurrently.
-
-In addition to the "await" sets of API, the `delay(milliseconds)` method puts your function into sleep in a 
-non-blocking manner. The `yield()` method is useful when your function requires more time to execute complex
-business logic. You can add the `yield()` statement before you execute a block of code. The yield method releases
-control to the event loop so that other coroutines and suspend functions will not be blocked by a heavy weighted
-function.
-
-> *Note*: Do not block your function because it may block all coroutines since they run in a single kernel thread
 
 ### Kernel thread pool
 
@@ -373,7 +343,7 @@ arrives. When a virtual thread is suspended, it does not consume CPU time and th
 the thread in suspend mode is very small. Virtual thread technology is designed to support tens of thousands
 of concurrent RPC requests in a single compute machine, container or serverless instance.
 
-Mercury Composable supports mixed thread management - virtual threads, suspend functions and kernel threads.
+Mercury Composable supports mixed thread management - virtual threads and kernel threads.
 
 Functions running in different types of threads are connected loosely in events. This functional isolation
 and encapsulation mean that you can precisely control how your application performs for each functional logic block.

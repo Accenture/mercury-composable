@@ -31,7 +31,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +59,7 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String NOT_FOUND = " not found";
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws IOException {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         if (input.getRawBody() instanceof Map && input.getReplyTo() != null) {
             Utility util = Utility.getInstance();
             AsyncHttpRequest request = new AsyncHttpRequest(input.getRawBody());
@@ -82,7 +81,7 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
 
     private void handleRequest(Map<String, String> sessionInfo, Map<String, String> headers, int instance,
                                byte[] requestBody, EventEnvelope input,
-                               long timeout, boolean async) throws IOException {
+                               long timeout, boolean async) {
         EventEnvelope request = new EventEnvelope(requestBody);
         // propagate session info if any
         sessionInfo.forEach(request::setHeader);
@@ -125,7 +124,7 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                     .setHeader(CONTENT_TYPE, OCTET_STREAM)
                     .setBody(result.toBytes());
             EventEmitter.getInstance().send(response);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unable to send response {} -> {} - {}", EVENT_API_SERVICE, input.getReplyTo(), e.getMessage());
         }
     }
@@ -141,7 +140,7 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
                     .setStatus(status)
                     .setBody(result.toBytes());
             EventEmitter.getInstance().send(response);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Unable to send error {} -> {} - {}", EVENT_API_SERVICE, input.getReplyTo(), e.getMessage());
         }
     }

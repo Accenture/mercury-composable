@@ -34,7 +34,6 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -89,7 +88,7 @@ public class MockPresenceMonitor implements LambdaFunction {
     private static final ManagedCache connectionInfo = ManagedCache.createCache("app.presence.list", EXPIRY);
 
 
-    public MockPresenceMonitor() throws IOException {
+    public MockPresenceMonitor() {
         topicSubstitution = ConnectorConfig.topicSubstitutionEnabled();
         preAllocatedTopics = ConnectorConfig.getTopicSubstitution();
         Utility util = Utility.getInstance();
@@ -161,7 +160,7 @@ public class MockPresenceMonitor implements LambdaFunction {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         Utility util = Utility.getInstance();
         Platform platform = Platform.getInstance();
         EventEmitter po = EventEmitter.getInstance();
@@ -239,7 +238,7 @@ public class MockPresenceMonitor implements LambdaFunction {
                                         int partition = util.str2int(topicPartition.substring(hyphen+1));
                                         String virtualTopic = topic + "." + partition;
                                         if (!preAllocatedTopics.containsKey(virtualTopic)) {
-                                            throw new IOException("Missing topic substitution for "+virtualTopic);
+                                            throw new IllegalArgumentException("Missing topic substitution for "+virtualTopic);
                                         }
                                     }
                                     if (!topicSubstitution) {
@@ -251,7 +250,7 @@ public class MockPresenceMonitor implements LambdaFunction {
                                                         topic, partitionCount, actualPartitions);
                                                 log.error("SYSTEM NOT OPERATIONAL. Please setup topic {} and restart",
                                                         topic);
-                                                throw new IOException("Insufficient partitions in " + topic);
+                                                throw new IllegalArgumentException("Insufficient partitions in " + topic);
                                             }
                                         } else {
                                             ps.createTopic(topic, partitionCount);
@@ -281,7 +280,7 @@ public class MockPresenceMonitor implements LambdaFunction {
         return null;
     }
 
-    private String nextTopic(String appOrigin) throws IOException {
+    private String nextTopic(String appOrigin) {
         for (String t: allTopics) {
             String value = topicStore.get(t);
             if (value.equals(AVAILABLE)) {
@@ -289,7 +288,7 @@ public class MockPresenceMonitor implements LambdaFunction {
                 return t;
             }
         }
-        throw new IOException("All virtual topics are used");
+        throw new IllegalArgumentException("All virtual topics are used");
     }
 
     private String getMemberInfo(String origin, Map<String, Object> info) {

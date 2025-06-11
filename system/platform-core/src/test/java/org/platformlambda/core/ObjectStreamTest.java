@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,7 @@ class ObjectStreamTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void streamConsumerTest() throws IOException, InterruptedException, ExecutionException {
+    void streamConsumerTest() throws InterruptedException, ExecutionException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -108,7 +107,7 @@ class ObjectStreamTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void fluxProducerConsumerTest() throws IOException, InterruptedException {
+    void fluxProducerConsumerTest() throws InterruptedException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -146,7 +145,7 @@ class ObjectStreamTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void fluxProducerConsumerExceptionTest() throws IOException, InterruptedException {
+    void fluxProducerConsumerExceptionTest() throws InterruptedException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -188,7 +187,7 @@ class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    void eventPublisherFluxConsumerCompatibilityTest() throws IOException, InterruptedException {
+    void eventPublisherFluxConsumerCompatibilityTest() throws InterruptedException {
         final long TIME_TO_LIVE = 3000;
         final String FIRST_MESSAGE = "first message";
         final String SECOND_MESSAGE = "second message";
@@ -220,7 +219,7 @@ class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    void eventPublisherExpiryTest() throws IOException, InterruptedException {
+    void eventPublisherExpiryTest() throws InterruptedException {
         final long TIME_TO_LIVE = 1000;
         EventPublisher publisher = new EventPublisher(TIME_TO_LIVE);
         Thread.sleep(1100);
@@ -241,7 +240,7 @@ class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    void fluxPublisherExpiryTest() throws IOException, InterruptedException {
+    void fluxPublisherExpiryTest() throws InterruptedException {
         final long TIME_TO_LIVE = 1000;
         Flux<String> source = Flux.create(emitter -> {
             emitter.next("hello world");
@@ -267,7 +266,7 @@ class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    void expiryTest() throws InterruptedException, IOException {
+    void expiryTest() throws InterruptedException {
         final BlockingQueue<String> dataBench = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Throwable> exceptionBench = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
@@ -305,7 +304,7 @@ class ObjectStreamTest extends TestBase {
     }
 
     @Test
-    void asyncReadWrite() throws InterruptedException, IOException {
+    void asyncReadWrite() throws InterruptedException {
         int CYCLES = 10;
         String TEXT = "hello world";
         EventPublisher publisher = new EventPublisher(10000);

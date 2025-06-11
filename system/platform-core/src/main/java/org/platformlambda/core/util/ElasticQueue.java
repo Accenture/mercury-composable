@@ -77,11 +77,7 @@ public class ElasticQueue implements AutoCloseable {
         resetCounter();
         if (initCounter.incrementAndGet() == 1) {
             Platform platform = Platform.getInstance();
-            try {
-                platform.registerPrivate(CLEAN_UP_TASK, new Cleanup(), 1);
-            } catch (IOException e) {
-                log.error("Unable to register {} - {}", CLEAN_UP_TASK, e.getMessage());
-            }
+            platform.registerPrivate(CLEAN_UP_TASK, new Cleanup(), 1);
             Runtime.getRuntime().addShutdownHook(new Thread(ElasticQueue::shutdown));
             AppConfigReader config = AppConfigReader.getInstance();
             runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
@@ -159,11 +155,7 @@ public class ElasticQueue implements AutoCloseable {
         if (!isClosed()) {
             if (dbEnv != null && !dbEnv.isClosed()) {
                 if (readCounter < writeCounter && writeCounter > MEMORY_BUFFER) {
-                    try {
-                        EventEmitter.getInstance().send(CLEAN_UP_TASK, id + SLASH + currentVersion);
-                    } catch (IOException e) {
-                        log.error("Unable to run {} - {}", CLEAN_UP_TASK, e.getMessage());
-                    }
+                    EventEmitter.getInstance().send(CLEAN_UP_TASK, id + SLASH + currentVersion);
                 } else {
                     dbEnv.cleanLog();
                 }
@@ -179,11 +171,7 @@ public class ElasticQueue implements AutoCloseable {
         close();
         if (dbEnv != null) {
             // perform final clean up
-            try {
-                EventEmitter.getInstance().send(CLEAN_UP_TASK, id);
-            } catch (IOException e) {
-                log.error("Unable to run {} - {}", CLEAN_UP_TASK, e.getMessage());
-            }
+            EventEmitter.getInstance().send(CLEAN_UP_TASK, id);
         }
     }
 

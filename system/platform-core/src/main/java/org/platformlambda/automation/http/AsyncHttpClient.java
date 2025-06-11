@@ -439,11 +439,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         response.setTo(input.getReplyTo()).setFrom(ASYNC_HTTP_REQUEST)
                 .setCorrelationId(input.getCorrelationId())
                 .setTrace(input.getTraceId(), input.getTracePath());
-        try {
-            EventEmitter.getInstance().send(response);
-        } catch (IOException e) {
-            log.error("Unable to deliver response to {} - {}", input.getReplyTo(), e.getMessage());
-        }
+        EventEmitter.getInstance().send(response);
     }
 
     private boolean allowedHeader(String header) {

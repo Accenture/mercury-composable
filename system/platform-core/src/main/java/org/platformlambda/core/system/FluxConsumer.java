@@ -26,7 +26,6 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -67,11 +66,11 @@ public class FluxConsumer<T> {
      * @param consumer for handling messages
      * @param errorConsumer for handling exception message
      * @param completeConsumer for handling stream completion
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void consume(Consumer<T> consumer,
                         Consumer<Throwable> errorConsumer,
-                        Runnable completeConsumer) throws IOException {
+                        Runnable completeConsumer) {
         consume(consumer, errorConsumer, completeConsumer, null, null);
     }
 
@@ -83,11 +82,11 @@ public class FluxConsumer<T> {
      * @param errorConsumer for handling exception message
      * @param completeConsumer for handling stream completion
      * @param pojoClass if type (T) is a PoJo. Otherwise, put in a null
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     public void consume(Consumer<T> consumer,
                         Consumer<Throwable> errorConsumer,
-                        Runnable completeConsumer, Class<T> pojoClass) throws IOException {
+                        Runnable completeConsumer, Class<T> pojoClass) {
         consume(consumer, errorConsumer, completeConsumer, pojoClass, null);
     }
 
@@ -100,13 +99,13 @@ public class FluxConsumer<T> {
      * @param completeConsumer for handling stream completion
      * @param pojoClass if type (T) is a PoJo. Otherwise, put in a null
      * @param serializer custom serializer or null
-     * @throws IOException in case of routing error
+     * @throws IllegalArgumentException in case of routing error
      */
     @SuppressWarnings("unchecked")
     public void consume(Consumer<T> consumer,
                         Consumer<Throwable> errorConsumer,
                         Runnable completeConsumer,
-                        Class<T> pojoClass, CustomSerializer serializer) throws IOException {
+                        Class<T> pojoClass, CustomSerializer serializer) {
         if (consumed.get()) {
             throw new IllegalArgumentException("Consumer already assigned");
         } else {
@@ -119,13 +118,9 @@ public class FluxConsumer<T> {
                 if (!eof.get()) {
                     eof.set(true);
                     if (platform.hasRoute(callback)) {
-                        try {
-                            var error = new EventEnvelope().setException(new AppException(408, "Consumer expired"));
-                            po.send(new EventEnvelope().setTo(callback)
+                        var error = new EventEnvelope().setException(new AppException(408, "Consumer expired"));
+                        po.send(new EventEnvelope().setTo(callback)
                                     .setHeader(TYPE, EXCEPTION).setBody(error.toBytes()));
-                        } catch (IOException e) {
-                            // ok to ignore
-                        }
                     }
                 }
             });

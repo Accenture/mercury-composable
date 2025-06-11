@@ -28,7 +28,6 @@ import org.platformlambda.core.util.MultiLevelMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -41,7 +40,7 @@ class FlowTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void endToEndFlowTest() throws IOException, ExecutionException, InterruptedException {
+    void endToEndFlowTest() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         final int PROFILE_ID = 300;
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /flow/tests");
@@ -107,7 +106,7 @@ class FlowTest extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void healthCheck() throws IOException, ExecutionException, InterruptedException {
+    void healthCheck() throws ExecutionException, InterruptedException {
         final long TIMEOUT = 8000;
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /health/check");
         // try to retrieve a non-exist profile will get HTTP-404

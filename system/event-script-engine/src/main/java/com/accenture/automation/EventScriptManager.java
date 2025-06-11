@@ -29,7 +29,6 @@ import org.platformlambda.core.system.EventEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -47,7 +46,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     private static final String PARENT = "parent";
 
     @Override
-    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws IOException {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
         EventEmitter po = EventEmitter.getInstance();
         try {
             processRequest(event, headers.get(FLOW_ID));
@@ -63,7 +62,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         return null;
     }
 
-    private void processRequest(EventEnvelope event, String flowId) throws IOException {
+    private void processRequest(EventEnvelope event, String flowId) {
         if (flowId == null || flowId.isEmpty()) {
             throw new IllegalArgumentException("Missing "+FLOW_ID);
         }

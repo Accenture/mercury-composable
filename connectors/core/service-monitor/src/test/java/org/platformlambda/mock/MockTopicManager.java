@@ -22,7 +22,6 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.PubSub;
 import org.platformlambda.core.util.Utility;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class MockTopicManager implements LambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (headers.containsKey(TYPE)) {
             if (LIST.equals(headers.get(TYPE))) {
                 return listTopics();
@@ -74,23 +73,23 @@ public class MockTopicManager implements LambdaFunction {
         return false;
     }
 
-    private boolean topicExists(String topic) throws IOException {
+    private boolean topicExists(String topic) {
         return ps.exists(topic);
     }
 
-    private int topicPartitions(String topic) throws IOException {
+    private int topicPartitions(String topic) {
         return ps.partitionCount(topic);
     }
 
-    private void createTopic(String topic, int partitions) throws IOException {
+    private void createTopic(String topic, int partitions) {
         ps.createTopic(topic, partitions);
     }
 
-    private void deleteTopic(String topic) throws IOException {
+    private void deleteTopic(String topic) {
         ps.deleteTopic(topic);
     }
 
-    private List<String> listTopics() throws IOException {
+    private List<String> listTopics() {
         return ps.list();
     }
 }
