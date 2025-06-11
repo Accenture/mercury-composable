@@ -16,10 +16,10 @@ In this version, we have retired the support of Kotlin suspend function. Therefo
 the project is 100% pure Java.
 
 In addition to dropping Kotlin dependency, it also streamlines exception handling by
-replacing IOExceptin with IllegalArgumentException.
+replacing IOException with IllegalArgumentException.
 
 Your applications may need minor refactoring of try-catch that uses the ConfigReader, 
-PostOffice and Platform APIs. 
+PostOffice and Platform APIs.
 
 In most cases, you can just remove the try-catch block. In some cases, you can change 
 the IOException to IllegalArgumentException in the try-catch block for best compatibility 
