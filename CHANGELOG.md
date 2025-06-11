@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Version 4.3.0, 6/10/2025
 
-In this version, we have retired the support of Kotlin suspend functiond. Therefore, 
+In this version, we have retired the support of Kotlin suspend function. Therefore, 
 the project is 100% pure Java.
 
 In addition to dropping Kotlin dependency, it also streamlines exception handling by
