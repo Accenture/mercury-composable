@@ -241,11 +241,10 @@ Note that you can use smaller number of workers to handle many concurrent users 
 processing very quickly. If not, you should reserve more workers to handle the work load.
 
 Concurrency requires careful planning for optimal performance and throughput. 
-Let's review the strategies for function execution.
 
-## Three strategies for function execution
+## Strategies for function execution
 
-A function is executed when an event arrives. There are three function execution strategies.
+Let's review the strategies for function execution. A function is executed when an event arrives.
 
 | Strategy         | Advantage                                                 | Disadvantage                                                                   |
 |:-----------------|:----------------------------------------------------------|:-------------------------------------------------------------------------------|

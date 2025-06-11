@@ -21,7 +21,7 @@ thus making code easier to read and maintain.
 
 ## Low level control of function execution strategies
 
-You can precisely control how your functions execute, using virtual threads, suspend functions
+You can precisely control how your functions execute, using virtual threads
 or kernel thread pools to yield the highest performance and throughput.
 
 ## Serialization
