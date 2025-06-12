@@ -1,7 +1,7 @@
 ﻿# Event Script Syntax
 
-Event Script uses YAML to represent an end-to-end transaction flow. A transaction is a business use case, and
-the flow can be an API service, a batch job or a real-time transaction.
+Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
+A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
 
 ## Flow list
 
