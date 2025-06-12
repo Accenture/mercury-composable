@@ -20,7 +20,7 @@ January 2025
 Composable methodology reduces the problem space for AI code assistant because each function is self-contained,
 independent and I/O is immutable.
 
-In addition, the Event Script is a Domain Specific Language (DSL) that can be understood with AI agent with some
+In addition, the Event Script is a Domain Specific Language (DSL) that can be understood by AI agent with some
 fine-tuning, thus making the whole ecosystem AI friendly.
 
 # Getting Started
