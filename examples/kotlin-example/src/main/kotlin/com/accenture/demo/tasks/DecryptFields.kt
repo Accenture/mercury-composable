@@ -6,6 +6,7 @@ import org.platformlambda.core.util.CryptoApi
 import org.platformlambda.core.util.MultiLevelMap
 import org.platformlambda.core.util.Utility
 
+@Suppress("UNCHECKED_CAST")
 @PreLoad(route = "v1.decrypt.fields", instances = 10)
 class DecryptFields : TypedLambdaFunction<Map<String, Any>, Map<String, Any>> {
 
@@ -16,13 +17,13 @@ class DecryptFields : TypedLambdaFunction<Map<String, Any>, Map<String, Any>> {
     ): Map<String, Any> {
         require(input.containsKey(PROTECTED_FIELDS)) { MISSING + PROTECTED_FIELDS }
         require(input.containsKey(KEY)) { MISSING + KEY }
-        val keyBytes: Any = input.get(KEY)!!
-        require(keyBytes is ByteArray) { KEY + " - Expect bytes, Actual: " + keyBytes.javaClass }
+        val keyBytes: Any? = input[KEY]
+        require(keyBytes is ByteArray) { KEY + " - Expect bytes, Actual: " + keyBytes?.javaClass }
         if (input.containsKey(DATASET)) {
             val key = keyBytes
             val dataset = input[DATASET] as Map<String, Any>
             val multiLevels = MultiLevelMap(dataset)
-            val fields = util.split(input.get(PROTECTED_FIELDS) as String?, ", ")
+            val fields = util.split(input[PROTECTED_FIELDS] as String?, ", ")
             for (f in fields) {
                 if (multiLevels.exists(f)) {
                     val cipherText = util.base64ToBytes(multiLevels.getElement(f).toString())
