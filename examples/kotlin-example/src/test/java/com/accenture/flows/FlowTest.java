@@ -25,10 +25,7 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -36,14 +33,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class FlowTest extends TestBase {
-    private static final Logger log = LoggerFactory.getLogger(FlowTest.class);
     private static final String HTTP_CLIENT = "async.http.request";
 
     @SuppressWarnings("unchecked")
     @Test
-    void endToEndFlowTest() throws IOException, ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
-        final int PROFILE_ID = 300;
+    void endToEndFlowTest() throws ExecutionException, InterruptedException {
+        final long timeout = 8000;
+        final int profileId = 300;
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /flow/tests");
         // try to retrieve a non-exist profile will get HTTP-404
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -51,7 +47,7 @@ class FlowTest extends TestBase {
                 .setHeader("accept", "application/json")
                 .setUrl("/api/profile/no-such-profile");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
         assertEquals(404, result.getStatus());
         Map<String, Object> data = (Map<String, Object>) result.getBody();
@@ -66,11 +62,11 @@ class FlowTest extends TestBase {
                 .setHeader("accept", "application/json")
                 .setBody(profile).setUrl("/api/profile");
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
-        EventEnvelope result1 = po.request(req1, TIMEOUT).get();
+        EventEnvelope result1 = po.request(req1, timeout).get();
         assertInstanceOf(Map.class, result1.getBody());
         assertEquals(201, result1.getStatus());
         var mm1 = new MultiLevelMap((Map<String, Object>) result1.getBody());
-        assertEquals(PROFILE_ID, mm1.getElement("profile.id"));
+        assertEquals(profileId, mm1.getElement("profile.id"));
         assertEquals("Peter", mm1.getElement("profile.name"));
         assertEquals("***", mm1.getElement("profile.address"));
         assertEquals("***", mm1.getElement("profile.telephone"));
@@ -81,13 +77,13 @@ class FlowTest extends TestBase {
         AsyncHttpRequest request2 = new AsyncHttpRequest()
                 .setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
-                .setUrl("/api/profile/"+PROFILE_ID);
+                .setUrl("/api/profile/"+profileId);
         EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
-        EventEnvelope result2 = po.request(req2, TIMEOUT).get();
+        EventEnvelope result2 = po.request(req2, timeout).get();
         assertInstanceOf(Map.class, result2.getBody());
         assertEquals(200, result2.getStatus());
         var mm2 = new MultiLevelMap((Map<String, Object>) result2.getBody());
-        assertEquals(PROFILE_ID, mm2.getElement("id"));
+        assertEquals(profileId, mm2.getElement("id"));
         assertEquals("Peter", mm2.getElement("name"));
         assertEquals("100 World Blvd", mm2.getElement("address"));
         assertEquals("888-123-0000", mm2.getElement("telephone"));
@@ -95,20 +91,20 @@ class FlowTest extends TestBase {
         AsyncHttpRequest request3 = new AsyncHttpRequest()
                 .setTargetHost(HOST).setMethod("DELETE")
                 .setHeader("accept", "application/json")
-                .setUrl("/api/profile/"+PROFILE_ID);
+                .setUrl("/api/profile/"+profileId);
         EventEnvelope req3 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request3);
-        EventEnvelope result3 = po.request(req3, TIMEOUT).get();
+        EventEnvelope result3 = po.request(req3, timeout).get();
         assertInstanceOf(Map.class, result3.getBody());
         assertEquals(200, result3.getStatus());
         var mm3 = new MultiLevelMap((Map<String, Object>) result3.getBody());
-        assertEquals(PROFILE_ID, mm3.getElement("id"));
+        assertEquals(profileId, mm3.getElement("id"));
         assertEquals(true, mm3.getElement("deleted"));
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    void healthCheck() throws IOException, ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
+    void healthCheck() throws ExecutionException, InterruptedException {
+        final long timeout = 8000;
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /health/check");
         // try to retrieve a non-exist profile will get HTTP-404
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -116,7 +112,7 @@ class FlowTest extends TestBase {
                 .setHeader("accept", "application/json")
                 .setUrl("/health");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
         assertEquals(200, result.getStatus());
         var mm = new MultiLevelMap((Map<String, Object>) result.getBody());
