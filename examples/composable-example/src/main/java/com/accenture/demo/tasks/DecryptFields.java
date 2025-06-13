@@ -51,11 +51,10 @@ public class DecryptFields implements TypedLambdaFunction<Map<String, Object>, M
             throw new IllegalArgumentException(MISSING+ KEY);
         }
         Object keyBytes = input.get(KEY);
-        if (!(keyBytes instanceof byte[])) {
+        if (!(keyBytes instanceof byte[] key)) {
             throw new IllegalArgumentException(KEY + " - Expect bytes, Actual: " + keyBytes.getClass());
         }
         if (input.containsKey(DATASET)) {
-            byte[] key = (byte[]) keyBytes;
             Map<String, Object> dataset = (Map<String, Object>) input.get(DATASET);
             MultiLevelMap multiLevels = new MultiLevelMap(dataset);
             List<String> fields = util.split((String) input.get(PROTECTED_FIELDS), ", ");
