@@ -27,7 +27,7 @@ class DeleteProfile : TypedLambdaFunction<Map<String, Any>, Map<String, Any>> {
         Files.delete(f.toPath())
         val util = Utility.getInstance()
         val result: MutableMap<String, Any> = HashMap()
-        if (util.isDigits(profileId)) util.str2int(profileId) else profileId?.let { result.put(ID, it) }
+        result.put(ID, (if (util.isDigits(profileId)) util.str2int(profileId) else profileId)!!)
         result.put(DELETED, true)
         return result
     }

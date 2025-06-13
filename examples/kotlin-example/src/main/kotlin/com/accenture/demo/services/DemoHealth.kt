@@ -6,7 +6,7 @@ import org.platformlambda.core.models.LambdaFunction
 @PreLoad(route = "demo.health", instances = 5)
 class DemoHealth : LambdaFunction {
 
-    override fun handleEvent(headers: Map<String, String>, input: Any, instance: Int): Any {
+    override fun handleEvent(headers: Map<String, String>, input: Any?, instance: Int): Any {
         return when (headers[TYPE]) {
             INFO -> {
                 mapOf(
