@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.0</version>
+    <version>4.3.1</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -31,6 +31,7 @@
         <module>examples/lambda-example</module>
         <module>examples/rest-spring-3-example</module>
         <module>examples/composable-example</module>
+        <module>examples/kotlin-example</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>
