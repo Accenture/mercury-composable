@@ -36,7 +36,7 @@ public class TestBase {
     protected static String HOST;
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         // execute only once
         if (startCounter.incrementAndGet() == 1) {
             AppConfigReader config = AppConfigReader.getInstance();

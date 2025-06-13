@@ -36,16 +36,16 @@ class CryptoTest extends TestBase {
     void encryptAndDecryptTest() throws ExecutionException, InterruptedException {
         byte[] key = crypto.generateAesKey(strongCrypto? 256 : 128);
         PostOffice po = new PostOffice("unit.test", "1000", "TEST /crypto");
-        String KEY1 = "k1";
-        String KEY2 = "k2";
-        String KEY1_DATA = "hello";
-        String KEY2_DATA = "world";
+        String key1 = "k1";
+        String key2 = "k2";
+        String key1Data = "hello";
+        String key2Data = "world";
         Map<String, Object> input = new HashMap<>();
         Map<String, Object> dataset = new HashMap<>();
         input.put("protected_fields", "k1, k2");
         input.put("key", key);
-        dataset.put(KEY1, KEY1_DATA);
-        dataset.put(KEY2, KEY2_DATA);
+        dataset.put(key1, key1Data);
+        dataset.put(key2, key2Data);
         input.put("dataset", dataset);
         // send event to encryption function
         EventEnvelope encRequest = new EventEnvelope().setTo("v1.encrypt.fields").setBody(input);
@@ -53,10 +53,10 @@ class CryptoTest extends TestBase {
         assertInstanceOf(Map.class, encResult.getBody());
         Map<String, Object> encrypted = (Map<String, Object>) encResult.getBody();
         assertEquals(2, encrypted.size());
-        assertTrue(encrypted.containsKey(KEY1));
-        assertTrue(encrypted.containsKey(KEY2));
-        assertNotEquals(KEY1_DATA, encrypted.get(KEY1));
-        assertNotEquals(KEY2_DATA, encrypted.get(KEY2));
+        assertTrue(encrypted.containsKey(key1));
+        assertTrue(encrypted.containsKey(key2));
+        assertNotEquals(key1Data, encrypted.get(key1));
+        assertNotEquals(key2Data, encrypted.get(key2));
         // update encrypted dataset
         input.put("dataset", encrypted);
         // send event to decryption function
@@ -65,9 +65,9 @@ class CryptoTest extends TestBase {
         assertInstanceOf(Map.class, decResult.getBody());
         Map<String, Object> decrypted = (Map<String, Object>) decResult.getBody();
         assertEquals(2, decrypted.size());
-        assertTrue(decrypted.containsKey(KEY1));
-        assertTrue(decrypted.containsKey(KEY2));
-        assertEquals(KEY1_DATA, decrypted.get(KEY1));
-        assertEquals(KEY2_DATA, decrypted.get(KEY2));
+        assertTrue(decrypted.containsKey(key1));
+        assertTrue(decrypted.containsKey(key2));
+        assertEquals(key1Data, decrypted.get(key1));
+        assertEquals(key2Data, decrypted.get(key2));
     }
 }
