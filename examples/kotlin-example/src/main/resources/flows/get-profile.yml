@@ -1,0 +1,42 @@
+flow:
+  id: 'get-profile'
+  description: 'Get a user profile using profile ID'
+  ttl: 10s
+  exception: 'v1.hello.exception'
+
+first.task: 'v1.get.profile'
+
+tasks:
+  - input:
+      - 'input.path_parameter.profile_id -> header.profile_id'
+    process: 'v1.get.profile'
+    output:
+      - 'result -> model.profile'
+    description: 'Retrieve user profile from database using profile_id'
+    execution: sequential
+    next:
+      - 'v1.decrypt.fields'
+
+  - input:
+      - 'file(text:/tmp/keystore/demo.txt) -> model.b64_key'
+      # convert the b64 string into bytes using simple type matching
+      - 'model.b64_key:b64 -> key'
+      - 'model.profile -> dataset'
+      - 'text(telephone, address) -> protected_fields'
+    process: 'v1.decrypt.fields'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Decrypt fields'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.hello.exception'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
+    execution: end

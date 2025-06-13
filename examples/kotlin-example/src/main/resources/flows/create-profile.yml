@@ -1,0 +1,55 @@
+flow:
+  id: 'create-profile'
+  description: 'Create a user profile and demonstrate async and fork-n-join patterns'
+  ttl: 10s
+  exception: 'v1.hello.exception'
+
+first.task: 'v1.create.profile'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'text(id, name, address, telephone) -> header.required_fields'
+      - 'text(address, telephone) -> header.protected_fields'
+    process: 'v1.create.profile'
+    output:
+      - 'int(201) -> output.status'
+      - 'result -> output.body'
+    description: 'Inform the user that a profile will be created'
+    execution: response
+    next:
+      - 'v1.encrypt.fields'
+
+  - input:
+      - 'file(text:/tmp/keystore/demo.txt) -> model.b64_key'
+      # convert the b64 string into bytes using simple type matching
+      - 'model.b64_key:b64 -> key'
+      - 'input.body -> dataset'
+      - 'text(address, telephone) -> protected_fields'
+    process: 'v1.encrypt.fields'
+    output:
+      - 'result -> model.profile'
+    description: 'Encrypt fields'
+    execution: sequential
+    next:
+      - 'v1.save.profile'
+
+  - input:
+      - 'model.profile -> *'
+      - 'text(id) -> id_field'
+      - 'text(id, name, address, telephone) -> header.required_fields'
+    process: 'v1.save.profile'
+    output: []
+    description: 'Perform field encryption and save user profile record'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.hello.exception'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
+    execution: end
