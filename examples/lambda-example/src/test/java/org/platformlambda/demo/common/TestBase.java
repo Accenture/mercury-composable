@@ -28,7 +28,7 @@ public class TestBase {
     private static final AtomicInteger seq = new AtomicInteger(0);
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         if (seq.incrementAndGet() == 1) {
             AutoStart.main(new String[0]);
         }
