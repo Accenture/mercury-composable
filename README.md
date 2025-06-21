@@ -15,9 +15,15 @@ For Node.js, please browse [Mercury Composable for Node](https://github.com/Acce
 
 January 2025
 
+# Optimized for Human
+
+Composability methodology provides a clear path from Domain Driven Design (DDD), Event Driven Architecture (EDA)
+to application software design and implementation, connecting product managers, domain knowledge owners,
+architects and engineers together to deliver high quality products.
+
 # Optimized for AI
 
-Composable methodology reduces the problem space for AI code assistant because each function is self-contained,
+The methodology reduces the problem space for AI code assistant because each function is self-contained,
 independent and I/O is immutable.
 
 In addition, Event Script is a Domain Specific Language (DSL) that can be understood by AI agent with some

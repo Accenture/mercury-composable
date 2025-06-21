@@ -409,11 +409,23 @@ modules.autostart:
   - 'flow://my-startup-flow'
 ```
 
-For more complex startup procedure, you can use a flow to execute multiple tasks. The second item in the
+For more sophisticated startup procedure, you can use a flow to execute multiple tasks. The second item in the
 `modules.autostart` illustrates this use case.
 
 > *Note*: autostart modules or flows should assume there is no input dataset. Startup modules usually take
           input parameters from the environment variables or a secret manager.
+
+## Graceful shutdown
+
+If your application has some dependencies that must be shutdown gracefully, you can use Java's native API
+similar to this sample code:
+
+```java
+Runtime.getRuntime().addShutdownHook(new Thread(this::stopAdmin));
+```
+
+> *Note*: In the composable node.js version, there is an "autostop" feature to support graceful shutdown
+          of dependencies since JavaScript does not offer similar life-cycle feature in the standard library.
 
 ## Dependency management
 
