@@ -39,6 +39,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.IntStream;
 
 /**
  * This is reserved for system use.
@@ -122,6 +123,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
     private static final String UUID_SUFFIX = "uuid";
+    private static final String CURRENT_ITEM_SUFFIX = "current-item";
+    private static final String CURRENT_INDEX_SUFFIX = "current-index";
     private static final String LENGTH_SUFFIX = "length";
     private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
@@ -234,7 +237,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         if (stackTrace != null) {
                             error.put(STACK_TRACE, stackTrace);
                         }
-                        executeTask(flowInstance, handler, -1, error);
+                        executeTask(flowInstance, handler, error);
                     } else {
                         // when there are no task or flow exception handlers
                         abortFlow(flowInstance, statusCode, event.getError());
@@ -592,12 +595,31 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void handleForkAndJoin(FlowInstance flowInstance, Task task) {
         List<String> steps = task.nextSteps;
+        boolean hasDynamicList = false;
+        var dynamicListKey = task.getSourceModelKey();
+        if (dynamicListKey != null && !dynamicListKey.isBlank()) {
+            Map<String, Object> modelOnly = new HashMap<>();
+            modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
+            MultiLevelMap model = new MultiLevelMap(modelOnly);
+            var list = (List<?>)model.getElement(task.getSourceModelKey());
+            if (list != null) {
+                var size = list.size();
+                var nextSteps = task.nextSteps;
+                steps = IntStream.range(0, size) // Generates a stream of integers from 0 to n-1
+                        .mapToObj(i -> nextSteps) // Maps each integer to the original list
+                        .flatMap(List::stream) // Flattens the stream of lists into a single stream of elements
+                        .toList();
+                hasDynamicList = true;
+            }
+        }
         if (!steps.isEmpty() && task.getJoinTask() != null) {
             int seq = flowInstance.pipeCounter.incrementAndGet();
             int forks = steps.size();
             flowInstance.pipeMap.put(seq, new JoinTaskInfo(forks, task.getJoinTask()));
-            for (String next: steps) {
-                executeTask(flowInstance, next, seq);
+
+            for (int i = 0; i < steps.size(); i++) {
+                String next = steps.get(i);
+                executeTask(flowInstance, next, seq, hasDynamicList ? i : -1, hasDynamicList ? dynamicListKey : null);
             }
         }
     }
@@ -683,15 +705,23 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void executeTask(FlowInstance flowInstance, String processName) {
-        executeTask(flowInstance, processName, -1, null);
+        executeTask(flowInstance, processName, -1);
     }
 
     private void executeTask(FlowInstance flowInstance, String processName, int seq) {
-        executeTask(flowInstance, processName, seq, null);
+        executeTask(flowInstance, processName, seq, null, -1, null);
+    }
+
+    private void executeTask(FlowInstance flowInstance, String processName, Map<String, Object> error) {
+        executeTask(flowInstance, processName, -1, error, -1, null);
+    }
+
+    private void executeTask(FlowInstance flowInstance, String processName, int seq, int dynamicListIndex, String dynamicListKey) {
+        executeTask(flowInstance, processName, seq, null, dynamicListIndex, dynamicListKey);
     }
 
     @SuppressWarnings("unchecked")
-    private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error) {
+    private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error, int dynamicListIndex, String dynamicListKey) {
         Task task = flowInstance.getFlow().tasks.get(processName);
         if (task == null) {
             log.error("Unable to process flow {}:{} - missing task '{}'",
@@ -754,6 +784,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     if (value == null && lhs.startsWith(MODEL_NAMESPACE)) {
                         value = getValueFromNonExistModel(lhs);
                     }
+                    // special case for a dynamic list in fork and join
+                    if (value == null && dynamicListKey != null && lhs.startsWith(dynamicListKey)) {
+                        if (lhs.endsWith(CURRENT_ITEM_SUFFIX)) {
+                            value = getDynamicListItem(dynamicListKey, dynamicListIndex, source);
+                        }
+                        if (lhs.endsWith(CURRENT_INDEX_SUFFIX)) {
+                            value = dynamicListIndex;
+                        }
+                    }
+
                     if (value != null) {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {
@@ -937,6 +977,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
             return getValueByType(type, value, "LHS '"+lhs+"'", source);
+        }
+        return value;
+    }
+
+    private Object getDynamicListItem(String dynamicListKey, int dynamicListIndex, MultiLevelMap source) {
+        Object value = source.getElement(dynamicListKey);
+        if (value instanceof List<?> list) {
+            return list.get(dynamicListIndex);
         }
         return value;
     }

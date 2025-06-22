@@ -42,6 +42,7 @@ public class Task {
     private String exceptionTask = null;
     private String loopType = "none";
     private String whileModelKey = null;
+    private String sourceModelKey = null;
 
     /**
      * This is reserved for system use.
@@ -207,5 +208,13 @@ public class Task {
      */
     public void setWhileModelKey(String whileModelKey) {
         this.whileModelKey = whileModelKey;
+    }
+
+    public String getSourceModelKey() {
+        return sourceModelKey;
+    }
+
+    public void setSourceModelKey(String sourceModelKey) {
+        this.sourceModelKey = sourceModelKey;
     }
 }
