@@ -1038,6 +1038,11 @@ tells the system which model variable holds the list of elements. You should onl
 task. The system will spin up parallel instances of the `next` task to handle each element from the model
 variable containing the list.
 
+In the input data mapping section, there are two special suffixes `.ITEM` and `.INDEX`. The system will iterate
+the list of elements and spin up an instance of the "next" task to retrieve the element (item) and index of
+the element in the list. The two special suffixes are relevant only when adding to the model variable configured
+in the "source" parameter.
+
 > *Note*: Usually, parallel processing would improve performance. However, spinning up a large number of
           concurrent sessions to a slower backend service may create performance bottleneck. In fact, a 
           massive number of concurrent sessions to a single backend would bring down the target service. 
