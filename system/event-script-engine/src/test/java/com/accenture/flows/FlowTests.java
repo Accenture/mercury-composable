@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -865,16 +866,31 @@ class FlowTests extends TestBase {
 
     @Test
     void forkJoinWithDynamicModeListTest() throws InterruptedException, ExecutionException {
-        PoJo pw = forkJoin("/api/fork-n-join-with-dynamic-model/", false);
-        // Additional assertion
-        assertNotNull(pw.list1);
-        assertEquals(3, pw.list1.size());
-        assertTrue(pw.list1.containsAll(List.of(1L,2L,3L)));
-        assertTrue(List.of(1L,2L,3L).containsAll(pw.list1));
+        var mockFunction = "mock.echo.me";
+        ConcurrentMap<String, Integer> itemsAndIndexes = new ConcurrentHashMap<>();
+        TypedLambdaFunction<Map<String, Object>, Object> f =
+                (headers, input, instance) -> {
+                    Object item = input.get("item");
+                    Object index = input.get("index");
+                    if (item instanceof String text && index instanceof Integer n) {
+                        itemsAndIndexes.put(text, n);
+                    }
+                    return input;
+                };
+        Platform.getInstance().registerPrivate(mockFunction, f, 10);
+        var mock = new EventScriptMock("fork-n-join-with-dynamic-model-test");
+        mock.assignFunctionRoute("echo.me", mockFunction);
+        forkJoin("/api/fork-n-join-with-dynamic-model/", false);
+        assertEquals(5, itemsAndIndexes.size());
+        assertEquals(0, itemsAndIndexes.get("one"));
+        assertEquals(1, itemsAndIndexes.get("two"));
+        assertEquals(2, itemsAndIndexes.get("three"));
+        assertEquals(3, itemsAndIndexes.get("four"));
+        assertEquals(4, itemsAndIndexes.get("five"));
     }
 
     @SuppressWarnings("unchecked")
-    PoJo forkJoin(String apiPath, boolean exception) throws InterruptedException, ExecutionException {
+    void forkJoin(String apiPath, boolean exception) throws InterruptedException, ExecutionException {
         final int UNAUTHORIZED = 401;
         final long TIMEOUT = 8000;
         String USER = "test-user";
@@ -896,7 +912,6 @@ class FlowTests extends TestBase {
                     "type", "error",
                     "status", UNAUTHORIZED), res.getBody());
             assertEquals(UNAUTHORIZED, res.getStatus());
-            return null;
         } else {
             Map<String, Object> result = (Map<String, Object>) res.getBody();
             PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
@@ -904,7 +919,6 @@ class FlowTests extends TestBase {
             assertEquals(USER, pw.user);
             assertEquals("hello-world-one", pw.key1);
             assertEquals("hello-world-two", pw.key2);
-            return pw;
         }
     }
 

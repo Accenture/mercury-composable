@@ -123,8 +123,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
     private static final String UUID_SUFFIX = "uuid";
-    private static final String CURRENT_ITEM_SUFFIX = "current-item";
-    private static final String CURRENT_INDEX_SUFFIX = "current-index";
+    private static final String ITEM_SUFFIX = ".ITEM";
+    private static final String INDEX_SUFFIX = ".INDEX";
     private static final String LENGTH_SUFFIX = "length";
     private static final String NEGATE_SUFFIX = "!";
     private static final String SUBSTRING_TYPE = "substring(";
@@ -616,7 +616,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             int seq = flowInstance.pipeCounter.incrementAndGet();
             int forks = steps.size();
             flowInstance.pipeMap.put(seq, new JoinTaskInfo(forks, task.getJoinTask()));
-
             for (int i = 0; i < steps.size(); i++) {
                 String next = steps.get(i);
                 executeTask(flowInstance, next, seq, hasDynamicList ? i : -1, hasDynamicList ? dynamicListKey : null);
@@ -785,15 +784,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         value = getValueFromNonExistModel(lhs);
                     }
                     // special case for a dynamic list in fork and join
+
                     if (value == null && dynamicListKey != null && lhs.startsWith(dynamicListKey)) {
-                        if (lhs.endsWith(CURRENT_ITEM_SUFFIX)) {
+
+                        if (lhs.endsWith(ITEM_SUFFIX)) {
                             value = getDynamicListItem(dynamicListKey, dynamicListIndex, source);
                         }
-                        if (lhs.endsWith(CURRENT_INDEX_SUFFIX)) {
+                        if (lhs.endsWith(INDEX_SUFFIX)) {
                             value = dynamicListIndex;
                         }
                     }
-
                     if (value != null) {
                         boolean valid = true;
                         if (ALL.equals(rhs)) {

@@ -1,7 +1,7 @@
 flow:
   id: 'fork-n-join-with-dynamic-model-test'
   description: 'Test fork-n-join flow'
-  ttl: 500000s
+  ttl: 30s
 
 first.task: 'my.first.task'
 
@@ -10,9 +10,11 @@ tasks:
     input:
       - 'input.path_parameter.user -> user'
       - 'input.query.seq -> sequence'
-      - 'int(1) -> model.intList[]'
-      - 'int(2) -> model.intList[]'
-      - 'int(3) -> model.intList[]'
+      - 'text(one) -> model.intList[]'
+      - 'text(two) -> model.intList[]'
+      - 'text(three) -> model.intList[]'
+      - 'text(four) -> model.intList[]'
+      - 'text(five) -> model.intList[]'
     process: 'sequential.one'
     output:
       - 'result -> model.pojo'
@@ -27,14 +29,13 @@ tasks:
     input:
       - 'text(hello-world-one) -> key1'
       - 'text(hello-world-two) -> key2'
-      - 'model.intList.current-item -> current-item'
-      - 'model.intList.current-index -> current-index'
+      - 'model.intList.ITEM -> item'
+      - 'model.intList.INDEX -> index'
       - 'model.key:uuid -> uuid'
     process: 'no.op'
     output:
       - 'result.key1 -> model.key1'
       - 'result.key2 -> model.key2'
-      - 'result.current-item -> model.returnIntList[]'
     description: 'Hello world'
     execution: sink
 
@@ -47,7 +48,6 @@ tasks:
       - 'model.pojo -> *'
       - 'model.key1 -> key1'
       - 'model.key2 -> key2'
-      - 'model.returnIntList -> list1'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
