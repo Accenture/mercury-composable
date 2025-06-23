@@ -308,7 +308,13 @@ public class CompileFlows implements EntryPoint {
                                     return;
                                 }
                                 if (source != null && !source.isEmpty()) {
-                                    task.setSourceModelKey(source);
+                                    if (source.startsWith(MODEL_NAMESPACE) && !source.endsWith(".")) {
+                                        task.setSourceModelKey(source);
+                                    } else {
+                                        log.error("Invalid {} task {} in {}. Source must start with model namespace, Actual: {}",
+                                                execution, uniqueTaskName, name, source);
+                                        return;
+                                    }
                                 }
                                 task.nextSteps.addAll(nextTasks);
                             } else {
