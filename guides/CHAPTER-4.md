@@ -1001,6 +1001,54 @@ tasks:
     join: 'join.task'
 ```
 
+A special version of the fork-n-join pattern is called "dynamic fork-n-join" where refers to parallel processing
+of multiple instances of the same "next" task for each element in a list.
+
+For example, you have a list of 100 elements in an incoming request and each element would be processed by the
+same backend service. A pipeline task can handle the iterations sequentially. However, you want to process the
+100 elements in parallel by multiple instances of a service wraper that connects to the backend service.
+
+This use case can be configured like this:
+```yaml
+tasks:
+  - input:
+      - 'input.elements -> elements'
+    process: 'data.validation'
+    output:
+      - 'result.elements -> model.elements'
+    description: 'Validate list of elements'
+    execution: fork
+    source: 'model.elements'    
+    next:
+      - 'element.processor'
+    join: 'join.task'
+
+  - name: 'element.processor'
+    input:
+      - 'model.elements.ITEM -> item'
+      - 'model.elements.INDEX -> index'
+    process: 'v1.element.processor'
+    output: []
+    description: 'Hello world'
+    execution: sink    
+```
+
+To handle this special use case, you can add a `source` parameter in the fork task. The "source" parameter
+tells the system which model variable holds the list of elements. You should only configure a single "next"
+task. The system will spin up parallel instances of the `next` task to handle each element from the model
+variable containing the list.
+
+> *Note*: Usually, parallel processing would improve performance. However, spinning up a large number of
+          concurrent sessions to a slower backend service may create performance bottleneck. In fact, a 
+          massive number of concurrent sessions to a single backend would bring down the target service. 
+          This is an unintended "denial of service" attack. To control parallelism, you can set a smaller number
+          of concurrent "instances" for the "next" task using the "instances" parameter in the "PreLoad"
+          annotation of the task. For example, you have 100 elements in a list but the maximum instances
+          of the task is 20. This would reduce the concurrency to 20, thus allowing you to manage performance
+          according to available infrastructure rsources. Therefore, processing 100 elements would require
+          5 rounds of 20 parallel executions and this ordering execution is supported by the underlying
+          reactive event system.
+
 ### Sink task
 
 A sink task is a task without any next tasks. Sink tasks are used by fork-n-join and pipeline tasks as reusable modules.

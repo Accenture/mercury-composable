@@ -10,14 +10,14 @@ tasks:
     input:
       - 'input.path_parameter.user -> user'
       - 'input.query.seq -> sequence'
+    process: 'sequential.one'
+    output:
+      - 'result -> model.pojo'
       - 'text(one) -> model.intList[]'
       - 'text(two) -> model.intList[]'
       - 'text(three) -> model.intList[]'
       - 'text(four) -> model.intList[]'
       - 'text(five) -> model.intList[]'
-    process: 'sequential.one'
-    output:
-      - 'result -> model.pojo'
     description: 'Pass a pojo to another task'
     execution: fork
     source: 'model.intList'
