@@ -784,9 +784,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         value = getValueFromNonExistModel(lhs);
                     }
                     // special case for a dynamic list in fork and join
-
-                    if (value == null && dynamicListKey != null && lhs.startsWith(dynamicListKey)) {
-
+                    if (value == null && dynamicListKey != null && lhs.startsWith(dynamicListKey + ".")) {
                         if (lhs.endsWith(ITEM_SUFFIX)) {
                             value = getDynamicListItem(dynamicListKey, dynamicListIndex, source);
                         }
