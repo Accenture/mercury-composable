@@ -1083,7 +1083,7 @@ spin up a large number of parallel instances of the same task.
 To control parallelism, you can set a smaller number of concurrent "instances" for the "next" task
 using the "instances" parameter in the "PreLoad" annotation of the task. For example, you have 100
 elements in a list but the maximum instances of the task can be set to 20. This would reduce the
-concurrency to 20, thus allowing you to manage performance according to available infrastructure rsources. 
+concurrency to 20, thus allowing you to manage performance according to available infrastructure resources. 
 Therefore, processing 100 elements would require 5 rounds of 20 parallel executions and this orderly
 execution is supported by the underlying reactive event system.
 
