@@ -559,7 +559,7 @@ will be deleted. This allows you to clean up temporary files before your flow fi
 An optional prefix "append" may be used to tell the system to append file content instead of overwriting it.
 
 > *Note*: The local file system write operation is not thread-safe. If you have parallel tasks appending
-          to the same file, the integrity of the file content is not guaranteed. One way to ensure thread
+          to the same file, the integrity of file content is not guaranteed. One way to ensure thread
           safety is to use singleton pattern. This can be done by setting the number of instances of the
           task writing to the local file system to 1.
 
