@@ -550,10 +550,18 @@ a hash map of key-values or an array of values.
 | Type   | Keyword for the right-hand-side argument |
 |:-------|:-----------------------------------------|
 | File   | `file(file_path)`                        |
+| File   | `file(append:file_path)`                 |
 
 For output data mapping, the "file" content type is used to save some data from the output of a user function
 to a file in the local file system. If the left-hand-side (LHS) resolved value is null, the file in the RHS
 will be deleted. This allows you to clean up temporary files before your flow finishes.
+
+An optional prefix "append" may be used to tell the system to append file content instead of overwriting it.
+
+> *Note*: The local file system write operation is not thread-safe. If you have parallel tasks appending
+          to the same file, the integrity of the file content is not guaranteed. One way to ensure thread
+          safety is to use singleton pattern. This can be done by setting the number of instances of the
+          task writing to the local file system to 1.
 
 *Decision value*
 
@@ -1001,6 +1009,50 @@ tasks:
     join: 'join.task'
 ```
 
+### Dynamic fork-n-join task
+
+A special version of the fork-n-join pattern is called `dynamic fork-n-join` which refers to parallel processing
+of multiple instances of the same "next" task for each element in a list.
+
+For example, you have a list of 100 elements in an incoming request and each element would be processed by the
+same backend service. You want to process the 100 elements in parallel by multiple instances of a service wraper
+that connects to the backend service.
+
+The use case can be configured like this:
+```yaml
+tasks:
+  - input:
+      - 'input.elements -> elements'
+    process: 'data.validation'
+    output:
+      - 'result.elements -> model.elements'
+    description: 'Validate list of elements'
+    execution: fork
+    source: 'model.elements'    
+    next:
+      - 'element.processor'
+    join: 'join.task'
+
+  - name: 'element.processor'
+    input:
+      - 'model.elements.ITEM -> item'
+      - 'model.elements.INDEX -> index'
+    process: 'v1.element.processor'
+    output: []
+    description: 'Hello world'
+    execution: sink    
+```
+
+To handle this special use case, you can add a `source` parameter in the fork task. The "source" parameter
+tells the system which model variable holds the list of elements. You should only configure a single "next"
+task. The system will spin up parallel instances of the `next` task to handle each element from the model
+variable containing the list.
+
+In the input data mapping section, there are two special suffixes `.ITEM` and `.INDEX`. The system will iterate
+the list of elements and spin up an instance of the "next" task to retrieve the element (item) and index of
+the element in the list. The two special suffixes are relevant only when adding to the model variable configured
+in the "source" parameter.
+
 ### Sink task
 
 A sink task is a task without any next tasks. Sink tasks are used by fork-n-join and pipeline tasks as reusable modules.
@@ -1015,6 +1067,25 @@ This task has the tag `execution=sink`.
     description: 'Hello world'
     execution: sink
 ```
+
+### Special consideration for parallelism
+
+The execution types (parallel and fork-n-join) are designed for parallel processing.
+
+Usually, parallel processing would improve performance. However, spinning up a large number of
+concurrent sessions to a slower backend service may create performance bottleneck. In fact, a 
+massive number of concurrent sessions to a single backend would bring down the target service. 
+This is an unintended "denial of service" attack. 
+
+The dynamic fork-n-join execution style should be handled with caution because it can easily
+spin up a large number of parallel instances of the same task.
+
+To control parallelism, you can set a smaller number of concurrent "instances" for the "next" task
+using the "instances" parameter in the "PreLoad" annotation of the task. For example, you have 100
+elements in a list but the maximum instances of the task can be set to 20. This would reduce the
+concurrency to 20, thus allowing you to manage performance according to available infrastructure resources. 
+Therefore, processing 100 elements would require 5 rounds of 20 parallel executions and this orderly
+execution is supported by the underlying reactive event system.
 
 ## Pipeline feature
 

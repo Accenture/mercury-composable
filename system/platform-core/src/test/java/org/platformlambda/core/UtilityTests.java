@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
@@ -67,10 +66,10 @@ class UtilityTests {
     @Test
     void setServerPersonality() {
         ServerPersonality personality = ServerPersonality.getInstance();
-        String MESSAGE = "Personality cannot be null";
+        String message = "Personality cannot be null";
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                                 () -> personality.setType(null));
-        assertEquals(MESSAGE, ex.getMessage());
+        assertEquals(message, ex.getMessage());
     }
 
     @Test
@@ -100,10 +99,10 @@ class UtilityTests {
     void mockPubSubCreateQueue() {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
-        String MESSAGE = "Not implemented";
+        String message = "Not implemented";
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                             () -> ps.createQueue("demo.queue"));
-        assertEquals(MESSAGE, ex.getMessage());
+        assertEquals(message, ex.getMessage());
     }
 
     @Test
@@ -118,7 +117,7 @@ class UtilityTests {
     @Test
     void timestampTest() {
         Utility util = Utility.getInstance();
-        String EXACT_SECOND = ".000";
+        String exactSecond = ".000";
         Date now = new Date();
         String t = util.getTimestamp();
         assertTrue(util.isDigits(t));
@@ -135,8 +134,8 @@ class UtilityTests {
         assertEquals(iso.substring(0, iso.indexOf('T')), sqlDate);
         java.sql.Timestamp sqlTs = new java.sql.Timestamp(now.getTime());
         String sqlTime = util.getSqlTimestamp(sqlTs);
-        if (sqlTime.endsWith(EXACT_SECOND)) {
-            sqlTime = sqlTime.substring(0, sqlTime.length() - EXACT_SECOND.length());
+        if (sqlTime.endsWith(exactSecond)) {
+            sqlTime = sqlTime.substring(0, sqlTime.length() - exactSecond.length());
         }
         assertEquals(iso.replace("T", " ").replace("Z", ""), sqlTime);
     }
@@ -144,14 +143,14 @@ class UtilityTests {
     @Test
     void exactSecondTimestampTest() {
         Utility util = Utility.getInstance();
-        String EXACT_SECOND = ".000";
+        String exactSecond = ".000";
         String exact = util.date2str(new Date(), true);
         Date now = util.str2date(exact);
         String iso = util.date2str(now);
         java.sql.Timestamp sqlTs = new java.sql.Timestamp(now.getTime());
         String sqlTime = util.getSqlTimestamp(sqlTs);
-        assertTrue(sqlTime.endsWith(EXACT_SECOND));
-        sqlTime = sqlTime.substring(0, sqlTime.length() - EXACT_SECOND.length());
+        assertTrue(sqlTime.endsWith(exactSecond));
+        sqlTime = sqlTime.substring(0, sqlTime.length() - exactSecond.length());
         assertEquals(iso.replace("T", " ").replace("Z", ""), sqlTime);
     }
 
@@ -177,15 +176,32 @@ class UtilityTests {
     }
 
     @Test
-    void ioTest() {
+    void fileTest() {
         Utility util = Utility.getInstance();
         File temp = new File("/tmp");
         File tempFile = new File(temp, "dummy");
         try {
-            String HELLO_WORLD = "hello world";
-            util.str2file(tempFile, HELLO_WORLD);
+            String helloWorld = "hello world";
+            boolean ok = util.bytes2file(tempFile, util.getUTF(helloWorld));
+            assertTrue(ok);
             String restored = util.file2str(tempFile);
-            assertEquals(HELLO_WORLD, restored);
+            assertEquals(helloWorld, restored);
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    @Test
+    void fileAppendTest() {
+        Utility util = Utility.getInstance();
+        File temp = new File("/tmp");
+        File tempFile = new File(temp, "append-test");
+        try {
+            String helloWorld = "hello world\n";
+            util.str2file(tempFile, helloWorld, true);
+            util.bytes2file(tempFile, util.getUTF(helloWorld), true);
+            String restored = util.file2str(tempFile);
+            assertEquals(helloWorld + helloWorld, restored);
         } finally {
             tempFile.delete();
         }
@@ -238,24 +254,24 @@ class UtilityTests {
     void numberTest() {
         Utility util = Utility.getInstance();
         // digits
-        String CORRECT_DIGITS = "12345";
-        String INCORRECT_DIGITS = "123a45";
-        assertTrue(util.isDigits(CORRECT_DIGITS));
-        assertFalse(util.isDigits(INCORRECT_DIGITS));
+        String correctDigits = "12345";
+        String incorrectDigits = "123a45";
+        assertTrue(util.isDigits(correctDigits));
+        assertFalse(util.isDigits(incorrectDigits));
         // numeric
-        String CORRECT_NUMBER = "-12345";
-        String INCORRECT_NUMBER = "$12345";
-        assertTrue(util.isNumeric(CORRECT_NUMBER));
-        assertFalse(util.isNumeric(INCORRECT_NUMBER));
+        String correctNumber = "-12345";
+        String incorrectNumber = "$12345";
+        assertTrue(util.isNumeric(correctNumber));
+        assertFalse(util.isNumeric(incorrectNumber));
     }
 
     @Test
     void utfTest() {
         Utility util = Utility.getInstance();
-        String HELLO_WORLD = "hello world";
-        byte[] b = util.getUTF(HELLO_WORLD);
+        String helloWorld = "hello world";
+        byte[] b = util.getUTF(helloWorld);
         String restored = util.getUTF(b);
-        assertEquals(HELLO_WORLD, restored);
+        assertEquals(helloWorld, restored);
     }
 
     @Test
@@ -268,37 +284,37 @@ class UtilityTests {
 
     @Test
     void multiLevelMapTest() {
-        String HELLO = "hello";
-        String WORLD = "world";
-        String HELLO_WORLD = "hello.world";
-        String NULL_KEY_VALUE = "this.is.null";
-        String NOT_EXIST_KEY = "key.not.exist";
+        String hello = "hello";
+        String world = "world";
+        String helloWorld = "hello.world";
+        String nullKeyValue = "this.is.null";
+        String notExistKey = "key.not.exist";
         MultiLevelMap mm = new MultiLevelMap();
-        mm.setElement(HELLO, WORLD);
-        mm.setElement(NULL_KEY_VALUE, null);
-        assertEquals(WORLD, mm.getElement(HELLO));
-        assertNull(mm.getElement(NULL_KEY_VALUE));
+        mm.setElement(hello, world);
+        mm.setElement(nullKeyValue, null);
+        assertEquals(world, mm.getElement(hello));
+        assertNull(mm.getElement(nullKeyValue));
         // key exists but value is null
-        assertTrue(mm.keyExists(NULL_KEY_VALUE));
-        assertFalse(mm.exists(NULL_KEY_VALUE));
+        assertTrue(mm.keyExists(nullKeyValue));
+        assertFalse(mm.exists(nullKeyValue));
         // key does not exist
-        assertFalse(mm.keyExists(NOT_EXIST_KEY));
+        assertFalse(mm.keyExists(notExistKey));
         // delete a key-value
-        mm.removeElement(HELLO);
-        assertNull(mm.getElement(HELLO));
-        mm.removeElement(HELLO_WORLD).setElement(HELLO_WORLD, null);
-        assertTrue(mm.keyExists(HELLO_WORLD));
-        mm.removeElement(HELLO_WORLD);
-        assertEquals(Collections.EMPTY_MAP, mm.getElement(HELLO));
-        assertFalse(mm.keyExists(HELLO_WORLD));
+        mm.removeElement(hello);
+        assertNull(mm.getElement(hello));
+        mm.removeElement(helloWorld).setElement(helloWorld, null);
+        assertTrue(mm.keyExists(helloWorld));
+        mm.removeElement(helloWorld);
+        assertEquals(Collections.EMPTY_MAP, mm.getElement(hello));
+        assertFalse(mm.keyExists(helloWorld));
     }
 
     @Test
     void defaultValueTest() {
-        String HELLO = "hello";
+        String hello = "hello";
         MultiLevelMap mm = new MultiLevelMap();
-        Object value = mm.getElement("no.such.key", HELLO);
-        assertEquals(HELLO, value);
+        Object value = mm.getElement("no.such.key", hello);
+        assertEquals(hello, value);
     }
 
     @Test
@@ -349,27 +365,27 @@ class UtilityTests {
         assertEquals(1, mm.getElement("hello.number[2].hello.number[0]"));
         assertEquals(2, mm.getElement("hello.number[2].hello.number[1]"));
         // really a lot of nested levels
-        String NESTED_PATH = "hello[5][4][3][2]";
-        String SIMPLE_VALUE = "world";
+        String nestedPath = "hello[5][4][3][2]";
+        String simpleValue = "world";
         MultiLevelMap m2 = new MultiLevelMap();
-        m2.setElement(NESTED_PATH, SIMPLE_VALUE);
+        m2.setElement(nestedPath, simpleValue);
         Map<String, Object> m2flat = util.getFlatMap(m2.getMap());
-        assertEquals(SIMPLE_VALUE, m2flat.get(NESTED_PATH));
-        assertEquals(m2flat.get(NESTED_PATH), m2.getElement(NESTED_PATH));
+        assertEquals(simpleValue, m2flat.get(nestedPath));
+        assertEquals(m2flat.get(nestedPath), m2.getElement(nestedPath));
         // alternate map and list
         String MIX_PATH = "hello.world[0].headers[0]";
         MultiLevelMap m3 = new MultiLevelMap();
-        m3.setElement(MIX_PATH, SIMPLE_VALUE);
+        m3.setElement(MIX_PATH, simpleValue);
         Map<String, Object> m3flat = util.getFlatMap(m3.getMap());
-        assertEquals(SIMPLE_VALUE, m3flat.get(MIX_PATH));
+        assertEquals(simpleValue, m3flat.get(MIX_PATH));
         assertEquals(m3flat.get(MIX_PATH), m3.getElement(MIX_PATH));
     }
 
     @Test
     void intranetIpTest() {
         final Utility util = Utility.getInstance();
-        String[] IP_ADDRESSES = {"127.0.0.1:8080", "127.0.0.1", "10.1.2.3", "172.16.1.2", "192.168.1.30"};
-        for (String ip: IP_ADDRESSES) {
+        String[] ipAddresses = {"127.0.0.1:8080", "127.0.0.1", "10.1.2.3", "172.16.1.2", "192.168.1.30"};
+        for (String ip: ipAddresses) {
             assertTrue(util.isIntranetAddress(ip));
         }
         assertFalse(util.isIntranetAddress("localhost"));
@@ -445,7 +461,7 @@ class UtilityTests {
     }
 
     @Test
-    void dirCleaningTest() throws InterruptedException {
+    void dirCleaningTest() {
         final Utility util = Utility.getInstance();
         File dir = new File("/tmp/cleanup-test");
         if (!dir.exists() && dir.mkdirs()) {

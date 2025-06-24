@@ -27,7 +27,6 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.websocket.common.MultipartPayload;
 
-import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +48,7 @@ class PayloadSegmentationTest extends TestBase {
         sb.append(TEST_STRING.repeat(CYCLE));
         BlockingQueue<Integer> bench = new ArrayBlockingQueue<>(1);
         MultipartPayload multipart = MultipartPayload.getInstance();
-        String RECEIVER = "large.payload.receiver";
+        String receiver = "large.payload.receiver";
         Platform platform = Platform.getInstance();
         // create function to receive large payload
         LambdaFunction f = (headers, input, instance) -> {
@@ -71,10 +70,10 @@ class PayloadSegmentationTest extends TestBase {
             }
             return true;
         };
-        platform.registerPrivate(RECEIVER, f, 1);
+        platform.registerPrivate(receiver, f, 1);
         EventEnvelope event = new EventEnvelope();
-        event.setTo(RECEIVER).setBody(Utility.getInstance().getUTF(sb.toString()));
-        multipart.outgoing(RECEIVER, event);
+        event.setTo(receiver).setBody(Utility.getInstance().getUTF(sb.toString()));
+        multipart.outgoing(receiver, event);
         // wait for receiver to acknowledge message
         Integer size = bench.poll(5, TimeUnit.SECONDS);
         assertNotNull(size);

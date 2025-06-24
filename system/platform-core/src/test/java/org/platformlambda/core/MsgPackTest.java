@@ -43,11 +43,11 @@ class MsgPackTest {
     void dataIsMap() throws IOException {
         PoJo pojo = new PoJo();
         pojo.setName("hello world");
-        String[] HELLO_WORLD = {"hello", "world"};
+        String[] helloWorld = {"hello", "world"};
         Map<String, Object> input = new HashMap<>();
         input.put("hello", "world");
         input.put("boolean", true);
-        input.put("array", HELLO_WORLD);
+        input.put("array", helloWorld);
         input.put("integer", 12345L);
         input.put("long", 12345L);
         input.put("float", 12.345f);
@@ -68,7 +68,7 @@ class MsgPackTest {
         result.remove(PayloadMapper.NOTHING);
         assertEquals(o, result);
         // array is converted to list of objects
-        assertEquals(Arrays.asList(HELLO_WORLD), result.get("array"));
+        assertEquals(Arrays.asList(helloWorld), result.get("array"));
         // embedded pojo in a map is converted to a map
         Object innerPoJo = result.get("pojo");
         assertInstanceOf(Map.class, innerPoJo);
@@ -300,5 +300,4 @@ class MsgPackTest {
         assertEquals(input.getName(), result.getName());
         assertEquals(input.getAddress(), result.getAddress());
     }
-
 }

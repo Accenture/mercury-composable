@@ -51,6 +51,7 @@ public class CompileFlows implements EntryPoint {
     private static final String OUTPUT = "output";
     private static final String DESCRIPTION = "description";
     private static final String EXECUTION = "execution";
+    private static final String SOURCE = "source";
     private static final String DATA_TYPE = "datatype";
     private static final String RESULT = "result";
     private static final String STATUS = "status";
@@ -215,6 +216,7 @@ public class CompileFlows implements EntryPoint {
                 String loopStatement = flow.getProperty(TASKS+"["+i+"]."+LOOP+"."+STATEMENT);
                 Object loopCondition = flow.get(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
                 String uniqueTaskName = taskName == null? functionRoute : taskName;
+                String source = flow.getProperty(TASKS+"["+i+"]."+SOURCE);
                 if (input instanceof List && output instanceof List && uniqueTaskName != null &&
                         taskDesc instanceof String && execution instanceof String taskExecution &&
                         validExecutionType(taskExecution)) {
@@ -298,6 +300,21 @@ public class CompileFlows implements EntryPoint {
                                     log.error("Invalid {} task {} in {}. Expected one next task, Actual: {}",
                                             execution, uniqueTaskName, name, nextTasks.size());
                                     return;
+                                }
+                                if (nextTasks.size() > 1 &&
+                                        (source != null && !source.isEmpty())) {
+                                    log.error("Invalid {} task {} in {}. Expected one next task if dynamic model source is used, Actual: {}",
+                                            execution, uniqueTaskName, name, nextTasks.size());
+                                    return;
+                                }
+                                if (source != null && !source.isEmpty()) {
+                                    if (source.startsWith(MODEL_NAMESPACE) && !source.endsWith(".")) {
+                                        task.setSourceModelKey(source);
+                                    } else {
+                                        log.error("Invalid {} task {} in {}. Source must start with model namespace, Actual: {}",
+                                                execution, uniqueTaskName, name, source);
+                                        return;
+                                    }
                                 }
                                 task.nextSteps.addAll(nextTasks);
                             } else {

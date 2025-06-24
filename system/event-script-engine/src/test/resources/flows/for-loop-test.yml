@@ -40,6 +40,7 @@ tasks:
     process: 'no.op'
     output:
       - 'result.data -> model.pojo'
+      - 'text(one,) -> file(append:/tmp/for-loop-test.txt)'
     description: 'first step of a pipeline'
     execution: sink
 
@@ -50,6 +51,7 @@ tasks:
     process: 'no.op'
     output:
       - 'result.data -> model.pojo'
+      - 'text(two,) -> file(append:/tmp/for-loop-test.txt)'
     description: 'second step of a pipeline'
     execution: sink
 
@@ -60,6 +62,7 @@ tasks:
     process: 'no.op'
     output:
       - 'result.data -> model.pojo'
+      - 'text(three,) -> file(append:/tmp/for-loop-test.txt)'
     description: 'third step of a pipeline'
     execution: sink
 
@@ -67,10 +70,12 @@ tasks:
     input:
       - 'model.n -> n'
       - 'model.pojo -> data'
+      - 'file(text:/tmp/for-loop-test.txt) -> content'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
       - 'model.none -> model.pojo'
+      - 'model.none -> file(/tmp/for-loop-test.txt)'
     description: 'Final step to take result from the pipeline'
     execution: end

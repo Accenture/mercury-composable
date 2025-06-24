@@ -33,6 +33,7 @@ flows:
   - 'externalize-put-key-value.yml'
   - 'externalize-get-key-value.yml'
   - 'fork-n-join-flows.yml'
+  - 'fork-n-join-with-dynamic-model-test.yml'
   - 'children/child-one.yml'
   - 'children/child-two.yml'
   - 'children/child-three.yml'

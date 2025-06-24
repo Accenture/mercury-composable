@@ -69,7 +69,7 @@ class XmlReadWriteTest {
         assertTrue(lines.contains("<single>one</single>"));
         Map<String, Object> result = parser.parse(xml);
         assertEquals("one", result.get("single"));
-        assertTrue(result.get("lists") instanceof List);
+        assertInstanceOf(List.class, result.get("lists"));
         List<Object> mixedList = (List<Object>) result.get("lists");
         // the 7th element in the array is dropped
         assertEquals(6, mixedList.size());

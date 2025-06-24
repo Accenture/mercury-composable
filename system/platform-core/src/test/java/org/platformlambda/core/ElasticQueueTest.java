@@ -36,17 +36,14 @@ class ElasticQueueTest {
         ElasticQueue spooler = new ElasticQueue("unit.test");
         spooler.write(new EventEnvelope().setBody(firstItem).toBytes());
         spooler.write(new EventEnvelope().setBody(secondItem).toBytes());
-
         byte[] b = spooler.peek();
         EventEnvelope first = new EventEnvelope();
         first.load(b);
         assertEquals(firstItem, first.getBody());
-
         b = spooler.read();
         EventEnvelope firstAgain = new EventEnvelope();
         firstAgain.load(b);
         assertEquals(firstItem, firstAgain.getBody());
-
         b = spooler.read();
         EventEnvelope second = new EventEnvelope();
         second.load(b);
@@ -125,10 +122,10 @@ class ElasticQueueTest {
 
     @Test
     void cleanupTest() {
-        String HELLO_WORLD = "hello world ";
+        String helloWorld = "hello world ";
         try (ElasticQueue spooler = new ElasticQueue("unread.test")) {
             for (int i = 0; i < ElasticQueue.MEMORY_BUFFER * 3; i++) {
-                String input = HELLO_WORLD + i;
+                String input = helloWorld + i;
                 EventEnvelope event = new EventEnvelope();
                 event.setTo("hello.world");
                 event.setBody(input);
@@ -144,5 +141,4 @@ class ElasticQueueTest {
             assertFalse(spooler.isClosed());
         }
     }
-
 }

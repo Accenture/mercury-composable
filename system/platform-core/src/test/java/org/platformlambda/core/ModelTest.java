@@ -31,55 +31,55 @@ class ModelTest {
 
     @Test
     void asyncHttpRequestModel() {
-        final String HELLO = "hello";
-        final String WORLD = "world";
-        final String PUT = "PUT";
+        final String hello = "hello";
+        final String world = "world";
+        final String putMethod = "PUT";
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setContentLength(HELLO.length());
-        request.setBody(HELLO);
-        request.setHeader(HELLO, WORLD);
-        request.setCookie(HELLO, WORLD).setMethod(PUT);
+        request.setContentLength(hello.length());
+        request.setBody(hello);
+        request.setHeader(hello, world);
+        request.setCookie(hello, world).setMethod(putMethod);
         request.setCookie("hack", "invalid\ncookie");
         request.setFileName("none")
-                .setPathParameter(HELLO, WORLD)
-                .setQueryString(HELLO+"="+WORLD)
-                .setQueryParameter(HELLO, WORLD);
+                .setPathParameter(hello, world)
+                .setQueryString(hello+"="+world)
+                .setQueryParameter(hello, world);
         request.setRemoteIp("127.0.0.1");
         request.setSecure(false).setStreamRoute("none");
-        request.setSessionInfo(HELLO, WORLD).setTrustAllCert(false).setTimeoutSeconds(10);
+        request.setSessionInfo(hello, world).setTrustAllCert(false).setTimeoutSeconds(10);
         request.setTargetHost("http://localhost");
         request.setUploadTag("file").setUrl("/api/hello");
-        request.removePathParameter(HELLO).setPathParameter(HELLO, WORLD);
-        request.removeHeader(HELLO).setHeader(HELLO, WORLD);
-        request.removeSessionInfo(HELLO).setSessionInfo(HELLO, WORLD);
-        request.removeCookie(HELLO).setCookie(HELLO, WORLD);
-        request.removeQueryParameter(HELLO).setQueryParameter(HELLO, WORLD);
+        request.removePathParameter(hello).setPathParameter(hello, world);
+        request.removeHeader(hello).setHeader(hello, world);
+        request.removeSessionInfo(hello).setSessionInfo(hello, world);
+        request.removeCookie(hello).setCookie(hello, world);
+        request.removeQueryParameter(hello).setQueryParameter(hello, world);
         AsyncHttpRequest restored = new AsyncHttpRequest(request.toMap());
-        assertEquals(HELLO, restored.getBody());
+        assertEquals(hello, restored.getBody());
         // header, cookie, path and query's get methods are case-insensitive
-        assertEquals(WORLD, restored.getHeader("hElLo"));
-        assertEquals(WORLD, restored.getCookie("heLLO"));
+        assertEquals(world, restored.getHeader("hElLo"));
+        assertEquals(world, restored.getCookie("heLLO"));
         // prove that the invalid cookie will be pass thru
         assertEquals(1, restored.getCookies().size());
-        assertEquals(WORLD, restored.getPathParameter("Hello"));
-        assertEquals(WORLD, restored.getQueryParameter("HellO"));
-        assertEquals(PUT, restored.getMethod());
+        assertEquals(world, restored.getPathParameter("Hello"));
+        assertEquals(world, restored.getQueryParameter("HellO"));
+        assertEquals(putMethod, restored.getMethod());
         assertEquals("none", restored.getFileName());
         assertEquals("127.0.0.1", restored.getRemoteIp());
         assertFalse(restored.isSecure());
         assertEquals("none", restored.getStreamRoute());
-        assertEquals(WORLD, restored.getSessionInfo(HELLO));
+        assertEquals(world, restored.getSessionInfo(hello));
         assertFalse(restored.isTrustAllCert());
         assertEquals(10, restored.getTimeoutSeconds());
         assertEquals("http://localhost", restored.getTargetHost());
         assertEquals("file", restored.getUploadTag());
         assertEquals("/api/hello", restored.getUrl());
         Map<String, String> parameters = restored.getPathParameters();
-        assertEquals(Map.of(HELLO, WORLD), parameters);
+        assertEquals(Map.of(hello, world), parameters);
         Map<String, Object> query = restored.getQueryParameters();
-        assertEquals(Map.of(HELLO, WORLD), query);
-        List<String> qp = restored.getQueryParameters(HELLO);
+        assertEquals(Map.of(hello, world), query);
+        List<String> qp = restored.getQueryParameters(hello);
         assertEquals(1, qp.size());
-        assertEquals(WORLD, qp.getFirst());
+        assertEquals(world, qp.getFirst());
     }
 }

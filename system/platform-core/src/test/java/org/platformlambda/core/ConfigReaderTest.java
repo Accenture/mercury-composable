@@ -117,21 +117,21 @@ class ConfigReaderTest {
 
     @Test
     void getNonExistEnvVariable() {
-        String TEXT = "hello";
-        String ONE_HUNDRED = "100";
+        String text = "hello";
+        String oneHundred = "100";
         ConfigReader reader = new ConfigReader("classpath:/test.properties");
         // property.one=${no.property} where no.property does not exist
-        String value1 = reader.getProperty("property.one", TEXT);
-        assertEquals(TEXT, value1);
+        String value1 = reader.getProperty("property.one", text);
+        assertEquals(text, value1);
         // without default value
         String value2 = reader.getProperty("property.one");
         assertNull(value2);
         // property.two=${no.property}100 will return "100"
-        String value3 = reader.getProperty("property.two", TEXT);
-        assertEquals(ONE_HUNDRED, value3);
+        String value3 = reader.getProperty("property.two", text);
+        assertEquals(oneHundred, value3);
         // without default value
         String value4 = reader.getProperty("property.two");
-        assertEquals(ONE_HUNDRED, value4);
+        assertEquals(oneHundred, value4);
     }
 
     @Test
@@ -372,5 +372,4 @@ class ConfigReaderTest {
         Object value = reader.getProperty("error.multiple.env.vars");
         assertEquals(expected, value);
     }
-
 }

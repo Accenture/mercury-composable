@@ -31,22 +31,22 @@ class CacheTest {
 
     @Test
     void cacheBehavior() throws InterruptedException {
-        String KEY = "key1";
-        String DATA = "hello";
-        cache1.put(KEY, DATA);
-        Object o = cache1.get(KEY);
-        assertEquals(DATA, o);
+        String key = "key1";
+        String data = "hello";
+        cache1.put(key, data);
+        Object o = cache1.get(key);
+        assertEquals(data, o);
         long n = cache1.size();
         assertEquals(1, n);
         // test expiry
         Thread.sleep(1050);
         // cached item will disappear in one second
-        Object o2 = cache1.get(KEY);
+        Object o2 = cache1.get(key);
         assertNull(o2);
         // test removal
-        cache1.put(KEY, DATA);
-        cache1.remove(KEY);
-        assertFalse(cache1.exists(KEY));
+        cache1.put(key, data);
+        cache1.remove(key);
+        assertFalse(cache1.exists(key));
         cache1.cleanUp();
         cache1.clear();
     }
@@ -58,30 +58,30 @@ class CacheTest {
      */
     @Test
     void simpleCacheTest() throws InterruptedException {
-        String KEY = "key1";
-        String DATA = "hello";
+        String key = "key1";
+        String data = "hello";
         long expiry = cache2.getExpiry();
         // test minimum expiry to be one second
         assertEquals(1000, expiry);
-        cache2.put(KEY, DATA);
-        Object o = cache2.get(KEY);
-        assertEquals(DATA, o);
+        cache2.put(key, data);
+        Object o = cache2.get(key);
+        assertEquals(data, o);
         long n = cache2.size();
         assertEquals(1, n);
-        cache2.remove(KEY);
-        Object o2 = cache2.get(KEY);
+        cache2.remove(key);
+        Object o2 = cache2.get(key);
         assertNull(o2);
-        cache2.put(KEY, DATA);
-        cache2.remove(KEY);
-        assertFalse(cache2.exists(KEY));
-        cache2.put(KEY, DATA);
-        assertTrue(cache2.exists(KEY));
+        cache2.put(key, data);
+        cache2.remove(key);
+        assertFalse(cache2.exists(key));
+        cache2.put(key, data);
+        assertTrue(cache2.exists(key));
         Thread.sleep(500);
         // since minimum expiry is 1000 ms, the item should still be there
-        assertTrue(cache2.exists(KEY));
+        assertTrue(cache2.exists(key));
         Thread.sleep(600);
         // test expiry timer accuracy
-        assertFalse(cache2.exists(KEY));
+        assertFalse(cache2.exists(key));
         // test clean up
         cache2.cleanUp();
         // test clear cache

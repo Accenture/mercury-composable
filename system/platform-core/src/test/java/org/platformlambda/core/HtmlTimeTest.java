@@ -37,5 +37,4 @@ class HtmlTimeTest {
         Date converted = util.getHtmlDate(timestamp);
         assertEquals(normalizedTime, converted);
     }
-
 }
