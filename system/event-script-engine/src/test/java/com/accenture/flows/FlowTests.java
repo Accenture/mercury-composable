@@ -43,7 +43,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,7 +53,7 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void httpClientByConfigTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
                 .setHeader("accept", "application/json")
@@ -63,7 +62,7 @@ class FlowTests extends TestBase {
         request.setBody(Map.of("hello", "world"));
         PostOffice po = new PostOffice("unit.test", "10", "TEST /http/client/by/config");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals("test", map.getElement("parameters.path.demo"));
@@ -75,14 +74,14 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void noSuchFlowTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/no-such-flow");
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /no/such/flow");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
         assertEquals(500, result.getStatus());
         Map<String, Object> data = (Map<String, Object>) result.getBody();
@@ -101,16 +100,16 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     void executeExtStateMachine(String uriPath) throws InterruptedException, ExecutionException {
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        var PAYLOAD = Map.of("hello", "world");
+        final long timeout = 8000;
+        String user = "test-user";
+        var payload = Map.of("hello", "world");
         AsyncHttpRequest request1 = new AsyncHttpRequest();
         request1.setTargetHost(HOST).setMethod("PUT").setHeader("accept", "application/json")
-                .setHeader("content-type", "application/json").setBody(PAYLOAD);
-        request1.setUrl(uriPath+USER);
+                .setHeader("content-type", "application/json").setBody(payload);
+        request1.setUrl(uriPath+user);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
-        EventEnvelope res1 = po.request(req1, TIMEOUT).get();
+        EventEnvelope res1 = po.request(req1, timeout).get();
         assert res1 != null;
         assertInstanceOf(Map.class, res1.getBody());
         Map<String, Object> result1 = (Map<String, Object>) res1.getBody();
@@ -124,56 +123,56 @@ class FlowTests extends TestBase {
          */
         AsyncHttpRequest request2 = new AsyncHttpRequest();
         request2.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request2.setUrl("/api/ext/state/"+USER);
+        request2.setUrl("/api/ext/state/"+user);
         EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
-        EventEnvelope res2 = po.request(req2, TIMEOUT).get();
+        EventEnvelope res2 = po.request(req2, timeout).get();
         assert res2 != null;
         assertInstanceOf(Map.class, res2.getBody());
         Map<String, Object> result2 = (Map<String, Object>) res2.getBody();
-        assertEquals(USER, result2.get("user"));
-        assertEquals(PAYLOAD, result2.get("payload"));
+        assertEquals(user, result2.get("user"));
+        assertEquals(payload, result2.get("payload"));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void typeMatchingTest() throws ExecutionException, InterruptedException {
         Utility util = Utility.getInstance();
-        final String HELLO_WORLD = "hello world";
-        final String HELLO = "hello";
-        final String WORLD = "world";
-        final byte[] HELLO_WORLD_BYTES = util.getUTF(HELLO_WORLD);
-        final String B64_TEXT = util.bytesToBase64(HELLO_WORLD_BYTES);
-        final long TIMEOUT = 8000;
+        final String helloWorld = "hello world";
+        final String hello = "hello";
+        final String world = "world";
+        final byte[] helloWorldBytes = util.getUTF(helloWorld);
+        final String B64_TEXT = util.bytesToBase64(helloWorldBytes);
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/type/matching");
         PostOffice po = new PostOffice("unit.test", "2000", "TEST /type/matching");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
         MultiLevelMap mm = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals(B64_TEXT, mm.getElement("b64"));
-        assertArrayEquals(HELLO_WORLD_BYTES, getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("binary")));
-        Map<String, Object> m1 = Map.of("b64", B64_TEXT, "text", HELLO_WORLD);
+        assertArrayEquals(helloWorldBytes, getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("binary")));
+        Map<String, Object> m1 = Map.of("b64", B64_TEXT, "text", helloWorld);
         Map<String, Object> m2 = SimpleMapper.getInstance().getMapper().readValue(mm.getElement("json"), Map.class);
         equalsMap(m1, m2);
-        assertEquals(HELLO, mm.getElement("substring"));
+        assertEquals(hello, mm.getElement("substring"));
         byte[] bson = getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("bson"));
         Map<String, Object> m3 = SimpleMapper.getInstance().getMapper().readValue(bson, Map.class);
         equalsMap(m1, m3);
-        assertEquals(HELLO, mm.getElement("source.substring"));
-        assertEquals(WORLD, mm.getElement("source.substring-2"));
-        assertArrayEquals(HELLO_WORLD_BYTES,
+        assertEquals(hello, mm.getElement("source.substring"));
+        assertEquals(world, mm.getElement("source.substring-2"));
+        assertArrayEquals(helloWorldBytes,
                 getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.keep-as-binary")));
-        assertEquals(HELLO_WORLD, mm.getElement("source.no-change"));
-        assertArrayEquals(HELLO_WORLD_BYTES,
+        assertEquals(helloWorld, mm.getElement("source.no-change"));
+        assertArrayEquals(helloWorldBytes,
                 getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.binary")));
-        assertArrayEquals(HELLO_WORLD_BYTES,
+        assertArrayEquals(helloWorldBytes,
                 getByteArrayFromEncodedIntegers((List<Integer>) mm.getElement("source.bytes")));
-        assertEquals(HELLO_WORLD, mm.getElement("source.out-of-bound"));
-        assertEquals(HELLO_WORLD, mm.getElement("source.invalid-substring"));
-        assertEquals(HELLO_WORLD, mm.getElement("source.text"));
+        assertEquals(helloWorld, mm.getElement("source.out-of-bound"));
+        assertEquals(helloWorld, mm.getElement("source.invalid-substring"));
+        assertEquals(helloWorld, mm.getElement("source.text"));
         assertEquals(true, mm.getElement("positive"));
         assertEquals(false, mm.getElement("negative"));
         assertEquals(false, mm.getElement("boolean-text"));
@@ -232,17 +231,17 @@ class FlowTests extends TestBase {
 
     @Test
     void bodyTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
-        final String HELLO = "hello world";
-        final String VALUE_A = "A";
-        final String VALUE_B = "B";
-        final int SEQ = 1;
+        final long timeout = 8000;
+        final String hello = "hello world";
+        final String valueA = "A";
+        final String valueB = "B";
+        final int seq = 1;
         Map<String, Object> pojoBody = new HashMap<>();
-        pojoBody.put("user", HELLO);
-        pojoBody.put("sequence", SEQ);
+        pojoBody.put("user", hello);
+        pojoBody.put("sequence", seq);
         pojoBody.put("date", new Date());
-        pojoBody.put("key1", VALUE_A);
-        pojoBody.put("key2", VALUE_B);
+        pojoBody.put("key1", valueA);
+        pojoBody.put("key2", valueB);
         // put the pojo data structure into a holder to test "input data mapping" feature
         Map<String, Object> holder = new HashMap<>();
         holder.put("pojoHolder", pojoBody);
@@ -254,17 +253,17 @@ class FlowTests extends TestBase {
                 .setUrl("/api/body/test");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         // Take return value as PoJo
         assertInstanceOf(Map.class, result.getBody());
         PoJo restored = result.getBody(PoJo.class);
-        assertEquals(HELLO, restored.user);
-        assertEquals(SEQ, restored.sequence);
-        assertEquals(VALUE_A, restored.key1);
-        assertEquals(VALUE_B, restored.key2);
+        assertEquals(hello, restored.user);
+        assertEquals(seq, restored.sequence);
+        assertEquals(valueA, restored.key1);
+        assertEquals(valueB, restored.key2);
         Utility util = Utility.getInstance();
         // verify that result contains headers set by "input data mapping" earlier
-        assertEquals(SEQ, util.str2int(result.getHeader("X-Sequence")));
+        assertEquals(seq, util.str2int(result.getHeader("X-Sequence")));
         assertEquals("AAA", result.getHeader("X-Tag"));
         assertEquals("async-http-client", result.getHeader("x-agent"));
         assertEquals("com.accenture.models.PoJo", result.getHeader("x-datatype"));
@@ -273,14 +272,14 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void headerTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json")
                 .setUrl("/api/header/test");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> body = (Map<String, Object>) result.getBody();
         // verify that input headers are mapped to the function's input body
@@ -291,17 +290,17 @@ class FlowTests extends TestBase {
 
     @Test
     void fileVaultTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
-        final String HELLO = "hello world";
+        final long timeout = 8000;
+        final String hello = "hello world";
         File f1 = new File("/tmp/temp-test-input.txt");
         Utility util = Utility.getInstance();
-        util.str2file(f1, HELLO);
+        util.str2file(f1, hello);
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json").setUrl("/api/file/vault");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(String.class, result.getBody());
         // "output data mapping" will pass the input classpath file as output body
         InputStream in = this.getClass().getResourceAsStream("/files/hello.txt");
@@ -312,7 +311,7 @@ class FlowTests extends TestBase {
         File f2 = new File("/tmp/temp-test-output.txt");
         assertTrue(f2.exists());
         String text = util.file2str(f2);
-        assertEquals(HELLO, text);
+        assertEquals(hello, text);
         File f3 = new File("/tmp/temp-test-match.txt");
         assertTrue(f3.exists());
         String matched = util.file2str(f3);
@@ -330,13 +329,13 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void circuitBreakerRetryTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
                 .setHeader("accept", "application/json").setUrl("/api/circuit/breaker/2");
         PostOffice po = new PostOffice("unit.test", "100100", "TEST /circuit/breaker/retry");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertEquals(200, result.getStatus());
         assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> output = (Map<String, Object>) result.getBody();
@@ -346,14 +345,14 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void circuitBreakerAbortTest() throws ExecutionException, InterruptedException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         // the max_attempt is 2 for the circuit breaker and thus this will break
         request.setUrl("/api/circuit/breaker/3");
         PostOffice po = new PostOffice("unit.test", "100101", "TEST /circuit/breaker/abort");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope result = po.request(req, TIMEOUT).get();
+        EventEnvelope result = po.request(req, timeout).get();
         assertEquals(400, result.getStatus());
         assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> output = (Map<String, Object>) result.getBody();
@@ -376,16 +375,16 @@ class FlowTests extends TestBase {
         }
         // run test
         final PostOffice po = new PostOffice("unit.test", "100102", "TEST /resilience");
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         // Create condition for backoff by forcing it to throw exception over the backoff_trigger (threshold of 3)
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
         request.setQueryParameter("exception", 400);
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope first = po.request(req, TIMEOUT).get();
+        EventEnvelope first = po.request(req, timeout).get();
         // after 3 attempts, it aborts and returns error 400
         assertEquals(400, first.getStatus());
-        EventEnvelope second = po.request(req, TIMEOUT).get();
+        EventEnvelope second = po.request(req, timeout).get();
         // the system will enter into backoff mode when the cumulative attempt reaches 5
         assertEquals(503, second.getStatus());
         assertInstanceOf(Map.class, second.getBody());
@@ -399,7 +398,7 @@ class FlowTests extends TestBase {
         requestDuringBackoff.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
         requestDuringBackoff.setQueryParameter("exception", 400);
         EventEnvelope requestBo = new EventEnvelope().setTo(HTTP_CLIENT).setBody(requestDuringBackoff);
-        EventEnvelope resultBo = po.request(requestBo, TIMEOUT).get();
+        EventEnvelope resultBo = po.request(requestBo, timeout).get();
         assertEquals(503, resultBo.getStatus());
         assertInstanceOf(Map.class, resultBo.getBody());
         Map<String, Object> outputBo = (Map<String, Object>) resultBo.getBody();
@@ -416,7 +415,7 @@ class FlowTests extends TestBase {
         request1.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
         request1.setQueryParameter("exception", 401);
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
-        EventEnvelope result1 = po.request(req1, TIMEOUT).get();
+        EventEnvelope result1 = po.request(req1, timeout).get();
         assertEquals(200, result1.getStatus());
         assertInstanceOf(Map.class, result1.getBody());
         Map<String, Object> output1 = (Map<String, Object>) result1.getBody();
@@ -426,7 +425,7 @@ class FlowTests extends TestBase {
         request2.setTargetHost(HOST).setMethod("GET").setUrl("/api/resilience");
         request2.setQueryParameter("exception", 403);
         EventEnvelope req2 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request2);
-        EventEnvelope result2 = po.request(req2, TIMEOUT).get();
+        EventEnvelope result2 = po.request(req2, timeout).get();
         assertEquals(200, result2.getStatus());
         assertInstanceOf(Map.class, result2.getBody());
         Map<String, Object> output2 = (Map<String, Object>) result2.getBody();
@@ -437,21 +436,21 @@ class FlowTests extends TestBase {
     @Test
     void greetingTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        final String TRACE_ID = "1001";
-        final String GREETINGS = "greetings";
-        String USER = "12345";
+        final long timeout = 8000;
+        final String traceId = "1001";
+        final String greetings = "greetings";
+        String user = "12345";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greetings/"+USER);
-        PostOffice po = new PostOffice("unit.test", TRACE_ID, "TEST /greeting");
+        request.setUrl("/api/greetings/"+user);
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /greeting");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertEquals(USER, result.get("user"));
+        assertEquals(user, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
         assertEquals("hello world", result.get("greeting"));
         assertEquals(true, result.get("positive"));
@@ -466,7 +465,7 @@ class FlowTests extends TestBase {
          * serialization compresses numbers to long and float
          * if the number is not greater than MAX integer or float
          */
-        assertEquals(Utility.getInstance().str2int(USER), original.get("user_number"));
+        assertEquals(Utility.getInstance().str2int(user), original.get("user_number"));
         assertEquals(12345, original.get("long_number"));
         assertEquals(12.345, original.get("float_number"));
         assertEquals(12.345, original.get("double_number"));
@@ -486,11 +485,11 @@ class FlowTests extends TestBase {
         // check environment variable substitution
         assertEquals(System.getenv("PATH"), original.get("path"));
         // check metadata for a flow
-        assertEquals(TRACE_ID, original.get("trace_id"));
-        assertEquals(GREETINGS, original.get("flow_id"));
+        assertEquals(traceId, original.get("trace_id"));
+        assertEquals(greetings, original.get("flow_id"));
         // the "demo" key-value is collected from the input headers to the test function
         assertEquals("ok", result.get("demo1"));
-        assertEquals(USER, result.get("demo2"));
+        assertEquals(user, result.get("demo2"));
         // input mapping 'input.header -> header' relays all HTTP headers
         assertEquals("greetings", result.get("demo3"));
         // check map values
@@ -522,18 +521,18 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void parentGreetingTest() throws InterruptedException, ExecutionException {
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/parent-greeting/"+USER);
+        request.setUrl("/api/parent-greeting/"+user);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope res = po.request(req, TIMEOUT).get();
+        EventEnvelope res = po.request(req, timeout).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertEquals(USER, result.get("user"));
+        assertEquals(user, result.get("user"));
         assertEquals(getAppName(), result.get("name"));
         assertEquals("hello", result.get("hello"));
         assertEquals("hello world", result.get("greeting"));
@@ -548,7 +547,7 @@ class FlowTests extends TestBase {
         assertEquals(true, original.get("boolean_value"));
         // the "demo" key-value is collected from the input headers to the test function
         assertEquals("ok", result.get("demo1"));
-        assertEquals(USER, result.get("demo2"));
+        assertEquals(user, result.get("demo2"));
         // input mapping 'input.header -> header' relays all HTTP headers
         assertEquals("parent-greetings", result.get("demo3"));
     }
@@ -556,14 +555,14 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void missingSubFlow() throws InterruptedException, ExecutionException {
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/missing-flow/"+USER);
+        request.setUrl("/api/missing-flow/"+user);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope res = po.request(req, TIMEOUT).get();
+        EventEnvelope res = po.request(req, timeout).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -579,14 +578,14 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void exceptionTest() throws InterruptedException, ExecutionException {
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", "403");
+        request.setUrl("/api/greetings/"+user).setQueryParameter("ex", "403");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope res = po.request(req, TIMEOUT).get();
+        EventEnvelope res = po.request(req, timeout).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -597,14 +596,14 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void exceptionLoopTest() throws InterruptedException, ExecutionException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/greetings/"+user).setQueryParameter("ex", "409");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope res = po.request(req, TIMEOUT).get();
+        EventEnvelope res = po.request(req, timeout).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -616,15 +615,15 @@ class FlowTests extends TestBase {
     @Test
     void nonStandardExceptionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/greetings/"+USER).setQueryParameter("ex", "custom");
+        request.setUrl("/api/greetings/"+user).setQueryParameter("ex", "custom");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -635,17 +634,17 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void flowTimeoutTest() throws InterruptedException {
+    void flowtimeoutTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/timeout/"+USER).setQueryParameter("ex", "timeout");
+        request.setUrl("/api/timeout/"+user).setQueryParameter("ex", "timeout");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -657,7 +656,7 @@ class FlowTests extends TestBase {
     @Test
     void simpleDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/decision");
@@ -665,8 +664,8 @@ class FlowTests extends TestBase {
         request.setQueryParameter("decision", "false");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -675,8 +674,8 @@ class FlowTests extends TestBase {
         // setting decision to true will trigger decision.case.one
         request.setQueryParameter("decision", "true");
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         result = (Map<String, Object>) res.getBody();
@@ -688,7 +687,7 @@ class FlowTests extends TestBase {
     @Test
     void noOpDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/noop/decision");
@@ -696,8 +695,8 @@ class FlowTests extends TestBase {
         request.setQueryParameter("decision", "something-else");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -707,8 +706,8 @@ class FlowTests extends TestBase {
         // "hello" is mapped to true in decision-with-no-op.yml
         request.setQueryParameter("decision", "hello");
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         result = (Map<String, Object>) res.getBody();
@@ -720,7 +719,7 @@ class FlowTests extends TestBase {
     @Test
     void numericDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/numeric-decision");
@@ -728,8 +727,8 @@ class FlowTests extends TestBase {
         request.setQueryParameter("decision", 3);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -738,8 +737,8 @@ class FlowTests extends TestBase {
         // setting decision to 1 will trigger decision.case.one
         request.setQueryParameter("decision", 1);
         req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         result = (Map<String, Object>) res.getBody();
@@ -751,7 +750,7 @@ class FlowTests extends TestBase {
     @Test
     void invalidNumericDecisionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/numeric-decision");
@@ -759,8 +758,8 @@ class FlowTests extends TestBase {
         request.setQueryParameter("decision", 100);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertEquals(500, res.getStatus());
         assertInstanceOf(Map.class, res.getBody());
@@ -774,21 +773,21 @@ class FlowTests extends TestBase {
     @Test
     void sequentialTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         int SEQ = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/sequential/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/sequential/"+user).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         MultiLevelMap result = new MultiLevelMap((Map<String, Object>) res.getBody());
         assertEquals(SEQ, result.getElement("pojo.sequence"));
-        assertEquals(USER, result.getElement("pojo.user"));
+        assertEquals(user, result.getElement("pojo.user"));
         /*
          * serialization compresses numbers to long and float
          * if the number is not greater than MAX integer or float
@@ -803,45 +802,45 @@ class FlowTests extends TestBase {
     @Test
     void responseTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/response/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/response/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         // This is the result from the "response" task and not the "end" task
         // where the end task return content type as "text/plain".
         assertEquals("application/json", res.getHeader("content-type"));
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertEquals(SEQ, result.get("sequence"));
-        assertEquals(USER, result.get("user"));
+        assertEquals(seq, result.get("sequence"));
+        assertEquals(user, result.get("user"));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void delayedResponseTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/delayed-response/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/delayed-response/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
-        assertEquals(SEQ, result.get("sequence"));
-        assertEquals(USER, result.get("user"));
+        assertEquals(seq, result.get("sequence"));
+        assertEquals(user, result.get("user"));
     }
 
     @Test
@@ -866,9 +865,9 @@ class FlowTests extends TestBase {
 
     @Test
     void forkJoinWithDynamicModeListTest() throws InterruptedException, ExecutionException {
-        var mockFunction = "mock.echo.me";
+        var mockForkedTask = "mock.echo.me";
         ConcurrentMap<String, Integer> itemsAndIndexes = new ConcurrentHashMap<>();
-        TypedLambdaFunction<Map<String, Object>, Object> f =
+        TypedLambdaFunction<Map<String, Object>, Object> f1 =
                 (headers, input, instance) -> {
                     Object item = input.get("item");
                     Object index = input.get("index");
@@ -877,9 +876,9 @@ class FlowTests extends TestBase {
                     }
                     return input;
                 };
-        Platform.getInstance().registerPrivate(mockFunction, f, 10);
+        Platform.getInstance().registerPrivate(mockForkedTask, f1, 10);
         var mock = new EventScriptMock("fork-n-join-with-dynamic-model-test");
-        mock.assignFunctionRoute("echo.me", mockFunction);
+        mock.assignFunctionRoute("echo.me", mockForkedTask);
         forkJoin("/api/fork-n-join-with-dynamic-model/", false);
         assertEquals(5, itemsAndIndexes.size());
         assertEquals(0, itemsAndIndexes.get("one"));
@@ -892,18 +891,18 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     void forkJoin(String apiPath, boolean exception) throws InterruptedException, ExecutionException {
         final int UNAUTHORIZED = 401;
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl(apiPath+USER).setQueryParameter("seq", SEQ);
+        request.setUrl(apiPath+user).setQueryParameter("seq", seq);
         if (exception) {
             request.setQueryParameter("exception", UNAUTHORIZED);
         }
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope res = po.request(req, TIMEOUT).get();
+        EventEnvelope res = po.request(req, timeout).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         if (exception) {
@@ -915,8 +914,8 @@ class FlowTests extends TestBase {
         } else {
             Map<String, Object> result = (Map<String, Object>) res.getBody();
             PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
-            assertEquals(SEQ, pw.sequence);
-            assertEquals(USER, pw.user);
+            assertEquals(seq, pw.sequence);
+            assertEquals(user, pw.user);
             assertEquals("hello-world-one", pw.key1);
             assertEquals("hello-world-two", pw.key2);
         }
@@ -926,23 +925,23 @@ class FlowTests extends TestBase {
     @Test
     void pipelineTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/pipeline/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/pipeline/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
     }
 
     @SuppressWarnings("unchecked")
@@ -952,42 +951,44 @@ class FlowTests extends TestBase {
         // The first task of the flow "for-loop-test" is "echo.one" that is using "no.op".
         // We want to override no.op with my.mock.function to demonstrate mocking a function
         // for a flow.
-        var ECHO_ONE = "echo.one";
-        var MOCK_FUNCTION = "my.mock.function";
+        var echoOne = "echo.one";
+        var mockFunction = "my.mock.function";
         var iteration = new AtomicInteger(0);
         LambdaFunction f = (headers, body, instance) -> {
             var n = iteration.incrementAndGet();
             log.info("Iteration-{} {}", n, body);
             return body;
         };
-        platform.registerPrivate(MOCK_FUNCTION, f, 1);
+        platform.registerPrivate(mockFunction, f, 1);
         // override the function for the task "echo.one" to the mock function
         var mock = new EventScriptMock("for-loop-test");
-        var previousRoute = mock.getFunctionRoute(ECHO_ONE);
-        var currentRoute = mock.assignFunctionRoute(ECHO_ONE, MOCK_FUNCTION).getFunctionRoute(ECHO_ONE);
+        var previousRoute = mock.getFunctionRoute(echoOne);
+        var currentRoute = mock.assignFunctionRoute(echoOne, mockFunction).getFunctionRoute(echoOne);
         assertEquals("no.op", previousRoute);
-        assertEquals(MOCK_FUNCTION, currentRoute);
+        assertEquals(mockFunction, currentRoute);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         int SEQ = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/for-loop/"+user).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
+        // the for-loop has executed 3 times and each round deposits "one,", "two," and "three," using file append mode
+        assertEquals("one,two,three,one,two,three,one,two,three,", result.get("content"));
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
         assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(user, pojo.user);
         assertEquals(3, result.get("n"));
         assertEquals(3, iteration.get());
-        platform.release(MOCK_FUNCTION);
+        platform.release(mockFunction);
     }
 
     @SuppressWarnings("unchecked")
@@ -1032,23 +1033,23 @@ class FlowTests extends TestBase {
         assertEquals("no.op", previousRoute);
         assertEquals(mockFunction, currentRoute);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
+        final long timeout = 8000;
+        String user = "test-user";
         int SEQ = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop-single/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/for-loop-single/"+user).setQueryParameter("seq", SEQ);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
         assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(user, pojo.user);
         assertEquals(3, result.get("n"));
         assertEquals(3, iteration.get());
         assertEquals(List.of("x", "y", "z", "ITEM3"), result.get("latest"));
@@ -1093,23 +1094,23 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     void pipelineForLoopBreakConditionTest(String type) throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop-break/"+USER).setQueryParameter("seq", SEQ).setQueryParameter(type, 2);
+        request.setUrl("/api/for-loop-break/"+user).setQueryParameter("seq", seq).setQueryParameter(type, 2);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
         assertEquals(2, result.get("n"));
     }
 
@@ -1117,23 +1118,23 @@ class FlowTests extends TestBase {
     @Test
     void pipelineForLoopBreakConditionTestSingleTask() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop-break-single/"+USER).setQueryParameter("seq", SEQ).setQueryParameter("none", 2);
+        request.setUrl("/api/for-loop-break-single/"+user).setQueryParameter("seq", seq).setQueryParameter("none", 2);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
         assertEquals(0, result.get("n"));
     }
 
@@ -1141,23 +1142,23 @@ class FlowTests extends TestBase {
     @Test
     void pipelineForLoopContinueTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/for-loop-continue/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/for-loop-continue/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
         assertEquals(4, result.get("n"));
     }
 
@@ -1165,23 +1166,23 @@ class FlowTests extends TestBase {
     @Test
     void pipelineWhileLoopTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/while-loop/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/while-loop/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
         assertEquals(3, result.get("n"));
     }
 
@@ -1189,23 +1190,23 @@ class FlowTests extends TestBase {
     @Test
     void pipelineWhileLoopBreakTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/while-loop-break/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/while-loop-break/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
         assertEquals(2, result.get("n"));
     }
 
@@ -1213,23 +1214,23 @@ class FlowTests extends TestBase {
     @Test
     void pipelineWhileLoopContinueTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/while-loop-continue/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/while-loop-continue/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
         assertTrue(result.containsKey("data"));
         PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get("data"), PoJo.class);
-        assertEquals(SEQ, pojo.sequence);
-        assertEquals(USER, pojo.user);
+        assertEquals(seq, pojo.sequence);
+        assertEquals(user, pojo.user);
         assertEquals(3, result.get("n"));
     }
 
@@ -1237,16 +1238,16 @@ class FlowTests extends TestBase {
     @Test
     void pipelineExceptionTest() throws InterruptedException {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
-        final long TIMEOUT = 8000;
-        String USER = "test-user";
-        int SEQ = 100;
+        final long timeout = 8000;
+        String user = "test-user";
+        int seq = 100;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
-        request.setUrl("/api/pipeline-exception/"+USER).setQueryParameter("seq", SEQ);
+        request.setUrl("/api/pipeline-exception/"+user).setQueryParameter("seq", seq);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
-        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -1257,13 +1258,13 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void parallelTest() throws InterruptedException, ExecutionException {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET").setHeader("accept", "application/json");
         request.setUrl("/api/parallel");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
-        EventEnvelope res = po.request(req, TIMEOUT).get();
+        EventEnvelope res = po.request(req, timeout).get();
         assert res != null;
         assertInstanceOf(Map.class, res.getBody());
         Map<String, Object> result = (Map<String, Object>) res.getBody();
@@ -1275,7 +1276,7 @@ class FlowTests extends TestBase {
     @Test
     void internalFlowTest() throws ExecutionException, InterruptedException {
         final String ORIGINATOR = "unit.test";
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         Utility util = Utility.getInstance();
         String traceId = util.getUuid();
         // the "header-test" flow maps the input.header to function input body, thus the input.body is ignored
@@ -1289,14 +1290,14 @@ class FlowTests extends TestBase {
         dataset.put("body", Map.of("hello", "world"));
         FlowExecutor flowExecutor = FlowExecutor.getInstance();
         EventEnvelope result1 = flowExecutor.request(ORIGINATOR, traceId, "INTERNAL /flow/test",
-                flowId, dataset, util.getUuid(), TIMEOUT).get();
+                flowId, dataset, util.getUuid(), timeout).get();
         assertInstanceOf(Map.class, result1.getBody());
         Map<String, Object> body1 = (Map<String, Object>) result1.getBody();
         // verify that input headers are mapped to the function's input body
         assertEquals("header-test", body1.get("x-flow-id"));
         assertEquals("internal-flow", body1.get("user-agent"));
         assertEquals("application/json", body1.get("accept"));
-        EventEnvelope result2 = flowExecutor.request(ORIGINATOR, flowId, dataset, util.getUuid(), TIMEOUT).get();
+        EventEnvelope result2 = flowExecutor.request(ORIGINATOR, flowId, dataset, util.getUuid(), timeout).get();
         assertInstanceOf(Map.class, result2.getBody());
         Map<String, Object> body2 = (Map<String, Object>) result2.getBody();
         // verify that input headers are mapped to the function's input body
@@ -1329,7 +1330,7 @@ class FlowTests extends TestBase {
 
     @Test
     void internalFlowWithoutFlowIdTest() {
-        final long TIMEOUT = 8000;
+        final long timeout = 8000;
         String traceId = Utility.getInstance().getUuid();
         Map<String, Object> headers = new HashMap<>();
         Map<String, Object> dataset = new HashMap<>();
@@ -1340,14 +1341,14 @@ class FlowTests extends TestBase {
         // missing flowId
         assertThrows(IllegalArgumentException.class, () ->
                 flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", null,
-                        dataset, traceId, TIMEOUT).get());
+                        dataset, traceId, timeout).get());
         // missing correlation ID
         assertThrows(IllegalArgumentException.class, () ->
                 flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
-                        dataset, null, TIMEOUT).get());
+                        dataset, null, timeout).get());
         // missing body
         assertThrows(IllegalArgumentException.class, () ->
                 flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test", "dummy-flow",
-                        new HashMap<>(), null, TIMEOUT).get());
+                        new HashMap<>(), null, timeout).get());
     }
 }

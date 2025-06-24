@@ -54,12 +54,12 @@ class LocalPubSubTest extends TestBase {
         platform.register(SUBSCRIBER_ONE, f, 1);
         platform.registerPrivate(SUBSCRIBER_TWO, f, 1);
         final EventEmitter po = EventEmitter.getInstance();
-        final String TEXT = "test message";
-        po.send(TEST_TOPIC_ONE, TEXT);
+        final String text = "test message";
+        po.send(TEST_TOPIC_ONE, text);
         completion.poll(5, TimeUnit.SECONDS);
         assertEquals(2, result.size());
         for (Map.Entry<String, Object> kv: result.entrySet()) {
-            assertEquals(TEXT, kv.getValue());
+            assertEquals(text, kv.getValue());
             log.info("Result from {} is correct", kv.getKey());
         }
         ps.unsubscribe(TEST_TOPIC_ONE, SUBSCRIBER_ONE);

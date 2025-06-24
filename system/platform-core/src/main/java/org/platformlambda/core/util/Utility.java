@@ -483,17 +483,25 @@ public class Utility {
     public String stream2str(InputStream stream) {
         return getUTF(stream2bytes(stream));
     }
-
+    
     public boolean str2file(File f, String s) {
-        return bytes2file(f, getUTF(s));
+        return str2file(f, s, false);
+    }
+
+    public boolean str2file(File f, String s, boolean append) {
+        return bytes2file(f, getUTF(s), append);
     }
 
     public boolean bytes2file(File f, byte[] b) {
+        return bytes2file(f, b, false);
+    }
+
+    public boolean bytes2file(File f, byte[] b, boolean append) {
         byte[] content = file2bytes(f);
-        if (Arrays.equals(b, content)) {
+        if (!append && Arrays.equals(b, content)) {
             return true;
         } else {
-            try (FileOutputStream out = new FileOutputStream(f)) {
+            try (FileOutputStream out = new FileOutputStream(f, append)) {
                 out.write(b);
                 return true;
             } catch (IOException e) {

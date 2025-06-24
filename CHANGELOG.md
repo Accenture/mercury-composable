@@ -10,8 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
-## Version 4.3.1, 6/12/2025
+## Version 4.3.2, 6/23/2025
 
+### Added
+
+1. Support file "append" mode in output data mapping
+2. Dynamic fork-n-join feature for parallel processing of a list of elements by multiple instances of the same task
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.3.1, 6/12/2025
 
 ### Added
 

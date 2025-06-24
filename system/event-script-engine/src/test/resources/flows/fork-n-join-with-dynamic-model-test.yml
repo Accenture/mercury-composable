@@ -13,14 +13,14 @@ tasks:
     process: 'sequential.one'
     output:
       - 'result -> model.pojo'
-      - 'text(one) -> model.intList[]'
-      - 'text(two) -> model.intList[]'
-      - 'text(three) -> model.intList[]'
-      - 'text(four) -> model.intList[]'
-      - 'text(five) -> model.intList[]'
+      - 'text(one) -> model.dataList[]'
+      - 'text(two) -> model.dataList[]'
+      - 'text(three) -> model.dataList[]'
+      - 'text(four) -> model.dataList[]'
+      - 'text(five) -> model.dataList[]'
     description: 'Pass a pojo to another task'
     execution: fork
-    source: 'model.intList'
+    source: 'model.dataList'
     next:
       - 'echo.me'
     join: 'join.task'
@@ -29,13 +29,14 @@ tasks:
     input:
       - 'text(hello-world-one) -> key1'
       - 'text(hello-world-two) -> key2'
-      - 'model.intList.ITEM -> item'
-      - 'model.intList.INDEX -> index'
+      - 'model.dataList.ITEM -> item'
+      - 'model.dataList.INDEX -> index'
       - 'model.key:uuid -> uuid'
     process: 'no.op'
     output:
       - 'result.key1 -> model.key1'
       - 'result.key2 -> model.key2'
+      - 'result.item -> model.item'
     description: 'Hello world'
     execution: sink
 
@@ -52,5 +53,6 @@ tasks:
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
+      - 'model.none -> file(/tmp/temp-items.txt)'
     description: 'Return result'
     execution: end

@@ -32,16 +32,16 @@ class GenericTypeTest {
 
     @Test
     void testListOfPoJo() {
-        int NUMBER_1 = 100;
-        String NAME_1 = "hello world";
-        int NUMBER_2 = 200;
-        String NAME_2 = "it is a nice day";
+        int number1 = 100;
+        String name1 = "hello world";
+        int number2 = 200;
+        String name2 = "it is a nice day";
         PoJo pojo1 = new PoJo();
-        pojo1.setNumber(NUMBER_1);
-        pojo1.setName(NAME_1);
+        pojo1.setNumber(number1);
+        pojo1.setName(name1);
         PoJo pojo2 = new PoJo();
-        pojo2.setNumber(NUMBER_2);
-        pojo2.setName(NAME_2);
+        pojo2.setNumber(number2);
+        pojo2.setName(name2);
         List<PoJo> list = new ArrayList<>();
         list.add(pojo1);
         list.add(null);
@@ -54,26 +54,26 @@ class GenericTypeTest {
         List<PoJo> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(3, pojoList.size());
         PoJo restored1 = pojoList.getFirst();
-        assertEquals(NAME_1, restored1.getName());
-        assertEquals(NUMBER_1, restored1.getNumber());
+        assertEquals(name1, restored1.getName());
+        assertEquals(number1, restored1.getNumber());
         assertNull(pojoList.get(1));
         PoJo restored2 = pojoList.get(2);
-        assertEquals(NAME_2, restored2.getName());
-        assertEquals(NUMBER_2, restored2.getNumber());
+        assertEquals(name2, restored2.getName());
+        assertEquals(number2, restored2.getNumber());
     }
 
     @Test
     void testArrayOfPoJo() {
-        int NUMBER_1 = 100;
-        String NAME_1 = "hello world";
-        int NUMBER_2 = 200;
-        String NAME_2 = "it is a nice day";
+        int number1 = 100;
+        String name1 = "hello world";
+        int number2 = 200;
+        String name2 = "it is a nice day";
         PoJo pojo1 = new PoJo();
-        pojo1.setNumber(NUMBER_1);
-        pojo1.setName(NAME_1);
+        pojo1.setNumber(number1);
+        pojo1.setName(name1);
         PoJo pojo2 = new PoJo();
-        pojo2.setNumber(NUMBER_2);
-        pojo2.setName(NAME_2);
+        pojo2.setNumber(number2);
+        pojo2.setName(name2);
         PoJo[] array = new PoJo[3];
         array[0] = pojo1;
         array[1] = null;
@@ -87,26 +87,26 @@ class GenericTypeTest {
         List<PoJo> pojoList = result.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(3, pojoList.size());
         PoJo restored1 = pojoList.getFirst();
-        assertEquals(NAME_1, restored1.getName());
-        assertEquals(NUMBER_1, restored1.getNumber());
+        assertEquals(name1, restored1.getName());
+        assertEquals(number1, restored1.getNumber());
         assertNull(pojoList.get(1));
         PoJo restored2 = pojoList.get(2);
-        assertEquals(NAME_2, restored2.getName());
-        assertEquals(NUMBER_2, restored2.getNumber());
+        assertEquals(name2, restored2.getName());
+        assertEquals(number2, restored2.getNumber());
     }
 
     @Test
     void checkMixedTypes() {
-        int NUMBER_1 = 100;
-        String NAME_1 = "hello world";
-        int NUMBER_2 = 200;
-        String NAME_2 = "it is a nice day";
+        int number1 = 100;
+        String name1 = "hello world";
+        int number2 = 200;
+        String name2 = "it is a nice day";
         PoJo pojo1 = new PoJo();
-        pojo1.setNumber(NUMBER_1);
-        pojo1.setName(NAME_1);
+        pojo1.setNumber(number1);
+        pojo1.setName(name1);
         PoJo pojo2 = new PoJo();
-        pojo2.setNumber(NUMBER_2);
-        pojo2.setName(NAME_2);
+        pojo2.setNumber(number2);
+        pojo2.setName(name2);
         List<Object> list = new ArrayList<>();
         list.add(pojo1);
         list.add(2);
@@ -179,7 +179,7 @@ class GenericTypeTest {
         EventEnvelope result = new EventEnvelope();
         result.load(b);
         ObjectWithGenericType<PoJo> o = result.getBody(ObjectWithGenericType.class, PoJo.class);
-        assertEquals(o.getClass(), ObjectWithGenericType.class);
+        assertEquals(ObjectWithGenericType.class, o.getClass());
         Map<String, Object> restored = SimpleMapper.getInstance().getMapper().readValue(o, Map.class);
         MultiLevelMap map = new MultiLevelMap(restored);
         assertEquals(name, map.getElement("content.name"));
@@ -191,66 +191,66 @@ class GenericTypeTest {
     @SuppressWarnings("unchecked")
     @Test
     void parametricHttpObjectTest() {
-        int ID = 100;
-        String NAME = "hello world";
+        int id = 100;
+        String name = "hello world";
         ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
         PoJo pojo = new PoJo();
-        pojo.setName(NAME);
-        pojo.setNumber(ID);
+        pojo.setName(name);
+        pojo.setNumber(id);
         genericObject.setContent(pojo);
-        genericObject.setId(ID);
+        genericObject.setId(id);
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setBody(genericObject);
         AsyncHttpRequest restored = new AsyncHttpRequest(request.toMap());
         ObjectWithGenericType<PoJo> o = restored.getBody(ObjectWithGenericType.class, PoJo.class);
-        assertEquals(NAME, o.getContent().getName());
-        assertEquals(ID, o.getContent().getNumber());
-        assertEquals(ID, o.getId());
+        assertEquals(name, o.getContent().getName());
+        assertEquals(id, o.getContent().getNumber());
+        assertEquals(id, o.getId());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void parametricEnvelopeTest() {
-        int ID = 100;
-        String NAME = "hello world";
+        int id = 100;
+        String name = "hello world";
         ObjectWithGenericType<PoJo> genericObject = new ObjectWithGenericType<>();
         PoJo pojo = new PoJo();
-        pojo.setName(NAME);
-        pojo.setNumber(ID);
+        pojo.setName(name);
+        pojo.setNumber(id);
         genericObject.setContent(pojo);
-        genericObject.setId(ID);
+        genericObject.setId(id);
         EventEnvelope event = new EventEnvelope();
         event.setBody(genericObject);
         byte[] b = event.toBytes();
         EventEnvelope restored = new EventEnvelope(b);
         ObjectWithGenericTypeVariance<PoJoVariance> o =
                 restored.getBody(ObjectWithGenericTypeVariance.class, PoJoVariance.class);
-        assertEquals(NAME, o.getContent().getName());
-        assertEquals(ID, o.getContent().getNumber());
-        assertEquals(ID, o.getId());
+        assertEquals(name, o.getContent().getName());
+        assertEquals(id, o.getContent().getNumber());
+        assertEquals(id, o.getId());
         assertInstanceOf(Map.class, restored.getRawBody());
     }
 
     @Test
     void remappingEnvelopeTest() {
-        int ID = 100;
-        String NAME = "hello world";
+        int id = 100;
+        String name = "hello world";
         PoJo pojo = new PoJo();
-        pojo.setName(NAME);
-        pojo.setNumber(ID);
+        pojo.setName(name);
+        pojo.setNumber(id);
         EventEnvelope event = new EventEnvelope();
         event.setBody(pojo);
         byte[] b = event.toBytes();
         EventEnvelope restored = new EventEnvelope(b);
         PoJoVariance o = restored.getBody(PoJoVariance.class);
-        assertEquals(NAME, o.getName());
-        assertEquals(ID, o.getNumber());
+        assertEquals(name, o.getName());
+        assertEquals(id, o.getNumber());
         assertInstanceOf(Map.class, restored.getRawBody());
     }
 
     @Test
     void primitiveObjectTest() {
-        String MESSAGE = "Unable to convert a primitive into class " + PoJoVariance.class.getName();
+        String message = "Unable to convert a primitive into class " + PoJoVariance.class.getName();
         int id = 100;
         EventEnvelope event = new EventEnvelope();
         event.setBody(id);
@@ -259,6 +259,6 @@ class GenericTypeTest {
         assertEquals(100, restored.getBody());
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                                 () -> restored.getBody(PoJoVariance.class));
-        assertEquals(MESSAGE, ex.getMessage());
+        assertEquals(message, ex.getMessage());
     }
 }

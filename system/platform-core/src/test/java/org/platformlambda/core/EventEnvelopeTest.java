@@ -40,9 +40,9 @@ class EventEnvelopeTest {
 
     @Test
     void booleanTest() {
-        boolean HELLO = true;
+        boolean hello = true;
         EventEnvelope source = new EventEnvelope();
-        source.setBody(HELLO);
+        source.setBody(hello);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         assertEquals(true, target.getRawBody());
@@ -51,97 +51,97 @@ class EventEnvelopeTest {
 
     @Test
     void integerTest() {
-        int VALUE = 100;
+        int value = 100;
         EventEnvelope source = new EventEnvelope();
-        source.setBody(VALUE);
+        source.setBody(value);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        assertEquals(VALUE, target.getRawBody());
-        assertEquals(VALUE, target.getBody());
+        assertEquals(value, target.getRawBody());
+        assertEquals(value, target.getBody());
     }
 
     @Test
     void longTest() {
-        Long VALUE = 100L;
+        Long value = 100L;
         EventEnvelope source = new EventEnvelope();
-        source.setBody(VALUE);
+        source.setBody(value);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         // long will be compressed to integer by MsgPack
-        assertEquals(VALUE.intValue(), target.getRawBody());
-        assertEquals(VALUE.intValue(), target.getBody());
+        assertEquals(value.intValue(), target.getRawBody());
+        assertEquals(value.intValue(), target.getBody());
     }
 
     @Test
     void floatTest() {
-        float VALUE = 1.23f;
+        float value = 1.23f;
         EventEnvelope source = new EventEnvelope();
-        source.setBody(VALUE);
+        source.setBody(value);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        assertEquals(VALUE, target.getRawBody());
-        assertEquals(VALUE, target.getBody());
+        assertEquals(value, target.getRawBody());
+        assertEquals(value, target.getBody());
     }
 
     @Test
     void doubleTest() {
-        double VALUE = 1.23d;
+        double value = 1.23d;
         EventEnvelope source = new EventEnvelope();
-        source.setBody(VALUE);
+        source.setBody(value);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        assertEquals(VALUE, target.getRawBody());
-        assertEquals(VALUE, target.getBody());
+        assertEquals(value, target.getRawBody());
+        assertEquals(value, target.getBody());
     }
 
     @Test
     void bigDecimalTest() {
-        String VALUE = "1.23";
-        BigDecimal HELLO = new BigDecimal(VALUE);
+        String value = "1.23";
+        BigDecimal hello = new BigDecimal(value);
         EventEnvelope source = new EventEnvelope();
-        source.setBody(HELLO);
+        source.setBody(hello);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         // big decimal is converted to string if it is not encoded in a PoJo
-        assertEquals(VALUE, target.getRawBody());
-        assertEquals(VALUE, target.getBody());
+        assertEquals(value, target.getRawBody());
+        assertEquals(value, target.getBody());
     }
 
     @Test
     void dateTest() {
         Utility util = Utility.getInstance();
-        Date NOW = new Date();
+        Date now = new Date();
         EventEnvelope source = new EventEnvelope();
-        source.setBody(NOW);
+        source.setBody(now);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
-        assertEquals(util.date2str(NOW), target.getRawBody());
-        assertEquals(util.date2str(NOW), target.getBody());
+        assertEquals(util.date2str(now), target.getRawBody());
+        assertEquals(util.date2str(now), target.getBody());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void pojoTest() {
-        String HELLO = "hello";
+        String hello = "hello";
         PoJo pojo = new PoJo();
-        pojo.setName(HELLO);
+        pojo.setName(hello);
         EventEnvelope source = new EventEnvelope();
         source.setBody(pojo);
         byte[] b = source.toBytes();
         EventEnvelope target = new EventEnvelope(b);
         assertInstanceOf(Map.class, target.getRawBody());
         Map<String, Object> map = (Map<String, Object>) target.getRawBody();
-        assertEquals(HELLO, map.get("name"));
+        assertEquals(hello, map.get("name"));
         PoJo restored = target.getBody(PoJo.class);
-        assertEquals(HELLO, restored.getName());
+        assertEquals(hello, restored.getName());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void pojoListTest() {
-        String HELLO = "hello";
+        String hello = "hello";
         PoJo pojo = new PoJo();
-        pojo.setName(HELLO);
+        pojo.setName(hello);
         List<PoJo> list = Collections.singletonList(pojo);
         EventEnvelope source = new EventEnvelope();
         source.setBodyWithDefaultSerialization(list);
@@ -154,40 +154,40 @@ class EventEnvelopeTest {
         Map<String, Object> map = new HashMap<>();
         map.put("list", restored);
         MultiLevelMap multi = new MultiLevelMap(map);
-        assertEquals(HELLO, multi.getElement("list[0].name"));
+        assertEquals(hello, multi.getElement("list[0].name"));
         assertInstanceOf(List.class, target.getBody());
         List<PoJo> output = target.getBodyAsListOfPoJo(PoJo.class);
         assertEquals(1, output.size());
         PoJo restoredPoJo = output.getFirst();
-        assertEquals(HELLO, restoredPoJo.getName());
+        assertEquals(hello, restoredPoJo.getName());
     }
 
     @Test
     void taggingTest() {
-        final String HELLO = "hello";
-        final String WORLD = "world";
-        final String ROUTING = "routing";
-        final String DATA = "a->b";
-        final String TAG_WITH_NO_VALUE = "tag-with-no-value";
+        final String hello = "hello";
+        final String world = "world";
+        final String routing = "routing";
+        final String data = "a->b";
+        final String tagWithNoValue = "tag-with-no-value";
         EventEnvelope event = new EventEnvelope();
-        event.addTag(TAG_WITH_NO_VALUE).addTag(HELLO, WORLD).addTag(ROUTING, DATA);
+        event.addTag(tagWithNoValue).addTag(hello, world).addTag(routing, data);
         // When a tag is created with no value, the system will set it to "true"
-        assertEquals("true", event.getTag(TAG_WITH_NO_VALUE));
-        assertEquals(WORLD, event.getTag(HELLO));
-        assertEquals(DATA, event.getTag(ROUTING));
-        event.removeTag(HELLO).removeTag(ROUTING);
-        assertNull(event.getTag(HELLO));
-        assertNull(event.getTag(ROUTING));
-        event.removeTag(TAG_WITH_NO_VALUE);
+        assertEquals("true", event.getTag(tagWithNoValue));
+        assertEquals(world, event.getTag(hello));
+        assertEquals(data, event.getTag(routing));
+        event.removeTag(hello).removeTag(routing);
+        assertNull(event.getTag(hello));
+        assertNull(event.getTag(routing));
+        event.removeTag(tagWithNoValue);
         assertTrue(event.getTags().isEmpty());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void mapSerializationTest() {
-        String HELLO = "hello";
+        String hello = "hello";
         PoJo pojo = new PoJo();
-        pojo.setName(HELLO);
+        pojo.setName(hello);
         pojo.setNumber(10);
         pojo.setLongNumber(Long.MAX_VALUE);
         EventEnvelope source = new EventEnvelope();
@@ -215,7 +215,7 @@ class EventEnvelopeTest {
         assertTrue(list.getFirst().contains("IllegalArgumentException"));
         assertTrue(list.get(1).startsWith("at"));
         MultiLevelMap map = new MultiLevelMap(target.toMap());
-        assertEquals(HELLO, map.getElement("body.name"));
+        assertEquals(hello, map.getElement("body.name"));
         // when event envelope is serialized, it will become very compact
         assertEquals(10, map.getElement("body.number"));
         assertEquals(Long.MAX_VALUE, map.getElement("body.long_number"));
@@ -235,8 +235,8 @@ class EventEnvelopeTest {
         // when it is not binary encoding (default), it should contain the tag "json"
         assertEquals("true", target.getTag("json"));
         PoJo output = target.getBody(PoJo.class);
-        assertEquals(HELLO, output.getName());
-        assertEquals(HELLO, target.getException().getMessage());
+        assertEquals(hello, output.getName());
+        assertEquals(hello, target.getException().getMessage());
         assertEquals(IllegalArgumentException.class, target.getException().getClass());
         assertInstanceOf(byte[].class, map.getElement("exception"));
         byte[] b = (byte[]) map.getElement("exception");

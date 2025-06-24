@@ -270,5 +270,4 @@ class PayloadMapperTest {
         Object converted = converter.decode(typed);
         assertEquals(Arrays.asList(input), converted);
     }
-
 }

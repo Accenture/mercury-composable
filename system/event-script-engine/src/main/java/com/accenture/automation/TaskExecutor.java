@@ -94,6 +94,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String CLOSE_BRACKET = ")";
     private static final String TEXT_FILE = "text:";
     private static final String BINARY_FILE = "binary:";
+    private static final String APPEND_MODE = "append:";
     private static final String MAP_TO = "->";
     private static final String ALL = "*";
     private static final String END = "end";
@@ -363,17 +364,17 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     if (!fileFound || (!f.isDirectory() && f.canWrite())) {
                         switch (value) {
                             // delete the RHS' target file if LHS value is null
-                            case null ->    {
-                                                if (fileFound && f.delete()) {
-                                                    log.debug("File {} deleted", f);
-                                                }
+                            case null -> {
+                                            if (fileFound && f.delete()) {
+                                                log.debug("File {} deleted", f);
                                             }
-                            case byte[] b -> util.bytes2file(f, b);
-                            case String str -> util.str2file(f, str);
+                                          }
+                            case byte[] b -> util.bytes2file(f, b, fd.append);
+                            case String str -> util.str2file(f, str, fd.append);
                             // best effort to save as a JSON string
                             case Map map ->
                                 util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map));
-                            default -> util.str2file(f, String.valueOf(value));
+                            default -> util.str2file(f, String.valueOf(value), fd.append);
                         }
                     }
                 } else {
@@ -784,11 +785,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         value = getValueFromNonExistModel(lhs);
                     }
                     // special case for a dynamic list in fork and join
-                    if (value == null && dynamicListKey != null && lhs.startsWith(dynamicListKey + ".")) {
-                        if (lhs.endsWith(ITEM_SUFFIX)) {
+                    if (value == null && dynamicListKey != null) {
+                        if (lhs.equals(dynamicListKey + ITEM_SUFFIX)) {
                             value = getDynamicListItem(dynamicListKey, dynamicListIndex, source);
                         }
-                        if (lhs.endsWith(INDEX_SUFFIX)) {
+                        if (lhs.equals(dynamicListKey + INDEX_SUFFIX)) {
                             value = dynamicListIndex;
                         }
                     }
@@ -1328,8 +1329,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private static class SimpleFileDescriptor {
-        public final String fileName;
-        public final boolean binary;
+        private final String fileName;
+        private boolean binary = true;
+        private boolean append = false;
 
         public SimpleFileDescriptor(String value) {
             int last = value.lastIndexOf(CLOSE_BRACKET);
@@ -1339,18 +1341,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             } else if (value.startsWith(CLASSPATH_TYPE)) {
                 offset = CLASSPATH_TYPE.length();
             }
-            String name;
+            final String name;
             final String filePath = value.substring(offset, last).trim();
             if (filePath.startsWith(TEXT_FILE)) {
                 name = filePath.substring(TEXT_FILE.length());
                 binary = false;
             } else if (filePath.startsWith(BINARY_FILE)) {
                 name = filePath.substring(BINARY_FILE.length());
-                binary = true;
+            } else if (filePath.startsWith(APPEND_MODE)) {
+                name = filePath.substring(APPEND_MODE.length());
+                append = true;
             } else {
                 // default fileType is binary
                 name = filePath;
-                binary = true;
             }
             fileName = name.startsWith("/")? name : "/" + name;
         }
