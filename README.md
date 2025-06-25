@@ -12,6 +12,7 @@ The project is available in both Java and Node.js languages.
 For Java, please visit [Mercury Composable for Java](https://github.com/Accenture/mercury-composable)
 
 For Node.js, please browse [Mercury Composable for Node](https://github.com/Accenture/mercury-nodejs)
+and [Composable-example](https://github.com/Accenture/mercury-composable-examples)
 
 January 2025
 

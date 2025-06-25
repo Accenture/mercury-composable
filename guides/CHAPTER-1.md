@@ -412,8 +412,9 @@ modules.autostart:
 For more sophisticated startup procedure, you can use a flow to execute multiple tasks. The second item in the
 `modules.autostart` illustrates this use case.
 
-> *Note*: autostart modules or flows should assume there is no input dataset. Startup modules usually take
-          input parameters from the environment variables or a secret manager.
+> *Note*: autostart modules or flows should assume there is no input dataset except a header ('type = start')
+          to indicate that the request is triggered by "autostart" process.
+          Startup modules usually take input parameters from the environment variables or a secret manager.
 
 ## Graceful shutdown
 
