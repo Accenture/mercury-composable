@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.3, 6/25/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Improve CompileFlow error message.  The new error message will tell where the error comes from.
+
+---
 ## Version 4.3.2, 6/23/2025
 
 ### Added
