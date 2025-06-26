@@ -217,10 +217,9 @@ public class CompileFlows implements EntryPoint {
                 Object loopCondition = flow.get(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
                 String uniqueTaskName = taskName == null? functionRoute : taskName;
                 String source = flow.getProperty(TASKS+"["+i+"]."+SOURCE);
-                if (input instanceof List && output instanceof List && uniqueTaskName != null &&
-                        taskDesc instanceof String && execution instanceof String taskExecution &&
-                        validExecutionType(taskExecution)) {
+                if (isValidTaskConfiguration(input, output, uniqueTaskName, taskDesc, execution, name, i)) {
                     boolean validTask = true;
+                    var taskExecution = (String) execution;
                     if (uniqueTaskName.contains("://") && !uniqueTaskName.startsWith(FLOW_PROTOCOL)) {
                         log.error("{} {} in {}. Syntax is flow://{flow-name}", SKIP_INVALID_TASK, uniqueTaskName, name);
                         return;
@@ -234,7 +233,7 @@ public class CompileFlows implements EntryPoint {
                     if (uniqueTaskName.startsWith(FLOW_PROTOCOL) && functionRoute != null &&
                             !functionRoute.startsWith(FLOW_PROTOCOL)) {
                         log.error("{} process={} in {}. process tag not allowed when name is a sub-flow",
-                                    SKIP_INVALID_TASK, uniqueTaskName, name);
+                                SKIP_INVALID_TASK, uniqueTaskName, name);
                         return;
                     }
                     Task task = new Task(uniqueTaskName, functionRoute, taskExecution);
@@ -271,7 +270,7 @@ public class CompileFlows implements EntryPoint {
                         endTaskFound = true;
                     } else {
                         if (FORK.equals(execution)) {
-                            Object join = flow.get(TASKS+"["+i+"]."+JOIN);
+                            Object join = flow.get(TASKS + "[" + i + "]." + JOIN);
                             if (join instanceof String jt) {
                                 task.setJoinTask(jt);
                             } else {
@@ -286,7 +285,7 @@ public class CompileFlows implements EntryPoint {
                          * A sequential or pipeline must have one next task.
                          */
                         if (!SINK.equals(execution)) {
-                            Object nextList = flow.get(TASKS+"["+i+"]."+NEXT, new ArrayList<>());
+                            Object nextList = flow.get(TASKS + "[" + i + "]." + NEXT, new ArrayList<>());
                             if (nextList instanceof List list) {
                                 if (list.isEmpty()) {
                                     log.error("{} {} in {}. Missing a list of next tasks",
@@ -327,7 +326,7 @@ public class CompileFlows implements EntryPoint {
                          * A pipeline task must have at least one pipeline step
                          */
                         if (PIPELINE.equals(execution)) {
-                            Object pipelineList = flow.get(TASKS+"["+i+"]."+PIPELINE, new ArrayList<>());
+                            Object pipelineList = flow.get(TASKS + "[" + i + "]." + PIPELINE, new ArrayList<>());
                             if (pipelineList instanceof List list) {
                                 if (list.isEmpty()) {
                                     log.error("{} {} in {}. Missing a list of pipeline steps",
@@ -351,7 +350,7 @@ public class CompileFlows implements EntryPoint {
                                         return;
                                     }
                                     task.setLoopType(type);
-                                    List<String> parts = util.split(loopStatement.substring(bracket+1), "(;)");
+                                    List<String> parts = util.split(loopStatement.substring(bracket + 1), "(;)");
                                     if (type.equals(FOR)) {
                                         if (parts.size() < 2 || parts.size() > 3) {
                                             log.error("{} {} in {}. 'for' loop should have 2 or 3 segments",
@@ -366,7 +365,7 @@ public class CompileFlows implements EntryPoint {
                                             List<String> initializer = getForPart1(parts.getFirst());
                                             if (initializer.isEmpty()) {
                                                 log.error("{} {} in {}. Please check for-loop initializer. " +
-                                                            "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
+                                                                "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
                                                         SKIP_INVALID_TASK, uniqueTaskName, name);
                                                 return;
                                             }
@@ -412,7 +411,7 @@ public class CompileFlows implements EntryPoint {
                                     }
                                 }
                                 if (loopCondition instanceof List multiConditions) {
-                                    for (Object c: multiConditions) {
+                                    for (Object c : multiConditions) {
                                         List<String> condition = getCondition(String.valueOf(c));
                                         if (condition.size() == 2) {
                                             task.conditions.add(condition);
@@ -433,17 +432,17 @@ public class CompileFlows implements EntryPoint {
                     List<String> inputList = new ArrayList<>();
                     // ensure data mapping entries are text strings
                     int inputListSize = ((List<Object>) input).size();
-                    for (int j=0; j < inputListSize; j++) {
+                    for (int j = 0; j < inputListSize; j++) {
                         inputList.add(flow.getProperty(TASKS + "[" + i + "]." + INPUT + "[" + j + "]"));
                     }
                     // Support two data mapping formats and convert the 3-part syntax into two entries of 2-part syntax
                     // LHS -> RHS
                     // LHS -> model -> RHS
                     List<String> filteredInputMapping = filterDataMapping(inputList);
-                    for (String line: filteredInputMapping) {
+                    for (String line : filteredInputMapping) {
                         if (validInput(line)) {
                             int sep = line.lastIndexOf(MAP_TO);
-                            String rhs = line.substring(sep+2).trim();
+                            String rhs = line.substring(sep + 2).trim();
                             if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
                                 log.warn("Task {} in {} uses input namespace in right-hand-side - {}", uniqueTaskName, name, line);
                             }
@@ -457,14 +456,14 @@ public class CompileFlows implements EntryPoint {
                     List<String> outputList = new ArrayList<>();
                     // ensure data mapping entries are text strings
                     int outputListSize = ((List<Object>) output).size();
-                    for (int j=0; j < outputListSize; j++) {
+                    for (int j = 0; j < outputListSize; j++) {
                         outputList.add(flow.getProperty(TASKS + "[" + i + "]." + OUTPUT + "[" + j + "]"));
                     }
                     // Support two data mapping formats and convert the 3-part syntax into two entries of 2-part syntax
                     // LHS -> RHS
                     // LHS -> model -> RHS
                     List<String> filteredOutputMapping = filterDataMapping(outputList);
-                    for (String line: filteredOutputMapping) {
+                    for (String line : filteredOutputMapping) {
                         if (validOutput(line, isDecisionTask)) {
                             task.output.add(line);
                         } else {
@@ -479,9 +478,6 @@ public class CompileFlows implements EntryPoint {
                     if (validTask) {
                         entry.addTask(task);
                     }
-                } else {
-                    log.error("Unable to parse {} - " +
-                            "a task must contain input, process, output, description and execution", name);
                 }
             }
             if (endTaskFound) {
@@ -516,6 +512,41 @@ public class CompileFlows implements EntryPoint {
             log.error("Unable to parse {} - check flow.id, flow.description, flow.ttl, first.task", name);
         }
     }
+
+    private boolean isValidTaskConfiguration(Object input, Object output, String uniqueTaskName, Object taskDesc, Object execution, String flowName, int taskIndex) {
+
+        if (!(input instanceof List)) {
+            log.error("Unable to parse {} task {} - input must be a list", flowName, taskIndex);
+            return false;
+        }
+
+        if (!(output instanceof List)) {
+            log.error("Unable to parse {} task {} - output must be a list", flowName, taskIndex);
+            return false;
+        }
+
+        if (uniqueTaskName == null || uniqueTaskName.isBlank()) {
+            log.error("Unable to parse {} task {} - task name must not be empty", flowName, taskIndex);
+            return false;
+        }
+
+        if (!(taskDesc instanceof String taskDescription) || taskDescription.isBlank()) {
+            log.error("Unable to parse {} task {} - description must not be empty", flowName, taskIndex);
+            return false;
+        }
+
+        if (!(execution instanceof String taskExecution) || taskExecution.isBlank()) {
+            log.error("Unable to parse {} task {} - invalid task execution type must not be empty", flowName, taskIndex);
+            return false;
+        }
+
+        if(!validExecutionType(taskExecution)) {
+            log.error("Unable to parse {} task {} - invalid task execution type {}, must be one of {}", flowName, taskIndex, taskExecution, EXECUTION_TYPES);
+        }
+
+        return true;
+    }
+
 
     private boolean hasExternalState(List<String> mapping) {
         for (String m: mapping) {
