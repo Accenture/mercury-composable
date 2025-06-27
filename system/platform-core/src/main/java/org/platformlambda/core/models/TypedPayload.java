@@ -22,21 +22,4 @@ package org.platformlambda.core.models;
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  */
-public class TypedPayload {
-    private final String type;
-    private final Object payload;
-
-    public TypedPayload(String type, Object payload) {
-        this.type = type;
-        this.payload = payload;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public Object getPayload() {
-        return payload;
-    }
-
-}
+public record TypedPayload(String type, Object payload) { }

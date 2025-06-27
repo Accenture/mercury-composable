@@ -48,7 +48,7 @@ public class MsgPack {
      */
     @SuppressWarnings("unchecked")
     public Object unpack(byte[] bytes) throws IOException  {
-        Object result = unpack(bytes, 0, bytes.length);
+        Object result = unpackData(bytes);
         if (result instanceof Map) {
             // is this an encoded payload
             Map<String, Object> map = (Map<String, Object>) result;
@@ -67,25 +67,21 @@ public class MsgPack {
      * Optimized unpack method for generic map or list object
      *
      * @param bytes - packed structure
-     * @param offset of array
-     * @param length from offset
      * @return result - Map or List
      * @throws IOException for mapping exception
      */
-    public Object unpack(byte[] bytes, int offset, int length) throws IOException  {
+    private Object unpackData(byte[] bytes) throws IOException  {
         MessageUnpacker handler = null;
         try {
-            handler = MessagePack.newDefaultUnpacker(bytes, offset, length);
+            handler = MessagePack.newDefaultUnpacker(bytes, 0, bytes.length);
             if (handler.hasNext()) {
                 MessageFormat mf = handler.getNextFormat();
                 ValueType type = mf.getValueType();
-                if (type == ValueType.MAP) {
-                    return unpack(handler, new HashMap<>());
-                } else if (type == ValueType.ARRAY) {
-                    return unpack(handler, new ArrayList<>());
-                } else {
-                    throw new MessageFormatException("Packed input should be Map or List, Actual: "+type);
-                }
+                return switch (type) {
+                    case ValueType.MAP -> unpack(handler, new HashMap<>());
+                    case ValueType.ARRAY -> unpack(handler, new ArrayList<>());
+                    default -> throw new MessageFormatException("Packed input should be Map or List, Actual: " + type);
+                };
             }
             handler.close();
             handler = null;
@@ -205,8 +201,8 @@ public class MsgPack {
         } else {
             TypedPayload typed = converter.encode(obj, true);
             Map<String, Object> map = new HashMap<>();
-            map.put(TYPE, typed.getType());
-            map.put(DATA, typed.getPayload());
+            map.put(TYPE, typed.type());
+            map.put(DATA, typed.payload());
             return pack(map);
         }
     }

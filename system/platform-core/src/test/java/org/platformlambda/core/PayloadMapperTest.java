@@ -107,13 +107,13 @@ class PayloadMapperTest {
     }
 
     @Test
-    void convertPoJoUsingMsgPack() {
+    void convertPoJoUsingConverter() {
         PoJo input = new PoJo();
         input.setName("hello world");
         input.setNumber(12345);
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(input.getClass().getName(), typed.getType());
-        assertInstanceOf(Map.class, typed.getPayload());
+        assertEquals(input.getClass().getName(), typed.type());
+        assertInstanceOf(Map.class, typed.payload());
         Object converted = converter.decode(typed);
         assertInstanceOf(Map.class, converted);
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
@@ -127,9 +127,11 @@ class PayloadMapperTest {
         input.setName("hello world");
         input.setNumber(12345);
         TypedPayload typed = converter.encode(input, false);
-        assertEquals(input.getClass().getName(), typed.getType());
-        assertInstanceOf(byte[].class, typed.getPayload());
+        assertEquals(input.getClass().getName(), typed.type());
+        assertInstanceOf(byte[].class, typed.payload());
         Object converted = converter.decode(typed);
+        System.out.println(converted);
+
         assertInstanceOf(byte[].class, converted);
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
         assertEquals(input.getName(), o.getName());
@@ -155,8 +157,8 @@ class PayloadMapperTest {
         Map<String, Object> input = new HashMap<>();
         input.put("hello", "world");
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.MAP, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.MAP, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -165,8 +167,8 @@ class PayloadMapperTest {
     void convertString() {
         String input = "hello world";
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -175,8 +177,8 @@ class PayloadMapperTest {
     void convertBytes() {
         byte[] input = "hello world".getBytes();
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -184,8 +186,8 @@ class PayloadMapperTest {
     @Test
     void convertNull() {
         TypedPayload typed = converter.encode(null, true);
-        assertEquals(PayloadMapper.NOTHING, typed.getType());
-        assertNull(typed.getPayload());
+        assertEquals(PayloadMapper.NOTHING, typed.type());
+        assertNull(typed.payload());
         Object converted = converter.decode(typed);
         assertNull(converted);
     }
@@ -193,8 +195,8 @@ class PayloadMapperTest {
     @Test
     void convertBoolean() {
         TypedPayload typed = converter.encode(true, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(true, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(true, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(true, converted);
     }
@@ -203,8 +205,8 @@ class PayloadMapperTest {
     void convertInteger() {
         Integer input = 12345;
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -213,8 +215,8 @@ class PayloadMapperTest {
     void convertLong() {
         Long input = 123456L;
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -223,8 +225,8 @@ class PayloadMapperTest {
     void convertFloat() {
         Float input = 12.34f;
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -233,8 +235,8 @@ class PayloadMapperTest {
     void convertDouble() {
         Double input = 12.34d;
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -244,8 +246,8 @@ class PayloadMapperTest {
         Utility util = Utility.getInstance();
         Date input = new Date();
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.PRIMITIVE, typed.getType());
-        assertEquals(util.date2str(input), typed.getPayload());
+        assertEquals(PayloadMapper.PRIMITIVE, typed.type());
+        assertEquals(util.date2str(input), typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(util.date2str(input), converted);
     }
@@ -256,8 +258,8 @@ class PayloadMapperTest {
         input.add("hello");
         input.add("world");
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.LIST, typed.getType());
-        assertEquals(input, typed.getPayload());
+        assertEquals(PayloadMapper.LIST, typed.type());
+        assertEquals(input, typed.payload());
         Object converted = converter.decode(typed);
         assertEquals(input, converted);
     }
@@ -266,7 +268,7 @@ class PayloadMapperTest {
     void convertArray() {
         String[] input = {"hello", "world"};
         TypedPayload typed = converter.encode(input, true);
-        assertEquals(PayloadMapper.LIST, typed.getType());
+        assertEquals(PayloadMapper.LIST, typed.type());
         Object converted = converter.decode(typed);
         assertEquals(Arrays.asList(input), converted);
     }

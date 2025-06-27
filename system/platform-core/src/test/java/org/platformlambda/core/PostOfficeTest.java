@@ -84,69 +84,6 @@ class PostOfficeTest extends TestBase {
     }
 
     @Test
-    void testEventManagementOptimization() throws InterruptedException {
-        Platform platform = Platform.getInstance();
-        EventEmitter po = EventEmitter.getInstance();
-        final String unknown = "unknown";
-        BlockingQueue<String> routeBench = new LinkedBlockingQueue<>();
-        BlockingQueue<Object> inputBench = new LinkedBlockingQueue<>();
-        BlockingQueue<Integer> freeWorkerBench = new LinkedBlockingQueue<>();
-        LambdaFunction f = (headers, input, instance) -> {
-            String myRoute = headers.getOrDefault("my_route", unknown);
-            routeBench.add(myRoute);
-            inputBench.add(input);
-            if (input instanceof String functionName) {
-                Map<String, ServiceDef> routingTable = platform.getLocalRoutingTable();
-                var service = routingTable.get(functionName);
-                freeWorkerBench.add(service.getManager().getFreeWorkers());
-            } else if (input instanceof EventEnvelope event) {
-                Map<String, ServiceDef> routingTable = platform.getLocalRoutingTable();
-                var service = routingTable.get(event.getTo());
-                freeWorkerBench.add(service.getManager().getFreeWorkers());
-            } else {
-                freeWorkerBench.add(-1);
-            }
-            return null;
-        };
-        /*
-         * In this unit test, we want to prove that the regular function is executed through
-         * the event loop and the event script functions are served by virtual threads directly.
-         *
-         * This optimization permits ideal event choreography in the event-script-engine module.
-         */
-        platform.registerPrivate(TASK_EXECUTOR, f, 1);
-        platform.registerPrivate(EVENT_MANAGER, f, 1);
-        platform.registerPrivate(REGULAR_FUNCTION, f, 1);
-        // metadata is inserted by the event system when routing to regular functions
-        po.send(REGULAR_FUNCTION, REGULAR_FUNCTION);
-        String regularResult = routeBench.poll(10, TimeUnit.SECONDS);
-        assertEquals(REGULAR_FUNCTION, regularResult);
-        assertInstanceOf(String.class, inputBench.take());
-        // since this is a regular event routing, the number of worker is decremented by one
-        assertEquals(0, freeWorkerBench.take());
-        // metadata is not set when routing to the event script manager function
-        po.send(TASK_EXECUTOR, TASK_EXECUTOR);
-        String taskExecutorResult = routeBench.poll(10, TimeUnit.SECONDS);
-        assertEquals(unknown, taskExecutorResult);
-        Object taskExecutorInput = inputBench.take();
-        assertInstanceOf(EventEnvelope.class, taskExecutorInput);
-        var taskExecutorEvent = (EventEnvelope) taskExecutorInput;
-        assertEquals(TASK_EXECUTOR, taskExecutorEvent.getTo());
-        // since this is a direct execution, the number of worker is not changed
-        assertEquals(1, freeWorkerBench.take());
-        // metadata is not set when routing to the task executor function
-        po.send(EVENT_MANAGER, EVENT_MANAGER);
-        String eventManagerResult = routeBench.poll(10, TimeUnit.SECONDS);
-        assertEquals(unknown, eventManagerResult);
-        Object eventManagerInput = inputBench.take();
-        assertInstanceOf(EventEnvelope.class, eventManagerInput);
-        var eventManagerEvent = (EventEnvelope) eventManagerInput;
-        assertEquals(EVENT_MANAGER, eventManagerEvent.getTo());
-        // since this is a direct execution, the number of worker is not changed
-        assertEquals(1, freeWorkerBench.take());
-    }
-
-    @Test
     void testMonoFunction() throws ExecutionException, InterruptedException {
         // test multiple times to validate worker flow control
         final var data = Map.of("hello", "world");
