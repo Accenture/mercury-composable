@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Warn up logic for Java 21 virtual thread system
+Warm up logic for Java 21 virtual thread system
 
 ### Removed
 
