@@ -531,11 +531,12 @@ public class CompileFlows implements EntryPoint {
             return false;
         }
         if (!(execution instanceof String taskExecution) || taskExecution.isBlank()) {
-            log.error("Unable to parse {} task {} - invalid task execution type must not be empty", flowName, taskIndex);
+            log.error("Unable to parse {} task {} - execution type must not be empty", flowName, taskIndex);
             return false;
         }
         if(!validExecutionType(taskExecution)) {
-            log.error("Unable to parse {} task {} - invalid task execution type {}, must be one of {}", flowName, taskIndex, taskExecution, EXECUTION_TYPES);
+            log.error("Unable to parse {} task {} - execution type '{}' must be one of {}", flowName, taskIndex, taskExecution, EXECUTION_TYPES);
+            return false;
         }
         return true;
     }
