@@ -6,19 +6,19 @@
     <groupId>com.accenture</groupId>
     <artifactId>api-playground</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.2</version>
+    <version>4.3.3</version>
     <name>API playground using OpenAPI</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.3</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netty.version>4.2.1.Final</netty.version>
+        <netty.version>4.2.2.Final</netty.version>
         <kafka.version>3.9.0</kafka.version>
         <gson.version>2.13.0</gson.version>
         <java.version>21</java.version>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.3.2</version>
+            <version>4.3.3</version>
         </dependency>
 
         <dependency>

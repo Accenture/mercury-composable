@@ -103,11 +103,10 @@ public class PayloadMapper {
     }
 
     public Object decode(TypedPayload typed) {
-        return typed.getPayload();
+        return typed.payload();
     }
 
     public boolean isPrimitive(Object obj) {
         return (obj instanceof String || obj instanceof byte[] || obj instanceof Number || obj instanceof Boolean);
     }
-
 }

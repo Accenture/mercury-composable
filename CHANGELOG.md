@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.3, 6/26/2025
+
+### Added
+
+Warn up logic for Java 21 virtual thread system
+
+### Removed
+
+The setBodyWithDefaultSerialization() method in EventEnvelope is retired
+
+### Changed
+
+1. Improve CompileFlow error message.  The new error message will tell where the error comes from.
+2. Open source dependency update below.
+
+Spring Boot parent version 3.5.3, Classgraph version 4.8.180, Netty version 4.2.2.Final
+
+---
 ## Version 4.3.2, 6/23/2025
 
 ### Added

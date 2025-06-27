@@ -15,7 +15,6 @@ package org.platformlambda.core.models;
 
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.serializers.MsgPack;
-import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -29,7 +28,6 @@ public class EventEnvelope {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelope.class);
     private static final Utility util = Utility.getInstance();
     private static final MsgPack msgPack = new MsgPack();
-    private static final PayloadMapper converter = PayloadMapper.getInstance();
     private static final String ID_FIELD = "id";
     private static final String TO_FIELD = "to";
     private static final String FROM_FIELD = "from";
@@ -561,22 +559,6 @@ public class EventEnvelope {
         }
         this.originalPayload = payload;
         this.body = payload;
-        return this;
-    }
-
-    /**
-     * This method is designed for backward compatibility.
-     * (Since version 4.2.43, default serialization is deferred to the WorkerHandler to reduce overheads)
-     *
-     * @param body Usually a PoJo, a Map or Java primitive
-     * @return event envelope
-     */
-    public EventEnvelope setBodyWithDefaultSerialization(Object body) {
-        setBody(body);
-        // encode body and save object type
-        TypedPayload typed = converter.encode(this.body, isBinary());
-        this.body = typed.getPayload();
-        this.type = typed.getType();
         return this;
     }
 

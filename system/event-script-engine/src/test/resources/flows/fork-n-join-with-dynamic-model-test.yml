@@ -53,6 +53,5 @@ tasks:
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
-      - 'model.none -> file(/tmp/temp-items.txt)'
     description: 'Return result'
     execution: end

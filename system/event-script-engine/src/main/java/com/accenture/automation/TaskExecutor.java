@@ -39,7 +39,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.IntStream;
 
 /**
  * This is reserved for system use.
@@ -595,32 +594,40 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void handleForkAndJoin(FlowInstance flowInstance, Task task) {
-        List<String> steps = task.nextSteps;
-        boolean hasDynamicList = false;
+        List<String> steps = new ArrayList<>(task.nextSteps);
+        boolean isList = false;
         var dynamicListKey = task.getSourceModelKey();
-        if (dynamicListKey != null && !dynamicListKey.isBlank()) {
+        if (dynamicListKey != null && !dynamicListKey.isBlank() && steps.size() == 1) {
             Map<String, Object> modelOnly = new HashMap<>();
             modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
             MultiLevelMap model = new MultiLevelMap(modelOnly);
-            var list = (List<?>)model.getElement(task.getSourceModelKey());
-            if (list != null) {
-                var size = list.size();
-                var nextSteps = task.nextSteps;
-                steps = IntStream.range(0, size) // Generates a stream of integers from 0 to n-1
-                        .mapToObj(i -> nextSteps) // Maps each integer to the original list
-                        .flatMap(List::stream) // Flattens the stream of lists into a single stream of elements
-                        .toList();
-                hasDynamicList = true;
+            var o = model.getElement(dynamicListKey);
+            if (o instanceof List<?> list) {
+                isList = true;
+                if (list.size() > 1) {
+                    var singleStep = task.nextSteps.getFirst();
+                    for (int i=1; i < list.size(); i++) {
+                        steps.add(singleStep);
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException("Flow "+flowInstance.getFlow().id+":"+flowInstance.id +
+                            " " + task.service + " - " + dynamicListKey + " is not a list");
             }
         }
         if (!steps.isEmpty() && task.getJoinTask() != null) {
-            int seq = flowInstance.pipeCounter.incrementAndGet();
-            int forks = steps.size();
-            flowInstance.pipeMap.put(seq, new JoinTaskInfo(forks, task.getJoinTask()));
-            for (int i = 0; i < steps.size(); i++) {
-                String next = steps.get(i);
-                executeTask(flowInstance, next, seq, hasDynamicList ? i : -1, hasDynamicList ? dynamicListKey : null);
-            }
+            executeForkAndJoin(flowInstance, task, steps, isList, dynamicListKey);
+        }
+    }
+
+    private void executeForkAndJoin(FlowInstance flowInstance, Task task, List<String> steps,
+                                    boolean isList, String dynamicListKey) {
+        int seq = flowInstance.pipeCounter.incrementAndGet();
+        int forks = steps.size();
+        flowInstance.pipeMap.put(seq, new JoinTaskInfo(forks, task.getJoinTask()));
+        for (int i = 0; i < steps.size(); i++) {
+            String next = steps.get(i);
+            executeTask(flowInstance, next, seq, isList ? i : -1, isList ? dynamicListKey : null);
         }
     }
 
