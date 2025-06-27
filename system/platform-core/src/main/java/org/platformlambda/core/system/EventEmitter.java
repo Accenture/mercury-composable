@@ -84,8 +84,8 @@ public class EventEmitter {
     private boolean multicastEnabled = false;
     private boolean journalEnabled = false;
     private boolean eventHttpEnabled = false;
+    private boolean warm = false;
     private static final AtomicInteger warmUpCounter = new AtomicInteger(0);
-    private static boolean warm = false;
     private static final EventEmitter INSTANCE = new EventEmitter();
 
     private EventEmitter() {
