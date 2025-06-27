@@ -514,39 +514,31 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean isValidTaskConfiguration(Object input, Object output, String uniqueTaskName, Object taskDesc, Object execution, String flowName, int taskIndex) {
-
         if (!(input instanceof List)) {
             log.error("Unable to parse {} task {} - input must be a list", flowName, taskIndex);
             return false;
         }
-
         if (!(output instanceof List)) {
             log.error("Unable to parse {} task {} - output must be a list", flowName, taskIndex);
             return false;
         }
-
         if (uniqueTaskName == null || uniqueTaskName.isBlank()) {
             log.error("Unable to parse {} task {} - task name must not be empty", flowName, taskIndex);
             return false;
         }
-
         if (!(taskDesc instanceof String taskDescription) || taskDescription.isBlank()) {
             log.error("Unable to parse {} task {} - description must not be empty", flowName, taskIndex);
             return false;
         }
-
         if (!(execution instanceof String taskExecution) || taskExecution.isBlank()) {
             log.error("Unable to parse {} task {} - invalid task execution type must not be empty", flowName, taskIndex);
             return false;
         }
-
         if(!validExecutionType(taskExecution)) {
             log.error("Unable to parse {} task {} - invalid task execution type {}, must be one of {}", flowName, taskIndex, taskExecution, EXECUTION_TYPES);
         }
-
         return true;
     }
-
 
     private boolean hasExternalState(List<String> mapping) {
         for (String m: mapping) {
