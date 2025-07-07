@@ -18,7 +18,6 @@
 
 package org.platformlambda.core.logging;
 
-import com.google.gson.Gson;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
@@ -28,65 +27,19 @@ import org.apache.logging.log4j.core.impl.MutableLogEvent;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.platformlambda.core.serializers.SimpleMapper;
-import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class JsonLogger extends AbstractAppender {
-    protected static final ConcurrentLinkedQueue<Map<String, Object>> queue = new ConcurrentLinkedQueue<>();
-    private static final Gson prettySerializer = SimpleMapper.getInstance().getPrettyGson();
-    private static final Gson compactSerializer = SimpleMapper.getInstance().getCompactGson();
     private static final Utility util = Utility.getInstance();
-    private static final AtomicInteger counter = new AtomicInteger(0);
-    private static boolean running = true;
 
     protected JsonLogger(String name, Filter filter,
                          Layout<? extends Serializable> layout,
                          boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
-        if (counter.incrementAndGet() == 1) {
-            // perform asynchronous logging and do System.out orderly
-            Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                Runtime.getRuntime().addShutdownHook(new Thread(JsonLogger::shutdown));
-                while (running) {
-                    var message = queue.poll();
-                    if (message == null) {
-                        try {
-                            // Thread.sleep is non-blocking in a virtual thread
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            // just ignore it
-                        }
-                    } else {
-                        // enforce data contract
-                        var pretty = message.get("0");
-                        var data = message.get("1");
-                        if (pretty instanceof Boolean prettyPrint && data instanceof Map) {
-                            try {
-                                if (prettyPrint) {
-                                    System.out.println(prettySerializer.toJson(data));
-                                } else {
-                                    System.out.println(compactSerializer.toJson(data));
-                                }
-                            } catch (Exception e) {
-                                // guarantee printing even when serializer fails
-                                System.out.println(data);
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    private static void shutdown() {
-        running = false;
     }
 
     protected Map<String, Object> getJson(LogEvent event) {

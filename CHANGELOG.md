@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.4, 7/3/2025
+
+### Added
+
+N/A
+
+### Removed
+
+Message queuing mechanism in JSON and COMPACT loggers
+
+### Changed
+
+Updated OSS dependency - Kafka-client version 3.9.1
+
+---
 ## Version 4.3.3, 6/26/2025
 
 ### Added

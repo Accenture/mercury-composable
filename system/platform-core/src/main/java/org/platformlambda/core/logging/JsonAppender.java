@@ -18,15 +18,16 @@
 
 package org.platformlambda.core.logging;
 
+import com.google.gson.Gson;
 import org.apache.logging.log4j.core.*;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.platformlambda.core.serializers.SimpleMapper;
 
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * This is reserved for system use.
@@ -34,6 +35,7 @@ import java.util.Map;
  */
 @Plugin(name = "JsonLogger", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class JsonAppender extends JsonLogger {
+    private static final Gson prettySerializer = SimpleMapper.getInstance().getPrettyGson();
 
     protected JsonAppender(String name, Filter filter,
                            Layout<? extends Serializable> layout,
@@ -53,9 +55,13 @@ public class JsonAppender extends JsonLogger {
     @Override
     public void append(LogEvent event) {
         if (event != null) {
-            // 0 - true if pretty print
-            // 1 - map of key-values
-            queue.add(Map.of("0", true, "1", getJson(event)));
+            var data = getJson(event);
+            try {
+                System.out.println(prettySerializer.toJson(data));
+            } catch (Exception e) {
+                // guarantee printing even when serializer fails
+                System.out.println(data);
+            }
         }
     }
 }
