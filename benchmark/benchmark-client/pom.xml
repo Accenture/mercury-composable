@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>benchmark-client</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.3</version>
+    <version>4.3.4</version>
     <name>Benchmark client</name>
 
     <parent>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.3.3</version>
+            <version>4.3.4</version>
         </dependency>
 
         <dependency>
