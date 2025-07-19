@@ -133,7 +133,7 @@ public class WorkerHandler {
                     payload.put(TRACE, metrics);
                     po.send(dt.setBody(payload));
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
             }
         } else {
@@ -334,7 +334,7 @@ public class WorkerHandler {
             }
             return ps.setExecutionTime(diff).setInputOutput(inputOutput);
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             float diff = getExecTime(begin);
             final String replyTo = event.getReplyTo();
             final int status = getStatusFromException(e);
