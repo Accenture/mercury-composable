@@ -14,7 +14,7 @@ public class WorkerHandlerTest extends TestBase {
 
 
     @Test
-    void shouldReturn500_OnNoClassDefError() throws InterruptedException, ExecutionException {
+    void shouldReturn500OnNoClassDefError() throws InterruptedException, ExecutionException {
         long timeout = 5000;
         String demoFunction = "test.v1.error.noclassdef";
 
@@ -38,7 +38,7 @@ public class WorkerHandlerTest extends TestBase {
 
 
     @Test
-    void shouldReturn500_OnAssertionError() throws InterruptedException, ExecutionException {
+    void shouldReturn500OnAssertionError() throws InterruptedException, ExecutionException {
         long timeout = 5000;
         String demoFunction = "test.v1.error.assertion.error";
 
@@ -62,7 +62,7 @@ public class WorkerHandlerTest extends TestBase {
 
 
     @Test
-    void shouldReturn500_OnAssertion() throws InterruptedException, ExecutionException {
+    void shouldReturn500OnAssertion() throws InterruptedException, ExecutionException {
         long timeout = 5000;
         String demoFunction = "test.v1.error";
 

@@ -133,7 +133,7 @@ public class WorkerHandler {
                     payload.put(TRACE, metrics);
                     po.send(dt.setBody(payload));
                 }
-            } catch (NoClassDefFoundError | AssertionError | Exception e) {
+            } catch (IllegalArgumentException e) {
                 log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
             }
         } else {
