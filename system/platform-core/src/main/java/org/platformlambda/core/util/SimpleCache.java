@@ -95,9 +95,7 @@ public class SimpleCache {
         TimedItem item = cache.get(key);
         cache.remove(key);
         if (item != null) {
-            // remove references
-            item.time = null;
-            item.payload = null;
+            item.clear();
         }
     }
 
@@ -106,11 +104,11 @@ public class SimpleCache {
         if (item == null) {
             return null;
         } else {
-            if (System.currentTimeMillis() - item.time > expiry) {
+            if (System.currentTimeMillis() - item.getTime() > expiry) {
                 cache.remove(key);
                 return null;
             } else {
-                return item.payload;
+                return item.getPayload();
             }
         }
     }
@@ -138,7 +136,7 @@ public class SimpleCache {
         List<String> expired = new ArrayList<>();
         cache.keySet().forEach(k -> {
             TimedItem item = cache.get(k);
-            if (now - item.time > expiry) {
+            if (now - item.getTime() > expiry) {
                 expired.add(k);
             }
         });
@@ -165,5 +163,4 @@ public class SimpleCache {
             });
         }
     }
-
 }

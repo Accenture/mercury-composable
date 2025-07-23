@@ -63,5 +63,4 @@ public class EventBlocks {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
 }

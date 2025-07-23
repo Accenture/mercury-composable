@@ -31,10 +31,7 @@ import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -238,7 +235,7 @@ class EventHttpTest extends TestBase {
         event.setTo(demoFunction).setBody("ok").setHeader("hello", "world");
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        java.util.concurrent.Future<EventEnvelope> future = po.request(event, timeout, securityHeaders,
+        CompletableFuture<EventEnvelope> future = po.request(event, timeout, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
         EventEnvelope result = future.get();
         assert result != null;
@@ -256,7 +253,7 @@ class EventHttpTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", "123", "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setTo("hello.world")
                 .setBody(numberThree).setHeader("hello", "world");
-        java.util.concurrent.Future<EventEnvelope> future = po.request(event, timeout, securityHeaders,
+        CompletableFuture<EventEnvelope> future = po.request(event, timeout, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
         EventEnvelope result = future.get();
         assertNotNull(result);

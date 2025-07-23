@@ -261,18 +261,17 @@ public class EventEnvelope {
      * @return list of pojo
      * @param <T> class type
      */
-    @SuppressWarnings("rawtypes")
     public <T> List<T> getBodyAsListOfPoJo(Class<T> toValueType) {
-        List pojoList = null;
+        List<?> pojoList = null;
         List<T> result = new ArrayList<>();
         // for compatibility with older version 2
-        if (body instanceof Map m) {
+        if (body instanceof Map<?, ?> m) {
             Object o = m.get("list");
-            if (o instanceof List oList) {
-                pojoList = oList;
+            if (o instanceof List<?> items) {
+                pojoList = items;
             }
-        } else if (body instanceof List oList) {
-            pojoList = oList;
+        } else if (body instanceof List<?> items) {
+            pojoList = items;
         }
         if (pojoList != null) {
             var mapper = SimpleMapper.getInstance().getMapper();
@@ -777,68 +776,72 @@ public class EventEnvelope {
             Object o = msgPack.unpack(bytes);
             if (o instanceof Map) {
                 Map<String, Object> message = (Map<String, Object>) o;
-                if (message.containsKey(ID_FLAG)) {
-                    id = (String) message.get(ID_FLAG);
-                }
-                if (message.containsKey(TO_FLAG)) {
-                    to = (String) message.get(TO_FLAG);
-                }
-                if (message.containsKey(FROM_FLAG)) {
-                    from = (String) message.get(FROM_FLAG);
-                }
-                if (message.containsKey(REPLY_TO_FLAG)) {
-                    replyTo = (String) message.get(REPLY_TO_FLAG);
-                }
-                if (message.containsKey(TRACE_ID_FLAG)) {
-                    traceId = (String) message.get(TRACE_ID_FLAG);
-                }
-                if (message.containsKey(TRACE_PATH_FLAG)) {
-                    tracePath = (String) message.get(TRACE_PATH_FLAG);
-                }
-                if (message.containsKey(CID_FLAG)) {
-                    cid = (String) message.get(CID_FLAG);
-                }
-                if (message.containsKey(TAG_FLAG)) {
-                    Object tf = message.get(TAG_FLAG);
-                    if (tf instanceof Map) {
-                        Map<String, String> map = (Map<String, String>) tf;
-                        tags.putAll(map);
-                    }
-                }
-                if (message.containsKey(ANNOTATION_FLAG)) {
-                    Object tf = message.get(ANNOTATION_FLAG);
-                    if (tf instanceof Map) {
-                        Map<String, Object> map = (Map<String, Object>) tf;
-                        annotations.putAll(map);
-                    }
-                }
-                if (message.containsKey(STATUS_FLAG)) {
-                    status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FLAG))));
-                }
-                if (message.containsKey(HEADERS_FLAG)) {
-                    setHeaders((Map<String, String>) message.get(HEADERS_FLAG));
-                }
-                if (message.containsKey(BODY_FLAG)) {
-                    body = message.get(BODY_FLAG);
-                }
-                if (message.containsKey(EXCEPTION_FLAG)) {
-                    exceptionBytes = (byte[]) message.get(EXCEPTION_FLAG);
-                }
-                if (message.containsKey(STACK_FLAG)) {
-                    stackTrace = (String) message.get(STACK_FLAG);
-                }
-                if (message.containsKey(OBJ_TYPE_FLAG)) {
-                    type = (String) message.get(OBJ_TYPE_FLAG);
-                }
-                if (message.containsKey(EXECUTION_FLAG)) {
-                    executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
-                }
-                if (message.containsKey(ROUND_TRIP_FLAG)) {
-                    roundTrip = Math.max(0f, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
-                }
+                loadKeyValuePart1(message);
+                loadKeyValuePart2(message);
             }
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadKeyValuePart1(Map<String, Object> message) {
+        if (message.get(ID_FLAG) instanceof String text) {
+            id = text;
+        }
+        if (message.get(TO_FLAG) instanceof String text) {
+            to = text;
+        }
+        if (message.get(FROM_FLAG) instanceof String text) {
+            from = text;
+        }
+        if (message.get(REPLY_TO_FLAG) instanceof String text) {
+            replyTo = text;
+        }
+        if (message.get(TRACE_ID_FLAG) instanceof String text) {
+            traceId = text;
+        }
+        if (message.get(TRACE_PATH_FLAG) instanceof String text) {
+            tracePath = text;
+        }
+        if (message.get(CID_FLAG) instanceof String text) {
+            cid = text;
+        }
+        if (message.get(TAG_FLAG) instanceof Map) {
+            Map<String, String> map = (Map<String, String>) message.get(TAG_FLAG);
+            tags.putAll(map);
+        }
+        if (message.get(ANNOTATION_FLAG) instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) message.get(ANNOTATION_FLAG);
+            annotations.putAll(map);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadKeyValuePart2(Map<String, Object> message) {
+        if (message.containsKey(STATUS_FLAG)) {
+            status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FLAG))));
+        }
+        if (message.get(HEADERS_FLAG) instanceof Map) {
+            setHeaders((Map<String, String>) message.get(HEADERS_FLAG));
+        }
+        if (message.containsKey(BODY_FLAG)) {
+            body = message.get(BODY_FLAG);
+        }
+        if (message.get(EXCEPTION_FLAG) instanceof byte[] b) {
+            exceptionBytes = b;
+        }
+        if (message.get(STACK_FLAG) instanceof String text) {
+            stackTrace = text;
+        }
+        if (message.get(OBJ_TYPE_FLAG) instanceof String text) {
+            type = text;
+        }
+        if (message.containsKey(EXECUTION_FLAG)) {
+            executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FLAG))));
+        }
+        if (message.containsKey(ROUND_TRIP_FLAG)) {
+            roundTrip = Math.max(0f, util.str2float(String.valueOf(message.get(ROUND_TRIP_FLAG))));
         }
     }
 
@@ -849,6 +852,15 @@ public class EventEnvelope {
      * @throws IllegalArgumentException in case of encoding errors
      */
     public byte[] toBytes() {
+        Map<String, Object> message = packSomeKeyValues();
+        try {
+            return msgPack.pack(packMoreKeyValues(message));
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private Map<String, Object> packSomeKeyValues() {
         Map<String, Object> message = new HashMap<>();
         if (id != null) {
             message.put(ID_FLAG, id);
@@ -874,6 +886,10 @@ public class EventEnvelope {
         if (status != null) {
             message.put(STATUS_FLAG, status);
         }
+        return message;
+    }
+
+    private Map<String, Object> packMoreKeyValues(Map<String, Object> message) {
         if (!headers.isEmpty()) {
             message.put(HEADERS_FLAG, headers);
         }
@@ -901,67 +917,66 @@ public class EventEnvelope {
         if (roundTrip != null) {
             message.put(ROUND_TRIP_FLAG, Math.max(0f, roundTrip));
         }
-        try {
-            return msgPack.pack(message);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+        return message;
+    }
+
+    public void fromMap(Map<String, Object> message) {
+        fromKeyValuePart1(message);
+        fromKeyValuePart2(message);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void fromKeyValuePart1(Map<String, Object> message) {
+        if (message.get(ID_FIELD) instanceof String text) {
+            id = text;
+        }
+        if (message.get(TO_FIELD) instanceof String text) {
+            to = text;
+        }
+        if (message.get(FROM_FIELD) instanceof String text) {
+            from = text;
+        }
+        if (message.get(REPLY_TO_FIELD) instanceof String text) {
+            replyTo = text;
+        }
+        if (message.get(TRACE_ID_FIELD) instanceof String text) {
+            traceId = text;
+        }
+        if (message.get(TRACE_PATH_FIELD) instanceof String text) {
+            tracePath = text;
+        }
+        if (message.get(CID_FIELD) instanceof String text) {
+            cid = text;
+        }
+        if (message.get(TAG_FIELD) instanceof Map) {
+            Map<String, String> map = (Map<String, String>) message.get(TAG_FIELD);
+            tags.putAll(map);
+        }
+        if (message.get(ANNOTATION_FIELD) instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) message.get(ANNOTATION_FIELD);
+            annotations.putAll(map);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public void fromMap(Map<String, Object> message) {
-        if (message.containsKey(ID_FIELD)) {
-            id = (String) message.get(ID_FIELD);
-        }
-        if (message.containsKey(TO_FIELD)) {
-            to = (String) message.get(TO_FIELD);
-        }
-        if (message.containsKey(FROM_FIELD)) {
-            from = (String) message.get(FROM_FIELD);
-        }
-        if (message.containsKey(REPLY_TO_FIELD)) {
-            replyTo = (String) message.get(REPLY_TO_FIELD);
-        }
-        if (message.containsKey(TRACE_ID_FIELD)) {
-            traceId = (String) message.get(TRACE_ID_FIELD);
-        }
-        if (message.containsKey(TRACE_PATH_FIELD)) {
-            tracePath = (String) message.get(TRACE_PATH_FIELD);
-        }
-        if (message.containsKey(CID_FIELD)) {
-            cid = (String) message.get(CID_FIELD);
-        }
-        if (message.containsKey(TAG_FIELD)) {
-            Object tf = message.get(TAG_FIELD);
-            if (tf instanceof Map) {
-                Map<String, String> map = (Map<String, String>) tf;
-                tags.putAll(map);
-            }
-        }
-        if (message.containsKey(ANNOTATION_FIELD)) {
-            Object tf = message.get(ANNOTATION_FIELD);
-            if (tf instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) tf;
-                annotations.putAll(map);
-            }
-        }
+    private void fromKeyValuePart2(Map<String, Object> message) {
         if (message.containsKey(STATUS_FIELD)) {
             status = Math.max(0, util.str2int(String.valueOf(message.get(STATUS_FIELD))));
         }
-        if (message.containsKey(HEADERS_FIELD)) {
+        if (message.get(HEADERS_FIELD) instanceof Map) {
             setHeaders((Map<String, String>) message.get(HEADERS_FIELD));
         }
         if (message.containsKey(BODY_FIELD)) {
             body = message.get(BODY_FIELD);
         }
-        if (message.containsKey(EXCEPTION_FIELD)) {
-            exceptionBytes = (byte[]) message.get(EXCEPTION_FIELD);
+        if (message.get(EXCEPTION_FIELD) instanceof byte[] b) {
+            exceptionBytes = b;
         }
-        if (message.containsKey(STACK_FIELD)) {
-            stackTrace = (String) message.get(STACK_FIELD);
+        if (message.get(STACK_FIELD) instanceof String text) {
+            stackTrace = text;
         }
-        if (message.containsKey(OBJ_TYPE_FIELD)) {
-            type = (String) message.get(OBJ_TYPE_FIELD);
+        if (message.get(OBJ_TYPE_FIELD) instanceof String text) {
+            type = text;
         }
         if (message.containsKey(EXECUTION_FIELD)) {
             executionTime = Math.max(0f, util.str2float(String.valueOf(message.get(EXECUTION_FIELD))));
@@ -972,6 +987,10 @@ public class EventEnvelope {
     }
 
     public Map<String, Object> toMap() {
+        return toKeyValuePart2(toKeyValuePart1());
+    }
+
+    private Map<String, Object> toKeyValuePart1() {
         Map<String, Object> message = new HashMap<>();
         if (id != null) {
             message.put(ID_FIELD, id);
@@ -1000,6 +1019,10 @@ public class EventEnvelope {
         if (!annotations.isEmpty()) {
             message.put(ANNOTATION_FIELD, annotations);
         }
+        return message;
+    }
+
+    private Map<String, Object> toKeyValuePart2(Map<String, Object> message) {
         if (status != null) {
             message.put(STATUS_FIELD, status);
         }

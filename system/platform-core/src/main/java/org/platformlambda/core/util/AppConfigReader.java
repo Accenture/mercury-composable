@@ -226,5 +226,4 @@ public class AppConfigReader implements ConfigBase {
     public Map<String, Object> getCompositeKeyValues() {
         return config.getCompositeKeyValues();
     }
-
 }

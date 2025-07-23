@@ -144,5 +144,4 @@ public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void>
             log.error("Unable to send error {} -> {} - {}", EVENT_API_SERVICE, input.getReplyTo(), e.getMessage());
         }
     }
-
 }

@@ -69,5 +69,4 @@ public class OutputStreamQueue implements WriteStream<Buffer> {
         // no need to implement
         return null;
     }
-
 }

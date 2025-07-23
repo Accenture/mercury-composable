@@ -23,11 +23,29 @@ package org.platformlambda.core.models;
  * DO NOT use this directly in your application code.
  */
 public class StreamInfo {
-    public final long created = System.currentTimeMillis();
-    public final long expiryMills;
-    public long updated = created;
+    private final long created;
+    private final long expiryMills;
+    private long updated;
 
     public StreamInfo(long expirySeconds) {
+        this.created = System.currentTimeMillis();
+        this.setUpdated(this.created);
         this.expiryMills = expirySeconds * 1000;
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public long getExpiryMills() {
+        return expiryMills;
+    }
+
+    public long getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(long updated) {
+        this.updated = updated;
     }
 }

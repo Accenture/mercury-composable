@@ -52,10 +52,10 @@ public class PubSub {
 
     /**
      * Instances can only be created using the getInstance methods
-     *
+     * <p>
      * The getSystemInstance() is reserved for use by the system itself
      * The getInstance() can be used by the user application
-     *
+     * <p>
      * In the rare case that more than 2 pub/sub clusters are needed,
      * use the getInstance(clusterName) method.
      */
@@ -278,20 +278,20 @@ public class PubSub {
 
     /**
      * Subscribe to a topic
-     *
+     * <p>
      * For Kafka, the parameters must include a client ID, a group ID and an optional READ offset.
      * If read offset is not given, the listener will receive the latest events.
      * Specifying an offset allows the application to rewind time to earlier events.
-     *
+     * <p>
      * e,g, "client-101", "group-101", "0"
      * where "0" means rewinding the offset to the beginning of the event stream.
-     *
+     * <p>
      * Metadata is available as special headers for each incoming event like this:
      *  `{_timestamp_=1655234495875, _key_=19706bcf5ea54e1bb8a1d8845946e662, _partition_=0, _offset_=1013, _data_=text}`
-     *
+     * <p>
      * It includes kafka event timestamp, event key, partition number, read offset and whether the event payload
      * is bytes, map or text.
-     *
+     * <p>
      * Note that metadata tags use the underscore prefix and suffix.
      *
      * @param topic for a store-n-forward pub/sub channel
@@ -308,20 +308,20 @@ public class PubSub {
 
     /**
      * Subscribe to a topic
-     *
+     * <p>
      * For Kafka, the parameters must include a client ID, a group ID and an optional READ offset.
      * If read offset is not given, the listener will receive the latest events.
      * Specifying an offset allows the application to rewind time to earlier events.
-     *
+     * <p>
      * e,g, "client-101", "group-101", "0"
      * where "0" means rewinding the offset to the beginning of the event stream.
-     *
+     * <p>
      * Metadata is available as special headers for each incoming event like this:
      *  `{_timestamp_=1655234495875, _key_=19706bcf5ea54e1bb8a1d8845946e662, _partition_=0, _offset_=1013, _data_=text}`
-     *
+     * <p>
      * It includes kafka event timestamp, event key, partition number, read offset and whether the event payload
      * is bytes, map or text.
-     *
+     * <p>
      * Note that metadata tags use the underscore prefix and suffix.
      *
      * @param topic for a store-n-forward pub/sub channel
@@ -430,11 +430,10 @@ public class PubSub {
     }
 
     private static class SubscriberDetails {
+        final LambdaFunction listener;
+        final String[] parameters;
 
-        public final LambdaFunction listener;
-        public final String[] parameters;
-
-        public SubscriberDetails(LambdaFunction listener, String... parameters) {
+        SubscriberDetails(LambdaFunction listener, String... parameters) {
             this.listener = listener;
             if (parameters.length > 2) {
                 // drop offset parameter because it should only be used once

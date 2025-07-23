@@ -21,6 +21,7 @@ package org.platformlambda.automation.http;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
@@ -59,14 +60,14 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @EventInterceptor
 public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String ASYNC_HTTP_REQUEST = "async.http.request";
     public static final String ASYNC_HTTP_RESPONSE = "async.http.response";
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpClient.class);
-    private static final AtomicInteger initCounter = new AtomicInteger(0);
+    private static final AtomicBoolean loaded = new AtomicBoolean(false);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
     private static final long THIRTY_MINUTE = 30 * 60 * 1000L;
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
@@ -108,8 +109,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String[] MUST_DROP_HEADERS = { "content-encoding", "transfer-encoding", "host", "connection",
                                                         "upgrade-insecure-requests", "accept-encoding", "user-agent",
                                                         "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user" };
-    private static WebClientOptions optionsTrustAll;
-    private static WebClientOptions optionsVerifySSL;
+    private static final WebClientOptions optionsTrustAll = getClientOptions(true);
+    private static final WebClientOptions optionsVerifySSL = getClientOptions(false);
     private final File tempDir;
 
     public AsyncHttpClient() {
@@ -120,7 +121,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (!tempDir.exists() && tempDir.mkdirs()) {
             log.info("Temporary work directory {} created", tempDir);
         }
-        if (initCounter.incrementAndGet() == 1) {
+        if (!loaded.get()) {
+            loaded.set(true);
             HttpRouter.initialize();
             Platform platform = Platform.getInstance();
             platform.getVirtualThreadExecutor().submit(() -> {
@@ -131,19 +133,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 log.info("Housekeeper started");
             });
         }
-        if (initCounter.get() > 10000) {
-            initCounter.set(10);
-        }
-        // this is a brief blocking call because WebClient will read version information from the library JAR
-        if (optionsTrustAll == null) {
-            optionsTrustAll = getClientOptions(true);
-        }
-        if (optionsVerifySSL == null) {
-            optionsVerifySSL = getClientOptions(false);
-        }
     }
 
-    private WebClientOptions getClientOptions(boolean trustAll) {
+    private static WebClientOptions getClientOptions(boolean trustAll) {
         WebClientOptions options = new WebClientOptions().setUserAgent(USER_AGENT_NAME).setKeepAlive(true);
         options.setMaxHeaderSize(12 * 1024).setConnectTimeout(10000);
         if (trustAll) {
@@ -152,7 +144,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         return options;
     }
 
-    private WebClient getWebClient(int instance, boolean trustAll) {
+    private static WebClient getWebClient(int instance, boolean trustAll) {
         String key = (trustAll? TRUST_ALL_FACTORY : REGULAR_FACTORY) + instance;
         if (webClients.containsKey(key)) {
             return webClients.get(key);
@@ -233,74 +225,135 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (OPTIONS.equals(method)) {
             return HttpMethod.OPTIONS;
         }
-        return null;
+        throw new AppException(405, "Method not allowed");
     }
 
-    @SuppressWarnings("rawtypes")
     private void processRequest(Map<String, String> headers, EventEnvelope input, int instance)
             throws AppException, URISyntaxException {
         PostOffice po = new PostOffice(headers, instance);
-        Utility util = Utility.getInstance();
         AsyncHttpRequest request = new AsyncHttpRequest(input.getBody());
+        HttpMetadata md = new HttpMetadata();
+        validateUrl(request, md);
+        String uriWithHash = normalizeUrl(request, md);
+        po.annotateTrace(DESTINATION, md.url.getScheme() + "://" + md.url.getHost() + ":" + md.port + md.rawUri);
+        WebClient client = getWebClient(instance, request.isTrustAllCert());
+        HttpRequest<Buffer> http = client.request(md.httpMethod, md.port, md.host, uriWithHash).ssl(md.secure);
+        updateHttpQueryAndTimeout(request, http, md);
+        updateHttpHeaders(po, request, http);
+        OutputStreamQueue queue = new OutputStreamQueue();
+        HttpRequest<Void> httpRequest = http.as(BodyCodec.pipe(queue));
+        Future<HttpResponse<Void>> httpResponse = null;
+        // get request body if any
         String method = request.getMethod();
-        HttpMethod httpMethod = getMethod(method);
-        if (httpMethod == null) {
-            throw new AppException(405, "Method not allowed");
+        if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
+            final String streamId = request.getStreamRoute();
+            if (streamId != null && streamId.startsWith(STREAM_PREFIX)
+                    && streamId.contains(INPUT_STREAM_SUFFIX)) {
+                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
+                        handleUpload(input, queue, request, httpRequest));
+            } else {
+                httpResponse = getHttpResponseWithPayload(request, httpRequest);
+            }
+        } else {
+            httpResponse = httpRequest.send();
         }
+        if (httpResponse != null) {
+            httpResponse.onSuccess(new HttpResponseHandler(input, request, queue));
+            httpResponse.onFailure(new HttpExceptionHandler(input, queue));
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Future<HttpResponse<Void>> getHttpResponseWithPayload(AsyncHttpRequest request, HttpRequest<Void> httpReq) {
+        Utility util = Utility.getInstance();
+        String contentType = request.getHeader(CONTENT_TYPE);
+        final Future<HttpResponse<Void>> httpResponse;
+        Object reqBody = request.getBody() == null? new byte[0] : request.getBody();
+        switch (reqBody) {
+            case byte[] b -> {
+                httpReq.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                httpResponse = httpReq.sendBuffer(Buffer.buffer(b));
+            }
+            case String text -> {
+                byte[] b = util.getUTF(text);
+                httpReq.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                httpResponse = httpReq.sendBuffer(Buffer.buffer(b));
+            }
+            case Map map -> {
+                boolean xml = contentType != null && contentType.startsWith(APPLICATION_XML);
+                byte[] b = xml ? util.getUTF(xmlWriter.write(reqBody)) :
+                        SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
+                httpReq.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                httpResponse = httpReq.sendBuffer(Buffer.buffer(b));
+            }
+            case List list -> {
+                byte[] b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(list);
+                httpReq.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+                httpResponse = httpReq.sendBuffer(Buffer.buffer(b));
+            }
+            default -> throw new IllegalArgumentException("Invalid HTTP request body");
+        }
+        return httpResponse;
+    }
+
+    private void validateUrl(AsyncHttpRequest request, HttpMetadata md) throws URISyntaxException {
+        md.httpMethod = getMethod(request.getMethod());
         String targetHost = request.getTargetHost();
         if (targetHost == null) {
             throw new IllegalArgumentException("Missing target host. e.g. https://hostname");
         }
-        final boolean secure;
-        URI url = new URI(targetHost);
-        String protocol = url.getScheme();
+        md.url = new URI(targetHost);
+        String protocol = md.url.getScheme();
         if ("http".equals(protocol)) {
-            secure = false;
+            md.secure = false;
         } else if ("https".equals(protocol)) {
-            secure = true;
+            md.secure = true;
         } else {
             throw new IllegalArgumentException("Protocol must be http or https");
         }
-        String host = url.getHost().trim();
-        if (host.isEmpty()) {
+        md.host = md.url.getHost().trim();
+        if (md.host.isEmpty()) {
             throw new IllegalArgumentException("Unable to resolve target host as domain or IP address");
         }
-        int port = url.getPort();
-        if (port < 0) {
-            port = secure? 443 : 80;
+        md.port = md.url.getPort();
+        if (md.port < 0) {
+            md.port = md.secure? 443 : 80;
         }
-        String path = url.getPath();
+        String path = md.url.getPath();
         if (!path.isEmpty()) {
             throw new IllegalArgumentException("Target host must not contain URI path");
         }
-        // normalize URI and query string
-        final String rawUri;
+    }
+
+    private String normalizeUrl(AsyncHttpRequest request, HttpMetadata md) {
+        Utility util = Utility.getInstance();
         final String uri = util.getEncodedUri(request.getUrl());
         int hashMark = uri.lastIndexOf('#');
         final String uriWithoutHash = hashMark == -1? uri : uri.substring(0, hashMark);
         final String hashParams = hashMark == -1? null : uri.substring(hashMark+1);
-        String queryString = null;
+        md.queryString = null;
         int questionMark = uriWithoutHash.lastIndexOf('?');
         if (questionMark == -1) {
-            rawUri = uriWithoutHash;
+            md.rawUri = uriWithoutHash;
         } else {
-            rawUri = uriWithoutHash.substring(0, questionMark);
-            queryString = decodeUri(uriWithoutHash.substring(questionMark+1));
-            request.setQueryString(queryString);
+            md.rawUri = uriWithoutHash.substring(0, questionMark);
+            md.queryString = decodeUri(uriWithoutHash.substring(questionMark+1));
+            request.setQueryString(md.queryString);
         }
         // construct target URL
         final String queryParams = queryParametersToString(request);
         // combine query parameters from query string and query parameters
         if (queryParams != null) {
-            queryString = queryString == null? queryParams : queryString + "&" + queryParams;
+            md.queryString = md.queryString == null? queryParams : md.queryString + "&" + queryParams;
         }
-        final String uriWithHash = rawUri + (hashParams == null? "" : "#" + hashParams);
-        po.annotateTrace(DESTINATION, url.getScheme() + "://" + url.getHost() + ":" + port + rawUri);
-        WebClient client = getWebClient(instance, request.isTrustAllCert());
-        HttpRequest<Buffer> http = client.request(httpMethod, port, host, uriWithHash).ssl(secure);
-        if (queryString != null) {
+        return md.rawUri + (hashParams == null? "" : "#" + hashParams);
+    }
+
+    private void updateHttpQueryAndTimeout(AsyncHttpRequest request, HttpRequest<Buffer> http, HttpMetadata md) {
+        Utility util = Utility.getInstance();
+        if (md.queryString != null) {
             Set<String> keys = new HashSet<>();
-            List<String> parts = util.split(queryString, "&");
+            List<String> parts = util.split(md.queryString, "&");
             for (String p: parts) {
                 int eq = p.indexOf('=');
                 final String k;
@@ -325,6 +378,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (timeout > 0) {
             http.timeout(timeout * 1000L);
         }
+    }
+
+    private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpRequest<Buffer> http) {
         Map<String, String> reqHeaders = request.getHeaders();
         // convert authentication session info into HTTP request headers
         Map<String, String> sessionInfo = request.getSessionInfo();
@@ -351,51 +407,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (!sb.isEmpty()) {
             // remove the ending separator
             http.putHeader(COOKIE, sb.substring(0, sb.length()-2));
-        }
-        OutputStreamQueue queue = new OutputStreamQueue();
-        HttpRequest<Void> httpRequest = http.as(BodyCodec.pipe(queue));
-        Future<HttpResponse<Void>> httpResponse = null;
-        // get request body if any
-        String contentType = request.getHeader(CONTENT_TYPE);
-        if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
-            final String streamId = request.getStreamRoute();
-            if (streamId != null && streamId.startsWith(STREAM_PREFIX)
-                    && streamId.contains(INPUT_STREAM_SUFFIX)) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
-                        handleUpload(input, queue, request, httpRequest));
-            } else {
-                Object reqBody = request.getBody() == null? new byte[0] : request.getBody();
-                switch (reqBody) {
-                    case byte[] b -> {
-                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-                    }
-                    case String text -> {
-                        byte[] b = util.getUTF(text);
-                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-                    }
-                    case Map map -> {
-                        boolean xml = contentType != null && contentType.startsWith(APPLICATION_XML);
-                        byte[] b = xml ? util.getUTF(xmlWriter.write(reqBody)) :
-                                SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
-                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-                    }
-                    case List list -> {
-                        byte[] b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(list);
-                        httpRequest.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                        httpResponse = httpRequest.sendBuffer(Buffer.buffer(b));
-                    }
-                    default -> throw new IllegalArgumentException("Invalid HTTP request body");
-                }
-            }
-        } else {
-            httpResponse = httpRequest.send();
-        }
-        if (httpResponse != null) {
-            httpResponse.onSuccess(new HttpResponseHandler(input, request, queue));
-            httpResponse.onFailure(new HttpExceptionHandler(input, queue));
         }
     }
 
@@ -475,18 +486,20 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     } catch (IOException e) {
                         // ok to ignore
                     }
-                }, promise::fail, () -> {
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        // ok to ignore
-                    }
-                    promise.complete(temp);
-                });
+                }, promise::fail, () -> closeOutputStreamFile(out, temp, promise));
             } catch (IOException e) {
                 promise.fail(e);
             }
         });
+    }
+
+    private void closeOutputStreamFile(FileOutputStream out, File temp, Promise<File> promise) {
+        try {
+            out.close();
+        } catch (IOException e) {
+            // ok to ignore
+        }
+        promise.complete(temp);
     }
 
     private void removeExpiredFiles() {
@@ -543,103 +556,111 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 String contentLen = res.getHeader(CONTENT_LENGTH);
                 boolean renderAsBytes = "true".equals(request.getHeader(X_NO_STREAM));
                 if (renderAsBytes || contentLen != null || isTextResponse(resContentType)) {
-                    int len = 0;
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    try {
-                        while (true) {
-                            byte[] block = queue.read();
-                            if (block.length == 0) {
-                                break;
-                            } else {
-                                try {
-                                    out.write(block);
-                                    len += block.length;
-                                } catch (IOException e) {
-                                    // ok to ignore
-                                }
-                            }
-                        }
-                    } finally {
-                        queue.close();
-                    }
-                    if (renderAsBytes || contentLen != null) {
-                        response.setHeader(X_CONTENT_LENGTH, len);
-                    }
-                    byte[] b = out.toByteArray();
-                    if (resContentType != null) {
-                        if (resContentType.startsWith(APPLICATION_JSON)) {
-                            // response body is assumed to be JSON
-                            String text = util.getUTF(b).trim();
-                            if (text.isEmpty()) {
-                                sendResponse(input, response.setBody(new HashMap<>()));
-                            } else {
-                                if (text.startsWith("{") && text.endsWith("}")) {
-
-                                    sendResponse(input, response.setBody(
-                                            SimpleMapper.getInstance().getMapper().readValue(text, Map.class)));
-                                } else if (text.startsWith("[") && text.endsWith("]")) {
-                                    sendResponse(input, response.setBody(
-                                            SimpleMapper.getInstance().getMapper().readValue(text, List.class)));
-                                } else {
-                                    sendResponse(input, response.setBody(text));
-                                }
-                            }
-                        } else if (resContentType.startsWith(APPLICATION_XML)) {
-                            // response body is assumed to be XML
-                            String text = util.getUTF(b);
-                            String trimmed = text.trim();
-                            boolean rawXml = "true".equals(request.getHeader(X_RAW_XML));
-                            if (rawXml) {
-                                sendResponse(input, response.setBody(text));
-                            } else {
-                                try {
-                                    sendResponse(input, response.setBody(
-                                            trimmed.isEmpty() ? new HashMap<>() : xmlReader.parse(text)));
-                                } catch (Exception e) {
-                                    sendResponse(input, response.setBody(text));
-                                }
-                            }
-                        } else if (resContentType.startsWith(TEXT_PREFIX) ||
-                                resContentType.startsWith(APPLICATION_JAVASCRIPT)) {
-                            /*
-                             * For API targetHost, the content-types are usually JSON or XML.
-                             * HTML, CSS and JS are the best effort static file contents.
-                             */
-                            sendResponse(input, response.setBody(util.getUTF(b)));
-                        } else {
-                            sendResponse(input, response.setBody(b));
-                        }
-                    } else {
-                        sendResponse(input, response.setBody(b));
-                    }
+                    ByteArrayOutputStream out = resStreamToBytes(response, contentLen);
+                    sendFixedLengthResponse(resContentType, response, out.toByteArray());
                 } else {
-                    Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                        int len = 0;
-                        EventPublisher publisher = null;
-                        try {
-                            while (true) {
-                                byte[] b = queue.read();
-                                if (b.length == 0) {
-                                    break;
-                                } else {
-                                    if (publisher == null) {
-                                        publisher = new EventPublisher(timeoutSeconds * 1000L);
-                                    }
-                                    len += b.length;
-                                    publisher.publish(b);
-                                }
-                            }
-                            if (publisher != null) {
-                                response.setHeader(X_STREAM_ID, publisher.getStreamId())
-                                        .setHeader(X_TTL, timeoutSeconds * 1000)
-                                        .setHeader(X_CONTENT_LENGTH, len);
-                                publisher.publishCompletion();
-                            }
-                            sendResponse(input, response);
-                        } finally {
-                            queue.close();
+                    Platform.getInstance().getVirtualThreadExecutor().submit(() -> sendStreamResponse(response));
+                }
+            }
+        }
+
+        private ByteArrayOutputStream resStreamToBytes(EventEnvelope response, String contentLen) {
+            int len = 0;
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                while (true) {
+                    byte[] block = queue.read();
+                    if (block.length == 0) {
+                        break;
+                    } else {
+                        out.write(block);
+                        len += block.length;
+                    }
+                }
+                // if content-length is not provide, add x-content-length header
+                if (contentLen == null) {
+                    response.setHeader(X_CONTENT_LENGTH, len);
+                }
+                return out;
+            } catch (IOException e) {
+                throw new IllegalArgumentException(e);
+            } finally {
+                queue.close();
+            }
+        }
+
+        private void sendStreamResponse(EventEnvelope response) {
+            int len = 0;
+            EventPublisher publisher = null;
+            try {
+                while (true) {
+                    byte[] b = queue.read();
+                    if (b.length == 0) {
+                        break;
+                    } else {
+                        if (publisher == null) {
+                            publisher = new EventPublisher(timeoutSeconds * 1000L);
                         }
-                    });
+                        len += b.length;
+                        publisher.publish(b);
+                    }
+                }
+                if (publisher != null) {
+                    response.setHeader(X_STREAM_ID, publisher.getStreamId())
+                            .setHeader(X_TTL, timeoutSeconds * 1000)
+                            .setHeader(X_CONTENT_LENGTH, len);
+                    publisher.publishCompletion();
+                }
+                sendResponse(input, response);
+            } finally {
+                queue.close();
+            }
+        }
+
+        private void sendFixedLengthResponse(String resContentType, EventEnvelope response, byte[] b) {
+            if (resContentType != null) {
+                if (resContentType.startsWith(APPLICATION_JSON)) {
+                    sendJsonResponse(response, b);
+                } else if (resContentType.startsWith(APPLICATION_XML)) {
+                    sendXmlResponse(request, response, b);
+                } else if (resContentType.startsWith(TEXT_PREFIX) ||
+                        resContentType.startsWith(APPLICATION_JAVASCRIPT)) {
+                    sendResponse(input, response.setBody(util.getUTF(b)));
+                } else {
+                    sendResponse(input, response.setBody(b));
+                }
+            } else {
+                sendResponse(input, response.setBody(b));
+            }
+        }
+
+        private void sendJsonResponse(EventEnvelope response, byte[] b) {
+            String text = util.getUTF(b).trim();
+            if (text.isEmpty()) {
+                sendResponse(input, response.setBody(new HashMap<>()));
+            } else {
+                if (text.startsWith("{") && text.endsWith("}")) {
+                    sendResponse(input, response.setBody(
+                            SimpleMapper.getInstance().getMapper().readValue(text, Map.class)));
+                } else if (text.startsWith("[") && text.endsWith("]")) {
+                    sendResponse(input, response.setBody(
+                            SimpleMapper.getInstance().getMapper().readValue(text, List.class)));
+                } else {
+                    sendResponse(input, response.setBody(text));
+                }
+            }
+        }
+
+        private void sendXmlResponse(AsyncHttpRequest request, EventEnvelope response, byte[] b) {
+            String text = util.getUTF(b);
+            String trimmed = text.trim();
+            boolean rawXml = "true".equals(request.getHeader(X_RAW_XML));
+            if (rawXml) {
+                sendResponse(input, response.setBody(text));
+            } else {
+                try {
+                    sendResponse(input, response.setBody(trimmed.isEmpty() ? new HashMap<>() : xmlReader.parse(text)));
+                } catch (Exception e) {
+                    sendResponse(input, response.setBody(text));
                 }
             }
         }
@@ -652,7 +673,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private class HttpExceptionHandler implements Handler<Throwable> {
-
         private final EventEnvelope input;
         private final OutputStreamQueue queue;
 
@@ -687,4 +707,13 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
+    private static class HttpMetadata {
+        URI url;
+        String rawUri;
+        String queryString;
+        HttpMethod httpMethod;
+        boolean secure;
+        String host;
+        int port;
+    }
 }

@@ -62,8 +62,6 @@ public class TestBase {
     private static final Logger log = LoggerFactory.getLogger(TestBase.class);
     protected static final String HELLO_WORLD = "hello.world";
     protected static final String HELLO_MOCK = "hello.mock";
-    protected static final String LONG_RUNNING_RPC = "long.running.rpc";
-    protected static final String SLOW_RPC_FUNCTION = "slow.rpc.function";
     protected static final String HELLO_LIST = "hello.list";
     protected static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
     protected static final int MINIMALIST_HTTP_PORT = 8020;
@@ -108,9 +106,8 @@ public class TestBase {
             HttpServer server = vertx.createHttpServer(options);
             server.requestHandler(new MinimalistHttpHandler());
             server.listen(MINIMALIST_HTTP_PORT)
-                    .onSuccess(service -> {
-                        platform.registerPrivate(SERVICE_LOADED, (headers, input, instance) -> true, 1);
-                    })
+                    .onSuccess(service -> platform.registerPrivate(SERVICE_LOADED,
+                                    (headers, input, instance) -> true, 1))
                     .onFailure(ex -> {
                         log.error("Unable to start - {}", ex.getMessage());
                         System.exit(-1);

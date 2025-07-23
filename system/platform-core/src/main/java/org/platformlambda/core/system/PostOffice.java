@@ -27,6 +27,7 @@ import org.platformlambda.core.models.TraceInfo;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class PostOffice {
     private static final String MY_ROUTE = "my_route";
@@ -376,7 +377,7 @@ public class PostOffice {
      * @param event to be sent to a peer application instance
      * @param timeout to abort the request
      * @param headers optional security headers such as "Authorization"
-     * @param eventEndpoint fully qualified URL such as http://domain:port/api/event
+     * @param eventEndpoint fully qualified URL such as http: //domain:port/api/event
      * @param rpc if true, the target service will return a response.
      *            Otherwise, a response with status=202 will be returned to indicate that the event will be delivered.
      * @return response event
@@ -396,15 +397,15 @@ public class PostOffice {
      * @param event to be sent to a peer application instance
      * @param timeout to abort the request
      * @param headers optional security headers such as "Authorization"
-     * @param eventEndpoint fully qualified URL such as http://domain:port/api/event
+     * @param eventEndpoint fully qualified URL such as http: //domain:port/api/event
      * @param rpc if true, the target service will return a response.
      *            Otherwise, a response with status=202 will be returned to indicate that the event will be delivered.
      * @return response event
      * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
-                                              Map<String, String> headers,
-                                              String eventEndpoint, boolean rpc) {
+    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout,
+                                                    Map<String, String> headers,
+                                                    String eventEndpoint, boolean rpc) {
         return po.request(touch(event), timeout, headers, eventEndpoint, rpc);
     }
 
@@ -455,7 +456,7 @@ public class PostOffice {
      * @return future results
      * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout) {
+    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout) {
         return request(touch(event), timeout, true);
     }
 
@@ -471,7 +472,7 @@ public class PostOffice {
      * @return future result
      * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
+    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout,
                                                               boolean timeoutException) {
         return po.request(touch(event), timeout, timeoutException);
     }
@@ -526,7 +527,7 @@ public class PostOffice {
      * @return future list of results
      * @throws IllegalArgumentException in case of error
      */
-    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
+    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
         return request(events, timeout, true);
     }
 
@@ -542,8 +543,8 @@ public class PostOffice {
      * @return future list of results
      * @throws IllegalArgumentException in case of error
      */
-    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
-                                                    boolean timeoutException) {
+    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
+                                                          boolean timeoutException) {
         events.forEach(this::touch);
         return po.request(events, timeout, timeoutException);
     }
@@ -563,5 +564,4 @@ public class PostOffice {
         }
         return event;
     }
-
 }

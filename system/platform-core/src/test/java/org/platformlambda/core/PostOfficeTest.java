@@ -56,9 +56,6 @@ class PostOfficeTest extends TestBase {
     private static final Utility util = Utility.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
     private static final BlockingQueue<String> interceptorBench = new ArrayBlockingQueue<>(1);
-    private static final String TASK_EXECUTOR = "task.executor";
-    private static final String EVENT_MANAGER = "event.script.manager";
-    private static final String REGULAR_FUNCTION = "regular.function";
     private static final String HELLO_ALIAS = "hello.alias";
     private static final String REACTIVE_MONO = "v1.reactive.mono.function";
     private static final String REACTIVE_FLUX = "v1.reactive.flux.function";
@@ -289,7 +286,7 @@ class PostOfficeTest extends TestBase {
         final long timeout = 5000;
         EventEmitter po = EventEmitter.getInstance();
         final String message = "test message";
-        java.util.concurrent.Future<EventEnvelope> future = po.request(new EventEnvelope().setTo(HELLO_ALIAS).setBody(message), timeout);
+        CompletableFuture<EventEnvelope> future = po.request(new EventEnvelope().setTo(HELLO_ALIAS).setBody(message), timeout);
         assert future != null;
         EventEnvelope response = future.get();
         assertInstanceOf(Map.class, response.getBody());
@@ -402,7 +399,7 @@ class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(0)
                 .setHeader("timeout_exception", true).setHeader("seq", 0);
         // timeout is returned as a regular event
-        java.util.concurrent.Future<EventEnvelope> future = po.request(request, timeout, false);
+        CompletableFuture<EventEnvelope> future = po.request(request, timeout, false);
         EventEnvelope result = future.get();
         assertEquals(408, result.getStatus());
         assertEquals("Timeout for "+timeout+" ms", result.getBody());
@@ -566,8 +563,9 @@ class PostOfficeTest extends TestBase {
         platform.registerPrivate(pendingService, f, 1);
         PostOffice po = new PostOffice("unit.test", "11", "CHECK /provider");
         // start service two seconds later, so we can test the waitForProvider method
-        po.sendLater(new EventEnvelope().setTo(pendingService).setBody("hi"),
-                new Date(System.currentTimeMillis()+2100));
+        var ref = po.sendLater(new EventEnvelope().setTo(pendingService).setBody("hi"),
+                        new Date(System.currentTimeMillis() + 1000));
+        assertNotNull(ref);
         Future<Boolean> status = platform.waitForProvider(noOperation, 5);
         status.onSuccess(bench1::add);
         Boolean result = bench1.poll(12, TimeUnit.SECONDS);

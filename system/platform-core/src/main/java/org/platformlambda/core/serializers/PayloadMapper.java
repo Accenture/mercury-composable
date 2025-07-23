@@ -39,7 +39,6 @@ public class PayloadMapper {
         return PAYLOAD_MAPPER_INSTANCE;
     }
 
-    @SuppressWarnings("unchecked")
     public TypedPayload encode(Object obj, boolean binary) {
         if (obj == null) {
             return new TypedPayload(NOTHING, null);
@@ -47,8 +46,8 @@ public class PayloadMapper {
             return new TypedPayload(MAP, obj);
         } else if (obj instanceof Object[] objArray) {
             return encodeList(Arrays.asList(objArray), binary);
-        } else if (obj instanceof List) {
-            return encodeList((List<Object>) obj, binary);
+        } else if (obj instanceof List<?> items) {
+            return encodeList(items, binary);
         } else if (obj instanceof Date d) {
             return new TypedPayload(PRIMITIVE, Utility.getInstance().date2str(d));
         } else if (isPrimitive(obj)) {
@@ -58,9 +57,8 @@ public class PayloadMapper {
         }
     }
 
-    private TypedPayload encodeList(List<Object> objects, boolean binary) {
-        SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
-        Utility util = Utility.getInstance();
+    private TypedPayload encodeList(List<?> objects, boolean binary) {
+        var util = Utility.getInstance();
         List<Object> list = new ArrayList<>();
         int total = 0;
         Set<String> cls = new HashSet<>();
@@ -72,24 +70,27 @@ public class PayloadMapper {
                 list.add(o);
             } else if (isPrimitive(o) || o instanceof Map) {
                 list.add(o);
-            } else {
-                if (util.isPoJo(o)) {
-                    total++;
-                    cls.add(o.getClass().getName());
-                    if (binary) {
-                        list.add(mapper.readValue(o, Map.class));
-                    } else {
-                        list.add(mapper.writeValueAsBytes(o));
-                    }
-                } else {
-                    throw new IllegalArgumentException("Unable to serialize because it is not a list of PoJo");
-                }
+            } else if (util.isPoJo(o)){
+                encodePoJo(list, cls, o, binary);
+                total++;
             }
         }
         if (total == objects.size() && cls.size() == 1) {
+            // List of PoJo
             return new TypedPayload(cls.iterator().next(), list);
         } else {
+            // list of elements
             return new TypedPayload(LIST, list);
+        }
+    }
+
+    private void encodePoJo(List<Object> list, Set<String> cls, Object o, boolean binary) {
+        var mapper = SimpleMapper.getInstance().getMapper();
+        cls.add(o.getClass().getName());
+        if (binary) {
+            list.add(mapper.readValue(o, Map.class));
+        } else {
+            list.add(mapper.writeValueAsBytes(o));
         }
     }
 

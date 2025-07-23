@@ -18,12 +18,4 @@
 
 package org.platformlambda.core.models;
 
-public class InboxCorrelation {
-    public final String to;
-    public final String cid;
-
-    public InboxCorrelation(String to, String cid) {
-        this.to = to;
-        this.cid = cid;
-    }
-}
+public record InboxCorrelation(String to, String cid) { }

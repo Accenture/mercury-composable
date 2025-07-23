@@ -92,26 +92,34 @@ public class SimpleHttpUtility {
     public Map<String, String> filterHeaders(HeaderInfo headerInfo, Map<String, String> headers) {
         Map<String, String> result = new HashMap<>(headers);
         if (headerInfo.keepHeaders != null && !headerInfo.keepHeaders.isEmpty()) {
-            // drop all headers except those to be kept
-            Map<String, String> toBeKept = new HashMap<>();
-            for (var entry: headers.entrySet()) {
-                if (headerInfo.keepHeaders.contains(entry.getKey())) {
-                    toBeKept.put(entry.getKey(), entry.getValue());
-                }
-            }
-            result = toBeKept;
+            result = handleKeepHeaders(headerInfo, headers);
         } else if (headerInfo.dropHeaders != null && !headerInfo.dropHeaders.isEmpty()) {
-            // drop the headers according to "drop" list
-            Map<String, String> toBeKept = new HashMap<>();
-            for (var entry: headers.entrySet()) {
-                if (!headerInfo.dropHeaders.contains(entry.getKey())) {
-                    toBeKept.put(entry.getKey(), entry.getValue());
-                }
-            }
-            result = toBeKept;
+            result = handleDropHeaders(headerInfo, headers);
         }
         if (headerInfo.additionalHeaders != null && !headerInfo.additionalHeaders.isEmpty()) {
             result.putAll(headerInfo.additionalHeaders);
+        }
+        return result;
+    }
+
+    private Map<String, String> handleKeepHeaders(HeaderInfo headerInfo, Map<String, String> headers) {
+        // drop all headers except those to be kept
+        Map<String, String> result = new HashMap<>();
+        for (var entry: headers.entrySet()) {
+            if (headerInfo.keepHeaders.contains(entry.getKey())) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    private Map<String, String> handleDropHeaders(HeaderInfo headerInfo, Map<String, String> headers) {
+        // drop the headers according to "drop" list
+        Map<String, String> result = new HashMap<>();
+        for (var entry: headers.entrySet()) {
+            if (!headerInfo.dropHeaders.contains(entry.getKey())) {
+                result.put(entry.getKey(), entry.getValue());
+            }
         }
         return result;
     }
@@ -185,5 +193,4 @@ public class SimpleHttpUtility {
         }
         response.end();
     }
-
 }

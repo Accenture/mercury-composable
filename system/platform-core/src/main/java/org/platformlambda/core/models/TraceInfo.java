@@ -49,5 +49,4 @@ public class TraceInfo {
     public void annotate(String key, Object value) {
         annotations.put(key, value);
     }
-
 }

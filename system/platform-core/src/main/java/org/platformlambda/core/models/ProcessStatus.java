@@ -35,14 +35,13 @@ public class ProcessStatus {
     private String deliveryError;
     private Map<String, Object> inputOutput = new HashMap<>();
 
-    public ProcessStatus setUnDelivery(String error) {
+    public void setUnDelivery(String error) {
         this.delivered = false;
         this.deliveryError = error;
-        return this;
     }
 
-    public boolean isDelivered() {
-        return delivered;
+    public boolean isNotDelivered() {
+        return !delivered;
     }
 
     public String getDeliveryError() {
@@ -79,9 +78,8 @@ public class ProcessStatus {
         return this;
     }
 
-    public ProcessStatus setReactive() {
+    public void setReactive() {
         reactive = true;
-        return this;
     }
 
     public boolean isReactive() {
@@ -95,6 +93,4 @@ public class ProcessStatus {
     public String getException() {
         return exception;
     }
-
-
 }

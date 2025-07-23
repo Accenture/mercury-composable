@@ -122,7 +122,7 @@ public class SimpleXmlParser {
         int count = attributes.getLength();
         for (int i=0; i < count; i++) {
             String attributeName = attributes.item(i).getNodeName();
-            if (!canIgnore(attributeName)) {
+            if (cannotIgnore(attributeName)) {
                 seed.put(attributeName, attributes.item(i).getNodeValue());
             }
         }
@@ -181,7 +181,7 @@ public class SimpleXmlParser {
             int count = attributes.getLength();
             for (int i=0; i < count; i++) {
                 String attributeName = attributes.item(i).getNodeName();
-                if (!canIgnore(attributeName)) {
+                if (cannotIgnore(attributeName)) {
                     saveKv(kvList, parent+"."+attributeName, attributes.item(i).getNodeValue());
                 }
             }
@@ -229,18 +229,15 @@ public class SimpleXmlParser {
         kvList.add(kv);
     }
 
-    private boolean canIgnore(String attributeName) {
-        return !drop.isEmpty() ? drop.contains(attributeName) : SimpleXmlParser.defaultDrop.contains(attributeName);
+    private boolean cannotIgnore(String attributeName) {
+        return !drop.isEmpty() ? !drop.contains(attributeName) : !SimpleXmlParser.defaultDrop.contains(attributeName);
     }
 
-    private boolean setFeature(DocumentBuilderFactory dbf, String feature, boolean enable) {
+    private void setFeature(DocumentBuilderFactory dbf, String feature, boolean enable) {
         try {
             dbf.setFeature(feature, enable);
-            return dbf.getFeature(feature) == enable;
         } catch (ParserConfigurationException e) {
             log.error("Unable to {} feature - {}", enable? "enable" : "disable", e.getMessage());
-            return false;
         }
     }
-
 }

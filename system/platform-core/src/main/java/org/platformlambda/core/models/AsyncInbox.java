@@ -94,21 +94,28 @@ public class AsyncInbox extends InboxBase {
     }
 
     private void saveResponse(String inboxId, EventEnvelope reply) {
-        AsyncInbox holder = (AsyncInbox) inboxes.get(inboxId);
-        if (holder != null) {
+        if (inboxes.get(inboxId) instanceof AsyncInbox holder) {
             holder.close();
             Platform.getInstance().getVertx().cancelTimer(timer);
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            reply.setRoundTrip(diff);
             // remove some metadata that are not relevant for a RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             var annotations = new HashMap<>(reply.getAnnotations());
-            reply.clearAnnotations();
+            reply.clearAnnotations().setRoundTrip(diff);
             executor.submit(() -> holder.promise.complete(reply));
             if (to != null && holder.traceId != null && holder.tracePath != null) {
-                recordRpcTrace(holder.traceId, holder.tracePath, to, holder.from, start,
-                            reply.getStatus(), reply.getError(),
-                            reply.getExecutionTime(), reply.getRoundTrip(), annotations);
+                var md = new InboxMetadata();
+                md.traceId = holder.traceId;
+                md.tracePath = holder.tracePath;
+                md.to = to;
+                md.from = holder.from;
+                md.start = start;
+                md.status = reply.getStatus();
+                md.error = reply.getError();
+                md.execTime = reply.getExecutionTime();
+                md.roundTrip = reply.getRoundTrip();
+                md.annotations = annotations;
+                recordTrace(md);
             }
         }
     }

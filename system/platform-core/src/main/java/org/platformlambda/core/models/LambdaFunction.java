@@ -30,5 +30,4 @@ public interface LambdaFunction extends TypedLambdaFunction<Object, Object> {
 
     @Override
     Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception;
-
 }

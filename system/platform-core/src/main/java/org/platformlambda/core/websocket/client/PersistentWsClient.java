@@ -158,58 +158,9 @@ public class PersistentWsClient extends Thread {
             platform.registerPrivate(txPath, tx, 1);
             po.send(session, new Kv(TYPE, OPEN), new Kv(IP, target.getHost()+":"+options.getPort()),
                         new Kv(PATH, options.getURI()), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-            long poll = Math.max(10000, idleSeconds * 1000L / 2 - 3000);
-            long keepAlive = vertx.setPeriodic(poll, n -> {
-                Map<String, Object> data = new HashMap<>();
-                data.put(TYPE, ALIVE);
-                data.put(ALIVE_SEQ, aliveSeq.incrementAndGet());
-                data.put(TIME, new Date());
-                try {
-                    // inform primary handler
-                    po.send(session, data, new Kv(TYPE, MAP), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                    // send keep-alive to the remote websocket server
-                    po.send(txPath, data);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Unable to send keep-alive to {} - {}", session, e.getMessage());
-                }
-            });
-            ws.textMessageHandler(text -> {
-                try {
-                    po.send(session, text, new Kv(TYPE, STRING),
-                            new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Unable to send text message to {} - {}", session, e.getMessage());
-                }
-            });
-            ws.binaryMessageHandler(b -> {
-                try {
-                    po.send(session, b.getBytes(), new Kv(TYPE, BYTES),
-                            new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Unable to send binary message to {} - {}", session, e.getMessage());
-                }
-            });
-            ws.closeHandler(empty -> {
-                connected.set(false);
-                tx.close();
-                vertx.cancelTimer(keepAlive);
-                String reason = ws.closeReason() == null? "ok" : ws.closeReason();
-                log.info("Session {} closed ({}, {})", session, ws.closeStatusCode(), reason);
-                try {
-                    po.send(session, new Kv(TYPE, CLOSE), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
-                } catch (IllegalArgumentException e) {
-                    // ok to ignore
-                }
-                platform.release(txPath);
-                vertx.setTimer(RETRY_TIMER, n -> makeConnection(idleSeconds));
-            });
-            ws.exceptionHandler(e -> {
-                if (connected.get()) {
-                    log.warn("Session {} - {}", session, e.getMessage());
-                    connected.set(false);
-                    ws.close((short) 1000, e.getMessage());
-                }
-            });
+            long keepAlive = enableKeepAlive(txPath, idleSeconds);
+            setupMessageHandlers(ws, txPath);
+            setupCloseHandlers(ws, tx, txPath, idleSeconds, keepAlive);
         });
         connection.onFailure(e -> {
             String error = e.getMessage();
@@ -219,6 +170,71 @@ public class PersistentWsClient extends Thread {
                 log.warn("Unable to connect - {}", error);
             }
             vertx.setTimer(RETRY_TIMER, n -> makeConnection(idleSeconds));
+        });
+    }
+
+    private long enableKeepAlive(String txPath, int idleSeconds) {
+        long poll = Math.max(10000, idleSeconds * 1000L / 2 - 3000);
+        final EventEmitter po = EventEmitter.getInstance();
+        return vertx.setPeriodic(poll, n -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put(TYPE, ALIVE);
+            data.put(ALIVE_SEQ, aliveSeq.incrementAndGet());
+            data.put(TIME, new Date());
+            try {
+                // inform primary handler
+                po.send(session, data, new Kv(TYPE, MAP), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
+                // send keep-alive to the remote websocket server
+                po.send(txPath, data);
+            } catch (IllegalArgumentException e) {
+                log.warn("Unable to send keep-alive to {} - {}", session, e.getMessage());
+            }
+        });
+    }
+
+    private void setupMessageHandlers(WebSocket ws, String txPath) {
+        final EventEmitter po = EventEmitter.getInstance();
+        ws.textMessageHandler(text -> {
+            try {
+                po.send(session, text, new Kv(TYPE, STRING),
+                        new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
+            } catch (IllegalArgumentException e) {
+                log.warn("Unable to send text message to {} - {}", session, e.getMessage());
+            }
+        });
+        ws.binaryMessageHandler(b -> {
+            try {
+                po.send(session, b.getBytes(), new Kv(TYPE, BYTES),
+                        new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
+            } catch (IllegalArgumentException e) {
+                log.warn("Unable to send binary message to {} - {}", session, e.getMessage());
+            }
+        });
+    }
+
+    private void setupCloseHandlers(WebSocket ws, WsClientTransmitter tx, String txPath, int idleSeconds, long keepAlive) {
+        final Platform platform = Platform.getInstance();
+        final EventEmitter po = EventEmitter.getInstance();
+        ws.closeHandler(empty -> {
+            connected.set(false);
+            tx.close();
+            vertx.cancelTimer(keepAlive);
+            String reason = ws.closeReason() == null? "ok" : ws.closeReason();
+            log.info("Session {} closed ({}, {})", session, ws.closeStatusCode(), reason);
+            try {
+                po.send(session, new Kv(TYPE, CLOSE), new Kv(ROUTE, session), new Kv(TX_PATH, txPath));
+            } catch (IllegalArgumentException e) {
+                // ok to ignore
+            }
+            platform.release(txPath);
+            vertx.setTimer(RETRY_TIMER, n -> makeConnection(idleSeconds));
+        });
+        ws.exceptionHandler(e -> {
+            if (connected.get()) {
+                log.warn("Session {} - {}", session, e.getMessage());
+                connected.set(false);
+                ws.close((short) 1000, e.getMessage());
+            }
         });
     }
 
@@ -233,5 +249,4 @@ public class PersistentWsClient extends Thread {
             vertx.close();
         }
     }
-
 }

@@ -74,5 +74,4 @@ public class Feature {
             return TRUE.equalsIgnoreCase(reader.getProperty(condition));
         }
     }
-
 }

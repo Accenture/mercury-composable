@@ -85,16 +85,15 @@ public class SimpleXmlWriter {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked"})
     private void appendNode(StringBuilder buffer, String nodeName, Object value, int indent) {
         // Skip null value
         if (value == null) {
             return;
         }
-        if (value instanceof List) {
-            List<Object> list = (List<Object>) value;
+        if (value instanceof List<?> items) {
             // To preserve original sequence, DO NOT sort list elements
-            for (Object object: list) {
+            for (Object object: items) {
                 appendNode(buffer, nodeName, object, indent);
             }
         } else {
@@ -103,18 +102,16 @@ public class SimpleXmlWriter {
             buffer.append('<');
             buffer.append(escapeXml(nodeName, TagType.START));
             buffer.append('>');
-            if (value instanceof Date d) {
-                long ms = d.getTime();
-                ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ms), ZoneId.of("UTC"));
-                buffer.append(zdt.format(ISO_DATE));
-            } else if (value instanceof Map) {
-                write(buffer, null, (Map<String, Object>) value, indent+1);
-            } else if (value instanceof String str) {
-                buffer.append(escapeXml(str, TagType.BODY));
-            } else if (value instanceof BigDecimal bDecimal) {
-                buffer.append(bDecimal.toPlainString());
-            } else {
-                buffer.append(escapeXml(value.toString(), TagType.BODY));
+            switch (value) {
+                case Date d -> {
+                    long ms = d.getTime();
+                    ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ms), ZoneId.of("UTC"));
+                    buffer.append(zdt.format(ISO_DATE));
+                }
+                case Map<?, ?> map -> write(buffer, null, (Map<String, Object>) map, indent + 1);
+                case String str -> buffer.append(escapeXml(str, TagType.BODY));
+                case BigDecimal bDecimal -> buffer.append(bDecimal.toPlainString());
+                default -> buffer.append(escapeXml(value.toString(), TagType.BODY));
             }
             buffer.append("</");
             buffer.append(escapeXml(nodeName, TagType.END));
@@ -125,81 +122,69 @@ public class SimpleXmlWriter {
     }
 
     private void indentBlock(StringBuilder buffer, int indent) {
-        for (int i=0; i < indent; i++) {
-            buffer.append(SPACES);
-        }
+        buffer.append(SPACES.repeat(Math.max(0, indent)));
     }
 
     private String escapeXml(String value, TagType type) {
-        switch (type) {
-            case START:
+        return switch (type) {
+            case START -> {
                 if (value.startsWith("/") || value.startsWith("{")) {
-                    return "node value=\""+value+"\"";
+                    yield "node value=\"" + value + "\"";
                 }
-                return safeXmlKey(value);
-            case END:
+                yield safeXmlKey(value);
+            }
+            case END -> {
                 if (value.startsWith("/") || value.startsWith("{")) {
-                    return "node";
+                    yield "node";
                 }
-                return safeXmlKey(value);
-            default:
-                // escape special characters
-                // http://en.wikipedia.org/wiki/XML#Escaping
-                String result = value;
-                if (result.contains("&")) {
-                    result = result.replace("&", "&amp;");
-                }
-                if (result.contains("'")) {
-                    result = result.replace("'", "&apos;");
-                }
-                if (result.contains("\"")) {
-                    result = result.replace("\"", "&quot;");
-                }
-                if (result.contains(">")) {
-                    result = result.replace(">", "&gt;");
-                }
-                if (result.contains("<")) {
-                    result = result.replace("<", "&lt;");
-                }
-                return result;
+                yield safeXmlKey(value);
+            }
+            default -> escapeHtml(value);
+        };
+    }
+
+    private String escapeHtml(String text) {
+        if (text.contains("&")) {
+            text = text.replace("&", "&amp;");
         }
+        if (text.contains("'")) {
+            text = text.replace("'", "&apos;");
+        }
+        if (text.contains("\"")) {
+            text = text.replace("\"", "&quot;");
+        }
+        if (text.contains(">")) {
+            text = text.replace(">", "&gt;");
+        }
+        if (text.contains("<")) {
+            text = text.replace("<", "&lt;");
+        }
+        return text;
     }
 
     private String safeXmlKey(String str) {
-        boolean valid = true;
-        for (int i=0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (c >= '0' && c <= '9') continue;
-            if (c >= 'a' && c <= 'z') continue;
-            if (c >= 'A' && c <= 'Z') continue;
-            if (c == '-') continue;
-            valid = false;
-            break;
-        }
-        if (valid) {
+        if (validKey(str)) {
             return str;
         }
         StringBuilder sb = new StringBuilder();
         for (int i=0; i < str.length(); i++) {
             char c = str.charAt(i);
-            if (c >= '0' && c <= '9') {
+            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-') {
                 sb.append(c);
-                continue;
+            } else {
+                sb.append('_');
             }
-            if (c >= 'a' && c <= 'z') {
-                sb.append(c);
-                continue;
-            }
-            if (c >= 'A' && c <= 'Z') {
-                sb.append(c);
-                continue;
-            }
-            if (c == '-') {
-                sb.append(c);
-            }
-            sb.append('_');
         }
         return sb.toString();
     }
 
+    private boolean validKey(String str) {
+        for (int i=0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (!((c >= '0' && c <= '9') ||  (c >= 'a' && c <= 'z') ||  (c >= 'A' && c <= 'Z') || c == '-')) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

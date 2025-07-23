@@ -74,27 +74,32 @@ public class MultipartPayload {
             po.send(message);
         } else if (isDataBlock(control) && control.containsKey(ID) &&
                 control.containsKey(COUNT) && control.containsKey(TOTAL)) {
-            // segmented incoming event
-            Utility util = Utility.getInstance();
-            String id = control.get(ID);
-            int count = util.str2int(control.get(COUNT));
-            int total = util.str2int(control.get(TOTAL));
-            if (message.getBody() instanceof byte[] data && count != -1 && total != -1 && count <= total) {
-                log.debug("Receiving block {} of {} as {} - {} bytes", count, total, id, data.length);
-                Object o = cache.get(id);
-                EventBlocks segments = o instanceof EventBlocks eBlocks ? eBlocks : new EventBlocks(id);
-                if (segments.exists(count)) {
-                    log.error("Duplicated block {} for event {} dropped", count, id);
+            receiveDataBlock(message, control);
+        }
+    }
+
+    private void receiveDataBlock(EventEnvelope message, Map<String, String> control) {
+        // segmented incoming event
+        EventEmitter po = EventEmitter.getInstance();
+        Utility util = Utility.getInstance();
+        String id = control.get(ID);
+        int count = util.str2int(control.get(COUNT));
+        int total = util.str2int(control.get(TOTAL));
+        if (message.getBody() instanceof byte[] data && count != -1 && total != -1 && count <= total) {
+            log.debug("Receiving block {} of {} as {} - {} bytes", count, total, id, data.length);
+            Object o = cache.get(id);
+            EventBlocks segments = o instanceof EventBlocks eBlocks ? eBlocks : new EventBlocks(id);
+            if (segments.exists(count)) {
+                log.error("Duplicated block {} for event {} dropped", count, id);
+            } else {
+                segments.put(count, data);
+                if (total == segments.size()) {
+                    EventEnvelope reconstructed = new EventEnvelope();
+                    reconstructed.load(segments.toBytes());
+                    cache.remove(id);
+                    po.send(reconstructed);
                 } else {
-                    segments.put(count, data);
-                    if (total == segments.size()) {
-                        EventEnvelope reconstructed = new EventEnvelope();
-                        reconstructed.load(segments.toBytes());
-                        cache.remove(id);
-                        po.send(reconstructed);
-                    } else {
-                        cache.put(id, segments);
-                    }
+                    cache.put(id, segments);
                 }
             }
         }
@@ -125,40 +130,8 @@ public class MultipartPayload {
                 int total = (payload.length / maxPayload) + (payload.length % maxPayload == 0 ? 0 : 1);
                 ByteArrayInputStream in = new ByteArrayInputStream(payload);
                 for (int i = 0; i < total; i++) {
-                    // To distinguish from a normal payload, the segmented block MUST not have a "TO" value.
-                    int count = i + 1;
-                    EventEnvelope blk = new EventEnvelope()
-                                            .setHeader(MultipartPayload.ID, event.getId())
-                                            .setHeader(MultipartPayload.COUNT, count)
-                                            .setHeader(MultipartPayload.TOTAL, total);
-                    byte[] segment = new byte[maxPayload];
-                    final int size;
-                    try {
-                        size = in.read(segment);
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException(e.getMessage());
-                    }
-                    blk.setBody(size == maxPayload ? segment : Arrays.copyOfRange(segment, 0, size));
-                    /*
-                     * To guarantee that the cloud connector can deliver blocks of the same event
-                     * to the same destination, we pass id, count and total as the headers
-                     */
-                    EventEnvelope out = new EventEnvelope()
-                                            .setHeader(TO, event.getTo())
-                                            .setHeader(MultipartPayload.ID, event.getId())
-                                            .setHeader(MultipartPayload.COUNT, count)
-                                            .setHeader(MultipartPayload.TOTAL, total)
-                                            .setBody(blk.toBytes());
-
-                    if (event.getBroadcastLevel() > 1) {
-                        // tell a cloud connector that this event should be broadcast
-                        out.setHeader(BROADCAST, "1");
-                    }
-                    system.send(target.getRoute(), out.toBytes());
-                    log.debug("Sending block {} of {} to {} as {} - {} bytes", i + 1, total, event.getTo(),
-                            event.getId(), size);
+                    sendDataBlock(target, event, in, i, total);
                 }
-
             } else {
                 EventEnvelope out = new EventEnvelope().setHeader(TO, event.getTo()).setBody(payload);
                 if (event.getBroadcastLevel() > 1) {
@@ -168,5 +141,41 @@ public class MultipartPayload {
                 system.send(target.getRoute(), out.toBytes());
             }
         }
+    }
+
+    private void sendDataBlock(ServiceQueue target, EventEnvelope event, ByteArrayInputStream in, int i, int total) {
+        // To distinguish from a normal payload, the segmented block MUST not have a "TO" value.
+        int count = i + 1;
+        EventEnvelope blk = new EventEnvelope()
+                .setHeader(MultipartPayload.ID, event.getId())
+                .setHeader(MultipartPayload.COUNT, count)
+                .setHeader(MultipartPayload.TOTAL, total);
+        byte[] segment = new byte[maxPayload];
+        final int size;
+        try {
+            size = in.read(segment);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+        blk.setBody(size == maxPayload ? segment : Arrays.copyOfRange(segment, 0, size));
+        /*
+         * To guarantee that the cloud connector can deliver blocks of the same event
+         * to the same destination, we pass id, count and total as the headers
+         */
+        EventEnvelope out = new EventEnvelope()
+                .setHeader(TO, event.getTo())
+                .setHeader(MultipartPayload.ID, event.getId())
+                .setHeader(MultipartPayload.COUNT, count)
+                .setHeader(MultipartPayload.TOTAL, total)
+                .setBody(blk.toBytes());
+
+        if (event.getBroadcastLevel() > 1) {
+            // tell a cloud connector that this event should be broadcast
+            out.setHeader(BROADCAST, "1");
+        }
+        EventBus system = Platform.getInstance().getEventSystem();
+        system.send(target.getRoute(), out.toBytes());
+        log.debug("Sending block {} of {} to {} as {} - {} bytes", i + 1, total, event.getTo(),
+                event.getId(), size);
     }
 }

@@ -43,5 +43,4 @@ public class CorsInfo {
         String value = element.substring(colon+1).trim();
         headers.put(key, value);
     }
-
 }

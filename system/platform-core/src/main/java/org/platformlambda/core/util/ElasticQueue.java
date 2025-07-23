@@ -185,7 +185,7 @@ public class ElasticQueue implements AutoCloseable {
             try {
                 db.close();
             } catch (Exception e) {
-                log.debug("Exception while closing - {}", e.getMessage());
+                log.debug("Exception while closing DB - {}", e.getMessage());
             }
             try {
                 dbEnv.close();

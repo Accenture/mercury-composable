@@ -101,7 +101,6 @@ public class FluxConsumer<T> {
      * @param serializer custom serializer or null
      * @throws IllegalArgumentException in case of routing error
      */
-    @SuppressWarnings("unchecked")
     public void consume(Consumer<T> consumer,
                         Consumer<Throwable> errorConsumer,
                         Runnable completeConsumer,
@@ -112,7 +111,6 @@ public class FluxConsumer<T> {
             consumed.set(true);
             var platform = Platform.getInstance();
             var po = EventEmitter.getInstance();
-            var mapper = SimpleMapper.getInstance().getMapper();
             final long timer = Platform.getInstance().getVertx().setTimer(ttl, t -> {
                 expired.set(true);
                 if (!eof.get()) {
@@ -127,52 +125,72 @@ public class FluxConsumer<T> {
             // adding routing suffix in case the publisher and consumer are in different containers
             final EventEnvelope fetch = new EventEnvelope().setTo(inStream).setHeader(TYPE, READ)
                                                             .setReplyTo(callback + "@" + platform.getOrigin());
-            final LambdaFunction f = (headers, body, instance) -> {
-                String type = headers.get(TYPE);
-                if (END_OF_STREAM.equals(type)) {
-                    eof.set(true);
-                    po.send(inStream, new Kv(TYPE, CLOSE));
-                    if (completeConsumer != null) {
-                        completeConsumer.run();
-                    }
-                }
-                if (DATA.equals(type) && body != null && consumer != null) {
-                    if (body instanceof Map && pojoClass != null) {
-                        if (serializer != null) {
-                            consumer.accept(serializer.toPoJo(body, pojoClass));
-                        } else {
-                            consumer.accept(mapper.readValue(body, pojoClass));
-                        }
-                    } else {
-                        consumer.accept((T) body);
-                    }
-                }
-                if (EXCEPTION.equals(type) && body instanceof byte[] b) {
-                    EventEnvelope result = new EventEnvelope(b);
-                    Throwable ex = result.getException();
-                    if (ex != null) {
-                        if (errorConsumer != null) {
-                            errorConsumer.accept(ex);
-                        }
-                        eof.set(true);
-                        po.send(inStream, new Kv(TYPE, CLOSE));
-                    }
-                }
-                if (eof.get()) {
-                    if (!expired.get()) {
-                        expired.set(true);
-                        Platform.getInstance().getVertx().cancelTimer(timer);
-                    }
-                    if (platform.hasRoute(callback)) {
-                        platform.release(callback);
-                    }
-                } else {
-                    po.send(fetch);
-                }
-                return null;
-            };
-            platform.registerPrivate(callback, f, 1);
+            setupCallback(fetch, timer, consumer, errorConsumer, completeConsumer, pojoClass, serializer);
             po.send(fetch);
+        }
+    }
+
+    private void setupCallback(EventEnvelope fetch, long timer, Consumer<T> consumer, Consumer<Throwable> errorConsumer,
+                               Runnable completeConsumer, Class<T> pojoClass, CustomSerializer serializer) {
+        var platform = Platform.getInstance();
+        var po = EventEmitter.getInstance();
+        final LambdaFunction f = (headers, body, instance) -> {
+            String type = headers.get(TYPE);
+            processMessageStep1(type, body, consumer, completeConsumer, pojoClass, serializer);
+            processMessageStep2(type, body, errorConsumer);
+            if (eof.get()) {
+                if (!expired.get()) {
+                    expired.set(true);
+                    Platform.getInstance().getVertx().cancelTimer(timer);
+                }
+                if (platform.hasRoute(callback)) {
+                    platform.release(callback);
+                }
+            } else {
+                po.send(fetch);
+            }
+            return null;
+        };
+        platform.registerPrivate(callback, f, 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processMessageStep1(String type, Object body, Consumer<T> consumer,
+                                     Runnable completeConsumer, Class<T> pojoClass, CustomSerializer serializer) {
+        var po = EventEmitter.getInstance();
+        var mapper = SimpleMapper.getInstance().getMapper();
+        if (END_OF_STREAM.equals(type)) {
+            eof.set(true);
+            po.send(inStream, new Kv(TYPE, CLOSE));
+            if (completeConsumer != null) {
+                completeConsumer.run();
+            }
+        }
+        if (DATA.equals(type) && body != null && consumer != null) {
+            if (body instanceof Map && pojoClass != null) {
+                if (serializer != null) {
+                    consumer.accept(serializer.toPoJo(body, pojoClass));
+                } else {
+                    consumer.accept(mapper.readValue(body, pojoClass));
+                }
+            } else {
+                consumer.accept((T) body);
+            }
+        }
+    }
+
+    private void processMessageStep2(String type, Object body, Consumer<Throwable> errorConsumer) {
+        var po = EventEmitter.getInstance();
+        if (EXCEPTION.equals(type) && body instanceof byte[] b) {
+            EventEnvelope result = new EventEnvelope(b);
+            Throwable ex = result.getException();
+            if (ex != null) {
+                if (errorConsumer != null) {
+                    errorConsumer.accept(ex);
+                }
+                eof.set(true);
+                po.send(inStream, new Kv(TYPE, CLOSE));
+            }
         }
     }
 }

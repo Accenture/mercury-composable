@@ -18,9 +18,12 @@
 
 package org.platformlambda.core.models;
 
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class Kv {
 
@@ -40,8 +43,9 @@ public class Kv {
             case null -> this.value = "";
             case String str -> this.value = str;
             case Date d -> this.value = Utility.getInstance().date2str(d);
+            case Map<?, ?> m -> this.value = SimpleMapper.getInstance().getCompactGson().toJson(m);
+            case List<?> l -> this.value = SimpleMapper.getInstance().getCompactGson().toJson(l);
             default -> this.value = String.valueOf(value);
         }
     }
-
 }

@@ -37,8 +37,7 @@ public class MockApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MockApp.class);
 
     @Override
-    public void start(String[] args) {
-
+    public void start(String[] args)  {
         Platform platform = Platform.getInstance();
         platform.connectToCloud();
         log.info("Started");

@@ -57,7 +57,7 @@ public class ServiceQueue {
     public ServiceQueue(ServiceDef service) {
         this.service = service;
         String route = service.getRoute();
-        this.readyPrefix = READY+":" + route + HASH;
+        this.readyPrefix = READY + ":" + route + HASH;
         this.elasticQueue = new ElasticQueue(route);
         // create consumer
         system = Platform.getInstance().getEventSystem();
@@ -75,21 +75,17 @@ public class ServiceQueue {
                 var worker = new WorkerDispatcher(service, route + HASH + n, n);
                 workers.add(worker);
             }
-            if (service.isKernelThread()) {
-                if (instances == 1) {
-                    log.info("{} {} started as kernel thread", service.isPrivate() ? PRIVATE : PUBLIC, route);
-                } else {
-                    log.info("{} {} with {} instances started as kernel threads",
-                            service.isPrivate() ? PRIVATE : PUBLIC, route, instances);
-                }
-            } else {
-                if (instances == 1) {
-                    log.info("{} {} started as virtual thread", service.isPrivate() ? PRIVATE : PUBLIC, route);
-                } else {
-                    log.info("{} {} with {} instances started as virtual threads",
-                            service.isPrivate() ? PRIVATE : PUBLIC, route, instances);
-                }
-            }
+            printInitLog(route, instances, service.isKernelThread());
+        }
+    }
+
+    private void printInitLog(String route, int instances, boolean isKernel) {
+        var type = isKernel? "kernel" : "virtual";
+        if (instances == 1) {
+            log.info("{} {} started as {} thread", service.isPrivate() ? PRIVATE : PUBLIC, route, type);
+        } else {
+            log.info("{} {} with {} instances started as {} threads",
+                    service.isPrivate() ? PRIVATE : PUBLIC, route, instances, type);
         }
     }
 
@@ -136,49 +132,57 @@ public class ServiceQueue {
             Object body = message.body();
             if (!stopped) {
                 if (body instanceof String input) {
-                    String worker = getWorker(input);
-                    if (worker != null) {
-                        // Just for the safe side, this guarantees that a unique worker is inserted
-                        idx.computeIfAbsent(worker, d -> {
-                            fifo.add(worker);
-                            return true;
-                        });
-                        if (buffering) {
-                            byte[] event = elasticQueue.read();
-                            if (event.length == 0) {
-                                // Close elastic queue when all messages are cleared
-                                buffering = false;
-                                elasticQueue.close();
-                            } else {
-                                // Guarantees that there is an available worker
-                                String nextWorker = fifo.poll();
-                                if (nextWorker != null) {
-                                    idx.remove(nextWorker);
-                                    system.send(nextWorker, event);
-                                }
-                            }
+                    processReadySignal(input);
+                }
+                if (body instanceof byte[] event) {
+                    processEvent(event);
+                }
+            }
+        }
+
+        private void processReadySignal(String input) {
+            String worker = getWorker(input);
+            if (worker != null) {
+                // Just for the safe side, this guarantees that a unique worker is inserted
+                idx.computeIfAbsent(worker, d -> {
+                    fifo.add(worker);
+                    return true;
+                });
+                if (buffering) {
+                    byte[] event = elasticQueue.read();
+                    if (event.length == 0) {
+                        // Close elastic queue when all messages are cleared
+                        buffering = false;
+                        elasticQueue.close();
+                    } else {
+                        // Guarantees that there is an available worker
+                        String nextWorker = fifo.poll();
+                        if (nextWorker != null) {
+                            idx.remove(nextWorker);
+                            system.send(nextWorker, event);
                         }
                     }
                 }
-                if (body instanceof byte[] event) {
-                    if (buffering) {
-                        // Once elastic queue is started, we will continue buffering.
-                        elasticQueue.write(event);
-                    } else {
-                        // Check if a next worker is available
-                        String nextWorker = fifo.peek();
-                        if (nextWorker == null) {
-                            // Start persistent queue when no workers are available
-                            buffering = true;
-                            elasticQueue.write(event);
-                        } else {
-                            // Deliver event to the next worker
-                            nextWorker = fifo.poll();
-                            if (nextWorker != null) {
-                                idx.remove(nextWorker);
-                                system.send(nextWorker, event);
-                            }
-                        }
+            }
+        }
+
+        private void processEvent(byte[] event) {
+            if (buffering) {
+                // Once elastic queue is started, we will continue buffering.
+                elasticQueue.write(event);
+            } else {
+                // Check if a next worker is available
+                String nextWorker = fifo.peek();
+                if (nextWorker == null) {
+                    // Start persistent queue when no workers are available
+                    buffering = true;
+                    elasticQueue.write(event);
+                } else {
+                    // Deliver event to the next worker
+                    nextWorker = fifo.poll();
+                    if (nextWorker != null) {
+                        idx.remove(nextWorker);
+                        system.send(nextWorker, event);
                     }
                 }
             }

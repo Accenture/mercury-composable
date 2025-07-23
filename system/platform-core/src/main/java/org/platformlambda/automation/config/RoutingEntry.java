@@ -56,8 +56,8 @@ public class RoutingEntry {
     private static final String ADD = "add";
     private static final String DROP = "drop";
     private static final String KEEP = "keep";
-    private static final String SKIP_INVALID_AUTH = "Skipping entry with invalid authentication service name {}";
-    private static final String SKIP_INVALID_ENTRY = "Skipping invalid REST entry {}";
+    private static final String AUTHENTICATION_SERVICE_NAME = "authentication service name ";
+    private static final String SKIP_INVALID_ENTRY = "Skipping invalid REST entry";
     private static final String ACCESS_CONTROL_PREFIX = "Access-Control-";
     private static final String[] VALID_METHODS = {"GET", "PUT", "POST", "DELETE", "HEAD", "PATCH", OPTIONS_METHOD};
     private static final List<String> METHOD_LIST = Arrays.asList(VALID_METHODS);
@@ -70,8 +70,8 @@ public class RoutingEntry {
     private static final Map<String, HeaderInfo> requestHeaderInfo = new HashMap<>();
     private static final Map<String, HeaderInfo> responseHeaderInfo = new HashMap<>();
     private static final List<String> urlPaths = new ArrayList<>();
-    private static SimpleHttpFilter requestFilter;
-    private static List<String> noCachePages;
+    private SimpleHttpFilter requestFilter;
+    private List<String> noCachePages;
     private static final RoutingEntry instance = new RoutingEntry();
 
     private RoutingEntry() {
@@ -104,26 +104,26 @@ public class RoutingEntry {
         if (exactRoutes.containsKey(normalizedUrl)) {
             return new AssignedRoute(routes.get(key));
         } else {
-            // then compare each segment in the URL, also with case insensitivity
-            AssignedRoute similar = null;
-            for (String u: urlPaths) {
-                AssignedRoute info = getMatchedRoute(urlParts, method, u);
-                if (info != null) {
-                    if (similar == null) {
-                        similar = info;
-                    }
-                    // both URL path and method are correct
-                    if (routes.containsKey(method + ":" + u)) {
-                        return info;
-                    }
+            return getSimilarRoute(method, urlParts);
+        }
+    }
+
+    private AssignedRoute getSimilarRoute(String method, List<String> urlParts) {
+        AssignedRoute similar = null;
+        for (String u: urlPaths) {
+            AssignedRoute info = getMatchedRoute(urlParts, method, u);
+            if (info != null) {
+                if (similar == null) {
+                    similar = info;
+                }
+                // Both URL path and method are correct
+                if (routes.containsKey(method + ":" + u)) {
+                    return info;
                 }
             }
-            /*
-             * Similar path found but method does not match.
-             * This allows it to reject the request with "HTTP-405 Method Not Allowed".
-             */
-            return similar;
         }
+        // similar path found but method does not match - reject with HTTP-405 'Method Not Allowed'
+        return similar;
     }
 
     public HeaderInfo getRequestHeaderInfo(String id) {
@@ -172,37 +172,37 @@ public class RoutingEntry {
             }
         }
         for (int i=0; i < segments.size(); i++) {
-            String configuredItem = segments.get(i);
-            if (configuredItem.startsWith("{") && configuredItem.endsWith("}")) {
-                continue;
+            if (notMatched(segments.get(i), urlParts, i)) {
+                return false;
             }
-            if ("*".equals(configuredItem)) {
-                continue;
-            }
-            // case-insensitive comparison using lowercase
-            String inputItem = urlParts.get(i).toLowerCase();
-            if (configuredItem.endsWith("*")) {
-                String prefix = configuredItem.substring(0, configuredItem.length()-1);
-                if (inputItem.startsWith(prefix)) {
-                    continue;
-                }
-            }
-            if (inputItem.equals(configuredItem)) {
-                continue;
-            }
-            return false;
         }
         return true;
     }
 
-    @SuppressWarnings("unchecked")
+    private boolean notMatched(String item, List<String> urlParts, int i) {
+        if (item.startsWith("{") && item.endsWith("}")) {
+            return false;
+        }
+        if ("*".equals(item)) {
+            return false;
+        }
+        // case-insensitive comparison using lowercase
+        String inputItem = urlParts.get(i).toLowerCase();
+        if (item.endsWith("*")) {
+            String prefix = item.substring(0, item.length()-1);
+            if (inputItem.startsWith(prefix)) {
+                return false;
+            }
+        }
+        return !inputItem.equals(item);
+    }
+
     private List<String> getNoCacheConfig(ConfigReader config) {
         Object noCache = config.get("static-content.no-cache-pages");
         if (noCache != null) {
-            if (noCache instanceof List) {
+            if (noCache instanceof List<?> items) {
                 List<String> noCacheList = new ArrayList<>();
-                List<Object> cList = (List<Object>) noCache;
-                for (int i = 0; i < cList.size(); i++) {
+                for (int i = 0; i < items.size(); i++) {
                     noCacheList.add(config.getProperty("static-content.no-cache-pages[" + i + "]"));
                 }
                 if (invalidFilterParameters(noCacheList)) {
@@ -218,39 +218,21 @@ public class RoutingEntry {
         return Collections.emptyList();
     }
 
-    @SuppressWarnings(value="unchecked")
-    private SimpleHttpFilter getFilter(ConfigReader config) {
+    private SimpleHttpFilter getStaticContentFilter(ConfigReader config) {
         if (config.exists("static-content.filter")) {
             Object path = config.get("static-content.filter.path");
-            Object exclusion = config.get("static-content.filter.exclusion");
             String service = config.getProperty("static-content.filter.service");
-            if (path instanceof List && service != null && !service.isEmpty()) {
+            if (path instanceof List<?> pList && service != null && !service.isEmpty()) {
                 if (!Utility.getInstance().validServiceName(service)) {
                     log.error("Static content filter ignored: '{} -> {}' - invalid service name", path, service);
                     return null;
                 }
                 List<String> pathList = new ArrayList<>();
-                List<String> exclusionList = new ArrayList<>();
-                List<Object> pList = (List<Object>) path;
                 for (int i = 0; i < pList.size(); i++) {
                     pathList.add(config.getProperty("static-content.filter.path[" + i + "]"));
                 }
-                if (pathList.isEmpty()) {
-                    log.error("static-content.filter.path is empty");
-                    return null;
-                }
-                if (exclusion instanceof List) {
-                    List<Object> eList = (List<Object>) exclusion;
-                    for (int i = 0; i < eList.size(); i++) {
-                        exclusionList.add(config.getProperty("static-content.filter.exclusion[" + i + "]"));
-                    }
-                }
-                if (invalidFilterParameters(pathList)) {
-                    log.error("static-content.filter.path ignored - invalid syntax {}", path);
-                    return null;
-                }
-                if (invalidFilterParameters(exclusionList)) {
-                    log.error("static-content.filter.exclusion ignored - invalid syntax {}", exclusion);
+                List<String> exclusionList = new ArrayList<>();
+                if (invalidStaticContentFilter(config, exclusionList, pathList)) {
                     return null;
                 }
                 log.info("static-content.filter loaded: {} -> {}, exclusion {}", pathList, service, exclusionList);
@@ -260,6 +242,28 @@ public class RoutingEntry {
             }
         }
         return null;
+    }
+
+    private boolean invalidStaticContentFilter(ConfigReader config, List<String> exclusionList, List<String> pathList) {
+        Object exclusion = config.get("static-content.filter.exclusion");
+        if (exclusion instanceof List<?> items) {
+            for (int i = 0; i < items.size(); i++) {
+                exclusionList.add(config.getProperty("static-content.filter.exclusion[" + i + "]"));
+            }
+        }
+        if (pathList.isEmpty()) {
+            log.error("static-content.filter.path is empty");
+            return true;
+        }
+        if (invalidFilterParameters(pathList)) {
+            log.error("static-content.filter.path ignored - invalid syntax {}", pathList);
+            return true;
+        }
+        if (invalidFilterParameters(exclusionList)) {
+            log.error("static-content.filter.exclusion ignored - invalid syntax {}", exclusion);
+            return true;
+        }
+        return false;
     }
 
     private boolean invalidFilterParameters(List<String> items) {
@@ -281,95 +285,103 @@ public class RoutingEntry {
         return false;
     }
 
-    @SuppressWarnings(value = "unchecked")
     public void load(ConfigReader config) {
-        requestFilter = getFilter(config);
-        noCachePages = getNoCacheConfig(config);
+        this.requestFilter = getStaticContentFilter(config);
+        this.noCachePages = getNoCacheConfig(config);
         if (config.exists(HEADERS)) {
-            Object headerList = config.get(HEADERS);
-            boolean valid = false;
-            if (headerList instanceof List) {
-                List<Object> list = (List<Object>) headerList;
-                if (isListOfMap(list)) {
-                    loadHeaderTransform(config, list.size());
-                    valid = true;
-                }
-            }
-            if (!valid) {
-                log.error("'headers' section must be a list of request and response entries");
-            }
+            loadHeaderSection(config);
         }
         if (config.exists(CORS)) {
-            Object corsList = config.get(CORS);
-            boolean valid = false;
-            if (corsList instanceof List) {
-                List<Object> list = (List<Object>) corsList;
-                if (isListOfMap((List<Object>) corsList)) {
-                    loadCors(config, list.size());
-                    valid = true;
-                }
-            }
-            if (!valid) {
-                log.error("'cors' section must be a list of Access-Control entries (id, options and headers)");
-            }
+            loadCorsSection(config);
         }
         if (config.exists(REST)) {
-            Object rest = config.get(REST);
-            boolean valid = false;
-            if (rest instanceof List) {
-                if (isListOfMap((List<Object>) rest)) {
-                    loadRest(config);
-                    valid = true;
-                }
-            }
-            if (!valid) {
-                log.error("'rest' section must be a list of endpoint entries (url, service, methods, timeout...)");
-            }
-            List<String> exact = new ArrayList<>();
-            for (String r: exactRoutes.keySet()) {
-                if (!exact.contains(r)) {
-                    exact.add(r);
-                }
-            }
-            if (exact.size() > 1) {
-                Collections.sort(exact);
-            }
-            if (!exact.isEmpty()) {
-                var message = new HashMap<String, Object>();
-                message.put("type", "url");
-                message.put("match", "exact");
-                message.put("total", exact.size());
-                message.put("path", exact);
-                log.info("{}", message);
-            }
-            // sort URLs for easy parsing
-            if (!routes.isEmpty()) {
-                for (String r: routes.keySet()) {
-                    int colon = r.indexOf(':');
-                    if (colon > 0) {
-                        String urlOnly = r.substring(colon+1);
-                        if (!exactRoutes.containsKey(urlOnly) && !urlPaths.contains(urlOnly)) {
-                            urlPaths.add(urlOnly);
-                        }
-                    }
-                }
-            }
-            if (urlPaths.size() > 1) {
-                Collections.sort(urlPaths);
-            }
-            if (!urlPaths.isEmpty()) {
-                var message = new HashMap<String, Object>();
-                message.put("type", "url");
-                message.put("match", "parameters");
-                message.put("total", urlPaths.size());
-                message.put("path", urlPaths);
-                log.info("{}", message);
-            }
+            loadRestSection(config);
         }
     }
 
-    private boolean isListOfMap(List<Object> list) {
-        for (Object o: list) {
+    @SuppressWarnings(value = "unchecked")
+    private void loadHeaderSection(ConfigReader config) {
+        Object headerList = config.get(HEADERS);
+        boolean valid = false;
+        if (headerList instanceof List<?> items) {
+            if (isListOfMap(items)) {
+                loadHeaderTransform(config, items.size());
+                valid = true;
+            }
+        }
+        if (!valid) {
+            log.error("'headers' section must be a list of request and response entries");
+        }
+    }
+
+    private void loadCorsSection(ConfigReader config) {
+        Object corsList = config.get(CORS);
+        boolean valid = false;
+        if (corsList instanceof List<?> items) {
+            if (isListOfMap(items)) {
+                loadCors(config, items.size());
+                valid = true;
+            }
+        }
+        if (!valid) {
+            log.error("'cors' section must be a list of Access-Control entries (id, options and headers)");
+        }
+    }
+
+    private void loadRestSection(ConfigReader config) {
+        Object rest = config.get(REST);
+        boolean valid = false;
+        if (rest instanceof List<?> items && isListOfMap(items)) {
+            loadRest(config);
+            valid = true;
+        }
+        if (!valid) {
+            log.error("'rest' section must be a list of endpoint entries (url, service, methods, timeout...)");
+        }
+        List<String> exact = new ArrayList<>();
+        for (String r: exactRoutes.keySet()) {
+            if (!exact.contains(r)) {
+                exact.add(r);
+            }
+        }
+        printRestEntryStats(exact);
+    }
+
+    private void printRestEntryStats(List<String> exact) {
+        Collections.sort(exact);
+        if (!exact.isEmpty()) {
+            var message = new HashMap<String, Object>();
+            message.put("type", "url");
+            message.put("match", "exact");
+            message.put("total", exact.size());
+            message.put("path", exact);
+            log.info("{}", message);
+        }
+        // sort URLs for easy parsing
+        if (!routes.isEmpty()) {
+            for (String r: routes.keySet()) {
+                int colon = r.indexOf(':');
+                if (colon > 0) {
+                    String urlOnly = r.substring(colon+1);
+                    if (!exactRoutes.containsKey(urlOnly) && !urlPaths.contains(urlOnly)) {
+                        urlPaths.add(urlOnly);
+                    }
+                }
+            }
+        }
+        Collections.sort(urlPaths);
+        if (!urlPaths.isEmpty()) {
+            var message = new HashMap<String, Object>();
+            message.put("type", "url");
+            message.put("match", "parameters");
+            message.put("total", urlPaths.size());
+            message.put("path", urlPaths);
+            log.info("{}", message);
+        }
+    }
+
+    private boolean isListOfMap(List<?> items) {
+        for (Object o: items) {
             if (!(o instanceof Map)) {
                 return false;
             }
@@ -377,21 +389,20 @@ public class RoutingEntry {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     private void loadRest(ConfigReader config) {
         addDefaultEndpoints(config);
         sortEndpoints(config);
-        Object restEntries = config.get(REST);
-        int total = ((List<Object>) restEntries).size();
-        for (int i=0; i < total; i++) {
-            Object services = config.get(REST+"["+i+"]."+SERVICE);
-            Object methods = config.get(REST+"["+i+"]."+METHODS);
-            String url = config.getProperty(REST+"["+i+"]."+URL_LABEL);
-            if (url != null && methods instanceof List &&
-                    (services instanceof List || services instanceof String)) {
-                loadRestEntry(config, i, !url.contains("{") && !url.contains("}") && !url.contains("*"));
-            } else {
-                log.error(SKIP_INVALID_ENTRY, config.get(REST+"["+i+"]"));
+        if (config.get(REST) instanceof List<?> items) {
+            for (int i = 0; i < items.size(); i++) {
+                Object services = config.get(REST + "[" + i + "]." + SERVICE);
+                Object methods = config.get(REST + "[" + i + "]." + METHODS);
+                String url = config.getProperty(REST + "[" + i + "]." + URL_LABEL);
+                if (url != null && methods instanceof List &&
+                        (services instanceof List || services instanceof String)) {
+                    loadRestEntry(config, i, !url.contains("{") && !url.contains("}") && !url.contains("*"));
+                } else {
+                    log.error("{} - {}", SKIP_INVALID_ENTRY, config.get(REST + "[" + i + "]"));
+                }
             }
         }
     }
@@ -465,7 +476,6 @@ public class RoutingEntry {
 
     @SuppressWarnings("unchecked")
     private void loadRestEntry(ConfigReader config, int idx, boolean exact) {
-        Utility util = Utility.getInstance();
         RouteInfo info = new RouteInfo();
         Object services = config.get(REST+"["+idx+"]."+SERVICE);
         List<String> methods = (List<String>) config.get(REST+"["+idx+"]."+METHODS);
@@ -485,63 +495,12 @@ public class RoutingEntry {
         if (upload != null) {
             info.upload = "true".equalsIgnoreCase(upload);
         }
-        Object authConfig = config.get(REST+"["+idx+"]."+ AUTHENTICATION);
-        // authentication: "v1.api.auth"
-        if (authConfig instanceof String) {
-            String auth = authConfig.toString().trim();
-            if (util.validServiceName(auth)) {
-                info.defaultAuthService = auth;
-            } else {
-                log.error(SKIP_INVALID_AUTH, config.get(REST+"["+idx+"]"));
-                return;
-            }
-        }
-        /*
-            authentication:
-            - "x-app-name: demo : v1.demo.auth"
-            - "authorization: v1.basic.auth"
-            - "default: v1.api.auth"
-         */
-        if (authConfig instanceof List) {
-            List<Object> authList = (List<Object>) authConfig;
-            for (Object o : authList) {
-                String authEntry = String.valueOf(o);
-                List<String> parts = util.split(authEntry, ": ");
-                if (parts.size() == 2) {
-                    String authHeader = parts.get(0);
-                    String authService = parts.get(1);
-                    if (util.validServiceName(authService)) {
-                        if (DEFAULT_VALUE.equals(authHeader)) {
-                            info.defaultAuthService = authService;
-                        } else {
-                            info.setAuthService(authHeader, "*", authService);
-                        }
-                    } else {
-                        log.error(SKIP_INVALID_AUTH, config.get(REST+"["+idx+"]"));
-                        return;
-                    }
-
-                } else if (parts.size() == 3) {
-                    String authHeader = parts.get(0);
-                    String authValue = parts.get(1);
-                    String authService = parts.get(2);
-                    if (util.validServiceName(authService)) {
-                        info.setAuthService(authHeader, authValue, authService);
-                    } else {
-                        log.error(SKIP_INVALID_AUTH, config.get(REST+"["+idx+"]"));
-                        return;
-                    }
-
-                } else {
-                    log.error(SKIP_INVALID_AUTH, config.get(REST+"["+idx+"]"));
-                    return;
-                }
-            }
-            if (info.defaultAuthService == null) {
-                log.error("Skipping entry because it is missing default authentication service {}",
-                            config.get(REST+"["+idx+"]"));
-                return;
-            }
+        try {
+            validateAuthService(config, info, idx);
+            validateCorsAndHeaders(config, info, idx);
+        } catch (IllegalArgumentException e) {
+            log.error("Skip invalid entry - {}", e.getMessage());
+            return;
         }
         String tracing = config.getProperty(REST+"["+idx+"]."+TRACING);
         if ("true".equalsIgnoreCase(tracing)) {
@@ -552,73 +511,11 @@ public class RoutingEntry {
             url = url.substring(0, url.indexOf('?'));
         }
         info.timeoutSeconds = getDurationInSeconds(config.getProperty(REST+"["+idx+"]."+TIMEOUT));
-        String corsId = config.getProperty(REST+"["+idx+"]."+CORS);
-        if (corsId != null) {
-            if (corsConfig.containsKey(corsId)) {
-                info.corsId = corsId;
-            } else {
-                log.error("Skipping invalid entry because cors ID {} is not found, {}",
-                            corsId, config.get(REST+"["+idx+"]"));
-                return;
-            }
-        }
-        String headerId = config.getProperty(REST+"["+idx+"]."+HEADERS);
-        if (headerId != null) {
-            boolean foundTransform = false;
-            if (requestHeaderInfo.containsKey(headerId)) {
-                info.requestTransformId = headerId;
-                foundTransform = true;
-            }
-            if (responseHeaderInfo.containsKey(headerId)) {
-                info.responseTransformId = headerId;
-                foundTransform = true;
-            }
-            if (!foundTransform) {
-                log.error("Skipping invalid entry because headers ID {} is not found, {}",
-                        headerId, config.get(REST+"["+idx+"]"));
-                return;
-            }
-        }
         if (info.primary.startsWith(HTTP) || info.primary.startsWith(HTTPS)) {
-            Object rewrite = config.get(REST+"["+idx+"]."+URL_REWRITE);
-            // URL rewrite
-            if (rewrite instanceof List) {
-                List<String> urlRewrite = (List<String>) rewrite;
-                if (urlRewrite.size() == 2) {
-                    info.urlRewrite = urlRewrite;
-                } else {
-                    log.error("Skipping entry with invalid {} - {}. It should contain a list of 2 prefixes",
-                            URL_REWRITE, urlRewrite);
-                    return;
-                }
-            } else {
-                log.error("Skipping entry with invalid {} - {}, expected: List<String>, actual: {}",
-                        URL_REWRITE, rewrite, rewrite.getClass().getSimpleName());
-                return;
-            }
             try {
-                URI u = new URI(info.primary);
-                if (!u.getPath().isEmpty()) {
-                    log.error("Skipping entry with invalid service URL {} - Must not contain path", info.primary);
-                    return;
-                }
-                if (u.getQuery() != null) {
-                    log.error("Skipping entry with invalid service URL {} - Must not contain query", info.primary);
-                    return;
-                }
-                String trustAll = config.getProperty(REST+"["+idx+"]."+TRUST_ALL_CERT);
-                if (info.primary.startsWith(HTTPS) && "true".equalsIgnoreCase(trustAll)) {
-                    info.trustAllCert = true;
-                    log.warn("Be careful - {}=true for {}", TRUST_ALL_CERT, info.primary);
-                }
-                if (info.primary.startsWith(HTTP) && trustAll != null) {
-                    log.warn("{}=true for {} is not relevant - Do you meant https?", TRUST_ALL_CERT, info.primary);
-                }
-                // set primary to ASYNC_HTTP_REQUEST
-                info.host = info.primary;
-                info.primary = AsyncHttpClient.ASYNC_HTTP_REQUEST;
-            } catch (URISyntaxException e) {
-                log.error("Skipping entry with invalid service URL {} - {}", info.primary, e.getMessage());
+                validateHttpTarget(config, info, idx);
+            } catch (IllegalArgumentException e) {
+                log.error("Skip invalid entry with HTTP target - {}", e.getMessage());
                 return;
             }
         } else {
@@ -629,6 +526,10 @@ public class RoutingEntry {
         }
         // remove OPTIONS method
         methods.remove(OPTIONS_METHOD);
+        validateMethods(url, methods, config, info, idx, exact);
+    }
+
+    private void validateMethods(String url, List<String> methods, ConfigReader config, RouteInfo info, int i, boolean exact) {
         if (validMethods(methods)) {
             List<String> allMethods = new ArrayList<>(new HashSet<>(methods));
             Collections.sort(allMethods);
@@ -638,35 +539,173 @@ public class RoutingEntry {
             }
             String nUrl = getUrl(url, exact);
             if (nUrl == null) {
-                log.error("Skipping invalid entry {}", config.get(REST+"["+idx+"]"));
+                log.error("Skip entry with invalid URL {}", config.get(REST+"["+i+"]"));
             } else {
                 info.url = nUrl;
                 // ensure OPTIONS method is supported
                 allMethods.add(OPTIONS_METHOD);
-                for (String m: allMethods) {
-                    String key = m+":"+nUrl;
-                    routes.put(key, info);
-                    String flowHint = info.flowId == null? "" : ", flow=" + info.flowId;
-                    if (!OPTIONS_METHOD.equals(m)) {
-                        if (info.defaultAuthService != null) {
-                            log.info("{} {} -> {} -> {}, timeout={}s, tracing={}{}",
-                                    m, nUrl, info.defaultAuthService, info.services,
-                                    info.timeoutSeconds, info.tracing, flowHint);
-                        } else {
-                            log.info("{} {} -> {}, timeout={}s, tracing={}{}",
-                                    m, nUrl, info.services, info.timeoutSeconds, info.tracing, flowHint);
-                        }
-                    }
-                }
+                printRestEntry(allMethods, nUrl, info);
             }
         } else {
-            log.error("Skipping entry with invalid method {}", config.get(REST+"["+idx+"]"));
+            log.error("Skip entry with invalid method {}", config.get(REST+"["+i+"]"));
+        }
+    }
+
+    private void validateCorsAndHeaders(ConfigReader config, RouteInfo info, int i) {
+        String corsId = config.getProperty(REST+"["+i+"]."+CORS);
+        if (corsId != null) {
+            if (corsConfig.containsKey(corsId)) {
+                info.corsId = corsId;
+            } else {
+                throw new IllegalArgumentException("cors ID "+corsId+" is not found, "+config.get(REST+"["+i+"]"));
+            }
+        }
+        String headerId = config.getProperty(REST+"["+i+"]."+HEADERS);
+        if (invalidHeaderId(headerId, info)) {
+            throw new IllegalArgumentException("headers ID "+headerId+" is not found, "+config.get(REST+"["+i+"]"));
+        }
+    }
+
+    private boolean invalidHeaderId(String headerId, RouteInfo info) {
+        if (headerId != null) {
+            boolean foundTransform = false;
+            if (requestHeaderInfo.containsKey(headerId)) {
+                info.requestTransformId = headerId;
+                foundTransform = true;
+            }
+            if (responseHeaderInfo.containsKey(headerId)) {
+                info.responseTransformId = headerId;
+                foundTransform = true;
+            }
+            return !foundTransform;
+        }
+        return false;
+    }
+
+    private void printRestEntry(List<String> allMethods, String nUrl, RouteInfo info) {
+        for (String m: allMethods) {
+            String key = m+":"+nUrl;
+            routes.put(key, info);
+            String flowHint = info.flowId == null? "" : ", flow=" + info.flowId;
+            if (!OPTIONS_METHOD.equals(m)) {
+                if (info.defaultAuthService != null) {
+                    log.info("{} {} -> {} -> {}, timeout={}s, tracing={}{}",
+                            m, nUrl, info.defaultAuthService, info.services,
+                            info.timeoutSeconds, info.tracing, flowHint);
+                } else {
+                    log.info("{} {} -> {}, timeout={}s, tracing={}{}",
+                            m, nUrl, info.services, info.timeoutSeconds, info.tracing, flowHint);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateHttpTarget(ConfigReader config, RouteInfo info, int i) {
+        Object rewrite = config.get(REST+"["+i+"]."+URL_REWRITE);
+        // URL rewrite
+        if (rewrite instanceof List) {
+            List<String> urlRewrite = (List<String>) rewrite;
+            if (urlRewrite.size() == 2) {
+                info.urlRewrite = urlRewrite;
+            } else {
+                throw new IllegalArgumentException(URL_REWRITE + " - " + urlRewrite +
+                                                    ". It should contain a list of 2 prefixes");
+            }
+        } else {
+            var clsName = rewrite == null? "null" : rewrite.getClass().getSimpleName();
+            throw new IllegalArgumentException(URL_REWRITE + " - " + rewrite +
+                                                ", expected: List<String>, actual: " + clsName);
+        }
+        try {
+            URI u = new URI(info.primary);
+            if (!u.getPath().isEmpty()) {
+                throw new IllegalArgumentException("service URL " + info.primary + " - Must not contain path");
+            }
+            if (u.getQuery() != null) {
+                throw new IllegalArgumentException("service URL " + info.primary + " - Must not contain query");
+            }
+            String trustAll = config.getProperty(REST+"["+i+"]."+TRUST_ALL_CERT);
+            if (info.primary.startsWith(HTTPS) && "true".equalsIgnoreCase(trustAll)) {
+                info.trustAllCert = true;
+                log.warn("Be careful - {}=true for {}", TRUST_ALL_CERT, info.primary);
+            }
+            if (info.primary.startsWith(HTTP) && trustAll != null) {
+                log.warn("{}=true for {} is not relevant - Do you meant https?", TRUST_ALL_CERT, info.primary);
+            }
+            // set primary to ASYNC_HTTP_REQUEST
+            info.host = info.primary;
+            info.primary = AsyncHttpClient.ASYNC_HTTP_REQUEST;
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("service URL " + info.primary + " - " + e.getMessage());
+        }
+    }
+
+    private void validateAuthService(ConfigReader config, RouteInfo info, int i) {
+        Utility util = Utility.getInstance();
+        Object authConfig = config.get(REST+"["+i+"]."+ AUTHENTICATION);
+        // authentication: "v1.api.auth"
+        if (authConfig instanceof String) {
+            String auth = authConfig.toString().trim();
+            if (util.validServiceName(auth)) {
+                info.defaultAuthService = auth;
+            } else {
+                throw new IllegalArgumentException(AUTHENTICATION_SERVICE_NAME + config.get(REST+"["+i+"]"));
+            }
+        }
+        /*
+            authentication:
+            - "x-app-name: demo : v1.demo.auth"
+            - "authorization: v1.basic.auth"
+            - "default: v1.api.auth"
+         */
+        if (authConfig instanceof List<?> items) {
+            for (Object o : items) {
+                String authEntry = String.valueOf(o);
+                List<String> parts = util.split(authEntry, ": ");
+                if (parts.size() == 2) {
+                    validate2partAuthList(config, info, parts, i);
+                } else if (parts.size() == 3) {
+                    validate3partAuthList(config, info, parts, i);
+                } else {
+                    throw new IllegalArgumentException(AUTHENTICATION_SERVICE_NAME + config.get(REST+"["+i+"]"));
+                }
+            }
+            if (info.defaultAuthService == null) {
+                throw new IllegalArgumentException("missing default authentication: " + config.get(REST+"["+i+"]"));
+            }
+        }
+    }
+
+    private void validate2partAuthList(ConfigReader config, RouteInfo info, List<String> parts, int i) {
+        Utility util = Utility.getInstance();
+        String authHeader = parts.get(0);
+        String authService = parts.get(1);
+        if (util.validServiceName(authService)) {
+            if (DEFAULT_VALUE.equals(authHeader)) {
+                info.defaultAuthService = authService;
+            } else {
+                info.setAuthService(authHeader, "*", authService);
+            }
+        } else {
+            throw new IllegalArgumentException(config.getProperty(REST+"["+i+"]"));
+        }
+    }
+
+    private void validate3partAuthList(ConfigReader config, RouteInfo info, List<String> parts, int i) {
+        Utility util = Utility.getInstance();
+        String authHeader = parts.get(0);
+        String authValue = parts.get(1);
+        String authService = parts.get(2);
+        if (util.validServiceName(authService)) {
+            info.setAuthService(authHeader, authValue, authService);
+        } else {
+            throw new IllegalArgumentException(config.getProperty(REST+"["+i+"]"));
         }
     }
 
     @SuppressWarnings("unchecked")
     private List<String> validateServiceList(Object svcList) {
-        Utility util = Utility.getInstance();
         List<String> list = svcList instanceof String svc? Collections.singletonList(svc) : (List<String>) svcList;
         List<String> result = new ArrayList<>();
         for (String item: list) {
@@ -685,6 +724,12 @@ public class RoutingEntry {
             }
             return result;
         }
+        validateMultipleServices(result);
+        return result;
+    }
+
+    private void validateMultipleServices(List<String> result) {
+        Utility util = Utility.getInstance();
         for (String item: result) {
             if (item.startsWith(HTTP) || item.startsWith(HTTPS)) {
                 throw new IllegalArgumentException("Cannot mix HTTP and service target");
@@ -693,7 +738,6 @@ public class RoutingEntry {
                 throw new IllegalArgumentException("Invalid service name");
             }
         }
-        return result;
     }
 
     private boolean validMethods(List<String> methods) {
@@ -714,25 +758,30 @@ public class RoutingEntry {
         for (String p: parts) {
             String s = p.trim();
             sb.append('/');
-            if (!exact) {
-                if (s.contains("{") || s.contains("}")) {
-                    if (s.contains("*")) {
-                        log.error("wildcard url segment must not mix arguments with *, actual: {}", s);
-                        return null;
-                    }
-                    if (!validArgument(s)) {
-                        log.error("argument url segment must be enclosed by curly brackets, actual: {}", s);
-                        return null;
-                    }
-                }
-                if (s.contains("*") && !validWildcard(s)) {
-                    log.error("wildcard url segment must ends with *, actual: {}", s);
-                    return null;
-                }
-            }
             sb.append(s);
+            if (!exact && invalidWildcardUrl(s)) {
+                return null;
+            }
         }
         return sb.toString();
+    }
+
+    private boolean invalidWildcardUrl(String s) {
+        if (s.contains("{") || s.contains("}")) {
+            if (s.contains("*")) {
+                log.error("wildcard url segment must not mix arguments with *, actual: {}", s);
+                return true;
+            }
+            if (!validArgument(s)) {
+                log.error("argument url segment must be enclosed by curly brackets, actual: {}", s);
+                return true;
+            }
+        }
+        if (s.contains("*") && !validWildcard(s)) {
+            log.error("wildcard url segment must ends with *, actual: {}", s);
+            return true;
+        }
+        return false;
     }
 
     private boolean validArgument(String arg) {
@@ -759,25 +808,14 @@ public class RoutingEntry {
         return stars.size() == 1;
     }
 
-    @SuppressWarnings("unchecked")
     private void loadCors(ConfigReader config, int total) {
         for (int i=0; i < total; i++) {
             String id = config.getProperty(CORS+"["+i+"]."+ID);
             Object options = config.get(CORS+"["+i+"]."+OPTIONS);
             Object headers = config.get(CORS+"["+i+"]."+HEADERS);
-            if (id != null && options instanceof List && headers instanceof List) {
-                List<Object> optionList = (List<Object>) options;
-                List<Object> headerList = (List<Object>) headers;
+            if (id != null && options instanceof List<?> optionList && headers instanceof List<?> headerList) {
                 if (validCorsList(optionList) && validCorsList(headerList)) {
-                    CorsInfo info = new CorsInfo();
-                    for (int j = 0; j < optionList.size(); j++) {
-                        info.addOption(config.getProperty(CORS + "[" + i + "]." + OPTIONS + "[" + j + "]"));
-                    }
-                    for (int j = 0; j < headerList.size(); j++) {
-                        info.addHeader(config.getProperty(CORS + "[" + i + "]." + HEADERS + "[" + j + "]"));
-                    }
-                    corsConfig.put(id, info);
-                    log.info("Loaded {} cors headers ({})", id, info.getOrigin(false));
+                    loadCorsEntry(config, id, optionList, headerList, i);
                 } else {
                     log.error("Skipping invalid cors entry id={}, options={}, headers={}", id, options, headers);
                 }
@@ -787,10 +825,23 @@ public class RoutingEntry {
         }
     }
 
-    private boolean validCorsList(List<Object> list) {
+    private void loadCorsEntry(ConfigReader config, String id, List<?> optList, List<?> headerList, int i) {
+        CorsInfo info = new CorsInfo();
+        for (int j = 0; j < optList.size(); j++) {
+            info.addOption(config.getProperty(CORS + "[" + i + "]." + OPTIONS + "[" + j + "]"));
+        }
+        for (int j = 0; j < headerList.size(); j++) {
+            info.addHeader(config.getProperty(CORS + "[" + i + "]." + HEADERS + "[" + j + "]"));
+        }
+        corsConfig.put(id, info);
+        var origin = info.getOrigin(false);
+        log.info("Loaded {} cors headers ({})", id, origin);
+    }
+
+    private boolean validCorsList(List<?> list) {
         for (Object o: list) {
-            if (o instanceof String) {
-                if (!validCorsElement((String) o)) {
+            if (o instanceof String text) {
+                if (!validCorsElement(text)) {
                     return false;
                 }
             } else {
@@ -813,7 +864,8 @@ public class RoutingEntry {
         }
         String value = element.substring(colon+1).trim();
         if (value.isEmpty()) {
-            log.error("Missing value in cors header {}", element.substring(0, colon));
+            var v = element.substring(0, colon);
+            log.error("Missing value in cors header {}", v);
             return false;
         }
         return true;
@@ -831,7 +883,6 @@ public class RoutingEntry {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void loadHeaderEntry(ConfigReader config, int idx, boolean isRequest) {
         String id = config.getProperty(HEADERS+"["+idx+"]."+ID);
         String type = isRequest? REQUEST : RESPONSE;
@@ -842,47 +893,16 @@ public class RoutingEntry {
             int keepCount = 0;
             HeaderInfo info = new HeaderInfo();
             Object addList = config.get(HEADERS+"["+idx+"]."+type+"."+ADD);
-            if (addList instanceof List) {
-                List<Object> items = (List<Object>) addList;
-                for (int j=0; j < items.size(); j++) {
-                    boolean valid = false;
-                    String kv = config.getProperty(HEADERS+"["+idx+"]."+type+"."+ADD+"["+j+"]", "null");
-                    int colon = kv.indexOf(':');
-                    if (colon > 0) {
-                        String k = kv.substring(0, colon).trim().toLowerCase();
-                        String v = kv.substring(colon+1).trim();
-                        if (!k.isEmpty() && !v.isEmpty()) {
-                            info.addHeader(k, v);
-                            addCount++;
-                            valid = true;
-                        }
-                    }
-                    if (!valid) {
-                        log.warn("Skipping invalid header {} {}[{}].{}.{}", id, HEADERS, idx, type, ADD);
-                    }
-                }
+            if (addList instanceof List<?> items) {
+                addCount += addHeaders(config, idx, items, type, info, id);
             }
             Object dropList = config.get(HEADERS+"["+idx+"]."+type+"."+DROP);
-            if (dropList instanceof List) {
-                List<Object> items = (List<Object>) dropList;
-                for (int j=0; j < items.size(); j++) {
-                    String key = config.getProperty(HEADERS+"["+idx+"]."+type+"."+DROP+"["+j+"]");
-                    if (key != null) {
-                        info.drop(key);
-                        dropCount++;
-                    }
-                }
+            if (dropList instanceof List<?> items) {
+                dropCount += dropHeaders(config, idx, items, type, info);
             }
             Object keepList = config.get(HEADERS+"["+idx+"]."+type+"."+KEEP);
-            if (keepList instanceof List) {
-                List<Object> items = (List<Object>) keepList;
-                for (int j=0; j < items.size(); j++) {
-                    String key = config.getProperty(HEADERS+"["+idx+"]."+type+"."+KEEP+"["+j+"]");
-                    if (key != null) {
-                        info.keep(key);
-                        keepCount++;
-                    }
-                }
+            if (keepList instanceof List<?> items) {
+                keepCount += keepHeaders(config, idx, items, type, info);
             }
             if (isRequest) {
                 requestHeaderInfo.put(id, info);
@@ -893,15 +913,60 @@ public class RoutingEntry {
         }
     }
 
+    private int addHeaders(ConfigReader config, int i, List<?> items, String type, HeaderInfo info, String id) {
+        int count = 0;
+        for (int j=0; j < items.size(); j++) {
+            boolean valid = false;
+            String kv = config.getProperty(HEADERS+"["+i+"]."+type+"."+ADD+"["+j+"]", "null");
+            int colon = kv.indexOf(':');
+            if (colon > 0) {
+                String k = kv.substring(0, colon).trim().toLowerCase();
+                String v = kv.substring(colon+1).trim();
+                if (!k.isEmpty() && !v.isEmpty()) {
+                    info.addHeader(k, v);
+                    count++;
+                    valid = true;
+                }
+            }
+            if (!valid) {
+                log.warn("Skipping invalid header {} {}[{}].{}.{}", id, HEADERS, i, type, ADD);
+            }
+        }
+        return count;
+    }
+
+    private int dropHeaders(ConfigReader config, int i, List<?> items, String type, HeaderInfo info) {
+        int count = 0;
+        for (int j=0; j < items.size(); j++) {
+            String key = config.getProperty(HEADERS+"["+i+"]."+type+"."+DROP+"["+j+"]");
+            if (key != null) {
+                info.drop(key);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int keepHeaders(ConfigReader config, int i, List<?> items, String type, HeaderInfo info) {
+        int count = 0;
+        for (int j=0; j < items.size(); j++) {
+            String key = config.getProperty(HEADERS+"["+i+"]."+type+"."+KEEP+"["+j+"]");
+            if (key != null) {
+                info.keep(key);
+                count++;
+            }
+        }
+        return count;
+    }
+
     public int getDurationInSeconds(String duration) {
         if (duration == null) {
             // default 30 seconds
             return 30;
         } else {
             int result = Utility.getInstance().getDurationInSeconds(duration);
-            // set maximum to 5 minutes and minimum to 5 seconds
-            return Math.min(FIVE_MINUTES, Math.max(result, 5));
+            // 5 seconds > result > 5 minutes
+            return Math.clamp(result, 5, FIVE_MINUTES);
         }
     }
-
 }

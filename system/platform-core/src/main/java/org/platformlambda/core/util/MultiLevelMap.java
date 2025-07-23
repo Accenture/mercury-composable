@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MultiLevelMap {
-    private static final NotFound NOT_FOUND = NotFound.createNotFound();
+    private static final NotFound NOT_FOUND = NotFound.of();
     private final Map<String, Object> multiLevels = new HashMap<>();
 
     /**
@@ -129,7 +129,7 @@ public class MultiLevelMap {
         for (Integer i: indexes) {
             n++;
             if (i < 0 || i >= current.size()) {
-                break;
+                return NOT_FOUND;
             }
             Object o = current.get(i);
             if (n == len) {
@@ -138,13 +138,12 @@ public class MultiLevelMap {
             if (o instanceof List) {
                 current = (List<Object>) o;
             } else {
-                break;
+                return NOT_FOUND;
             }
         }
         return NOT_FOUND;
     }
 
-    @SuppressWarnings("unchecked")
     private Object getElement(String path, Map<String, Object> map) {
         if (path == null || map == null || map.isEmpty()) return NOT_FOUND;
         if (map.containsKey(path)) {
@@ -155,45 +154,56 @@ public class MultiLevelMap {
         }
         Utility util = Utility.getInstance();
         List<String> list = util.split(path, ".");
-        Map<String, Object> current = map;
+        CurrentMap current = new CurrentMap(map);
         int len = list.size();
         int n = 0;
         for (String p: list) {
             n++;
-            if (isListElement(p)) {
-                int start = p.indexOf('[');
-                int end = p.indexOf(']', start);
-                if (end == -1) break;
-                String key = p.substring(0, start);
-                String index = p.substring(start+1, end).trim();
-                if (index.isEmpty() || !util.isDigits(index)) break;
-                if (current.containsKey(key)) {
-                    Object nextList = current.get(key);
-                    if (nextList instanceof List) {
-                        List<Integer> indexes = getIndexes(p.substring(start));
-                        Object next = getListElement(indexes, (List<Object>) nextList);
-                        if (n == len) {
-                            return next;
-                        }
-                        if (next instanceof Map) {
-                            current = (Map<String, Object>) next;
-                            continue;
-                        }
-                    }
+            var element = isListElement(p)? getListElementFromCurrent(p, current, n, len) :
+                                            getNonListElementFromCurrent(p, current, n, len);
+            if (!(element instanceof ToBeContinued)) {
+                return element;
+            }
+        }
+        return NOT_FOUND;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getListElementFromCurrent(String p, CurrentMap current, int n, int len) {
+        var util = Utility.getInstance();
+        int start = p.indexOf('[');
+        int end = p.indexOf(']', start);
+        if (end == -1) return NOT_FOUND;
+        String key = p.substring(0, start);
+        String index = p.substring(start+1, end).trim();
+        if (index.isEmpty() || !util.isDigits(index)) return NOT_FOUND;
+        if (current.map.containsKey(key)) {
+            Object nextList = current.map.get(key);
+            if (nextList instanceof List) {
+                List<Integer> indexes = getIndexes(p.substring(start));
+                Object next = getListElement(indexes, (List<Object>) nextList);
+                if (n == len) {
+                    return next;
                 }
-            } else {
-                if (current.containsKey(p)) {
-                    Object next = current.get(p);
-                    if (n == len) {
-                        return next;
-                    } else if (next instanceof Map) {
-                        current = (Map<String, Object>) next;
-                        continue;
-                    }
+                if (next instanceof Map) {
+                    current.map = (Map<String, Object>) next;
+                    return ToBeContinued.of();
                 }
             }
-            // item not found
-            break;
+        }
+        return NOT_FOUND;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getNonListElementFromCurrent(String p, CurrentMap current, int n, int len) {
+        if (current.map.containsKey(p)) {
+            Object next = current.map.get(p);
+            if (n == len) {
+                return next;
+            } else if (next instanceof Map) {
+                current.map = (Map<String, Object>) next;
+                return ToBeContinued.of();
+            }
         }
         return NOT_FOUND;
     }
@@ -250,14 +260,13 @@ public class MultiLevelMap {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     private void setElement(String path, Object value, Map<String, Object> map, boolean delete) {
         Utility util = Utility.getInstance();
         List<String> segments = util.split(path, ".");
         if (segments.isEmpty()) {
             return;
         }
-        Map<String, Object> current = map;
+        CurrentMap current = new CurrentMap(map);
         int len = segments.size();
         int n = 0;
         // reconstruct the composite as we walk the path segments
@@ -270,53 +279,71 @@ public class MultiLevelMap {
                 String element = p.substring(0, sep);
                 Object parent = getElement(composite+element, map);
                 if (n == len) {
-                    if (parent instanceof List) {
-                        setListElement(indexes, (List<Object>) parent, value);
-                    } else {
-                        List<Object> newList = new ArrayList<>();
-                        setListElement(indexes, newList, value);
-                        current.put(element, newList);
-                    }
-                    break;
+                    setCurrentElement(element, value, current, parent, indexes);
+                    return;
                 } else {
-                    if (parent instanceof List) {
-                        Object next = getElement(composite+p, map);
-                        if (next instanceof Map) {
-                            current = (Map<String, Object>) next;
-                        } else {
-                            Map<String, Object> m = new HashMap<>();
-                            setListElement(indexes, (List<Object>) parent, m);
-                            current = m;
-                        }
-                    } else {
-                        Map<String, Object> nextMap = new HashMap<>();
-                        List<Object> newList = new ArrayList<>();
-                        setListElement(indexes, newList, nextMap);
-                        current.put(element, newList);
-                        current = nextMap;
-                    }
+                    walkOneElement(composite+p, element, current, parent, indexes, map);
                 }
-
             } else {
-                if (n == len) {
-                    if (value == null && delete) {
-                        current.remove(p);
-                    } else {
-                        current.put(p, value);
-                    }
-                    break;
-                } else {
-                    Object next = current.get(p);
-                    if (next instanceof Map) {
-                        current = (Map<String, Object>) next;
-                    } else {
-                        Map<String, Object> nextMap = new HashMap<>();
-                        current.put(p, nextMap);
-                        current = nextMap;
-                    }
+                if (walkNonListElement(p, value, current, n, len, delete)) {
+                    return;
                 }
             }
             composite.append(p).append('.');
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setCurrentElement(String element, Object value, CurrentMap current, Object parent, List<Integer> indexes) {
+        if (parent instanceof List) {
+            setListElement(indexes, (List<Object>) parent, value);
+        } else {
+            List<Object> newList = new ArrayList<>();
+            setListElement(indexes, newList, value);
+            current.map.put(element, newList);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void walkOneElement(String compositePath, String element, CurrentMap current, Object parent,
+                                List<Integer> indexes, Map<String, Object> map) {
+        if (parent instanceof List) {
+            Object next = getElement(compositePath, map);
+            if (next instanceof Map) {
+                current.map = (Map<String, Object>) next;
+            } else {
+                Map<String, Object> m = new HashMap<>();
+                setListElement(indexes, (List<Object>) parent, m);
+                current.map = m;
+            }
+        } else {
+            Map<String, Object> nextMap = new HashMap<>();
+            List<Object> newList = new ArrayList<>();
+            setListElement(indexes, newList, nextMap);
+            current.map.put(element, newList);
+            current.map = nextMap;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean walkNonListElement(String p, Object value, CurrentMap current, int n, int len, boolean delete) {
+        if (n == len) {
+            if (value == null && delete) {
+                current.map.remove(p);
+            } else {
+                current.map.put(p, value);
+            }
+            return true;
+        } else {
+            Object next = current.map.get(p);
+            if (next instanceof Map) {
+                current.map = (Map<String, Object>) next;
+            } else {
+                Map<String, Object> nextMap = new HashMap<>();
+                current.map.put(p, nextMap);
+                current.map = nextMap;
+            }
+            return false;
         }
     }
 
@@ -411,39 +438,67 @@ public class MultiLevelMap {
                 if (sep2 < sep1) {
                     throw new IllegalArgumentException("Invalid composite path - missing start bracket");
                 }
-                boolean start = false;
-                for (char c: s.substring(sep1).toCharArray()) {
-                    if (c == '[') {
-                        if (start) {
-                            throw new IllegalArgumentException("Invalid composite path - missing end bracket");
-                        } else {
-                            start = true;
-                        }
-                    } else if (c == ']') {
-                        if (!start) {
-                            throw new IllegalArgumentException("Invalid composite path - duplicated end bracket");
-                        } else {
-                            start = false;
-                        }
-                    } else {
-                        if (start) {
-                            if (c < '0' || c > '9') {
-                                throw new IllegalArgumentException("Invalid composite path - indexes must be digits");
-                            }
-                        } else {
-                            throw new IllegalArgumentException("Invalid composite path - invalid indexes");
-                        }
-                    }
-                }
+                validateOneSegmentOfPath(s, sep1);
             }
         }
+    }
+
+    private void validateOneSegmentOfPath(String s, int sep) {
+        boolean start = false;
+        for (char c: s.substring(sep).toCharArray()) {
+            int n = validateCorrectBracketPair(c, start);
+            if (n == 1) {
+                start = true;
+            } else if (n == 2) {
+                start = false;
+            } else if (start) {
+                if (c < '0' || c > '9') {
+                    throw new IllegalArgumentException("Invalid composite path - indexes must be digits");
+                }
+            } else {
+                throw new IllegalArgumentException("Invalid composite path - invalid indexes");
+            }
+        }
+    }
+
+    private int validateCorrectBracketPair(char c, boolean start) {
+        if (c == '[') {
+            if (start) {
+                throw new IllegalArgumentException("Invalid composite path - missing end bracket");
+            } else {
+                return 1;
+            }
+        } else if (c == ']') {
+            if (!start) {
+                throw new IllegalArgumentException("Invalid composite path - duplicated end bracket");
+            } else {
+                return 2;
+            }
+        }
+        return 0;
     }
 
     private static class NotFound {
         private NotFound() { }
 
-        private static NotFound createNotFound() {
+        private static NotFound of() {
             return new NotFound();
+        }
+    }
+
+    private static class ToBeContinued {
+        private ToBeContinued() { }
+
+        private static ToBeContinued of() {
+            return new ToBeContinued();
+        }
+    }
+
+    private static class CurrentMap {
+        Map<String, Object> map;
+
+        public CurrentMap(Map<String, Object> map) {
+            this.map = map;
         }
     }
 }

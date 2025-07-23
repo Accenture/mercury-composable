@@ -212,7 +212,7 @@ public class Platform {
     /**
      * Cloud services will be started automatically when your app call the connectToCloud() method
      * <p>
-     *     Call this function only when you want to start cloud services without an event stream connector.
+     *     Call this function only when you want to start cloud services without a cloud connector.
      */
     public synchronized void startCloudServices() {
         if (!Platform.cloudServicesStarted) {
@@ -221,29 +221,33 @@ public class Platform {
             AppConfigReader reader = AppConfigReader.getInstance();
             String cloudServices = reader.getProperty(EventEmitter.CLOUD_SERVICES);
             if (cloudServices != null) {
-                List<String> list = Utility.getInstance().split(cloudServices, ", ");
-                if (!list.isEmpty()) {
-                    List<String> loaded = new ArrayList<>();
+                List<String> serviceList = Utility.getInstance().split(cloudServices, ", ");
+                if (!serviceList.isEmpty()) {
                     SimpleClassScanner scanner = SimpleClassScanner.getInstance();
                     List<ClassInfo> services = scanner.getAnnotatedClasses(CloudService.class, true);
-                    for (String name: list) {
-                        if (loaded.contains(name)) {
-                            log.error("Cloud service ({}) already loaded", name);
-                        } else {
-                            if (startService(name, services, false)) {
-                                loaded.add(name);
-                            } else {
-                                log.error("Cloud service ({}) not found", name);
-                            }
-                        }
-                    }
-                    if (loaded.isEmpty()) {
-                        log.warn("No Cloud services are loaded");
-                    } else {
-                        log.info("Cloud services {} started", loaded);
-                    }
+                    loadCloudServices(serviceList, services);
                 }
             }
+        }
+    }
+
+    private void loadCloudServices(List<String> serviceList, List<ClassInfo> services) {
+        List<String> loaded = new ArrayList<>();
+        for (String name: serviceList) {
+            if (loaded.contains(name)) {
+                log.error("Cloud service ({}) already loaded", name);
+            } else {
+                if (startService(name, services, false)) {
+                    loaded.add(name);
+                } else {
+                    log.error("Cloud service ({}) not found", name);
+                }
+            }
+        }
+        if (loaded.isEmpty()) {
+            log.warn("No Cloud services are loaded");
+        } else {
+            log.info("Cloud services {} started", loaded);
         }
     }
 
@@ -284,7 +288,7 @@ public class Platform {
             try {
                 cls = Class.forName(info.getName());
             } catch (ClassNotFoundException e) {
-                log.error("Unable to start cloud {} ({}) - {}", type, info.getName(), e.getMessage());
+                log.error("Unable to start cloud {} - class {} not found", type, info.getName());
                 return false;
             }
             final String serviceName;
@@ -298,31 +302,38 @@ public class Platform {
                 serviceName = connector.name();
                 original = connector.original();
             }
-            final String nextService = original.equals(serviceName)? "" : original;
+            String originalService = original.equals(serviceName)? "" : original;
             if (name.equals(serviceName)) {
-                try {
-                    Object o = cls.getDeclaredConstructor().newInstance();
-                    if (o instanceof CloudSetup cloud) {
-                        Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
-                            log.info("Starting cloud {} {} using {}", type, name, cls.getName());
-                            cloud.initialize();
-                            // execute next service if provided
-                            if (!nextService.isEmpty()) {
-                                startService(nextService, services, isConnector);
-                            }
-                        });
-                        return true;
-                    } else {
-                        log.error("Unable to start cloud {} ({}) because it does not inherit {}",
-                                type, cls.getName(), CloudSetup.class.getName());
-                    }
-
-                } catch (NoSuchMethodException | InvocationTargetException |
-                        InstantiationException | IllegalAccessException e) {
-                    log.error("Unable to start cloud {} ({}) - {}", type, info.getName(), e.getMessage());
+                if (isCloudServiceStarted(type, name, cls, info, originalService, services, isConnector)) {
+                    return true;
                 }
                 break;
             }
+        }
+        return false;
+    }
+
+    private boolean isCloudServiceStarted(String type, String name, Class<?> cls, ClassInfo info,
+                                          String originalService, List<ClassInfo> services, boolean isConnector) {
+        try {
+            Object o = cls.getDeclaredConstructor().newInstance();
+            if (o instanceof CloudSetup cloud) {
+                Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
+                    log.info("Starting cloud {} {} using {}", type, name, cls.getName());
+                    cloud.initialize();
+                    // execute next service if provided
+                    if (!originalService.isEmpty()) {
+                        startService(originalService, services, isConnector);
+                    }
+                });
+                return true;
+            } else {
+                log.error("Unable to start cloud {} ({}) because it does not inherit {}",
+                        type, cls.getName(), CloudSetup.class.getName());
+            }
+        } catch (NoSuchMethodException | InvocationTargetException |
+                 InstantiationException | IllegalAccessException e) {
+            log.error("Unable to start cloud {} ({}) - {}", type, info.getName(), e.getMessage());
         }
         return false;
     }
@@ -345,8 +356,7 @@ public class Platform {
      * @param instances for concurrent processing of events
      * @throws IllegalArgumentException in case of duplicated registration
      */
-    @SuppressWarnings("rawtypes")
-    public void register(String route, TypedLambdaFunction lambda, int instances) {
+    public void register(String route, TypedLambdaFunction<?, ?> lambda, int instances) {
         register(route, lambda, false, instances);
     }
 
@@ -360,8 +370,7 @@ public class Platform {
      * @param instances for concurrent processing of events
      * @throws IllegalArgumentException in case of duplicated registration
      */
-    @SuppressWarnings("rawtypes")
-    public void registerPrivate(String route, TypedLambdaFunction lambda, int instances) {
+    public void registerPrivate(String route, TypedLambdaFunction<?, ?> lambda, int instances) {
         register(route, lambda, true, instances);
     }
 
@@ -513,8 +522,7 @@ public class Platform {
      * @param instances number of workers for this function
      * @throws IllegalArgumentException in case of routing error
      */
-    @SuppressWarnings("rawtypes")
-    private void register(String route, TypedLambdaFunction lambda, boolean isPrivate, int instances) {
+    private void register(String route, TypedLambdaFunction<?, ?> lambda, boolean isPrivate, int instances) {
         if (lambda == null) {
             throw new IllegalArgumentException("Missing LambdaFunction instance");
         }

@@ -25,17 +25,14 @@ public class AsyncContextHolder {
     public final HttpServerRequest request;
     public long timeout;
     public long lastAccess;
-    public String url, resHeaderId, accept, method;
+    public String url;
+    public String resHeaderId;
+    public String accept;
+    public String method;
 
     public AsyncContextHolder(HttpServerRequest request) {
         this.request = request;
         this.timeout = 30 * 1000L;
-        this.touch();
-    }
-
-    public AsyncContextHolder(HttpServerRequest request, long timeout) {
-        this.request = request;
-        this.timeout = timeout;
         this.touch();
     }
 

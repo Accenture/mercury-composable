@@ -59,10 +59,6 @@ public class CryptoApi {
     private static final String BEGIN = "BEGIN";
     private static final String END = "END";
 
-    /////////////////////////
-    // RSA crypto utilities
-    ////////////////////////
-
     /**
      * Generate RSA keypair
      * @return keypair
@@ -168,10 +164,10 @@ public class CryptoApi {
      * Verify a digital signature using a public key (RSA)
      * (Python PyCrypto compatibility tested
      *  example in <a href="https://www.dlitz.net/software/pycrypto/api/2.6/">PyCrypto</a>)
-     *
+     * <p>
      *  <code>
      *  Package Crypto :: Package Signature :: Module PKCS1_v1_5
-     *
+     * <p>
      *  from Crypto.Signature import PKCS1_v1_5 as pkcs
      *  from Crypto.Hash import SHA
      *  from Crypto.PublicKey import RSA
@@ -195,10 +191,6 @@ public class CryptoApi {
         rsa.update(data);
         return rsa.verify(signature);
     }
-
-    /////////////////////////
-    // DSA crypto utilities
-    ////////////////////////
 
     public KeyPair generateDsaKey() {
         return generateDsaKey(DSA_2048);
@@ -253,10 +245,6 @@ public class CryptoApi {
         dsa.update(data);
         return dsa.verify(signature);
     }
-
-    /////////////////////////
-    // AES crypto utilities
-    ////////////////////////
 
     /**
      * Secure random for secret key generation
@@ -351,10 +339,6 @@ public class CryptoApi {
         return getRandomBytes(IV_LENGTH);
     }
 
-    /////////////////////
-    // Hashing utilities
-    /////////////////////
-
     public byte[] getSHA256(byte[] data) {
         return getHash(data, SHA256);
     }
@@ -398,10 +382,6 @@ public class CryptoApi {
         }
     }
 
-    /////////////////////////////////////////////////////////////////
-    // HMAC utilities - cross-verified with Python hmac and hashlib
-    ////////////////////////////////////////////////////////////////
-
     public byte[] getHmacSha256(byte[] key, byte[] message) {
         return getHmac(key, message, HMAC_SHA256);
     }
@@ -423,26 +403,11 @@ public class CryptoApi {
         }
     }
 
-    ///////////////////
-    // Other utilities
-    ///////////////////
-
     public String writePem(byte[] key, String type) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(DASHES);
-        sb.append(BEGIN);
-        sb.append(' ');
-        sb.append(type.toUpperCase());
-        sb.append(DASHES);
-        sb.append("\r\n");
-        sb.append(Utility.getInstance().bytesToBase64(key, true, false));
-        sb.append(DASHES);
-        sb.append(END);
-        sb.append(' ');
-        sb.append(type.toUpperCase());
-        sb.append(DASHES);
-        sb.append("\r\n");
-        return sb.toString();
+        return DASHES + BEGIN + ' ' + type.toUpperCase() +
+                DASHES + "\r\n" +
+                Utility.getInstance().bytesToBase64(key, true, false) +
+                DASHES + END + ' ' + type.toUpperCase() + DASHES + "\r\n";
     }
 
     public byte[] readPem(String pem) {
@@ -452,14 +417,14 @@ public class CryptoApi {
         for (String s: lines) {
             if (s.contains(DASHES) && s.contains(BEGIN)) {
                 begin = true;
-                continue;
-            }
-            if (s.contains(DASHES) && s.contains(END)) {
-                break;
-            }
-            if (begin) {
-                // Beginning and trailing white spaces are not allowed because it is a base64 string
-                sb.append(s.trim());
+            } else {
+                if (s.contains(DASHES) && s.contains(END)) {
+                    break;
+                }
+                if (begin) {
+                    // Beginning and trailing white spaces are not allowed because it is a base64 string
+                    sb.append(s.trim());
+                }
             }
         }
         return Utility.getInstance().base64ToBytes(sb.toString());
@@ -473,7 +438,7 @@ public class CryptoApi {
         // initialize keystore with a random password which is not relevant in keystore operation
         ks.load(null, Utility.getInstance().getUuid().toCharArray());
         ks.setCertificateEntry("certificate", cert);
-        // initialize trust trust manager factory
+        // initialize trust manager factory
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(ks);

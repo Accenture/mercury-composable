@@ -142,9 +142,9 @@ public class ObjectStreamIO {
         for (Map.Entry<String, StreamInfo> kv: streams.entrySet()) {
             StreamInfo info = kv.getValue();
             Map<String, Object> metadata = new HashMap<>();
-            metadata.put("created", util.date2str(new Date(info.created)));
-            metadata.put("last_read", util.date2str(new Date(info.updated)));
-            metadata.put("expiry_seconds", info.expiryMills / 1000);
+            metadata.put("created", util.date2str(new Date(info.getCreated())));
+            metadata.put("last_read", util.date2str(new Date(info.getUpdated())));
+            metadata.put("expiry_seconds", info.getExpiryMills() / 1000);
             result.put(kv.getKey(), metadata);
         }
         result.put("count", streams.size());
@@ -159,7 +159,7 @@ public class ObjectStreamIO {
     public static void touch(String id) {
         StreamInfo info = streams.get(id);
         if (info != null) {
-            info.updated = System.currentTimeMillis();
+            info.setUpdated(System.currentTimeMillis());
         }
     }
 
@@ -174,11 +174,11 @@ public class ObjectStreamIO {
         for (String id : list) {
             StreamInfo info = streams.get(id);
             // test null pointer to avoid racing condition
-            if (info != null && now - info.updated > info.expiryMills) {
+            if (info != null && now - info.getUpdated() > info.getExpiryMills()) {
                 try {
-                    String createdTime = util.date2str(new Date(info.created));
-                    String updatedTime = util.date2str(new Date(info.updated));
-                    String idle = util.elapsedTime(info.expiryMills);
+                    String createdTime = util.date2str(new Date(info.getCreated()));
+                    String updatedTime = util.date2str(new Date(info.getUpdated()));
+                    String idle = util.elapsedTime(info.getExpiryMills());
                     log.warn("{} expired. Inactivity for {} ({} - {})", id, idle, createdTime, updatedTime);
                     po.send(id, new Kv(TYPE, CLOSE));
                 } catch (Exception e) {

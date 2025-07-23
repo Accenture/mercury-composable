@@ -41,8 +41,7 @@ public class ServiceDef {
     private static final String HANDLE_EVENT = "handleEvent";
     private static final int MAX_INSTANCES = 1000;
     private final String route;
-    @SuppressWarnings("rawtypes")
-    private final TypedLambdaFunction lambda;
+    private final TypedLambdaFunction<?, ?> lambda;
     private final StreamFunction stream;
     private final String id;
     private final boolean trackable;
@@ -58,8 +57,7 @@ public class ServiceDef {
     private SerializationStrategy outputSerializationStrategy = SerializationStrategy.DEFAULT;
     private int instances = 1;
 
-    @SuppressWarnings("rawtypes")
-    public ServiceDef(String route, TypedLambdaFunction lambda) {
+    public ServiceDef(String route, TypedLambdaFunction<?, ?> lambda) {
         this.trackable = lambda.getClass().getAnnotation(ZeroTracing.class) == null;
         this.interceptor = lambda.getClass().getAnnotation(EventInterceptor.class) != null;
         if (lambda.getClass().getAnnotation(KernelThreadRunner.class) != null) {

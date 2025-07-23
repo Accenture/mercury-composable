@@ -19,6 +19,7 @@
 package org.platformlambda.core.system;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import org.platformlambda.automation.http.AsyncHttpClient;
@@ -37,7 +38,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EventEmitter {
@@ -49,6 +49,7 @@ public class EventEmitter {
     private static final String MISSING_ROUTING_PATH = "Missing routing path";
     private static final String MISSING_EVENT = "Missing outgoing event";
     private static final long ASYNC_EVENT_HTTP_TIMEOUT = 60 * 1000L; // assume 60 seconds
+    private static final String EVENT_HTTP_PREFIX = "event.http[";
     private static final String TASK_EXECUTOR = "task.executor";
     private static final String EVENT_MANAGER = "event.script.manager";
     private static final String TYPE = "type";
@@ -172,13 +173,11 @@ public class EventEmitter {
         return new ArrayList<>(journaledRoutes.keySet());
     }
 
-    @SuppressWarnings("unchecked")
     private void loadJournalRoutes(ConfigReader reader) {
         Object o = reader.get("journal");
         if (o == null) {
             log.warn("Missing 'journal' section");
-        } else if (o instanceof List) {
-            List<Object> entries = (List<Object>) o;
+        } else if (o instanceof List<?> entries) {
             for (int i=0; i < entries.size(); i++) {
                 String route = reader.getProperty("journal["+i+"]");
                 journaledRoutes.put(route, true);
@@ -189,64 +188,48 @@ public class EventEmitter {
             log.warn("Invalid 'journal' section - it must be a list of route names");
         }
     }
-
-    @SuppressWarnings("unchecked")
+    
     private void loadMulticast(String file, ConfigReader reader) {
         Object o = reader.get("multicast");
-        if (o instanceof List) {
-            List<Object> multicastList = (List<Object>) o;
-            for (int i=0; i < multicastList.size(); i++) {
-                String source = reader.getProperty("multicast["+i+"].source");
-                List<String> targets = (List<String>) reader.get("multicast["+i+"].targets");
-                if (source != null && targets != null && !source.isEmpty() && !targets.isEmpty()) {
-                    List<String> targetList = new ArrayList<>(targets);
-                    targetList.remove(source);
-                    Set<String> members = new HashSet<>(targetList);
-                    if (members.size() < targets.size()) {
-                        log.warn("Multicast config error - {} -> {} becomes {} -> {}",
-                                source, targets, source, members);
-                    }
-                    LocalPubSub ps = LocalPubSub.getInstance();
-                    ps.createTopic(source);
-                    for (String member: members) {
-                        ps.subscribe(source, member);
-                    }
-                }
+        if (o instanceof List<?> items) {
+            for (int i=0; i < items.size(); i++) {
+                loadLocalPubSub(reader, i);
             }
         } else {
             log.error("Invalid config {} - the multicast section should be a list of source and targets", file);
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
+    private void loadLocalPubSub(ConfigReader reader, int i) {
+        String source = reader.getProperty("multicast["+i+"].source");
+        List<String> targets = (List<String>) reader.get("multicast["+i+"].targets");
+        if (source != null && targets != null && !source.isEmpty() && !targets.isEmpty()) {
+            List<String> targetList = new ArrayList<>(targets);
+            targetList.remove(source);
+            Set<String> members = new HashSet<>(targetList);
+            if (members.size() < targets.size()) {
+                log.warn("Multicast config error - {} -> {} becomes {} -> {}",
+                        source, targets, source, members);
+            }
+            LocalPubSub ps = LocalPubSub.getInstance();
+            ps.createTopic(source);
+            for (String member: members) {
+                ps.subscribe(source, member);
+            }
+        }
+    }
+
     private void loadHttpRoutes(String file, ConfigReader reader) {
         Utility util = Utility.getInstance();
         Object o = reader.get("event.http");
-        if (o instanceof List) {
-            List<Object> eventHttpEntries = (List<Object>) o;
-            for (int i=0; i < eventHttpEntries.size(); i++) {
-                String route = reader.getProperty("event.http["+i+"].route");
-                String target = reader.getProperty("event.http["+i+"].target");
+        if (o instanceof List<?> entries) {
+            for (int i=0; i < entries.size(); i++) {
+                String route = reader.getProperty(EVENT_HTTP_PREFIX+i+"].route");
+                String target = reader.getProperty(EVENT_HTTP_PREFIX+i+"].target");
                 if (route != null && target != null && !route.isEmpty() && !target.isEmpty()) {
                     if (util.validServiceName(route)) {
-                        try {
-                            new URI(target);
-                            eventHttpTargets.put(route, target);
-                            int headerCount = 0;
-                            Object h = reader.get("event.http["+i+"].headers");
-                            if (h instanceof Map m) {
-                                Map<String, String> headers = new HashMap<>();
-                                for (Object k: m.keySet()) {
-                                    headers.put(k.toString(), reader.getProperty("event.http["+i+"].headers."+k));
-                                    headerCount++;
-                                }
-                                eventHttpHeaders.put(route, headers);
-                            }
-                            log.info("Event-over-HTTP {} -> {} with {} header{}", route, target,
-                                    headerCount, headerCount == 1? "" : "s");
-                        } catch (URISyntaxException e) {
-                            log.error("Invalid Event over HTTP config entry - check target {}", target);
-                        }
+                        loadEventHttpEntry(reader, route, target, i);
                     } else {
                         log.error("Invalid Event over HTTP config entry - check route {}", route);
                     }
@@ -259,7 +242,27 @@ public class EventEmitter {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    private void loadEventHttpEntry(ConfigReader reader, String route, String target, int i) {
+        try {
+            new URI(target);
+            eventHttpTargets.put(route, target);
+            int headerCount = 0;
+            Object h = reader.get(EVENT_HTTP_PREFIX+i+"].headers");
+            if (h instanceof Map<?, ?> m) {
+                Map<String, String> headers = new HashMap<>();
+                for (Object k: m.keySet()) {
+                    headers.put(k.toString(), reader.getProperty(EVENT_HTTP_PREFIX+i+"].headers."+k));
+                    headerCount++;
+                }
+                eventHttpHeaders.put(route, headers);
+            }
+            log.info("Event-over-HTTP {} -> {} with {} header{}", route, target,
+                    headerCount, headerCount == 1? "" : "s");
+        } catch (URISyntaxException e) {
+            log.error("Invalid Event over HTTP config entry - check target {}", target);
+        }
+    }
+
     private void loadRouteSubstitution() {
         AppConfigReader config = AppConfigReader.getInstance();
         String location = config.getProperty(ROUTE_SUBSTITUTION_YAML);
@@ -267,23 +270,7 @@ public class EventEmitter {
             try {
                 // try loading from given location(s)
                 ConfigReader reader = getRouteSubstitutionConfig(location);
-                Object o = reader.get(ROUTE_SUBSTITUTION);
-                if (o instanceof List) {
-                    List<Object> list = (List<Object>) o;
-                    for (int i=0; i < list.size(); i++) {
-                        String entry = reader.getProperty(ROUTE_SUBSTITUTION+"["+i+"]");
-                        int sep = entry.indexOf("->");
-                        if (sep == -1) {
-                            log.error("Invalid route substitution entry {}", entry);
-                        } else {
-                            String route = entry.substring(0, sep).trim();
-                            String replacement = entry.substring(sep+2).trim();
-                            addRouteSubstitution(entry, route, replacement);
-                        }
-                    }
-                } else {
-                    throw new IllegalArgumentException("route.substitution should be a list of strings");
-                }
+                loadRouteSubstitutionData(reader);
             } catch (IllegalArgumentException e) {
                 log.error("Unable to load route substitution entries - {}", e.getMessage());
             }
@@ -297,6 +284,25 @@ public class EventEmitter {
                 String replacement = entry.substring(colon + 1).trim();
                 addRouteSubstitution(entry, route, replacement);
             }
+        }
+    }
+
+    private void loadRouteSubstitutionData(ConfigReader reader) {
+        Object o = reader.get(ROUTE_SUBSTITUTION);
+        if (o instanceof List<?> items) {
+            for (int i=0; i < items.size(); i++) {
+                String entry = reader.getProperty(ROUTE_SUBSTITUTION+"["+i+"]");
+                int sep = entry.indexOf("->");
+                if (sep == -1) {
+                    log.error("Invalid route substitution entry {}", entry);
+                } else {
+                    String route = entry.substring(0, sep).trim();
+                    String replacement = entry.substring(sep+2).trim();
+                    addRouteSubstitution(entry, route, replacement);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("route.substitution should be a list of strings");
         }
     }
 
@@ -395,18 +401,9 @@ public class EventEmitter {
     public TargetRoute discover(String to) {
         Platform platform = Platform.getInstance();
         if (to.contains("@")) {
-            int at = to.indexOf('@');
-            String origin = to.substring(at+1);
-            String target = to.substring(0, at);
-            if (origin.equals(platform.getOrigin())) {
-                if (platform.hasRoute(target)) {
-                    return new TargetRoute(platform.getManager(target), false);
-                }
-            } else {
-                TargetRoute cloud = getCloudRoute();
-                if (cloud != null && (origin.startsWith(APP_GROUP_PREFIX) || cloudOrigins.containsKey(origin))) {
-                    return cloud;
-                }
+            var target = resolveTargetRoute(to);
+            if (target != null) {
+                return target;
             }
         } else {
             if (platform.hasRoute(to)) {
@@ -419,6 +416,24 @@ public class EventEmitter {
             }
         }
         throw new IllegalArgumentException("Route "+to+" not found");
+    }
+
+    private TargetRoute resolveTargetRoute(String to) {
+        Platform platform = Platform.getInstance();
+        int at = to.indexOf('@');
+        String origin = to.substring(at+1);
+        String target = to.substring(0, at);
+        if (origin.equals(platform.getOrigin())) {
+            if (platform.hasRoute(target)) {
+                return new TargetRoute(platform.getManager(target), false);
+            }
+        } else {
+            TargetRoute cloud = getCloudRoute();
+            if (cloud != null && (origin.startsWith(APP_GROUP_PREFIX) || cloudOrigins.containsKey(origin))) {
+                return cloud;
+            }
+        }
+        return null;
     }
 
     public TargetRoute getCloudRoute() {
@@ -664,38 +679,13 @@ public class EventEmitter {
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
         }
-        String to = substituteRouteIfAny(destination);
-        event.setTo(to);
-        var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
+        event.setTo(substituteRouteIfAny(destination));
+        var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(event.getTo()) : null;
         if (targetHttp != null) {
-            String callback = event.getReplyTo();
-            String eventApiType = callback == null? "async" : "callback";
-            event.setReplyTo(null);
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, eventApiType);
-            Future<EventEnvelope> response = asyncRequest(forwardEvent, ASYNC_EVENT_HTTP_TIMEOUT,
-                                                            getEventHttpHeaders(to), targetHttp, callback != null);
-            response.onSuccess(evt -> {
-                if (callback != null) {
-                    // Send the RPC response from the remote target service to the callback
-                    evt.setTo(callback).setReplyTo(null).setFrom(to)
-                        .setTrace(event.getTraceId(), event.getTracePath())
-                        .setCorrelationId(event.getCorrelationId());
-                    try {
-                        send(evt);
-                    } catch (IllegalArgumentException e) {
-                        log.error("Error in sending callback event {} from {} to {} - {}",
-                                to, targetHttp, callback, e.getMessage());
-                    }
-                } else {
-                    if (evt.getStatus() != 202) {
-                        log.error("Error in sending async event {} to {} - status={}, error={}",
-                                to, targetHttp, evt.getStatus(), evt.getError());
-                    }
-                }
-            });
+            sendWithEventHttp(event, event.getTo(), targetHttp);
             return;
         }
-        TargetRoute target = discover(to);
+        TargetRoute target = discover(event.getTo());
         if (target.isCloud()) {
             /*
              * If broadcast, set broadcast level to 3 because the event will be sent
@@ -704,50 +694,84 @@ public class EventEmitter {
             MultipartPayload.getInstance().outgoing(target.getManager(),
                     event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event);
         } else {
-            EventBus system = Platform.getInstance().getEventSystem();
-            /*
-             * The target is the same memory space. We will route it to the cloud connector if broadcast.
-             */
-            if (Platform.isCloudSelected() && event.getBroadcastLevel() == 1 && !CLOUD_CONNECTOR.equals(to)) {
-                TargetRoute cloud = getCloudRoute();
-                if (cloud != null) {
-                    if (cloud.isCloud()) {
-                        MultipartPayload.getInstance().outgoing(cloud.getManager(), event.setBroadcastLevel(3));
-                    }
-                } else {
-                    system.send(target.getManager().getRoute(), event.setBroadcastLevel(3).toBytes());
+            routeEventSameMemorySpace(event, target);
+        }
+    }
+
+    private void routeEventSameMemorySpace(EventEnvelope event, TargetRoute target) {
+        EventBus system = Platform.getInstance().getEventSystem();
+        if (Platform.isCloudSelected() && event.getBroadcastLevel() == 1 && !CLOUD_CONNECTOR.equals(event.getTo())) {
+            TargetRoute cloud = getCloudRoute();
+            if (cloud != null) {
+                if (cloud.isCloud()) {
+                    MultipartPayload.getInstance().outgoing(cloud.getManager(), event.setBroadcastLevel(3));
                 }
             } else {
-                // also set broadcast-level to 3 to propagate broadcast in event-over-http use case
-                EventEnvelope out = event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event;
-                String route = target.getManager().getRoute();
-                /*
-                 * The "event.script.manager" and "task.executor" are reserved function route names
-                 * for Event Script. The system will run them directly using virtual threads for
-                 * performance optimization after warming up the virtual thread system.
-                 *
-                 * Since these two functions are event routers themselves, functional isolation,
-                 * serialization and I/O immutability are guaranteed.
-                 *
-                 * Therefore, it is safe to eliminate additional processing overheads.
-                 */
-                if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
-                    if (warm) {
-                        Platform.getInstance().getVirtualThreadExecutor().submit(() ->
-                                runTaskExecutor(out, target.getManager().getService().getFunction()));
-                    } else {
-                        system.send(route, out.toBytes());
-                        var counter = warmUpCounter.incrementAndGet();
-                        if (counter > 8) {
-                            warm = true;
-                            log.info("Virtual thread optimization completed");
-                        }
-                    }
-                } else {
-                    system.send(route, out.toBytes());
+                system.send(target.getManager().getRoute(), event.setBroadcastLevel(3).toBytes());
+            }
+        } else {
+            sendWithEventBus(event, target);
+        }
+    }
+
+    private void sendWithEventBus(EventEnvelope event, TargetRoute target) {
+        EventBus system = Platform.getInstance().getEventSystem();
+        // also set broadcast-level to 3 to propagate broadcast in event-over-http use case
+        EventEnvelope out = event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event;
+        String route = target.getManager().getRoute();
+        /*
+         * The "event.script.manager" and "task.executor" are reserved function route names
+         * for Event Script. The system will run them directly using virtual threads for
+         * performance optimization after warming up the virtual thread system.
+         *
+         * Since these two functions are event routers themselves, functional isolation,
+         * serialization and I/O immutability are guaranteed.
+         *
+         * Therefore, it is safe to eliminate additional processing overheads.
+         */
+        if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
+            if (warm) {
+                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
+                        runTaskExecutor(out, target.getManager().getService().getFunction()));
+            } else {
+                system.send(route, out.toBytes());
+                var counter = warmUpCounter.incrementAndGet();
+                if (counter > 8) {
+                    warm = true;
+                    log.info("Virtual thread optimization completed");
                 }
             }
+        } else {
+            system.send(route, out.toBytes());
         }
+    }
+
+    private void sendWithEventHttp(EventEnvelope event, String to, String targetHttp) {
+        String callback = event.getReplyTo();
+        String eventApiType = callback == null? "async" : "callback";
+        event.setReplyTo(null);
+        EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, eventApiType);
+        Future<EventEnvelope> response = asyncRequest(forwardEvent, ASYNC_EVENT_HTTP_TIMEOUT,
+                getEventHttpHeaders(to), targetHttp, callback != null);
+        response.onSuccess(evt -> {
+            if (callback != null) {
+                // Send the RPC response from the remote target service to the callback
+                evt.setTo(callback).setReplyTo(null).setFrom(to)
+                        .setTrace(event.getTraceId(), event.getTracePath())
+                        .setCorrelationId(event.getCorrelationId());
+                try {
+                    send(evt);
+                } catch (IllegalArgumentException e) {
+                    log.error("Error in sending callback event {} from {} to {} - {}",
+                            to, targetHttp, callback, e.getMessage());
+                }
+            } else {
+                if (evt.getStatus() != 202) {
+                    log.error("Error in sending async event {} to {} - status={}, error={}",
+                            to, targetHttp, evt.getStatus(), evt.getError());
+                }
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -780,13 +804,12 @@ public class EventEmitter {
      * @param input event to be sent to a peer application instance
      * @param timeout to abort the request
      * @param headers optional security headers such as "Authorization"
-     * @param eventEndpoint fully qualified URL such as http://domain:port/api/event
+     * @param eventEndpoint fully qualified URL such as http: //domain:port/api/event
      * @param rpc if true, the target service will return a response.
      *            Otherwise, the response has a status of 202 to indicate that the event is delivered.
      * @return response event
      * @throws IllegalArgumentException in case of routing error
      */
-    @SuppressWarnings("unchecked")
     public Future<EventEnvelope> asyncRequest(final EventEnvelope input, long timeout,
                                               Map<String, String> headers,
                                               String eventEndpoint, boolean rpc) {
@@ -835,45 +858,51 @@ public class EventEmitter {
         if (event.getTracePath() != null) {
             request.setTracePath(event.getTracePath());
         }
-        return Future.future(promise -> {
-            try {
-                // add 100 ms to make sure it does not time out earlier than the target service
-                Future<EventEnvelope> res = asyncRequest(request, Math.max(100L, timeout)+100L);
-                res.onSuccess(evt -> {
-                    Object o = evt.getBody();
-                    if (o instanceof byte[]) {
-                        try {
-                            EventEnvelope response = new EventEnvelope((byte[]) evt.getBody());
-                            promise.complete(response);
-                        } catch (IllegalArgumentException e) {
-                            // response is not a packed EventEnvelope
-                            promise.complete(new EventEnvelope()
-                                    .setStatus(400).setBody("Did you configure rest.yaml correctly? " +
-                                                            "Invalid result set - "+e.getMessage()));
-                        }
-                    } else {
-                        if (evt.getStatus() >= 400 && evt.getBody() instanceof Map) {
-                            Map<String, Object> data = (Map<String, Object>) evt.getBody();
-                            if (ERROR.equals(data.get(TYPE)) && data.containsKey(MESSAGE) &&
-                                    data.get(MESSAGE) instanceof String) {
-                                EventEnvelope error = new EventEnvelope()
-                                        .setStatus(evt.getStatus()).setBody(data.get(MESSAGE));
-                                promise.complete(error);
-                            } else {
-                                promise.complete(evt);
-                            }
-                        } else {
-                            promise.complete(evt);
-                        }
-                    }
-                });
-                res.onFailure(e -> promise.complete(new EventEnvelope().setStatus(408).setBody(e.getMessage())));
+        return Future.future(promise -> submitAsyncRequest(promise, request, timeout));
+    }
 
-            } catch (IllegalArgumentException e) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
-                        promise.complete(new EventEnvelope().setStatus(400).setBody(e.getMessage())));
+    private void submitAsyncRequest(Promise<EventEnvelope> promise, EventEnvelope request, long timeout) {
+        try {
+            // add 100 ms to make sure it does not time out earlier than the target service
+            Future<EventEnvelope> res = asyncRequest(request, Math.max(100L, timeout)+100L);
+            res.onSuccess(evt -> {
+                Object o = evt.getBody();
+                if (o instanceof byte[]) {
+                    try {
+                        EventEnvelope response = new EventEnvelope((byte[]) evt.getBody());
+                        promise.complete(response);
+                    } catch (IllegalArgumentException e) {
+                        // response is not a packed EventEnvelope
+                        promise.complete(new EventEnvelope()
+                                .setStatus(400).setBody("Did you configure rest.yaml correctly? " +
+                                        "Invalid result set - "+e.getMessage()));
+                    }
+                } else {
+                    handleFutureResponse(promise, evt);
+                }
+            });
+            res.onFailure(e -> promise.complete(new EventEnvelope().setStatus(408).setBody(e.getMessage())));
+        } catch (IllegalArgumentException e) {
+            Platform.getInstance().getVirtualThreadExecutor().submit(() ->
+                    promise.complete(new EventEnvelope().setStatus(400).setBody(e.getMessage())));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void handleFutureResponse(Promise<EventEnvelope> promise, EventEnvelope evt) {
+        if (evt.getStatus() >= 400 && evt.getBody() instanceof Map) {
+            Map<String, Object> data = (Map<String, Object>) evt.getBody();
+            if (ERROR.equals(data.get(TYPE)) && data.containsKey(MESSAGE) &&
+                    data.get(MESSAGE) instanceof String) {
+                EventEnvelope error = new EventEnvelope()
+                        .setStatus(evt.getStatus()).setBody(data.get(MESSAGE));
+                promise.complete(error);
+            } else {
+                promise.complete(evt);
             }
-        });
+        } else {
+            promise.complete(evt);
+        }
     }
 
     /**
@@ -886,16 +915,14 @@ public class EventEmitter {
      * @param input event to be sent to a peer application instance
      * @param timeout to abort the request
      * @param headers optional security headers such as "Authorization"
-     * @param eventEndpoint fully qualified URL such as http://domain:port/api/event
+     * @param eventEndpoint fully qualified URL such as http: //domain:port/api/event
      * @param rpc if true, the target service will return a response.
      *            Otherwise, the response has a status of 202 to indicate that the event is delivered.
      * @return response event
      * @throws IllegalArgumentException in case of routing error
      */
-    @SuppressWarnings("unchecked")
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
-                                              Map<String, String> headers,
-                                              String eventEndpoint, boolean rpc) {
+    public CompletableFuture<EventEnvelope> request(final EventEnvelope input, long timeout,
+                                                    Map<String, String> headers, String eventEndpoint, boolean rpc) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -943,41 +970,39 @@ public class EventEmitter {
         }
         CompletableFuture<EventEnvelope> future = new CompletableFuture<>();
         // add 100 ms to make sure it does not time out earlier than the target service
-        java.util.concurrent.Future<EventEnvelope> eventApi = request(apiRequest,
-                                                        Math.max(100L, timeout)+100L, false);
-        try {
-            EventEnvelope evt = eventApi.get();
-            Object o = evt.getBody();
-            if (o instanceof byte[]) {
-                try {
-                    EventEnvelope response = new EventEnvelope((byte[]) evt.getBody());
-                    future.complete(response);
-                } catch (IllegalArgumentException e) {
-                    // response is not a packed EventEnvelope
-                    future.complete(new EventEnvelope()
-                            .setStatus(400).setBody("Did you configure rest.yaml correctly? " +
-                                    "Invalid result set - "+e.getMessage()));
-                }
-            } else {
-                if (evt.getStatus() >= 400 && evt.getBody() instanceof Map) {
-                    Map<String, Object> data = (Map<String, Object>) evt.getBody();
-                    if (ERROR.equals(data.get(TYPE)) && data.containsKey(MESSAGE) &&
-                            data.get(MESSAGE) instanceof String) {
-                        EventEnvelope error = new EventEnvelope()
-                                .setStatus(evt.getStatus()).setBody(data.get(MESSAGE));
-                        future.complete(error);
-                    } else {
-                        future.complete(evt);
-                    }
+        request(apiRequest, Math.max(100L, timeout)+100L, false)
+                .thenAccept(evt -> submitRequest(future, evt));
+        return future;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void submitRequest(CompletableFuture<EventEnvelope> future, EventEnvelope evt) {
+        Object o = evt.getBody();
+        if (o instanceof byte[]) {
+            try {
+                EventEnvelope response = new EventEnvelope((byte[]) evt.getBody());
+                future.complete(response);
+            } catch (IllegalArgumentException e) {
+                // response is not a packed EventEnvelope
+                future.complete(new EventEnvelope()
+                        .setStatus(400).setBody("Did you configure rest.yaml correctly? " +
+                                "Invalid result set - "+e.getMessage()));
+            }
+        } else {
+            if (evt.getStatus() >= 400 && evt.getBody() instanceof Map) {
+                Map<String, Object> data = (Map<String, Object>) evt.getBody();
+                if (ERROR.equals(data.get(TYPE)) && data.containsKey(MESSAGE) &&
+                        data.get(MESSAGE) instanceof String) {
+                    EventEnvelope error = new EventEnvelope()
+                            .setStatus(evt.getStatus()).setBody(data.get(MESSAGE));
+                    future.complete(error);
                 } else {
                     future.complete(evt);
                 }
+            } else {
+                future.complete(evt);
             }
-        } catch (ExecutionException | InterruptedException e)  {
-            // just send exception as a response event
-            future.complete(new EventEnvelope().setStatus(500).setBody(e.getMessage()));
         }
-        return future;
     }
 
     private String getTargetFromUrl(URI url) {
@@ -1074,7 +1099,7 @@ public class EventEmitter {
      * @return future results
      * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout) {
+    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout) {
         return request(event, timeout, true);
     }
 
@@ -1090,8 +1115,7 @@ public class EventEmitter {
      * @return future result
      * @throws IllegalArgumentException in case of routing error
      */
-    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
-                                                              boolean timeoutException) {
+    public CompletableFuture<EventEnvelope> request(final EventEnvelope input, long timeout, boolean timeoutException) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -1206,7 +1230,7 @@ public class EventEmitter {
      * @return future list of results (partial or complete)
      * @throws IllegalArgumentException in case of error
      */
-    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
+    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
         return request(events, timeout, true);
     }
 
@@ -1222,8 +1246,8 @@ public class EventEmitter {
      * @return future list of results (partial or complete)
      * @throws IllegalArgumentException in case of error
      */
-    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
-                                                    boolean timeoutException) {
+    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
+                                                          boolean timeoutException) {
         if (events == null || events.isEmpty()) {
             throw new IllegalArgumentException(MISSING_EVENT);
         }
@@ -1333,7 +1357,6 @@ public class EventEmitter {
      * @param remoteOnly if true, search only from service registry. Otherwise, check local registry too.
      * @return list of application instance IDs (i.e. originId)
      */
-    @SuppressWarnings("unchecked")
     public Future<List<String>> search(String route, boolean remoteOnly) {
         return Future.future(promise -> {
             Platform platform = Platform.getInstance();
@@ -1342,27 +1365,33 @@ public class EventEmitter {
                 platform.getVirtualThreadExecutor().submit(() ->
                         promise.complete(Collections.singletonList(platform.getOrigin())));
             } else if (Platform.isCloudSelected()) {
-                try {
-                    if (platform.hasRoute(ServiceDiscovery.SERVICE_QUERY) || platform.hasRoute(CLOUD_CONNECTOR)) {
-                        EventEnvelope event = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
-                                .setHeader(ServiceDiscovery.TYPE, ServiceDiscovery.SEARCH)
-                                .setHeader(ServiceDiscovery.ROUTE, actualRoute);
-                        Future<EventEnvelope> response = asyncRequest(event, 3000);
-                        response.onSuccess(evt -> {
-                            if (evt.getBody() instanceof List) {
-                                promise.complete((List<String>) evt.getBody());
-                            } else {
-                                promise.complete(Collections.emptyList());
-                            }
-                        });
-                        response.onFailure(promise::fail);
-                    }
-                } catch (IllegalArgumentException e) {
-                    platform.getVirtualThreadExecutor().submit(() -> promise.fail(e));
-                }
+                searchCloud(promise, actualRoute);
             } else {
                 platform.getVirtualThreadExecutor().submit(() -> promise.complete(Collections.emptyList()));
             }
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void searchCloud(Promise<List<String>> promise, String actualRoute) {
+        Platform platform = Platform.getInstance();
+        try {
+            if (platform.hasRoute(ServiceDiscovery.SERVICE_QUERY) || platform.hasRoute(CLOUD_CONNECTOR)) {
+                EventEnvelope event = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
+                        .setHeader(ServiceDiscovery.TYPE, ServiceDiscovery.SEARCH)
+                        .setHeader(ServiceDiscovery.ROUTE, actualRoute);
+                Future<EventEnvelope> response = asyncRequest(event, 3000);
+                response.onSuccess(evt -> {
+                    if (evt.getBody() instanceof List) {
+                        promise.complete((List<String>) evt.getBody());
+                    } else {
+                        promise.complete(Collections.emptyList());
+                    }
+                });
+                response.onFailure(promise::fail);
+            }
+        } catch (IllegalArgumentException e) {
+            platform.getVirtualThreadExecutor().submit(() -> promise.fail(e));
+        }
     }
 }

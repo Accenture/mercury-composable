@@ -69,33 +69,31 @@ public abstract class InboxBase {
         throw new IllegalArgumentException("Not implemented");
     }
 
-    protected void recordRpcTrace(String traceId, String tracePath, String to, String from, String start,
-                                  int status, Object error, float execTime, float roundTrip,
-                                  Map<String, Object> annotations) {
-        var service = trimOrigin(to);
+    protected void recordTrace(InboxMetadata md) {
+        var service = trimOrigin(md.to);
         if (!ZERO_TRACING_FILTER.contains(service)) {
             try {
                 Map<String, Object> payload = new HashMap<>();
                 Map<String, Object> metrics = new HashMap<>();
                 metrics.put("origin", Platform.getInstance().getOrigin());
-                metrics.put("id", traceId);
+                metrics.put("id", md.traceId);
                 metrics.put("service", service);
-                if (from != null) {
-                    metrics.put("from", trimOrigin(from));
+                if (md.from != null) {
+                    metrics.put("from", trimOrigin(md.from));
                 }
-                metrics.put("exec_time", execTime);
-                metrics.put("round_trip", roundTrip);
-                metrics.put("start", start);
-                metrics.put("path", tracePath);
+                metrics.put("exec_time", md.execTime);
+                metrics.put("round_trip", md.roundTrip);
+                metrics.put("start", md.start);
+                metrics.put("path", md.tracePath);
                 payload.put("trace", metrics);
-                if (!annotations.isEmpty()) {
-                    payload.put(ANNOTATIONS, annotations);
+                if (!md.annotations.isEmpty()) {
+                    payload.put(ANNOTATIONS, md.annotations);
                 }
-                metrics.put("status", status);
-                if (status >= 400) {
+                metrics.put("status", md.status);
+                if (md.status >= 400) {
                     metrics.put("success", false);
                     // for data privacy, only shown error message from recognized standard error dataset format
-                    metrics.put("exception", error instanceof String message? message : "***");
+                    metrics.put("exception", md.error instanceof String message? message : "***");
                 } else {
                     metrics.put("success", true);
                 }
@@ -109,5 +107,18 @@ public abstract class InboxBase {
 
     private String trimOrigin(String route) {
         return route.contains("@")? route.substring(0, route.indexOf('@')) : route;
+    }
+
+    protected static class InboxMetadata {
+        String traceId;
+        String tracePath;
+        String to;
+        String from;
+        String start;
+        int status;
+        Object error;
+        float execTime;
+        float roundTrip;
+        Map<String, Object> annotations;
     }
 }

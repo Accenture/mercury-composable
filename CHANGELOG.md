@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.5, 7/22/2025
+
+### Added
+
+Support 2nd Kafka server in the kafka-standalone subproject.
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Refactor platform-core to comply with SonarQube's code complexity requirement of 15 or less
+2. Update WorkerHandler to catch NoClassDefFoundError, AssertionError and Exception
+3. PostOffice's request API provides CompletableFuture instead of Future to support
+   both reactive and sequential coding style
+4. MsgPack updated to version 0.9.10
+
+---
 ## Version 4.3.4, 7/3/2025
 
 ### Added

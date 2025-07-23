@@ -96,51 +96,62 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
             } catch (IllegalArgumentException e) {
                 log.error("Unable to send open signal to {} - {}", rxPath, e.getMessage());
             }
-            ws.binaryMessageHandler(b -> {
-                md.touch();
-                try {
-                    po.send(rxPath, b.getBytes(), new Kv(WsEnvelope.TYPE, WsEnvelope.BYTES),
-                            new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Unable to send binary message to {} - {}", rxPath, e.getMessage());
-                }
-            });
-            ws.textMessageHandler(text -> {
-                md.touch();
-                try {
-                    po.send(rxPath, text, new Kv(WsEnvelope.TYPE, WsEnvelope.STRING),
-                            new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
-                } catch (IllegalArgumentException e) {
-                    log.warn("Unable to send text message to {} - {}", rxPath, e.getMessage());
-                }
-            });
-            ws.closeHandler(close -> {
-                String reason = ws.closeReason() == null? "ok" : ws.closeReason();
-                log.info("Session {} closed ({}, {})", session, ws.closeStatusCode(), reason);
-                connections.remove(session);
-                // send the close signal to the websocket listener function and then tell housekeeper to clean up
-                EventEnvelope closeSignal = new EventEnvelope().setTo(rxPath);
-                closeSignal.setHeader(WsEnvelope.ROUTE, rxPath)
-                            .setHeader(WsEnvelope.TOKEN, token)
-                            .setHeader(WsEnvelope.CLOSE_CODE, ws.closeStatusCode())
-                            .setHeader(WsEnvelope.CLOSE_REASON, reason)
-                            .setHeader(WsEnvelope.TYPE, WsEnvelope.CLOSE)
-                            .setReplyTo(HOUSEKEEPER).setCorrelationId(session);
-                try {
-                    po.send(closeSignal);
-                } catch (IllegalArgumentException e) {
-                    platform.release(rxPath);
-                    platform.release(txPath);
-                    log.error("Unable to send close signal to {} - {}", rxPath, e.getMessage());
-                }
-            });
-            ws.exceptionHandler(e -> {
-                log.warn("Session {} exception - {}", session, e.getMessage());
-                if (!ws.isClosed()) {
-                    ws.close();
-                }
-            });
+            setupMessageHandlers(ws, md, rxPath, txPath);
+            setupCloseHandlers(ws, session, token, rxPath, txPath);
         }
+    }
+
+    private void setupMessageHandlers(ServerWebSocket ws, WsEnvelope md, String rxPath, String txPath) {
+        final EventEmitter po = EventEmitter.getInstance();
+        ws.binaryMessageHandler(b -> {
+            md.touch();
+            try {
+                po.send(rxPath, b.getBytes(), new Kv(WsEnvelope.TYPE, WsEnvelope.BYTES),
+                        new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
+            } catch (IllegalArgumentException e) {
+                log.warn("Unable to send binary message to {} - {}", rxPath, e.getMessage());
+            }
+        });
+        ws.textMessageHandler(text -> {
+            md.touch();
+            try {
+                po.send(rxPath, text, new Kv(WsEnvelope.TYPE, WsEnvelope.STRING),
+                        new Kv(WsEnvelope.ROUTE, rxPath), new Kv(WsEnvelope.TX_PATH, txPath));
+            } catch (IllegalArgumentException e) {
+                log.warn("Unable to send text message to {} - {}", rxPath, e.getMessage());
+            }
+        });
+    }
+
+    private void setupCloseHandlers(ServerWebSocket ws, String session, String token, String rxPath, String txPath) {
+        final Platform platform = Platform.getInstance();
+        final EventEmitter po = EventEmitter.getInstance();
+        ws.closeHandler(close -> {
+            String reason = ws.closeReason() == null? "ok" : ws.closeReason();
+            log.info("Session {} closed ({}, {})", session, ws.closeStatusCode(), reason);
+            connections.remove(session);
+            // send the close signal to the websocket listener function and then tell housekeeper to clean up
+            EventEnvelope closeSignal = new EventEnvelope().setTo(rxPath);
+            closeSignal.setHeader(WsEnvelope.ROUTE, rxPath)
+                    .setHeader(WsEnvelope.TOKEN, token)
+                    .setHeader(WsEnvelope.CLOSE_CODE, ws.closeStatusCode())
+                    .setHeader(WsEnvelope.CLOSE_REASON, reason)
+                    .setHeader(WsEnvelope.TYPE, WsEnvelope.CLOSE)
+                    .setReplyTo(HOUSEKEEPER).setCorrelationId(session);
+            try {
+                po.send(closeSignal);
+            } catch (IllegalArgumentException e) {
+                platform.release(rxPath);
+                platform.release(txPath);
+                log.error("Unable to send close signal to {} - {}", rxPath, e.getMessage());
+            }
+        });
+        ws.exceptionHandler(e -> {
+            log.warn("Session {} exception - {}", session, e.getMessage());
+            if (!ws.isClosed()) {
+                ws.close();
+            }
+        });
     }
 
     private String findPath(String path) {

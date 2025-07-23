@@ -207,35 +207,11 @@ public class MsgPack {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"rawtypes" })
     private MessagePacker pack(MessagePacker packer, Object o) throws IOException {
         switch (o) {
-            case null ->
-                // preserving null element in an array list
-                packer.packNil();
-            case Map map -> {
-                // In json, the key may not be a string
-                int mapSize = map.size();
-                List<Object> keys = new ArrayList<>(map.keySet());
-                for (var k : keys) {
-                    // reduce map size if null value
-                    if (map.get(k) == null) {
-                        mapSize--;
-                    }
-                }
-                packer.packMapHeader(mapSize);
-                if (mapSize > 0) {
-                    for (var k : keys) {
-                        // ignore null value
-                        Object value = map.get(k);
-                        if (value != null) {
-                            // convert key to string
-                            packer.packString(k instanceof String str ? str : String.valueOf(k));
-                            pack(packer, value);
-                        }
-                    }
-                }
-            }
+            case null -> packer.packNil();
+            case Map map -> packMap(packer, map);
             case Collection list -> {
                 packer.packArrayHeader(list.size());
                 for (Object l : list) {
@@ -288,5 +264,30 @@ public class MsgPack {
             }
         }
         return packer;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void packMap(MessagePacker packer, Map map) throws IOException {
+        // In json, the key may not be a string
+        int mapSize = map.size();
+        List<Object> keys = new ArrayList<>(map.keySet());
+        for (var k : keys) {
+            // reduce map size if null value
+            if (map.get(k) == null) {
+                mapSize--;
+            }
+        }
+        packer.packMapHeader(mapSize);
+        if (mapSize > 0) {
+            for (var k : keys) {
+                // ignore null value
+                Object value = map.get(k);
+                if (value != null) {
+                    // convert key to string
+                    packer.packString(k instanceof String text ? text : String.valueOf(k));
+                    pack(packer, value);
+                }
+            }
+        }
     }
 }

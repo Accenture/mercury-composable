@@ -46,7 +46,6 @@ public class SimpleObjectMapper {
         if (fromValue == null || toValueType == null) {
             return null;
         }
-        Utility util = Utility.getInstance();
         // return original map
         boolean outputIsMap = isMap(toValueType);
         if (outputIsMap) {
@@ -76,6 +75,11 @@ public class SimpleObjectMapper {
         if (!outputIsList && !outputIsMap && fromClass.equals(toValueType.getName())) {
             return (T) fromValue;
         }
+        return readJsonObject(fromValue, toValueType);
+    }
+
+    private <T> T readJsonObject(Object fromValue, Class<T> toValueType) {
+        var util = Utility.getInstance();
         switch (fromValue) {
             case InputStream in -> {
                 // input stream is a JSON string

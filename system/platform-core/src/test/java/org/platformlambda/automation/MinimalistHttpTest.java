@@ -38,9 +38,9 @@ class MinimalistHttpTest extends TestBase {
     private static final String[] INFO_ROUTES = {"/info/routes", "routes"};
     private static final String[] HEALTH_SERVICE = {"/health", "health"};
     private static final String[] ENV_SERVICE = {"/env", "env"};
-    private static final String[] LIVENESSPROBE = {"/livenessprobe", "livenessprobe"};
+    private static final String[] LIVENESS_PROBE = {"/livenessprobe", "livenessprobe"};
     private static final String[][] ADMIN_ENDPOINTS = {INFO_SERVICE, INFO_LIB, INFO_ROUTES,
-            HEALTH_SERVICE, ENV_SERVICE, LIVENESSPROBE};
+            HEALTH_SERVICE, ENV_SERVICE, LIVENESS_PROBE};
 
     @SuppressWarnings("unchecked")
     @Test

@@ -33,20 +33,26 @@ public class EmbeddedKafka extends Thread {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedKafka.class);
 
     private KafkaRaftServer kafka;
+    private final String serverPropPath;
+    private final String metaPropPath;
+
+    public EmbeddedKafka(boolean first) {
+        serverPropPath = first? "/server.properties" : "/server2.properties";
+        metaPropPath = first? "/meta.properties" : "/meta2.properties";
+    }
 
     @Override
     public void run() {
-        try (InputStream stream = EmbeddedKafka.class.getResourceAsStream("/server.properties")) {
+        try (InputStream stream = EmbeddedKafka.class.getResourceAsStream(serverPropPath)) {
             if (stream == null) {
-                throw new IllegalArgumentException("server.properties is not available as resource");
+                throw new IllegalArgumentException(serverPropPath+" is not available as resource");
             }
-            InputStream md = EmbeddedKafka.class.getResourceAsStream("/meta.properties");
+            InputStream md = EmbeddedKafka.class.getResourceAsStream(metaPropPath);
             if (md == null) {
-                throw new IllegalArgumentException("meta.properties is not available as resource");
+                throw new IllegalArgumentException(metaPropPath+" is not available as resource");
             }
             Utility util = Utility.getInstance();
             String metadata = util.stream2str(md);
-
             Properties p = new Properties();
             p.load(stream);
             String dir = p.getProperty("log.dirs");

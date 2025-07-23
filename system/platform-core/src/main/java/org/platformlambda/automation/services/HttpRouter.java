@@ -153,7 +153,6 @@ public class HttpRouter {
         contexts.remove(requestId);
     }
 
-    @SuppressWarnings("rawtypes")
     public void handleEvent(AssignedRoute route, String requestId, int status, String error) {
         AsyncContextHolder holder = contexts.get(requestId);
         if (holder != null) {
@@ -163,58 +162,10 @@ public class HttpRouter {
             SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
             HttpServerResponse response = request.response();
             if (error != null) {
-                if (GET.equals(request.method().name()) && status == 404) {
-                    EtagFile file = getStaticFile(uri);
-                    if (file != null) {
-                        RoutingEntry restConfig = RoutingEntry.getInstance();
-                        boolean noCache = matchedElement(restConfig.getNoCachePages(), uri);
-                        SimpleHttpFilter filter = restConfig.getRequestFilter();
-                        if (filter != null && needFilter(filter, uri)) {
-                            EventEmitter po = EventEmitter.getInstance();
-                            if (po.exists(filter.service)) {
-                                try {
-                                    var event = new EventEnvelope()
-                                                    .setTo(filter.service).setBody(createHttpRequest(request, uri));
-                                    po.asyncRequest(event, FILTER_TIMEOUT, false)
-                                        .onSuccess(filtered -> {
-                                            // this allows the filter to set HTTP response headers
-                                            Map<String, String> headers = filtered.getHeaders();
-                                            headers.forEach(response::putHeader);
-                                            // this allows the filter to send redirect-url or throw exception
-                                            if (filtered.getStatus() == 200) {
-                                                sendStaticFile(requestId, file, noCache, request, response);
-                                            } else {
-                                                response.setStatusCode(filtered.getStatus());
-                                                Object body = filtered.getRawBody();
-                                                final byte[] content = switch (body) {
-                                                    case null -> NOTHING;
-                                                    case String s -> util.getUTF(s);
-                                                    case byte[] bytes -> bytes;
-                                                    case Map m ->
-                                                            SimpleMapper.getInstance().getMapper().writeValueAsBytes(m);
-                                                    default -> util.getUTF(String.valueOf(body));
-                                                };
-                                                if (content.length > 0) {
-                                                    response.write(Buffer.buffer(content));
-                                                }
-                                                closeContext(requestId);
-                                                response.end();
-                                            }
-                                        });
-                                    return;
-                                } catch (IllegalArgumentException e) {
-                                    log.error("Unable to filter static content HTTP-GET {} - {}",
-                                            filter.service, e.getMessage());
-                                }
-                            } else {
-                                log.warn("Static content filter {} ignored because it does not exist", filter.service);
-                            }
-                        }
-                        sendStaticFile(requestId, file, noCache, request, response);
-                        return;
-                    }
+                if (!(GET.equals(request.method().name()) && status == 404 &&
+                        handleNotFound(requestId, uri, request, response))) {
+                    httpUtil.sendError(requestId, request, status, error);
                 }
-                httpUtil.sendError(requestId, request, status, error);
             } else {
                 try {
                     routeRequest(requestId, route, holder);
@@ -223,6 +174,67 @@ public class HttpRouter {
                 }
             }
         }
+    }
+
+    private boolean handleNotFound(String requestId, String uri, HttpServerRequest request, HttpServerResponse response) {
+        EtagFile file = getStaticFile(uri);
+        if (file != null) {
+            RoutingEntry restConfig = RoutingEntry.getInstance();
+            boolean noCache = matchedElement(restConfig.getNoCachePages(), uri);
+            SimpleHttpFilter filter = restConfig.getRequestFilter();
+            if (filter != null && needFilter(filter, uri) &&
+                    handleFilter(requestId, filter, uri, file, noCache, request, response)) {
+                return true;
+            }
+            sendStaticFile(requestId, file, noCache, request, response);
+            return true;
+        }
+        return false;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean handleFilter(String requestId, SimpleHttpFilter filter, String uri, EtagFile file, boolean noCache,
+                                 HttpServerRequest request, HttpServerResponse response) {
+        Utility util = Utility.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        if (po.exists(filter.service)) {
+            try {
+                var event = new EventEnvelope()
+                        .setTo(filter.service).setBody(createHttpRequest(request, uri));
+                po.asyncRequest(event, FILTER_TIMEOUT, false)
+                        .onSuccess(filtered -> {
+                            // this allows the filter to set HTTP response headers
+                            Map<String, String> headers = filtered.getHeaders();
+                            headers.forEach(response::putHeader);
+                            // this allows the filter to send redirect-url or throw exception
+                            if (filtered.getStatus() == 200) {
+                                sendStaticFile(requestId, file, noCache, request, response);
+                            } else {
+                                response.setStatusCode(filtered.getStatus());
+                                Object body = filtered.getRawBody();
+                                final byte[] content = switch (body) {
+                                    case null -> NOTHING;
+                                    case String s -> util.getUTF(s);
+                                    case byte[] bytes -> bytes;
+                                    case Map m -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(m);
+                                    default -> util.getUTF(String.valueOf(body));
+                                };
+                                if (content.length > 0) {
+                                    response.write(Buffer.buffer(content));
+                                }
+                                closeContext(requestId);
+                                response.end();
+                            }
+                        });
+                return true;
+            } catch (IllegalArgumentException e) {
+                log.error("Unable to filter static content HTTP-GET {} - {}",
+                        filter.service, e.getMessage());
+            }
+        } else {
+            log.warn("Static content filter {} ignored because it does not exist", filter.service);
+        }
+        return false;
     }
 
     private boolean needFilter(SimpleHttpFilter filter, String path) {
@@ -279,19 +291,22 @@ public class HttpRouter {
                 req.setHeader(key, value);
             }
         }
-        // load cookies
         if (hasCookies) {
-            Set<Cookie> cookies = request.cookies();
-            for (Cookie c : cookies) {
-                try {
-                    ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
-                    req.setCookie(c.getName(), c.getValue());
-                } catch (Exception e) {
-                    log.warn("Invalid cookie {} ignored during filtering - {}", c.getName(), e.getMessage());
-                }
-            }
+            setCookies(request, req);
         }
         return req.setRemoteIp(request.remoteAddress().hostAddress());
+    }
+
+    private void setCookies(HttpServerRequest request, AsyncHttpRequest req) {
+        Set<Cookie> cookies = request.cookies();
+        for (Cookie c : cookies) {
+            try {
+                ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
+                req.setCookie(c.getName(), c.getValue());
+            } catch (Exception e) {
+                log.warn("Invalid cookie {} ignored during filtering - {}", c.getName(), e.getMessage());
+            }
+        }
     }
 
     private void sendStaticFile(String requestId, EtagFile file, boolean noCache,
@@ -416,80 +431,232 @@ public class HttpRouter {
         return null;
     }
 
-    private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder)
-            throws AppException {
+    private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder) {
         Utility util = Utility.getInstance();
         HttpServerRequest request = holder.request;
         String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
-        holder.setUrl(uri).setMethod(method).setResHeaderId(route.info.responseTransformId);
-        SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
+        holder.setUrl(uri).setResHeaderId(route.info.responseTransformId).setMethod(method);
         if (OPTIONS.equals(method)) {
-            // insert CORS headers for OPTIONS
-            if (route.info.corsId == null) {
-                throw new AppException(405, "Method not allowed");
-            } else {
-                CorsInfo corsInfo = RoutingEntry.getInstance().getCorsInfo(route.info.corsId);
-                if (corsInfo != null && !corsInfo.options.isEmpty()) {
-                    HttpServerResponse response = request.response();
-                    for (String ch : corsInfo.options.keySet()) {
-                        String prettyHeader = getHeaderCase(ch);
-                        if (prettyHeader != null) {
-                            response.putHeader(prettyHeader, corsInfo.options.get(ch));
-                        }
-                    }
-                    closeContext(requestId);
-                    response.setStatusCode(204).end();
-                } else {
-                    throw new AppException(405, "Method not allowed");
-                }
-            }
+            handleOptionsMethod(requestId, request, route);
             return;
         }
         HttpServerResponse response = request.response();
-        // insert CORS headers for the HTTP response
-        if (route.info.corsId != null) {
-            CorsInfo corsInfo = RoutingEntry.getInstance().getCorsInfo(route.info.corsId);
-            if (corsInfo != null && !corsInfo.headers.isEmpty()) {
-                for (String ch : corsInfo.headers.keySet()) {
-                    String prettyHeader = getHeaderCase(ch);
-                    if (prettyHeader != null) {
-                        response.putHeader(prettyHeader, corsInfo.headers.get(ch));
-                    }
-                }
-            }
-        }
+        insertCorsHeaders(response, route);
         // check if target service is available
-        String authService = null;
         EventEmitter po = EventEmitter.getInstance();
         if (!po.exists(route.info.primary)) {
             throw new AppException(503, "Service " + route.info.primary + " not reachable");
         }
+        String authService = null;
         if (route.info.defaultAuthService != null) {
-            List<String> authHeaders = route.info.getAuthHeaders();
-            if (!authHeaders.isEmpty()) {
-                for (String h: authHeaders) {
-                    String v = request.getHeader(h);
-                    if (v != null) {
-                        String svc = route.info.getAuthService(h);
-                        if (svc == null) {
-                            svc = route.info.getAuthService(h, v);
-                        }
-                        if (svc != null) {
-                            authService = svc;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (authService == null) {
-                authService = route.info.defaultAuthService;
-            }
+            authService = getAuthService(request, route);
             if (!po.exists(authService)) {
                 throw new AppException(503, "Service " + authService + " not reachable");
             }
         }
-        AsyncHttpRequest req = new AsyncHttpRequest();
+        AsyncHttpRequest req = prepareHttpRequest(request, route, uri);
+        // Distributed tracing required?
+        String traceId = null;
+        String tracePath = null;
+        // Set trace header if needed
+        if (route.info.tracing) {
+            List<String> traceHeader = getTraceId(request);
+            traceId = traceHeader.get(1);
+            tracePath = method + " " + uri;
+            if (req.getQueryString() != null) {
+                tracePath += "?" + req.getQueryString();
+            }
+            response.putHeader(traceHeader.get(0), traceHeader.get(1));
+        }
+        final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);
+        // load HTTP body
+        if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
+            handlePayload(request, route, requestEvent, req);
+        } else {
+            sendRequestToService(request, requestEvent.setHttpRequest(req));
+        }
+    }
+
+    private void handlePayload(HttpServerRequest request, AssignedRoute route,
+                               HttpRequestEvent requestEvent, AsyncHttpRequest req) {
+        String method = request.method().name();
+        String contentType = resolver.getContentType(request.getHeader(CONTENT_TYPE));
+        if (contentType == null) {
+            contentType = "?";
+        }
+        if (contentType.startsWith(MULTIPART_FORM_DATA) && POST.equals(method) && route.info.upload) {
+            handleMultiPartContent(request, route, requestEvent, req);
+        } else if (contentType.startsWith(APPLICATION_JSON)) {
+            handleJsonContent(request, requestEvent, req);
+        } else if (contentType.startsWith(APPLICATION_XML)) {
+            handleXmlContent(request, requestEvent, req);
+        } else if (APPLICATION_FORM_URLENCODED.equals(contentType) ||
+                contentType.startsWith(TEXT_HTML) || contentType.startsWith(TEXT_PLAIN)) {
+            handleTextContent(request, requestEvent, req, contentType);
+        } else {
+            handleBinaryContent(request, route, requestEvent, req);
+        }
+    }
+
+    private void handleJsonContent(HttpServerRequest request, HttpRequestEvent requestEvent, AsyncHttpRequest req) {
+        var complete = new AtomicBoolean(false);
+        request.bodyHandler(block -> {
+            var requestBody = new ByteArrayOutputStream();
+            var util = Utility.getInstance();
+            byte[] b = block.getBytes(0, block.length());
+            requestBody.write(b, 0, b.length);
+            if (complete.get()) {
+                String text = util.getUTF(requestBody.toByteArray());
+                String trimmed = text.trim();
+                try {
+                    if (trimmed.isEmpty()) {
+                        req.setBody(new HashMap<>());
+                    } else if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+                        req.setBody(SimpleMapper.getInstance().getMapper().readValue(text, Map.class));
+                    } else if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                        req.setBody(SimpleMapper.getInstance().getMapper().readValue(text, List.class));
+                    } else {
+                        req.setBody(text);
+                    }
+                } catch(Exception e) {
+                    req.setBody(text);
+                }
+                sendRequestToService(request, requestEvent.setHttpRequest(req));
+            }
+        }).endHandler(done -> complete.set(true));
+    }
+
+    private void handleXmlContent(HttpServerRequest request, HttpRequestEvent requestEvent, AsyncHttpRequest req) {
+        var complete = new AtomicBoolean(false);
+        var requestBody = new ByteArrayOutputStream();
+        var rawXml = "true".equals(request.getHeader(X_RAW_XML));
+        request.bodyHandler(block -> {
+            var util = Utility.getInstance();
+            byte[] b = block.getBytes(0, block.length());
+            requestBody.write(b, 0, b.length);
+            if (complete.get()) {
+                String text = util.getUTF(requestBody.toByteArray());
+                if (rawXml) {
+                    req.setBody(text);
+                } else {
+                    try {
+                        req.setBody(text.isEmpty()? new HashMap<>() : xmlReader.parse(text));
+                    } catch (Exception e) {
+                        req.setBody(text);
+                    }
+                }
+                sendRequestToService(request, requestEvent.setHttpRequest(req));
+            }
+        }).endHandler(done -> complete.set(true));
+    }
+
+    private void handleTextContent(HttpServerRequest request, HttpRequestEvent requestEvent,
+                                   AsyncHttpRequest req, String contentType) {
+        var complete = new AtomicBoolean(false);
+        var requestBody = new ByteArrayOutputStream();
+        var urlEncode = APPLICATION_FORM_URLENCODED.equals(contentType);
+        request.bodyHandler(block -> {
+            var util = Utility.getInstance();
+            var httpUtil = SimpleHttpUtility.getInstance();
+            byte[] b = block.getBytes(0, block.length());
+            requestBody.write(b, 0, b.length);
+            if (complete.get()) {
+                String text = util.getUTF(requestBody.toByteArray());
+                if (urlEncode) {
+                    Map<String, String> kv = httpUtil.decodeQueryString(text);
+                    for (Map.Entry<String, String> entry: kv.entrySet()) {
+                        req.setQueryParameter(entry.getKey(), entry.getValue());
+                    }
+                } else {
+                    req.setBody(text);
+                }
+                sendRequestToService(request, requestEvent.setHttpRequest(req));
+            }
+        }).endHandler(done -> complete.set(true));
+    }
+
+    private void handleMultiPartContent(HttpServerRequest request, AssignedRoute route,
+                                        HttpRequestEvent requestEvent, AsyncHttpRequest req) {
+        final StreamHolder stream = new StreamHolder(route.info.timeoutSeconds);
+        request.uploadHandler(upload -> {
+            req.setFileName(upload.filename());
+            final AtomicInteger total = new AtomicInteger();
+            upload.handler(block -> {
+                int len = block.length();
+                if (len > 0) {
+                    total.addAndGet(len);
+                    pipeHttpInputToStream(stream.getPublisher(), block, len);
+                }
+            }).endHandler(end -> {
+                int size = total.get();
+                req.setContentLength(size);
+                if (size > 0) {
+                    req.setStreamRoute(stream.getInputStreamId());
+                    stream.close();
+                }
+                sendRequestToService(request, requestEvent.setHttpRequest(req));
+            });
+        });
+        request.resume();
+    }
+
+    private void handleBinaryContent(HttpServerRequest request, AssignedRoute route,
+                                     HttpRequestEvent requestEvent, AsyncHttpRequest req) {
+        /*
+         * Input is not JSON, XML or TEXT.
+         *
+         * If content-length is not given, the payload size is variable.
+         * The "x-small-payload-as-bytes" header allows the system to
+         * render variable size payload as a fix length content.
+         */
+        var util = Utility.getInstance();
+        var contentLen = util.str2int(request.getHeader(CONTENT_LEN));
+        var noStream = "true".equals(request.getHeader(X_NO_STREAM));
+        if (noStream || contentLen > 0) {
+            handleFixedLengthContent(request, requestEvent, req);
+        } else {
+            var complete = new AtomicBoolean(false);
+            var total = new AtomicInteger();
+            var stream = new StreamHolder(route.info.timeoutSeconds);
+            request.bodyHandler(block -> {
+                int len = block.length();
+                if (len > 0) {
+                    total.addAndGet(len);
+                    pipeHttpInputToStream(stream.getPublisher(), block, len);
+                }
+                if (complete.get()) {
+                    int size = total.get();
+                    req.setContentLength(size);
+                    if (size > 0) {
+                        req.setStreamRoute(stream.getInputStreamId())
+                                .setHeader(X_TTL, String.valueOf(stream.getPublisher().getTimeToLive()));
+                        stream.close();
+                    }
+                    sendRequestToService(request, requestEvent.setHttpRequest(req));
+                }
+            }).endHandler(end -> complete.set(true));
+        }
+    }
+
+    private void handleFixedLengthContent(HttpServerRequest request,
+                                          HttpRequestEvent requestEvent, AsyncHttpRequest req) {
+        final AtomicBoolean complete = new AtomicBoolean(false);
+        final ByteArrayOutputStream requestBody = new ByteArrayOutputStream();
+        request.bodyHandler(block -> {
+            byte[] b = block.getBytes(0, block.length());
+            requestBody.write(b, 0, b.length);
+            if (complete.get()) {
+                req.setBody(requestBody.toByteArray());
+                sendRequestToService(request, requestEvent.setHttpRequest(req));
+            }
+        }).endHandler(done -> complete.set(true));
+    }
+
+    private AsyncHttpRequest prepareHttpRequest(HttpServerRequest request, AssignedRoute route, String uri) {
+        var method = request.method().name();
+        var httpUtil = SimpleHttpUtility.getInstance();
+        var req = new AsyncHttpRequest();
         String queryString = request.query();
         if (queryString != null) {
             req.setQueryString(queryString);
@@ -517,30 +684,8 @@ public class HttpRouter {
                 req.setQueryParameter(key, values);
             }
         }
-        boolean hasCookies = false;
         Map<String, String> headers = new HashMap<>();
-        MultiMap headerMap = request.headers();
-        for (String key: headerMap.names()) {
-            // Single-value HTTP header is assumed
-            String value = headerMap.get(key);
-            if (COOKIE.equalsIgnoreCase(key)) {
-                hasCookies = true;
-            } else {
-                headers.put(key.toLowerCase(), value);
-            }
-        }
-        // load cookies
-        if (hasCookies) {
-            Set<Cookie> cookies = request.cookies();
-            for (Cookie c : cookies) {
-                try {
-                    ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
-                    req.setCookie(c.getName(), c.getValue());
-                } catch (Exception e) {
-                    log.warn("Invalid cookie {} ignored during routing - {}", c.getName(), e.getMessage());
-                }
-            }
-        }
+        setRequestCookies(request, req, headers);
         RoutingEntry re = RoutingEntry.getInstance();
         if (route.info.requestTransformId != null) {
             headers = httpUtil.filterHeaders(re.getRequestHeaderInfo(route.info.requestTransformId), headers);
@@ -552,164 +697,89 @@ public class HttpRouter {
             req.setHeader("x-flow-id", route.info.flowId);
         }
         req.setRemoteIp(request.remoteAddress().hostAddress());
-        // Distributed tracing required?
-        String traceId = null;
-        String tracePath = null;
-        // Set trace header if needed
-        if (route.info.tracing) {
-            List<String> traceHeader = getTraceId(request);
-            traceId = traceHeader.get(1);
-            tracePath = method + " " + uri;
-            if (queryString != null) {
-                tracePath += "?" + queryString;
-            }
-            response.putHeader(traceHeader.get(0), traceHeader.get(1));
-        }
-        final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route.info.primary,
-                                                    authService, traceId, tracePath,
-                                                    route.info.services, route.info.timeoutSeconds * 1000L,
-                                                    route.info.tracing);
-        // load HTTP body
-        if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
-            final AtomicBoolean inputComplete = new AtomicBoolean(false);
-            final ByteArrayOutputStream requestBody = new ByteArrayOutputStream();
-            String contentType = resolver.getContentType(request.getHeader(CONTENT_TYPE));
-            if (contentType == null) {
-                contentType = "?";
-            }
-            if (contentType.startsWith(MULTIPART_FORM_DATA) && POST.equals(method) && route.info.upload) {
-                final StreamHolder stream = new StreamHolder(route.info.timeoutSeconds);
-                request.uploadHandler(upload -> {
-                    req.setFileName(upload.filename());
-                    final AtomicInteger total = new AtomicInteger();
-                    upload.handler(block -> {
-                        int len = block.length();
-                        if (len > 0) {
-                            total.addAndGet(len);
-                            pipeHttpInputToStream(stream.getPublisher(), block, len);
-                        }
-                    }).endHandler(end -> {
-                        int size = total.get();
-                        req.setContentLength(size);
-                        if (size > 0) {
-                            req.setStreamRoute(stream.getInputStreamId());
-                            stream.close();
-                        }
-                        sendRequestToService(request, requestEvent.setHttpRequest(req));
-                    });
-                });
-                request.resume();
+        return req;
+    }
 
-            } else if (contentType.startsWith(APPLICATION_JSON)) {
-                request.bodyHandler(block -> {
-                    byte[] b = block.getBytes(0, block.length());
-                    requestBody.write(b, 0, b.length);
-                    if (inputComplete.get()) {
-                        String text = util.getUTF(requestBody.toByteArray());
-                        String trimmed = text.trim();
-                        try {
-                            if (trimmed.isEmpty()) {
-                                req.setBody(new HashMap<>());
-                            } else if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-                                req.setBody(SimpleMapper.getInstance().getMapper().readValue(text, Map.class));
-                            } else if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-                                req.setBody(SimpleMapper.getInstance().getMapper().readValue(text, List.class));
-                            } else {
-                                req.setBody(text);
-                            }
-                        } catch(Exception e) {
-                            req.setBody(text);
-                        }
-                        sendRequestToService(request, requestEvent.setHttpRequest(req));
-                    }
-                }).endHandler(done -> inputComplete.set(true));
-            } else if (contentType.startsWith(APPLICATION_XML)) {
-                boolean rawXml = "true".equals(request.getHeader(X_RAW_XML));
-                request.bodyHandler(block -> {
-                    byte[] b = block.getBytes(0, block.length());
-                    requestBody.write(b, 0, b.length);
-                    if (inputComplete.get()) {
-                        String text = util.getUTF(requestBody.toByteArray());
-                        if (rawXml) {
-                            req.setBody(text);
-                        } else {
-                            try {
-                                req.setBody(text.isEmpty()? new HashMap<>() : xmlReader.parse(text));
-                            } catch (Exception e) {
-                                req.setBody(text);
-                            }
-                        }
-                        sendRequestToService(request, requestEvent.setHttpRequest(req));
-                    }
-                }).endHandler(done -> inputComplete.set(true));
-            } else if (APPLICATION_FORM_URLENCODED.equals(contentType) ||
-                    contentType.startsWith(TEXT_HTML) || contentType.startsWith(TEXT_PLAIN)) {
-                final boolean urlEncodeParameters = APPLICATION_FORM_URLENCODED.equals(contentType);
-                request.bodyHandler(block -> {
-                    byte[] b = block.getBytes(0, block.length());
-                    requestBody.write(b, 0, b.length);
-                    if (inputComplete.get()) {
-                        String text = util.getUTF(requestBody.toByteArray());
-                        if (urlEncodeParameters) {
-                            Map<String, String> kv = httpUtil.decodeQueryString(text);
-                            for (Map.Entry<String, String> entry: kv.entrySet()) {
-                                req.setQueryParameter(entry.getKey(), entry.getValue());
-                            }
-                        } else {
-                            req.setBody(text);
-                        }
-                        sendRequestToService(request, requestEvent.setHttpRequest(req));
-                    }
-                }).endHandler(done -> inputComplete.set(true));
+    private void setRequestCookies(HttpServerRequest request, AsyncHttpRequest req, Map<String, String> headers) {
+        boolean hasCookies = false;
+        MultiMap headerMap = request.headers();
+        for (String key: headerMap.names()) {
+            // Single-value HTTP header is assumed
+            String value = headerMap.get(key);
+            if (COOKIE.equalsIgnoreCase(key)) {
+                hasCookies = true;
             } else {
-                /*
-                 * Input is not JSON, XML or TEXT.
-                 *
-                 * If content-length is not given, the payload size is variable.
-                 * The "x-small-payload-as-bytes" header allows the system to
-                 * render variable size payload as a fix length content.
-                 */
-                int contentLen = util.str2int(request.getHeader(CONTENT_LEN));
-                boolean noStream = "true".equals(request.getHeader(X_NO_STREAM));
-                if (noStream || contentLen > 0) {
-                    request.bodyHandler(block -> {
-                        byte[] b = block.getBytes(0, block.length());
-                        requestBody.write(b, 0, b.length);
-                        if (inputComplete.get()) {
-                            req.setBody(requestBody.toByteArray());
-                            sendRequestToService(request, requestEvent.setHttpRequest(req));
-                        }
-                    }).endHandler(done -> inputComplete.set(true));
-                } else {
-                    final AtomicInteger total = new AtomicInteger();
-                    final StreamHolder stream = new StreamHolder(route.info.timeoutSeconds);
-                    request.bodyHandler(block -> {
-                        int len = block.length();
-                        if (len > 0) {
-                            total.addAndGet(len);
-                            pipeHttpInputToStream(stream.getPublisher(), block, len);
-                        }
-                        if (inputComplete.get()) {
-                            int size = total.get();
-                            req.setContentLength(size);
-                            if (size > 0) {
-                                req.setStreamRoute(stream.getInputStreamId())
-                                    .setHeader(X_TTL, String.valueOf(stream.getPublisher().getTimeToLive()));
-                                stream.close();
-                            }
-                            sendRequestToService(request, requestEvent.setHttpRequest(req));
-                        }
-                    }).endHandler(end -> inputComplete.set(true));
+                headers.put(key.toLowerCase(), value);
+            }
+        }
+        if (hasCookies) {
+            Set<Cookie> cookies = request.cookies();
+            for (Cookie c : cookies) {
+                try {
+                    ServerCookieEncoder.STRICT.encode(c.getName(), c.getValue());
+                    req.setCookie(c.getName(), c.getValue());
+                } catch (Exception e) {
+                    log.warn("Invalid cookie {} ignored during routing - {}", c.getName(), e.getMessage());
                 }
             }
+        }
+    }
+
+    private String getAuthService(HttpServerRequest request, AssignedRoute route) {
+        List<String> authHeaders = route.info.getAuthHeaders();
+        for (String h: authHeaders) {
+            String v = request.getHeader(h);
+            if (v != null) {
+                String svc = route.info.getAuthService(h);
+                if (svc == null) {
+                    svc = route.info.getAuthService(h, v);
+                }
+                if (svc != null) {
+                    return svc;
+                }
+            }
+        }
+        return route.info.defaultAuthService;
+    }
+
+    private void insertCorsHeaders(HttpServerResponse response, AssignedRoute route) {
+        if (route.info.corsId != null) {
+            CorsInfo corsInfo = RoutingEntry.getInstance().getCorsInfo(route.info.corsId);
+            if (corsInfo != null && !corsInfo.headers.isEmpty()) {
+                for (String ch : corsInfo.headers.keySet()) {
+                    String prettyHeader = getHeaderCase(ch);
+                    if (prettyHeader != null) {
+                        response.putHeader(prettyHeader, corsInfo.headers.get(ch));
+                    }
+                }
+            }
+        }
+    }
+
+    private void handleOptionsMethod(String requestId, HttpServerRequest request, AssignedRoute route) {
+        if (route.info.corsId == null) {
+            throw new AppException(405, "Method not allowed");
         } else {
-            sendRequestToService(request, requestEvent.setHttpRequest(req));
+            CorsInfo corsInfo = RoutingEntry.getInstance().getCorsInfo(route.info.corsId);
+            if (corsInfo != null && !corsInfo.options.isEmpty()) {
+                HttpServerResponse response = request.response();
+                for (String ch : corsInfo.options.keySet()) {
+                    String prettyHeader = getHeaderCase(ch);
+                    if (prettyHeader != null) {
+                        response.putHeader(prettyHeader, corsInfo.options.get(ch));
+                    }
+                }
+                closeContext(requestId);
+                response.setStatusCode(204).end();
+            } else {
+                throw new AppException(405, "Method not allowed");
+            }
         }
     }
 
     public void sendRequestToService(HttpServerRequest request, HttpRequestEvent requestEvent) {
-        SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
-        EventEmitter po = EventEmitter.getInstance();
+        var httpUtil = SimpleHttpUtility.getInstance();
+        var po = EventEmitter.getInstance();
         if (requestEvent.authService != null) {
             try {
                 po.send(AUTH_HANDLER, requestEvent.toMap());
@@ -729,16 +799,7 @@ public class HttpRouter {
                 po.send(event);
                 // copying to secondary services if any
                 if (requestEvent.services.size() > 1) {
-                    for (String secondary : requestEvent.services) {
-                        if (!secondary.equals(requestEvent.primary)) {
-                            EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
-                                                        .setBody(requestEvent.httpRequest);
-                            if (requestEvent.tracing) {
-                                copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
-                            }
-                            sendToSecondaryTarget(copy);
-                        }
-                    }
+                    copyToSecondaryTarget(requestEvent);
                 }
             } catch (IllegalArgumentException e) {
                 httpUtil.sendError(requestEvent.requestId, request, 400, e.getMessage());
@@ -746,11 +807,20 @@ public class HttpRouter {
         }
     }
 
-    private void sendToSecondaryTarget(EventEnvelope event) {
-        try {
-            EventEmitter.getInstance().send(event);
-        } catch (Exception e) {
-            log.warn("Unable to copy event to {} - {}", event.getTo(), e.getMessage());
+    private void copyToSecondaryTarget(HttpRequestEvent requestEvent) {
+        for (String secondary : requestEvent.services) {
+            if (!secondary.equals(requestEvent.primary)) {
+                EventEnvelope copy = new EventEnvelope().setTo(secondary).setFrom(HTTP_REQUEST)
+                        .setBody(requestEvent.httpRequest);
+                if (requestEvent.tracing) {
+                    copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
+                }
+                try {
+                    EventEmitter.getInstance().send(copy);
+                } catch (Exception e) {
+                    log.warn("Unable to copy event to {} - {}", copy.getTo(), e.getMessage());
+                }
+            }
         }
     }
 
@@ -800,8 +870,8 @@ public class HttpRouter {
     }
 
     private String getHeaderCase(String header) {
-        StringBuilder sb = new StringBuilder();
-        List<String> parts = Utility.getInstance().split(header, "-");
+        var sb = new StringBuilder();
+        var parts = Utility.getInstance().split(header, "-");
         for (String p: parts) {
             sb.append(p.substring(0, 1).toUpperCase());
             if (p.length() > 1) {
@@ -820,79 +890,67 @@ public class HttpRouter {
 @ZeroTracing
 @EventInterceptor
 class HttpAuth implements LambdaFunction {
-    private static final Logger log = LoggerFactory.getLogger(HttpAuth.class);
     private static final String HTTP_REQUEST = "http.request";
 
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         if (input instanceof EventEnvelope incomingEvent) {
-            EventEmitter po = EventEmitter.getInstance();
-            HttpRequestEvent evt = new HttpRequestEvent(incomingEvent.getBody());
-            if (evt.authService != null && evt.requestId != null &&
-                    evt.httpRequest != null && !evt.httpRequest.isEmpty()) {
-                AsyncHttpRequest req = new AsyncHttpRequest(evt.httpRequest);
+            var po = EventEmitter.getInstance();
+            var event = new HttpRequestEvent(incomingEvent.getBody());
+            if (event.authService != null && event.requestId != null &&
+                    event.httpRequest != null && !event.httpRequest.isEmpty()) {
+                AsyncHttpRequest req = new AsyncHttpRequest(event.httpRequest);
                 EventEnvelope authRequest = new EventEnvelope();
                 // the AsyncHttpRequest is sent as a map
-                authRequest.setTo(evt.authService).setBody(evt.httpRequest);
+                authRequest.setTo(event.authService).setBody(event.httpRequest);
                 // distributed tracing required?
-                if (evt.tracing) {
+                if (event.tracing) {
                     authRequest.setFrom(HTTP_REQUEST);
-                    authRequest.setTrace(evt.traceId, evt.tracePath);
+                    authRequest.setTrace(event.traceId, event.tracePath);
                 }
-                po.asyncRequest(authRequest, evt.timeout)
-                        .onSuccess(response -> {
-                            if (Boolean.TRUE.equals(response.getBody())) {
-                                /*
-                                 * Upon successful authentication,
-                                 * the authentication service may save session information as headers
-                                 * (auth headers are converted to lower case for case insensitivity)
-                                 */
-                                Map<String, String> authResHeaders = response.getHeaders();
-                                for (Map.Entry<String, String> entry : authResHeaders.entrySet()) {
-                                    req.setSessionInfo(entry.getKey(), entry.getValue());
-                                }
-                                // forward request to target service(s)
-                                EventEnvelope event = new EventEnvelope();
-                                event.setTo(evt.primary).setBody(req)
-                                        .setCorrelationId(evt.requestId)
-                                        .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
-                                // enable distributed tracing if needed
-                                if (evt.tracing) {
-                                    event.setFrom(evt.authService);
-                                    event.setTrace(evt.traceId, evt.tracePath);
-                                }
-                                try {
-                                    po.send(event);
-                                    // copying to secondary services if any
-                                    if (evt.services.size() > 1) {
-                                        for (String secondary : evt.services) {
-                                            if (!secondary.equals(evt.primary)) {
-                                                EventEnvelope copy = new EventEnvelope()
-                                                        .setTo(secondary).setBody(evt.httpRequest);
-                                                if (evt.tracing) {
-                                                    copy.setFrom(HTTP_REQUEST);
-                                                    copy.setTrace(evt.traceId, evt.tracePath);
-                                                }
-                                                sendToSecondaryTarget(copy);
-                                            }
-                                        }
-                                    }
-                                } catch (IllegalArgumentException e) {
-                                    sendError(evt, 400, e.getMessage());
-                                }
-                            } else {
-                                sendError(evt, 401, "Unauthorized");
-                            }
-                        })
-                        .onFailure(e -> sendError(evt, 408, e.getMessage()));
+                po.asyncRequest(authRequest, event.timeout)
+                        .onSuccess(response -> handleAuthResponse(response, event, req))
+                        .onFailure(e -> sendError(event, 408, e.getMessage()));
             }
         }
         return null;
     }
 
+    private void handleAuthResponse(EventEnvelope response, HttpRequestEvent event, AsyncHttpRequest req) {
+        if (Boolean.TRUE.equals(response.getBody())) {
+            var po = EventEmitter.getInstance();
+            /*
+             * Upon successful authentication,
+             * the authentication service may save session information as headers
+             * (auth headers are converted to lower case for case insensitivity)
+             */
+            var authResHeaders = response.getHeaders();
+            for (Map.Entry<String, String> entry : authResHeaders.entrySet()) {
+                req.setSessionInfo(entry.getKey(), entry.getValue());
+            }
+            // forward request to target service(s)
+            var forward = new EventEnvelope();
+            forward.setTo(event.primary).setBody(req)
+                    .setCorrelationId(event.requestId)
+                    .setReplyTo(AsyncHttpClient.ASYNC_HTTP_RESPONSE + "@" + Platform.getInstance().getOrigin());
+            // enable distributed tracing if needed
+            if (event.tracing) {
+                forward.setFrom(event.authService);
+                forward.setTrace(event.traceId, event.tracePath);
+            }
+            try {
+                po.send(forward);
+            } catch (IllegalArgumentException e) {
+                sendError(event, 400, e.getMessage());
+            }
+        } else {
+            sendError(event, 401, "Unauthorized");
+        }
+    }
+
     private void sendError(HttpRequestEvent evt, int status, String message) {
-        EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope event = new EventEnvelope();
+        var po = EventEmitter.getInstance();
+        var event = new EventEnvelope();
         Map<String, Object> result = new HashMap<>();
         result.put("status", status);
         result.put("message", message);
@@ -905,13 +963,4 @@ class HttpAuth implements LambdaFunction {
         }
         po.send(event);
     }
-
-    private void sendToSecondaryTarget(EventEnvelope event) {
-        try {
-            EventEmitter.getInstance().send(event);
-        } catch (Exception e) {
-            log.warn("Unable to copy event to {} - {}", event.getTo(), e.getMessage());
-        }
-    }
 }
-

@@ -35,10 +35,7 @@ class SimpleCookieTest {
 
     private SimpleHttpCookie createCookie(String key, String value) {
         SimpleHttpCookie cookie = new SimpleHttpCookie(key, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setMaxAge(60);
+        cookie.setHttpOnly(true).setSecure(true).setMaxAge(60).setPath("/");
         return cookie;
     }
 

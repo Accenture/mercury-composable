@@ -52,19 +52,23 @@ public class WsServerTransmitter implements LambdaFunction {
                 String message = headers.get(MESSAGE) == null? "bye" : headers.get(MESSAGE);
                 ws.close((short) (status >= 0? status : 1000), message);
             } else {
-                if (input instanceof byte[] b) {
-                    ws.writeBinaryMessage(Buffer.buffer(b));
-                }
-                if (input instanceof String str) {
-                    ws.writeTextMessage(str);
-                }
-                if (input instanceof Map) {
-                    ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
-                }
+                sendMessage(input);
             }
             return true;
         } else {
             return false;
+        }
+    }
+
+    private void sendMessage(Object input) {
+        if (input instanceof byte[] b) {
+            ws.writeBinaryMessage(Buffer.buffer(b));
+        }
+        if (input instanceof String str) {
+            ws.writeTextMessage(str);
+        }
+        if (input instanceof Map) {
+            ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
         }
     }
 }

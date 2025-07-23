@@ -58,6 +58,7 @@ public class Utility {
     private static final String NESTED_EXCEPTION_MARKER = "** BEGIN NESTED EXCEPTION **";
     private static final String NESTED_EXCEPTION_START = "MESSAGE:";
     private static final String NESTED_EXCEPTION_END = "STACKTRACE:";
+    private static final String ZERO_TIMEZONE = "+0000";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
     private static final String BOOT_INF_LIB = "BOOT-INF/lib";
@@ -72,8 +73,6 @@ public class Utility {
             ".con", ".prn", ".aux", ".nul", ".com", ".exe",
             ".com1", ".com2", ".com3", ".com4", ".com5", ".com6", ".com7", ".com8", ".com9",
             ".lpt1", ".lpt2", ".lpt3", ".lpt4", ".lpt5", ".lpt6", ".lpt7", ".lpt8", ".lpt9"};
-    private static final String INVALID_HEX = "Invalid hex string";
-    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
     private static final String ZEROS = "0000000000000000";
     private static final String[] intranetPrefixes = {
             "10.", "192.168.",
@@ -155,25 +154,11 @@ public class Utility {
                     libs.add("--- "+BOOT_INF_LIB+" ---");
                     list.addAll(jars);
                 }
-                if (list.size() > 1) {
-                    Collections.sort(list);
-                }
+                Collections.sort(list);
                 if (!list.isEmpty()) {
-                    try (ScanResult scan = new ClassGraph().acceptPathsNonRecursive(META_INF).scan()) {
-                        ResourceList resources = scan.getResourcesWithExtension(".MF");
-                        for (Resource r: resources) {
-                            if (r.getPath().equals("META-INF/MANIFEST.MF")) {
-                                Properties p = new Properties();
-                                p.load(new ByteArrayInputStream(stream2bytes(r.open())));
-                                String v = p.getProperty("Implementation-Version");
-                                if (v != null) {
-                                    appVersion = v;
-                                }
-                                break;
-                            }
-                        }
-                    } catch (IOException e) {
-                        // ok to ignore
+                    var v = getVersionFromManifest();
+                    if (v != null) {
+                        appVersion = v;
                     }
                 }
                 libs.addAll(list);
@@ -183,6 +168,22 @@ public class Utility {
             }
             loaded = true;
         }
+    }
+
+    private String getVersionFromManifest() {
+        try (ScanResult scan = new ClassGraph().acceptPathsNonRecursive(META_INF).scan()) {
+            ResourceList resources = scan.getResourcesWithExtension(".MF");
+            for (Resource r: resources) {
+                if (r.getPath().equals("META-INF/MANIFEST.MF")) {
+                    Properties p = new Properties();
+                    p.load(new ByteArrayInputStream(stream2bytes(r.open())));
+                    return p.getProperty("Implementation-Version");
+                }
+            }
+        } catch (IOException e) {
+            // ok to ignore
+        }
+        return null;
     }
 
     public String getVersion() {
@@ -248,10 +249,6 @@ public class Utility {
         return getDateOnly(new Date())+getUuid();
     }
 
-    /////////////////////////////////////////////////////
-    // Simple string splitter without overheads of regex
-    /////////////////////////////////////////////////////
-
     /**
      * Split a string using a set of separators
      * Skips empty values.
@@ -276,31 +273,28 @@ public class Utility {
         List<String> rv = new ArrayList<>();
         if (str == null || chars == null) return rv;
         StringBuilder sb = new StringBuilder();
-        boolean found;
         for (int i=0; i < str.length(); i++) {
-            found = false;
-            for (int j=0; j < chars.length(); j++) {
-                if (str.charAt(i) == chars.charAt(j)) {
-                    if (!sb.isEmpty()) {
-                        rv.add(sb.toString());
-                    } else if (empty) {
-                        rv.add("");
-                    }
-                    // reset buffer
-                    sb.setLength(0);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) sb.append(str.charAt(i));
+            if (charNotFound(rv, sb, str, chars, i, empty)) sb.append(str.charAt(i));
         }
         if (!sb.isEmpty()) rv.add(sb.toString());
         return rv;
     }
 
-    ////////////////////////////////////////
-    // Convenient properties file utilities
-    ////////////////////////////////////////
+    private boolean charNotFound(List<String> rv, StringBuilder sb, String str, String chars, int i, boolean empty) {
+        for (int j=0; j < chars.length(); j++) {
+            if (str.charAt(i) == chars.charAt(j)) {
+                if (!sb.isEmpty()) {
+                    rv.add(sb.toString());
+                } else if (empty) {
+                    rv.add("");
+                }
+                // reset buffer
+                sb.setLength(0);
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * Hierarchical data of a map to be converted into properties like "this.is.a.key"
@@ -321,19 +315,8 @@ public class Utility {
             Object v = entry.getValue();
             if (v instanceof Map) {
                 getFlatMap(key, (Map<String, Object>) v, target);
-            } else if (v instanceof List) {
-                int n = 0;
-                for (Object o: (List<Object>) v) {
-                    String next = key +"["+n+"]";
-                    n++;
-                    if (o instanceof Map) {
-                        getFlatMap(next, (Map<String, Object>) o, target);
-                    } else if (o instanceof List) {
-                        getFlatList(next, (List<Object>) o, target);
-                    } else if (o != null) {
-                        target.put(next, o);
-                    }
-                }
+            } else if (v instanceof List<?> vList) {
+                handleListInFlatMap(key, vList, target);
             } else if (v != null) {
                 target.put(key, v);
             }
@@ -341,24 +324,36 @@ public class Utility {
     }
 
     @SuppressWarnings("unchecked")
-    private void getFlatList(String prefix, List<Object> src, Map<String, Object> target) {
+    private void handleListInFlatMap(String key, List<?> values, Map<String, Object> target) {
         int n = 0;
-        for (Object v: src) {
+        for (Object o: values) {
+            String next = key +"["+n+"]";
+            n++;
+            if (o instanceof Map) {
+                getFlatMap(next, (Map<String, Object>) o, target);
+            } else if (o instanceof List<?> oList) {
+                getFlatList(next, oList, target);
+            } else if (o != null) {
+                target.put(next, o);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void getFlatList(String prefix, List<?> values, Map<String, Object> target) {
+        int n = 0;
+        for (Object v: values) {
             String key = prefix+"["+n+"]";
             n++;
             if (v instanceof Map) {
                 getFlatMap(key, (Map<String, Object>) v, target);
-            } else if (v instanceof List) {
-                getFlatList(key, (List<Object>) v, target);
+            } else if (v instanceof List<?> oList) {
+                getFlatList(key, oList, target);
             } else {
                 target.put(key, v);
             }
         }
     }
-
-    //////////////////////////////////
-    // Convenient timestamp utilities
-    //////////////////////////////////
 
     public String getTimestamp() {
         return getTimestamp(System.currentTimeMillis());
@@ -429,10 +424,6 @@ public class Utility {
         return zdt.toInstant().toEpochMilli();
     }
 
-    /////////////////////////////
-    // Convenient file utilities
-    /////////////////////////////
-
     public byte[] stream2bytes(InputStream stream) {
         return stream2bytes(stream, true);
     }
@@ -446,38 +437,44 @@ public class Utility {
             return new byte[0];
         }
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int len;
-        int total = 0;
-        byte[] buffer = new byte[1024];
         if (stream instanceof ByteArrayInputStream in) {
+            int len;
+            byte[] buffer = new byte[1024];
             while ((len = in.read(buffer, 0, buffer.length)) != -1) {
                 out.write(buffer, 0, len) ;
             }
         } else {
             BufferedInputStream bin = (stream instanceof BufferedInputStream buffered) ?
                                         buffered : new BufferedInputStream(stream);
-            try {
-                while ((len = bin.read(buffer, 0, buffer.length)) != -1) {
-                    total += len;
-                    if (maxSize > 0 && total > maxSize) {
-                        throw new IllegalArgumentException("input larger than max of "+maxSize+" bytes");
-                    }
-                    out.write(buffer, 0, len) ;
-                }
-                if (closeStream) bin.close();
-                bin = null;
-            } catch (IOException e) {
-                // ignore
-            } finally {
-                if (bin != null && closeStream)
-                    try {
-                        bin.close();
-                    } catch (IOException e) {
-                        // does not matter
-                    }
-            }
+            inputStream2bytes(bin, out, closeStream, maxSize);
         }
         return out.toByteArray();
+    }
+
+    private void inputStream2bytes(BufferedInputStream bin, ByteArrayOutputStream out, boolean closeStream, int maxSize) {
+        try {
+            int len;
+            int total = 0;
+            byte[] buffer = new byte[1024];
+            while ((len = bin.read(buffer, 0, buffer.length)) != -1) {
+                total += len;
+                if (maxSize > 0 && total > maxSize) {
+                    throw new IllegalArgumentException("input larger than max of "+maxSize+" bytes");
+                }
+                out.write(buffer, 0, len) ;
+            }
+            if (closeStream) bin.close();
+            bin = null;
+        } catch (IOException e) {
+            // ignore
+        } finally {
+            if (bin != null && closeStream)
+                try {
+                    bin.close();
+                } catch (IOException e) {
+                    // does not matter
+                }
+        }
     }
 
     public String stream2str(InputStream stream) {
@@ -534,27 +531,25 @@ public class Utility {
         if (dir != null && dir.exists() && dir.isDirectory()) {
             File[] files = dir.listFiles();
             if (files != null) {
-                for (File f: files) {
-                    if (f.isDirectory()) {
-                        cleanupDir(f, false);
-                    } else {
-                        if (f.delete()) {
-                            log.debug("File {} deleted", f);
-                        }
-                    }
-                }
+                cleanFiles(files);
             }
-            if (!keep) {
-                if (dir.delete()) {
-                    log.debug("Folder {} deleted", dir);
-                }
+            if (!keep && dir.delete()) {
+                log.debug("Folder {} deleted", dir);
             }
         }
     }
 
-    ////////////////////////////////////////////////
-    // Useful integer and long conversion utilities
-    ////////////////////////////////////////////////
+    private void cleanFiles(File[] files) {
+        for (File f: files) {
+            if (f.isDirectory()) {
+                cleanupDir(f, false);
+            } else {
+                if (f.delete()) {
+                    log.debug("File {} deleted", f);
+                }
+            }
+        }
+    }
 
     public int bytes2int(byte[] b) {
         if (b == null || b.length != 4) return -1;
@@ -571,7 +566,6 @@ public class Utility {
 
     public byte[] int2bytes(int val) {
         byte[] results = new byte[4];
-
         for (int idx=3; idx >=0; --idx) {
             results[idx] = (byte) (val & 0xFF);
             val = val >> 8;
@@ -669,10 +663,6 @@ public class Utility {
         return clsName.contains(".") && !clsName.startsWith("java.");
     }
 
-    ///////////////////////////////////////
-    // Conversion between string and bytes
-    ///////////////////////////////////////
-
     public byte[] getUTF(String str) {
         if (str == null || str.isEmpty()) return new byte[0];
         return str.getBytes(StandardCharsets.UTF_8);
@@ -720,10 +710,10 @@ public class Utility {
                 || str.contains("..")
                 || str.endsWith(".") || str.endsWith("_") || str.endsWith("-")) return false;
         for (int i=0; i < str.length(); i++) {
-            if (str.charAt(i) >= '0' && str.charAt(i) <= '9') continue;
-            if (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') continue;
-            if (str.charAt(i) == '.' || str.charAt(i) == '_' || str.charAt(i) == '-') continue;
-            return false;
+            if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
+                    (str.charAt(i) == '.' || str.charAt(i) == '_' || str.charAt(i) == '-'))) {
+                return false;
+            }
         }
         return true;
     }
@@ -740,15 +730,8 @@ public class Utility {
                     dot = false;
                 }
             }
-            if (str.charAt(i) >= '0' && str.charAt(i) <= '9') {
-                sb.append(str.charAt(i));
-                continue;
-            }
-            if (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') {
-                sb.append(str.charAt(i));
-                continue;
-            }
-            if (str.charAt(i) == '.' || str.charAt(i) == '_' || str.charAt(i) == '-') {
+            if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
+                    (str.charAt(i) == '.' || str.charAt(i) == '_' || str.charAt(i) == '-')) {
                 sb.append(str.charAt(i));
             }
         }
@@ -849,14 +832,18 @@ public class Utility {
             if (str.length() >= 16 && str.charAt(10) != 'T') {
                 str = str.substring(0, 10) + "T" + str.substring(11);
             }
-            try {
-                return LocalDateTime.parse(str);
-            } catch (DateTimeParseException e) {
-                if (throwException) {
-                    throw e;
-                } else {
-                    return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                }
+            return parseLocalDateTime(str, throwException);
+        }
+    }
+
+    private LocalDateTime parseLocalDateTime(String str, boolean throwException) {
+        try {
+            return LocalDateTime.parse(str);
+        } catch (DateTimeParseException e) {
+            if (throwException) {
+                throw e;
+            } else {
+                return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
             }
         }
     }
@@ -891,11 +878,11 @@ public class Utility {
         }
         // use UTC timezone if not specified
         if (str.length() == 19) {
-            str += "+0000";
+            str += ZERO_TIMEZONE;
         }
         // normalize UTC "Z" indicator to +0000
         if (str.endsWith("Z")) {
-            str = str.substring(0, str.length()-1)+"+0000";
+            str = str.substring(0, str.length()-1)+ZERO_TIMEZONE;
         }
         // precision up to milliseconds only and drop microseconds if any
         int dot = str.indexOf('.');
@@ -906,9 +893,13 @@ public class Utility {
             }
             String ms = normalizeMs(sep > 0? str.substring(dot, sep) : str.substring(dot));
             // remove colon from timezone
-            String timezone = sep == -1? "+0000" : str.substring(sep).replace(":", "");
+            String timezone = sep == -1? ZERO_TIMEZONE : str.substring(sep).replace(":", "");
             str = str.substring(0, dot) + ms + timezone;
         }
+        return parseZonedDateTime(str, dot, throwException);
+    }
+
+    private Date parseZonedDateTime(String str, int dot, boolean throwException) {
         // parse the normalized time string
         try {
             ZonedDateTime zdt = dot==19? ZonedDateTime.parse(str, ISO_DATE_MS) : ZonedDateTime.parse(str, ISO_DATE);
@@ -938,10 +929,6 @@ public class Utility {
         return result.length() == 4? result : result.substring(0, 4);
     }
 
-    //////////////////////////////////////
-    // Resolve root cause of an exception
-    //////////////////////////////////////
-
     public Throwable getRootCause(Throwable exception) {
         if (exception.getCause() != null) {
             return getRootCause(exception.getCause());
@@ -961,10 +948,6 @@ public class Utility {
         }
         return exception;
     }
-
-    //////////////////////////////
-    // Hex and base64 converters
-    /////////////////////////////
 
     public String bytesToBase64(byte[] b) {
         return bytesToBase64(b, false, false);
@@ -1012,43 +995,12 @@ public class Utility {
     }
 
     public byte[] hex2bytes(String hex) {
-        char[] data = hex.toLowerCase().toCharArray();
-        int len = data.length;
-        if (len % 2 != 0) {
-            throw new IllegalArgumentException(INVALID_HEX);
-        }
-        byte[] out = new byte[len >> 1];
-        for (int i = 0, j = 0; j < len; i++) {
-            int f = getNumericValue(data[j]) << 4;
-            j++;
-            f = f | getNumericValue(data[j]);
-            j++;
-            out[i] = (byte) (f & 0xFF);
-        }
-        return out;
+        return HexFormat.of().parseHex(hex.toLowerCase());
     }
 
     public String bytes2hex(byte[] bytes) {
-        int l = bytes.length;
-        char[] out = new char[l << 1];
-        for (int i = 0, j = 0; i < l; i++) {
-            out[j++] = HEX_DIGITS[(0xF0 & bytes[i]) >>> 4 ];
-            out[j++] = HEX_DIGITS[ 0x0F & bytes[i] ];
-        }
-        return String.valueOf(out);
+        return HexFormat.of().formatHex(bytes).toLowerCase();
     }
-
-    private int getNumericValue(char c) {
-        int result = Character.digit(c, 16);
-        if (result == -1) {
-            throw new IllegalArgumentException(INVALID_HEX);
-        }
-        return result;
-    }
-
-    //////////////////////////////////
-    // Network connectivity utilities
-    //////////////////////////////////
 
     public boolean portReady(String host, int port, int timeoutMs) {
         return testPort(host, port, timeoutMs);
@@ -1155,17 +1107,10 @@ public class Utility {
         return n * multiplier;
     }
 
-    //////////////////////////////////////////////////////////////////
-    // Convenient utility to close a connection of a WebSocketService
-    //////////////////////////////////////////////////////////////////
     public void closeConnection(String txPath, int status, String message) {
         EventEmitter.getInstance().send(txPath, new Kv(WsEnvelope.TYPE, WsEnvelope.CLOSE),
                                               new Kv(STATUS, status), new Kv(MESSAGE, message));
     }
-
-    //////////////////////////////////////////////////////
-    // Convenient utilities to encode and decode URI path
-    //////////////////////////////////////////////////////
 
     /**
      * Encode text as a URI
@@ -1224,45 +1169,52 @@ public class Utility {
             }
             // filter out protocol identifier
             uri = uri.replace("://", "/");
-            // encode matrix parameters if any
-            StringBuilder sb = new StringBuilder();
-            List<String> segments = split(uri, "/");
-            if (uri.contains(";")) {
-                for (String s: segments) {
-                    sb.append('/');
-                    int semiColon = s.indexOf(';');
-                    if (semiColon == -1) {
-                        sb.append(encodeUri(s));
-                    } else {
-                        var pathPortion = s.substring(0, semiColon);
-                        sb.append(encodeUri(pathPortion));
-                        // matrix parameters
-                        List<String> parts = split(s.substring(semiColon+1), ";");
-                        for (String p: parts) {
-                            sb.append(';');
-                            int eq = p.indexOf('=');
-                            if (eq == -1) {
-                                sb.append(encodeUri(p));
-                            } else {
-                                sb.append(encodeUri(p.substring(0, eq)));
-                                sb.append('=');
-                                sb.append(encodeUri(p.substring(eq+1)));
-                            }
-                        }
-                    }
-                }
-            } else {
-                for (String s: segments) {
-                    sb.append('/');
-                    sb.append(encodeUri(s));
-                }
-            }
-            if (uri.endsWith("/")) {
-                sb.append('/');
-            }
-            uri = sb.toString();
+            uri = encodeUriSegments(uri);
             uri = queryParams.isEmpty()? uri : buildUriParams(uri, queryParams, true);
             return hashTags.isEmpty()? uri : buildUriParams(uri, hashTags, false);
+        }
+    }
+
+    private String encodeUriSegments(String uri) {
+        StringBuilder sb = new StringBuilder();
+        List<String> segments = split(uri, "/");
+        if (uri.contains(";")) {
+            handleMatrixParams(segments, sb);
+        } else {
+            for (String s: segments) {
+                sb.append('/');
+                sb.append(encodeUri(s));
+            }
+        }
+        if (uri.endsWith("/")) {
+            sb.append('/');
+        }
+        return sb.toString();
+    }
+
+    private void handleMatrixParams(List<String> segments, StringBuilder sb) {
+        for (String s: segments) {
+            sb.append('/');
+            int semiColon = s.indexOf(';');
+            if (semiColon == -1) {
+                sb.append(encodeUri(s));
+            } else {
+                var pathPortion = s.substring(0, semiColon);
+                sb.append(encodeUri(pathPortion));
+                // matrix parameters
+                List<String> parts = split(s.substring(semiColon+1), ";");
+                for (String p: parts) {
+                    sb.append(';');
+                    int eq = p.indexOf('=');
+                    if (eq == -1) {
+                        sb.append(encodeUri(p));
+                    } else {
+                        sb.append(encodeUri(p.substring(0, eq)));
+                        sb.append('=');
+                        sb.append(encodeUri(p.substring(eq+1)));
+                    }
+                }
+            }
         }
     }
 

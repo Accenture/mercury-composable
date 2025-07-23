@@ -23,11 +23,24 @@ package org.platformlambda.core.models;
  * DO NOT use this directly in your application code.
  */
 public class TimedItem {
-    public Long time;
-    public Object payload;
+    private long time;
+    private Object payload;
 
-    public TimedItem(Long time, Object payload) {
+    public TimedItem(long time, Object payload) {
         this.time = time;
         this.payload = payload;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public Object getPayload() {
+        return payload;
+    }
+
+    public void clear() {
+        this.time = 0;
+        this.payload = null;
     }
 }

@@ -21,10 +21,8 @@ package org.platformlambda.automation.models;
 import java.util.*;
 
 public class RouteInfo {
-
     private final List<String> authHeaders = new ArrayList<>();
     private final Map<String, String> authServices = new HashMap<>();
-
     public String url;
     public String defaultAuthService;
     public String corsId;
@@ -66,5 +64,4 @@ public class RouteInfo {
     public List<String> getAuthHeaders() {
         return authHeaders;
     }
-
 }

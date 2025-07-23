@@ -19,7 +19,5 @@
 package org.platformlambda.core.models;
 
 public interface CloudSetup {
-
     void initialize();
-
 }

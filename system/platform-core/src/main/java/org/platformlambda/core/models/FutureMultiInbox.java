@@ -61,13 +61,12 @@ public class FutureMultiInbox extends InboxBase {
         correlations.put(sequencedCid, correlation);
     }
 
-    public Future<List<EventEnvelope>> getFuture() {
+    public CompletableFuture<List<EventEnvelope>> getFuture() {
         return future;
     }
 
     private void abort(String inboxId) {
-        FutureMultiInbox holder = (FutureMultiInbox) inboxes.get(inboxId);
-        if (holder != null) {
+        if (inboxes.get(inboxId) instanceof FutureMultiInbox holder) {
             holder.close();
             if (timeoutException) {
                 future.completeExceptionally(new TimeoutException("Timeout for " + holder.timeout + " ms"));
@@ -92,18 +91,16 @@ public class FutureMultiInbox extends InboxBase {
 
     private void saveResponse(String sequencedCid, EventEnvelope reply) {
         String inboxId = sequencedCid.substring(0, sequencedCid.lastIndexOf('-'));
-        FutureMultiInbox holder = (FutureMultiInbox) inboxes.get(inboxId);
-        if (holder != null) {
+        if (inboxes.get(inboxId) instanceof FutureMultiInbox holder) {
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            reply.setRoundTrip(diff);
             // remove some metadata that are not relevant for a RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             var annotations = new HashMap<>(reply.getAnnotations());
-            reply.clearAnnotations();
+            reply.clearAnnotations().setRoundTrip(diff);
             InboxCorrelation correlation = holder.correlations.get(sequencedCid);
             if (correlation != null) {
                 // restore original correlation ID
-                replies.put(reply.getId(), reply.setCorrelationId(correlation.cid));
+                replies.put(reply.getId(), reply.setCorrelationId(correlation.cid()));
                 if (holder.total.decrementAndGet() == 0) {
                     List<EventEnvelope> result = new ArrayList<>();
                     for (Map.Entry<String, EventEnvelope> kv : replies.entrySet()) {
@@ -113,10 +110,19 @@ public class FutureMultiInbox extends InboxBase {
                     Platform.getInstance().getVertx().cancelTimer(timer);
                     future.complete(result);
                 }
-                if (correlation.to != null && holder.traceId != null && holder.tracePath != null) {
-                    recordRpcTrace(holder.traceId, holder.tracePath, correlation.to, holder.from, start,
-                            reply.getStatus(), reply.getError(),
-                            reply.getExecutionTime(), reply.getRoundTrip(), annotations);
+                if (correlation.to() != null && holder.traceId != null && holder.tracePath != null) {
+                    var md = new InboxMetadata();
+                    md.traceId = holder.traceId;
+                    md.tracePath = holder.tracePath;
+                    md.to = correlation.to();
+                    md.from = holder.from;
+                    md.start = start;
+                    md.status = reply.getStatus();
+                    md.error = reply.getError();
+                    md.execTime = reply.getExecutionTime();
+                    md.roundTrip = reply.getRoundTrip();
+                    md.annotations = annotations;
+                    recordTrace(md);
                 }
             }
         }

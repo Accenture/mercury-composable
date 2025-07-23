@@ -22,8 +22,7 @@ import java.util.Map;
 
 public interface CustomSerializer {
 
-    public Map<String, Object> toMap(Object obj);
+    Map<String, Object> toMap(Object obj);
 
-    public <T> T toPoJo(Object obj, Class<T> toValueType);
-
+    <T> T toPoJo(Object obj, Class<T> toValueType);
 }

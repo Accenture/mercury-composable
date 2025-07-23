@@ -28,8 +28,6 @@ import org.platformlambda.core.services.ActuatorServices;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.vertx.core.buffer.Buffer;
 
@@ -44,7 +42,6 @@ import java.util.*;
  * i.e. when user defined websocket server using WebSocketService is found.
  */
 public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
-    private static final Logger log = LoggerFactory.getLogger(MinimalistHttpHandler.class);
     private static final SimpleXmlWriter xml = new SimpleXmlWriter();
     private static final String TYPE = "type";
     private static final String ACCEPT = "Accept";
@@ -58,6 +55,7 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
+    private static final String ERROR = "error";
     private static final String PATH = "path";
     private static final String KEEP_ALIVE = "keep-alive";
     private static final String CONNECTION_HEADER = "Connection";
@@ -66,9 +64,9 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
     private static final String[] INFO_ROUTES = {"/info/routes", "routes"};
     private static final String[] HEALTH_SERVICE = {"/health", "health"};
     private static final String[] ENV_SERVICE = {"/env", "env"};
-    private static final String[] LIVENESSPROBE = {"/livenessprobe", "livenessprobe"};
+    private static final String[] LIVENESS_PROBE = {"/livenessprobe", "livenessprobe"};
     private static final String[][] ADMIN_ENDPOINTS = {INFO_SERVICE, INFO_LIB, INFO_ROUTES,
-            HEALTH_SERVICE, ENV_SERVICE, LIVENESSPROBE};
+            HEALTH_SERVICE, ENV_SERVICE, LIVENESS_PROBE};
 
     @Override
     public void handle(HttpServerRequest request) {
@@ -84,68 +82,69 @@ public class MinimalistHttpHandler implements Handler<HttpServerRequest> {
         }
         final String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
-        boolean processed = false;
-        if (GET.equals(method)) {
-            String type = getAdminEndpointType(uri);
-            if (type != null) {
-                EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
-                event.setTo(ActuatorServices.ACTUATOR_SERVICES);
-                String accept = request.getHeader(ACCEPT);
-                event.setHeader(ACCEPT_CONTENT, accept != null? accept : APPLICATION_JSON);
-                po.asyncRequest(event, 30000)
-                    .onSuccess(result -> {
-                        final String contentType = result.getHeaders()
-                                                    .getOrDefault(CONTENT_TYPE.toLowerCase(), APPLICATION_JSON);
-                        final Object data = result.getRawBody();
-                        final byte[] b;
-                        if (TEXT_PLAIN.equals(contentType) && data instanceof String str) {
-                            response.putHeader(CONTENT_TYPE, TEXT_PLAIN);
-                            b = util.getUTF(str);
-                        } else {
-                            if (APPLICATION_XML.equals(contentType)) {
-                                response.putHeader(CONTENT_TYPE, APPLICATION_XML);
-                                if (data instanceof Map) {
-                                    b = util.getUTF(xml.write(data));
-                                } else {
-                                    b = util.getUTF(data == null? "" : data.toString());
-                                }
-                            } else {
-                                if (data instanceof Map) {
-                                    b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(data);
-                                } else {
-                                    b = util.getUTF(data == null? "" : data.toString());
-                                }
-                            }
-                        }
-                        response.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
-                        response.setStatusCode(result.getStatus());
-                        response.write(Buffer.buffer(b));
-                        response.end();
-                    })
-                    .onFailure(e -> sendError(response, uri, 408, e.getMessage()));
-                processed = true;
-            }
+        String type = getAdminEndpointType(uri);
+        if (GET.equals(method) && type != null) {
+            EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
+            event.setTo(ActuatorServices.ACTUATOR_SERVICES);
+            String accept = request.getHeader(ACCEPT);
+            event.setHeader(ACCEPT_CONTENT, accept != null? accept : APPLICATION_JSON);
+            po.asyncRequest(event, 30000)
+                .onSuccess(result -> provideActuatorServices(response, result))
+                .onFailure(e -> sendResponse(ERROR, response, uri,408, e.getMessage()));
+            return;
         }
-        if (!processed) {
-            if ("/".equals(uri)) {
-                Map<String, Object> instruction = new HashMap<>();
-                List<String> endpoints = new ArrayList<>();
-                instruction.put(MESSAGE, "Minimalist HTTP server supports these admin endpoints");
-                instruction.put("endpoints", endpoints);
-                for (String[] service: ADMIN_ENDPOINTS) {
-                    endpoints.add(service[0]);
-                }
-                instruction.put("name", Platform.getInstance().getName());
-                instruction.put("time", new Date());
-                sendResponse("info", response, uri, 200, instruction);
-            } else {
-                sendError(response, uri, 404, "Resource not found");
+        if ("/".equals(uri)) {
+            Map<String, Object> instruction = new HashMap<>();
+            List<String> endpoints = new ArrayList<>();
+            instruction.put(MESSAGE, "Minimalist HTTP server supports these admin endpoints");
+            instruction.put("endpoints", endpoints);
+            for (String[] service: ADMIN_ENDPOINTS) {
+                endpoints.add(service[0]);
             }
+            instruction.put("name", Platform.getInstance().getName());
+            instruction.put("time", new Date());
+            sendResponse("info", response, uri, 200, instruction);
+        } else {
+            sendResponse(ERROR, response, uri, 404, "Resource not found");
         }
     }
 
-    private void sendError(HttpServerResponse response, String uri, int status, Object message) {
-        sendResponse("error", response, uri, status, message);
+    private void provideActuatorServices(HttpServerResponse response, EventEnvelope result) {
+        final Utility util = Utility.getInstance();
+        final Object data = result.getRawBody();
+        final byte[] b;
+        String contentType = result.getHeader(CONTENT_TYPE);
+        if (contentType == null) {
+            contentType = APPLICATION_JSON;
+        }
+        if (TEXT_PLAIN.equals(contentType) && data instanceof String str) {
+            response.putHeader(CONTENT_TYPE, TEXT_PLAIN);
+            b = util.getUTF(str);
+        } else {
+            b = getHttpBody(contentType, data, response);
+        }
+        response.putHeader(CONTENT_LENGTH, String.valueOf(b.length));
+        response.setStatusCode(result.getStatus());
+        response.write(Buffer.buffer(b));
+        response.end();
+    }
+
+    private byte[] getHttpBody(String contentType, Object data, HttpServerResponse response) {
+        final Utility util = Utility.getInstance();
+        if (APPLICATION_XML.equals(contentType)) {
+            response.putHeader(CONTENT_TYPE, APPLICATION_XML);
+            if (data instanceof Map) {
+                return util.getUTF(xml.write(data));
+            } else {
+                return util.getUTF(data == null? "" : data.toString());
+            }
+        } else {
+            if (data instanceof Map) {
+                return SimpleMapper.getInstance().getMapper().writeValueAsBytes(data);
+            } else {
+                return util.getUTF(data == null? "" : data.toString());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

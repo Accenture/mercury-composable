@@ -63,17 +63,16 @@ public class HttpRequestEvent {
         }
     }
 
-    public HttpRequestEvent(String requestId,
-                            String primary, String authService, String traceId, String tracePath,
-                            List<String> services, long timeout, boolean tracing) {
+    public HttpRequestEvent(String requestId, AssignedRoute route,
+                            String authService, String traceId, String tracePath) {
         this.requestId = requestId;
-        this.primary = primary;
+        this.primary = route.info.primary;
+        this.services = route.info.services;
+        this.timeout = route.info.timeoutSeconds * 1000L;
+        this.tracing =  route.info.tracing;
         this.authService = authService;
         this.traceId = traceId;
         this.tracePath = tracePath;
-        this.services = services;
-        this.timeout = timeout;
-        this.tracing = tracing;
     }
 
     public HttpRequestEvent setHttpRequest(AsyncHttpRequest request) {
@@ -94,5 +93,4 @@ public class HttpRequestEvent {
         result.put(TRACING_TAG, tracing);
         return result;
     }
-
 }

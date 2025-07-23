@@ -49,5 +49,4 @@ public class EtagFile {
             return this.eTag.equals(eTag);
         }
     }
-
 }

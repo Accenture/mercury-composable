@@ -32,6 +32,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -101,49 +102,13 @@ public class WorkerHandler {
         ProcessStatus ps = processEvent(event, rpc);
         TraceInfo trace = po.stopTracing(ref);
         if (tracing && trace != null && trace.id != null && trace.path != null) {
-            try {
-                boolean journaled = po.isJournaled(def.getRoute());
-                if (journaled || rpc == null || !ps.isDelivered()) {
-                    // Send tracing information to distributed trace logger
-                    EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put(ANNOTATIONS, trace.annotations);
-                    // send input/output dataset to journal if configured in journal.yaml
-                    if (journaled) {
-                        payload.put(JOURNAL, ps.getInputOutput());
-                    }
-                    Map<String, Object> metrics = new HashMap<>();
-                    metrics.put(ORIGIN, myOrigin);
-                    metrics.put(ID, trace.id);
-                    metrics.put(PATH, trace.path);
-                    metrics.put(SERVICE, def.getRoute());
-                    metrics.put(START, trace.startTime);
-                    metrics.put(SUCCESS, ps.isSuccess());
-                    metrics.put(FROM, event.getFrom() == null ? UNKNOWN : event.getFrom());
-                    metrics.put(EXEC_TIME, ps.getExecutionTime());
-                    metrics.put(STATUS, ps.getStatus());
-                    if (!ps.isSuccess()) {
-                        metrics.put(EXCEPTION, ps.getException());
-                    }
-                    if (!ps.isDelivered()) {
-                        metrics.put(STATUS, 500);
-                        metrics.put(SUCCESS, false);
-                        metrics.put(EXCEPTION, "Response not delivered - "+ps.getDeliveryError());
-                    }
-                    payload.put(TRACE, metrics);
-                    po.send(dt.setBody(payload));
-                }
-            } catch (IllegalArgumentException e) {
-                log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
-            }
-        } else {
-            if (!ps.isDelivered()) {
-                log.error("Delivery error - {}, from={}, to={}, type={}, exec_time={}",
-                        ps.getDeliveryError(),
-                        event.getFrom() == null? UNKNOWN : event.getFrom(), event.getTo(),
-                        ps.isSuccess()? "response" : "exception("+ps.getStatus()+", "+ps.getException()+")",
-                        ps.getExecutionTime());
-            }
+            sendTracingInfo(event.getFrom(), rpc, ps, trace);
+        } else if (ps.isNotDelivered()) {
+            log.error("Delivery error - {}, from={}, to={}, type={}, exec_time={}",
+                    ps.getDeliveryError(),
+                    event.getFrom() == null? UNKNOWN : event.getFrom(), event.getTo(),
+                    ps.isSuccess()? "response" : "exception("+ps.getStatus()+", "+ps.getException()+")",
+                    ps.getExecutionTime());
         }
         /*
          * If this response is not a Mono reactive object, send a ready signal to inform the system this worker
@@ -156,16 +121,58 @@ public class WorkerHandler {
         }
     }
 
+    private void sendTracingInfo(String from, String rpc, ProcessStatus ps, TraceInfo trace) {
+        EventEmitter po = EventEmitter.getInstance();
+        try {
+            boolean journaled = po.isJournaled(def.getRoute());
+            if (journaled || rpc == null || ps.isNotDelivered()) {
+                // Send tracing information to distributed trace logger
+                EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
+                Map<String, Object> payload = new HashMap<>();
+                payload.put(ANNOTATIONS, trace.annotations);
+                // send input/output dataset to journal if configured in journal.yaml
+                if (journaled) {
+                    payload.put(JOURNAL, ps.getInputOutput());
+                }
+                Map<String, Object> metrics = getMetrics(from, ps, trace);
+                payload.put(TRACE, metrics);
+                po.send(dt.setBody(payload));
+            }
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
+        }
+    }
+
+    private Map<String, Object> getMetrics(String from, ProcessStatus ps, TraceInfo trace) {
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put(ORIGIN, myOrigin);
+        metrics.put(ID, trace.id);
+        metrics.put(PATH, trace.path);
+        metrics.put(SERVICE, def.getRoute());
+        metrics.put(START, trace.startTime);
+        metrics.put(SUCCESS, ps.isSuccess());
+        metrics.put(FROM, from == null ? UNKNOWN : from);
+        metrics.put(EXEC_TIME, ps.getExecutionTime());
+        metrics.put(STATUS, ps.getStatus());
+        if (!ps.isSuccess()) {
+            metrics.put(EXCEPTION, ps.getException());
+        }
+        if (ps.isNotDelivered()) {
+            metrics.put(STATUS, 500);
+            metrics.put(SUCCESS, false);
+            metrics.put(EXCEPTION, "Response not delivered - "+ ps.getDeliveryError());
+        }
+        return metrics;
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private ProcessStatus processEvent(EventEnvelope event, String rpc) {
         Map<String, String> eventHeaders = event.getHeaders();
         ProcessStatus ps = new ProcessStatus();
-        EventEmitter po = EventEmitter.getInstance();
-        Map<String, Object> inputOutput = new HashMap<>();
-        Map<String, Object> input = new HashMap<>();
-        input.put(HEADERS, eventHeaders);
-        input.put(BODY, event.getRawBody());
-        inputOutput.put(INPUT, input);
+        ProcessMetadata md = new ProcessMetadata();
+        md.input.put(HEADERS, eventHeaders);
+        md.input.put(BODY, event.getRawBody());
+        md.inputOutput.put(INPUT, md.input);
         TypedLambdaFunction f = def.getFunction();
         final long begin = System.nanoTime();
         try {
@@ -173,51 +180,10 @@ public class WorkerHandler {
              * If the service is an interceptor or the input argument is EventEnvelope,
              * we will pass the original event envelope instead of the message body.
              */
-            var serializer = def.getCustomSerializer();
             final SimpleObjectMapper inputMapper = getMapper(true);
-            final Object inputBody;
-            var cls = def.getInputClass() != null? def.getInputClass() : def.getPoJoClass();
-            if (useEnvelope || (interceptor && cls == null)) {
-                inputBody = event;
-            } else {
-                if (event.getRawBody() instanceof Map && cls != null) {
-                    if (cls == AsyncHttpRequest.class) {
-                        // handle special case
-                        inputBody = new AsyncHttpRequest(event.getRawBody());
-                    } else {
-                        // convert Map to PoJo
-                        var o = event.getRawBody();
-                        inputBody = serializer != null? serializer.toPoJo(o, cls) : inputMapper.readValue(o, cls);
-                    }
-                } else if (event.getRawBody() instanceof List && cls != null) {
-                    // check if the input is a list of map
-                    List<Object> inputList = (List<Object>) event.getRawBody();
-                    // validate that the objects are PoJo or null
-                    int n = 0;
-                    for (Object o: inputList) {
-                        if (o == null || o instanceof Map) {
-                            n++;
-                        }
-                    }
-                    if (n == inputList.size()) {
-                        List<Object> updatedList = new ArrayList<>();
-                        for (Object o: inputList) {
-                            final Object pojo;
-                            if (o == null) {
-                                pojo = null;
-                            } else {
-                                pojo = serializer != null? serializer.toPoJo(o, cls) : inputMapper.readValue(o, cls);
-                            }
-                            updatedList.add(pojo);
-                        }
-                        inputBody = updatedList;
-                    } else {
-                        inputBody = event.getBody();
-                    }
-                } else {
-                    inputBody = event.getBody();
-                }
-            }
+            var cls = def.getInputClass() != null ? def.getInputClass() : def.getPoJoClass();
+            final Object inputBody = (useEnvelope || (interceptor && cls == null)) ?
+                    event : getInputBody(event, cls, inputMapper);
             // Insert READ only metadata into function input headers
             Map<String, String> parameters = new HashMap<>(eventHeaders);
             parameters.put(MY_ROUTE, parentRoute);
@@ -228,155 +194,236 @@ public class WorkerHandler {
                 parameters.put(MY_TRACE_PATH, event.getTracePath());
             }
             Object result = f.handleEvent(parameters, inputBody, instance);
-            float diff = getExecTime(begin);
-            Map<String, Object> output = new HashMap<>();
+            md.diff = getExecTime(begin);
             String replyTo = event.getReplyTo();
             if (replyTo != null) {
-                long rpcTimeout = util.str2long(rpc);
-                // if it is a callback instead of an RPC call, use default timeout of 30 minutes
-                final long expiry = rpcTimeout < 0? DEFAULT_TIMEOUT : rpcTimeout;
-                final EventEnvelope response = new EventEnvelope();
-                response.setTo(replyTo).setTags(event.getTags()).setFrom(def.getRoute());
-                /*
-                 * Preserve correlation ID and extra information
-                 *
-                 * "Extra" is usually used by event interceptors.
-                 * For example, to save some metadata from the original sender.
-                 */
-                if (event.getCorrelationId() != null) {
-                    response.setCorrelationId(event.getCorrelationId());
-                }
-                // propagate the trace to the next service if any
-                if (event.getTraceId() != null) {
-                    response.setTrace(event.getTraceId(), event.getTracePath());
-                }
-                boolean skipResponse = false;
-                // if response is a Mono, subscribe to it for a future response
-                if (result instanceof Mono mono) {
-                    skipResponse = true;
-                    // set reactive to defer service acknowledgement until Mono is complete
-                    ps.setReactive();
-                    Platform platform = Platform.getInstance();
-                    final AtomicLong timer = new AtomicLong(-1);
-                    final AtomicBoolean completed = new AtomicBoolean(false);
-                    // For non-blocking operation, use a new virtual thread for the subscription
-                    final Disposable disposable = mono.doFinally(done -> {
-                        long t1 = timer.get();
-                        if (t1 > 0) {
-                            platform.getVertx().cancelTimer(t1);
-                        }
-                        // finally, send service acknowledgement
-                        platform.getEventSystem().send(def.getRoute(), READY + route);
-                    }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
-                      .subscribe(data -> {
-                        completed.set(true);
-                        sendMonoResponse(response, data, begin);
-                    }, e -> {
-                        if (e instanceof Throwable ex) {
-                            completed.set(true);
-                            final EventEnvelope errorResponse = prepareErrorResponse(event, ex);
-                            po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
-                        }
-                    }, () -> {
-                          // When the Mono emitter sends a null payload, Mono will not return any result.
-                          // Therefore, the system must return a null body for this normal use case.
-                          if (!completed.get()) {
-                              sendMonoResponse(response, null, begin);
-                          }
-                      });
-                    // dispose a pending Mono if timeout
-                    timer.set(platform.getVertx().setTimer(expiry, t -> {
-                        timer.set(-1);
-                        if (!disposable.isDisposed()) {
-                            log.warn("Async response timeout after {} for {}", util.elapsedTime(expiry), route);
-                            disposable.dispose();
-                        }
-                    }));
-                }
-                var resultSet = result;
-                /*
-                 * if response is a Flux, subscribe to it for a future response and immediately
-                 * return x-stream-id and x-ttl so the caller can use a FluxConsumer to read the stream.
-                 *
-                 * The response contract is two headers containing x-stream-id and x-ttl.
-                 * The response body is an empty map.
-                 */
-                if (result instanceof Flux flux) {
-                    resultSet = Collections.EMPTY_MAP;
-                    FluxPublisher<Object> fluxRelay = new FluxPublisher<>(flux, expiry);
-                    if (serializer != null) {
-                        fluxRelay.setCustomSerializer(serializer);
-                    }
-                    response.setHeader(X_TTL, expiry);
-                    response.setHeader(X_STREAM_ID, fluxRelay.publish());
-                }
-                boolean simulatedStreamTimeout = !skipResponse && updateResponse(response, resultSet);
-                if (!response.getHeaders().isEmpty()) {
-                    output.put(HEADERS, response.getHeaders());
-                }
-                output.put(BODY, response.getRawBody() == null? "null" : response.getRawBody());
-                output.put(STATUS, response.getStatus());
-                inputOutput.put(OUTPUT, output);
-                try {
-                    if (!interceptor && !skipResponse && !simulatedStreamTimeout) {
-                        po.send(encodeTraceAnnotations(response).setExecutionTime(diff));
-                    }
-                } catch (Exception e2) {
-                    ps.setUnDelivery(e2.getMessage());
-                }
+                setCorrelation(md, event, rpc);
+                sendResponse(ps, result, event, md, begin);
             } else {
-                EventEnvelope response = new EventEnvelope();
-                updateResponse(response, result);
-                output.put(BODY, response.getRawBody() == null? "null" : response.getRawBody());
-                output.put(STATUS, response.getStatus());
-                output.put(ASYNC, true);
-                inputOutput.put(OUTPUT, output);
+                saveInputOutput(md, result);
             }
-            return ps.setExecutionTime(diff).setInputOutput(inputOutput);
-
+            return ps.setExecutionTime(md.diff).setInputOutput(md.inputOutput);
         } catch (NoClassDefFoundError | AssertionError | Exception e) {
-            float diff = getExecTime(begin);
-            final String replyTo = event.getReplyTo();
-            final int status = getStatusFromException(e);
-            String error = simplifyCastError(util.getRootCause(e));
-            if (f instanceof MappingExceptionHandler handler) {
-                try {
-                    handler.onError(parentRoute, new AppException(status, error), event, instance);
-                } catch (Exception e3) {
-                    ps.setUnDelivery(e3.getMessage());
-                }
-                Map<String, Object> output = new HashMap<>();
-                output.put(STATUS, status);
-                output.put(EXCEPTION, error);
-                inputOutput.put(OUTPUT, output);
-                return ps.setException(status, error).setInputOutput(inputOutput);
-            }
-            Map<String, Object> output = new HashMap<>();
-            if (replyTo != null) {
-                final EventEnvelope errorResponse = prepareErrorResponse(event, e);
-                try {
-                    po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(diff));
-                } catch (Exception e4) {
-                    ps.setUnDelivery(e4.getMessage());
-                }
-            } else {
-                output.put(ASYNC, true);
-                if (status >= 500) {
-                    log.error("Unhandled exception for {}", route, e);
-                } else {
-                    log.warn("Unhandled exception for {} - {}", route, error);
-                }
-            }
-            output.put(STATUS, status);
-            output.put(EXCEPTION, error);
-            inputOutput.put(OUTPUT, output);
-            return ps.setException(status, error).setExecutionTime(diff).setInputOutput(inputOutput);
+            return getErrorProcessStatus(f, e, ps, md, event, begin);
         }
     }
 
+    private void setCorrelation(ProcessMetadata md, EventEnvelope event, String rpc) {
+        String replyTo = event.getReplyTo();
+        long rpcTimeout = util.str2long(rpc);
+        // if it is a callback instead of an RPC call, use default timeout of 30 minutes
+        md.expiry = rpcTimeout < 0 ? DEFAULT_TIMEOUT : rpcTimeout;
+        md.response = new EventEnvelope();
+        md.response.setTo(replyTo).setTags(event.getTags()).setFrom(def.getRoute());
+        /*
+         * Preserve correlation ID and extra information
+         *
+         * "Extra" is usually used by event interceptors.
+         * For example, to save some metadata from the original sender.
+         */
+        if (event.getCorrelationId() != null) {
+            md.response.setCorrelationId(event.getCorrelationId());
+        }
+        // propagate the trace to the next service if any
+        if (event.getTraceId() != null) {
+            md.response.setTrace(event.getTraceId(), event.getTracePath());
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void sendResponse(ProcessStatus ps, Object result, EventEnvelope event, ProcessMetadata md, long begin) {
+        EventEmitter po = EventEmitter.getInstance();
+        boolean skipResponse = false;
+        if (result instanceof Mono mono) {
+            skipResponse = true;
+            // set reactive to defer service acknowledgement until Mono is complete
+            ps.setReactive();
+            handleMonoResponse(mono, event, md.response, begin, md.expiry);
+        }
+        var resultSet = result;
+        /*
+         * if response is a Flux, subscribe to it for a future response and immediately
+         * return x-stream-id and x-ttl so the caller can use a FluxConsumer to read the stream.
+         *
+         * The response contract is two headers containing x-stream-id and x-ttl.
+         * The response body is an empty map.
+         */
+        if (result instanceof Flux flux) {
+            resultSet = Collections.emptyMap();
+            handleFlexResponse(flux, md.response, md.expiry);
+        }
+        boolean simulatedStreamTimeout = !skipResponse && updateResponse(md.response, resultSet);
+        if (!md.response.getHeaders().isEmpty()) {
+            md.output.put(HEADERS, md.response.getHeaders());
+        }
+        md.output.put(BODY, md.response.getRawBody() == null? "null" : md.response.getRawBody());
+        md.output.put(STATUS, md.response.getStatus());
+        md.inputOutput.put(OUTPUT, md.output);
+        try {
+            if (!interceptor && !skipResponse && !simulatedStreamTimeout) {
+                po.send(encodeTraceAnnotations(md.response).setExecutionTime(md.diff));
+            }
+        } catch (Exception e2) {
+            ps.setUnDelivery(e2.getMessage());
+        }
+    }
+
+    private void saveInputOutput(ProcessMetadata md, Object result) {
+        EventEnvelope response = new EventEnvelope();
+        updateResponse(response, result);
+        md.output.put(BODY, response.getRawBody() == null? "null" : response.getRawBody());
+        md.output.put(STATUS, response.getStatus());
+        md.output.put(ASYNC, true);
+        md.inputOutput.put(OUTPUT, md.output);
+    }
+
+    private ProcessStatus getErrorProcessStatus(TypedLambdaFunction<?, ?> f, Throwable e, ProcessStatus ps,
+                                                ProcessMetadata md, EventEnvelope event, long begin) {
+        EventEmitter po = EventEmitter.getInstance();
+        md.diff = getExecTime(begin);
+        final String replyTo = event.getReplyTo();
+        final int status = getStatusFromException(e);
+        String error = simplifyCastError(util.getRootCause(e));
+        if (f instanceof MappingExceptionHandler handler) {
+            try {
+                handler.onError(parentRoute, new AppException(status, error), event, instance);
+            } catch (Exception e3) {
+                ps.setUnDelivery(e3.getMessage());
+            }
+            md.output.put(STATUS, status);
+            md.output.put(EXCEPTION, error);
+            md.inputOutput.put(OUTPUT, md.output);
+            return ps.setException(status, error).setInputOutput(md.inputOutput);
+        }
+        if (replyTo != null) {
+            final EventEnvelope errorResponse = prepareErrorResponse(event, e);
+            try {
+                po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(md.diff));
+            } catch (Exception e4) {
+                ps.setUnDelivery(e4.getMessage());
+            }
+        } else {
+            md.output.put(ASYNC, true);
+            if (status >= 500) {
+                log.error("Unhandled exception for {}", route, e);
+            } else {
+                log.warn("Unhandled exception for {} - {}", route, error);
+            }
+        }
+        md.output.put(STATUS, status);
+        md.output.put(EXCEPTION, error);
+        md.inputOutput.put(OUTPUT, md.output);
+        return ps.setException(status, error).setExecutionTime(md.diff).setInputOutput(md.inputOutput);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void handleFlexResponse(Flux flux, EventEnvelope response, long expiry) {
+        var serializer = def.getCustomSerializer();
+        FluxPublisher<Object> fluxRelay = new FluxPublisher<>(flux, expiry);
+        if (serializer != null) {
+            fluxRelay.setCustomSerializer(serializer);
+        }
+        response.setHeader(X_TTL, expiry);
+        response.setHeader(X_STREAM_ID, fluxRelay.publish());
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void handleMonoResponse(Mono mono, EventEnvelope event, EventEnvelope response, long begin, long expiry) {
+        EventEmitter po = EventEmitter.getInstance();
+        Platform platform = Platform.getInstance();
+        final AtomicLong timer = new AtomicLong(-1);
+        final AtomicBoolean completed = new AtomicBoolean(false);
+        // For non-blocking operation, use a new virtual thread for the subscription
+        final Disposable disposable = mono.doFinally(done -> {
+                    long t1 = timer.get();
+                    if (t1 > 0) {
+                        platform.getVertx().cancelTimer(t1);
+                    }
+                    // finally, send service acknowledgement
+                    platform.getEventSystem().send(def.getRoute(), READY + route);
+                }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
+                .subscribe(data -> {
+                    completed.set(true);
+                    sendMonoResponse(response, data, begin);
+                }, e -> {
+                    if (e instanceof Throwable ex) {
+                        completed.set(true);
+                        final EventEnvelope errorResponse = prepareErrorResponse(event, ex);
+                        po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
+                    }
+                }, () -> {
+                    // When the Mono emitter sends a null payload, Mono will not return any result.
+                    // Therefore, the system must return a null body for this normal use case.
+                    if (!completed.get()) {
+                        sendMonoResponse(response, null, begin);
+                    }
+                });
+        // dispose a pending Mono if timeout
+        timer.set(platform.getVertx().setTimer(expiry, t -> {
+            timer.set(-1);
+            if (!disposable.isDisposed()) {
+                log.warn("Async response timeout after {} for {}", util.elapsedTime(expiry), route);
+                disposable.dispose();
+            }
+        }));
+    }
+
+    private Object getInputBody(EventEnvelope event, Class<?> cls, SimpleObjectMapper inputMapper) {
+        if (event.getRawBody() instanceof Map && cls != null) {
+            return getMapBody(event, cls, inputMapper);
+        } else if (event.getRawBody() instanceof List && cls != null) {
+            return getListBody(event, cls, inputMapper);
+        } else {
+            return event.getBody();
+        }
+    }
+
+    private Object getMapBody(EventEnvelope event, Class<?> cls, SimpleObjectMapper inputMapper) {
+        var serializer = def.getCustomSerializer();
+        if (cls == AsyncHttpRequest.class) {
+            return new AsyncHttpRequest(event.getRawBody());
+        } else {
+            // convert Map to PoJo
+            var o = event.getRawBody();
+            return serializer != null? serializer.toPoJo(o, cls) : inputMapper.readValue(o, cls);
+        }
+    }
+
+    private Object getListBody(EventEnvelope event, Class<?> cls, SimpleObjectMapper inputMapper) {
+        // check if the input is a list of map
+        List<?> inputList = (List<?>) event.getRawBody();
+        // validate that the objects are PoJo or null
+        int n = 0;
+        for (Object o: inputList) {
+            if (o == null || o instanceof Map) {
+                n++;
+            }
+        }
+        if (n == inputList.size()) {
+            return getListOfMap(inputList, cls, inputMapper);
+        } else {
+            return event.getBody();
+        }
+    }
+
+    private Object getListOfMap(List<?> inputList, Class<?> cls, SimpleObjectMapper inputMapper) {
+        var serializer = def.getCustomSerializer();
+        List<Object> updatedList = new ArrayList<>();
+        for (Object o: inputList) {
+            final Object pojo;
+            if (o == null) {
+                pojo = null;
+            } else {
+                pojo = serializer != null? serializer.toPoJo(o, cls) : inputMapper.readValue(o, cls);
+            }
+            updatedList.add(pojo);
+        }
+        return updatedList;
+    }
+
     private SimpleObjectMapper getMapper(boolean isInput) {
-        final ServiceDef.SerializationStrategy strategy = isInput? def.getInputSerializationStrategy() :
-                                                            def.getOutputSerializationStrategy();
+        final ServiceDef.SerializationStrategy strategy = isInput?  def.getInputSerializationStrategy() :
+                                                                    def.getOutputSerializationStrategy();
         final SimpleObjectMapper mapper;
         switch(strategy) {
             case ServiceDef.SerializationStrategy.CAMEL -> mapper = SimpleMapper.getInstance().getCamelCaseMapper();
@@ -503,5 +550,14 @@ public class WorkerHandler {
             response.setAnnotations(trace.annotations);
         }
         return response;
+    }
+
+    private static class ProcessMetadata {
+        Map<String, Object> input = new HashMap<>();
+        Map<String, Object> output = new HashMap<>();
+        Map<String, Object> inputOutput = new HashMap<>();
+        EventEnvelope response;
+        long expiry;
+        float diff;
     }
 }

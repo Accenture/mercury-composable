@@ -175,8 +175,8 @@ public class AsyncHttpRequest {
         if (body == null || body instanceof Map || body instanceof List ||
                 PayloadMapper.getInstance().isPrimitive(body)) {
             this.body = body;
-        } else if (body instanceof Date) {
-            this.body = Utility.getInstance().date2str((Date) body);
+        } else if (body instanceof Date d) {
+            this.body = Utility.getInstance().date2str(d);
         } else {
             this.body = SimpleMapper.getInstance().getMapper().readValue(body, Map.class);
         }
@@ -379,17 +379,15 @@ public class AsyncHttpRequest {
      * @param key of the parameter
      * @return value of the parameter
      */
-    @SuppressWarnings("unchecked")
     public String getQueryParameter(String key) {
         final var k = findActualQueryKey(key);
         if (k != null) {
             final var value = queryParams.get(k);
             if (value instanceof String strValue) {
                 return strValue;
-            } else if (value instanceof List) {
-                final var params = (List<String>) value;
+            } else if (value instanceof List<?> params) {
                 if (!params.isEmpty()) {
-                    return params.getFirst();
+                    return String.valueOf(params.getFirst());
                 }
             }
         }
@@ -415,17 +413,16 @@ public class AsyncHttpRequest {
         return Collections.emptyList();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({"rawtypes"})
     public AsyncHttpRequest setQueryParameter(String key, Object value) {
         if (key != null) {
             switch (value) {
                 case String ignoredString -> this.queryParams.put(key, value);
-                case List valueList -> {
+                case List vList -> {
                     final var params = new ArrayList<String>();
-                    final var list = (List<Object>) valueList;
-                    for (Object o : list) {
+                    for (Object o : vList) {
                         if (o != null) {
-                            params.add(o instanceof String text? text : String.valueOf(o));
+                            params.add(String.valueOf(o));
                         }
                     }
                     this.queryParams.put(key, params);
@@ -454,6 +451,32 @@ public class AsyncHttpRequest {
      * @return async http request object as a map
      */
     public Map<String, Object> toMap() {
+        Map<String, Object> result = setKeyValuesAsMap();
+        if (!pathParams.isEmpty() || !queryParams.isEmpty()) {
+            Map<String, Object> parameters = new HashMap<>();
+            result.put(PARAMETERS, parameters);
+            if (!pathParams.isEmpty()) {
+                parameters.put(PATH, pathParams);
+            }
+            if (!queryParams.isEmpty()) {
+                parameters.put(QUERY, queryParams);
+            }
+        }
+        result.put(HTTP_SECURE, https);
+        /*
+         * Optional HTTP host name in the "relay" field
+         *
+         * This is used by the rest-automation "async.http.request" service
+         * when forwarding HTTP request to a target HTTP endpoint.
+         */
+        if (targetHost != null) {
+            result.put(TARGET_HOST, targetHost);
+            result.put(TRUST_ALL_CERT, trustAllCert);
+        }
+        return result;
+    }
+
+    private Map<String, Object> setKeyValuesAsMap() {
         Map<String, Object> result = new HashMap<>();
         if (!headers.isEmpty()) {
             result.put(HTTP_HEADERS, headers);
@@ -488,94 +511,15 @@ public class AsyncHttpRequest {
         if (upload != null) {
             result.put(FILE_UPLOAD, upload);
         }
-        if (!pathParams.isEmpty() || !queryParams.isEmpty()) {
-            Map<String, Object> parameters = new HashMap<>();
-            result.put(PARAMETERS, parameters);
-            if (!pathParams.isEmpty()) {
-                parameters.put(PATH, pathParams);
-            }
-            if (!queryParams.isEmpty()) {
-                parameters.put(QUERY, queryParams);
-            }
-        }
-        result.put(HTTP_SECURE, https);
-        /*
-         * Optional HTTP host name in the "relay" field
-         *
-         * This is used by the rest-automation "async.http.request" service
-         * when forwarding HTTP request to a target HTTP endpoint.
-         */
-        if (targetHost != null) {
-            result.put(TARGET_HOST, targetHost);
-            result.put(TRUST_ALL_CERT, trustAllCert);
-        }
         return result;
     }
 
     @SuppressWarnings("unchecked")
     private void fromMap(Object input) {
         if (input instanceof AsyncHttpRequest source) {
-            this.headers = source.headers;
-            this.cookies = source.cookies;
-            this.session = source.session;
-            this.method = source.method;
-            this.ip = source.ip;
-            this.url = source.url;
-            this.fileName = source.fileName;
-            this.contentLength = source.contentLength;
-            this.body = source.body;
-            this.queryString = source.queryString;
-            this.https = source.https;
-            this.targetHost = source.targetHost;
-            this.trustAllCert = source.trustAllCert;
-            this.upload = source.upload;
-            this.pathParams = source.pathParams;
-            this.queryParams = source.queryParams;
-        }
-        if (input instanceof Map) {
-            final var map = (Map<String, Object>) input;
-            if (map.containsKey(HTTP_HEADERS)) {
-                headers = (Map<String, String>) map.get(HTTP_HEADERS);
-            }
-            if (map.containsKey(HTTP_COOKIES)) {
-                cookies = (Map<String, String>) map.get(HTTP_COOKIES);
-            }
-            if (map.containsKey(HTTP_SESSION)) {
-                session = (Map<String, String>) map.get(HTTP_SESSION);
-            }
-            if (map.containsKey(HTTP_METHOD)) {
-                method = (String) map.get(HTTP_METHOD);
-            }
-            if (map.containsKey(IP_ADDRESS)) {
-                ip = (String) map.get(IP_ADDRESS);
-            }
-            if (map.containsKey(URL_LABEL)) {
-                url = (String) map.get(URL_LABEL);
-            }
-            if (map.containsKey(FILE_NAME)) {
-                fileName = (String) map.get(FILE_NAME);
-            }
-            if (map.containsKey(CONTENT_LENGTH)) {
-                contentLength = (int) map.get(CONTENT_LENGTH);
-            }
-            if (map.containsKey(HTTP_BODY)) {
-                body = map.get(HTTP_BODY);
-            }
-            if (map.containsKey(QUERY)) {
-                queryString = (String) map.get(QUERY);
-            }
-            if (map.containsKey(HTTP_SECURE)) {
-                https = (boolean) map.get(HTTP_SECURE);
-            }
-            if (map.containsKey(TARGET_HOST)) {
-                targetHost = (String) map.get(TARGET_HOST);
-            }
-            if (map.containsKey(TRUST_ALL_CERT)) {
-                trustAllCert = (boolean) map.get(TRUST_ALL_CERT);
-            }
-            if (map.containsKey(FILE_UPLOAD)) {
-                upload = (String) map.get(FILE_UPLOAD);
-            }
+            copy(source);
+        } else if (input instanceof Map<?, ?> map) {
+            copyKeyValuesFromMap(map);
             if (map.containsKey(PARAMETERS)) {
                 Map<String, Object> parameters = (Map<String, Object>) map.get(PARAMETERS);
                 if (parameters.containsKey(PATH)) {
@@ -585,6 +529,71 @@ public class AsyncHttpRequest {
                     queryParams = (Map<String, Object>) parameters.get(QUERY);
                 }
             }
+        }
+    }
+
+    private void copy(AsyncHttpRequest source) {
+        this.headers = source.headers;
+        this.cookies = source.cookies;
+        this.session = source.session;
+        this.method = source.method;
+        this.ip = source.ip;
+        this.url = source.url;
+        this.fileName = source.fileName;
+        this.contentLength = source.contentLength;
+        this.body = source.body;
+        this.queryString = source.queryString;
+        this.https = source.https;
+        this.targetHost = source.targetHost;
+        this.trustAllCert = source.trustAllCert;
+        this.upload = source.upload;
+        this.pathParams = source.pathParams;
+        this.queryParams = source.queryParams;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void copyKeyValuesFromMap(Map<?, ?> map) {
+        if (map.get(HTTP_HEADERS) instanceof Map) {
+            headers = (Map<String, String>) map.get(HTTP_HEADERS);
+        }
+        if (map.get(HTTP_COOKIES) instanceof Map) {
+            cookies = (Map<String, String>) map.get(HTTP_COOKIES);
+        }
+        if (map.get(HTTP_SESSION) instanceof Map) {
+            session = (Map<String, String>) map.get(HTTP_SESSION);
+        }
+        if (map.get(HTTP_METHOD) instanceof String httpMethod) {
+            method = httpMethod;
+        }
+        if (map.get(IP_ADDRESS) instanceof String address) {
+            ip = address;
+        }
+        if (map.get(URL_LABEL) instanceof String label) {
+            url = label;
+        }
+        if (map.get(FILE_NAME) instanceof String name) {
+            fileName = name;
+        }
+        if (map.get(CONTENT_LENGTH) instanceof Integer len) {
+            contentLength = len;
+        }
+        if (map.containsKey(HTTP_BODY)) {
+            body = map.get(HTTP_BODY);
+        }
+        if (map.get(QUERY) instanceof String q) {
+            queryString = q;
+        }
+        if (map.get(HTTP_SECURE) instanceof Boolean secure) {
+            https = secure;
+        }
+        if (map.get(TARGET_HOST) instanceof String host) {
+            targetHost = host;
+        }
+        if (map.get(TRUST_ALL_CERT) instanceof Boolean trust) {
+            trustAllCert = trust;
+        }
+        if (map.get(FILE_UPLOAD) instanceof String up) {
+            upload = up;
         }
     }
 

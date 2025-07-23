@@ -76,11 +76,13 @@ class UtilityTests {
     void mockPubSub() {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
-        ps.createTopic(HELLO_WORLD);
+        var topicCreated = ps.createTopic(HELLO_WORLD);
+        assertTrue(topicCreated);
         assertTrue(ps.exists(HELLO_WORLD));
         ps.deleteTopic(HELLO_WORLD);
         assertFalse(ps.exists(HELLO_WORLD));
-        ps.createTopic(HELLO_WORLD, 10);
+        var partitionCreated = ps.createTopic(HELLO_WORLD, 10);
+        assertTrue(partitionCreated);
         assertTrue(ps.exists(HELLO_WORLD));
         assertTrue(ps.isStreamingPubSub());
         assertEquals(10, ps.partitionCount(HELLO_WORLD));
@@ -100,8 +102,7 @@ class UtilityTests {
         PubSub ps = PubSub.getInstance();
         ps.enableFeature(new MockPubSub());
         String message = "Not implemented";
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                            () -> ps.createQueue("demo.queue"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> ps.createQueue("demo.queue"));
         assertEquals(message, ex.getMessage());
     }
 
@@ -210,10 +211,10 @@ class UtilityTests {
     @Test
     void splitTest() {
         Utility util = Utility.getInstance();
-        String TEST = "hello world this is | a |      test";
-        List<String> parts = util.split(TEST, " |");
+        String testMessage = "hello world this is | a |      test";
+        List<String> parts = util.split(testMessage, " |");
         for (String p: parts) {
-            assertTrue(TEST.contains(p));
+            assertTrue(testMessage.contains(p));
         }
     }
 

@@ -54,5 +54,4 @@ public class ServerPersonality {
         this.type = type;
         log.info("Setting personality as {}", type);
     }
-
 }

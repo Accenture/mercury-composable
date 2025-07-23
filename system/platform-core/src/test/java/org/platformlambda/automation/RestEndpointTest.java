@@ -32,6 +32,8 @@ import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,21 +44,21 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RestEndpointTest extends TestBase {
-
+    private static final Logger log = LoggerFactory.getLogger(RestEndpointTest.class);
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
     private static final long RPC_TIMEOUT = 10000;
-
     private static final SimpleXmlParser xml = new SimpleXmlParser();
 
     @BeforeAll
-    public static void setupAuthenticator() {
+    static void setupAuthenticator() {
         Platform platform = Platform.getInstance();
         if (!platform.hasRoute("v1.api.auth")) {
             LambdaFunction f = (headers, input, instance) -> {
                 PostOffice po = new PostOffice(headers, instance);
-                po.annotateTrace("hello", "world");
-                po.annotateTrace("demo-map", Map.of("status", "authenticated"));
-                po.annotateTrace("demo-list", List.of("item1", "item2"));
+                var myTraceId = po.annotateTrace("hello", "world").annotateTrace("demo-list", List.of("item1", "item2"))
+                        .getTraceId();
+                var myRoute = po.annotateTrace("demo-map", Map.of("status", "authenticated")).getRoute();
+                log.info("{} authenticates {}", myRoute, myTraceId);
                 return true;
             };
             platform.registerPrivate("v1.api.auth", f, 1);
@@ -138,7 +140,7 @@ class RestEndpointTest extends TestBase {
         /*
          * This is a valid URL with matrix parameters
          *
-         * It will return HTTP-404 to prove that it has passed thru to the REST endpoint.
+         * It will return HTTP-404 to prove that it has passed through to the REST endpoint.
          * If the URL format is invalid, the system will return HTTP-400 with empty HTTP response body.
          *
          * Matrix parameter feature may not be supported in some REST application server.
@@ -263,7 +265,7 @@ class RestEndpointTest extends TestBase {
         final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
         final Utility util = Utility.getInstance();
         final EventEmitter po = EventEmitter.getInstance();
-        int TTL = 9;
+        int ttl = 9;
         int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         EventPublisher publisher = new EventPublisher(10000);
@@ -275,17 +277,7 @@ class RestEndpointTest extends TestBase {
         }
         publisher.publishCompletion();
         byte[] b = bytes.toByteArray();
-        AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("PUT");
-        /*
-         * The "/api/v1/hello/world" prefix tests the REST automation system HTTP relay feature.
-         * It will rewrite the URI to "/api/hello/world" based on the rest.yaml configuration.
-         */
-        req.setUrl("/api/v1/hello/world");
-        req.setTargetHost("http://127.0.0.1:"+port);
-        req.setStreamRoute(publisher.getStreamId());
-        req.setTimeoutSeconds(TTL);
-        req.setContentLength(len);
+        AsyncHttpRequest req = getHttpRequest(publisher, ttl, len);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
@@ -294,7 +286,7 @@ class RestEndpointTest extends TestBase {
         assertNull(response.getBody());
         // async.http.request returns a stream
         String streamId = response.getHeader("X-Stream-Id");
-        assertEquals(String.valueOf(TTL * 1000), response.getHeader("x-ttl"));
+        assertEquals(String.valueOf(ttl * 1000), response.getHeader("x-ttl"));
         assertNotNull(streamId);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
@@ -308,6 +300,21 @@ class RestEndpointTest extends TestBase {
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertArrayEquals(b, result.toByteArray());
+    }
+
+    private static AsyncHttpRequest getHttpRequest(EventPublisher publisher, int ttl, int len) {
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("PUT");
+        /*
+         * The "/api/v1/hello/world" prefix tests the REST automation system HTTP relay feature.
+         * It will rewrite the URI to "/api/hello/world" based on the rest.yaml configuration.
+         */
+        req.setUrl("/api/v1/hello/world");
+        req.setTargetHost("http://127.0.0.1:"+port);
+        req.setStreamRoute(publisher.getStreamId());
+        req.setTimeoutSeconds(ttl);
+        req.setContentLength(len);
+        return req;
     }
 
     @Test
@@ -487,8 +494,7 @@ class RestEndpointTest extends TestBase {
         Map<String, Object> data = new HashMap<>();
         data.put("hello", "world");
         data.put("test", "message");
-        String xml = xmlWriter.write(data);
-        req.setBody(xml);
+        req.setBody(xmlWriter.write(data));
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
@@ -631,8 +637,7 @@ class RestEndpointTest extends TestBase {
         Map<String, Object> data = new HashMap<>();
         data.put("hello", "world");
         data.put("test", "message");
-        String xml = xmlWriter.write(data);
-        req.setTimeoutSeconds((int) (RPC_TIMEOUT / 1000)).setBody(xml);
+        req.setTimeoutSeconds((int) (RPC_TIMEOUT / 1000)).setBody(xmlWriter.write(data));
         req.setHeader("accept", "application/xml");
         req.setHeader("content-type", "application/xml");
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
@@ -688,17 +693,7 @@ class RestEndpointTest extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         String traceId = Utility.getInstance().getDateUuid();
         EventEmitter po = EventEmitter.getInstance();
-        AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("HEAD");
-        req.setUrl("/api/hello/world");
-        req.setTargetHost("http://127.0.0.1:"+port);
-        req.setHeader("accept", "application/json");
-        req.setHeader("x-correlation-id", traceId);
-        // prove that CR and LF will be filtered out
-        req.setHeader("x-hello", "hello\r\nworld");
-        req.setCookie("hello", "world");
-        req.setCookie("another", "one");
-        req.setCookie("invalid", "cookie\nnot\nallowed");
+        AsyncHttpRequest req = getRequest(traceId);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
@@ -719,6 +714,21 @@ class RestEndpointTest extends TestBase {
         var helloWorld = response.getHeader("x-hello");
         assertInstanceOf(String.class, helloWorld);
         assertEquals("hello world", helloWorld);
+    }
+
+    private static AsyncHttpRequest getRequest(String traceId) {
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("HEAD");
+        req.setUrl("/api/hello/world");
+        req.setTargetHost("http://127.0.0.1:"+port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("x-correlation-id", traceId);
+        // prove that CR and LF will be filtered out
+        req.setHeader("x-hello", "hello\r\nworld");
+        req.setCookie("hello", "world");
+        req.setCookie("another", "one");
+        req.setCookie("invalid", "cookie\nnot\nallowed");
+        return req;
     }
 
     @Test

@@ -25,7 +25,6 @@ import org.platformlambda.core.util.Utility;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -57,13 +56,12 @@ public class FutureInbox extends InboxBase {
         this.timer = Platform.getInstance().getVertx().setTimer(timeout, t -> abort(this.cid));
     }
 
-    public Future<EventEnvelope> getFuture() {
+    public CompletableFuture<EventEnvelope> getFuture() {
         return future;
     }
 
     private void abort(String inboxId) {
-        FutureInbox holder = (FutureInbox) inboxes.get(inboxId);
-        if (holder != null) {
+        if (inboxes.get(inboxId) instanceof FutureInbox holder) {
             holder.close();
             String error = "Timeout for " + holder.timeout + " ms";
             if (timeoutException) {
@@ -87,21 +85,28 @@ public class FutureInbox extends InboxBase {
     }
 
     private void saveResponse(String inboxId, EventEnvelope reply) {
-        FutureInbox holder = (FutureInbox) inboxes.get(inboxId);
-        if (holder != null) {
+        if (inboxes.get(inboxId) instanceof FutureInbox holder) {
             holder.close();
             Platform.getInstance().getVertx().cancelTimer(timer);
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            reply.setRoundTrip(diff);
             // remove some metadata that are not relevant for a RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             var annotations = new HashMap<>(reply.getAnnotations());
-            reply.clearAnnotations();
+            reply.clearAnnotations().setRoundTrip(diff);
             future.complete(reply);
             if (to != null && holder.traceId != null && holder.tracePath != null) {
-                recordRpcTrace(holder.traceId, holder.tracePath, to, holder.from, start,
-                        reply.getStatus(), reply.getError(),
-                        reply.getExecutionTime(), reply.getRoundTrip(), annotations);
+                var md = new InboxMetadata();
+                md.traceId = holder.traceId;
+                md.tracePath = holder.tracePath;
+                md.to = to;
+                md.from = holder.from;
+                md.start = start;
+                md.status = reply.getStatus();
+                md.error = reply.getError();
+                md.execTime = reply.getExecutionTime();
+                md.roundTrip = reply.getRoundTrip();
+                md.annotations = annotations;
+                recordTrace(md);
             }
         }
     }

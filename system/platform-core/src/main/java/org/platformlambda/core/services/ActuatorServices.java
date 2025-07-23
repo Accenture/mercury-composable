@@ -33,9 +33,11 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     private static final Logger log = LoggerFactory.getLogger(ActuatorServices.class);
     private static final Utility util = Utility.getInstance();
     private static final SimpleCache cache = SimpleCache.createCache("health.info", 5000);
+    private static final String GET = "GET";
     private static final String MY_ROUTE = "my_route";
     private static final String TYPE = "type";
     private static final String INFO = "info";
+    private static final String INFO_PREFIX = "info/";
     private static final String ROUTES = "routes";
     private static final String LIB = "lib";
     private static final String ENV = "env";
@@ -113,39 +115,16 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
     
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        // check if the request comes from a REST endpoint
         if (input.getRawBody() instanceof Map) {
             AsyncHttpRequest request = new AsyncHttpRequest(input.getRawBody());
-            var reqHeaders = request.getHeaders();
-            // preserve HTTP headers
-            if (!reqHeaders.isEmpty()) {
-                headers.putAll(reqHeaders);
-            }
-            // retrieve different information according to target route, therefore avoiding hardcode of URLs
-            var myRoute = headers.get(MY_ROUTE);
-            if (INFO_ACTUATOR.equals(myRoute)) {
-                headers.put(TYPE, INFO);
-            }
-            if (LIB_ACTUATOR.equals(myRoute)) {
-                headers.put(TYPE, LIB);
-            }
-            if (ROUTES_ACTUATOR_SERVICE.equals(myRoute)) {
-                headers.put(TYPE, ROUTES);
-            }
-            if (ENV_ACTUATOR.equals(myRoute)) {
-                headers.put(TYPE, ENV);
-            }
-            if (HEALTH_ACTUATOR.equals(myRoute) || ACTUATOR_SERVICES.equals(myRoute)) {
-                headers.put(TYPE, HEALTH);
-            }
-            if (LIVENESS_ACTUATOR.equals(myRoute)) {
-                headers.put(TYPE, LIVENESS_PROBE);
+            if (GET.equals(request.getMethod())) {
+                handleRequestFromHttp(request, headers);
             }
         }
         // for MinimalistHttpHandler, the request will come as an event directly
         var type = headers.get(TYPE);
-        if (HEALTH_STATUS.equals(type) && input.getBody() instanceof Boolean healthState) {
-            healthStatus.set(healthState);
+        if (HEALTH_STATUS.equals(type) && input.getBody() instanceof Boolean status) {
+            healthStatus.set(status);
             return true;
         }
         if (LIVENESS_PROBE.equals(type)) {
@@ -165,9 +144,36 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         throw new AppException(404, "Resource not found");
     }
 
+    private void handleRequestFromHttp(AsyncHttpRequest request, Map<String, String> headers) {
+        var reqHeaders = request.getHeaders();
+        // preserve HTTP headers
+        if (!reqHeaders.isEmpty()) {
+            headers.putAll(reqHeaders);
+        }
+        // retrieve different information according to target route, therefore avoiding hardcode of URLs
+        var myRoute = headers.get(MY_ROUTE);
+        if (INFO_ACTUATOR.equals(myRoute)) {
+            headers.put(TYPE, INFO);
+        }
+        if (LIB_ACTUATOR.equals(myRoute)) {
+            headers.put(TYPE, LIB);
+        }
+        if (ROUTES_ACTUATOR_SERVICE.equals(myRoute)) {
+            headers.put(TYPE, ROUTES);
+        }
+        if (ENV_ACTUATOR.equals(myRoute)) {
+            headers.put(TYPE, ENV);
+        }
+        if (HEALTH_ACTUATOR.equals(myRoute) || ACTUATOR_SERVICES.equals(myRoute)) {
+            headers.put(TYPE, HEALTH);
+        }
+        if (LIVENESS_ACTUATOR.equals(myRoute)) {
+            headers.put(TYPE, LIVENESS_PROBE);
+        }
+    }
+
     private Object handleInfo(Map<String, String> headers) throws ExecutionException, InterruptedException {
         var platform = Platform.getInstance();
-        var po = EventEmitter.getInstance();
         var acceptHeader = headers.getOrDefault(ACCEPT, "?");
         var accept = acceptHeader.startsWith(APPLICATION_XML)? APPLICATION_XML : APPLICATION_JSON;
         var result = new HashMap<String, Object>();
@@ -181,27 +187,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
             app.put(INSTANCE, appId);
         }
         switch (headers.get(TYPE)) {
-            case ROUTES -> {
-                // network routing table is not available in presence monitor
-                if (!isServiceMonitor) {
-                    var networkRoutes = getRoutingTable();
-                    if (!networkRoutes.isEmpty()) {
-                        result.put(NETWORK, networkRoutes);
-                    }
-                }
-                result.put(ROUTING, getLocalRouting());
-                var journaledRoutes = po.getJournaledRoutes();
-                if (journaledRoutes.size() > 1) {
-                    Collections.sort(journaledRoutes);
-                }
-                if (!journaledRoutes.isEmpty()) {
-                    result.put(JOURNAL, journaledRoutes);
-                }
-                var substitutions = po.getRouteSubstitutionList();
-                if (!substitutions.isEmpty()) {
-                    result.put(ROUTE_SUBSTITUTION, substitutions);
-                }
-            }
+            case ROUTES -> handleInfoRoute(result);
             case LIB -> result.put(LIBRARY, util.getLibraryList());
             case ENV -> result.put(ENV, getEnv());
             case null, default -> {
@@ -239,6 +225,29 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
             }
         }
         return new EventEnvelope().setHeader(CONTENT_TYPE, accept).setBody(result);
+    }
+
+    private void handleInfoRoute(Map<String, Object> result) throws ExecutionException, InterruptedException {
+        var po = EventEmitter.getInstance();
+        // network routing table is not available in presence monitor
+        if (!isServiceMonitor) {
+            var networkRoutes = getRoutingTable();
+            if (!networkRoutes.isEmpty()) {
+                result.put(NETWORK, networkRoutes);
+            }
+        }
+        result.put(ROUTING, getLocalRouting());
+        var journaledRoutes = po.getJournaledRoutes();
+        if (journaledRoutes.size() > 1) {
+            Collections.sort(journaledRoutes);
+        }
+        if (!journaledRoutes.isEmpty()) {
+            result.put(JOURNAL, journaledRoutes);
+        }
+        var substitutions = po.getRouteSubstitutionList();
+        if (!substitutions.isEmpty()) {
+            result.put(ROUTE_SUBSTITUTION, substitutions);
+        }
     }
 
     private Object getAdditionalInfo() throws ExecutionException, InterruptedException {
@@ -310,7 +319,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         return result;
     }
     
-    private Object handleHealth(Map<String, String> headers) {
+    private Object handleHealth(Map<String, String> headers) throws ExecutionException, InterruptedException {
         var platform = Platform.getInstance();
         var po = EventEmitter.getInstance();
         var up = true;
@@ -341,9 +350,8 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         return response;
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean checkServices(List<Map<String, Object>> dependency, List<String> services, boolean required) {
-        var po = EventEmitter.getInstance();
+    private boolean checkServices(List<Map<String, Object>> dependency, List<String> services, boolean required)
+                                    throws ExecutionException, InterruptedException {
         var up = true;
         for (String route: services) {
             var m = new HashMap<String, Object>();
@@ -351,29 +359,10 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
             m.put(REQUIRED, required);
             dependency.add(m);
             try {
-                var key = "info/" + route;
-                if (!cache.exists(key)) {
-                    var req = new EventEnvelope().setTo(route).setHeader(TYPE, INFO);
-                    var res = po.request(req, 3000).get();
-                    if (res.getBody() instanceof Map) {
-                        cache.put(key, res.getBody());
-                    }
-                }
-                var info = cache.get(key);
-                if (info instanceof Map) {
-                    m.putAll((Map<String, Object>) info);
-                }
-                var req = new EventEnvelope().setTo(route).setHeader(TYPE, HEALTH);
-                var res = po.request(req, 10000).get();
-                m.put(STATUS_CODE, res.getStatus());
-                if (res.getStatus() != 200) {
+                if (isServiceUnhealthy(route, m)) {
                     up = false;
                 }
-                // only accept text or Map
-                if (res.getRawBody() instanceof String || res.getRawBody() instanceof Map) {
-                    m.put(MESSAGE, res.getRawBody());
-                }
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 up = false;
                 if (e.getMessage().contains(NOT_FOUND)) {
                     m.put(STATUS_CODE, 404);
@@ -385,5 +374,31 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
             }
         }
         return up;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean isServiceUnhealthy(String route, Map<String, Object> map)
+                                        throws ExecutionException, InterruptedException {
+        var po = EventEmitter.getInstance();
+        var key = INFO_PREFIX + route;
+        if (!cache.exists(key)) {
+            var req = new EventEnvelope().setTo(route).setHeader(TYPE, INFO);
+            var res = po.request(req, 3000).get();
+            if (res.getBody() instanceof Map) {
+                cache.put(key, res.getBody());
+            }
+        }
+        var info = cache.get(key);
+        if (info instanceof Map) {
+            map.putAll((Map<String, Object>) info);
+        }
+        var req = new EventEnvelope().setTo(route).setHeader(TYPE, HEALTH);
+        var res = po.request(req, 10000).get();
+        map.put(STATUS_CODE, res.getStatus());
+        // only accept text or Map
+        if (res.getRawBody() instanceof String || res.getRawBody() instanceof Map) {
+            map.put(MESSAGE, res.getRawBody());
+        }
+        return res.getStatus() != 200;
     }
 }
