@@ -254,7 +254,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         if (Platform.getInstance().hasRoute(ADDITIONAL_INFO)) {
             var po = EventEmitter.getInstance();
             var req = new EventEnvelope().setTo(ADDITIONAL_INFO).setHeader(TYPE, QUERY);
-            var res = po.request(req, 5000).get();
+            var res = po.eRequest(req, 5000).get();
             return res.getBody();
         } else {
             return null;
@@ -293,7 +293,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
                                   platform.hasRoute(CLOUD_CONNECTOR))) {
             var req = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_QUERY)
                         .setHeader(TYPE, DOWNLOAD).setHeader(ORIGIN, platform.getOrigin());
-            var res = po.request(req, 5000).get();
+            var res = po.eRequest(req, 5000).get();
             if (res.getRawBody() instanceof Map) {
                 return (Map<String, Object>) res.getRawBody();
             }
@@ -383,7 +383,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         var key = INFO_PREFIX + route;
         if (!cache.exists(key)) {
             var req = new EventEnvelope().setTo(route).setHeader(TYPE, INFO);
-            var res = po.request(req, 3000).get();
+            var res = po.eRequest(req, 3000).get();
             if (res.getBody() instanceof Map) {
                 cache.put(key, res.getBody());
             }
@@ -393,7 +393,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
             map.putAll((Map<String, Object>) info);
         }
         var req = new EventEnvelope().setTo(route).setHeader(TYPE, HEALTH);
-        var res = po.request(req, 10000).get();
+        var res = po.eRequest(req, 10000).get();
         map.put(STATUS_CODE, res.getStatus());
         // only accept text or Map
         if (res.getRawBody() instanceof String || res.getRawBody() instanceof Map) {

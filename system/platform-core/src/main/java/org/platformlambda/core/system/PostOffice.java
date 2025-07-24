@@ -403,10 +403,30 @@ public class PostOffice {
      * @return response event
      * @throws IllegalArgumentException in case of routing error
      */
-    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout,
-                                                    Map<String, String> headers,
-                                                    String eventEndpoint, boolean rpc) {
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
+                                                     Map<String, String> headers,
+                                                     String eventEndpoint, boolean rpc) {
         return po.request(touch(event), timeout, headers, eventEndpoint, rpc);
+    }
+
+    /**
+     * Send an RPC request with a future result
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param event to be sent to a peer application instance
+     * @param timeout to abort the request
+     * @param headers optional security headers such as "Authorization"
+     * @param eventEndpoint fully qualified URL such as http: //domain:port/api/event
+     * @param rpc if true, the target service will return a response.
+     *            Otherwise, a response with status=202 will be returned to indicate that the event will be delivered.
+     * @return response event
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public CompletableFuture<EventEnvelope> eRequest(final EventEnvelope event, long timeout,
+                                                     Map<String, String> headers,
+                                                     String eventEndpoint, boolean rpc) {
+        return po.eRequest(touch(event), timeout, headers, eventEndpoint, rpc);
     }
 
     /**
@@ -456,8 +476,22 @@ public class PostOffice {
      * @return future results
      * @throws IllegalArgumentException in case of routing error
      */
-    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout) {
-        return request(touch(event), timeout, true);
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout) {
+        return po.request(touch(event), timeout, true);
+    }
+
+    /**
+     * Future request API for RPC
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param event to the target
+     * @param timeout in milliseconds
+     * @return future results
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public CompletableFuture<EventEnvelope> eRequest(final EventEnvelope event, long timeout) {
+        return po.eRequest(touch(event), timeout, true);
     }
 
     /**
@@ -472,9 +506,26 @@ public class PostOffice {
      * @return future result
      * @throws IllegalArgumentException in case of routing error
      */
-    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout,
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout,
                                                               boolean timeoutException) {
         return po.request(touch(event), timeout, timeoutException);
+    }
+
+    /**
+     * Future request API for RPC
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param event to the target
+     * @param timeout in milliseconds
+     * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
+     *                         Otherwise, return timeout as a regular event.
+     * @return future result
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public CompletableFuture<EventEnvelope> eRequest(final EventEnvelope event, long timeout,
+                                                     boolean timeoutException) {
+        return po.eRequest(touch(event), timeout, timeoutException);
     }
 
     /**
@@ -527,8 +578,24 @@ public class PostOffice {
      * @return future list of results
      * @throws IllegalArgumentException in case of error
      */
-    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
-        return request(events, timeout, true);
+    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
+        events.forEach(this::touch);
+        return po.request(events, timeout);
+    }
+
+    /**
+     * Future request API for sending parallel requests with a future result
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param events list of envelopes
+     * @param timeout in milliseconds
+     * @return future list of results
+     * @throws IllegalArgumentException in case of error
+     */
+    public CompletableFuture<List<EventEnvelope>> eRequest(final List<EventEnvelope> events, long timeout) {
+        events.forEach(this::touch);
+        return po.eRequest(events, timeout);
     }
 
     /**
@@ -543,10 +610,28 @@ public class PostOffice {
      * @return future list of results
      * @throws IllegalArgumentException in case of error
      */
-    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
-                                                          boolean timeoutException) {
+    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
+                                                                    boolean timeoutException) {
         events.forEach(this::touch);
         return po.request(events, timeout, timeoutException);
+    }
+
+    /**
+     * Future request API for sending parallel requests with a future result
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param events list of envelopes
+     * @param timeout in milliseconds
+     * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
+     *                         Otherwise, return timeout as a regular event.
+     * @return future list of results
+     * @throws IllegalArgumentException in case of error
+     */
+    public CompletableFuture<List<EventEnvelope>> eRequest(final List<EventEnvelope> events, long timeout,
+                                                           boolean timeoutException) {
+        events.forEach(this::touch);
+        return po.eRequest(events, timeout, timeoutException);
     }
 
     private EventEnvelope touch(final EventEnvelope event) {

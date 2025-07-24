@@ -468,6 +468,9 @@ PostOffice po = new PostOffice(headers, instance);
 List<EventEnvelope> result = po.request(requestEvents, timeoutInMills).get();
 ```
 
+> *Note*: the "eRequest" is a reactive version of the above "request" methods. Its return type is
+          a CompletableFuture, thus allowing the use of "nextAccept" method to process result asynchronously.
+
 ### Check if a function with a named route exists
 
 The PostOffice provides the "exists()" method that is similar to the "platform.hasRoute()" command.

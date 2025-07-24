@@ -73,11 +73,14 @@ class PostOfficeTest extends TestBase {
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json");
         PostOffice po = new PostOffice("unit.test", "10", "TEST /api/test/error");
-        EventEnvelope res = po.request(new EventEnvelope().setTo("async.http.request")
-                            .setBody(req.toMap()), 5000).get();
-        assertEquals(400, res.getStatus());
+        EventEnvelope res1 = po.request(new EventEnvelope().setTo("async.http.request")
+                                .setBody(req.toMap()), 5000).get();
+        EventEnvelope res2 = po.eRequest(new EventEnvelope().setTo("async.http.request")
+                                .setBody(req.toMap()), 5000).get();
+        assertEquals(res1.getBody(), res2.getBody());
+        assertEquals(400, res1.getStatus());
         // demonstrate that non-standard error result can be transported
-        assertEquals(Map.of("error", data), res.getBody());
+        assertEquals(Map.of("error", data), res1.getBody());
     }
 
     @Test
@@ -87,7 +90,7 @@ class PostOfficeTest extends TestBase {
         for (int i=0; i < 12; i++) {
             EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data);
             PostOffice po = new PostOffice("unit.test", "100", "TEST /api/mono");
-            EventEnvelope response = po.request(request, 5000).get();
+            EventEnvelope response = po.eRequest(request, 5000).get();
             assertEquals(200, response.getStatus());
             assertEquals(data, response.getBody());
         }
@@ -97,7 +100,7 @@ class PostOfficeTest extends TestBase {
     void testMonoFunctionWithNullPayload() throws ExecutionException, InterruptedException {
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO);
         PostOffice po = new PostOffice("unit.test", "101", "TEST /api/mono");
-        EventEnvelope response = po.request(request, 5000).get();
+        EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNull(response.getBody());
     }
@@ -108,7 +111,7 @@ class PostOfficeTest extends TestBase {
         final var message = "hello test";
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data).setHeader("exception", message);
         PostOffice po = new PostOffice("unit.test", "102", "TEST /error/mono");
-        EventEnvelope response = po.request(request, 5000).get();
+        EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(400, response.getStatus());
         assertEquals(message, response.getError());
         assertInstanceOf(AppException.class, response.getException());
@@ -123,7 +126,7 @@ class PostOfficeTest extends TestBase {
         data.setName("hello");
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data);
         PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
-        EventEnvelope response = po.request(request, 5000).get();
+        EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));
         assertNotNull(response.getHeader(X_TTL));
@@ -155,7 +158,7 @@ class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("v1.reactive.flux.custom.serializer");
         // perform custom serialization
         po.setEventBodyAsPoJo(request, data);
-        EventEnvelope response = po.request(request, 5000).get();
+        EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));
         assertNotNull(response.getHeader(X_TTL));
@@ -181,7 +184,7 @@ class PostOfficeTest extends TestBase {
         final var message = "hello test";
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data).setHeader("exception", message);
         PostOffice po = new PostOffice("unit.test", "104", "TEST /error/flux");
-        EventEnvelope response = po.request(request, 5000).get();
+        EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));
         assertNotNull(response.getHeader(X_TTL));
@@ -213,7 +216,7 @@ class PostOfficeTest extends TestBase {
                 .setUrl("/api/hello/bytes").setMethod("GET");
         EventEnvelope httpResponse = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope response = po.request(httpResponse, 5000).get();
+        EventEnvelope response = po.eRequest(httpResponse, 5000).get();
         assertEquals(200, response.getStatus());
         assertInstanceOf(byte[].class, response.getBody());
         if (response.getBody() instanceof byte[] b) {
@@ -232,7 +235,7 @@ class PostOfficeTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port).setUrl("/api/hello/bytes").setMethod("GET");
         EventEnvelope httpResponse = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope response = po.request(httpResponse, 5000).get();
+        EventEnvelope response = po.eRequest(httpResponse, 5000).get();
         /*
          * The system will print an INFO log when your app tries to read the empty response body
          * in an EventEnvelope that contains streaming content.
@@ -286,7 +289,7 @@ class PostOfficeTest extends TestBase {
         final long timeout = 5000;
         EventEmitter po = EventEmitter.getInstance();
         final String message = "test message";
-        CompletableFuture<EventEnvelope> future = po.request(new EventEnvelope().setTo(HELLO_ALIAS).setBody(message), timeout);
+        CompletableFuture<EventEnvelope> future = po.eRequest(new EventEnvelope().setTo(HELLO_ALIAS).setBody(message), timeout);
         assert future != null;
         EventEnvelope response = future.get();
         assertInstanceOf(Map.class, response.getBody());
@@ -327,7 +330,7 @@ class PostOfficeTest extends TestBase {
         final int body = 100;
         final String rpcTimeoutCheck = "rpc.timeout.check";
         EventEnvelope request = new EventEnvelope().setTo(rpcTimeoutCheck).setBody(body);
-        EventEnvelope response = po.request(request, timeout).get();
+        EventEnvelope response = po.eRequest(request, timeout).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
@@ -364,19 +367,27 @@ class PostOfficeTest extends TestBase {
         assertEquals(cycle, payloads.size());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void parallelRpcTagFutureTest() throws InterruptedException, ExecutionException {
         final PostOffice po = new PostOffice("unit.test", "8022", "TEST /rpc2/timeout/tag");
         final int cycle = 3;
         final long timeout = 5500;
-        final String body = "body";
         final String rpcTimeoutCheck = "rpc.timeout.check";
         List<EventEnvelope> requests = new ArrayList<>();
         for (int i=0; i < cycle; i++) {
             requests.add(new EventEnvelope().setTo(rpcTimeoutCheck).setBody(i+1));
         }
-        List<EventEnvelope> responses = po.request(requests, timeout).get();
+        assertParallelRpcTest(po.request(requests, timeout).get());
+        assertParallelRpcTest(po.eRequest(requests, timeout).get());
+        assertParallelRpcTest(po.request(requests, timeout, false).get());
+        assertParallelRpcTest(po.eRequest(requests, timeout, true).get());
+    }
+
+    @SuppressWarnings("unchecked")
+    void assertParallelRpcTest(List<EventEnvelope> responses) {
+        final int cycle = 3;
+        final long timeout = 5500;
+        final String body = "body";
         assert responses != null;
         assertEquals(cycle, responses.size());
         List<Integer> payloads = new ArrayList<>();
@@ -384,6 +395,7 @@ class PostOfficeTest extends TestBase {
             assertInstanceOf(Map.class, response.getBody());
             Map<String, Object> result = (Map<String, Object>) response.getBody();
             assertTrue(result.containsKey(body));
+            System.out.println(result);
             assertInstanceOf(Integer.class, result.get(body));
             payloads.add((Integer) result.get(body));
             assertEquals(String.valueOf(timeout), result.get(EventEmitter.RPC));
@@ -399,13 +411,14 @@ class PostOfficeTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(0)
                 .setHeader("timeout_exception", true).setHeader("seq", 0);
         // timeout is returned as a regular event
-        CompletableFuture<EventEnvelope> future = po.request(request, timeout, false);
+        CompletableFuture<EventEnvelope> future = po.eRequest(request, timeout, false);
         EventEnvelope result = future.get();
         assertEquals(408, result.getStatus());
         assertEquals("Timeout for "+timeout+" ms", result.getBody());
         // timeout is thrown as an ExecutionException wrapping a TimeoutException
+        assertThrows(ExecutionException.class, () -> po.request(request, timeout, true).get());
         ExecutionException e = assertThrows(ExecutionException.class, () ->
-                po.request(request, timeout, true).get());
+                                            po.eRequest(request, timeout, true).get());
         assertNotNull(e);
         assertEquals(ExecutionException.class, e.getClass());
         Throwable ex = e.getCause();
@@ -959,7 +972,7 @@ class PostOfficeTest extends TestBase {
         };
         platform.registerPrivate(traceDetector, f, 1);
         EventEnvelope req = new EventEnvelope().setTo(traceDetector).setBody("ok");
-        EventEnvelope result = po.request(req, 5000).get();
+        EventEnvelope result = po.eRequest(req, 5000).get();
         platform.release(traceDetector);
         assertEquals(Boolean.TRUE, result.getBody());
     }
@@ -1582,7 +1595,7 @@ class PostOfficeTest extends TestBase {
         // class name is encoded as type so user function can inspect it
         assertEquals(pojo.getClass().getName(), event1.getType());
         // test java user function
-        EventEnvelope result1 = po.request(event1, 5000).get();
+        EventEnvelope result1 = po.eRequest(event1, 5000).get();
         assertInstanceOf(Map.class, result1.getBody());
         Map<String, Object> data1 = (Map<String, Object>) result1.getBody();
         assertEquals(pojo.fullName, data1.get("fullName"));
@@ -1613,7 +1626,7 @@ class PostOfficeTest extends TestBase {
         // prove that null can also be transported in a list of pojo
         input.add(null);
         var event = new EventEnvelope().setTo(route).setBody(input);
-        var result = po.request(event, 5000).get();
+        var result = po.eRequest(event, 5000).get();
         assertInstanceOf(Map.class, result.getBody());
         var map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals(pojo1.getName(), map.getElement("names[0]"));
@@ -1629,7 +1642,7 @@ class PostOfficeTest extends TestBase {
         pojo.setName("hello");
         // prove that list of pojo can be restored using the inputPojoClass in the PreLoad annotation
         var event = new EventEnvelope().setTo("input.pojo.untyped").setBody(pojo);
-        var result = po.request(event, 5000).get();
+        var result = po.eRequest(event, 5000).get();
         assertInstanceOf(Map.class, result.getBody());
         var map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals(pojo.getName(), map.getElement("map.name"));
@@ -1643,7 +1656,7 @@ class PostOfficeTest extends TestBase {
         pojo.setName("hello");
         // prove that list of pojo can be restored using the inputPojoClass in the PreLoad annotation
         var event = new EventEnvelope().setTo("input.pojo.untyped").setBody(List.of(pojo));
-        var result = po.request(event, 5000).get();
+        var result = po.eRequest(event, 5000).get();
         assertInstanceOf(Map.class, result.getBody());
         var map = new MultiLevelMap((Map<String, Object>) result.getBody());
         assertEquals(pojo.getName(), map.getElement("list[0].name"));

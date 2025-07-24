@@ -79,7 +79,7 @@ class ObjectStreamTest extends TestBase {
         var req = new EventEnvelope().setTo(streamId).setCorrelationId("101").setHeader(TYPE, READ)
                         .setTrace("202", "STREAM /low/level");
         while (true) {
-            var res = po.request(req, 5000).get();
+            var res = po.eRequest(req, 5000).get();
             // replyTo is set to the request event but input event is guaranteed to be immutable, thus null value.
             assertNull(req.getReplyTo());
             String type = res.getHeader(TYPE);

@@ -113,7 +113,7 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setTimeoutSeconds(TTL_SECONDS);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
+        EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         // validate custom content type
@@ -177,7 +177,7 @@ class RestEndpointTest extends TestBase {
         req.setQueryParameter("x2", list);
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
+        EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
         assert response != null;
         assertEquals(404, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());

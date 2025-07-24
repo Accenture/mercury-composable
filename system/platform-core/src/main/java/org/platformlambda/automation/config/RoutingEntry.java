@@ -32,6 +32,7 @@ import java.util.*;
 
 public class RoutingEntry {
     private static final Logger log = LoggerFactory.getLogger(RoutingEntry.class);
+    private static final String SERVICE_URL = "service URL ";
     private static final String HTTP = "http://";
     private static final String HTTPS = "https://";
     private static final String REST = "rest";
@@ -299,16 +300,14 @@ public class RoutingEntry {
         }
     }
 
-    @SuppressWarnings(value = "unchecked")
     private void loadHeaderSection(ConfigReader config) {
         Object headerList = config.get(HEADERS);
         boolean valid = false;
-        if (headerList instanceof List<?> items) {
-            if (isListOfMap(items)) {
-                loadHeaderTransform(config, items.size());
-                valid = true;
-            }
+        if (headerList instanceof List<?> items && isListOfMap(items)) {
+            loadHeaderTransform(config, items.size());
+            valid = true;
         }
+
         if (!valid) {
             log.error("'headers' section must be a list of request and response entries");
         }
@@ -317,11 +316,9 @@ public class RoutingEntry {
     private void loadCorsSection(ConfigReader config) {
         Object corsList = config.get(CORS);
         boolean valid = false;
-        if (corsList instanceof List<?> items) {
-            if (isListOfMap(items)) {
-                loadCors(config, items.size());
-                valid = true;
-            }
+        if (corsList instanceof List<?> items && isListOfMap(items)) {
+            loadCors(config, items.size());
+            valid = true;
         }
         if (!valid) {
             log.error("'cors' section must be a list of Access-Control entries (id, options and headers)");
@@ -620,10 +617,10 @@ public class RoutingEntry {
         try {
             URI u = new URI(info.primary);
             if (!u.getPath().isEmpty()) {
-                throw new IllegalArgumentException("service URL " + info.primary + " - Must not contain path");
+                throw new IllegalArgumentException(SERVICE_URL + info.primary + " - Must not contain path");
             }
             if (u.getQuery() != null) {
-                throw new IllegalArgumentException("service URL " + info.primary + " - Must not contain query");
+                throw new IllegalArgumentException(SERVICE_URL + info.primary + " - Must not contain query");
             }
             String trustAll = config.getProperty(REST+"["+i+"]."+TRUST_ALL_CERT);
             if (info.primary.startsWith(HTTPS) && "true".equalsIgnoreCase(trustAll)) {
@@ -637,7 +634,7 @@ public class RoutingEntry {
             info.host = info.primary;
             info.primary = AsyncHttpClient.ASYNC_HTTP_REQUEST;
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("service URL " + info.primary + " - " + e.getMessage());
+            throw new IllegalArgumentException(SERVICE_URL + info.primary + " - " + e.getMessage());
         }
     }
 

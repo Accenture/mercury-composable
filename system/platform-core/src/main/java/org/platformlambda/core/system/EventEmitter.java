@@ -921,8 +921,29 @@ public class EventEmitter {
      * @return response event
      * @throws IllegalArgumentException in case of routing error
      */
-    public CompletableFuture<EventEnvelope> request(final EventEnvelope input, long timeout,
-                                                    Map<String, String> headers, String eventEndpoint, boolean rpc) {
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout,
+                                                     Map<String, String> headers, String eventEndpoint, boolean rpc) {
+        return eRequest(input, timeout, headers, eventEndpoint, rpc);
+    }
+
+    /**
+     * This method allows your app to send an RPC request to another application instance
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * <p>
+     *     Note that timeout is returned as a regular event with status=408
+     *
+     * @param input event to be sent to a peer application instance
+     * @param timeout to abort the request
+     * @param headers optional security headers such as "Authorization"
+     * @param eventEndpoint fully qualified URL such as http: //domain:port/api/event
+     * @param rpc if true, the target service will return a response.
+     *            Otherwise, the response has a status of 202 to indicate that the event is delivered.
+     * @return response event
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public CompletableFuture<EventEnvelope> eRequest(final EventEnvelope input, long timeout,
+                                                     Map<String, String> headers, String eventEndpoint, boolean rpc) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -970,7 +991,7 @@ public class EventEmitter {
         }
         CompletableFuture<EventEnvelope> future = new CompletableFuture<>();
         // add 100 ms to make sure it does not time out earlier than the target service
-        request(apiRequest, Math.max(100L, timeout)+100L, false)
+        eRequest(apiRequest, Math.max(100L, timeout)+100L, false)
                 .thenAccept(evt -> submitRequest(future, evt));
         return future;
     }
@@ -1099,8 +1120,22 @@ public class EventEmitter {
      * @return future results
      * @throws IllegalArgumentException in case of routing error
      */
-    public CompletableFuture<EventEnvelope> request(final EventEnvelope event, long timeout) {
-        return request(event, timeout, true);
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope event, long timeout) {
+        return eRequest(event, timeout, true);
+    }
+
+    /**
+     * Future request API for RPC
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param event to the target
+     * @param timeout in milliseconds
+     * @return future results
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public CompletableFuture<EventEnvelope> eRequest(final EventEnvelope event, long timeout) {
+        return eRequest(event, timeout, true);
     }
 
     /**
@@ -1115,7 +1150,23 @@ public class EventEmitter {
      * @return future result
      * @throws IllegalArgumentException in case of routing error
      */
-    public CompletableFuture<EventEnvelope> request(final EventEnvelope input, long timeout, boolean timeoutException) {
+    public java.util.concurrent.Future<EventEnvelope> request(final EventEnvelope input, long timeout, boolean timeoutException) {
+        return eRequest(input, timeout, timeoutException);
+    }
+
+    /**
+     * Future request API for RPC
+     * <p>
+     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param input event to the target
+     * @param timeout in milliseconds
+     * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
+     *                         Otherwise, return timeout as a regular event.
+     * @return future result
+     * @throws IllegalArgumentException in case of routing error
+     */
+    public CompletableFuture<EventEnvelope> eRequest(final EventEnvelope input, long timeout, boolean timeoutException) {
         var event = input.copy();
         String destination = event.getTo();
         if (destination == null) {
@@ -1126,7 +1177,7 @@ public class EventEmitter {
         var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
             EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "request");
-            return request(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
+            return eRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();
         TargetRoute target = discover(to);
@@ -1230,8 +1281,23 @@ public class EventEmitter {
      * @return future list of results (partial or complete)
      * @throws IllegalArgumentException in case of error
      */
-    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
-        return request(events, timeout, true);
+    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout) {
+        return eRequest(events, timeout, true);
+    }
+
+    /**
+     * Future request API for sending parallel requests (Fork-n-join)
+     * <p>
+     * You can retrieve results using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param events list of envelopes
+     * @param timeout in milliseconds. If timeout, throws TimeoutException
+     *                wrapped in an ExecutionException with future.get().
+     * @return future list of results (partial or complete)
+     * @throws IllegalArgumentException in case of error
+     */
+    public CompletableFuture<List<EventEnvelope>> eRequest(final List<EventEnvelope> events, long timeout) {
+        return eRequest(events, timeout, true);
     }
 
     /**
@@ -1246,8 +1312,25 @@ public class EventEmitter {
      * @return future list of results (partial or complete)
      * @throws IllegalArgumentException in case of error
      */
-    public CompletableFuture<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
-                                                          boolean timeoutException) {
+    public java.util.concurrent.Future<List<EventEnvelope>> request(final List<EventEnvelope> events, long timeout,
+                                                           boolean timeoutException) {
+        return eRequest(events, timeout, timeoutException);
+    }
+
+    /**
+     * Future request API for sending parallel requests (Fork-n-join)
+     * <p>
+     * You can retrieve results using future.get() or future.nextAccept(evt -> f)
+     *
+     * @param events list of envelopes
+     * @param timeout in milliseconds
+     * @param timeoutException if true, throws TimeoutException wrapped in an ExecutionException with future.get().
+     *                         Otherwise, return partial results that are successful.
+     * @return future list of results (partial or complete)
+     * @throws IllegalArgumentException in case of error
+     */
+    public CompletableFuture<List<EventEnvelope>> eRequest(final List<EventEnvelope> events, long timeout,
+                                                           boolean timeoutException) {
         if (events == null || events.isEmpty()) {
             throw new IllegalArgumentException(MISSING_EVENT);
         }

@@ -385,10 +385,8 @@ public class AsyncHttpRequest {
             final var value = queryParams.get(k);
             if (value instanceof String strValue) {
                 return strValue;
-            } else if (value instanceof List<?> params) {
-                if (!params.isEmpty()) {
-                    return String.valueOf(params.getFirst());
-                }
+            } else if (value instanceof List<?> params && !params.isEmpty()) {
+                return String.valueOf(params.getFirst());
             }
         }
         return null;

@@ -75,7 +75,7 @@ class EventHttpTest extends TestBase {
         Object serviceResponse = wait1.poll(5, TimeUnit.SECONDS);
         assertEquals("saved", serviceResponse);
         EventEnvelope get = new EventEnvelope().setTo(route).setHeader("type", "get");
-        EventEnvelope response = po.request(get, 10000).get();
+        EventEnvelope response = po.eRequest(get, 10000).get();
         assertEquals(hello, response.getBody());
         Future<EventEnvelope> asyncResponse = po.asyncRequest(get, 10000);
         asyncResponse.onSuccess(evt -> wait2.add(evt.getBody()));
@@ -235,7 +235,7 @@ class EventHttpTest extends TestBase {
         event.setTo(demoFunction).setBody("ok").setHeader("hello", "world");
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        CompletableFuture<EventEnvelope> future = po.request(event, timeout, securityHeaders,
+        CompletableFuture<EventEnvelope> future = po.eRequest(event, timeout, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
         EventEnvelope result = future.get();
         assert result != null;
@@ -253,17 +253,25 @@ class EventHttpTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", "123", "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setTo("hello.world")
                 .setBody(numberThree).setHeader("hello", "world");
-        CompletableFuture<EventEnvelope> future = po.request(event, timeout, securityHeaders,
-                "http://127.0.0.1:"+port+"/api/event", true);
-        EventEnvelope result = future.get();
-        assertNotNull(result);
-        assertEquals(200, result.getStatus());
-        assertInstanceOf(Map.class, result.getBody());
-        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
-        assertEquals("world", map.getElement("headers.hello"));
+        // prove that po.request and po.eRequest return the same result from different worker instances
+        EventEnvelope result1 = po.request(event, timeout, securityHeaders,
+                                "http://127.0.0.1:"+port+"/api/event", true).get();
+        EventEnvelope result2 = po.eRequest(event, timeout, securityHeaders,
+                                "http://127.0.0.1:"+port+"/api/event", true).get();
+        assertNotNull(result1);
+        assertNotEquals(result1.getBody(), result2.getBody());
+        assertEquals(200, result1.getStatus());
+        assertInstanceOf(Map.class, result1.getBody());
+        assertInstanceOf(Map.class, result2.getBody());
+        MultiLevelMap map1 = new MultiLevelMap((Map<String, Object>) result1.getBody());
+        MultiLevelMap map2 = new MultiLevelMap((Map<String, Object>) result2.getBody());
+        assertEquals("world", map1.getElement("headers.hello"));
+        assertEquals("world", map2.getElement("headers.hello"));
         // validate that session information is passed by the demo authentication service "event.api.auth"
-        assertEquals("demo", map.getElement("headers.user"));
-        assertEquals(numberThree, map.getElement("body"));
+        assertEquals("demo", map1.getElement("headers.user"));
+        assertEquals("demo", map2.getElement("headers.user"));
+        assertEquals(numberThree, map1.getElement("body"));
+        assertEquals(numberThree, map2.getElement("body"));
     }
 
     @SuppressWarnings("unchecked")

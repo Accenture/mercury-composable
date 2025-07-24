@@ -96,25 +96,7 @@ public class SimpleXmlParser {
     @SuppressWarnings("unchecked")
     public Map<String, Object> parse(InputStream res) {
         Map<String, Object> result = new HashMap<>();
-        Document doc;
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            for (String feature: FEATURES_TO_ENABLE) {
-                setFeature(dbf, feature, true);
-            }
-            for (String feature: FEATURES_TO_DISABLE) {
-                setFeature(dbf, feature, false);
-            }
-            dbf.setXIncludeAware(false);
-            dbf.setExpandEntityReferences(false);
-            DocumentBuilder dBuilder = dbf.newDocumentBuilder();
-            dBuilder.setErrorHandler(null);
-            doc = dBuilder.parse(res);
-            doc.getDocumentElement().normalize();
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            // Simplify by converting to IllegalArgumentException
-            throw new IllegalArgumentException(e);
-        }
+        Document doc = getDocument(res);
         Element root = doc.getDocumentElement();
         Map<String, Object> seed = new HashMap<>();
         result.put(root.getNodeName(), seed);
@@ -157,6 +139,28 @@ public class SimpleXmlParser {
         return result;
     }
 
+    private Document getDocument(InputStream res) {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            for (String feature: FEATURES_TO_ENABLE) {
+                setFeature(dbf, feature, true);
+            }
+            for (String feature: FEATURES_TO_DISABLE) {
+                setFeature(dbf, feature, false);
+            }
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(false);
+            DocumentBuilder dBuilder = dbf.newDocumentBuilder();
+            dBuilder.setErrorHandler(null);
+            Document doc = dBuilder.parse(res);
+            doc.getDocumentElement().normalize();
+            return doc;
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            // Simplify by converting to IllegalArgumentException
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     private String normalizeParentPath(String parent) {
         if (parent.endsWith("]")) {
             int sep = parent.lastIndexOf('[');
@@ -168,7 +172,6 @@ public class SimpleXmlParser {
 
     private void parseXML(Map<String, Map<String, Integer>> childMap,
                           List<List<String>> kvList, Node node, String parent) {
-
         String parentPath = normalizeParentPath(parent);
         if (node.getNodeType() == Node.TEXT_NODE) {
             String value = node.getTextContent().trim();
@@ -186,40 +189,49 @@ public class SimpleXmlParser {
                 }
             }
             if (!childMap.containsKey(parentPath)) {
-                Map<String, Integer> childCounts = new HashMap<>();
-                NodeList peers = node.getParentNode().getChildNodes();
-                if (peers.getLength() > 0) {
-                    int len = peers.getLength();
-                    for (int i = 0; i < len; i++) {
-                        Node current = peers.item(i);
-                        if (current.getNodeType() == Node.ELEMENT_NODE) {
-                            String nodeName = current.getNodeName();
-                            int counter = childCounts.getOrDefault(nodeName, 0);
-                            current.setUserData(INDEX, counter, null);
-                            childCounts.put(nodeName, ++counter);
-                        }
-                    }
-                }
-                childMap.put(parentPath, childCounts);
+                processChildMap(parentPath, node, childMap);
             }
-            Map<String, Integer> childCounts = childMap.get(parentPath);
-            NodeList nodes = node.getChildNodes();
-            if (nodes.getLength() > 0) {
-                int len = nodes.getLength();
-                for (int i=0; i < len; i++) {
-                    Node current = nodes.item(i);
-                    String nodeName = node.getNodeName();
-                    Object index = node.getUserData(INDEX);
-                    String path = parent + "." + node.getNodeName();
-                    int counter = childCounts.getOrDefault(nodeName, 0);
-                    if (counter > 1 && index instanceof Integer) {
-                        parseXML(childMap, kvList, current, path + "["+index+"]");
-                    } else {
-                        parseXML(childMap, kvList, current, path);
-                    }
+            parseChildNode(parent, parentPath, kvList, childMap, node);
+        }
+    }
+
+    private void parseChildNode(String parent, String parentPath, List<List<String>> kvList,
+                                Map<String, Map<String, Integer>> childMap, Node node) {
+        Map<String, Integer> childCounts = childMap.get(parentPath);
+        NodeList nodes = node.getChildNodes();
+        if (nodes.getLength() > 0) {
+            int len = nodes.getLength();
+            for (int i=0; i < len; i++) {
+                Node current = nodes.item(i);
+                String nodeName = node.getNodeName();
+                Object index = node.getUserData(INDEX);
+                String path = parent + "." + node.getNodeName();
+                int counter = childCounts.getOrDefault(nodeName, 0);
+                if (counter > 1 && index instanceof Integer) {
+                    parseXML(childMap, kvList, current, path + "["+index+"]");
+                } else {
+                    parseXML(childMap, kvList, current, path);
                 }
             }
         }
+    }
+
+    private void processChildMap(String parentPath, Node node, Map<String, Map<String, Integer>> childMap) {
+        Map<String, Integer> childCounts = new HashMap<>();
+        NodeList peers = node.getParentNode().getChildNodes();
+        if (peers.getLength() > 0) {
+            int len = peers.getLength();
+            for (int i = 0; i < len; i++) {
+                Node current = peers.item(i);
+                if (current.getNodeType() == Node.ELEMENT_NODE) {
+                    String nodeName = current.getNodeName();
+                    int counter = childCounts.getOrDefault(nodeName, 0);
+                    current.setUserData(INDEX, counter, null);
+                    childCounts.put(nodeName, ++counter);
+                }
+            }
+        }
+        childMap.put(parentPath, childCounts);
     }
 
     private void saveKv(List<List<String>> kvList, String key, String value) {

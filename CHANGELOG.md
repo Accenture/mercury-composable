@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.6, 7/23/2025
+
+### Added
+
+new "eRequest" APIs for EventEmitter and PostOffice
+
+### Removed
+
+N/A
+
+### Changed
+
+1. restore original return type of java.util.concurrent.Future for the "request" APIs
+   that in turns call the new "eRequest" APIs
+2. Update netty to version 4.2.3.Final
+
+---
 ## Version 4.3.5, 7/22/2025
 
 ### Added

@@ -40,7 +40,7 @@ class WorkerHandlerTest extends TestBase {
         var platform = Platform.getInstance();
         var po = new PostOffice("unit.test", "404", "TEST /no/class/def");
         platform.registerPrivate(route, f, 1);
-        var result = po.request(new EventEnvelope().setTo(route).setBody("ok"), 5000).get();
+        var result = po.eRequest(new EventEnvelope().setTo(route).setBody("ok"), 5000).get();
         assertEquals(500, result.getStatus());
         assertEquals("Missing library dependency", result.getError());
         assertEquals("NoClassDefFoundError", result.getException().getClass().getSimpleName());
@@ -57,7 +57,7 @@ class WorkerHandlerTest extends TestBase {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);
         PostOffice po = new PostOffice("unit.test", "10", "TEST /function/" + demoFunction);
-        EventEnvelope res = po.request(new EventEnvelope().setTo(demoFunction)
+        EventEnvelope res = po.eRequest(new EventEnvelope().setTo(demoFunction)
                 .setBody(Map.of()), timeout)
                 .get();
         assertNotNull(res);
@@ -76,7 +76,7 @@ class WorkerHandlerTest extends TestBase {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);
         PostOffice po = new PostOffice("unit.test", "10", "TEST /function/" + demoFunction);
-        EventEnvelope res = po.request(new EventEnvelope().setTo(demoFunction).setBody(Map.of()), timeout).get();
+        EventEnvelope res = po.eRequest(new EventEnvelope().setTo(demoFunction).setBody(Map.of()), timeout).get();
         assertNotNull(res);
         assertEquals(500, res.getStatus());
         assertNotNull(res.getException());
@@ -94,7 +94,7 @@ class WorkerHandlerTest extends TestBase {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);
         PostOffice po = new PostOffice("unit.test", "10", "TEST /function/" + demoFunction);
-        EventEnvelope res = po.request(new EventEnvelope().setTo(demoFunction).setBody(Map.of()), timeout).get();
+        EventEnvelope res = po.eRequest(new EventEnvelope().setTo(demoFunction).setBody(Map.of()), timeout).get();
         assertNotNull(res);
         assertEquals(500, res.getStatus());
         assertNotNull(res.getException());
