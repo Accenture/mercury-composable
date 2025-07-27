@@ -38,9 +38,9 @@ import java.util.Map;
  */
 @EventInterceptor
 @ZeroTracing
-public class DistributedTrace implements TypedLambdaFunction<EventEnvelope, Void> {
+public class Telemetry implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String DISTRIBUTED_TRACING = "distributed.tracing";
-    private static final Logger log = LoggerFactory.getLogger(DistributedTrace.class);
+    private static final Logger log = LoggerFactory.getLogger(Telemetry.class);
     private static final String DISTRIBUTED_TRACE_FORWARDER = "distributed.trace.forwarder";
     private static final String TRANSACTION_JOURNAL_RECORDER = "transaction.journal.recorder";
     private static final List<String> ZERO_TRACING_FILTER = List.of(DISTRIBUTED_TRACING,

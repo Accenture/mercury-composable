@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.Telemetry;
 import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.Utility;
@@ -74,7 +74,7 @@ class ObjectStreamTest extends TestBase {
         var po = new PostOffice("unit.test", "202", "STREAM /low/level");
         Platform platform = Platform.getInstance();
         platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 1);
-        platform.registerPrivate(DistributedTrace.DISTRIBUTED_TRACING, new DistributedTrace(), 1);
+        platform.registerPrivate(Telemetry.DISTRIBUTED_TRACING, new Telemetry(), 1);
         // use low-level stream READ protocol. This demonstrates compatibility with Composable Node.js version.
         var req = new EventEnvelope().setTo(streamId).setCorrelationId("101").setHeader(TYPE, READ)
                         .setTrace("202", "STREAM /low/level");

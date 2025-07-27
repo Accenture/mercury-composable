@@ -13,7 +13,7 @@ We will discuss using Kafka as a minimalist service mesh.
 
 > *Important*: Always design your application system in an event-driven manner to decouple application services
           from each other. You should avoid using service mesh to tightly couple application services together
-          because it would lead to the creation of a "distributed monolith". Minimalist service mesh
+          because it would lead to the creation of a "Distributed Monolith". Minimalist service mesh
           is designed as a service discovery mechanism so that you can detect the presence of
           other application instances. You can use it for operation control mechanism and "leader selection"
           in writing resilient distributed application.

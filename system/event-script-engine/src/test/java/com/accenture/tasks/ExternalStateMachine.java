@@ -23,13 +23,11 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.util.ManagedCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 
 @PreLoad(route = "v1.ext.state.machine")
 public class ExternalStateMachine implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(ExternalStateMachine.class);
-
     private static final ManagedCache store = ManagedCache.createCache("state.machine", 5000);
     private static final String TYPE = "type";
     private static final String PUT = "put";

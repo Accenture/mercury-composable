@@ -22,11 +22,11 @@ import com.accenture.models.PoJo;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-
 import java.util.Map;
 
 @PreLoad(route = "pojo.echo", instances=10)
 public class PoJoEcho implements TypedLambdaFunction<PoJo, EventEnvelope> {
+
     @Override
     public EventEnvelope handleEvent(Map<String, String> headers, PoJo input, int instance) throws Exception {
         return new EventEnvelope().setHeaders(headers).setBody(input);

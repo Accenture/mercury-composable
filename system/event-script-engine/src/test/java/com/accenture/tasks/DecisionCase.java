@@ -22,12 +22,10 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
-
 import java.util.Map;
 
 @PreLoad(route="decision.case", instances=10)
 public class DecisionCase implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
-
     private static final String EXCEPTION = "exception";
     private static final String BREAK = "break";
     private static final String CONTINUE = "continue";

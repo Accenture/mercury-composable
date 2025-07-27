@@ -22,13 +22,11 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 
 @PreLoad(route="begin.parallel.test", instances=10)
 public class ParallelTestSetup implements TypedLambdaFunction<Map<String, Object>, Void> {
     private static final Logger log = LoggerFactory.getLogger(ParallelTestSetup.class);
-
     private static final String COUNT = "count";
 
     @Override

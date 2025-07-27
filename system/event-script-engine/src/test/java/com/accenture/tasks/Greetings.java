@@ -23,7 +23,6 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import reactor.core.publisher.Mono;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;

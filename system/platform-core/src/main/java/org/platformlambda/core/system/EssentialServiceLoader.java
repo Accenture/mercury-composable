@@ -21,7 +21,7 @@ package org.platformlambda.core.system;
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
-import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.Telemetry;
 import org.platformlambda.core.services.TemporaryInbox;
 
 /**
@@ -39,6 +39,6 @@ public class EssentialServiceLoader implements EntryPoint {
         Platform platform = Platform.getInstance();
         platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 100);
         platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_REQUEST, new AsyncHttpClient(), 100);
-        platform.registerPrivate(DistributedTrace.DISTRIBUTED_TRACING, new DistributedTrace(), 1);
+        platform.registerPrivate(Telemetry.DISTRIBUTED_TRACING, new Telemetry(), 1);
     }
 }

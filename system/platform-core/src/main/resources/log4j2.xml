@@ -11,6 +11,6 @@
         </Root>
 
         <!-- Enable INFO logging for DistributedTrace -->
-        <logger name="org.platformlambda.core.services.DistributedTrace" level="INFO" />
+        <logger name="org.platformlambda.core.services.Telemetry" level="INFO" />
     </Loggers>
 </Configuration>

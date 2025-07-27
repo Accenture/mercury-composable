@@ -18,7 +18,7 @@
 
 package org.platformlambda.core.models;
 
-import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.Telemetry;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.Utility;
@@ -97,10 +97,10 @@ public abstract class InboxBase {
                 } else {
                     metrics.put("success", true);
                 }
-                EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
+                EventEnvelope dt = new EventEnvelope().setTo(Telemetry.DISTRIBUTED_TRACING);
                 EventEmitter.getInstance().send(dt.setBody(payload));
             } catch (Exception e) {
-                log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
+                log.error("Unable to send to {}", Telemetry.DISTRIBUTED_TRACING, e);
             }
         }
     }

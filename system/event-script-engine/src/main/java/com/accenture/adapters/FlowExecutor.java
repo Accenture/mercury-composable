@@ -242,7 +242,7 @@ public class FlowExecutor {
         if (correlationId == null) {
             throw new IllegalArgumentException("Missing correlation ID");
         }
-        if (dataset.containsKey(BODY)) {
+        if (dataset != null && dataset.containsKey(BODY)) {
             EventEnvelope forward = new EventEnvelope();
             forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId);
             forward.setCorrelationId(correlationId).setBody(dataset);

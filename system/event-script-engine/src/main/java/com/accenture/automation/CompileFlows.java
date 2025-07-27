@@ -101,7 +101,7 @@ public class CompileFlows implements EntryPoint {
     private static final String INCREMENT = "++";
     private static final String DECREMENT = "--";
     private static final String CONDITION = "condition";
-    private static final String SKIP_INVALID_TASK = "Skip invalid task";
+    private static final String INVALID_TASK = "invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
     /**
@@ -113,7 +113,6 @@ public class CompileFlows implements EntryPoint {
         AppStarter.main(args);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void start(String[] args) {
         Utility util = Utility.getInstance();
@@ -126,25 +125,11 @@ public class CompileFlows implements EntryPoint {
                 reader = new ConfigReader(p);
                 log.info("Loading event scripts from {}", p);
                 String prefix = reader.getProperty("location", "classpath:/flows/");
-                Object flowConfig = reader.get("flows");
-                if (flowConfig instanceof List flows) {
-                    Set<String> uniqueFlows = new HashSet<>();
-                    for (int i = 0; i < flows.size(); i++) {
-                        String f = reader.getProperty("flows[" + i + "]");
-                        if (f.endsWith(".yml") || f.endsWith(".yaml")) {
-                            uniqueFlows.add(f);
-                        } else {
-                            log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
-                        }
-                    }
-                    List<String> ordered = new ArrayList<>(uniqueFlows);
-                    Collections.sort(ordered);
+                Object allFlows = reader.get("flows");
+                if (allFlows instanceof List<?> flows) {
+                    List<String> ordered = getUniqueFlows(reader, flows);
                     for (String f: ordered) {
-                        try {
-                            createFlow(f, new ConfigReader(prefix + f));
-                        } catch (IllegalArgumentException e) {
-                            log.error("Ignored {} - {}", f, e.getMessage());
-                        }
+                        createOneFlow(prefix, f);
                     }
                 }
             } catch (IllegalArgumentException e) {
@@ -159,16 +144,38 @@ public class CompileFlows implements EntryPoint {
         log.info("Event scripts deployed: {}", flows.size());
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void createFlow(String name, ConfigReader flow) {
+    private List<String> getUniqueFlows(ConfigReader reader, List<?> flows) {
+        Set<String> uniqueFlows = new HashSet<>();
+        for (int i = 0; i < flows.size(); i++) {
+            String f = reader.getProperty("flows[" + i + "]");
+            if (f.endsWith(".yml") || f.endsWith(".yaml")) {
+                uniqueFlows.add(f);
+            } else {
+                log.error("Ignored {} because it does not have .yml or .yaml file extension", f);
+            }
+        }
+        var result = new ArrayList<>(uniqueFlows);
+        Collections.sort(result);
+        return result;
+    }
+
+    private void createOneFlow(String prefix, String name) {
+        try {
+            createFlow(name, new ConfigReader(prefix + name));
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to parse {} - {}", name, e.getMessage());
+        }
+    }
+
+    private void createFlow(String name, ConfigReader reader) {
         log.info("Parsing {}", name);
         Utility util = Utility.getInstance();
-        Object id = flow.get("flow.id");
-        Object description = flow.get("flow.description");
-        Object timeToLive = flow.get("flow.ttl");
-        Object exceptionTask = flow.get("flow.exception");
-        Object firstTask = flow.get("first.task");
-        Object ext = flow.get("external.state.machine");
+        Object id = reader.get("flow.id");
+        Object description = reader.get("flow.description");
+        Object timeToLive = reader.get("flow.ttl");
+        Object exceptionTask = reader.get("flow.exception");
+        Object firstTask = reader.get("first.task");
+        Object ext = reader.get("external.state.machine");
         /*
          * Flow description is enforced at compile time for documentation purpose.
          * It is not used in flow processing.
@@ -176,369 +183,369 @@ public class CompileFlows implements EntryPoint {
         if (id instanceof String flowId && description instanceof String
                 && timeToLive instanceof String ttl && firstTask instanceof String start) {
             if (Flows.flowExists(flowId)) {
-                log.error("Skip {} - Flow '{}' already exists", name, flowId);
-                return;
+                throw new IllegalArgumentException(String.format("Flow '%s' already exists", flowId));
             }
             String unhandledException = exceptionTask instanceof String et? et : null;
             // minimum 1 second for TTL
             long ttlSeconds = Math.max(1, util.getDurationInSeconds(ttl));
             String extState = ext instanceof String es? es : null;
             Flow entry = new Flow(flowId, start, extState, ttlSeconds * 1000L, unhandledException);
-            int taskCount = 0;
-            Object taskList = flow.get(TASKS);
-            if (taskList instanceof List) {
-                taskCount = ((List<?>) taskList).size();
-            }
+            Object taskList = reader.get(TASKS);
+            int taskCount = taskList instanceof List<?> tList? tList.size() : 0;
             if (taskCount == 0) {
-                log.error("Unable to parse {} - 'tasks' section is empty or invalid", name);
-                return;
+                throw new IllegalArgumentException("'tasks' section is empty or invalid");
             }
-            boolean endTaskFound = false;
-            for (int i=0; i < taskCount; i++) {
-                // input or output are optional
-                Object input = flow.get(TASKS+"["+i+"]."+INPUT, new ArrayList<>());
-                Object output = flow.get(TASKS+"["+i+"]."+OUTPUT, new ArrayList<>());
-                /*
-                 * When "name" is given, it is used for event routing and the "process" can be used
-                 * to point to the original composable function.
-                 *
-                 * When "name" is not provided, the "process" value will be used instead.
-                 *
-                 * Task description is enforced at compile time for documentation purpose.
-                 * It is not used in flow processing.
-                 */
-                String taskName = flow.getProperty(TASKS+"["+i+"]."+NAME);
-                String functionRoute = flow.getProperty(TASKS+"["+i+"]."+PROCESS);
-                Object taskDesc = flow.get(TASKS+"["+i+"]."+DESCRIPTION);
-                Object execution = flow.get(TASKS+"["+i+"]."+EXECUTION);
-                String delay = flow.getProperty(TASKS+"["+i+"]."+DELAY);
-                Object taskException = flow.get(TASKS+"["+i+"]."+EXCEPTION);
-                String loopStatement = flow.getProperty(TASKS+"["+i+"]."+LOOP+"."+STATEMENT);
-                Object loopCondition = flow.get(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
-                String uniqueTaskName = taskName == null? functionRoute : taskName;
-                String source = flow.getProperty(TASKS+"["+i+"]."+SOURCE);
-                if (isValidTaskConfiguration(input, output, uniqueTaskName, taskDesc, execution, name, i)) {
-                    boolean validTask = true;
-                    var taskExecution = (String) execution;
-                    if (uniqueTaskName.contains("://") && !uniqueTaskName.startsWith(FLOW_PROTOCOL)) {
-                        log.error("{} {} in {}. Syntax is flow://{flow-name}", SKIP_INVALID_TASK, uniqueTaskName, name);
-                        return;
-                    }
-                    if (functionRoute != null && functionRoute.contains("://") &&
-                            !functionRoute.startsWith(FLOW_PROTOCOL)) {
-                        log.error("{} process={} in {}. Syntax is flow://{flow-name}",
-                                SKIP_INVALID_TASK, functionRoute, name);
-                        return;
-                    }
-                    if (uniqueTaskName.startsWith(FLOW_PROTOCOL) && functionRoute != null &&
-                            !functionRoute.startsWith(FLOW_PROTOCOL)) {
-                        log.error("{} process={} in {}. process tag not allowed when name is a sub-flow",
-                                SKIP_INVALID_TASK, uniqueTaskName, name);
-                        return;
-                    }
-                    Task task = new Task(uniqueTaskName, functionRoute, taskExecution);
-                    if (delay != null && !delay.isEmpty()) {
-                        if (delay.endsWith("ms")) {
-                            // the "ms" suffix is used for documentation purpose only
-                            delay = delay.substring(0, delay.length() - 2).trim();
-                        }
-                        if (util.isNumeric(delay)) {
-                            // delay must be positive
-                            long n = Math.max(1, util.str2long(delay));
-                            if (n < entry.ttl) {
-                                task.setDelay(n);
-                            } else {
-                                log.error("{} {} in {}. delay must be less than TTL",
-                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                return;
-                            }
-                        } else {
-                            List<String> dParts = util.split(delay, ".");
-                            if (dParts.size() > 1 && delay.startsWith(MODEL_NAMESPACE)) {
-                                task.setDelayVar(delay);
-                            } else {
-                                log.error("{} {} in {}. delay variable must starts with 'model.'",
-                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                return;
-                            }
-                        }
-                    }
-                    if (taskException instanceof String te) {
-                        task.setExceptionTask(te);
-                    }
-                    if (END.equals(execution)) {
-                        endTaskFound = true;
-                    } else {
-                        if (FORK.equals(execution)) {
-                            Object join = flow.get(TASKS + "[" + i + "]." + JOIN);
-                            if (join instanceof String jt) {
-                                task.setJoinTask(jt);
-                            } else {
-                                log.error("{} {} in {}. Missing a join task", SKIP_INVALID_TASK, uniqueTaskName, name);
-                                return;
-                            }
-                        }
-                        /*
-                         * A sink function does not have next steps.
-                         * This task type is used in a "pipeline" or "fork" task.
-                         *
-                         * A sequential or pipeline must have one next task.
-                         */
-                        if (!SINK.equals(execution)) {
-                            Object nextList = flow.get(TASKS + "[" + i + "]." + NEXT, new ArrayList<>());
-                            if (nextList instanceof List list) {
-                                if (list.isEmpty()) {
-                                    log.error("{} {} in {}. Missing a list of next tasks",
-                                            SKIP_INVALID_TASK, uniqueTaskName, name);
-                                    return;
-                                }
-                                List<String> nextTasks = new ArrayList<>();
-                                list.forEach(v -> nextTasks.add(String.valueOf(v)));
-                                if (nextTasks.size() > 1 &&
-                                        (SEQUENTIAL.equals(execution) || PIPELINE.equals(execution))) {
-                                    log.error("Invalid {} task {} in {}. Expected one next task, Actual: {}",
-                                            execution, uniqueTaskName, name, nextTasks.size());
-                                    return;
-                                }
-                                if (nextTasks.size() > 1 &&
-                                        (source != null && !source.isEmpty())) {
-                                    log.error("Invalid {} task {} in {}. Expected one next task if dynamic model source is used, Actual: {}",
-                                            execution, uniqueTaskName, name, nextTasks.size());
-                                    return;
-                                }
-                                if (source != null && !source.isEmpty()) {
-                                    if (source.startsWith(MODEL_NAMESPACE) && !source.endsWith(".")) {
-                                        task.setSourceModelKey(source);
-                                    } else {
-                                        log.error("Invalid {} task {} in {}. Source must start with model namespace, Actual: {}",
-                                                execution, uniqueTaskName, name, source);
-                                        return;
-                                    }
-                                }
-                                task.nextSteps.addAll(nextTasks);
-                            } else {
-                                log.error("{} {} in {}. 'next' should be a list",
-                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                return;
-                            }
-                        }
-                        /*
-                         * A pipeline task must have at least one pipeline step
-                         */
-                        if (PIPELINE.equals(execution)) {
-                            Object pipelineList = flow.get(TASKS + "[" + i + "]." + PIPELINE, new ArrayList<>());
-                            if (pipelineList instanceof List list) {
-                                if (list.isEmpty()) {
-                                    log.error("{} {} in {}. Missing a list of pipeline steps",
-                                            SKIP_INVALID_TASK, uniqueTaskName, name);
-                                    return;
-                                }
-                                List<String> pipelineSteps = new ArrayList<>();
-                                list.forEach(v -> pipelineSteps.add(String.valueOf(v)));
-                                task.pipelineSteps.addAll(pipelineSteps);
-                                if (loopStatement != null) {
-                                    int bracket = loopStatement.indexOf('(');
-                                    if (bracket == -1) {
-                                        log.error("{} {} in {}. Please check loop.statement",
-                                                SKIP_INVALID_TASK, uniqueTaskName, name);
-                                        return;
-                                    }
-                                    String type = loopStatement.substring(0, bracket).trim();
-                                    if (!type.equals(FOR) && !type.equals(WHILE)) {
-                                        log.error("{} {} in {}. loop.statement must be 'for' or 'while'",
-                                                SKIP_INVALID_TASK, uniqueTaskName, name);
-                                        return;
-                                    }
-                                    task.setLoopType(type);
-                                    List<String> parts = util.split(loopStatement.substring(bracket + 1), "(;)");
-                                    if (type.equals(FOR)) {
-                                        if (parts.size() < 2 || parts.size() > 3) {
-                                            log.error("{} {} in {}. 'for' loop should have 2 or 3 segments",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                        if (parts.size() == 2) {
-                                            task.comparator.addAll(getForPart2(parts.getFirst()));
-                                            task.sequencer.addAll(getForPart3(parts.get(1)));
-                                        }
-                                        if (parts.size() == 3) {
-                                            List<String> initializer = getForPart1(parts.getFirst());
-                                            if (initializer.isEmpty()) {
-                                                log.error("{} {} in {}. Please check for-loop initializer. " +
-                                                                "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
-                                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                                return;
-                                            }
-                                            task.init.addAll(initializer);
-                                            task.comparator.addAll(getForPart2(parts.get(1)));
-                                            task.sequencer.addAll(getForPart3(parts.get(2)));
-                                        }
-                                        if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
-                                            log.error("{} {} in {}. Please check for-loop syntax. e.g. " +
-                                                            "for (model.n = 0; model.n < 3; model.n++)",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                        if (!validForStatement(task.comparator, task.sequencer)) {
-                                            log.error("{} {} in {}. 'for' loop has invalid comparator or sequencer",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                    } else {
-                                        if (parts.size() != 1) {
-                                            log.error("{} {} in {}. 'while' loop should have only one value",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                        String modelKey = parts.getFirst().trim();
-                                        if (!modelKey.startsWith(MODEL_NAMESPACE) ||
-                                                modelKey.contains("=") || modelKey.contains(" ")) {
-                                            log.error("{} {} in {}. 'while' should use a model key",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name);
-                                            return;
-                                        }
-                                        task.setWhileModelKey(modelKey);
-                                    }
-                                }
-                                if (loopCondition instanceof String oneCondition) {
-                                    List<String> condition = getCondition(oneCondition);
-                                    if (condition.size() == 2) {
-                                        task.conditions.add(condition);
-                                    } else {
-                                        log.error("{} {} in {}. loop condition syntax error - {}",
-                                                SKIP_INVALID_TASK, uniqueTaskName, name, loopCondition);
-                                        return;
-                                    }
-                                }
-                                if (loopCondition instanceof List multiConditions) {
-                                    for (Object c : multiConditions) {
-                                        List<String> condition = getCondition(String.valueOf(c));
-                                        if (condition.size() == 2) {
-                                            task.conditions.add(condition);
-                                        } else {
-                                            log.error("{} {} in {}. loop conditions syntax error - {}",
-                                                    SKIP_INVALID_TASK, uniqueTaskName, name, loopCondition);
-                                            return;
-                                        }
-                                    }
-                                }
-                            } else {
-                                log.error("{} {} in {}. 'pipeline' should be a list",
-                                        SKIP_INVALID_TASK, uniqueTaskName, name);
-                                return;
-                            }
-                        }
-                    }
-                    List<String> inputList = new ArrayList<>();
-                    // ensure data mapping entries are text strings
-                    int inputListSize = ((List<Object>) input).size();
-                    for (int j = 0; j < inputListSize; j++) {
-                        inputList.add(flow.getProperty(TASKS + "[" + i + "]." + INPUT + "[" + j + "]"));
-                    }
-                    // Support two data mapping formats and convert the 3-part syntax into two entries of 2-part syntax
-                    // LHS -> RHS
-                    // LHS -> model -> RHS
-                    List<String> filteredInputMapping = filterDataMapping(inputList);
-                    for (String line : filteredInputMapping) {
-                        if (validInput(line)) {
-                            int sep = line.lastIndexOf(MAP_TO);
-                            String rhs = line.substring(sep + 2).trim();
-                            if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
-                                log.warn("Task {} in {} uses input namespace in right-hand-side - {}", uniqueTaskName, name, line);
-                            }
-                            task.input.add(line);
-                        } else {
-                            log.error("Skip invalid task {} in {} that has invalid input mapping - {}", uniqueTaskName, name, line);
-                            validTask = false;
-                        }
-                    }
-                    boolean isDecisionTask = DECISION.equals(execution);
-                    List<String> outputList = new ArrayList<>();
-                    // ensure data mapping entries are text strings
-                    int outputListSize = ((List<Object>) output).size();
-                    for (int j = 0; j < outputListSize; j++) {
-                        outputList.add(flow.getProperty(TASKS + "[" + i + "]." + OUTPUT + "[" + j + "]"));
-                    }
-                    // Support two data mapping formats and convert the 3-part syntax into two entries of 2-part syntax
-                    // LHS -> RHS
-                    // LHS -> model -> RHS
-                    List<String> filteredOutputMapping = filterDataMapping(outputList);
-                    for (String line : filteredOutputMapping) {
-                        if (validOutput(line, isDecisionTask)) {
-                            task.output.add(line);
-                        } else {
-                            log.error("Skip invalid task {} in {} that has invalid output mapping - {}", uniqueTaskName, name, line);
-                            validTask = false;
-                        }
-                    }
-                    if (isDecisionTask && task.nextSteps.size() < 2) {
-                        log.error("Decision task {} in {} must have at least 2 next tasks", uniqueTaskName, name);
-                        validTask = false;
-                    }
-                    if (validTask) {
-                        entry.addTask(task);
-                    }
-                }
-            }
-            if (endTaskFound) {
-                // final validation pass to check if the flow is missing external.state.machine
-                boolean extFound = false;
-                boolean incomplete = false;
-                for (String t: entry.tasks.keySet()) {
-                    Task task = entry.tasks.get(t);
-                    if (hasExternalState(task.input) || hasExternalState(task.output)) {
-                        extFound = true;
-                        break;
-                    }
-                }
-                for (String t: entry.tasks.keySet()) {
-                    Task task = entry.tasks.get(t);
-                    if (hasIncompleteMapping(task.input) || hasIncompleteMapping(task.output)) {
-                        incomplete = true;
-                        break;
-                    }
-                }
-                if (extFound && entry.externalStateMachine == null) {
-                    log.error("Unable to parse {} - flow is missing external.state.machine", name);
-                } else if (incomplete) {
-                    log.error("Unable to parse {} - flow has invalid data mappings", name);
-                } else {
-                    Flows.addFlow(entry);
-                }
-            } else {
-                log.error("Unable to parse {} - flow must have at least one end task", name);
-            }
+            validateEntry(name, entry, reader, taskCount);
         } else {
-            log.error("Unable to parse {} - check flow.id, flow.description, flow.ttl, first.task", name);
+            throw new IllegalArgumentException("check flow.id, flow.description, flow.ttl, first.task");
         }
     }
 
-    private boolean isValidTaskConfiguration(Object input, Object output, String uniqueTaskName, Object taskDesc, Object execution, String flowName, int taskIndex) {
-        if (!(input instanceof List)) {
-            log.error("Unable to parse {} task {} - input must be a list", flowName, taskIndex);
-            return false;
+    private void validateEntry(String name, Flow entry, ConfigReader reader, int taskCount) {
+        boolean endTaskFound = false;
+        for (int i=0; i < taskCount; i++) {
+            var md = getConfigMetadata(name, reader, i);
+            Task task = new Task(md.uniqueTaskName, md.functionRoute, md.execution);
+            validateDelayParameter(md, entry, task);
+            if (md.taskException instanceof String te) {
+                task.setExceptionTask(te);
+            }
+            if (END.equals(md.execution)) {
+                endTaskFound = true;
+            } else {
+                setForkJoinIfAny(task, md, reader, i);
+                setNonSinkTaskIfAny(task, md, reader, i);
+                setPipelineIfAny(task, md, reader, i);
+            }
+            validateInputOutput(name, entry, task, md, reader, i);
         }
-        if (!(output instanceof List)) {
-            log.error("Unable to parse {} task {} - output must be a list", flowName, taskIndex);
-            return false;
+        if (endTaskFound) {
+            finalizeEntry(entry);
+        } else {
+            throw new IllegalArgumentException("flow must have at least one end task");
         }
-        if (uniqueTaskName == null || uniqueTaskName.isBlank()) {
-            log.error("Unable to parse {} task {} - task name must not be empty", flowName, taskIndex);
-            return false;
+    }
+
+    private void validateInputOutput(String name, Flow entry, Task task, FlowConfigMetadata md,
+                                     ConfigReader reader, int i) {
+        List<String> inputList = new ArrayList<>();
+        // ensure data mapping entries are text strings
+        for (int j = 0; j < md.input.size(); j++) {
+            inputList.add(reader.getProperty(TASKS + "[" + i + "]." + INPUT + "[" + j + "]"));
         }
-        if (!(taskDesc instanceof String taskDescription) || taskDescription.isBlank()) {
-            log.error("Unable to parse {} task {} - description must not be empty", flowName, taskIndex);
-            return false;
+        List<String> outputList = new ArrayList<>();
+        // ensure data mapping entries are text strings
+        for (int j = 0; j < md.output.size(); j++) {
+            outputList.add(reader.getProperty(TASKS + "[" + i + "]." + OUTPUT + "[" + j + "]"));
         }
-        if (!(execution instanceof String taskExecution) || taskExecution.isBlank()) {
-            log.error("Unable to parse {} task {} - execution type must not be empty", flowName, taskIndex);
-            return false;
+        if (validInputMapping(name, inputList, task, md) && validOutputMapping(name, outputList, task, md)) {
+            entry.addTask(task);
         }
-        if(!validExecutionType(taskExecution)) {
-            log.error("Unable to parse {} task {} - execution type '{}' must be one of {}", flowName, taskIndex, taskExecution, EXECUTION_TYPES);
+    }
+
+    private boolean validOutputMapping(String name, List<String> outputList, Task task, FlowConfigMetadata md) {
+        boolean isDecisionTask = DECISION.equals(md.execution);
+        List<String> filteredOutputMapping = filterDataMapping(outputList);
+        for (String line : filteredOutputMapping) {
+            if (validOutput(line, isDecisionTask)) {
+                task.output.add(line);
+            } else {
+                log.error("Skip invalid task {} in {} that has invalid output mapping - {}",
+                        md.uniqueTaskName, name, line);
+                return false;
+            }
+        }
+        if (isDecisionTask && task.nextSteps.size() < 2) {
+            log.error("Decision task {} in {} must have at least 2 next tasks", md.uniqueTaskName, name);
             return false;
         }
         return true;
+    }
+
+    private boolean validInputMapping(String name, List<String> inputList, Task task, FlowConfigMetadata md) {
+        List<String> filteredInputMapping = filterDataMapping(inputList);
+        for (String line : filteredInputMapping) {
+            if (validInput(line)) {
+                int sep = line.lastIndexOf(MAP_TO);
+                String rhs = line.substring(sep + 2).trim();
+                if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
+                    log.warn("Task {} in {} uses input namespace in right-hand-side - {}",
+                            md.uniqueTaskName, name, line);
+                }
+                task.input.add(line);
+            } else {
+                log.error("Skip invalid task {} in {} that has invalid input mapping - {}",
+                        md.uniqueTaskName, name, line);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void finalizeEntry(Flow entry) {
+        // final validation pass to check if the flow is missing external.state.machine
+        boolean extFound = false;
+        boolean incomplete = false;
+        for (String t: entry.tasks.keySet()) {
+            Task task = entry.tasks.get(t);
+            if (hasExternalState(task.input) || hasExternalState(task.output)) {
+                extFound = true;
+                break;
+            }
+        }
+        for (String t: entry.tasks.keySet()) {
+            Task task = entry.tasks.get(t);
+            if (hasIncompleteMapping(task.input) || hasIncompleteMapping(task.output)) {
+                incomplete = true;
+                break;
+            }
+        }
+        if (extFound && entry.externalStateMachine == null) {
+            throw new IllegalArgumentException("flow is missing external.state.machine");
+        } else if (incomplete) {
+            throw new IllegalArgumentException("flow has invalid data mappings");
+        } else {
+            Flows.addFlow(entry);
+        }
+    }
+
+    private void setPipelineIfAny(Task task, FlowConfigMetadata md, ConfigReader reader, int i) {
+        if (PIPELINE.equals(md.execution)) {
+            Object pipelineList = reader.get(TASKS + "[" + i + "]." + PIPELINE, new ArrayList<>());
+            if (pipelineList instanceof List<?> list) {
+                if (list.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            String.format("%s %s. Missing a list of pipeline steps",
+                                    INVALID_TASK, md.uniqueTaskName));
+                }
+                List<String> pipelineSteps = new ArrayList<>();
+                list.forEach(v -> pipelineSteps.add(String.valueOf(v)));
+                task.pipelineSteps.addAll(pipelineSteps);
+                handleLoopStatementIfAny(task, md);
+                handleLoopConditions(task, md);
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("%s %s. 'pipeline' should be a list",
+                                INVALID_TASK, md.uniqueTaskName));
+            }
+        }
+    }
+
+    private void handleLoopStatementIfAny(Task task, FlowConfigMetadata md) {
+        if (md.loopStatement != null) {
+            var util = Utility.getInstance();
+            int bracket = md.loopStatement.indexOf('(');
+            if (bracket == -1) {
+                throw new IllegalArgumentException(
+                        String.format("%s %s. Please check loop.statement",
+                                INVALID_TASK, md.uniqueTaskName));
+            }
+            String type = md.loopStatement.substring(0, bracket).trim();
+            if (!type.equals(FOR) && !type.equals(WHILE)) {
+                throw new IllegalArgumentException(
+                        String.format("%s %s. loop.statement must be 'for' or 'while'",
+                                INVALID_TASK, md.uniqueTaskName));
+            }
+            task.setLoopType(type);
+            List<String> parts = util.split(md.loopStatement.substring(bracket + 1), "(;)");
+            if (type.equals(FOR)) {
+                handleForLoop(task, md, parts);
+            } else {
+                handleWhileLoop(task, md, parts);
+            }
+        }
+    }
+
+    private void handleLoopConditions(Task task, FlowConfigMetadata md) {
+        if (md.loopCondition instanceof String oneCondition) {
+            List<String> condition = getCondition(oneCondition);
+            if (condition.size() == 2) {
+                task.conditions.add(condition);
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("%s %s. loop condition syntax error - %s",
+                                INVALID_TASK, md.uniqueTaskName, md.loopCondition));
+            }
+        }
+        if (md.loopCondition instanceof List<?> multiConditions) {
+            for (Object c : multiConditions) {
+                List<String> condition = getCondition(String.valueOf(c));
+                if (condition.size() == 2) {
+                    task.conditions.add(condition);
+                } else {
+                    throw new IllegalArgumentException(
+                            String.format("%s %s. loop conditions syntax error - %s",
+                                    INVALID_TASK, md.uniqueTaskName, md.loopCondition));
+                }
+            }
+        }
+    }
+
+    private void handleWhileLoop(Task task, FlowConfigMetadata md, List<String> parts) {
+        if (parts.size() != 1) {
+            throw new IllegalArgumentException(
+                    String.format("%s %s. 'while' loop should have only one value",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
+        String modelKey = parts.getFirst().trim();
+        if (!modelKey.startsWith(MODEL_NAMESPACE) ||
+                modelKey.contains("=") || modelKey.contains(" ")) {
+            throw new IllegalArgumentException(
+                    String.format("%s %s. 'while' should use a model key",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
+        task.setWhileModelKey(modelKey);
+    }
+
+    private void handleForLoop(Task task, FlowConfigMetadata md, List<String> parts) {
+        if (parts.size() < 2 || parts.size() > 3) {
+            throw new IllegalArgumentException(
+                    String.format("%s %s. 'for' loop should have 2 or 3 segments",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
+        if (parts.size() == 2) {
+            task.comparator.addAll(getForPart2(parts.getFirst()));
+            task.sequencer.addAll(getForPart3(parts.get(1)));
+        }
+        if (parts.size() == 3) {
+            List<String> initializer = getForPart1(parts.getFirst());
+            if (initializer.isEmpty()) {
+                throw new IllegalArgumentException(
+                        String.format("%s %s. check for-loop initializer. " +
+                                        "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
+                                INVALID_TASK, md.uniqueTaskName));
+            }
+            task.init.addAll(initializer);
+            task.comparator.addAll(getForPart2(parts.get(1)));
+            task.sequencer.addAll(getForPart3(parts.get(2)));
+        }
+        if (task.comparator.isEmpty() || task.sequencer.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("%s %s. check for-loop syntax. " +
+                                    "e.g. 'for (model.n = 0; model.n < 3; model.n++)'",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
+        if (!validForStatement(task.comparator, task.sequencer)) {
+            throw new IllegalArgumentException(
+                    String.format("%s %s. 'for' loop has invalid comparator or sequencer",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
+    }
+
+    private void setForkJoinIfAny(Task task, FlowConfigMetadata md, ConfigReader reader, int i) {
+        if (FORK.equals(md.execution)) {
+            Object join = reader.get(TASKS + "[" + i + "]." + JOIN);
+            if (join instanceof String jt) {
+                task.setJoinTask(jt);
+            } else {
+                throw new IllegalArgumentException(String.format("%s %s. Missing a join task",
+                        INVALID_TASK, md.uniqueTaskName));
+            }
+        }
+    }
+
+    private void setNonSinkTaskIfAny(Task task, FlowConfigMetadata md, ConfigReader reader, int i) {
+        if (!SINK.equals(md.execution)) {
+            Object nextList = reader.get(TASKS + "[" + i + "]." + NEXT, new ArrayList<>());
+            if (nextList instanceof List<?> list) {
+                if (list.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid task %s. Missing a list of next tasks", md.uniqueTaskName));
+                }
+                List<String> nextTasks = new ArrayList<>();
+                list.forEach(v -> nextTasks.add(String.valueOf(v)));
+                if (nextTasks.size() > 1 &&
+                        (SEQUENTIAL.equals(md.execution) || PIPELINE.equals(md.execution))) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid %s task %s. Expected one next task, Actual: %s",
+                                    md.execution, md.uniqueTaskName, nextTasks.size()));
+                }
+                validateSourceModelKey(task, md, nextTasks);
+                task.nextSteps.addAll(nextTasks);
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("%s %s. 'next' should be a list", INVALID_TASK, md.uniqueTaskName));
+            }
+        }
+    }
+
+    private void validateSourceModelKey(Task task, FlowConfigMetadata md, List<String> nextTasks) {
+        if (nextTasks.size() > 1 &&
+                (md.source != null && !md.source.isEmpty())) {
+            throw new IllegalArgumentException(
+                    String.format("Invalid %s task %s. " +
+                                    "Expected one next task if dynamic model source is used, Actual: %s",
+                            md.execution, md.uniqueTaskName, nextTasks.size()));
+        }
+        if (md.source != null && !md.source.isEmpty()) {
+            if (md.source.startsWith(MODEL_NAMESPACE) && !md.source.endsWith(".")) {
+                task.setSourceModelKey(md.source);
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("Invalid %s task %s. " +
+                                        "Source must start with model namespace, Actual: %s",
+                                md.execution, md.uniqueTaskName, md.source));
+            }
+        }
+    }
+
+    private static FlowConfigMetadata getConfigMetadata(String name, ConfigReader reader, int i) {
+        var md = new FlowConfigMetadata(name, reader, i);
+        if (md.uniqueTaskName.contains("://") && !md.uniqueTaskName.startsWith(FLOW_PROTOCOL)) {
+            throw new IllegalArgumentException(String.format("%s name=%s. Syntax is flow://{flow-name}",
+                    INVALID_TASK, md.uniqueTaskName));
+        }
+        if (md.functionRoute != null && md.functionRoute.contains("://") &&
+                !md.functionRoute.startsWith(FLOW_PROTOCOL)) {
+            throw new IllegalArgumentException(String.format("%s process=%s. Syntax is flow://{flow-name}",
+                    INVALID_TASK, md.functionRoute));
+        }
+        if (md.uniqueTaskName.startsWith(FLOW_PROTOCOL) && md.functionRoute != null &&
+                !md.functionRoute.startsWith(FLOW_PROTOCOL)) {
+            throw new IllegalArgumentException(
+                    String.format("%s process=%s. process tag not allowed when name is a sub-flow",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
+        return md;
+    }
+
+    private void validateDelayParameter(FlowConfigMetadata md, Flow entry, Task task) {
+        var util = Utility.getInstance();
+        if (md.delay != null && !md.delay.isEmpty()) {
+            if (md.delay.endsWith("ms")) {
+                // the "ms" suffix is used for documentation purpose only
+                md.delay = md.delay.substring(0, md.delay.length() - 2).trim();
+            }
+            if (util.isNumeric(md.delay)) {
+                setNumericDelay(md, entry, task);
+            } else {
+                setDelayFromModelVar(md, task);
+            }
+        }
+    }
+
+    private void setNumericDelay(FlowConfigMetadata md, Flow entry, Task task) {
+        var util = Utility.getInstance();
+        // delay must be positive
+        long n = Math.max(1, util.str2long(md.delay));
+        if (n < entry.ttl) {
+            task.setDelay(n);
+        } else {
+            throw new IllegalArgumentException(String.format("%s %s. delay must be less than TTL",
+                    INVALID_TASK, md.uniqueTaskName));
+        }
+    }
+
+    private void setDelayFromModelVar(FlowConfigMetadata md, Task task) {
+        var util = Utility.getInstance();
+        List<String> dParts = util.split(md.delay, ".");
+        if (dParts.size() > 1 && md.delay.startsWith(MODEL_NAMESPACE)) {
+            task.setDelayVar(md.delay);
+        } else {
+            throw new IllegalArgumentException(
+                    String.format("%s %s. delay variable must starts with 'model.'",
+                            INVALID_TASK, md.uniqueTaskName));
+        }
     }
 
     private boolean hasExternalState(List<String> mapping) {
@@ -666,15 +673,6 @@ public class CompileFlows implements EntryPoint {
         return found;
     }
 
-    private boolean validExecutionType(String execution) {
-        for (String s: EXECUTION_TYPES) {
-            if (s.equals(execution)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private List<String> filterDataMapping(List<String> entries) {
         List<String> result = new ArrayList<>();
         for (String line: entries) {
@@ -694,33 +692,37 @@ public class CompileFlows implements EntryPoint {
                 if (parts.size() == 2) {
                     result.add(filterMapping(parts.getFirst() + SPACED_MAP_TO + parts.get(1)));
                 } else if (parts.size() == 3) {
-                    /*
-                     * 3-part mapping format handling:
-                     * 1. The middle part must be a model variable
-                     * 2. It will decompose into two entries of 2-part mappings
-                     * 3. Any type information of the LHS of the second entry will be dropped
-                     *
-                     * For example,
-                     *
-                     * BEFORE
-                     * - 'boolean(true) -> !model.bool -> negate_value'
-                     * AFTER
-                     * - 'boolean(true) -> model.bool:!'
-                     * - 'model.bool -> negate_value'
-                     */
-                    if (parts.get(1).startsWith(MODEL_NAMESPACE) || parts.get(1).startsWith(NEGATE_MODEL)) {
-                        result.add(filterMapping(parts.getFirst() + SPACED_MAP_TO + parts.get(1)));
-                        var secondLhs = trimTypeQualifier(parts.get(1));
-                        result.add(filterMapping(secondLhs + SPACED_MAP_TO + parts.get(2)));
-                    } else {
-                        result.add("3-part data mapping must have model variable as the middle part");
-                    }
+                    handleThreePartMapping(parts, result);
                 } else {
                     result.add("Syntax must be (LHS -> RHS) or (LHS -> model.variable -> RHS)");
                 }
             }
         }
         return result;
+    }
+
+    private void handleThreePartMapping(List<String> parts, List<String> result) {
+        /*
+         * 3-part mapping format handling:
+         * 1. The middle part must be a model variable
+         * 2. It will decompose into two entries of 2-part mappings
+         * 3. Any type information of the LHS of the second entry will be dropped
+         *
+         * For example,
+         *
+         * BEFORE
+         * - 'boolean(true) -> !model.bool -> negate_value'
+         * AFTER
+         * - 'boolean(true) -> model.bool:!'
+         * - 'model.bool -> negate_value'
+         */
+        if (parts.get(1).startsWith(MODEL_NAMESPACE) || parts.get(1).startsWith(NEGATE_MODEL)) {
+            result.add(filterMapping(parts.getFirst() + SPACED_MAP_TO + parts.get(1)));
+            var secondLhs = trimTypeQualifier(parts.get(1));
+            result.add(filterMapping(secondLhs + SPACED_MAP_TO + parts.get(2)));
+        } else {
+            result.add("3-part data mapping must have model variable as the middle part");
+        }
     }
 
     private String filterMapping(String mapping) {
@@ -850,5 +852,88 @@ public class CompileFlows implements EntryPoint {
         return (rhs.equals(DECISION) && isDecision) || rhs.startsWith(FILE_TYPE) ||
                 rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE) ||
                 rhs.startsWith(EXT_NAMESPACE);
+    }
+
+    private static class FlowConfigMetadata {
+        String name;
+        List<?> input;
+        List<?> output;
+        String taskName;
+        String functionRoute;
+        String taskDesc;
+        String execution;
+        String delay;
+        String taskException;
+        String loopStatement;
+        Object loopCondition;
+        String uniqueTaskName;
+        String source;
+
+        FlowConfigMetadata(String name, ConfigReader reader, int i) {
+            this.name = name;
+            Object vInput = reader.get(TASKS+"["+i+"]."+INPUT, new ArrayList<>());
+            Object vOutput = reader.get(TASKS+"["+i+"]."+OUTPUT, new ArrayList<>());
+            String vTaskName = reader.getProperty(TASKS+"["+i+"]."+NAME);
+            String vFunctionRoute = reader.getProperty(TASKS+"["+i+"]."+PROCESS);
+            Object vTaskDesc = reader.get(TASKS+"["+i+"]."+DESCRIPTION);
+            Object vExecution = reader.get(TASKS+"["+i+"]."+EXECUTION);
+            String vDelay = reader.getProperty(TASKS+"["+i+"]."+DELAY);
+            Object vTaskException = reader.get(TASKS+"["+i+"]."+EXCEPTION);
+            String vLoopStatement = reader.getProperty(TASKS+"["+i+"]."+LOOP+"."+STATEMENT);
+            Object vLoopCondition = reader.get(TASKS+"["+i+"]."+LOOP+"."+CONDITION);
+            String vUniqueTaskName = vTaskName == null? vFunctionRoute : vTaskName;
+            String vSource = reader.getProperty(TASKS+"["+i+"]."+SOURCE);
+            isValidTaskConfiguration(vInput, vOutput, vUniqueTaskName, vTaskDesc, vExecution, i);
+            this.input = (List<?>) vInput;
+            this.output = (List<?>) vOutput;
+            this.taskName = vTaskName;
+            this.functionRoute = vFunctionRoute;
+            this.taskDesc = String.valueOf(vTaskDesc);
+            this.execution = String.valueOf(vExecution);
+            this.delay = vDelay;
+            if (vTaskException instanceof String e) {
+                this.taskException = e;
+            }
+            this.loopStatement = vLoopStatement;
+            this.loopCondition = vLoopCondition;
+            this.uniqueTaskName = vUniqueTaskName;
+            this.source = vSource;
+        }
+
+        private void isValidTaskConfiguration(Object input, Object output, String uniqueTaskName,
+                                              Object taskDesc, Object execution, int taskIndex) {
+            if (uniqueTaskName == null || uniqueTaskName.isBlank()) {
+                throw new IllegalArgumentException(String.format("task[%s]. task name must not be empty", taskIndex));
+            }
+            if (!(input instanceof List)) {
+                throw new IllegalArgumentException(String.format("task %s. input must be a list", uniqueTaskName));
+            }
+            if (!(output instanceof List)) {
+                throw new IllegalArgumentException(String.format("task %s. output must be a list", uniqueTaskName));
+            }
+
+            if (!(taskDesc instanceof String taskDescription) || taskDescription.isBlank()) {
+                throw new IllegalArgumentException(
+                        String.format("task %s. description must not be empty", uniqueTaskName));
+            }
+            if (!(execution instanceof String taskExecution) || taskExecution.isBlank()) {
+                throw new IllegalArgumentException(
+                        String.format("task %s. execution type must not be empty", uniqueTaskName));
+            }
+            if(!validExecutionType(taskExecution)) {
+                throw new IllegalArgumentException(
+                        String.format("task %s. execution type '%s' must be one of %s", uniqueTaskName, taskExecution,
+                                Arrays.stream(EXECUTION_TYPES).toList()));
+            }
+        }
+
+        private boolean validExecutionType(String execution) {
+            for (String s: EXECUTION_TYPES) {
+                if (s.equals(execution)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

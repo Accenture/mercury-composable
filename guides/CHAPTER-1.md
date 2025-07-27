@@ -288,21 +288,21 @@ Your browser will return the following:
 You have successfully tested the two REST endpoints. Tracing information in the application log may look like this:
 
 ```log
-DistributedTrace:76 - trace={path=POST /api/profile, service=http.flow.adapter, success=true, 
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.524Z, 
-                            exec_time=0.284, from=http.request, id=f6a6ae62340e43afb0a6f30445166e08}
-DistributedTrace:76 - trace={path=POST /api/profile, service=event.script.manager, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.525Z,
-                            exec_time=0.57, from=http.flow.adapter, id=f6a6ae62340e43afb0a6f30445166e08}
-DistributedTrace:76 - trace={path=POST /api/profile, service=v1.create.profile, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.526Z,
-                            exec_time=0.342, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
-DistributedTrace:76 - trace={path=POST /api/profile, service=async.http.response, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
-                            exec_time=0.294, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
-DistributedTrace:76 - trace={path=POST /api/profile, service=v1.encrypt.fields, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
-                            exec_time=3.64, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+Telemetry:76 - trace={path=POST /api/profile, service=http.flow.adapter, success=true, 
+                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.524Z, 
+                      exec_time=0.284, from=http.request, id=f6a6ae62340e43afb0a6f30445166e08}
+Telemetry:76 - trace={path=POST /api/profile, service=event.script.manager, success=true,
+                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.525Z,
+                      exec_time=0.57, from=http.flow.adapter, id=f6a6ae62340e43afb0a6f30445166e08}
+Telemetry:76 - trace={path=POST /api/profile, service=v1.create.profile, success=true,
+                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.526Z,
+                      exec_time=0.342, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+Telemetry:76 - trace={path=POST /api/profile, service=async.http.response, success=true,
+                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
+                      exec_time=0.294, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
+Telemetry:76 - trace={path=POST /api/profile, service=v1.encrypt.fields, success=true,
+                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
+                      exec_time=3.64, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
 SaveProfile:52 - Profile 100 saved
 TaskExecutor:186 - TaskExecutor:262 - {
   "execution": "Run 3 tasks in 11 ms",
@@ -315,20 +315,20 @@ TaskExecutor:186 - TaskExecutor:262 - {
   ],
   "status": "completed"
 }
-DistributedTrace:76 - trace={path=POST /api/profile, service=v1.save.profile, success=true,
+Telemetry:76 - trace={path=POST /api/profile, service=v1.save.profile, success=true,
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.533Z,
                             exec_time=2.006, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
 
-DistributedTrace:76 - trace={path=GET /api/profile/100, service=http.flow.adapter, success=true, 
+Telemetry:76 - trace={path=GET /api/profile/100, service=http.flow.adapter, success=true, 
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.089Z,
                             exec_time=0.152, from=http.request, id=1a29105044e94cc3ac68aee002f6f429}
-DistributedTrace:76 - trace={path=GET /api/profile/100, service=event.script.manager, success=true,
+Telemetry:76 - trace={path=GET /api/profile/100, service=event.script.manager, success=true,
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.090Z,
                             exec_time=0.291, from=http.flow.adapter, id=1a29105044e94cc3ac68aee002f6f429}
-DistributedTrace:76 - trace={path=GET /api/profile/100, service=v1.get.profile, success=true,
+Telemetry:76 - trace={path=GET /api/profile/100, service=v1.get.profile, success=true,
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.091Z,
                             exec_time=1.137, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
-DistributedTrace:76 - trace={path=GET /api/profile/100, service=v1.decrypt.fields, success=true, 
+Telemetry:76 - trace={path=GET /api/profile/100, service=v1.decrypt.fields, success=true, 
                             origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.093Z,
                             exec_time=1.22, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
 TaskExecutor:262 - {
@@ -341,9 +341,9 @@ TaskExecutor:262 - {
   ],
   "status": "completed"
 }
-DistributedTrace:76 - trace={path=GET /api/profile/100, service=async.http.response, success=true, 
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.095Z, 
-                            exec_time=0.214, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
+Telemetry:76 - trace={path=GET /api/profile/100, service=async.http.response, success=true, 
+                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.095Z, 
+                      exec_time=0.214, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
 ```
 
 ### Main application entry point

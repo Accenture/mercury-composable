@@ -14,7 +14,7 @@ For Java, please visit [Mercury Composable for Java](https://github.com/Accentur
 For Node.js, please browse [Mercury Composable for Node](https://github.com/Accenture/mercury-nodejs)
 and [Composable-example](https://github.com/Accenture/mercury-composable-examples)
 
-January 2025
+July 2025
 
 # Optimized for Human
 
@@ -98,11 +98,13 @@ Here's a breakdown of the approach:
 
 - *Function Design*: Each function serves a specific purpose, with clearly defined inputs and outputs.
 - *Event Communication*: Functions communicate through well-defined events, avoiding direct dependencies.
-- *Choreography*: An event manager, with a state machine and event flow configuration, sequences and triggers functions
-  based on events.
+- *Choreography*: For each event flow instance, an event manager, with a state machine and event flow configuration,
+                  sequences and triggers functions based on events.
 
 ## Conclusion
 
 Composable design patterns offer a powerful paradigm for building maintainable, scalable, and future-proof applications.
 By embracing the principles of self-contained functions and event-driven communication, you can conquer complexity and
 write code that is a joy to work with.
+
+> *Source*: This article was summarized from composable technology papers using AI in January 2025

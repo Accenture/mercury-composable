@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.7, 7/26/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Refactor event-script-engine to comply with SonarQube's code complexity requirement of 15 or less
+2. Rename DistributedTrace class to "Telemetry" for compatibility with node.js version
+
+---
 ## Version 4.3.6, 7/23/2025
 
 ### Added

@@ -143,15 +143,15 @@ In the lambda-example application, there is a demo authentication function in th
 You can test this by visiting http://127.0.0.1:8085/api/hello/generic/1 to invoke the "hello.generic" function.
 
 The console will print:
-```shell
-DistributedTrace:55 - trace={path=GET /api/hello/generic/1, service=v1.api.auth, success=true,
+```log
+Telemetry:55 - trace={path=GET /api/hello/generic/1, service=v1.api.auth, success=true,
   origin=20230326f84dd5f298b64be4901119ce8b6c18be, exec_time=0.056, start=2023-03-26T20:08:01.702Z, 
   from=http.request, id=aa983244cef7455cbada03c9c2132453, round_trip=1.347, status=200}
 HelloGeneric:56 - Got session information {user=demo}
-DistributedTrace:55 - trace={path=GET /api/hello/generic/1, service=hello.generic, success=true, 
+Telemetry:55 - trace={path=GET /api/hello/generic/1, service=hello.generic, success=true, 
   origin=20230326f84dd5f298b64be4901119ce8b6c18be, start=2023-03-26T20:08:01.704Z, exec_time=0.506, 
   from=v1.api.auth, id=aa983244cef7455cbada03c9c2132453, status=200}
-DistributedTrace:55 - trace={path=GET /api/hello/generic/1, service=async.http.response, 
+Telemetry:55 - trace={path=GET /api/hello/generic/1, service=async.http.response, 
   success=true, origin=20230326f84dd5f298b64be4901119ce8b6c18be, start=2023-03-26T20:08:01.705Z, 
   exec_time=0.431, from=hello.generic, id=aa983244cef7455cbada03c9c2132453, status=200}
 ```

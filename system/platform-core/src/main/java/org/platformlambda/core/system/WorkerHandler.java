@@ -22,7 +22,7 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
-import org.platformlambda.core.services.DistributedTrace;
+import org.platformlambda.core.services.Telemetry;
 import org.platformlambda.core.services.TemporaryInbox;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -32,7 +32,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -127,7 +126,7 @@ public class WorkerHandler {
             boolean journaled = po.isJournaled(def.getRoute());
             if (journaled || rpc == null || ps.isNotDelivered()) {
                 // Send tracing information to distributed trace logger
-                EventEnvelope dt = new EventEnvelope().setTo(DistributedTrace.DISTRIBUTED_TRACING);
+                EventEnvelope dt = new EventEnvelope().setTo(Telemetry.DISTRIBUTED_TRACING);
                 Map<String, Object> payload = new HashMap<>();
                 payload.put(ANNOTATIONS, trace.annotations);
                 // send input/output dataset to journal if configured in journal.yaml
@@ -139,7 +138,7 @@ public class WorkerHandler {
                 po.send(dt.setBody(payload));
             }
         } catch (IllegalArgumentException e) {
-            log.error("Unable to send to {}", DistributedTrace.DISTRIBUTED_TRACING, e);
+            log.error("Unable to send to {}", Telemetry.DISTRIBUTED_TRACING, e);
         }
     }
 

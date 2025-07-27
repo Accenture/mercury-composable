@@ -229,8 +229,8 @@ RestController endpoint. To enable tracing, the function sets the trace ID and p
 When you try the endpoint at http://127.0.0.1:8083/api/hello/world, it will echo your HTTP request headers. 
 In the command terminal, you will see tracing information in the console log like this:
 
-```text
-DistributedTrace:67 - trace={path=GET /api/hello/world, service=hello.world, success=true, 
+```log
+Telemetry:67 - trace={path=GET /api/hello/world, service=hello.world, success=true, 
   origin=20230403364f70ebeb54477f91986289dfcd7b75, exec_time=0.249, start=2023-04-03T04:42:43.445Z, 
   from=hello.world.endpoint, id=e12e871096ba4938b871ee72ef09aa0a, round_trip=20.018, status=200}
 ```

@@ -30,6 +30,7 @@ import java.util.Map;
 @PreLoad(route="v1.api.auth", instances=10)
 public class AuthDemo implements TypedLambdaFunction<AsyncHttpRequest, Boolean> {
     private static final Logger log = LoggerFactory.getLogger(AuthDemo.class);
+
     @Override
     public Boolean handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws AppException {
         String auth = input.getHeader("Authorization");
