@@ -32,7 +32,7 @@ import java.util.Map;
 public class MultiLevelTrace implements TypedLambdaFunction<EventEnvelope, Object> {
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        var po = new PostOffice(headers, instance);
+        var po = PostOffice.trackable(headers, instance);
         var result = new HashMap<String, Object>();
         result.put("headers", headers);
         result.put("body", input.getBody());

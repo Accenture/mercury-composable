@@ -40,7 +40,7 @@ class FlowTest extends TestBase {
     void endToEndFlowTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         final int profileId = 300;
-        PostOffice po = new PostOffice("unit.test", "1000", "TEST /flow/tests");
+        PostOffice po = PostOffice.trackable("unit.test", "1000", "TEST /flow/tests");
         // try to retrieve a non-exist profile will get HTTP-404
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")
@@ -105,7 +105,7 @@ class FlowTest extends TestBase {
     @Test
     void healthCheck() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
-        PostOffice po = new PostOffice("unit.test", "2000", "TEST /health/check");
+        PostOffice po = PostOffice.trackable("unit.test", "2000", "TEST /health/check");
         // try to retrieve a non-exist profile will get HTTP-404
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("GET")

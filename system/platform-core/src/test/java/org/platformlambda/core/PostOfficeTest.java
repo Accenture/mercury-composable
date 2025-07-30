@@ -72,7 +72,7 @@ class PostOfficeTest extends TestBase {
                 .setMethod("POST").setBody(data)
                 .setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json");
-        PostOffice po = new PostOffice("unit.test", "10", "TEST /api/test/error");
+        PostOffice po = PostOffice.trackable("unit.test", "10", "TEST /api/test/error");
         EventEnvelope res1 = po.request(new EventEnvelope().setTo("async.http.request")
                                 .setBody(req.toMap()), 5000).get();
         EventEnvelope res2 = po.eRequest(new EventEnvelope().setTo("async.http.request")
@@ -154,7 +154,7 @@ class PostOfficeTest extends TestBase {
         data.setName("custom");
         data.setNumber(123);
         data.setLongNumber(200);
-        PostOffice po = new PostOffice("unit.test", "103", "TEST /custom/flux", customSerializer);
+        PostOffice po = PostOffice.withSerializer("unit.test", "103", "TEST /custom/flux", customSerializer);
         EventEnvelope request = new EventEnvelope().setTo("v1.reactive.flux.custom.serializer");
         // perform custom serialization
         po.setEventBodyAsPoJo(request, data);
@@ -792,7 +792,7 @@ class PostOfficeTest extends TestBase {
             return null;
         };
         LambdaFunction myFunction = (headers, input, instance) -> {
-            PostOffice po = new PostOffice(headers, instance);
+            PostOffice po = PostOffice.trackable(headers, instance);
             po.annotateTrace(hello, world);
             return rv;
         };

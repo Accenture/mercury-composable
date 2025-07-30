@@ -92,6 +92,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String MAP_TYPE = "map(";
     private static final String CLOSE_BRACKET = ")";
     private static final String TEXT_FILE = "text:";
+    private static final String JSON_FILE = "json:";
     private static final String BINARY_FILE = "binary:";
     private static final String APPEND_MODE = "append:";
     private static final String MAP_TO = "->";
@@ -140,6 +141,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         AND_COMMAND,
         OR_COMMAND,
         BOOLEAN_COMMAND
+    }
+
+    private enum FILE_MODE {
+        TEXT,
+        BINARY,
+        JSON,
+        APPEND
     }
 
     public TaskExecutor() {
@@ -487,6 +495,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void setOutputDataMappingFile(OutputMappingMetadata md, Object value) {
         SimpleFileDescriptor fd = new SimpleFileDescriptor(md.rhs);
+        boolean append = fd.mode == FILE_MODE.APPEND;
         File f = new File(fd.fileName);
         // automatically create parent folder
         boolean fileFound = f.exists();
@@ -501,12 +510,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         log.debug("File {} deleted", f);
                     }
                 }
-                case byte[] b -> util.bytes2file(f, b, fd.append);
-                case String str -> util.str2file(f, str, fd.append);
+                case byte[] b -> util.bytes2file(f, b, append);
+                case String str -> util.str2file(f, str, append);
                 // best effort to save as a JSON string
+                case List<?> list ->
+                        util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(list), append);
                 case Map<?, ?> map ->
-                        util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map));
-                default -> util.str2file(f, String.valueOf(value), fd.append);
+                        util.str2file(f, SimpleMapper.getInstance().getMapper().writeValueAsString(map), append);
+                default -> util.str2file(f, String.valueOf(value), append);
             }
         }
     }
@@ -1445,17 +1456,45 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
         File f = new File(fd.fileName);
         if (f.exists() && !f.isDirectory() && f.canRead()) {
-            return fd.binary? util.file2bytes(f) : util.file2str(f);
+            if (fd.mode == FILE_MODE.TEXT) {
+                return util.file2str(f);
+            } else if (fd.mode == FILE_MODE.JSON) {
+                return getJsonFileContent(lhs, util.file2str(f));
+            } else {
+                return util.file2bytes(f);
+            }
         } else {
             return null;
         }
+    }
+
+    private Object getJsonFileContent(String lhs, String content) {
+        var mapper = SimpleMapper.getInstance().getMapper();
+        try {
+            String json = content.trim();
+            if (json.startsWith("[") && json.endsWith("]")) {
+                return mapper.readValue(json, List.class);
+            }
+            if (json.startsWith("{") && json.endsWith("}")) {
+                return mapper.readValue(json, Map.class);
+            }
+        } catch (Exception e) {
+            log.warn("Unable to decode JSON file {} - {}", lhs, e.getMessage());
+        }
+        return content;
     }
 
     private Object getConstantClassPathValue(String lhs) {
         SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
         InputStream in = this.getClass().getResourceAsStream(fd.fileName);
         if (in != null) {
-            return fd.binary? util.stream2bytes(in) : util.stream2str(in);
+            if (fd.mode == FILE_MODE.TEXT) {
+                return util.stream2str(in);
+            } else if (fd.mode == FILE_MODE.JSON) {
+                return getJsonFileContent(lhs, util.stream2str(in));
+            } else {
+                return util.stream2bytes(in);
+            }
         } else {
             return null;
         }
@@ -1491,8 +1530,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private static class SimpleFileDescriptor {
         private final String fileName;
-        private boolean binary = true;
-        private boolean append = false;
+        private final FILE_MODE mode;
 
         public SimpleFileDescriptor(String value) {
             int last = value.lastIndexOf(CLOSE_BRACKET);
@@ -1506,15 +1544,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             final String filePath = value.substring(offset, last).trim();
             if (filePath.startsWith(TEXT_FILE)) {
                 name = filePath.substring(TEXT_FILE.length());
-                binary = false;
+                mode = FILE_MODE.TEXT;
+            } else if (filePath.startsWith(JSON_FILE)) {
+                name = filePath.substring(JSON_FILE.length());
+                mode = FILE_MODE.JSON;
             } else if (filePath.startsWith(BINARY_FILE)) {
                 name = filePath.substring(BINARY_FILE.length());
+                mode = FILE_MODE.BINARY;
             } else if (filePath.startsWith(APPEND_MODE)) {
                 name = filePath.substring(APPEND_MODE.length());
-                append = true;
+                mode = FILE_MODE.APPEND;
             } else {
-                // default fileType is binary
                 name = filePath;
+                mode = FILE_MODE.BINARY;
             }
             fileName = name.startsWith("/")? name : "/".concat(name);
         }

@@ -182,7 +182,7 @@ public class FluxConsumer<T> {
     private void processMessageStep2(String type, Object body, Consumer<Throwable> errorConsumer) {
         var po = EventEmitter.getInstance();
         if (EXCEPTION.equals(type) && body instanceof byte[] b) {
-            EventEnvelope result = new EventEnvelope(b);
+            EventEnvelope result = EventEnvelope.of(b);
             Throwable ex = result.getException();
             if (ex != null) {
                 if (errorConsumer != null) {

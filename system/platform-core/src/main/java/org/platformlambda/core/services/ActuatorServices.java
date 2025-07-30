@@ -129,9 +129,9 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         }
         if (LIVENESS_PROBE.equals(type)) {
             if (healthStatus.get()) {
-                return new EventEnvelope().setBody("OK").setHeader(CONTENT_TYPE, "text/plain");
+                return EventEnvelope.of().setBody("OK").setHeader(CONTENT_TYPE, "text/plain");
             } else {
-                return new EventEnvelope().setBody("Unhealthy. Please check '/health' endpoint.")
+                return EventEnvelope.of().setBody("Unhealthy. Please check '/health' endpoint.")
                                         .setStatus(400).setHeader(CONTENT_TYPE, "text/plain");
             }
         }
