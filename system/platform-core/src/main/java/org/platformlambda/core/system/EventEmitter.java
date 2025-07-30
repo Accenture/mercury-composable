@@ -750,7 +750,7 @@ public class EventEmitter {
         String callback = event.getReplyTo();
         String eventApiType = callback == null? "async" : "callback";
         event.setReplyTo(null);
-        EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, eventApiType);
+        EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, eventApiType);
         Future<EventEnvelope> response = asyncRequest(forwardEvent, ASYNC_EVENT_HTTP_TIMEOUT,
                 getEventHttpHeaders(to), targetHttp, callback != null);
         response.onSuccess(evt -> {
@@ -1092,7 +1092,7 @@ public class EventEmitter {
         event.setTo(to);
         var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "asyncRequest");
+            EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, "asyncRequest");
             return asyncRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();
@@ -1176,7 +1176,7 @@ public class EventEmitter {
         event.setTo(to);
         var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(to) : null;
         if (targetHttp != null) {
-            EventEnvelope forwardEvent = new EventEnvelope(event.toMap()).setHeader(X_EVENT_API, "request");
+            EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, "request");
             return eRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
         Platform platform = Platform.getInstance();

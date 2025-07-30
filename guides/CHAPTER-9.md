@@ -216,7 +216,7 @@ the system automatically insert them as read-only metadata.
 They are used to create a trackable instance of the PostOffice. e.g.
 
 ```java
-var po = new PostOffice(headers, instance);
+var po = PostOffice.trackable(headers, instance);
 ```
 
 To inspect all metadata, you can declare the input as "EventEnvelope" in a TypedLambdaFunction. The system will
@@ -333,7 +333,7 @@ You can obtain an instance of the PostOffice from the input "headers" and "insta
 arguments of your function.
 
 ```java
-var po = new PostOffice(headers, instance);
+var po = PostOffice.trackable(headers, instance);
 ```
 
 The PostOffice is the event manager that you can use to send asynchronous events or to make RPC requests.
@@ -460,11 +460,11 @@ The most convenient method to make a sequential non-blocking RPC call is to use 
 
 ```java
 // for a single RPC call
-PostOffice po = new PostOffice(headers, instance);
+PostOffice po = PostOffice.trackable(headers, instance);
 EventEnvelope result = po.request(requestEvent, timeoutInMills).get();
 
 // for a fork-n-join call
-PostOffice po = new PostOffice(headers, instance);
+PostOffice po = PostOffice.trackable(headers, instance);
 List<EventEnvelope> result = po.request(requestEvents, timeoutInMills).get();
 ```
 
@@ -505,7 +505,7 @@ String tracePath = po.getTracePath();
 ## Trace annotation
 
 To annotate additional information in the trace of your function, please obtain a trackable PostOffice
-instance using `new PostOffice(headers, instance)` and follow the following API signatures:
+instance using `PostOffice.trackable(headers, instance)` and follow the following API signatures:
 
 ```java
 // API signatures
@@ -514,7 +514,7 @@ public PostOffice annotateTrace(String key, Map<String, Object> value);
 public PostOffice annotateTrace(String key, List<Object> value);
 
 // For example,
-var po = new PostOffice(headers, instance);
+var po = PostOffice.trackable(headers, instance);
 po.annotateTrace("hello", "world");
 ```
 
@@ -610,12 +610,12 @@ public void setCustomSerializer(String route, CustomSerializer mapper);
 // platform.setCustomSerializer("my.function", new JacksonSerializer());
 ```
 
-If you use the PostOffice to programmatically send event or make event RPC call and you need
+If you use the PostOffice to programmatically send event or make event RPC call and you need a
 custom serializer, you can create a PostOffice instance like this:
 
 ```java
 // this should be the first statement in the "handleEvent" method.
-PostOffice po = new PostOffice(headers, instance, new MyCustomSerializer());
+PostOffice po = PostOffice.withSerializer(headers, instance, new MyCustomSerializer());
 ```
 
 The outgoing event using the PostOffice will use the custom serializer automatically.

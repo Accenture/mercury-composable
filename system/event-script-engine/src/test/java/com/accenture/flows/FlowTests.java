@@ -292,10 +292,13 @@ class FlowTests extends TestBase {
         assertEquals("application/json", body.get("accept"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void fileVaultTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
-        final String hello = "hello world";
+        final String hello = """
+                { "hello": "world" }
+                """;
         File f1 = new File("/tmp/temp-test-input.txt");
         Utility util = Utility.getInstance();
         util.str2file(f1, hello);
@@ -305,12 +308,15 @@ class FlowTests extends TestBase {
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, timeout).get();
-        assertInstanceOf(String.class, result.getBody());
+        assertInstanceOf(Map.class, result.getBody());
+        MultiLevelMap mm = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertInstanceOf(Map.class, mm.getElement("json"));
+        assertEquals("world", mm.getElement("json.hello"));
         // "output data mapping" will pass the input classpath file as output body
         InputStream in = this.getClass().getResourceAsStream("/files/hello.txt");
         String resourceContent = util.stream2str(in);
-        assertEquals(resourceContent, result.getBody());
-        assertEquals("text/plain", result.getHeader("content-type"));
+        assertEquals(resourceContent, mm.getElement("text"));
+        assertEquals("application/json", result.getHeader("content-type"));
         assertEquals(200, result.getStatus());
         File f2 = new File("/tmp/temp-test-output.txt");
         assertTrue(f2.exists());
@@ -324,10 +330,17 @@ class FlowTests extends TestBase {
         assertTrue(f4.exists());
         String binary = util.file2str(f4);
         assertEquals("binary", binary);
+        File f5 = new File("/tmp/temp-test-list.json");
+        String value = util.file2str(f5);
+        assertTrue(value.startsWith("["));
+        assertTrue(value.endsWith("]"));
+        var json = SimpleMapper.getInstance().getMapper().readValue(value, List.class);
+        assertEquals(List.of("hello", "world"), json);
         // f1 will be deleted by the output data mapping 'model.none -> file(/tmp/temp-test-input.txt)'
         f2.deleteOnExit();
         f3.deleteOnExit();
         f4.deleteOnExit();
+        f5.deleteOnExit();
     }
 
     @SuppressWarnings("unchecked")

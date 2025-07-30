@@ -42,6 +42,21 @@ public class PostOffice {
 
     private static final EventEmitter po = EventEmitter.getInstance();
 
+    public static PostOffice trackable(Map<String, String> headers, int instance) {
+        return new PostOffice(headers, instance);
+    }
+
+    public static PostOffice trackable(String myRoute, String myTraceId, String myTracePath) {
+        return new PostOffice(myRoute, myTraceId, myTracePath);
+    }
+
+    public static PostOffice withSerializer(Map<String, String> headers, int instance, CustomSerializer serializer) {
+        return new PostOffice(headers, instance, serializer);
+    }
+
+    public static PostOffice withSerializer(String myRoute, String myTraceId, String myTracePath, CustomSerializer serializer) {
+        return new PostOffice(myRoute, myTraceId, myTracePath, serializer);
+    }
     /**
      * Create a PostOffice instance
      *

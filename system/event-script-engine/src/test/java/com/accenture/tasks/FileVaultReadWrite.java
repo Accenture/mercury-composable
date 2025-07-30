@@ -22,6 +22,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @PreLoad(route="file.vault")
@@ -31,7 +32,10 @@ public class FileVaultReadWrite implements TypedLambdaFunction<Map<String, Objec
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         Object text = input.get("text");
         Object binary = input.get("binary");
+        Object json = input.get("json");
         Map<String, Object> result = new HashMap<>();
+        result.put("json", json);
+        result.put("list", List.of("hello", "world"));
         if (text instanceof String && binary instanceof byte[] b) {
             String str = Utility.getInstance().getUTF(b);
             if (str.equals(text)) {

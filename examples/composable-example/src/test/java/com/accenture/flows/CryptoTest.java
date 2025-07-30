@@ -35,7 +35,7 @@ class CryptoTest extends TestBase {
     @Test
     void encryptAndDecryptTest() throws ExecutionException, InterruptedException {
         byte[] key = crypto.generateAesKey(strongCrypto? 256 : 128);
-        PostOffice po = new PostOffice("unit.test", "1000", "TEST /crypto");
+        PostOffice po = PostOffice.trackable("unit.test", "1000", "TEST /crypto");
         String key1 = "k1";
         String key2 = "k2";
         String key1Data = "hello";
@@ -48,7 +48,7 @@ class CryptoTest extends TestBase {
         dataset.put(key2, key2Data);
         input.put("dataset", dataset);
         // send event to encryption function
-        EventEnvelope encRequest = new EventEnvelope().setTo("v1.encrypt.fields").setBody(input);
+        EventEnvelope encRequest = EventEnvelope.of().setTo("v1.encrypt.fields").setBody(input);
         EventEnvelope encResult = po.request(encRequest, 5000).get();
         assertInstanceOf(Map.class, encResult.getBody());
         Map<String, Object> encrypted = (Map<String, Object>) encResult.getBody();
@@ -60,7 +60,7 @@ class CryptoTest extends TestBase {
         // update encrypted dataset
         input.put("dataset", encrypted);
         // send event to decryption function
-        EventEnvelope decRequest = new EventEnvelope().setTo("v1.decrypt.fields").setBody(input);
+        EventEnvelope decRequest = EventEnvelope.of().setTo("v1.decrypt.fields").setBody(input);
         EventEnvelope decResult = po.request(decRequest, 5000).get();
         assertInstanceOf(Map.class, decResult.getBody());
         Map<String, Object> decrypted = (Map<String, Object>) decResult.getBody();

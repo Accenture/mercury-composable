@@ -230,7 +230,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
     private void processRequest(Map<String, String> headers, EventEnvelope input, int instance)
             throws AppException, URISyntaxException {
-        PostOffice po = new PostOffice(headers, instance);
+        PostOffice po = PostOffice.trackable(headers, instance);
         AsyncHttpRequest request = new AsyncHttpRequest(input.getBody());
         HttpMetadata md = new HttpMetadata();
         validateUrl(request, md);

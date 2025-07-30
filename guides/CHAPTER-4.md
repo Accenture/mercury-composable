@@ -496,21 +496,26 @@ The external state machine namespace uses the namespace `ext:` to indicate that 
 
 *Constants for input data mapping*
 
-| Type      | Keyword for the left-hand-side argument                      |
-|:----------|:-------------------------------------------------------------|
-| String    | `text(example_value)`                                        |
-| Integer   | `int(number)`                                                |
-| Long      | `long(number)`                                               |
-| Float     | `float(number)`                                              |
-| Double    | `double(number)`                                             |
-| Boolean   | `boolean(true or false)`                                     |
-| Map       | `map(k1=v1, k2=v2)`<br>`map(base.config.parameter)`          |
-| File      | `file(text:file_path)`<br>`file(binary:file_path)`           |
-| Classpath | `classpath(text:file_path)`<br>`classpath(binary:file_path)` |
+| Type      | Keyword for the left-hand-side argument              |
+|:----------|:-----------------------------------------------------|
+| String    | `text(example_value)`                                |
+| Integer   | `int(number)`                                        |
+| Long      | `long(number)`                                       |
+| Float     | `float(number)`                                      |
+| Double    | `double(number)`                                     |
+| Boolean   | `boolean(true or false)`                             |
+| Map       | `map(k1=v1, k2=v2)`<br>`map(base.config.parameter)`  |
+| File      | `file(text:file_path)`                               |
+| File      | `file(binary:file_path)`                             |
+| File      | `file(json:file_path)`                               |
+| Classpath | `classpath(text:file_path)`                          |
+| Classpath | `classpath(binary:file_path)`                        |
+| Classpath | `classpath(json:file_path)`                          |
 
 For input data mapping, the "file" constant type is used to load some file content as an argument of a user function.
-You can tell the system to render the file as "text" or "binary". Similarly, the "classpath" constant type refers
-to static file in the application source code's "resources" folder.
+You can tell the system to render the file as "text", "binary" or "json". Similarly, the "classpath" constant type
+refers to static file in the application source code's "resources" folder. When file type mapping is "json", the
+file content will be rendered as a Map or a List from a JSON string.
 
 The "map" constant type is used for two purposes:
 

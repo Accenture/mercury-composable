@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.8, 7/29/2025
+
+### Added
+
+1. Static methods in EventEnvelope and PostOffice to instantiate new objects
+2. option to render input file content as "json"
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.7, 7/26/2025
 
 ### Added

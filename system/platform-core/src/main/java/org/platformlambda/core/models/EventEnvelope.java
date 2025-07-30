@@ -99,6 +99,18 @@ public class EventEnvelope {
     private Float roundTrip;
     private boolean exRestored = false;
 
+    public static EventEnvelope of() {
+        return new EventEnvelope();
+    }
+
+    public static EventEnvelope of(byte[] event) {
+        return new EventEnvelope(event);
+    }
+
+    public static EventEnvelope of(Map<String, Object> map) {
+        return new EventEnvelope(map);
+    }
+
     /**
      * Create a new EventEnvelope
      */
