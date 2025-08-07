@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.9, 8/6/2025
+
+### Added
+
+Support multipart upload for one or more files in both AsyncHttpClient and reactive HTTP server.
+
+### Removed
+
+N/A
+
+### Changed
+
+OSS updates:
+
+1. Spring Boot parent version 3.5.4
+2. Classgraph version 4.8.181
+3. Vertx version 5.0.2
+
+---
 ## Version 4.3.8, 7/29/2025
 
 ### Added

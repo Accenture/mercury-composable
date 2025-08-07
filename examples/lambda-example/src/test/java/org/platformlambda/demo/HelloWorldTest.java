@@ -39,19 +39,19 @@ class HelloWorldTest extends TestBase {
     @Test
     void rpcTest() throws InterruptedException, ExecutionException {
         Utility util = Utility.getInstance();
-        String NAME = "hello";
-        String ADDRESS = "world";
-        String TELEPHONE = "123-456-7890";
-        DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
+        String name = "hello";
+        String address = "world";
+        String telephone = "123-456-7890";
+        DemoPoJo pojo = new DemoPoJo(name, address, telephone);
         PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
         EventEnvelope response = po.request(request, 8000).get();
         assert response != null;
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        assertEquals(NAME, map.getElement("body.name"));
-        assertEquals(ADDRESS, map.getElement("body.address"));
-        assertEquals(TELEPHONE, map.getElement("body.telephone"));
+        assertEquals(name, map.getElement("body.name"));
+        assertEquals(address, map.getElement("body.address"));
+        assertEquals(telephone, map.getElement("body.telephone"));
         assertEquals(util.date2str(pojo.time), map.getElement("body.time"));
     }
 

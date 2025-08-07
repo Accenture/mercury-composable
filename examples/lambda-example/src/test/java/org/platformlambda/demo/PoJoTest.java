@@ -35,9 +35,9 @@ class PoJoTest extends TestBase {
 
     @Test
     void pojoRpcTest() throws InterruptedException {
-        Integer ID = 1;
-        String NAME = "Simple PoJo class";
-        String ADDRESS = "100 World Blvd, Planet Earth";
+        Integer id = 1;
+        String name = "Simple PoJo class";
+        String address = "100 World Blvd, Planet Earth";
         BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         PostOffice po = new PostOffice("unit.test", "20001", "GET /api/hello/pojo");
         EventEnvelope request = new EventEnvelope().setTo("hello.pojo").setHeader("id", "1");
@@ -46,8 +46,8 @@ class PoJoTest extends TestBase {
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
         SamplePoJo pojo = response.getBody(SamplePoJo.class);
-        assertEquals(ID, pojo.getId());
-        assertEquals(NAME, pojo.getName());
-        assertEquals(ADDRESS, pojo.getAddress());
+        assertEquals(id, pojo.getId());
+        assertEquals(name, pojo.getName());
+        assertEquals(address, pojo.getAddress());
     }
 }

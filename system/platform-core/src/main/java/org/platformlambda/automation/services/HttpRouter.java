@@ -578,25 +578,33 @@ public class HttpRouter {
 
     private void handleMultiPartContent(HttpServerRequest request, AssignedRoute route,
                                         HttpRequestEvent requestEvent, AsyncHttpRequest req) {
-        final StreamHolder stream = new StreamHolder(route.info.timeoutSeconds);
+        // Multipart content may contain one or more files
+        final AtomicInteger total = new AtomicInteger();
+        final List<String> streamIds = new ArrayList<>();
+        final List<String> fileNames = new ArrayList<>();
+        final List<String> contentTypes = new ArrayList<>();
+        final List<Integer> fileSizes = new ArrayList<>();
         request.uploadHandler(upload -> {
-            req.setFileName(upload.filename());
-            final AtomicInteger total = new AtomicInteger();
+            final AtomicInteger fileLen = new AtomicInteger();
+            final StreamHolder stream = new StreamHolder(route.info.timeoutSeconds);
+            fileNames.add(upload.filename());
+            contentTypes.add(upload.contentType());
             upload.handler(block -> {
                 int len = block.length();
                 if (len > 0) {
+                    fileLen.addAndGet(len);
                     total.addAndGet(len);
                     pipeHttpInputToStream(stream.getPublisher(), block, len);
                 }
             }).endHandler(end -> {
-                int size = total.get();
-                req.setContentLength(size);
-                if (size > 0) {
-                    req.setStreamRoute(stream.getInputStreamId());
-                    stream.close();
-                }
-                sendRequestToService(request, requestEvent.setHttpRequest(req));
+                fileSizes.add(fileLen.get());
+                streamIds.add(stream.getInputStreamId());
+                stream.close();
             });
+        }).endHandler(end -> {
+            req.setStreamRoutes(streamIds).setContentLength(total.get())
+                .setFileNames(fileNames).setFileContentTypes(contentTypes).setFileSizes(fileSizes);
+            sendRequestToService(request, requestEvent.setHttpRequest(req));
         });
         request.resume();
     }

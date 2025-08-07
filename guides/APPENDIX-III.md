@@ -271,6 +271,18 @@ of the payload.
 *IMPORTANT*: Do not set the "content-length" HTTP header because the system will automatically compute the
 correct content-length for small payload. For large payload, it will use the chunking method.
 
+## Multipart file upload
+
+The "multipart/form-data" file upload protocol is supported for client side and server side.
+
+You can upload single file or multiple files in a single HTTP request.
+
+1. Client side is handled by the AsyncHttpClient composable function with the route name "async.http.request".
+2. Server side is processed by the `handleMultiPartContent` method in the HttpRouter class.
+
+Please refer to the `FileUploadDemo` class in the "lambda-example" for a REST endpoint reference implementation
+and the `MultiPartFileUploadTest` class in the unit tests for the client side handling.
+
 ## Using AsyncHttpClient by configuration
 
 The "async.http.request" service can be used as a task in a flow. The following flow configuration example

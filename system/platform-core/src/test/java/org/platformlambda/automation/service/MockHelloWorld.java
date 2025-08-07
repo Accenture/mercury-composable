@@ -57,10 +57,9 @@ public class MockHelloWorld implements TypedLambdaFunction<AsyncHttpRequest, Obj
             result.setHeader("Set-Cookie", "second=one");
             return result;
         }
-        if (input.getStreamRoute() != null) {
+        if (!input.getStreamRoutes().isEmpty()) {
             var result = new EventEnvelope().setBody(input.getBody())
                                 .setHeader("content-type", "application/octet-stream");
-
             String streamId = input.getHeader(X_STREAM_ID);
             String ttl = input.getHeader(X_TTL);
             if (streamId != null && ttl != null) {

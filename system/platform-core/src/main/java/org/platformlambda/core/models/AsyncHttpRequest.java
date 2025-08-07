@@ -31,6 +31,7 @@ import java.util.*;
 
 public class AsyncHttpRequest {
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpRequest.class);
+    private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private static final String HTTP_HEADERS = "headers";
     private static final String HTTP_METHOD = "method";
     private static final String IP_ADDRESS = "ip";
@@ -46,6 +47,8 @@ public class AsyncHttpRequest {
     private static final String HTTP_BODY = "body";
     private static final String FILE_UPLOAD = "upload";
     private static final String FILE_NAME = "filename";
+    private static final String FILE_TYPE = "file_type";
+    private static final String FILE_LENGTH = "file_length";
     private static final String CONTENT_LENGTH = "size";
     private static final String TRUST_ALL_CERT = "trust_all_cert";
     private static final String TARGET_HOST = "host";
@@ -62,8 +65,10 @@ public class AsyncHttpRequest {
     private Map<String, String> pathParams = new HashMap<>();
     private Map<String, String> cookies = new HashMap<>();
     private Map<String, String> session = new HashMap<>();
+    private List<String> fileNames = new ArrayList<>();
+    private List<String> fileContentTypes = new ArrayList<>();
+    private List<Integer> fileSizes = new ArrayList<>();
     private Object body;
-    private String fileName;
     private String targetHost;
     private boolean trustAllCert = false;
     private boolean https = false;
@@ -183,6 +188,24 @@ public class AsyncHttpRequest {
         return this;
     }
 
+    public boolean isValidStreams() {
+        var streams = getStreamRoutes();
+        var names = getFileNames();
+        var contentTypes = getFileContentTypes();
+        var sizeList = getFileSizes();
+        if (!streams.isEmpty() && streams.size() == names.size() &&
+                streams.size() == contentTypes.size() && streams.size() == sizeList.size()) {
+            for (String id: streams) {
+                if (!id.startsWith("stream.")) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public String getStreamRoute() {
         return getHeader(X_STREAM_ID);
     }
@@ -194,23 +217,90 @@ public class AsyncHttpRequest {
         return this;
     }
 
+    public List<String> getStreamRoutes() {
+        var routes = getStreamRoute();
+        if (routes == null) {
+            return Collections.emptyList();
+        } else {
+            return routes.startsWith("[") ? Utility.getInstance().split(routes, "[, ]") : List.of(routes);
+        }
+    }
+
+    public AsyncHttpRequest setStreamRoutes(List<String> streamRoutes) {
+        return streamRoutes.size() == 1?
+                setStreamRoute(streamRoutes.getFirst()) : setStreamRoute(String.valueOf(streamRoutes));
+    }
+
     public boolean isStream() {
         return getStreamRoute() != null;
     }
 
+    /**
+     * Please use getFileNames()
+     * <p>
+     * this API is or backward compatibility only
+     * @return the first entry of file names
+     */
     public String getFileName() {
-        return fileName;
+        return fileNames.isEmpty()? null : fileNames.getFirst();
     }
 
+    public List<String> getFileNames() {
+        return fileNames;
+    }
+
+    /**
+     * Please use setFileNames(fileNames)
+     * <p>
+     * this API is or backward compatibility only
+     * @param fileName for multi-part upload
+     * @return this
+     */
     public AsyncHttpRequest setFileName(String fileName) {
-        if (fileName != null) {
-            this.fileName = fileName;
+        if (fileName != null && !fileName.isEmpty()) {
+            setFileSizes(List.of(-1)).setFileContentTypes(List.of(APPLICATION_OCTET_STREAM));
+            setFileNames(List.of(fileName));
+        }
+        return this;
+    }
+
+    public AsyncHttpRequest setFileNames(List<String> fileNames) {
+        if (fileNames != null && !fileNames.isEmpty()) {
+            this.fileNames.clear();
+            this.fileNames.addAll(fileNames);
+            List<Integer> placeholder = new ArrayList<>();
+            fileNames.forEach(f -> placeholder.add(-1));
+            setFileSizes(placeholder);
+        }
+        return this;
+    }
+
+    public List<String> getFileContentTypes() {
+        return fileContentTypes;
+    }
+
+    public AsyncHttpRequest setFileContentTypes(List<String> contentTypes) {
+        if (contentTypes != null && !contentTypes.isEmpty()) {
+            this.fileContentTypes.clear();
+            this.fileContentTypes.addAll(contentTypes);
+        }
+        return this;
+    }
+
+    public List<Integer> getFileSizes() {
+        return fileSizes;
+    }
+
+    public AsyncHttpRequest setFileSizes(List<Integer> sizes) {
+        if (sizes != null && !sizes.isEmpty()) {
+            this.fileSizes.clear();
+            this.fileSizes.addAll(sizes);
         }
         return this;
     }
 
     public boolean isFile() {
-        return fileName != null;
+        return !fileNames.isEmpty();
     }
 
     public int getTimeoutSeconds() {
@@ -494,8 +584,14 @@ public class AsyncHttpRequest {
         if (url != null) {
             result.put(URL_LABEL, url);
         }
-        if (fileName != null) {
-            result.put(FILE_NAME, fileName);
+        if (!fileNames.isEmpty()) {
+            result.put(FILE_NAME, fileNames);
+        }
+        if (!fileContentTypes.isEmpty()) {
+            result.put(FILE_TYPE, fileContentTypes);
+        }
+        if (!fileSizes.isEmpty()) {
+            result.put(FILE_LENGTH, fileSizes);
         }
         if (contentLength != -1) {
             result.put(CONTENT_LENGTH, contentLength);
@@ -518,6 +614,7 @@ public class AsyncHttpRequest {
             copy(source);
         } else if (input instanceof Map<?, ?> map) {
             copyKeyValuesFromMap(map);
+            copyFileMetadataFromMap(map);
             if (map.containsKey(PARAMETERS)) {
                 Map<String, Object> parameters = (Map<String, Object>) map.get(PARAMETERS);
                 if (parameters.containsKey(PATH)) {
@@ -537,8 +634,10 @@ public class AsyncHttpRequest {
         this.method = source.method;
         this.ip = source.ip;
         this.url = source.url;
-        this.fileName = source.fileName;
+        this.fileNames = source.fileNames;
+        this.fileContentTypes = source.fileContentTypes;
         this.contentLength = source.contentLength;
+        this.fileSizes = source.fileSizes;
         this.body = source.body;
         this.queryString = source.queryString;
         this.https = source.https;
@@ -569,9 +668,6 @@ public class AsyncHttpRequest {
         if (map.get(URL_LABEL) instanceof String label) {
             url = label;
         }
-        if (map.get(FILE_NAME) instanceof String name) {
-            fileName = name;
-        }
         if (map.get(CONTENT_LENGTH) instanceof Integer len) {
             contentLength = len;
         }
@@ -592,6 +688,21 @@ public class AsyncHttpRequest {
         }
         if (map.get(FILE_UPLOAD) instanceof String up) {
             upload = up;
+        }
+    }
+
+    private void copyFileMetadataFromMap(Map<?, ?> map) {
+        if (map.get(FILE_NAME) instanceof List<?> names) {
+            fileNames.clear();
+            names.forEach(name -> fileNames.add(String.valueOf(name)));
+        }
+        if (map.get(FILE_TYPE) instanceof List<?> ct) {
+            fileContentTypes.clear();
+            ct.forEach(c -> fileContentTypes.add(String.valueOf(c)));
+        }
+        if (map.get(FILE_LENGTH) instanceof List<?> sizes) {
+            fileSizes.clear();
+            sizes.forEach(c -> fileSizes.add(Utility.getInstance().str2int(String.valueOf(c))));
         }
     }
 

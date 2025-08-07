@@ -399,31 +399,22 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void uploadMultipartWithPost() throws IOException, InterruptedException {
+    void uploadSingleFileUsingMultipart() throws IOException, InterruptedException {
         final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
-        Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
-        int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        EventPublisher publisher = new EventPublisher(10000);
-        for (int i=0; i < 600; i++) {
-            String line = "hello world "+i+"\n";
-            byte[] d = util.getUTF(line);
-            publisher.publish(d);
-            bytes.write(d);
-            len += d.length;
-        }
-        publisher.publishCompletion();
+        String publishedStreamId = getStream(bytes, 100);
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("POST");
         req.setUrl("/api/upload/demo");
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", MULTIPART_FORM_DATA);
-        req.setContentLength(len);
+        // for multipart upload, content-length must be set.
+        req.setContentLength(bytes.size());
         req.setFileName("hello-world.txt");
-        req.setStreamRoute(publisher.getStreamId());
+        req.setStreamRoute(publishedStreamId);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
@@ -443,6 +434,80 @@ class RestEndpointTest extends TestBase {
         Boolean done = bench2.poll(10, TimeUnit.SECONDS);
         assertEquals(true, done);
         assertArrayEquals(bytes.toByteArray(), result.toByteArray());
+    }
+
+    private String getStream(ByteArrayOutputStream bytes, int lines) throws IOException {
+        Utility util = Utility.getInstance();
+        EventPublisher publisher = new EventPublisher(10000);
+        for (int i=0; i < lines; i++) {
+            String line = "hello world "+i+"\n";
+            byte[] d = util.getUTF(line);
+            publisher.publish(d);
+            bytes.write(d);
+        }
+        publisher.publishCompletion();
+        return publisher.getStreamId();
+    }
+
+    @Test
+    void uploadTwoFilesUsingMultipart() throws IOException, InterruptedException {
+        final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
+        final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
+        Utility util = Utility.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
+        ByteArrayOutputStream bytes1 = new ByteArrayOutputStream();
+        String publishedStreamId1 = getStream(bytes1, 10);
+        ByteArrayOutputStream bytes2 = new ByteArrayOutputStream();
+        String publishedStreamId2 = getStream(bytes2, 20);
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("POST");
+        req.setUrl("/api/upload/demo");
+        req.setTargetHost("http://127.0.0.1:"+port);
+        req.setHeader("accept", "application/json");
+        req.setHeader("content-type", MULTIPART_FORM_DATA);
+        // for multipart upload, content-length must be set.
+        req.setContentLength(bytes1.size() + bytes2.size());
+        // To upload multiple files using multipart/form-data,
+        // file-names, file-content-types and stream-routes must be set.
+        req.setFileNames(List.of("hello1.txt", "hello2.txt"));
+        req.setFileContentTypes(List.of("text/plain", "text/plain"));
+        req.setStreamRoutes(List.of(publishedStreamId1, publishedStreamId2));
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
+        res.onSuccess(bench1::add);
+        EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
+        assert response != null;
+        assertNotNull(response.getHeader("x-stream-id"));
+        String streams = response.getHeader("x-stream-id");
+        assertTrue(streams.startsWith("["));
+        List<String> streamList = util.split(streams, "[], ");
+        assertEquals(2, streamList.size());
+        // check the first uploaded file
+        ByteArrayOutputStream result1 = new ByteArrayOutputStream();
+        FluxConsumer<byte[]> flux1 = new FluxConsumer<>(streamList.getFirst(), RPC_TIMEOUT);
+        flux1.consume(data -> {
+            try {
+                result1.write(data);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, null, () -> bench2.add(true));
+        Boolean done1 = bench2.poll(10, TimeUnit.SECONDS);
+        assertEquals(true, done1);
+        assertArrayEquals(bytes1.toByteArray(), result1.toByteArray());
+        // check the second uploaded file
+        ByteArrayOutputStream result2 = new ByteArrayOutputStream();
+        FluxConsumer<byte[]> flux2 = new FluxConsumer<>(streamList.get(1), RPC_TIMEOUT);
+        flux2.consume(data -> {
+            try {
+                result2.write(data);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, null, () -> bench2.add(true));
+        Boolean done2 = bench2.poll(10, TimeUnit.SECONDS);
+        assertEquals(true, done2);
+        assertArrayEquals(bytes2.toByteArray(), result2.toByteArray());
     }
 
     @SuppressWarnings("unchecked")

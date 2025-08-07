@@ -5,13 +5,13 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-presence</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.8</version>
+    <version>4.3.9</version>
     <name>Presence monitor for Kafka</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.4</version>
         <relativePath/>
     </parent>
 
@@ -46,13 +46,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>service-monitor</artifactId>
-            <version>4.3.8</version>
+            <version>4.3.9</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.3.8</version>
+            <version>4.3.9</version>
         </dependency>
 
         <dependency>

@@ -78,7 +78,7 @@ public class FileDownloadDemo implements TypedLambdaFunction<AsyncHttpRequest, E
             }
             publisher.publishCompletion();
             log.info("Sending {} with {} bytes to {}", filePath, total, publisher.getStreamId());
-            return new EventEnvelope().setHeader("stream", publisher.getStreamId())
+            return new EventEnvelope().setHeader("x-stream-id", publisher.getStreamId())
                     .setHeader("Content-Type", "application/octet-stream")
                     .setHeader("Content-Disposition", "attachment; filename=" + SAMPLE_FILE);
         }

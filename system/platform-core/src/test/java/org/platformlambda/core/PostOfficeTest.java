@@ -395,7 +395,6 @@ class PostOfficeTest extends TestBase {
             assertInstanceOf(Map.class, response.getBody());
             Map<String, Object> result = (Map<String, Object>) response.getBody();
             assertTrue(result.containsKey(body));
-            System.out.println(result);
             assertInstanceOf(Integer.class, result.get(body));
             payloads.add((Integer) result.get(body));
             assertEquals(String.valueOf(timeout), result.get(EventEmitter.RPC));

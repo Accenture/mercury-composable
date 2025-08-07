@@ -130,8 +130,6 @@ class PayloadMapperTest {
         assertEquals(input.getClass().getName(), typed.type());
         assertInstanceOf(byte[].class, typed.payload());
         Object converted = converter.decode(typed);
-        System.out.println(converted);
-
         assertInstanceOf(byte[].class, converted);
         PoJo o = SimpleMapper.getInstance().getMapper().readValue(converted, PoJo.class);
         assertEquals(input.getName(), o.getName());

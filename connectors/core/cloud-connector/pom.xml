@@ -6,13 +6,13 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>cloud-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.8</version>
+    <version>4.3.9</version>
     <name>Cloud connector module</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.4</version>
         <relativePath/>
     </parent>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.3.8</version>
+            <version>4.3.9</version>
         </dependency>
 
         <dependency>

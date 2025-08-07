@@ -61,6 +61,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @EventInterceptor
 public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void> {
@@ -74,7 +75,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final ConcurrentMap<String, WebClient> webClients = new ConcurrentHashMap<>();
     private static final OpenOptions READ_THEN_DELETE = new OpenOptions().setRead(true).setDeleteOnClose(true);
-    private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "application/xml";
@@ -95,8 +95,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String HEAD = "HEAD";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
-    private static final String STREAM_PREFIX = "stream.";
-    private static final String INPUT_STREAM_SUFFIX = ".in";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
     private static final String X_CONTENT_LENGTH = "X-Content-Length";
@@ -246,13 +244,12 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         // get request body if any
         String method = request.getMethod();
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
-            final String streamId = request.getStreamRoute();
-            if (streamId != null && streamId.startsWith(STREAM_PREFIX)
-                    && streamId.contains(INPUT_STREAM_SUFFIX)) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
-                        handleUpload(input, queue, request, httpRequest));
-            } else {
+            final var streams = request.getStreamRoutes();
+            if (streams.isEmpty()) {
                 httpResponse = getHttpResponseWithPayload(request, httpRequest);
+            } else {
+                Platform.getInstance().getVirtualThreadExecutor()
+                        .submit(() -> handleUpload(input, queue, request, httpRequest));
             }
         } else {
             httpResponse = httpRequest.send();
@@ -416,25 +413,32 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
 
     private void handleUpload(EventEnvelope input, OutputStreamQueue queue,
                               AsyncHttpRequest request, HttpRequest<Void> httpRequest) {
-        String streamId = request.getStreamRoute();
+        var streams = request.getStreamRoutes();
         String contentType = request.getHeader(CONTENT_TYPE);
         String method = request.getMethod();
         int timeout = request.getTimeoutSeconds();
-        objectStream2file(streamId, timeout > 0? timeout : DEFAULT_TTL_SECONDS)
-            .onSuccess(temp -> {
+        objectStreams2files(streams, timeout > 0? timeout : DEFAULT_TTL_SECONDS)
+            .onSuccess(files -> {
                 final Future<HttpResponse<Void>> future;
                 int contentLen = request.getContentLength();
                 if (contentLen > 0) {
-                    String filename = request.getFileName();
                     if (contentType != null && contentType.startsWith(MULTIPART_FORM_DATA) &&
-                            POST.equals(method) && filename != null) {
-                        MultipartForm form = MultipartForm.create()
-                                .binaryFileUpload(request.getUploadTag(), filename, temp.getPath(),
-                                                    APPLICATION_OCTET_STREAM);
+                            POST.equals(method) && request.isValidStreams()) {
+                        // support one or more files to upload
+                        var fileNames = request.getFileNames();
+                        var contentTypes = request.getFileContentTypes();
+                        MultipartForm form = MultipartForm.create();
+                        int i = 0;
+                        for (File f: files) {
+                            form.binaryFileUpload(request.getUploadTag(),
+                                                    fileNames.get(i), f.getPath(), contentTypes.get(i));
+                            i++;
+                        }
                         future = httpRequest.sendMultipartForm(form);
                     } else {
+                        // if more than one file is provided, take only the first one
                         FileSystem fs = Platform.getInstance().getVertx().fileSystem();
-                        AsyncFile file = fs.openBlocking(temp.getPath(), READ_THEN_DELETE);
+                        AsyncFile file = fs.openBlocking(files.getFirst().getPath(), READ_THEN_DELETE);
                         future = httpRequest.sendStream(file);
                     }
                 } else {
@@ -467,39 +471,74 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         return new File(tempDir, at > 0? streamId.substring(0, at) : streamId);
     }
 
-    private Future<File> objectStream2file(String streamId, int timeoutSeconds) {
+    private Future<List<File>> objectStreams2files(List<String> streams, int timeoutSeconds) {
         return Future.future(promise -> {
-            Utility util = Utility.getInstance();
-            File temp = getTempFile(streamId);
-            try {
-                // No auto-close because FluxConsumer is reactive and the file output stream will close at completion
-                FileOutputStream out = new FileOutputStream(temp);
-                FluxConsumer<Object> flux = new FluxConsumer<>(streamId, Math.max(5000L, timeoutSeconds * 1000L));
-                flux.consume(data -> {
-                    try {
-                        if (data instanceof byte[] b && b.length > 0) {
-                            out.write(b);
-                        }
-                        if (data instanceof String text && !text.isEmpty()) {
-                            out.write(util.getUTF(text));
-                        }
-                    } catch (IOException e) {
-                        // ok to ignore
+            final List<File> files = new ArrayList<>();
+            final List<BufferedOutputStream> fileStreams = new ArrayList<>();
+            streams.forEach(id -> files.add(getTempFile(id)));
+            files.forEach(f -> {
+                try {
+                    fileStreams.add(new BufferedOutputStream(new FileOutputStream(f)));
+                } catch (FileNotFoundException e) {
+                    promise.fail(e);
+                }
+            });
+            final AtomicInteger received = new AtomicInteger(0);
+            final AtomicInteger index = new AtomicInteger(0);
+            for (String id: streams) {
+                final int i = index.getAndIncrement();
+                BufferedOutputStream out = fileStreams.get(i);
+                FluxConsumer<Object> flux = new FluxConsumer<>(id, Math.max(5000L, timeoutSeconds * 1000L));
+                flux.consume(data -> saveFileBlock(data, out),
+                e -> closeFileStreams(promise, fileStreams, e),
+                () -> {
+                    if (received.incrementAndGet() == streams.size()) {
+                        closeFileStreams(promise, fileStreams, files);
                     }
-                }, promise::fail, () -> closeOutputStreamFile(out, temp, promise));
-            } catch (IOException e) {
-                promise.fail(e);
+                });
             }
         });
     }
 
-    private void closeOutputStreamFile(FileOutputStream out, File temp, Promise<File> promise) {
+    private void saveFileBlock(Object data, BufferedOutputStream out) {
         try {
-            out.close();
+            if (data instanceof byte[] b && b.length > 0) {
+                out.write(b);
+            }
+            if (data instanceof String text && !text.isEmpty()) {
+                out.write(Utility.getInstance().getUTF(text));
+            }
         } catch (IOException e) {
-            // ok to ignore
+            throw new IllegalArgumentException(e);
         }
-        promise.complete(temp);
+    }
+
+    private void closeFileStreams(Promise<List<File>> promise, List<BufferedOutputStream> fileStreams, Throwable e) {
+        Throwable error = null;
+        for (BufferedOutputStream out: fileStreams) {
+            try {
+                out.close();
+            } catch (IOException ex) {
+                error = ex;
+            }
+        }
+        promise.fail(error == null? e : error);
+    }
+
+    private void closeFileStreams(Promise<List<File>> promise, List<BufferedOutputStream> fileStreams, List<File> files) {
+        Throwable error = null;
+        for (BufferedOutputStream out: fileStreams) {
+            try {
+                out.close();
+            } catch (IOException ex) {
+                error = ex;
+            }
+        }
+        if (error != null) {
+            promise.fail(error);
+        } else {
+            promise.complete(files);
+        }
     }
 
     private void removeExpiredFiles() {
