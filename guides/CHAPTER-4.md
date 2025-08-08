@@ -644,7 +644,9 @@ a segment of a key in the model, input, header and result namespaces.
 
 When it is used in the right hand side, there is no restriction.
 
-For security reason, the key inside the brackets must be a model variable.
+> *Note*: (1) For security reason, the key inside the brackets must be a model variable.
+          (2) The resolved value from a model variable must be either text or number.
+              Otherwise, it will be converted to a value of "null".
 
 ### Handling arrays in a dataset
 

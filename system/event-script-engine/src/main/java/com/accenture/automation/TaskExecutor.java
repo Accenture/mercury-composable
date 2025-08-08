@@ -1095,7 +1095,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private String getStringFromModelValue(Object obj) {
-        return obj instanceof String || obj instanceof Number || obj instanceof Boolean? String.valueOf(obj) : "null";
+        return obj instanceof String || obj instanceof Number? String.valueOf(obj) : "null";
     }
 
     private int replaceWithRuntimeVar(VarSegment s, StringBuilder sb, int start, String text, MultiLevelMap source) {
