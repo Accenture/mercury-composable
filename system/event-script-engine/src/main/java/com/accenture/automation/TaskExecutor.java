@@ -1094,11 +1094,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return value;
     }
 
+    private String getStringFromModelValue(Object obj) {
+        return obj instanceof String || obj instanceof Number || obj instanceof Boolean? String.valueOf(obj) : "null";
+    }
+
     private int replaceWithRuntimeVar(VarSegment s, StringBuilder sb, int start, String text, MultiLevelMap source) {
         String middle = text.substring(s.start() + 1, s.end() - 1).trim();
         if (middle.startsWith(MODEL_NAMESPACE) && !middle.endsWith(".")) {
-            var resolved = source.getElement(middle);
-            middle = String.valueOf(resolved);
+            middle = getStringFromModelValue(source.getElement(middle));
         } else {
             middle = "null";
         }
@@ -1178,7 +1181,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void resolveModelIndex(StringBuilder sb, String text, MultiLevelMap source,
                                    String modelIndex, boolean isRhs) {
-        int ptr = util.str2int(String.valueOf(source.getElement(modelIndex)));
+        int ptr = util.str2int(getStringFromModelValue(source.getElement(modelIndex)));
         if (isRhs) {
             if (ptr > maxModelArraySize) {
                 throw new IllegalArgumentException("Cannot set RHS to index > " + ptr
