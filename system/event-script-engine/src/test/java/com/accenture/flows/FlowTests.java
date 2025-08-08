@@ -478,7 +478,6 @@ class FlowTests extends TestBase {
         // output mapping 'header.demo -> output.header.x-demo' maps the original header "demo" to "x-demo"
         assertEquals("test-header", res.getHeader("x-demo"));
         greetingAssertions(placeholder, original, result);
-
     }
 
     private void greetingAssertions(String user, Map<String, Object> original, Map<String, Object> result) {
@@ -489,6 +488,8 @@ class FlowTests extends TestBase {
          * if the number is not greater than MAX integer or float
          */
         assertEquals(Utility.getInstance().str2int(user), original.get("user_number"));
+        assertEquals("wonderful day", original.get("runtime_value1"));
+        assertEquals("new world", original.get("runtime_value2"));
         assertEquals(12345, original.get("long_number"));
         assertEquals(12.345, original.get("float_number"));
         assertEquals(12.345, original.get("double_number"));

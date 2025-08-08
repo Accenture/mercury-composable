@@ -616,6 +616,36 @@ The "decision" value is also saved to the state machine (`model`) for subsequent
       - 'result -> model.decision'
 ```
 
+### Environment variables
+
+You can use the standard `${ENV_VAR:default}` syntax to resolve environment variables or parameters from
+the application.properties.
+
+### Runtime model variables
+
+To use a runtime model variable value as a key or constant, you can use the `{model.variable_name}` syntax.
+
+In the following data mapping example,
+
+1. `model.{model.pointer}` is resolved as `model.world`. Therefore, value1 = 'wonderful day'.
+2. value2 is resolved as 'new world'.
+
+```yaml
+  - input:
+      - 'text(wonderful day) -> model.world'
+      - 'text(world) -> model.pointer'
+      - 'model.{model.pointer} -> value1'
+      - 'text(new {model.pointer}) -> value2'      
+    process: 'demo.function'
+```
+
+When this feature is used in the left-hand-side of a data mapping, it can be used to substitute a constant or
+a segment of a key in the model, input, header and result namespaces.
+
+When it is used in the right hand side, there is no restriction.
+
+For security reason, the key inside the brackets must be a model variable.
+
 ### Handling arrays in a dataset
 
 An array of data elements is expressed as a list.
@@ -1057,6 +1087,9 @@ In the input data mapping section, there are two special suffixes `.ITEM` and `.
 the list of elements and spin up an instance of the "next" task to retrieve the element (item) and index of
 the element in the list. The two special suffixes are relevant only when adding to the model variable configured
 in the "source" parameter.
+
+> *Note*: the model variables with special suffixes '.ITEM' and '.INDEX' are virtual objects for the purpose
+          of mapping as input arguments to a task. They cannot be used as regular model variables.
 
 ### Sink task
 

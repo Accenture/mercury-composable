@@ -23,6 +23,7 @@ import io.github.classgraph.Resource;
 import io.github.classgraph.ResourceList;
 import io.github.classgraph.ScanResult;
 import org.platformlambda.core.models.Kv;
+import org.platformlambda.core.models.VarSegment;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.websocket.server.WsEnvelope;
 import org.slf4j.Logger;
@@ -1249,5 +1250,30 @@ public class Utility {
             }
         }
         return sb.substring(0, sb.length()-1);
+    }
+
+    /**
+     * Extract all the segments that contain environment or runtime variable references
+     * @param original text of the key-value
+     * @return list of segment pointers
+     */
+    public List<VarSegment> extractSegments(String original, String begin, String end) {
+        List<VarSegment> result = new ArrayList<>();
+        String text = original;
+        while (true) {
+            int bracketStart = text.lastIndexOf(begin);
+            int bracketEnd = text.lastIndexOf(end);
+            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart) {
+                result.add(new VarSegment(bracketStart, bracketEnd + 1));
+                text = original.substring(0, bracketStart);
+            } else if (bracketStart != -1) {
+                text = original.substring(0, bracketStart);
+            } else {
+                break;
+            }
+        }
+        // restore to original order since the text parsing is in reverse order
+        Collections.reverse(result);
+        return result;
     }
 }

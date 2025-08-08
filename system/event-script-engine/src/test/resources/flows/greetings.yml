@@ -20,6 +20,12 @@ tasks:
       - 'boolean(true) -> boolean_value'
       - 'boolean(true) -> !model.bool -> negate_value'
       - 'model.bool:! -> double_negate_value'
+      - 'text(wonderful day) -> model.world'
+      - 'text(world) -> model.pointer'
+      # model.{model.pointer} is resolved to model.world. Therefore, runtime_value1 = 'wonderful day'
+      - 'model.{model.pointer} -> runtime_value1'
+      # runtime_value2 is resolved to 'new world'
+      - 'text(new {model.pointer}) -> runtime_value2'
       # non-exist model variable can be used in 2 use cases ("boolean null" and "uuid")
       - 'model.none:boolean (null = true) -> none_is_true'
       - 'model.none:boolean (null=false) -> none_is_false'

@@ -51,8 +51,8 @@ class UtilityTests {
     static void setup() {
         // temp directory should be available from the OS without access right restriction
         File temp = new File("/tmp");
-        if (!temp.exists()) {
-            temp.mkdir();
+        if (!temp.exists() && temp.mkdir()) {
+            log.info("/tmp created");
         }
         Configurator.reconfigure(URI.create("classpath:log4j2-json.xml"));
         log.info("Reconfigured to JSON logging");
@@ -64,11 +64,34 @@ class UtilityTests {
     }
 
     @Test
+    void scanEnvVars() {
+        Utility util = Utility.getInstance();
+        var statement = "hello.${world}.this.is.a.${nice}.day";
+        var segments = util.extractSegments(statement, "${", "}");
+        assertEquals(2, segments.size());
+        assertEquals('$', statement.charAt(segments.getFirst().start()));
+        assertEquals('$', statement.charAt(segments.getLast().start()));
+        assertEquals('}', statement.charAt(segments.getFirst().end() - 1));
+        assertEquals('}', statement.charAt(segments.getLast().end() - 1));
+    }
+
+    @Test
+    void scanRuntimeVars() {
+        Utility util = Utility.getInstance();
+        var statement = "hello.{world}.this.is.a.{nice}.day";
+        var segments = util.extractSegments(statement, "{", "}");
+        assertEquals(2, segments.size());
+        assertEquals('{', statement.charAt(segments.getFirst().start()));
+        assertEquals('{', statement.charAt(segments.getLast().start()));
+        assertEquals('}', statement.charAt(segments.getFirst().end() - 1));
+        assertEquals('}', statement.charAt(segments.getLast().end() - 1));
+    }
+
+    @Test
     void setServerPersonality() {
         ServerPersonality personality = ServerPersonality.getInstance();
         String message = "Personality cannot be null";
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                                () -> personality.setType(null));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> personality.setType(null));
         assertEquals(message, ex.getMessage());
     }
 
@@ -188,7 +211,9 @@ class UtilityTests {
             String restored = util.file2str(tempFile);
             assertEquals(helloWorld, restored);
         } finally {
-            tempFile.delete();
+            if (tempFile.delete()) {
+                log.debug("{} deleted", tempFile);
+            }
         }
     }
 
@@ -204,7 +229,9 @@ class UtilityTests {
             String restored = util.file2str(tempFile);
             assertEquals(helloWorld + helloWorld, restored);
         } finally {
-            tempFile.delete();
+            if (tempFile.delete()) {
+                log.debug("{} removed", tempFile);
+            }
         }
     }
 
@@ -468,13 +495,13 @@ class UtilityTests {
         if (!dir.exists() && dir.mkdirs()) {
             log.info("Test folder {} created", dir);
         }
+        assertTrue(dir.exists());
         File f = new File(dir, "test");
         if (util.str2file(f, "hello world")) {
             log.info("Test file {} created", f);
         }
         util.cleanupDir(dir);
-        if (!dir.exists()) {
-            log.info("Test folder {} removed", dir);
-        }
+        assertFalse(dir.exists());
+        log.info("Test folder {} removed", dir);
     }
 }

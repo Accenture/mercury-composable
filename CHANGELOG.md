@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.10, 8/7/2025
+
+### Added
+
+Support runtime string substitution using a model variable
+
+### Removed
+
+N/A
+
+### Changed
+
+ConfigReader refactored to reduce code complexity to 15 or less as per SonarQube's requirement
+
+---
 ## Version 4.3.9, 8/6/2025
 
 ### Added

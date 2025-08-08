@@ -480,5 +480,4 @@ public class CryptoApi {
     public int nextInt(int start, int bound) {
         return random.nextInt(start, bound);
     }
-
 }

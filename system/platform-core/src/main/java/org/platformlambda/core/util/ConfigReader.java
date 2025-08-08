@@ -18,6 +18,7 @@
 
 package org.platformlambda.core.util;
 
+import org.platformlambda.core.models.VarSegment;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.common.ConfigBase;
 import org.yaml.snakeyaml.Yaml;
@@ -39,7 +40,8 @@ public class ConfigReader implements ConfigBase {
     private static final String YML = ".yml";
     private static final String YAML = ".yaml";
     private static final String DOT_PROPERTIES = ".properties";
-
+    private static final String BEGIN = "${";
+    private static final String END = "}";
     private static ConfigReader baseConfig = null;
     private boolean resolved = false;
     private final String id = Utility.getInstance().getUuid();
@@ -129,67 +131,50 @@ public class ConfigReader implements ConfigBase {
             return defaultValue;
         }
         // start parsing environment variables if it has the signature
-        if (value instanceof String result && baseConfig != null && result.lastIndexOf("${") != -1) {
-            List<EnvVarSegment> segments = extractSegments(result);
-            // restore to original order since the text parsing is in reverse order
-            Collections.reverse(segments);
-            int start = 0;
-            StringBuilder sb = new StringBuilder();
-            for (EnvVarSegment s: segments) {
-                String middle = result.substring(s.start+2, s.end-1).trim();
-                String evaluated = performEnvVarSubstitution(key, middle, defaultValue, loop);
-                String heading = result.substring(start, s.start);
-                if (!heading.isEmpty()) {
-                    sb.append(heading);
+        if (value instanceof String text && baseConfig != null && text.lastIndexOf(BEGIN) != -1) {
+            List<VarSegment> segments = Utility.getInstance().extractSegments(text, BEGIN, END);
+            if (!segments.isEmpty()) {
+                int start = 0;
+                StringBuilder sb = new StringBuilder();
+                for (VarSegment s: segments) {
+                    start = replaceWithEnvVar(s, sb, start, key, text, defaultValue, loop);
                 }
-                if (evaluated != null) {
-                    sb.append(evaluated);
+                String lastSegment = text.substring(start);
+                if (!lastSegment.isEmpty()) {
+                    sb.append(lastSegment);
                 }
-                start = s.end;
+                return sb.isEmpty()? null : sb.toString();
             }
-            String lastSegment = result.substring(start);
-            if (!lastSegment.isEmpty()) {
-                sb.append(lastSegment);
-            }
-            return sb.isEmpty()? null : sb.toString();
         }
         return value;
     }
 
-    /**
-     * Extract all the segments that contain environment variable references
-     * @param original text of the key-value
-     * @return list of segment pointers in reversed order
-     */
-    private List<EnvVarSegment> extractSegments(String original) {
-        List<EnvVarSegment> result = new ArrayList<>();
-        String text = original;
-        while (true) {
-            int bracketStart = text.lastIndexOf("${");
-            int bracketEnd = text.lastIndexOf("}");
-            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart) {
-                result.add(new EnvVarSegment(bracketStart, bracketEnd+1));
-                text = original.substring(0, bracketStart);
-            } else if (bracketStart != -1) {
-                text = original.substring(0, bracketStart);
-            } else {
-                break;
-            }
+    private int replaceWithEnvVar(VarSegment s, StringBuilder sb, int start, String key,
+                                  String text, Object defaultValue, String... loop) {
+        String middle = text.substring(s.start() + 2, s.end() - 1).trim();
+        String evaluated = performEnvVarSubstitution(key, middle, defaultValue, loop);
+        String heading = text.substring(start, s.start());
+        if (!heading.isEmpty()) {
+            sb.append(heading);
         }
-        return result;
+        if (evaluated != null) {
+            sb.append(evaluated);
+        }
+        return s.end();
     }
 
     /**
      * Resolve environment variable for a key-value
      *
      * @param key of the property
-     * @param text containing environment variable reference
+     * @param statement containing environment variable reference
      * @param defaultValue when property is not found
      * @param loop contains 0 or 1 elements
      * @return value with environment variable substitution
      */
-    private String performEnvVarSubstitution(String key, String text, Object defaultValue, String... loop) {
-        if (!text.isEmpty()) {
+    private String performEnvVarSubstitution(String key, String statement, Object defaultValue, String... loop) {
+        if (!statement.isEmpty()) {
+            String text = statement;
             String middleDefault = null;
             String loopId = loop.length == 1 && !loop[0].isEmpty() ? loop[0] : Utility.getInstance().getUuid();
             int colon = text.indexOf(':');
@@ -198,25 +183,25 @@ public class ConfigReader implements ConfigBase {
                 text = text.substring(0, colon);
             }
             String property = System.getenv(text);
-            if (property != null) {
-                text = property;
-            } else {
-                List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
-                if (refs.contains(text)) {
-                    log.warn("Config loop for '{}' detected", key);
-                    text = "";
-                } else {
-                    refs.add(text);
-                    loopDetection.put(loopId, refs);
-                    Object mid = baseConfig.get(text, defaultValue, loopId);
-                    text = mid != null? String.valueOf(mid) : null;
-                }
-            }
+            text = property != null? property : detectLoop(key, text, defaultValue, loopId);
             // this guarantees cleaning up temporary loop detection reference to avoid memory leak
             loopDetection.remove(loopId);
             return text != null ? text : middleDefault;
         } else {
             return defaultValue != null? String.valueOf(defaultValue) : null;
+        }
+    }
+
+    private String detectLoop(String key, String text, Object defaultValue, String loopId) {
+        List<String> refs = loopDetection.getOrDefault(loopId, new ArrayList<>());
+        if (refs.contains(text)) {
+            log.warn("Config loop for '{}' detected", key);
+            return "";
+        } else {
+            refs.add(text);
+            loopDetection.put(loopId, refs);
+            Object mid = baseConfig.get(text, defaultValue, loopId);
+            return mid != null? String.valueOf(mid) : null;
         }
     }
 
@@ -313,65 +298,62 @@ public class ConfigReader implements ConfigBase {
             String pathWithoutExt = path.substring(0, path.lastIndexOf('.'));
             alternativePath = path.endsWith(YML)? pathWithoutExt + YAML : pathWithoutExt + YML;
         }
-        InputStream in = null;
-        if (path.startsWith(FILEPATH)) {
-            String filePath = path.substring(FILEPATH.length());
-            File f = new File(filePath);
-            try {
-                if (f.exists()) {
-                    in = Files.newInputStream(Paths.get(filePath));
-                } else {
-                    if (alternativePath != null) {
-                        in = Files.newInputStream(Paths.get(alternativePath.substring(FILEPATH.length())));
-                    }
-                }
-            } catch (IOException e) {
-                // ok to ignore
+        final InputStream in = path.startsWith(FILEPATH)?
+                                fromFilePath(path, alternativePath) : fromClasspath(path, alternativePath);
+        try (in) {
+            if (in == null) {
+                throw new IllegalArgumentException(path + " not found");
             }
-        } else {
-            String resourcePath = path.startsWith(CLASSPATH)? path.substring(CLASSPATH.length()) : path;
-            if (alternativePath != null && alternativePath.startsWith(CLASSPATH)) {
-                alternativePath = alternativePath.substring(CLASSPATH.length());
-            }
-            in = ConfigReader.class.getResourceAsStream(resourcePath);
-            if (in == null && alternativePath != null) {
-                in = ConfigReader.class.getResourceAsStream(alternativePath);
-            }
-        }
-        if (in == null) {
-            throw new IllegalArgumentException(path + " not found");
-        }
-        try {
             if (isYaml) {
                 Utility util = Utility.getInstance();
                 Yaml yaml = new Yaml();
                 String data = util.getUTF(util.stream2bytes(in, false));
-                Map<String, Object> m = yaml.load(data.contains("\t")? data.replace("\t", "  ") : data);
+                Map<String, Object> m = yaml.load(data.contains("\t") ? data.replace("\t", "  ") : data);
                 config.reload(enforceKeysAsText(m));
             } else if (path.endsWith(JSON)) {
                 Map<String, Object> m = SimpleMapper.getInstance().getMapper().readValue(in, Map.class);
                 config.reload(enforceKeysAsText(m));
             } else if (path.endsWith(DOT_PROPERTIES)) {
                 Properties p = new Properties();
-                try {
-                    p.load(in);
-                } catch (IOException e) {
-                    throw new IllegalArgumentException(e.getMessage());
-                }
+                p.load(in);
                 Map<String, Object> map = new HashMap<>();
-                p.forEach((k,v) -> map.put(String.valueOf(k), v));
+                p.forEach((k, v) -> map.put(String.valueOf(k), v));
                 List<String> keys = new ArrayList<>(map.keySet());
                 Collections.sort(keys);
                 keys.forEach(k -> config.setElement(k, map.get(k)));
             }
-        } finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                //
-            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
         return this;
+    }
+
+    private InputStream fromFilePath(String path, String alternativePath) {
+        String filePath = path.substring(FILEPATH.length());
+        File f = new File(filePath);
+        try {
+            if (f.exists()) {
+                return Files.newInputStream(Paths.get(filePath));
+            } else if (alternativePath != null) {
+                return Files.newInputStream(Paths.get(alternativePath.substring(FILEPATH.length())));
+            }
+        } catch (IOException e) {
+            // ok to ignore
+        }
+        return null;
+    }
+
+    private InputStream fromClasspath(String path, String alternativePath) {
+        String resourcePath = path.startsWith(CLASSPATH)? path.substring(CLASSPATH.length()) : path;
+        if (alternativePath != null && alternativePath.startsWith(CLASSPATH)) {
+            alternativePath = alternativePath.substring(CLASSPATH.length());
+        }
+        InputStream in = ConfigReader.class.getResourceAsStream(resourcePath);
+        if (in == null && alternativePath != null) {
+            return ConfigReader.class.getResourceAsStream(alternativePath);
+        } else {
+            return in;
+        }
     }
 
     /**
@@ -413,7 +395,7 @@ public class ConfigReader implements ConfigBase {
             for (String k : keys) {
                 Object o = flat.get(k);
                 if (o instanceof String v) {
-                    int start = v.indexOf("${");
+                    int start = v.indexOf(BEGIN);
                     int end = v.indexOf('}');
                     if (start != -1 && end != -1 && end > start) {
                         hasReferences = true;
@@ -448,5 +430,5 @@ public class ConfigReader implements ConfigBase {
         return result;
     }
 
-    private record EnvVarSegment(int start, int end) { }
+//    private record VarSegment(int start, int end) { }
 }

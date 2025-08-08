@@ -24,6 +24,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.models.VarSegment;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -476,9 +478,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private Object getOutputDataMappingLhsValue(OutputMappingMetadata md, String entry) {
         md.lhs = substituteDynamicIndex(entry.substring(0, md.sep).trim(), md.consolidated, false);
-        boolean isInput = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT);
         md.rhs = substituteDynamicIndex(entry.substring(md.sep+2).trim(), md.consolidated, true);
         final Object value;
+        boolean isInput = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT);
         if (isInput || md.lhs.startsWith(MODEL_NAMESPACE) ||
                 md.lhs.equals(HEADER) || md.lhs.startsWith(HEADER_NAMESPACE) ||
                 md.lhs.equals(STATUS) || md.lhs.equals(DATA_TYPE) ||
@@ -506,8 +508,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             switch (value) {
                 // delete the RHS' target file if LHS value is null
                 case null -> {
-                    if (fileFound && f.delete()) {
-                        log.debug("File {} deleted", f);
+                    if (fileFound) {
+                        try {
+                            Files.delete(f.toPath());
+                        } catch (IOException e) {
+                            throw new IllegalArgumentException(e);
+                        }
                     }
                 }
                 case byte[] b -> util.bytes2file(f, b, append);
@@ -1088,27 +1094,71 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return value;
     }
 
-    private String substituteDynamicIndex(String text, MultiLevelMap source, boolean isRhs) {
+    private int replaceWithRuntimeVar(VarSegment s, StringBuilder sb, int start, String text, MultiLevelMap source) {
+        String middle = text.substring(s.start() + 1, s.end() - 1).trim();
+        if (middle.startsWith(MODEL_NAMESPACE) && !middle.endsWith(".")) {
+            var resolved = source.getElement(middle);
+            middle = String.valueOf(resolved);
+        } else {
+            middle = "null";
+        }
+        String heading = text.substring(start, s.start());
+        if (!heading.isEmpty()) {
+            sb.append(heading);
+        }
+        sb.append(middle);
+        return s.end();
+    }
+
+    private String substituteRuntimeVarsIfAny(String text, MultiLevelMap source) {
+        if (text.contains("{") && text.contains("}")) {
+            List<VarSegment> segments = util.extractSegments(text, "{", "}");
+            if (segments.isEmpty()) {
+                return text;
+            } else {
+                int start = 0;
+                StringBuilder sb = new StringBuilder();
+                for (VarSegment s : segments) {
+                    start = replaceWithRuntimeVar(s, sb, start, text, source);
+                }
+                String lastSegment = text.substring(start);
+                if (!lastSegment.isEmpty()) {
+                    sb.append(lastSegment);
+                }
+                return sb.toString();
+            }
+        } else {
+            return text;
+        }
+    }
+
+    private int scanDynamicIndex(StringBuilder sb, String text, MultiLevelMap source, boolean isRhs, int start) {
+        int open = text.indexOf('[', start);
+        int close = text.indexOf(']', start);
+        if (open != -1 && close > open) {
+            sb.append(text, start, open+1);
+            var idx = text.substring(open+1, close).trim();
+            if (idx.startsWith(MODEL_NAMESPACE) && !idx.endsWith(".")) {
+                resolveModelIndex(sb, text, source, idx, isRhs);
+            } else {
+                validateNumericIndex(sb, text, idx, isRhs);
+            }
+            sb.append(']');
+            return close + 1;
+        } else {
+            // scan completed
+            sb.append(text, start, text.length());
+            return text.length();
+        }
+    }
+
+    private String substituteDynamicIndex(String statement, MultiLevelMap source, boolean isRhs) {
+        String text = substituteRuntimeVarsIfAny(statement, source);
         if (text.contains("[") && text.contains("]")) {
             StringBuilder sb = new StringBuilder();
             int start = 0;
             while (start < text.length()) {
-                int open = text.indexOf('[', start);
-                int close = text.indexOf(']', start);
-                if (open != -1 && close > open) {
-                    sb.append(text, start, open+1);
-                    var idx = text.substring(open+1, close).trim();
-                    if (idx.startsWith(MODEL_NAMESPACE)) {
-                        resolveModelIndex(sb, text, source, idx, isRhs);
-                    } else {
-                        resolveIndex(sb, text, idx, isRhs);
-                    }
-                    sb.append(']');
-                    start = close + 1;
-                } else {
-                    sb.append(text, start, text.length());
-                    break;
-                }
+                start = scanDynamicIndex(sb, text, source, isRhs, start);
             }
             return sb.toString();
         } else {
@@ -1116,7 +1166,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void resolveIndex(StringBuilder sb, String text, String idx, boolean isRhs) {
+    private void validateNumericIndex(StringBuilder sb, String text, String idx, boolean isRhs) {
         if (isRhs && !idx.isEmpty()) {
             int ptr = util.str2int(idx);
             if (ptr < 0) {
