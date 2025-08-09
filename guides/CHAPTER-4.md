@@ -625,11 +625,7 @@ the application.properties.
 
 To use a runtime model variable value as a key or constant, you can use the `{model.variable_name}` syntax.
 
-In the following data mapping example,
-
-1. `model.{model.pointer}` is resolved as `model.world`. Therefore, value1 = 'wonderful day'.
-2. value2 is resolved as 'new world'.
-
+For example,
 ```yaml
   - input:
       - 'text(wonderful day) -> model.world'
@@ -639,14 +635,25 @@ In the following data mapping example,
     process: 'demo.function'
 ```
 
-When this feature is used in the left-hand-side of a data mapping, it can be used to substitute a constant or
-a segment of a key in the model, input, header and result namespaces.
+`model.{model.pointer}` is resolved as `model.world` and thus value1 = `wonderful day` and
+value2 = `new world`.
 
-When it is used in the right hand side, there is no restriction.
+The use of string substitution is subject to event script syntax validation. Therefore,
+1. When this feature is used in the left-hand-side of an input data mapping, it can be used to substitute a constant 
+   or a segment of a key in the `input.` and `model.` namespaces. The above example shows the use of the
+   model namespace in `model.{model.pointer} -> value1`.
+2. Similarly, when used in the left-hand-side of an output data mapping, it can be used to substitute a constant
+   or a segment of a key in the `input.`, `model.`, `header.` or `result.` namespaces.
+3. When used in the right-hand-side of an input data mapping, namespace is optional because it may map as an argument
+   to a task.
+4. When used in the right-hand-side of an output data mapping, it can be used to substitute a model namespace,
+   `file(` output, flow `output.` namespace or an external state machine `ext:` namespace.
 
-> *Note*: (1) For security reason, the key inside the brackets must be a model variable.
-          (2) The resolved value from a model variable must be either text or number.
-              Otherwise, it will be converted to a value of "null".
+*Important*:
+1. For security reason, the key inside the brackets must be a model variable.
+2. The resolved value from a model variable must be either text or number.
+   Otherwise, it will be converted to a value of "null".
+3. For simplicity, nested substitution is not allowed. i.e. `model.{model.{model.n}}` or `model.{model.list[model.n]}`
 
 ### Handling arrays in a dataset
 
