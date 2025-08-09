@@ -647,7 +647,7 @@ The use of string substitution is subject to event script syntax validation. The
    or a segment of a key in the `input.`, `model.`, `header.` or `result.` namespaces.
 3. When used in the right-hand-side of an input data mapping, namespace is optional because it may map as an argument
    to a task.
-4. When used in the right-hand-side of an output data mapping, it can be used to substitute a model namespace,
+4. When used in the right-hand-side of an output data mapping, it can be used to substitute a `model.` namespace,
    `file(` output, flow `output.` namespace or an external state machine `ext:` namespace.
 
 *Important*:
@@ -655,7 +655,8 @@ The use of string substitution is subject to event script syntax validation. The
 1. For security reason, the key inside the brackets must be a model variable.
 2. The resolved value from a model variable must be either text or number.
    Otherwise, it will be converted to a value of "null".
-3. For simplicity, nested substitution is not allowed. i.e. `model.{model.{model.n}}` or `model.{model.list[model.n]}`
+3. For simplicity, nested substitution is not allowed. 
+   i.e. `model.{model.{model.n}}` or `model.{model.list[model.n]}` will be rejected.
 
 ### Handling arrays in a dataset
 
