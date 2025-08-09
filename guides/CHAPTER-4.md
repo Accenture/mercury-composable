@@ -639,6 +639,7 @@ For example,
 value2 = `new world`.
 
 The use of string substitution is subject to event script syntax validation. Therefore,
+
 1. When this feature is used in the left-hand-side of an input data mapping, it can be used to substitute a constant 
    or a segment of a key in the `input.` and `model.` namespaces. The above example shows the use of the
    model namespace in `model.{model.pointer} -> value1`.
@@ -650,6 +651,7 @@ The use of string substitution is subject to event script syntax validation. The
    `file(` output, flow `output.` namespace or an external state machine `ext:` namespace.
 
 *Important*:
+
 1. For security reason, the key inside the brackets must be a model variable.
 2. The resolved value from a model variable must be either text or number.
    Otherwise, it will be converted to a value of "null".
