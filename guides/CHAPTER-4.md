@@ -631,12 +631,16 @@ For example,
       - 'text(wonderful day) -> model.world'
       - 'text(world) -> model.pointer'
       - 'model.{model.pointer} -> value1'
-      - 'text(new {model.pointer}) -> value2'      
+      - 'text(new {model.pointer}) -> value2' 
+      - 'text(keep {this}/{one} unchanged) -> value3'  
     process: 'demo.function'
 ```
 
-`model.{model.pointer}` is resolved as `model.world` and thus value1 = `wonderful day` and
-value2 = `new world`.
+`model.{model.pointer}` is resolved as `model.world`, giving value1 = `wonderful day` and
+value2 = `new world`. 
+
+The text inside a set of brackets that is not a model variable will be kept unchanged, 
+thus value3 = `keep {this}/{one} unchanged`
 
 The use of string substitution is subject to event script syntax validation. Therefore,
 
@@ -657,6 +661,7 @@ The use of string substitution is subject to event script syntax validation. The
    Otherwise, it will be converted to a value of "null".
 3. For simplicity, nested substitution is not allowed. 
    i.e. `model.{model.{model.n}}` or `model.{model.list[model.n]}` will be rejected.
+4. If the bracketed text is not a model variable, the brackets and the enclosed text will be kept unchanged.
 
 ### Handling arrays in a dataset
 

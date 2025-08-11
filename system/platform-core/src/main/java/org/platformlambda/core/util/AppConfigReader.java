@@ -82,7 +82,6 @@ public class AppConfigReader implements ConfigBase {
                 // the datasets are always normalized because it is a flat map of key-values
                 keys.forEach(k -> multiMap.setElement(k, consolidated.get(k)));
                 config.load(multiMap.getMap());
-                config.resolveReferences();
             } else {
                 throw new IOException("missing 'resources' section in "+APP_CONFIG_READER_YML);
             }
@@ -113,7 +112,7 @@ public class AppConfigReader implements ConfigBase {
              * because the AppConfigReader constructor will resolve references
              * after merging all base configuration files.
              */
-            ConfigReader reader = new ConfigReader().load(filename);
+            ConfigReader reader = new ConfigReader().load(filename, false);
             Map<String, Object> flat = Utility.getInstance().getFlatMap(reader.getMap());
             if (!flat.isEmpty()) {
                 consolidated.putAll(flat);

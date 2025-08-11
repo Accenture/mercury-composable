@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>csv-flow-adapter</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.10</version>
+    <version>4.3.11</version>
     <name>CSV Flow Adapter demo library</name>
 
     <parent>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.3.10</version>
+            <version>4.3.11</version>
         </dependency>
 
         <dependency>

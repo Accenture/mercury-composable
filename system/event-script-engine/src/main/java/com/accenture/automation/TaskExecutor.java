@@ -1103,18 +1103,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (!heading.isEmpty()) {
             sb.append(heading);
         }
-
         String middle = text.substring(s.start() + 1, s.end() - 1).trim();
         if (middle.startsWith(MODEL_NAMESPACE) && !middle.endsWith(".")) {
-            middle = getStringFromModelValue(source.getElement(middle));
-
+            sb.append(getStringFromModelValue(source.getElement(middle)));
+        } else {
+            sb.append(text, s.start(), s.end());
         }
-        else{ //Only do substitution if in the `model` namespace
-            middle = text.substring(s.start(), s.end()).trim();
-        }
-
-        sb.append(middle);
-
         return s.end();
     }
 

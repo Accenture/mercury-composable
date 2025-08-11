@@ -64,7 +64,6 @@ public class ConfigReader implements ConfigBase {
      */
     public ConfigReader(String path) {
         this.load(path);
-        this.resolveReferences();
     }
 
     /**
@@ -287,9 +286,23 @@ public class ConfigReader implements ConfigBase {
      *
      * @param path of the configuration file prefix with "classpath:/" or "file:/"
      * @throws IllegalArgumentException if file not found
+     * @return this
+     */
+    public ConfigReader load(String path) {
+        this.load(path, true);
+        return this;
+    }
+
+    /**
+     * Load a configuration file into a config reader
+     *
+     * @param path of the configuration file prefix with "classpath:/" or "file:/"
+     * @param resolveEnvVars is false to defer environment variable resolution
+     * @throws IllegalArgumentException if file not found
+     * @return this
      */
     @SuppressWarnings("unchecked")
-    public ConfigReader load(String path) {
+    public ConfigReader load(String path, boolean resolveEnvVars) {
         resolved = false;
         boolean isYaml = path.endsWith(YML) || path.endsWith(YAML);
         // ".yaml" and ".yml" can be used interchangeably
@@ -324,6 +337,9 @@ public class ConfigReader implements ConfigBase {
             }
         } catch (IOException e) {
             throw new IllegalArgumentException(e.getMessage());
+        }
+        if (resolveEnvVars) {
+            resolveReferences();
         }
         return this;
     }
@@ -364,6 +380,7 @@ public class ConfigReader implements ConfigBase {
     public ConfigReader load(Map<String, Object> map) {
         resolved = false;
         config.reload(enforceKeysAsText(map));
+        resolveReferences();
         return this;
     }
 
@@ -380,7 +397,7 @@ public class ConfigReader implements ConfigBase {
      * When using the constructor without file path, this allows the resolution to be invoked
      * programmatically or deferred.
      */
-    public void resolveReferences() {
+    private void resolveReferences() {
         if (!resolved) {
             resolved = true;
             // normalize the dataset first
@@ -429,6 +446,4 @@ public class ConfigReader implements ConfigBase {
         }
         return result;
     }
-
-//    private record VarSegment(int start, int end) { }
 }
