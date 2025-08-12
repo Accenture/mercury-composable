@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.11, 8/11/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Bug fix:
+
+1. Environment variable resolution in the "load" method of the ConfigReader class.
+2. Updated model variable string substitution to pass through non-model text.
+
+---
 ## Version 4.3.10, 8/7/2025
 
 ### Added

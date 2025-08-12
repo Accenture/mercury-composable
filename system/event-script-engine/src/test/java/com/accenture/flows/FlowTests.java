@@ -490,6 +490,7 @@ class FlowTests extends TestBase {
         assertEquals(Utility.getInstance().str2int(user), original.get("user_number"));
         assertEquals("wonderful day", original.get("runtime_value1"));
         assertEquals("new world", original.get("runtime_value2"));
+        assertEquals("keep {this}/{ one } unchanged", original.get("runtime_value3"));
         assertEquals(12345, original.get("long_number"));
         assertEquals(12.345, original.get("float_number"));
         assertEquals(12.345, original.get("double_number"));

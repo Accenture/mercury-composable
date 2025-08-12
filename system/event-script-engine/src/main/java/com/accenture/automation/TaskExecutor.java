@@ -1099,21 +1099,20 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private int replaceWithRuntimeVar(VarSegment s, StringBuilder sb, int start, String text, MultiLevelMap source) {
-        String middle = text.substring(s.start() + 1, s.end() - 1).trim();
-        if (middle.startsWith(MODEL_NAMESPACE) && !middle.endsWith(".")) {
-            middle = getStringFromModelValue(source.getElement(middle));
-        } else {
-            middle = "null";
-        }
         String heading = text.substring(start, s.start());
         if (!heading.isEmpty()) {
             sb.append(heading);
         }
-        sb.append(middle);
+        String middle = text.substring(s.start() + 1, s.end() - 1).trim();
+        if (middle.startsWith(MODEL_NAMESPACE) && !middle.endsWith(".")) {
+            sb.append(getStringFromModelValue(source.getElement(middle)));
+        } else {
+            sb.append(text, s.start(), s.end());
+        }
         return s.end();
     }
 
-    private String substituteRuntimeVarsIfAny(String text, MultiLevelMap source) {
+    protected final String substituteRuntimeVarsIfAny(String text, MultiLevelMap source) {
         if (text.contains("{") && text.contains("}")) {
             List<VarSegment> segments = util.extractSegments(text, "{", "}");
             if (segments.isEmpty()) {

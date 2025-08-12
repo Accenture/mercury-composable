@@ -26,6 +26,8 @@ tasks:
       - 'model.{model.pointer} -> runtime_value1'
       # runtime_value2 is resolved to 'new world'
       - 'text(new {model.pointer}) -> runtime_value2'
+      # if bracketed value is not a model variable, pass through the original value
+      - 'text(keep {this}/{ one } unchanged) -> runtime_value3'
       # non-exist model variable can be used in 2 use cases ("boolean null" and "uuid")
       - 'model.none:boolean (null = true) -> none_is_true'
       - 'model.none:boolean (null=false) -> none_is_false'

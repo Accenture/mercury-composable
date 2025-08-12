@@ -78,8 +78,31 @@ class ConfigReaderTest {
 
     @Test
     void defaultValueForNonExistEnvVar() {
-        ConfigReader reader = new ConfigReader("classpath:/test.yaml");
+        ConfigReader reader = new ConfigReader();
+        reader.load("classpath:/test.yaml");
         assertEquals("text(http://127.0.0.1:8100) -> test", reader.getProperty("hello.no_env_var"));
+    }
+
+    @Test
+    void compareLoadingMethods() {
+        var originalValue = "text(${NON_EXIST_ENV_VAR:http://127.0.0.1:8100}) -> test";
+        // the first reader automatically resolves environment variables
+        ConfigReader reader1 = new ConfigReader("classpath:/test.yml");
+        // the second reader also supports environment variable resolution
+        ConfigReader reader2 = new ConfigReader();
+        reader2.load("classpath:/test.yaml", true);
+        // the third reader defers environment variable resolution
+        ConfigReader reader3 = new ConfigReader();
+        reader3.load("classpath:/test.yaml", false);
+        var mm1 = new MultiLevelMap(reader1.getMap());
+        var mm2 = new MultiLevelMap(reader2.getMap());
+        var mm3 = new MultiLevelMap(reader3.getMap());
+        assertEquals(mm1.getElement("hello.no_env_var"), mm2.getElement("hello.no_env_var"));
+        assertNotEquals(mm1.getElement("hello.no_env_var"), mm3.getElement("hello.no_env_var"));
+        // Since reader3 defers environment variable resolution, the property is still the original value
+        assertEquals(originalValue, mm3.getElement("hello.no_env_var"));
+        // However, environment variable can still be resolved at runtime
+        assertEquals("text(http://127.0.0.1:8100) -> test", reader3.getProperty("hello.no_env_var"));
     }
 
     @Test
