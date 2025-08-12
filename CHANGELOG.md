@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.12, 8/11/2025
+
+### Added
+
+N/A
+
+### Removed
+
+Content-length is not required to be set when uploading multiple files using multipart/form-data protocol.
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.11, 8/11/2025
 
 ### Added

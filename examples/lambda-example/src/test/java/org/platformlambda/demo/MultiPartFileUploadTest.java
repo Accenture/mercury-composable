@@ -63,8 +63,6 @@ class MultiPartFileUploadTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:" + port);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "multipart/form-data");
-        // for multipart upload, content-length must be set.
-        req.setContentLength(bytes.size());
         // To upload a single file using multipart/form-data,
         // just set filename and stream-route.
         req.setFileName(filename);
@@ -100,8 +98,6 @@ class MultiPartFileUploadTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:" + port);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", "multipart/form-data");
-        // for multipart upload, content-length must be set.
-        req.setContentLength(bytes1.size() + bytes2.size());
         // To upload multiple files using multipart/form-data,
         // file-names, file-content-types and stream-routes must be set.
         req.setFileNames(List.of(filename1, filename2));

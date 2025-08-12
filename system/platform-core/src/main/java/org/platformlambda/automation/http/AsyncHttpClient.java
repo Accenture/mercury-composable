@@ -420,29 +420,24 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         objectStreams2files(streams, timeout > 0? timeout : DEFAULT_TTL_SECONDS)
             .onSuccess(files -> {
                 final Future<HttpResponse<Void>> future;
-                int contentLen = request.getContentLength();
-                if (contentLen > 0) {
-                    if (contentType != null && contentType.startsWith(MULTIPART_FORM_DATA) &&
-                            POST.equals(method) && request.isValidStreams()) {
-                        // support one or more files to upload
-                        var fileNames = request.getFileNames();
-                        var contentTypes = request.getFileContentTypes();
-                        MultipartForm form = MultipartForm.create();
-                        int i = 0;
-                        for (File f: files) {
-                            form.binaryFileUpload(request.getUploadTag(),
-                                                    fileNames.get(i), f.getPath(), contentTypes.get(i));
-                            i++;
-                        }
-                        future = httpRequest.sendMultipartForm(form);
-                    } else {
-                        // if more than one file is provided, take only the first one
-                        FileSystem fs = Platform.getInstance().getVertx().fileSystem();
-                        AsyncFile file = fs.openBlocking(files.getFirst().getPath(), READ_THEN_DELETE);
-                        future = httpRequest.sendStream(file);
+                if (contentType != null && contentType.startsWith(MULTIPART_FORM_DATA) &&
+                        POST.equals(method) && request.isValidStreams()) {
+                    // support one or more files to upload
+                    var fileNames = request.getFileNames();
+                    var contentTypes = request.getFileContentTypes();
+                    MultipartForm form = MultipartForm.create();
+                    int i = 0;
+                    for (File f: files) {
+                        form.binaryFileUpload(request.getUploadTag(),
+                                                fileNames.get(i), f.getPath(), contentTypes.get(i));
+                        i++;
                     }
+                    future = httpRequest.sendMultipartForm(form);
                 } else {
-                    future = httpRequest.send();
+                    // if more than one file is provided, take only the first one
+                    FileSystem fs = Platform.getInstance().getVertx().fileSystem();
+                    AsyncFile file = fs.openBlocking(files.getFirst().getPath(), READ_THEN_DELETE);
+                    future = httpRequest.sendStream(file);
                 }
                 future.onSuccess(new HttpResponseHandler(input, request, queue))
                         .onFailure(new HttpExceptionHandler(input, queue));

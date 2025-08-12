@@ -411,8 +411,6 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", MULTIPART_FORM_DATA);
-        // for multipart upload, content-length must be set.
-        req.setContentLength(bytes.size());
         req.setFileName("hello-world.txt");
         req.setStreamRoute(publishedStreamId);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
@@ -465,8 +463,6 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/json");
         req.setHeader("content-type", MULTIPART_FORM_DATA);
-        // for multipart upload, content-length must be set.
-        req.setContentLength(bytes1.size() + bytes2.size());
         // To upload multiple files using multipart/form-data,
         // file-names, file-content-types and stream-routes must be set.
         req.setFileNames(List.of("hello1.txt", "hello2.txt"));
