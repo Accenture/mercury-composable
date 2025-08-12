@@ -103,6 +103,17 @@ class MultiPartFileUploadTest extends TestBase {
         req.setFileNames(List.of(filename1, filename2));
         req.setFileContentTypes(List.of("text/plain", "text/plain"));
         req.setStreamRoutes(List.of(streamId1, streamId2));
+        //
+        // IMPORTANT:
+        // ----------
+        // When the target HTTP server is a Spring Boot application, it would require you to set the correct value.
+        //
+        // e.g. When the input parameters for the Spring Boot's RestController is
+        // `(@RequestParam("files") MultipartFile[] files)`, your upload tag must be set to "files".
+        //
+        // Note that the built-in Reactive HTTP server in the platform-core is more relaxed to accept any upload tag.
+        //
+        req.setUploadTag("files");
         // send the HTTP request using AsyncHttpClient's route "async.http.request"
         EventEnvelope request = new EventEnvelope().setTo("async.http.request")
                 .setBody(req).setTrace("102", "UPLOAD /multipart/2").setFrom("unit.test");
