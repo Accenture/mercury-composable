@@ -452,8 +452,11 @@ In the input/output data mapping sections, the configuration management system p
 state machine using the namespace `model.parent.` to be shared by the primary flow and all sub-flows that
 are instantiated from it.
 
-> *Note*: The input data mapping for a "sub-flow" task should contain only the "header" and "body" arguments
-          to be mapped in the "input" namespace.
+*Important*:
+
+1. The input data mapping for a "sub-flow" task should contain only the "header" and "body" arguments
+   to be mapped in the "input" namespace.
+2. The "body" argument must be a map of key-values. Otherwise, it will be ignored.
 
 ## Tasks and data mapping
 
@@ -1105,8 +1108,12 @@ the list of elements and spin up an instance of the "next" task to retrieve the 
 the element in the list. The two special suffixes are relevant only when adding to the model variable configured
 in the "source" parameter.
 
-> *Note*: the model variables with special suffixes '.ITEM' and '.INDEX' are virtual objects for the purpose
-          of mapping as input arguments to a task. They cannot be used as regular model variables.
+*Important*:
+
+1. The model variables with special suffixes '.ITEM' and '.INDEX' are virtual objects for the purpose
+   of mapping as input arguments to a task. They cannot be used as regular model variables.
+2. Dynamic fork-n-join is designed to execute the same task for a list of elements in parallel.
+   It does not support subflow. i.e. the "process" tag of the "next" task cannot be a subflow.
 
 ### Sink task
 
