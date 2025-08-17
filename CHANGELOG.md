@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 1. Update AsyncHttpClient to change from Vertx to Reactor HttpClient
 2. Upgrade reactor-bom to version 2024.0.9 that fetches reactor-netty-core version 1.2.9
-3. Upgrade netty to version 4.2.3.Final
+3. Upgrade netty to version 4.2.4.Final
 
 ---
 ## Version 4.3.12, 8/11/2025
