@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.13, 8/16/2025
+
+### Added
+
+1. Reactor HttpClient
+2. Support the use of different upload tags for multipart file upload
+
+### Removed
+
+1. Vertx HttpClient
+2. OutputStreamQueue class
+
+### Changed
+
+1. Update AsyncHttpClient to change from Vertx to Reactor HttpClient
+2. Upgrade reactor-bom to version 2024.0.9 that fetches reactor-netty-core version 1.2.9
+3. Upgrade netty to version 4.2.3.Final
+
+---
 ## Version 4.3.12, 8/11/2025
 
 ### Added

@@ -18,17 +18,15 @@
 
 package org.platformlambda.core;
 
-import io.vertx.core.Vertx;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.common.TestBase;
+import org.platformlambda.core.models.AsyncHttpRequest;
+import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.EventEmitter;
 
 import javax.net.ssl.*;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,13 +52,12 @@ class HttpsTest extends TestBase {
     }
 
     @Test
-    void testHttpsRoundTrip() throws Exception {
-        final BlockingQueue<String> bench = new ArrayBlockingQueue<>(1);
-        WebClientOptions options = new WebClientOptions().setSsl(true).setTrustAll(true).setVerifyHost(false);
-        WebClient client = WebClient.create(Vertx.vertx(), options);
-        client.get(8443, "localhost", "/")
-                .send().onSuccess(data -> bench.add(data.bodyAsString()));
-        String response = bench.poll(20, TimeUnit.SECONDS);
-        assertEquals("Hello from HTTPS server", response);
+    void testHttpsRoundTrip() throws ExecutionException, InterruptedException {
+        var po = EventEmitter.getInstance();
+        var request = new AsyncHttpRequest().setMethod("GET")
+                        .setTargetHost("https://127.0.0.1:8443").setUrl("/").setSecure(true).setTrustAllCert(true);
+        var event = new EventEnvelope().setTo("async.http.request").setBody(request.toMap());
+        var response = po.request(event, 5000).get();
+        assertEquals("Hello from HTTPS server", response.getBody());
     }
 }

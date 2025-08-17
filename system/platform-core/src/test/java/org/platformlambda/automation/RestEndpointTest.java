@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RestEndpointTest extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(RestEndpointTest.class);
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
+    private static final String X_NO_STREAM = "x-small-payload-as-bytes";
     private static final long RPC_TIMEOUT = 10000;
     private static final SimpleXmlParser xml = new SimpleXmlParser();
 
@@ -90,6 +91,7 @@ class RestEndpointTest extends TestBase {
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
+        assertEquals(204, response.getStatus());
         // response body is null
         assertNull(response.getBody());
         // CORS headers are inserted - retrieve it with a case-insensitive key
@@ -260,60 +262,36 @@ class RestEndpointTest extends TestBase {
     }
 
     @Test
-    void uploadSmallBlockWithPut() throws IOException, InterruptedException {
-        final BlockingQueue<EventEnvelope> bench1 = new ArrayBlockingQueue<>(1);
-        final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
+    void uploadSmallBlockWithPut() throws IOException, InterruptedException, ExecutionException {
         final Utility util = Utility.getInstance();
         final EventEmitter po = EventEmitter.getInstance();
         int ttl = 9;
-        int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         EventPublisher publisher = new EventPublisher(10000);
         for (int i=0; i < 100; i++) {
             byte[] line = util.getUTF("hello world "+i+"\n");
             publisher.publish(line);
             bytes.write(line);
-            len += line.length;
         }
         publisher.publishCompletion();
         byte[] b = bytes.toByteArray();
-        AsyncHttpRequest req = getHttpRequest(publisher, ttl, len);
+        AsyncHttpRequest req = getHttpPutRequest(publisher, ttl);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
-        res.onSuccess(bench1::add);
-        EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
+        EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
         assert response != null;
-        assertNull(response.getBody());
-        // async.http.request returns a stream
-        String streamId = response.getHeader("X-Stream-Id");
-        assertEquals(String.valueOf(ttl * 1000), response.getHeader("x-ttl"));
-        assertNotNull(streamId);
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-        FluxConsumer<byte[]> flux = new FluxConsumer<>(streamId, RPC_TIMEOUT);
-        flux.consume(data -> {
-            try {
-                result.write(data);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, null, () -> bench2.add(true));
-        Boolean done = bench2.poll(10, TimeUnit.SECONDS);
-        assertEquals(true, done);
-        assertArrayEquals(b, result.toByteArray());
+        assertInstanceOf(byte[].class, response.getBody());
+        assertArrayEquals(b, (byte[]) response.getBody());
     }
 
-    private static AsyncHttpRequest getHttpRequest(EventPublisher publisher, int ttl, int len) {
+    private static AsyncHttpRequest getHttpPutRequest(EventPublisher publisher, int ttl) {
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod("PUT");
-        /*
-         * The "/api/v1/hello/world" prefix tests the REST automation system HTTP relay feature.
-         * It will rewrite the URI to "/api/hello/world" based on the rest.yaml configuration.
-         */
+        // test HTTP forward and rewrite features
         req.setUrl("/api/v1/hello/world");
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setStreamRoute(publisher.getStreamId());
         req.setTimeoutSeconds(ttl);
-        req.setContentLength(len);
+        req.setHeader(X_NO_STREAM, "true");
         return req;
     }
 
@@ -355,7 +333,6 @@ class RestEndpointTest extends TestBase {
         final BlockingQueue<Boolean> bench2 = new ArrayBlockingQueue<>(1);
         Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
-        int len = 0;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         EventPublisher publisher = new EventPublisher(10000);
         for (int i=0; i < 600; i++) {
@@ -363,7 +340,6 @@ class RestEndpointTest extends TestBase {
             byte[] d = util.getUTF(line);
             publisher.publish(d);
             bytes.write(d);
-            len += d.length;
         }
         publisher.publishCompletion();
         AsyncHttpRequest req = new AsyncHttpRequest();
@@ -372,7 +348,6 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         req.setHeader("accept", "application/octet-stream");
         req.setHeader("content-type", "application/octet-stream");
-        req.setContentLength(len);
         req.setStreamRoute(publisher.getStreamId());
         req.setTimeoutSeconds((int) RPC_TIMEOUT / 1000);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
@@ -468,6 +443,7 @@ class RestEndpointTest extends TestBase {
         req.setFileNames(List.of("hello1.txt", "hello2.txt"));
         req.setFileContentTypes(List.of("text/plain", "text/plain"));
         req.setStreamRoutes(List.of(publishedStreamId1, publishedStreamId2));
+        req.setUploadTags(List.of("file1", "file2"));
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);

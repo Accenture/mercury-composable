@@ -53,18 +53,19 @@ public class AsyncHttpRequest {
     private static final String TRUST_ALL_CERT = "trust_all_cert";
     private static final String TARGET_HOST = "host";
     private static final String FILE = "file";
+    private static final String FILES = "files";
     private static final String X_STREAM_ID = "x-stream-id";
     private static final String X_TTL = "x-ttl";
     private String method;
     private String queryString;
     private String url;
     private String ip;
-    private String upload;
     private Map<String, String> headers = new HashMap<>();
     private Map<String, Object> queryParams = new HashMap<>();
     private Map<String, String> pathParams = new HashMap<>();
     private Map<String, String> cookies = new HashMap<>();
     private Map<String, String> session = new HashMap<>();
+    private List<String> uploadTags = new ArrayList<>();
     private List<String> fileNames = new ArrayList<>();
     private List<String> fileContentTypes = new ArrayList<>();
     private List<Integer> fileSizes = new ArrayList<>();
@@ -200,7 +201,7 @@ public class AsyncHttpRequest {
                     return false;
                 }
             }
-            return true;
+            return getUploadTags().size() == streams.size();
         } else {
             return false;
         }
@@ -414,15 +415,38 @@ public class AsyncHttpRequest {
     }
 
     public String getUploadTag() {
-        return upload == null? FILE : upload;
+        return uploadTags.isEmpty()? FILE : uploadTags.getFirst();
     }
 
     public AsyncHttpRequest setUploadTag(String tag) {
-        if (tag != null) {
-            final var value = tag.trim();
-            this.upload = value.isEmpty()? null : value;
-        } else {
-            this.upload = null;
+        if (this.fileNames.isEmpty()) {
+            throw new IllegalArgumentException("Set filenames first before setting upload tags");
+        }
+        if (tag == null || tag.isEmpty()) {
+            throw new IllegalArgumentException("Upload tag cannot be empty");
+        }
+        final var value = tag.trim();
+        this.uploadTags.clear();
+        this.fileNames.forEach(f -> this.uploadTags.add(value));
+        return this;
+    }
+
+    public List<String> getUploadTags() {
+        if (uploadTags.isEmpty()) {
+            setUploadTag(FILES);
+        }
+        return uploadTags;
+    }
+
+    public AsyncHttpRequest setUploadTags(List<String> uploadTags) {
+        if (uploadTags != null && !uploadTags.isEmpty()) {
+            for (String tag: uploadTags) {
+                if (tag == null || tag.isEmpty()) {
+                    throw new IllegalArgumentException("Upload tag cannot be empty");
+                }
+            }
+            this.uploadTags.clear();
+            this.uploadTags.addAll(uploadTags);
         }
         return this;
     }
@@ -602,8 +626,8 @@ public class AsyncHttpRequest {
         if (queryString != null) {
             result.put(QUERY, queryString);
         }
-        if (upload != null) {
-            result.put(FILE_UPLOAD, upload);
+        if (!uploadTags.isEmpty()) {
+            result.put(FILE_UPLOAD, uploadTags);
         }
         return result;
     }
@@ -643,7 +667,7 @@ public class AsyncHttpRequest {
         this.https = source.https;
         this.targetHost = source.targetHost;
         this.trustAllCert = source.trustAllCert;
-        this.upload = source.upload;
+        this.uploadTags = source.uploadTags;
         this.pathParams = source.pathParams;
         this.queryParams = source.queryParams;
     }
@@ -686,9 +710,6 @@ public class AsyncHttpRequest {
         if (map.get(TRUST_ALL_CERT) instanceof Boolean trust) {
             trustAllCert = trust;
         }
-        if (map.get(FILE_UPLOAD) instanceof String up) {
-            upload = up;
-        }
     }
 
     private void copyFileMetadataFromMap(Map<?, ?> map) {
@@ -703,6 +724,10 @@ public class AsyncHttpRequest {
         if (map.get(FILE_LENGTH) instanceof List<?> sizes) {
             fileSizes.clear();
             sizes.forEach(c -> fileSizes.add(Utility.getInstance().str2int(String.valueOf(c))));
+        }
+        if (map.get(FILE_UPLOAD) instanceof List<?> tags) {
+            uploadTags.clear();
+            tags.forEach(c -> uploadTags.add(String.valueOf(c)));
         }
     }
 
