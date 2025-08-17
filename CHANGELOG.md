@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 1. Reactor HttpClient
 2. Support the use of different upload tags for multipart file upload
+3. "content-length" HTTP header integrity protection logic added
 
 ### Removed
 

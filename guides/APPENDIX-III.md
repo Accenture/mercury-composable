@@ -268,8 +268,15 @@ of the payload.
 
 ## Content length for HTTP request
 
-*IMPORTANT*: Do not set the "content-length" HTTP header because the system will automatically compute the
-correct content-length for small payload. For large payload, it will use the chunking method.
+If you do not set the "Content-Length" HTTP header, the AsyncHttpClient will use the "chunking" method to send
+your payload for PUT, POST and PATCH methods.
+
+If you set the "Content-Length" HTTP header, it must be a correct size of the payload when rendered as a byte array.
+Setting an incorrect value would produce suboptimal outcome.
+
+For file upload using the streaming method, please refer to the section of "Send HTTP request body as a stream" above.
+Note that the "Content-Length" HTTP header will be ignored by the AsyncHttpClient so that the system can compute
+the correct value.
 
 ## Multipart file upload
 
