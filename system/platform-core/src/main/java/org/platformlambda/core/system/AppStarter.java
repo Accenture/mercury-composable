@@ -575,8 +575,7 @@ public class AppStarter {
         server.listen(port).onSuccess(service -> {
             EventEmitter.getInstance().send(startupMonitor, "ready");
             if (contexts != null) {
-                platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE,
-                        new AsyncHttpResponse(contexts), 200);
+                platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_RESPONSE, new AsyncHttpResponse(contexts), 500);
                 // start timeout handler
                 Housekeeper housekeeper = new Housekeeper(contexts);
                 platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL,

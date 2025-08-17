@@ -37,8 +37,9 @@ public class EssentialServiceLoader implements EntryPoint {
     @Override
     public void start(String[] args) {
         Platform platform = Platform.getInstance();
-        platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 100);
-        platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_REQUEST, new AsyncHttpClient(), 100);
+        // AsyncHttpClient concurrency is set to the same value as the connection pool of underlying HTTP client
+        platform.registerPrivate(AsyncHttpClient.ASYNC_HTTP_REQUEST, new AsyncHttpClient(), 500);
+        platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 500);
         platform.registerPrivate(Telemetry.DISTRIBUTED_TRACING, new Telemetry(), 1);
     }
 }

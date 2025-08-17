@@ -87,16 +87,16 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String X_TTL = "x-ttl";
     private static final String CONTENT_TYPE = "content-type";
     private static final String CONTENT_LENGTH = "content-length";
-    private static final String X_CONTENT_LENGTH = "X-Content-Length";
-    private static final String USER_AGENT = "User-Agent";
+    private static final String X_CONTENT_LENGTH = "x-content-length";
+    private static final String USER_AGENT = "user-agent";
     private static final String USER_AGENT_NAME = "async-http-client";
     private static final int DEFAULT_TTL_SECONDS = 30;  // 30 seconds
     /*
-     * Some headers must be dropped because they are not relevant for HTTP relay
-     * e.g. "content-encoding" and "transfer-encoding" will break HTTP response rendering.
+     * Some headers are ignored because they may interfere with the underlying HttpClient
      */
-    private static final String[] MUST_DROP_HEADERS = { "content-encoding", "transfer-encoding", "host", "connection",
-                                                        "upgrade-insecure-requests", "accept-encoding", "user-agent",
+    private static final String[] HEADERS_TO_IGNORE = { CONTENT_LENGTH, USER_AGENT, X_STREAM_ID,
+                                                        "content-encoding", "transfer-encoding", "host", "connection",
+                                                        "upgrade-insecure-requests", "accept-encoding",
                                                         "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user" };
     private final File tempDir;
 
@@ -357,9 +357,13 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     }
 
     private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpHeaders http) {
+        // set user-agent for this HTTP client
         http.set(USER_AGENT, USER_AGENT_NAME);
-        int len = request.getContentLength();
-        if (len > 0 && request.getStreamRoutes().isEmpty()) {
+        // set content-length if needed
+        var len = request.getContentLength();
+        var method = request.getMethod();
+        if (len > 0 && request.getStreamRoutes().isEmpty() &&
+                (POST.equals(method) || PUT.equals(method) || PATCH.equals(method))) {
             http.set(CONTENT_LENGTH, len);
         }
         Map<String, String> reqHeaders = request.getHeaders();
@@ -367,8 +371,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         Map<String, String> sessionInfo = request.getSessionInfo();
         reqHeaders.putAll(sessionInfo);
         for (Map.Entry<String, String> kv: reqHeaders.entrySet()) {
-            // x-stream-id is not transported because the stream will be consumed by the AsyncHttpClient itself
-            if (allowedHeader(kv.getKey()) && !kv.getKey().equals(X_STREAM_ID)) {
+            if (permittedHttpHeader(kv.getKey())) {
                 http.set(kv.getKey(), kv.getValue());
             }
         }
@@ -403,8 +406,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         EventEmitter.getInstance().send(response);
     }
 
-    private boolean allowedHeader(String header) {
-        for (String h: MUST_DROP_HEADERS) {
+    private boolean permittedHttpHeader(String header) {
+        for (String h: HEADERS_TO_IGNORE) {
             if (header.equalsIgnoreCase(h)) {
                 return false;
             }
