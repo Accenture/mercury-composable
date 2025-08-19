@@ -452,11 +452,23 @@ In the input/output data mapping sections, the configuration management system p
 state machine using the namespace `model.parent.` to be shared by the primary flow and all sub-flows that
 are instantiated from it.
 
-*Important*:
+Just like a task, a subflow has "input" and "output". You can map data to the "input" of a subflow using
+the namespaces "body" and "header" where they are maps of key-values. Inside a task of the subflow, 
+the body and header namespaces can be accessed for their key-values like this:
 
-1. The input data mapping for a "sub-flow" task should contain only the "header" and "body" arguments
-   to be mapped in the "input" namespace.
-2. The "body" argument must be a map of key-values. Otherwise, it will be ignored.
+```yaml
+  - input:
+      - 'input.header.user -> header.user'
+      - 'input.body -> *'
+    process: 'first.task.in.subflow'
+    output:
+      - 'result -> model.parent.subflow_result'
+    description: 'Execute a task in a subflow'
+    execution: end
+```
+
+> *Note*: The namespace `model.root.` is an alias of `model.parent.` This would reduce ambiguity
+          if you prefer to use "root" referring to the parent flow that creates one or more subflows.
 
 ## Tasks and data mapping
 
@@ -483,12 +495,14 @@ To handle this level of modularity, the system provides configurable input/outpu
 | Decision value                    | `decision`                   | right      | output   |
 | State machine dataset             | `model.`                     | both       | I/O      |
 | Parent state machine dataset      | `model.parent.`              | both       | I/O      |
+| Alias for parent state machine    | `model.root.`                | both       | I/O      |
 | External state machine key-value  | `ext:`                       | right      | I/O      |
 
 For state machine (model and model.parent namespaces), the system prohibits access to the whole
 namespace. You should only access specific key-values in the model or model.parent namespaces.
 
-The namespace `model.parent.` is shared by the primary flow and all sub-flows that are instantiated from it.
+The namespace `model.root.` or `model.parent.` is shared by the primary flow and all sub-flows
+that are instantiated from it.
 
 When your function returns a PoJo, the `datatype` field in the left-hand-side will contain
 the class name of the PoJo. This allows you to save the class name in the state machine and

@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.14, 8/19/2025
+
+### Added
+
+To reduce ambiguity in event script configuration, created an alias for `model.parent.` namespace as `model.root.`
+
+The alias is implemented using a memory reference for lowest memory and processing overheads.
+
+### Removed
+
+N/A
+
+### Changed
+
+CompileFlows and TaskExecutor classes are updated to support the `model.root.` namespace alias.
+
+---
 ## Version 4.3.13, 8/16/2025
 
 ### Added

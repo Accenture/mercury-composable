@@ -64,6 +64,7 @@ public class CompileFlows implements EntryPoint {
     private static final String OUTPUT_NAMESPACE = "output.";
     private static final String MODEL = "model";
     private static final String PARENT = "parent";
+    private static final String ROOT = "root";
     private static final String MODEL_NAMESPACE = "model.";
     private static final String NEGATE_MODEL = "!model.";
     private static final String RESULT_NAMESPACE = "result.";
@@ -788,10 +789,12 @@ public class CompileFlows implements EntryPoint {
             if (MODEL.equals(parts.getFirst())) {
                 return false;
             }
-            // model.parent to access the whole parent namespace is not allowed
+            // Both model.parent and model.root point to the same root state machine.
+            // Accessing the whole parent namespace is not allowed.
             if (parts.getFirst().startsWith(MODEL_NAMESPACE)) {
                 List<String> segments = util.split(parts.getFirst(), ".");
-                return segments.size() != 1 && (segments.size() != 2 || !PARENT.equals(segments.get(1)));
+                return segments.size() != 1 && (segments.size() != 2 ||
+                        (!PARENT.equals(segments.get(1)) && !ROOT.equals(segments.get(1))));
             }
             return true;
         }

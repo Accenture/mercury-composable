@@ -41,6 +41,7 @@ public class FlowInstance {
     private static final String CID_TAG = "cid";
     private static final String TRACE = "trace";
     private static final String PARENT = "parent";
+    private static final String ROOT = "root";
 
     // dataset is the state machine that holds the original input and the latest model
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
@@ -81,14 +82,17 @@ public class FlowInstance {
         model.put(INSTANCE, id);
         model.put(CID_TAG, cid);
         model.put(FLOW, flowId);
-        // this is a sub-flow if parent flow instance is available
+        // "parent" and "root" are aliases to the shared state machine in the root
         if (parentId == null) {
             this.parentId = null;
             model.put(PARENT, shared);
+            model.put(ROOT, shared);
         } else {
+            // this is a sub-flow if parent flow instance is available
             var parent = resolveParent(parentId);
             if (parent != null) {
                 model.put(PARENT, parent.shared);
+                model.put(ROOT, parent.shared);
                 this.parentId = parent.id;
                 log.info("{}:{} extends {}:{}", this.getFlow().id, this.id, parent.getFlow().id, parent.id);
             }
