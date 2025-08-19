@@ -467,6 +467,10 @@ the body and header namespaces can be accessed for their key-values like this:
     execution: end
 ```
 
+Since the parent flow and subflows has a shared state machine, passing "body" and "header" key-values
+to the "input" of a subflow is optional. You can pass key-values between the parent and subflows
+using the shared state machine easily.
+
 > *Note*: The namespace `model.root.` is an alias of `model.parent.` This would reduce ambiguity
           if you prefer to use "root" referring to the parent flow that creates one or more subflows.
 
