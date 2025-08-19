@@ -470,8 +470,8 @@ The default log4j2.xml configuration file looks like this:
             <AppenderRef ref="Console" />
         </Root>
 
-        <!-- Enable INFO logging for DistributedTrace -->
-        <logger name="org.platformlambda.core.services.DistributedTrace" level="INFO" />
+        <!-- Enable INFO logging for Telemetry -->
+        <logger name="org.platformlambda.core.services.Telemetry" level="INFO" />
     </Loggers>
 </Configuration>
 ```

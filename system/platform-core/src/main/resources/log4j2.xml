@@ -10,7 +10,7 @@
             <AppenderRef ref="Console" />
         </Root>
 
-        <!-- Enable INFO logging for DistributedTrace -->
+        <!-- Enable INFO logging for Telemetry -->
         <logger name="org.platformlambda.core.services.Telemetry" level="INFO" />
     </Loggers>
 </Configuration>

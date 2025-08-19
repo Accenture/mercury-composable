@@ -308,7 +308,7 @@ cloud.client.properties=file:/tmp/config/kafka.properties, classpath:/kafka.prop
 To enable distributed trace logging, please set this in log4j2.xml:
 
 ```text
-<logger name="org.platformlambda.core.services.DistributedTrace" level="INFO" />
+<logger name="org.platformlambda.core.services.Telemetry" level="INFO" />
 ```
 
 ## Built-in XML serializer
