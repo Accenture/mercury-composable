@@ -266,7 +266,7 @@ public class ObjectStreamIO {
         }
     }
 
-    public static class CallBackReference {
+    private static class CallBackReference {
         final String cb;
         final String cid;
 

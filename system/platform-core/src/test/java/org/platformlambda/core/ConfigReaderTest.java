@@ -45,6 +45,12 @@ class ConfigReaderTest {
         log.info("Loaded {} key-values in base configuration", config.getCompositeKeyValues().size());
     }
 
+    @Test
+    void pathTraveralTest() {
+        var ex = assertThrows(IllegalArgumentException.class, () -> new ConfigReader("file:/tmp/../opt/hi.txt"));
+        assertEquals("Relative parent file path not allowed", ex.getMessage());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void envVarRenderingAppConfigReaderTest() {

@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.15, 8/20/2025
+
+### Added
+
+1. CR/LF are filtered as a space in the EventEnvelope's setHeader and EventEmitter's asEnvelope methods
+2. Avoid "path traversal" attack by rejecting relative parent file path in configuration
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.14, 8/19/2025
 
 ### Added

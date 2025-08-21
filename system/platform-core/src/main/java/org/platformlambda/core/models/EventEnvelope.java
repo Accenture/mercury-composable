@@ -519,18 +519,18 @@ public class EventEnvelope {
                 case Date d -> util.date2str(d);
                 default -> String.valueOf(value);
             };
-            // guarantee CR/LF are filtered out
-            v = v.replace("\r", "").replace("\n", " ");
+            // guarantee CR/LF are filtered as a space
+            var filtered = v.replace('\r', ' ').replace('\n', ' ');
             // null value is transported as an empty string
             if (SET_COOKIE.equalsIgnoreCase(key)) {
                 if (this.headers.containsKey(key)) {
-                    String composite = this.headers.get(key) + "|" + v;
+                    String composite = this.headers.get(key) + "|" + filtered;
                     this.headers.put(key, composite);
                 } else {
-                    this.headers.put(key, v);
+                    this.headers.put(key, filtered);
                 }
             } else {
-                this.headers.put(key, v);
+                this.headers.put(key, filtered);
             }
         }
         return this;

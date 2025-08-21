@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,37 +130,42 @@ public class ConfigReader implements ConfigBase {
         if (value == null) {
             return defaultValue;
         }
-        // start parsing environment variables if it has the signature
+        // parse environment variables if signature is detected
         if (value instanceof String text && baseConfig != null && text.lastIndexOf(BEGIN) != -1) {
             List<VarSegment> segments = Utility.getInstance().extractSegments(text, BEGIN, END);
             if (!segments.isEmpty()) {
-                int start = 0;
-                StringBuilder sb = new StringBuilder();
-                for (VarSegment s: segments) {
-                    start = replaceWithEnvVar(s, sb, start, key, text, defaultValue, loop);
-                }
-                String lastSegment = text.substring(start);
-                if (!lastSegment.isEmpty()) {
-                    sb.append(lastSegment);
-                }
-                return sb.isEmpty()? null : sb.toString();
+                return reconstructFromVarSegments(segments, key, text, defaultValue, loop);
             }
         }
         return value;
     }
 
-    private int replaceWithEnvVar(VarSegment s, StringBuilder sb, int start, String key,
-                                  String text, Object defaultValue, String... loop) {
-        String middle = text.substring(s.start() + 2, s.end() - 1).trim();
+    private String reconstructFromVarSegments(List<VarSegment> segments, String key, String text,
+                                              Object defaultValue, String... loop) {
+        int start = 0;
+        StringBuilder sb = new StringBuilder();
+        for (VarSegment segment: segments) {
+            start = replaceWithEnvVar(segment, sb, start, key, text, defaultValue, loop);
+        }
+        String lastSegment = text.substring(start);
+        if (!lastSegment.isEmpty()) {
+            sb.append(lastSegment);
+        }
+        return sb.isEmpty()? null : sb.toString();
+    }
+
+    private int replaceWithEnvVar(VarSegment segment, StringBuilder sb, int start, String key, String text,
+                                  Object defaultValue, String... loop) {
+        String middle = text.substring(segment.start() + 2, segment.end() - 1).trim();
         String evaluated = performEnvVarSubstitution(key, middle, defaultValue, loop);
-        String heading = text.substring(start, s.start());
+        String heading = text.substring(start, segment.start());
         if (!heading.isEmpty()) {
             sb.append(heading);
         }
         if (evaluated != null) {
             sb.append(evaluated);
         }
-        return s.end();
+        return segment.end();
     }
 
     /**
@@ -345,18 +351,27 @@ public class ConfigReader implements ConfigBase {
     }
 
     private InputStream fromFilePath(String path, String alternativePath) {
-        String filePath = path.substring(FILEPATH.length());
-        File f = new File(filePath);
         try {
-            if (f.exists()) {
-                return Files.newInputStream(Paths.get(filePath));
+            Path primary = getPath(path.substring(FILEPATH.length()));
+            if (Files.exists(primary)) {
+                return Files.newInputStream(primary);
             } else if (alternativePath != null) {
-                return Files.newInputStream(Paths.get(alternativePath.substring(FILEPATH.length())));
+                Path secondary = getPath(alternativePath.substring(FILEPATH.length()));
+                if (Files.exists(secondary)) {
+                    return Files.newInputStream(primary);
+                }
             }
         } catch (IOException e) {
             // ok to ignore
         }
         return null;
+    }
+
+    private Path getPath(String filePath) {
+        if (filePath.contains("../")) {
+            throw new IllegalArgumentException("Relative parent file path not allowed");
+        }
+        return Paths.get(filePath);
     }
 
     private InputStream fromClasspath(String path, String alternativePath) {

@@ -3,7 +3,9 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -29,12 +31,20 @@ class EventEnvelopeTest {
     }
 
     @Test
+    void crLfTest() {
+        var po = EventEmitter.getInstance();
+        var event = po.asEnvelope("hello.world", "test", new Kv("multi", "Line one\rLine two\nLine three"));
+        // CR is removed and LF is replaced with a space
+        assertEquals("Line one Line two Line three", event.getHeader("multi"));
+    }
+
+    @Test
     void headerTest() {
         EventEnvelope event = new EventEnvelope();
         event.setHeader("hello", "world");
         event.setHeader("test", "hello\r\nworld");
         EventEnvelope restored = new EventEnvelope(event.toBytes());
-        assertEquals("hello world", restored.getHeader("test"));
+        assertEquals("hello  world", restored.getHeader("test"));
         assertEquals("world", restored.getHeader("hello"));
     }
 

@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kotlin-example</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.14</version>
+    <version>4.3.15</version>
     <name>Composable example written in Kotlin</name>
 
     <parent>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.3.14</version>
+            <version>4.3.15</version>
         </dependency>
 
         <dependency>

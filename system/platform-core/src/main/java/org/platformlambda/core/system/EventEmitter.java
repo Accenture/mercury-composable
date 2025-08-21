@@ -531,7 +531,7 @@ public class EventEmitter {
         if (parameters != null) {
             for (Kv kv: parameters) {
                 if (kv.key != null && kv.value != null) {
-                    event.setHeader(kv.key, kv.value);
+                    event.setHeader(kv.key, kv.value.replace('\r', ' ').replace('\n', ' '));
                 }
             }
         }
