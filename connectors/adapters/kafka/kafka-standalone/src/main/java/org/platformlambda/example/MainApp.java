@@ -49,11 +49,13 @@ public class MainApp implements EntryPoint {
             // wait for first server to be ready
             Properties props = new Properties();
             props.put("bootstrap.servers", "127.0.0.1:9092");
-            props.put("request.timeout.ms", 3000);
-            props.put("connections.max.idle.ms", 5000);
+            props.put("client.id", "admin-1");
             try (AdminClient client = AdminClient.create(props)) {
                 var nodes = client.describeCluster().nodes().get();
                 if (nodes != null && !nodes.isEmpty()) {
+                    for (var node: nodes) {
+                        log.info("First Kafka server {}", node);
+                    }
                     log.info("Starting 2nd standalone Kafka server");
                     EmbeddedKafka secondKafka = new EmbeddedKafka(false);
                     secondKafka.start();

@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.16, 8/21/2025
+
+### Added
+
+log4j2.xml in standalone-kafka-server to reduce logging noise
+
+### Removed
+
+Update standalone-kafka-server's pom.xml for unused dependencies:
+
+1. apache commons-beanutils
+2. apache commons-digester
+3. apache commons-logging
+
+### Changed
+
+Update OSS versions:
+
+1. Spring Boot 3.5.5
+2. Kafka client and server 4.0.0
+3. Gson 2.13.1
+4. junit-bom 5.13.4
+
+---
 ## Version 4.3.15, 8/20/2025
 
 ### Added
