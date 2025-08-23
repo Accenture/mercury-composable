@@ -750,7 +750,7 @@ class RestEndpointTest extends TestBase {
         assertEquals(Map.of("hello", "world", "another", "one"), restoredCookies);
         var helloWorld = response.getHeader("x-hello");
         assertInstanceOf(String.class, helloWorld);
-        assertEquals("hello world", helloWorld);
+        assertEquals("helloworld", helloWorld);
     }
 
     private static AsyncHttpRequest getRequest(String traceId) {

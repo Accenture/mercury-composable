@@ -35,16 +35,16 @@ class EventEnvelopeTest {
         var po = EventEmitter.getInstance();
         var event = po.asEnvelope("hello.world", "test", new Kv("multi", "Line one\rLine two\nLine three"));
         // CR is removed and LF is replaced with a space
-        assertEquals("Line one Line two Line three", event.getHeader("multi"));
+        assertEquals("Line oneLine twoLine three", event.getHeader("multi"));
     }
 
     @Test
     void headerTest() {
         EventEnvelope event = new EventEnvelope();
         event.setHeader("hello", "world");
-        event.setHeader("test", "hello\r\nworld");
+        event.setHeader("test", "Hello\r\nWorld");
         EventEnvelope restored = new EventEnvelope(event.toBytes());
-        assertEquals("hello  world", restored.getHeader("test"));
+        assertEquals("HelloWorld", restored.getHeader("test"));
         assertEquals("world", restored.getHeader("hello"));
     }
 

@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.17, 8/22/2025
+
+### Added
+
+Validation logic to filter out CR/LF for headers, cookies and session info when creating
+an AsyncHttpRequest from a map. For example, when using the "AsyncHttpClient
+by configuration" method, the AsyncHttpRequest is created by a map of key-values.
+The additional validation prevents creating headers and cookies with CR/LF accidentially.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.16, 8/21/2025
 
 ### Added

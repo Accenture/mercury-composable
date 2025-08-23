@@ -312,7 +312,7 @@ rest:
     tracing: true
 
   - service: "echo.endpoint"
-    methods: ['PUT']
+    methods: ['POST']
     url: "/api/echo/{demo}"
     timeout: 10s
     tracing: true

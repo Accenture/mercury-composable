@@ -520,7 +520,7 @@ public class EventEnvelope {
                 default -> String.valueOf(value);
             };
             // guarantee CR/LF are filtered as a space
-            var filtered = v.replace('\r', ' ').replace('\n', ' ');
+            var filtered = v.replace("\r", "").replace("\n", "");
             // null value is transported as an empty string
             if (SET_COOKIE.equalsIgnoreCase(key)) {
                 if (this.headers.containsKey(key)) {

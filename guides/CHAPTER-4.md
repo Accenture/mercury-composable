@@ -796,7 +796,17 @@ operation such as multiple AND, OR and NEGATE operators, you can configure multi
 operation.
 
 For string concatenation, you may concat a model variable with one or more model variables and
-text constants. The latter uses the "text(some value)" format.
+text constants. A more convenient alternative to string concatenation is the use of "runtime model
+variables". You can replace the "concat" method with "runtime model variable" method as follows:
+
+```yaml
+# assuming the bearer token value is in model.token
+- 'text(Bearer ) -> model.bearer'
+- 'model.bearer:concat(model.token) -> authorization'
+
+# the above is the same as
+- 'text(Bearer {model.token}) -> authorization'
+```
 
 An interesting use case is a simple decision task using the built-in no-op function.
 For boolean with value matching, you can test if the key-value in the left-hand-side is a null

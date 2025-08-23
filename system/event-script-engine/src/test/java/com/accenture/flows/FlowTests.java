@@ -52,6 +52,31 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
+    void httpClientByCodeTest() throws ExecutionException, InterruptedException {
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST")
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json")
+                .setHeader("authorization", "Bearer demo123\r\n\r\n")
+                .setUrl("/api/echo/test");
+        request.setBody(Map.of("hello", "world"));
+        PostOffice po = new PostOffice("unit.test", "10A", "TEST /http/client/by/config");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, timeout).get();
+        assertInstanceOf(Map.class, result.getBody());
+        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) result.getBody());
+        assertEquals("test", map.getElement("parameters.path.demo"));
+        assertInstanceOf(Map.class, map.getElement("body"));
+        assertEquals(Map.of("hello", "world"), map.getElement("body"));
+        assertEquals("Bearer demo123", map.getElement("headers.authorization"));
+        assertEquals("application/json", map.getElement("headers.accept"));
+        assertEquals("application/json", map.getElement("headers.content-type"));
+        assertEquals("async-http-client", map.getElement("headers.user-agent"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void httpClientByConfigTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -60,7 +85,7 @@ class FlowTests extends TestBase {
                 .setHeader("content-type", "application/json")
                 .setUrl("/api/http/client/by/config/test");
         request.setBody(Map.of("hello", "world"));
-        PostOffice po = new PostOffice("unit.test", "10", "TEST /http/client/by/config");
+        PostOffice po = new PostOffice("unit.test", "10B", "TEST /http/client/by/config");
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, timeout).get();
         assertInstanceOf(Map.class, result.getBody());
@@ -69,6 +94,10 @@ class FlowTests extends TestBase {
         assertEquals("world", map.getElement("parameters.query.hello"));
         assertInstanceOf(Map.class, map.getElement("body"));
         assertEquals(Map.of("hello", "world"), map.getElement("body"));
+        assertEquals("Bearer demo123", map.getElement("headers.authorization"));
+        assertEquals("application/json", map.getElement("headers.accept"));
+        assertEquals("application/json", map.getElement("headers.content-type"));
+        assertEquals("async-http-client", map.getElement("headers.user-agent"));
     }
 
     @SuppressWarnings("unchecked")
