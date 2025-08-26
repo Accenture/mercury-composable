@@ -313,7 +313,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         metrics.put("id", logId);
         metrics.put("service", TaskExecutor.SERVICE_NAME);
         metrics.put("from", EventScriptManager.SERVICE_NAME);
-        metrics.put("exec_time", diff);
+        metrics.put("exec_time", (float) diff);
         metrics.put("start", util.date2str(new Date(flowInstance.getStartMillis())));
         metrics.put("path", flowInstance.getTracePath());
         metrics.put(STATUS, normal? 200 : 400);
@@ -797,7 +797,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error, int dynamicListIndex, String dynamicListKey) {
-        Task task = flowInstance.getFlow().tasks.get(processName);
+        var task = flowInstance.getFlow().tasks.get(processName);
         if (task == null) {
             log.error("Unable to process flow {}:{} - missing task '{}'",
                     flowInstance.getFlow().id, flowInstance.id, processName);
@@ -805,7 +805,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             return;
         }
         // add the task to the flow-instance
-        String functionRoute = task.getFunctionRoute();
+        var functionRoute = task.getFunctionRoute();
         flowInstance.tasks.add(task.service.equals(functionRoute)? functionRoute : task.service+"("+functionRoute+")");
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
@@ -822,15 +822,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else if (task.getDelayVar() != null) {
             deferred = getDelayedVariable(md, flowInstance, task);
         }
-        final Platform platform = Platform.getInstance();
-        final String uuid = util.getDateUuid();
-        final TaskReference ref = new TaskReference(flowInstance.id, task.service);
+        final var uuid = util.getDateUuid();
+        final var ref = new TaskReference(flowInstance.id, task.service);
         taskRefs.put(uuid, ref);
         flowInstance.pendingTasks.put(uuid, true);
-        final String compositeCid = seq > 0? uuid + "#" + seq : uuid;
+        final var compositeCid = seq > 0? uuid + "#" + seq : uuid;
         if (functionRoute.startsWith(FLOW_PROTOCOL)) {
-            String flowId = functionRoute.substring(FLOW_PROTOCOL.length());
-            Flow subFlow = Flows.getFlow(flowId);
+            var flowId = functionRoute.substring(FLOW_PROTOCOL.length());
+            var subFlow = Flows.getFlow(flowId);
             if (subFlow == null) {
                 log.error("Unable to process flow {}:{} - missing sub-flow {}",
                         flowInstance.getFlow().id, flowInstance.id, functionRoute);
@@ -840,24 +839,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (!md.optionalHeaders.isEmpty()) {
                 md.target.setElement(HEADER, md.optionalHeaders);
             }
-            EventEnvelope forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
-                    .setHeader(PARENT, flowInstance.id)
-                    .setHeader(FLOW_ID, flowId).setBody(md.target.getMap()).setCorrelationId(util.getUuid());
-            PostOffice po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
-            po.asyncRequest(forward, subFlow.ttl, false).onSuccess(response -> {
-                EventEnvelope event = new EventEnvelope()
-                        .setTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
-                        .setCorrelationId(compositeCid).setStatus(response.getStatus())
-                        .setHeaders(response.getHeaders()).setBody(response.getBody());
-                po.send(event);
-            });
+            // execute a subflow
+            var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
+                                                .setReplyTo(TaskExecutor.SERVICE_NAME)
+                                                .setHeader(PARENT, flowInstance.id)
+                                                .setHeader(FLOW_ID, flowId).setBody(md.target.getMap())
+                                                .setCorrelationId(compositeCid);
+            var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
+            po.send(forward);
         } else {
-            PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
+            var po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
-            EventEnvelope event = new EventEnvelope().setTo(functionRoute)
-                    .setCorrelationId(compositeCid)
-                    .setReplyTo(TaskExecutor.SERVICE_NAME + "@" + platform.getOrigin())
-                    .setBody(md.target.getMap());
+            var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
+                                            .setCorrelationId(compositeCid).setBody(md.target.getMap());
             md.optionalHeaders.forEach(event::setHeader);
             // execute task by sending event
             if (deferred > 0) {

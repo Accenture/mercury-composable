@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.18, 8/26/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Streamlined subflow routing in TaskExecutor of the event-script-engine.
+Changed subflow RPC call to asynchronous callback for performance optimization.
+
+---
 ## Version 4.3.17, 8/22/2025
 
 ### Added
