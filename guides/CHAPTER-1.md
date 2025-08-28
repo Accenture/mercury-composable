@@ -310,11 +310,11 @@ You have successfully tested the two REST endpoints. Tracing information in the 
       "tasks": [
         {
           "name": "v1.get.profile",
-          "time": 2.982
+          "spent": 2.982
         },
         {
           "name": "v1.decrypt.fields",
-          "time": 1.313
+          "spent": 1.313
         }
       ],
       "flow": "get-profile"

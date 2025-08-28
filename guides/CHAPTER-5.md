@@ -383,6 +383,86 @@ containing the performance metrics data and a "journal" section with the request
 
 > *IMPORTANT*: journaling may contain sensitive personally identifiable data and secrets. Please check
   security compliance before storing them into access restricted audit data store.
+
+## Performance tuning
+
+The composable framework is designed for high concurrency using virtual threads and new channel I/O (NIO).
+
+As a result, it can generate a massive volume of outgoing traffic to your system of records. If not managed properly,
+massive parallelism can actually degrade overall performance because it can become a form of unintended
+"denial of service" attack.
+
+Composable applications are, by definition, cloud native. You can scale your applications horizontally.
+
+In addition, composable functions in each application instance can be scaled vertically using Java virtual thread
+technology. Back-pressure is automated so your application usually does not need to do advanced coding to do flow
+control.
+
+For each composable function, you can define concurrency using the "instances" parameter in the "PreLoad" class
+annotation. Note that if the function makes outgoing calls to an external dependency that is slow, it can consume
+"worker" threads very quickly because the "workers" are waiting for a response from the external dependency.
+
+Therefore, you should increase the concurrency count to adjust for your performance requirement.
+
+If you configure parallel processing, especially when using the parallel pipeline method, it can spin up instances
+of composable functions in an "uncontrolled" manner. It would result in making too many parallel requests to an
+external dependency. For external system that runs using legacy technology, it can easily be overwhelmed,
+resulting in performance bottleneck. It can block the calling functions from a composable application and
+thus the outcome can be suboptimal.
+
+When configuring parallel calls, please consider end-to-end connectivity and potential bottlenecks.
+
+Since event flow instances are already running in parallel, configuring parallel requests within a single event flow
+would reduce performance. An orderly executed pipeline would be faster than a parallel pipeline that is
+"uncontrolled". On the other hands, fork-n-join uses a predetermined number of parallel tasks and it is easier
+to control parallelism.
+
+Performance tuning is an art than a science. A holistic view of end-to-end performance and careful configuration
+of parallelism would yield good outcome.
+
+## Performance metrics
+
+The built-in telemetry system offers basic performance metrics that can be visualized with a telemetry dashboard.
+
+For more advanced performance metrics, you may refer to the "end-of-flow" performance report. It states the
+sequence of task execution and their elapsed time that includes execution time of a function, routing overheads
+and all system overheads. It may look like this when you configure "log.format=json" in application.properties.
+
+```json
+{
+  "level": "INFO",
+  "time": "2025-08-27 18:39:25.683",
+  "source": "org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)",
+  "thread": 336,
+  "message": {
+    "trace": {
+      "path": "GET /api/profile/100",
+      "service": "task.executor",
+      "success": true,
+      "origin": "20250828c022812c67294a63871942c568a9e277",
+      "exec_time": 7.0,
+      "start": "2025-08-28T01:39:25.674Z",
+      "from": "event.script.manager",
+      "id": "9c0934a98dcf4ab1ae4b5b7b389f6d31",
+      "status": 200
+    },
+    "annotations": {
+      "execution": "Run 2 tasks in 7 ms",
+      "tasks": [
+        {
+          "name": "v1.get.profile",
+          "spent": 2.982
+        },
+        {
+          "name": "v1.decrypt.fields",
+          "spent": 1.313
+        }
+      ],
+      "flow": "get-profile"
+    }
+  }
+}
+```
 <br/>
 
 |              Chapter-4              |                   Home                    |          Chapter-6          |

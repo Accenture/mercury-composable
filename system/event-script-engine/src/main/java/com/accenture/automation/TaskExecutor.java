@@ -311,7 +311,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         List<TaskMetrics> taskList = new ArrayList<>(flowInstance.tasks);
         List<Map<String, Object>> taskInfo = new ArrayList<>();
         taskList.forEach(info ->
-                taskInfo.add(Map.of("name", info.getRoute(), "time", info.getElapsed())));
+                taskInfo.add(Map.of("name", info.getRoute(), "spent", info.getElapsed())));
         int totalExecutions = taskList.size();
         var payload = new HashMap<String, Object>();
         var metrics = new HashMap<String, Object>();
