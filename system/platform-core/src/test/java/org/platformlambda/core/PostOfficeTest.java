@@ -564,31 +564,31 @@ class PostOfficeTest extends TestBase {
     void findProviderThatIsPending() throws InterruptedException {
         final BlockingQueue<Boolean> bench1 = new ArrayBlockingQueue<>(1);
         final BlockingQueue<EventEnvelope> bench2 = new ArrayBlockingQueue<>(1);
-        String noOperation = "no.op";
-        String pendingService = "pending.service";
+        String futureOperation = "future.operation";
+        String delayedStart = "delayed.start";
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
         LambdaFunction f = (headers, input, instance) -> {
-            platform.register(noOperation, noOp, 1);
+            platform.register(futureOperation, noOp, 1);
             return true;
         };
-        platform.registerPrivate(pendingService, f, 1);
+        platform.registerPrivate(delayedStart, f, 1);
         PostOffice po = new PostOffice("unit.test", "11", "CHECK /provider");
-        // start service two seconds later, so we can test the waitForProvider method
-        var ref = po.sendLater(new EventEnvelope().setTo(pendingService).setBody("hi"),
-                        new Date(System.currentTimeMillis() + 1000));
+        // start service one second later, so we can test the waitForProvider method
+        var ref = po.sendLater(new EventEnvelope().setTo(delayedStart).setBody("hi"),
+                                new Date(System.currentTimeMillis() + 1000));
         assertNotNull(ref);
-        Future<Boolean> status = platform.waitForProvider(noOperation, 5);
+        Future<Boolean> status = platform.waitForProvider(futureOperation, 5);
         status.onSuccess(bench1::add);
         Boolean result = bench1.poll(12, TimeUnit.SECONDS);
         assertEquals(Boolean.TRUE, result);
-        EventEnvelope request = new EventEnvelope().setTo(noOperation).setBody("ok");
+        EventEnvelope request = new EventEnvelope().setTo(futureOperation).setBody("ok");
         po.asyncRequest(request, 5000).onSuccess(bench2::add);
         EventEnvelope response = bench2.poll(12, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(true, response.getBody());
-        platform.release(noOperation);
-        platform.release(pendingService);
+        platform.release(futureOperation);
+        platform.release(delayedStart);
     }
 
     @Test

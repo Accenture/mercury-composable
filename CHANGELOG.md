@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.19, 8/27/2025
+
+### Added
+
+Performance metrics for each task in the end-of-flow report
+
+### Removed
+
+N/A
+
+### Changed
+
+1. move "NoOp" composable function from event-script-engine to platform-core
+2. adjust concurrency for no op, actuator service, event over http, resilience handler and simple exception handler
+3. virtual thread optimization runs at application start-up phase
+
+---
 ## Version 4.3.18, 8/26/2025
 
 ### Added

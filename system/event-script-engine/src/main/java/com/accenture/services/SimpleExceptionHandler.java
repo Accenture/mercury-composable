@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@PreLoad(route="simple.exception.handler", instances=10)
+@PreLoad(route="simple.exception.handler", instances=300)
 public class SimpleExceptionHandler implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(SimpleExceptionHandler.class);
 

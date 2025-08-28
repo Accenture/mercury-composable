@@ -85,7 +85,6 @@ public class EventEmitter {
     private boolean multicastEnabled = false;
     private boolean journalEnabled = false;
     private boolean eventHttpEnabled = false;
-    private boolean warm = false;
     private static final AtomicInteger warmUpCounter = new AtomicInteger(0);
     private static final EventEmitter INSTANCE = new EventEmitter();
 
@@ -730,17 +729,8 @@ public class EventEmitter {
          * Therefore, it is safe to eliminate additional processing overheads.
          */
         if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
-            if (warm) {
-                Platform.getInstance().getVirtualThreadExecutor().submit(() ->
+            Platform.getInstance().getVirtualThreadExecutor().submit(() ->
                         runTaskExecutor(out, target.getManager().getService().getFunction()));
-            } else {
-                system.send(route, out.toBytes());
-                var counter = warmUpCounter.incrementAndGet();
-                if (counter > 8) {
-                    warm = true;
-                    log.info("Virtual thread optimization completed");
-                }
-            }
         } else {
             system.send(route, out.toBytes());
         }

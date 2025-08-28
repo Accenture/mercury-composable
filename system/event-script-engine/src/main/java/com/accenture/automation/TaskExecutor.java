@@ -225,6 +225,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             log.error("Unable to process callback {}:{} - missing task in {}", flowName, refId, caller);
             return;
         }
+        if (ref != null) {
+            var taskMetrics = flowInstance.metrics.get(ref.uuid);
+            if (taskMetrics != null) {
+                taskMetrics.complete();
+            }
+        }
         int statusCode = event.getStatus();
         if (statusCode >= 400 || event.isException()) {
             handleFunctionException(event, flowInstance, task, seq, statusCode);
@@ -297,12 +303,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         flowInstance.close();
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
-        flowInstance.pendingTasks.keySet().forEach(taskRefs::remove);
+        flowInstance.metrics.keySet().forEach(taskRefs::remove);
         String traceId = flowInstance.getTraceId();
         String logId = traceId != null? traceId : flowInstance.id;
         long diff = Math.max(0, System.currentTimeMillis() - flowInstance.getStartMillis());
         String formatted = Utility.getInstance().elapsedTime(diff);
-        List<String> taskList = new ArrayList<>(flowInstance.tasks);
+        List<TaskMetrics> taskList = new ArrayList<>(flowInstance.tasks);
+        List<Map<String, Object>> taskInfo = new ArrayList<>();
+        taskList.forEach(info ->
+                taskInfo.add(Map.of("name", info.getRoute(), "time", info.getElapsed())));
         int totalExecutions = taskList.size();
         var payload = new HashMap<String, Object>();
         var metrics = new HashMap<String, Object>();
@@ -323,7 +332,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         annotations.put("execution", "Run " + totalExecutions +
                         " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
-        annotations.put("tasks", taskList);
+        annotations.put("tasks", taskInfo);
         annotations.put("flow", flowInstance.getFlow().id);
         EventEmitter.getInstance().send(new EventEnvelope().setTo(DISTRIBUTED_TRACING).setBody(payload));
     }
@@ -804,9 +813,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 500, SERVICE_AT +processName+" not defined");
             return;
         }
-        // add the task to the flow-instance
-        var functionRoute = task.getFunctionRoute();
-        flowInstance.tasks.add(task.service.equals(functionRoute)? functionRoute : task.service+"("+functionRoute+")");
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -823,9 +829,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             deferred = getDelayedVariable(md, flowInstance, task);
         }
         final var uuid = util.getDateUuid();
-        final var ref = new TaskReference(flowInstance.id, task.service);
+        final var ref = new TaskReference(uuid, flowInstance.id, task.service);
         taskRefs.put(uuid, ref);
-        flowInstance.pendingTasks.put(uuid, true);
+        // add task metrics and pending status to the flow-instance
+        var functionRoute = task.getFunctionRoute();
+        var taskMetrics = new TaskMetrics(task.service, functionRoute);
+        flowInstance.metrics.put(uuid, taskMetrics);
+        flowInstance.tasks.add(taskMetrics);
         final var compositeCid = seq > 0? uuid + "#" + seq : uuid;
         if (functionRoute.startsWith(FLOW_PROTOCOL)) {
             var flowId = functionRoute.substring(FLOW_PROTOCOL.length());
@@ -1608,7 +1618,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private record TaskReference(String flowInstanceId, String processId) { }
+    private record TaskReference(String uuid, String flowInstanceId, String processId) { }
 
     private static class OutputMappingMetadata {
         MultiLevelMap consolidated;

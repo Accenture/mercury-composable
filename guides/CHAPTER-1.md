@@ -287,63 +287,59 @@ Your browser will return the following:
 
 You have successfully tested the two REST endpoints. Tracing information in the application log may look like this:
 
-```log
-Telemetry:76 - trace={path=POST /api/profile, service=http.flow.adapter, success=true, 
-                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.524Z, 
-                      exec_time=0.284, from=http.request, id=f6a6ae62340e43afb0a6f30445166e08}
-Telemetry:76 - trace={path=POST /api/profile, service=event.script.manager, success=true,
-                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.525Z,
-                      exec_time=0.57, from=http.flow.adapter, id=f6a6ae62340e43afb0a6f30445166e08}
-Telemetry:76 - trace={path=POST /api/profile, service=v1.create.profile, success=true,
-                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.526Z,
-                      exec_time=0.342, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
-Telemetry:76 - trace={path=POST /api/profile, service=async.http.response, success=true,
-                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
-                      exec_time=0.294, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
-Telemetry:76 - trace={path=POST /api/profile, service=v1.encrypt.fields, success=true,
-                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.528Z,
-                      exec_time=3.64, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
-SaveProfile:52 - Profile 100 saved
-TaskExecutor:186 - TaskExecutor:262 - {
-  "execution": "Run 3 tasks in 11 ms",
-  "id": "a0eef12d94bd4ab3b5fd6c25e2461130",
-  "flow": "get-profile",
-  "tasks": [
-    "v1.create.profile",
-    "v1.encrypt.fields",
-    "v1.save.profile"
-  ],
-  "status": "completed"
+```json
+{
+  "level": "INFO",
+  "time": "2025-08-27 18:39:25.683",
+  "source": "org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)",
+  "thread": 336,
+  "message": {
+    "trace": {
+      "path": "GET /api/profile/100",
+      "service": "task.executor",
+      "success": true,
+      "origin": "20250828c022812c67294a63871942c568a9e277",
+      "exec_time": 7.0,
+      "start": "2025-08-28T01:39:25.674Z",
+      "from": "event.script.manager",
+      "id": "9c0934a98dcf4ab1ae4b5b7b389f6d31",
+      "status": 200
+    },
+    "annotations": {
+      "execution": "Run 2 tasks in 7 ms",
+      "tasks": [
+        {
+          "name": "v1.get.profile",
+          "time": 2.982
+        },
+        {
+          "name": "v1.decrypt.fields",
+          "time": 1.313
+        }
+      ],
+      "flow": "get-profile"
+    }
+  }
 }
-Telemetry:76 - trace={path=POST /api/profile, service=v1.save.profile, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:23.533Z,
-                            exec_time=2.006, from=task.executor, id=f6a6ae62340e43afb0a6f30445166e08}
-
-Telemetry:76 - trace={path=GET /api/profile/100, service=http.flow.adapter, success=true, 
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.089Z,
-                            exec_time=0.152, from=http.request, id=1a29105044e94cc3ac68aee002f6f429}
-Telemetry:76 - trace={path=GET /api/profile/100, service=event.script.manager, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.090Z,
-                            exec_time=0.291, from=http.flow.adapter, id=1a29105044e94cc3ac68aee002f6f429}
-Telemetry:76 - trace={path=GET /api/profile/100, service=v1.get.profile, success=true,
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.091Z,
-                            exec_time=1.137, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
-Telemetry:76 - trace={path=GET /api/profile/100, service=v1.decrypt.fields, success=true, 
-                            origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.093Z,
-                            exec_time=1.22, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
-TaskExecutor:262 - {
-  "execution": "Run 2 tasks in 7 ms",
-  "id": "a0eef12d94bd4ab3b5fd6c25e2461130",
-  "flow": "get-profile",
-  "tasks": [
-    "v1.get.profile",
-    "v1.decrypt.fields"
-  ],
-  "status": "completed"
+{
+  "level": "INFO",
+  "time": "2025-08-27 18:39:25.685",
+  "source": "org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)",
+  "thread": 337,
+  "message": {
+    "trace": {
+      "path": "GET /api/profile/100",
+      "service": "async.http.response",
+      "success": true,
+      "origin": "20250828c022812c67294a63871942c568a9e277",
+      "start": "2025-08-28T01:39:25.681Z",
+      "exec_time": 0.374,
+      "from": "task.executor",
+      "id": "9c0934a98dcf4ab1ae4b5b7b389f6d31",
+      "status": 200
+    }
+  }
 }
-Telemetry:76 - trace={path=GET /api/profile/100, service=async.http.response, success=true, 
-                      origin=202406249aea0a481d46401d8379c8896a6698a2, start=2024-06-24T22:41:52.095Z, 
-                      exec_time=0.214, from=task.executor, id=1a29105044e94cc3ac68aee002f6f429}
 ```
 
 ### Main application entry point

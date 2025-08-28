@@ -69,7 +69,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *     its result programmatically using the PostOffice.
  */
 @EventInterceptor
-@PreLoad(route = "resilience.handler", instances=100)
+@PreLoad(route = "resilience.handler", instances=500)
 public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Utility util = Utility.getInstance();
     private static final String MAX_ATTEMPTS = "max_attempts";

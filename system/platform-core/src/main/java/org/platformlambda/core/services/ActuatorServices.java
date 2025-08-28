@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@PreLoad(route=ActuatorServices.SERVICE_NAMES, instances=10)
+@PreLoad(route=ActuatorServices.SERVICE_NAMES, instances=30)
 public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Object> {
     public static final String ACTUATOR_SERVICES = "actuator.services";
     public static final String INFO_ACTUATOR = "info.actuator.service";

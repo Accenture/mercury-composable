@@ -21,6 +21,7 @@ package org.platformlambda.core.system;
 import io.github.classgraph.ClassInfo;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -566,9 +567,10 @@ public class AppStarter {
         var platform = Platform.getInstance();
         var startupMonitor = "loader." + platform.getOrigin();
         LambdaFunction f = (headers, input, instance) -> {
-            String diff = NumberFormat.getInstance().format(System.currentTimeMillis() - startTime);
-            log.info("Modules loaded in {} ms", diff);
             platform.release(startupMonitor);
+            String diff = NumberFormat.getInstance().format(System.currentTimeMillis() - startTime);
+            warmUpVirtualThreadSystem();
+            log.info("Modules loaded in {} ms", diff);
             return null;
         };
         platform.registerPrivate(startupMonitor, f, 1);
@@ -590,6 +592,15 @@ public class AppStarter {
             log.error("Unable to start - {}", ex.getMessage());
             System.exit(-1);
         });
+    }
+
+    private void warmUpVirtualThreadSystem() {
+        // send a few events to the "no.op" composable function where each execution consumes a new virtual thread
+        var po = EventEmitter.getInstance();
+        for (int i=0; i < 16; i++) {
+            po.send(new EventEnvelope().setTo("no.op").setBody(Map.of("type", "warm-up", "seq", i)));
+        }
+        log.info("Virtual thread optimization completed");
     }
 
     /**

@@ -47,8 +47,8 @@ public class FlowInstance {
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
     public final AtomicInteger pipeCounter = new AtomicInteger(0);
     public final ConcurrentMap<Integer, PipeInfo> pipeMap = new ConcurrentHashMap<>();
-    public final Queue<String> tasks = new ConcurrentLinkedQueue<>();
-    public final ConcurrentMap<String, Boolean> pendingTasks = new ConcurrentHashMap<>();
+    public final Queue<TaskMetrics> tasks = new ConcurrentLinkedQueue<>();
+    public final ConcurrentMap<String, TaskMetrics> metrics = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
     public final String id = Utility.getInstance().getUuid();

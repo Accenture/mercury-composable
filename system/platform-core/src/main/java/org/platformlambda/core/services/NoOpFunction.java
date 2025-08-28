@@ -16,7 +16,7 @@
 
  */
 
-package com.accenture.services;
+package org.platformlambda.core.services;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
@@ -28,7 +28,7 @@ import java.util.Map;
  * This is a convenient no-operation function for event scripts.
  * It is effectively an echo function.
  */
-@PreLoad(route = "no.op", instances=50)
+@PreLoad(route = "no.op", instances=500)
 public class NoOpFunction implements TypedLambdaFunction<Map<String, Object>, EventEnvelope> {
 
     @Override

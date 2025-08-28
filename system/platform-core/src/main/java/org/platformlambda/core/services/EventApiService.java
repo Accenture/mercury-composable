@@ -41,7 +41,7 @@ import java.util.Map;
  */
 @ZeroTracing
 @EventInterceptor
-@PreLoad(route=EventApiService.EVENT_API_SERVICE, instances=50)
+@PreLoad(route=EventApiService.EVENT_API_SERVICE, instances=250)
 public class EventApiService implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String EVENT_API_SERVICE = "event.api.service";
     private static final Logger log = LoggerFactory.getLogger(EventApiService.class);
