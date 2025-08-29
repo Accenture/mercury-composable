@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.20, 8/28/2025
+
+### Added
+
+1. `error.task` in the error namespace to map to the original task that throws exception
+2. `@retry` keyword in the first next task list in an exception handler tells the system to
+   automatically resolve the original task.
+
+### Removed
+
+N/A
+
+### Changed
+
+Chapter 4 of the Developer Guide updated for the new feature for error handling
+
+---
 ## Version 4.3.19, 8/27/2025
 
 ### Added

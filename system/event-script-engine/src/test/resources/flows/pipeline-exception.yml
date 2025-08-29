@@ -55,6 +55,7 @@ tasks:
     execution: end
 
   - input:
+      - 'error.task -> task'
       - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'

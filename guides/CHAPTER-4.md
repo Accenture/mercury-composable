@@ -490,6 +490,7 @@ To handle this level of modularity, the system provides configurable input/outpu
 | Type                              | Keyword and/or namespace     | LHS / RHS  | Mappings |
 |:----------------------------------|:-----------------------------|------------|----------|
 | Flow input dataset                | `input.`                     | left       | input    |
+| Flow error dataset                | `error.`                     | left.      | input    |
 | Flow output dataset               | `output.`                    | right      | output   |
 | Function input body               | no namespace required        | right      | input    |
 | Function input or output headers  | `header` or `header.`        | both       | I/O      |
@@ -512,6 +513,16 @@ When your function returns a PoJo, the `datatype` field in the left-hand-side wi
 the class name of the PoJo. This allows you to save the class name in the state machine and
 pass it to another task that needs to reconstruct the PoJo class. This is used when your
 function may return different PoJo classes for different scenarios.
+
+The error dataset is available in the input data mapping of an exception handler that attaches
+to a task or the generic exception handler that attaches to the flow itself.
+
+The error dataset includes the following:
+
+1. error.task - this is the task name of the task that throws exception
+2. error.status - the status code of the exception
+3. error.message - the error message
+4. error.stack - stack trace if any
 
 The external state machine namespace uses the namespace `ext:` to indicate that the key-value is external.
 
@@ -1473,16 +1484,28 @@ reaches the "backoff_trigger" threshold of 3. After that, all requests will be a
     description: 'Resilience handler with alternative path and backoff features'
     execution: decision
     next:
-      - 'my.task'
+      - '@retry'
       - 'abort.request'
       - 'alternative.task'
 ```
 
-> *Note*: When the "backoff" feature is enabled, you should configure the resilience handler as a gatekeeper
-          to protect your user function. This allows the system to abort requests during the backoff period.
-
-You may also use this resilience handler as a starting point to write your own exception handler for more
+You may also use this resilience handler as a template to write your own exception handler for more
 complex recovery use cases.
+
+*Important*:
+
+1. If you want the resilience handler to automatically retry the task that throws exception, set
+   "@retry" as the first task in the "next" task list.
+2. When the "backoff" feature is enabled, you should configure the resilience handler as a gatekeeper
+   to protect your user function. i.e. it is the "first.task". This allows the system to abort requests
+   during the backoff period.
+3. If the resilience handler is used as a gatekeeper and there was no exception, it will execute the
+   original task. However, if "@retry" is used as the first next task entry, it cannot resolve the original
+   task since it has never been executed. You can add the original task to the first entry with "|"
+   as a separator. e.g. `@retry | my.task` where "my.task" is the original task. This tells the system to
+   route the request to "my.task" when there is no exception in the first place.
+4. The "@retry" keyword can only be used in the first entry of the "next" task list.
+
 
 ### External state machine
 

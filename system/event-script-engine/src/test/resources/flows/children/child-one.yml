@@ -35,6 +35,7 @@ tasks:
   # propagate the stack trace to the caller.
   #
   - input:
+      - 'error.task -> task'
       - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'

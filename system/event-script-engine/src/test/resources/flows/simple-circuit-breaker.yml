@@ -33,7 +33,7 @@ tasks:
     description: 'Just a demo circuit breaker'
     execution: decision
     next:
-      - 'my.task'
+      - '@retry'
       - 'abort.request'
 
   - input:

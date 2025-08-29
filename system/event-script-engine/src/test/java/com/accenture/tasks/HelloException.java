@@ -26,22 +26,25 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@PreLoad(route="v1.hello.exception", instances=2)
+@PreLoad(route="v1.hello.exception", instances=5)
 public class HelloException implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(HelloException.class);
     private static final String TYPE = "type";
     private static final String ERROR = "error";
+    private static final String TASK = "task";
+    private static final String STACK = "stack";
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
-            Object stack = input.get("stack");
-            if (stack instanceof String text) {
-                log.info("User defined exception handler got {}, rc={}, error={}, stack size={}",
-                        headers, input.get(STATUS), input.get(MESSAGE), text.length());
-            }
+            Object stack = input.get(STACK);
+            Object task = input.get(TASK);
+            log.error("User defined exception handler received from {}, rc={}, error={}, stack size={}",
+                    task instanceof String name? name : "previous task",
+                    input.get(STATUS), input.get(MESSAGE),
+                    stack instanceof String text? text.length() : "0");
             if ("409".equals(String.valueOf(input.get(STATUS)))) {
                 throw new IllegalArgumentException("Demonstrate throwing exception at top level");
             }

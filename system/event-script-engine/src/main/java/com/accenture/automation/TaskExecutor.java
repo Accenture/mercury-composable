@@ -73,6 +73,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String RESULT = "result";
     private static final String DATA_TYPE = "datatype";
     private static final String HEADER = "header";
+    private static final String RETRY = "@retry";
+    private static final String TASK = "task";
     private static final String CODE = "code";
     private static final String STACK_TRACE = "stack";
     private static final String DECISION = "decision";
@@ -238,7 +240,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         // clear top level exception state
         flowInstance.setExceptionAtTopLevel(false);
-        handleCallback(from, flowInstance, task, event, seq);
+        handleCallback(ref, from, flowInstance, task, event, seq);
     }
 
     private void handleFunctionException(EventEnvelope event, FlowInstance flowInstance, Task task,
@@ -268,6 +270,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 flowInstance.setExceptionAtTopLevel(true);
             }
             Map<String, Object> error = new HashMap<>();
+            error.put(TASK, task.service);
             error.put(CODE, statusCode);
             error.put(MESSAGE, event.getError());
             String stackTrace = event.getStackTrace();
@@ -337,7 +340,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         EventEmitter.getInstance().send(new EventEnvelope().setTo(DISTRIBUTED_TRACING).setBody(payload));
     }
 
-    private void handleCallback(String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq) {
+    private void handleCallback(TaskReference ref, String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq) {
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -372,7 +375,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             handleEndTask(flowInstance, task, md.consolidated);
         }
         if (DECISION.equals(executionType)) {
-            handleDecisionTask(flowInstance, task, md.consolidated);
+            handleDecisionTask(ref, flowInstance, task, md.consolidated.getElement(DECISION));
         }
         // consolidated dataset should be mapped to model for normal tasks
         if (SEQUENTIAL.equals(executionType)) {
@@ -628,8 +631,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         endFlow(flowInstance, true);
     }
 
-    private void handleDecisionTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
-        Object decisionValue = map.getElement(DECISION);
+    private void handleDecisionTask(TaskReference ref, FlowInstance flowInstance, Task task, Object decisionValue) {
         List<String> nextTasks = task.nextSteps;
         final int decisionNumber;
         if (decisionValue instanceof Boolean) {
@@ -646,7 +648,36 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 500,
                     "Task "+task.service+" returned invalid decision ("+decisionValue+")");
         } else {
-            executeTask(flowInstance, nextTasks.get(decisionNumber - 1));
+            decideNextTask(ref, flowInstance, task, nextTasks, decisionNumber);
+        }
+    }
+
+    private void decideNextTask(TaskReference ref, FlowInstance flowInstance, Task task,
+                                List<String> nextTasks, int decisionNumber) {
+        var nextList = getDecision(nextTasks.get(decisionNumber - 1));
+        if (decisionNumber == 1 && RETRY.equals(nextList.getFirst())) {
+            if (ref.errorTask != null) {
+                executeTask(flowInstance, ref.errorTask);
+            } else if (nextList.size() > 1) {
+                executeTask(flowInstance, nextList.get(1));
+            } else {
+                log.error("Flow {}:{} {} does not have a previous task {}",
+                        flowInstance.getFlow().id, flowInstance.id, task.service, nextList);
+                abortFlow(flowInstance, 500,
+                        "Task "+task.service+" does not have a previous task "+nextList);
+            }
+        } else {
+            executeTask(flowInstance, nextList.getFirst());
+        }
+    }
+
+    private List<String> getDecision(String text) {
+        if (text.contains("|")) {
+            var nextList = util.split(text, "| ");
+            Collections.sort(nextList);
+            return nextList;
+        } else {
+            return List.of(text);
         }
     }
 
@@ -813,10 +844,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             abortFlow(flowInstance, 500, SERVICE_AT +processName+" not defined");
             return;
         }
+        String errorTask = null;
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
-        if (error != null) {
+        if (error != null && error.get(TASK) instanceof String et) {
+            errorTask = et;
             combined.put(ERROR, error);
         }
         var md = new InputMappingMetadata(combined);
@@ -829,7 +862,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             deferred = getDelayedVariable(md, flowInstance, task);
         }
         final var uuid = util.getDateUuid();
-        final var ref = new TaskReference(uuid, flowInstance.id, task.service);
+        final var ref = new TaskReference(uuid, flowInstance.id, task.service, errorTask);
         taskRefs.put(uuid, ref);
         // add task metrics and pending status to the flow-instance
         var functionRoute = task.getFunctionRoute();
@@ -1618,7 +1651,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private record TaskReference(String uuid, String flowInstanceId, String processId) { }
+    private record TaskReference(String uuid, String flowInstanceId, String processId, String errorTask) { }
 
     private static class OutputMappingMetadata {
         MultiLevelMap consolidated;

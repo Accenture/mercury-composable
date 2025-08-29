@@ -61,8 +61,8 @@ tasks:
       - 'result.cumulative -> file(/tmp/resilience/cumulative)'
     description: 'Resilience handler with alternative path and backoff features'
     execution: decision
-    next:
-      - 'my.task'
+    next: # "my.task | @retry" means that when it cannot resolve the original task using @retry, use "my.task"
+      - 'my.task | @retry'
       - 'abort.request'
       - 'alternative.task'
 
