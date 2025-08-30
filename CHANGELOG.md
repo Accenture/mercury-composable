@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.21, 8/30/2025
+
+### Added
+
+Enable connection timeout in AsyncHttpClient with a new parameter in application.properties
+to support fail-fast when making HTTP requests.
+
+http.client.connection.timeout (default value of 5000, unit in milliseconds)
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.20, 8/28/2025
 
 ### Added

@@ -18,6 +18,7 @@
 
 package org.platformlambda.automation.http;
 
+import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -99,11 +100,14 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                                                         "upgrade-insecure-requests", "accept-encoding",
                                                         "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user" };
     private final File tempDir;
+    private final int connectTimeout;
 
     public AsyncHttpClient() {
-        // create temp upload directory
-        AppConfigReader reader = AppConfigReader.getInstance();
-        String temp = reader.getProperty("app.temp.dir", "/tmp/composable/java/temp-streams");
+        Utility util = Utility.getInstance();
+        AppConfigReader config = AppConfigReader.getInstance();
+        var timeout = config.getProperty("http.client.connection.timeout", "5000");
+        connectTimeout = Math.max(2000, util.str2int(timeout));
+        String temp = config.getProperty("app.temp.dir", "/tmp/composable/java/temp-streams");
         tempDir = new File(temp);
         if (!tempDir.exists() && tempDir.mkdirs()) {
             log.info("Temporary work directory {} created", tempDir);
@@ -201,8 +205,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         HttpMetadata md = new HttpMetadata();
         validateUrl(request, md);
         String uri = normalizeUrl(request, md);
-        po.annotateTrace(DESTINATION, md.url.getScheme() + "://" + md.url.getHost() + ":" + md.port + md.rawUri);
-        HttpClient client = HttpClient.create().headers(h -> updateHttpHeaders(po, request, h));
+        po.annotateTrace(DESTINATION, request.getTargetHost() + md.rawUri);
+        HttpClient client = HttpClient.create()
+                            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
+                            .headers(h -> updateHttpHeaders(po, request, h));
         int timeout = request.getTimeoutSeconds();
         client.responseTimeout(Duration.ofSeconds(timeout));
         if (md.secure) {
@@ -312,9 +318,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             throw new IllegalArgumentException("Unable to resolve target host as domain or IP address");
         }
         md.port = md.url.getPort();
-        if (md.port < 0) {
-            md.port = md.secure? 443 : 80;
-        }
         String path = md.url.getPath();
         if (!path.isEmpty()) {
             throw new IllegalArgumentException("Target host must not contain URI path");

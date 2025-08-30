@@ -20,6 +20,7 @@ precedence.
 | rest.server.ssl-enabled                | Enable SSL for reactive HTTP server<br/>(Default: false)                 | Optional    |
 | rest.server.ssl.cert                   | X.509 certificate in PEM format.<br/>filepath prefix classpath: or file: | Optional    |
 | rest.server.ssl.key                    | Private key in PEM format.<br/>filepath prefix classpath: or file:       | Optional    |
+| http.client.connection.timeout         | default 5000 (unit in milliseconds)                                      | Optional    |
 | yaml.rest.automation                   | Config location e.g. classpath:/rest.yaml                                | Optional    |
 | yaml.event.over.http                   | Config location<br/>classpath:/event-over-http.yaml                      | Optional    |
 | yaml.multicast                         | Config location<br/>classpath:/multicast.yaml                            | Optional    |
