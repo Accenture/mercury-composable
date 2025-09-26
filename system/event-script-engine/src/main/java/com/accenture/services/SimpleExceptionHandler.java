@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
+import static com.accenture.utils.EventScriptConstants.ENV_INSTANCES_PREFIX;
 
 @PreLoad(route=SimpleExceptionHandler.ROUTE, instances=250, envInstances = SimpleExceptionHandler.ENV_INSTANCE_PROPERTY)
 public class SimpleExceptionHandler implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {

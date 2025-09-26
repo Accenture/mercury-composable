@@ -24,13 +24,10 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.util.Map;
 
-import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
-
-@PreLoad(route=EchoEndpoint.ROUTE, instances=10, envInstances = EchoEndpoint.ENV_INSTANCE_PROPERTY)
+@PreLoad(route=EchoEndpoint.ROUTE, instances=10)
 public class EchoEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
     public static final String ROUTE = "echo.endpoint";
-    public static final String ENV_INSTANCE_PROPERTY = ENV_INSTANCES_PREFIX + EchoEndpoint.ROUTE;
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws Exception {

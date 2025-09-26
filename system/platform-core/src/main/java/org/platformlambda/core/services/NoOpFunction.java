@@ -24,7 +24,7 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.util.Map;
 
-import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
+import static org.platformlambda.core.util.common.PlatformConstants.ENV_INSTANCES_PREFIX;
 
 /**
  * This is a convenient no-operation function for event scripts.

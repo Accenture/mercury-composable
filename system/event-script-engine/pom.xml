@@ -51,12 +51,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>shared</artifactId>
-            <version>4.3.21</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
             <version>5.13.4</version>

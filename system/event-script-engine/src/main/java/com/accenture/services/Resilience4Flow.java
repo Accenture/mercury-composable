@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
+import static com.accenture.utils.EventScriptConstants.ENV_INSTANCES_PREFIX;
 
 /**
  * This is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.

@@ -1,7 +1,6 @@
 package com.accenture;
 
 import com.accenture.adapters.HttpToFlow;
-import com.accenture.service.EchoEndpoint;
 import com.accenture.services.Resilience4Flow;
 import com.accenture.services.SimpleExceptionHandler;
 import com.accenture.setup.TestBase;
@@ -54,16 +53,11 @@ public class EnvInstanceOverrideTest extends TestBase {
     @Test
     void shouldNotReplaceInstanceIfNoOverride(){
         assertFalse(reader.exists(HttpToFlow.ENV_INSTANCE_PROPERTY));
-        assertFalse(reader.exists(EchoEndpoint.ENV_INSTANCE_PROPERTY));
 
         assertEquals(
                 200,
                 routeToInstancesMap.get(HttpToFlow.ROUTE)
         );
 
-        assertEquals(
-                10,
-                routeToInstancesMap.get(EchoEndpoint.ROUTE)
-        );
     }
 }
