@@ -211,7 +211,6 @@ You can override special services such as `no.op`, `reslience.handler`, `echo.en
  - `worker.instances.no.op`
  - `worker.instances.resilience.handler`
  - `worker.instances.simple.exception.handler`
- - `worker.instances.echo.endpoint`
 
 ## Inspect event metadata
 
