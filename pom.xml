@@ -10,7 +10,9 @@
     <name>Parent Mercury</name>
 
     <modules>
-    
+
+        <module>shared/shared</module>
+
         <!-- Core libraries -->
         <module>system/platform-core</module>
         <module>system/rest-spring-3</module>

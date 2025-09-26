@@ -46,6 +46,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>shared</artifactId>
+            <version>4.3.21</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty-http</artifactId>
         </dependency>

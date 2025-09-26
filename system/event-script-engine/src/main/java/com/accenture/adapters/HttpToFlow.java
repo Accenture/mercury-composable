@@ -29,13 +29,19 @@ import org.platformlambda.core.system.PostOffice;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
+
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  */
 @EventInterceptor
-@PreLoad(route = "http.flow.adapter", instances = 200)
+@PreLoad(route = HttpToFlow.ROUTE, instances = 200, envInstances = HttpToFlow.ENV_INSTANCE_PROPERTY)
 public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
+
+    public static final String ROUTE = "http.flow.adapter";
+    public static final String ENV_INSTANCE_PROPERTY = ENV_INSTANCES_PREFIX + HttpToFlow.ROUTE;
+
     private static final String TYPE = "type";
     private static final String ERROR = "error";
     private static final String STATUS = "status";

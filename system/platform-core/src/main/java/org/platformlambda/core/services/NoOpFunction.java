@@ -24,12 +24,17 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.util.Map;
 
+import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
+
 /**
  * This is a convenient no-operation function for event scripts.
  * It is effectively an echo function.
  */
-@PreLoad(route = "no.op", instances=500)
+@PreLoad(route = NoOpFunction.ROUTE, instances=500, envInstances = NoOpFunction.ENV_INSTANCE_PROPERTY)
 public class NoOpFunction implements TypedLambdaFunction<Map<String, Object>, EventEnvelope> {
+
+    public static final String ROUTE = "no.op";
+    public static final String ENV_INSTANCE_PROPERTY = ENV_INSTANCES_PREFIX + NoOpFunction.ROUTE;
 
     @Override
     public EventEnvelope handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {

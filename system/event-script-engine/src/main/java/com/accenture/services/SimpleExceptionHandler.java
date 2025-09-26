@@ -27,9 +27,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@PreLoad(route="simple.exception.handler", instances=250)
+import static com.accenture.utils.ComposableConstants.ENV_INSTANCES_PREFIX;
+
+@PreLoad(route=SimpleExceptionHandler.ROUTE, instances=250, envInstances = SimpleExceptionHandler.ENV_INSTANCE_PROPERTY)
 public class SimpleExceptionHandler implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(SimpleExceptionHandler.class);
+
+    public static final String ROUTE = "simple.exception.handler";
+    public static final String ENV_INSTANCE_PROPERTY = ENV_INSTANCES_PREFIX + SimpleExceptionHandler.ROUTE;
 
     private static final String TYPE = "type";
     private static final String TASK = "task";
