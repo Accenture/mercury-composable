@@ -29,6 +29,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.accenture.utils.EventScriptConstants.ENV_INSTANCES_PREFIX;
+
 /**
  * This is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
  * <p>
@@ -69,8 +71,12 @@ import java.util.concurrent.atomic.AtomicLong;
  *     its result programmatically using the PostOffice.
  */
 @EventInterceptor
-@PreLoad(route = "resilience.handler", instances=500)
+@PreLoad(route = Resilience4Flow.ROUTE, instances=500, envInstances = Resilience4Flow.ENV_INSTANCE_PROPERTY)
 public class Resilience4Flow implements TypedLambdaFunction<EventEnvelope, Void> {
+
+    public static final String ROUTE = "resilience.handler";
+    public static final String ENV_INSTANCE_PROPERTY = ENV_INSTANCES_PREFIX + Resilience4Flow.ROUTE;
+
     private static final Utility util = Utility.getInstance();
     private static final String MAX_ATTEMPTS = "max_attempts";
     private static final String ATTEMPT = "attempt";

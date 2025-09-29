@@ -24,8 +24,10 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 
 import java.util.Map;
 
-@PreLoad(route="echo.endpoint", instances=10)
+@PreLoad(route=EchoEndpoint.ROUTE, instances=10)
 public class EchoEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+
+    public static final String ROUTE = "echo.endpoint";
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws Exception {
