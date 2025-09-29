@@ -207,7 +207,9 @@ Optionally, you can specify an `envInstances` parameter. This tells the system t
 application.properties (or application.yml) to configure the number of workers for the function. When the parameter
 defined in "envInstances" is not found, the "instances" parameter is used as the default value.
 
-You can override special services such as `no.op`, `reslience.handler`, `echo.endpoint` and `simple.exception.handler` using the following properties
+You can override special services such as `no.op`, `reslience.handler`, and `simple.exception.handler` using the
+following properties:
+
  - `worker.instances.no.op`
  - `worker.instances.resilience.handler`
  - `worker.instances.simple.exception.handler`
