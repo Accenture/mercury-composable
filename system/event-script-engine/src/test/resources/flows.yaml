@@ -39,5 +39,6 @@ flows:
   - 'children/child-three.yml'
   - 'http-client-by-config.yml'
   - 'autostart.yml'
+  - 'pluggableFunctions/arithmetic.yml'
 
 location: 'classpath:/flows/'

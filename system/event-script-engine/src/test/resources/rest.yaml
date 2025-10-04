@@ -323,6 +323,15 @@ rest:
     flow: 'http-client-by-config'
     timeout: 10s
     tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['GET']
+    url: "/api/pluggableFunctions/arithmetic"
+    flow: 'arithmetic'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

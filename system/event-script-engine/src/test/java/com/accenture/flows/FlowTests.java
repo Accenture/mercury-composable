@@ -1346,4 +1346,30 @@ class FlowTests extends TestBase {
                                         flowId, dataset, correlationId, timeout));
         assertEquals(error, ex.getMessage());
     }
+
+
+
+    @Test
+    void shouldHandleArithmeticPluggableFunction() throws InterruptedException, ExecutionException {
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST)
+                .setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/pluggableFunctions/arithmetic");
+
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = EventEnvelope.of().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, timeout).get();
+        assertNotNull(res);
+
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertNotNull(result);
+
+        assertEquals(3, result.size());
+        assertEquals(8, result.get("sum"));
+        assertEquals(12, result.get("product"));
+        assertEquals(3, result.get("quotient"));
+    }
 }
