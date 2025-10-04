@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * This is reserved for system use.
@@ -761,6 +762,14 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
+
+            if(isPluggableFunction(rhs)){
+                return false;
+            }
+            else if(isPluggableFunction(lhs)){
+                return isValidPluggableFunction(lhs);
+            }
+
             if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
                 if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
                         lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
@@ -777,6 +786,25 @@ public class CompileFlows implements EntryPoint {
             }
         }
         return false;
+    }
+
+    static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<funcName>.+)\\(.*\\)";
+    static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
+
+    private boolean isValidPluggableFunction(String lhs){
+        var matcher = PLUGGABLE_FUNCTION_PATTERN.matcher(lhs);
+
+        if(! matcher.find()){
+            return false;
+        }
+
+        String function = matcher.group("funcName");
+
+        return true; //TODO: check function against Macro
+    }
+
+    private boolean isPluggableFunction(String lhs){
+        return lhs.matches(PLUGGABLE_FUNCTION_REGEX); // Should match f:func(...args), where args is optional
     }
 
     private boolean validModel(String key) {
