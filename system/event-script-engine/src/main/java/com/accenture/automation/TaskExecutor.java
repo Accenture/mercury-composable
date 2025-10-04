@@ -971,6 +971,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    //TODO: I think this is where we need to call the pluggable function
     private Object getInputDataMappingLhsValue(InputMappingMetadata md, int dynamicListIndex, String dynamicListKey) {
         Object value = getLhsElement(md.lhs, md.source);
         // special cases for simple type matching for a non-exist model variable
@@ -1112,6 +1113,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    //TODO: Could be we set it here?
     private Object getLhsElement(String lhs, MultiLevelMap source) {
         int colon = getModelTypeIndex(lhs);
         String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
