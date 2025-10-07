@@ -137,7 +137,7 @@ public class MultiLevelMap {
 
         // Split the path using [] as the separator
         String basePath = compositePath.substring(0, wildcardIndex);
-        String remainingPath = compositePath.substring(wildcardIndex + 2); // 跳过 "[]"
+        String remainingPath = compositePath.substring(wildcardIndex + 2); // skip "[]"
         if (remainingPath.startsWith(".")) {
             remainingPath = remainingPath.substring(1);
         }
