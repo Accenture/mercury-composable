@@ -161,15 +161,24 @@ For example, given a map like this:
   "body":
   {
     "time": "2023-03-27T18:10:34.234Z",
-    "hello": [1, 2, 3]
+    "hello": [1, 2, 3],
+    "complex": [
+      {"key": "value1"},
+      {"key": "value2"}
+    ]
   }
 }
 ```
 
-| Example | Command                         | Result                   |
-|:-------:|:--------------------------------|:-------------------------|
-|    1    | map.getElement("body.time")     | 2023-03-27T18:10:34.234Z |
-|    2    | map.getElement("body.hello[2]") | 3                        |
+| Example | Command                                | Result                   |
+|:-------:|:---------------------------------------|:-------------------------|
+|    1    | map.getElement("body.time")            | 2023-03-27T18:10:34.234Z |
+|    2    | map.getElement("body.hello[2]")        | 3                        |
+|    3    | map.getElement("body.complex[1].key")  | value2                   |
+|    4    | map.getElements("body.complex[*].key") | [ value1, value2 ]       |
+
+Example-4 above uses the "getElements" in plural form to indicate that it is retrieving a list of elements
+using a "wildcard" index. 
 
 ## Your second unit test
 
