@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.23, 10/6/2025
+
+### Added
+
+State machine monitor feature in EventScriptMock class
+
+Updated MultiLevelMap to support a new "getElements" method to retrieve elements using
+wildcard index "*".
+
+### Removed
+
+N/A
+
+### Changed
+
+OSS update:
+
+1. spring boot version 3.5.6
+2. vertx version 5.0.4
+3. netty version 4.2.6.Final
+
+---
 ## Version 4.3.22, 9/28/2025
 
 ### Added

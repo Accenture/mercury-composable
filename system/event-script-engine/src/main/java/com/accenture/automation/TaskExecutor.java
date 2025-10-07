@@ -356,11 +356,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         // consolidated dataset includes input, model and task result set
         var md = new OutputMappingMetadata(combined);
         performOutputDataMapping(md, flowInstance, task);
-        // has output data mapping monitor?
-        var monitor = task.getMonitorAfterTask();
-        if (monitor != null) {
-            EventEmitter.getInstance().send(monitor, filterModelRoot(md.consolidated.getMap()));
-        }
         if (seq > 0 && flowInstance.pipeMap.containsKey(seq)) {
             PipeInfo pipe = flowInstance.pipeMap.get(seq);
             // this is a callback from a fork task
@@ -407,6 +402,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (md.sep > 0) {
                 doOutputDataMappingEntry(md, entry, flowInstance, task);
             }
+        }
+        // has output data mapping monitor?
+        var monitor = task.getMonitorAfterTask();
+        if (monitor != null) {
+            EventEmitter.getInstance().send(monitor, filterModelRoot(md.consolidated.getMap()));
         }
     }
 
@@ -862,12 +862,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         var md = new InputMappingMetadata(combined);
         performInputDataMapping(md, flowInstance, task, dynamicListIndex, dynamicListKey);
-        // has input data mapping monitor?
-        var monitor = task.getMonitorBeforeTask();
-        if (monitor != null) {
-            EventEmitter.getInstance().send(monitor,
-                    Map.of(STATE_MACHINE, filterModelRoot(flowInstance.dataset), INPUT_MAPPING, md.target.getMap()));
-        }
         // need to send later?
         long deferred = 0;
         if (task.getDelay() > 0) {
@@ -919,17 +913,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Object> filterModelRoot(Map<String, Object> stateMachine) {
         // do a shallow copy and remove the alias model.root
         Map<String, Object> result = new HashMap<>(stateMachine);
         var original = result.get(MODEL);
-        if (original instanceof Map<?, ?> map) {
-            Map<String, Object> filtered = new HashMap<>();
-            for (var entry: map.entrySet()) {
-                if (!ROOT.equals(entry.getKey())) {
-                    filtered.put(String.valueOf(entry.getKey()), entry.getValue());
-                }
-            }
+        if (original instanceof Map) {
+            Map<String, Object> filtered = new HashMap<>((Map<String, Object>) original);
+            filtered.remove(ROOT);
             result.put(MODEL, filtered);
         }
         return result;
@@ -960,6 +951,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (sep > 0) {
                 doInputDataMappingEntry(md, flowInstance, task, entry, sep, dynamicListIndex, dynamicListKey);
             }
+        }
+        // has input data mapping monitor?
+        var monitor = task.getMonitorBeforeTask();
+        if (monitor != null) {
+            EventEmitter.getInstance().send(monitor,
+                    Map.of(STATE_MACHINE, filterModelRoot(flowInstance.dataset),
+                            HEADER, md.optionalHeaders,
+                            INPUT_MAPPING, md.target.getMap()));
         }
     }
 

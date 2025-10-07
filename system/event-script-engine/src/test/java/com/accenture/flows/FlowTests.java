@@ -629,13 +629,17 @@ class FlowTests extends TestBase {
         platform.release("before.task.monitor");
         platform.release("after.task.monitor");
         // assert monitored key-values
-        var mmBefore = new MultiLevelMap(beforeMap);
-        var mmAfter = new MultiLevelMap(afterMap);
-        // mmBefore contains state_machine (input and model) and input_mapping
+        checkBeforeAfterDatasets(new MultiLevelMap(beforeMap), new MultiLevelMap(afterMap));
+    }
+
+    void checkBeforeAfterDatasets(MultiLevelMap mmBefore, MultiLevelMap mmAfter) {
+        // mmBefore contains state_machine (input and model), input_mapping and header
         assertEquals("parent-greetings", mmBefore.getElement("state_machine.input.header.x-flow-id"));
         assertEquals("GET", mmBefore.getElement("state_machine.input.method"));
         assertEquals(12345, mmBefore.getElement("input_mapping.body.long_number"));
         assertEquals("test", mmBefore.getElement("input_mapping.body.user"));
+        assertEquals("async-http-client", mmBefore.getElement("header.user-agent"));
+        assertEquals("ok", mmBefore.getElement("header.demo"));
         // mmAfter contains input, output, model, status, header, result
         assertEquals("event-script-tests", mmAfter.getElement("model.parent.name"));
         assertEquals("hello", mmAfter.getElement("model.parent.hello"));

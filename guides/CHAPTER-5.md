@@ -281,12 +281,12 @@ when the test finishes.
     }
 ```
 
-When the event flow finishes, you will see an "end-of-flow" log like this. It shows that the function
+When the event flow finishes, you will see an "end-of-flow" report like this. It shows that the function
 route for the "echo.one" task has been changed to "my.mock.function". This end-of-flow log is useful
 during application development and tests so that the developer knows exactly which function has been
 executed.
 
-```json
+```log
 Flow for-loop-test (0afcf555fc4141f4a16393422e468dc9) completed. Run 11 tasks in 28 ms. 
 [ sequential.one, 
   echo.one(my.mock.function), 
@@ -299,6 +299,36 @@ Flow for-loop-test (0afcf555fc4141f4a16393422e468dc9) completed. Run 11 tasks in
   echo.two(no.op), 
   echo.three(no.op), 
   echo.four(no.op) ]
+```
+
+## Inspecting the state machine using EventScriptMock
+
+The state machine of a "flow instance" is not accessible directly by a user tasks. To inspect the state machine
+in a unit test, you can use the `setMonitorBeforeTask` and `setMonitorAfterTask` methods. The former tells the
+system to send a copy of the state machine to a composable function after "input data mapping" but before entering
+a task. The latter sends a copy of the state machine to a composable function after a task is completed.
+
+The following code segment from a unit test illustrates this feature. The function "before.task.monitor" will get
+a copy of the state machine before "my.task" executes. Similarly, the function "after.task.monitor" will obtain
+a copy of the state machine after "my.task" finishes execution.
+
+```java
+var platform = Platform.getInstance();
+var mock = new EventScriptMock("parent-greetings");
+TypedLambdaFunction<Map<String, Object>, Void> f1 =
+        (headers, input, instance) -> {
+            before.add(input);
+            return null;
+        };
+platform.registerPrivate("before.task.monitor", f1, 1);
+TypedLambdaFunction<Map<String, Object>, Void> f2 =
+        (headers, input, instance) -> {
+            after.add(input);
+            return null;
+        };
+platform.registerPrivate("after.task.monitor", f2, 1);
+mock.setMonitorBeforeTask("my.task", "before.task.monitor")
+    .setMonitorAfterTask("my.task", "after.task.monitor");
 ```
 
 ## Deployment
