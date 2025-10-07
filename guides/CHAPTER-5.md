@@ -303,7 +303,7 @@ Flow for-loop-test (0afcf555fc4141f4a16393422e468dc9) completed. Run 11 tasks in
 
 ## Inspecting the state machine using EventScriptMock
 
-The state machine of a "flow instance" is not accessible directly by a user tasks. To inspect the state machine
+The state machine of a "flow instance" is not accessible directly by a user task. To inspect the state machine
 in a unit test, you can use the `setMonitorBeforeTask` and `setMonitorAfterTask` methods. The former tells the
 system to send a copy of the state machine to a composable function after "input data mapping" but before entering
 a task. The latter sends a copy of the state machine to a composable function after a task is completed.
