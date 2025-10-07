@@ -122,6 +122,55 @@ public class MultiLevelMap {
     }
 
     @SuppressWarnings("unchecked")
+    public List<Object> getElements(String compositePath) {
+        if (compositePath == null || compositePath.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        validateCompositePathSyntax(compositePath);
+
+        int wildcardIndex = compositePath.indexOf("[*]");
+        if (wildcardIndex == -1) {
+            // if there is no [] in the path, error out
+            throw new IllegalArgumentException("Invalid composite path - missing index segment");
+        }
+
+        // Split the path using [] as the separator
+        String basePath = compositePath.substring(0, wildcardIndex);
+        String remainingPath = compositePath.substring(wildcardIndex + 3); // skip "[]"
+        if (remainingPath.startsWith(".")) {
+            remainingPath = remainingPath.substring(1);
+        }
+
+        Object baseArray = getElement(basePath);
+        if (!(baseArray instanceof List)) {
+            return new ArrayList<>();
+        }
+
+        List<Object> array = (List<Object>) baseArray;
+        List<Object> result = new ArrayList<>();
+
+        // iterate through the list
+        for (int i = 0; i < array.size(); i++) {
+            String elementPath;
+            if (remainingPath.isEmpty()) {
+                // If there is no remaining path, build the element path directly from the base path and index.
+                elementPath = basePath + "[" + i + "]";
+            } else {
+                // Otherwise build the element path by concatenating the base path, index, and remaining path.
+                elementPath = basePath + "[" + i + "]." + remainingPath;
+            }
+
+            Object element = getElement(elementPath);
+            if (element != null) {
+                result.add(element);
+            }
+        }
+
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
     private Object getListElement(List<Integer> indexes, List<Object> data) {
         List<Object> current = data;
         int n = 0;
@@ -452,7 +501,7 @@ public class MultiLevelMap {
             } else if (n == 2) {
                 start = false;
             } else if (start) {
-                if (c < '0' || c > '9') {
+                if ( (c < '0' || c > '9') && c != '*') {
                     throw new IllegalArgumentException("Invalid composite path - indexes must be digits");
                 }
             } else {
