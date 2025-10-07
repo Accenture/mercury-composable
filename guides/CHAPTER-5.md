@@ -214,7 +214,7 @@ For example, given a map like this:
 |    4    | map.getElements("body.complex[*].key") | [ value1, value2 ]       |
 
 Example-4 above uses the "getElements" in plural form to indicate that it is retrieving a list of elements
-using a "wildcard" index.
+using a "wildcard" index. For simplicity, it does not support more than one wildcard index in the search path.
 
 ## Event Flow mocking framework
 
