@@ -43,6 +43,8 @@ public class Task {
     private String loopType = "none";
     private String whileModelKey = null;
     private String sourceModelKey = null;
+    private String monitorBeforeTask = null;
+    private String monitorAfterTask = null;
 
     /**
      * This is reserved for system use.
@@ -58,12 +60,6 @@ public class Task {
         this.execution = execution;
     }
 
-    /**
-     * This is reserved for system use.
-     * DO NOT use this directly in your application code.
-     *
-     * @return function route
-     */
     public String getFunctionRoute() {
         return this.functionRoute;
     }
@@ -72,12 +68,52 @@ public class Task {
      * This is reserved for system use.
      * DO NOT use this directly in your application code.
      * <p>
-     * This function is used by the EventScriptMock class
+     * This function is used exclusively by the EventScriptMock class
      *
      * @param functionRoute to reassign
      */
     public void reAssign(String functionRoute) {
         this.functionRoute = functionRoute;
+    }
+
+    public String getMonitorBeforeTask() {
+        return this.monitorBeforeTask;
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     * <p>
+     * This function is used exclusively by the EventScriptMock class
+     *
+     * @param monitor function route name
+     */
+    public void setMonitorBeforeTask(String monitor) {
+        this.monitorBeforeTask = monitor;
+    }
+
+    public String getMonitorAfterTask() {
+        return this.monitorAfterTask;
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     * <p>
+     * This function is used exclusively by the EventScriptMock class
+     *
+     * @param monitor function route name
+     */
+    public void setMonitorAfterTask(String monitor) {
+        this.monitorAfterTask = monitor;
+    }
+
+    /**
+     * Clear monitors for "before" and "after" this task
+     */
+    public void clearMonitors() {
+        this.monitorBeforeTask = null;
+        this.monitorAfterTask = null;
     }
 
     /**
