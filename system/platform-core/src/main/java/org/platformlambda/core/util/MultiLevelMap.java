@@ -129,7 +129,7 @@ public class MultiLevelMap {
 
         validateCompositePathSyntax(compositePath);
 
-        int wildcardIndex = compositePath.indexOf("[]");
+        int wildcardIndex = compositePath.indexOf("[*]");
         if (wildcardIndex == -1) {
             // if there is no [] in the path, error out
             throw new IllegalArgumentException("Invalid composite path - missing index segment");
@@ -137,7 +137,7 @@ public class MultiLevelMap {
 
         // Split the path using [] as the separator
         String basePath = compositePath.substring(0, wildcardIndex);
-        String remainingPath = compositePath.substring(wildcardIndex + 2); // skip "[]"
+        String remainingPath = compositePath.substring(wildcardIndex + 3); // skip "[]"
         if (remainingPath.startsWith(".")) {
             remainingPath = remainingPath.substring(1);
         }
@@ -501,7 +501,7 @@ public class MultiLevelMap {
             } else if (n == 2) {
                 start = false;
             } else if (start) {
-                if (c < '0' || c > '9') {
+                if ( (c < '0' || c > '9') && c != '*') {
                     throw new IllegalArgumentException("Invalid composite path - indexes must be digits");
                 }
             } else {

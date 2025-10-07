@@ -79,12 +79,12 @@ class MultiLevelMapTest {
         mm.setElement("a.b.c[5].array_key", helloWorldList);
         assertEquals("world", mm.getElement("a.b.c[5].array_key[1].hello"));
         assertThrows(IllegalArgumentException.class, () -> mm.getElements("a.b.c[5].array_key[1].hello"));
-        assertEquals(List.of("world", "world"), mm.getElements("a.b.c[5].array_key[].hello"));
-        assertEquals(helloWorldList, mm.getElements("a.b.c[5].array_key[]"));
+        assertEquals(List.of("world", "world"), mm.getElements("a.b.c[5].array_key[*].hello"));
+        assertEquals(helloWorldList, mm.getElements("a.b.c[5].array_key[*]"));
         assertEquals(helloWorldList, mm.getElement("a.b.c[5].array_key"));
 
         mm.setElement("a.b.c[6].array_key[]", Map.of("hello", "single_array"));
-        assertEquals(List.of("single_array"), mm.getElements("a.b.c[6].array_key[].hello"));
+        assertEquals(List.of("single_array"), mm.getElements("a.b.c[6].array_key[*].hello"));
     }
 
     @Test
