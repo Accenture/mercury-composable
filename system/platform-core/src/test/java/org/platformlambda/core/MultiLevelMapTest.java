@@ -24,6 +24,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,6 +74,18 @@ class MultiLevelMapTest {
         assertEquals("message2", mm.getElement("a.b.c[4].test2"));
         assertTrue(mm.exists("test.boolean"));
         assertEquals(false, mm.getElement("test.boolean"));
+
+        var helloWorldList = List.of(Map.of("hello", "world"), Map.of("hello", "world"));
+        mm.setElement("a.b.c[5].array_key", helloWorldList);
+        assertEquals("world", mm.getElement("a.b.c[5].array_key[1].hello"));
+        assertThrows(IllegalArgumentException.class, () -> mm.getElements("a.b.c[5].array_key[1].hello"));
+        assertThrows(IllegalArgumentException.class, () -> mm.getElements("a.b.c[5].array_key[*][*].hello"));
+        assertEquals(List.of("world", "world"), mm.getElements("a.b.c[5].array_key[*].hello"));
+        assertEquals(helloWorldList, mm.getElements("a.b.c[5].array_key[*]"));
+        assertEquals(helloWorldList, mm.getElement("a.b.c[5].array_key"));
+
+        mm.setElement("a.b.c[6].array_key[]", Map.of("hello", "single_array"));
+        assertEquals(List.of("single_array"), mm.getElements("a.b.c[6].array_key[*].hello"));
     }
 
     @Test

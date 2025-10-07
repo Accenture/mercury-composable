@@ -56,6 +56,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String FIRST_TASK = "first_task";
     private static final String FLOW_ID = "flow_id";
     private static final String PARENT = "parent";
+    private static final String ROOT = "root";
+    private static final String STATE_MACHINE = "state_machine";
+    private static final String INPUT_MAPPING = "input_mapping";
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String TYPE = "type";
     private static final String PUT = "put";
@@ -399,6 +402,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (md.sep > 0) {
                 doOutputDataMappingEntry(md, entry, flowInstance, task);
             }
+        }
+        // has output data mapping monitor?
+        var monitor = task.getMonitorAfterTask();
+        if (monitor != null) {
+            EventEmitter.getInstance().send(monitor, filterModelRoot(md.consolidated.getMap()));
         }
     }
 
@@ -905,6 +913,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> filterModelRoot(Map<String, Object> stateMachine) {
+        // do a shallow copy and remove the alias model.root
+        Map<String, Object> result = new HashMap<>(stateMachine);
+        var original = result.get(MODEL);
+        if (original instanceof Map) {
+            Map<String, Object> filtered = new HashMap<>((Map<String, Object>) original);
+            filtered.remove(ROOT);
+            result.put(MODEL, filtered);
+        }
+        return result;
+    }
+
     private long getDelayedVariable(InputMappingMetadata md, FlowInstance flowInstance, Task task) {
         Object d = md.source.getElement(task.getDelayVar());
         if (d != null) {
@@ -930,6 +951,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (sep > 0) {
                 doInputDataMappingEntry(md, flowInstance, task, entry, sep, dynamicListIndex, dynamicListKey);
             }
+        }
+        // has input data mapping monitor?
+        var monitor = task.getMonitorBeforeTask();
+        if (monitor != null) {
+            EventEmitter.getInstance().send(monitor,
+                    Map.of(STATE_MACHINE, filterModelRoot(flowInstance.dataset),
+                            HEADER, md.optionalHeaders,
+                            INPUT_MAPPING, md.target.getMap()));
         }
     }
 

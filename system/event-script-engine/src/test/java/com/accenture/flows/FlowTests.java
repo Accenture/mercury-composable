@@ -570,6 +570,27 @@ class FlowTests extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void parentGreetingTest() throws InterruptedException, ExecutionException {
+        // setup monitor for the task "my.greeting.task" in the flow "greetings"
+        final BlockingQueue<Map<String, Object>> before = new ArrayBlockingQueue<>(1);
+        final BlockingQueue<Map<String, Object>> after = new ArrayBlockingQueue<>(1);
+        var platform = Platform.getInstance();
+        var mock = new EventScriptMock("parent-greetings");
+        var functionRoute = mock.setMonitorBeforeTask("another.flow", "before.task.monitor")
+                                .setMonitorAfterTask("another.flow", "after.task.monitor")
+                                .getFunctionRoute("another.flow");
+        log.info("Monitoring {}", functionRoute);
+        TypedLambdaFunction<Map<String, Object>, Void> f1 =
+                (headers, input, instance) -> {
+                    before.add(input);
+                    return null;
+                };
+        platform.registerPrivate("before.task.monitor", f1, 1);
+        TypedLambdaFunction<Map<String, Object>, Void> f2 =
+                (headers, input, instance) -> {
+                    after.add(input);
+                    return null;
+                };
+        platform.registerPrivate("after.task.monitor", f2, 1);
         final long timeout = 8000;
         String placeholder = "test";
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -599,6 +620,29 @@ class FlowTests extends TestBase {
         assertEquals(placeholder, result.get("demo2"));
         // input mapping 'input.header -> header' relays all HTTP headers
         assertEquals("parent-greetings", result.get("demo3"));
+        var beforeMap = before.poll(timeout, TimeUnit.MILLISECONDS);
+        var afterMap = after.poll(timeout, TimeUnit.MILLISECONDS);
+        assertNotNull(beforeMap);
+        assertNotNull(afterMap);
+        // clean up
+        mock.clearMonitors("another.flow");
+        platform.release("before.task.monitor");
+        platform.release("after.task.monitor");
+        // assert monitored key-values
+        checkBeforeAfterDatasets(new MultiLevelMap(beforeMap), new MultiLevelMap(afterMap));
+    }
+
+    void checkBeforeAfterDatasets(MultiLevelMap mmBefore, MultiLevelMap mmAfter) {
+        // mmBefore contains state_machine (input and model), input_mapping and header
+        assertEquals("parent-greetings", mmBefore.getElement("state_machine.input.header.x-flow-id"));
+        assertEquals("GET", mmBefore.getElement("state_machine.input.method"));
+        assertEquals(12345, mmBefore.getElement("input_mapping.body.long_number"));
+        assertEquals("test", mmBefore.getElement("input_mapping.body.user"));
+        assertEquals("async-http-client", mmBefore.getElement("header.user-agent"));
+        assertEquals("ok", mmBefore.getElement("header.demo"));
+        // mmAfter contains input, output, model, status, header, result
+        assertEquals("event-script-tests", mmAfter.getElement("model.parent.name"));
+        assertEquals("hello", mmAfter.getElement("model.parent.hello"));
     }
 
     @SuppressWarnings("unchecked")
