@@ -128,16 +128,11 @@ public class MultiLevelMap {
         }
 
         validateCompositePathSyntax(compositePath);
+        int wildcardIndex = validateSingleWildcard(compositePath);
 
-        int wildcardIndex = compositePath.indexOf("[*]");
-        if (wildcardIndex == -1) {
-            // if there is no [] in the path, error out
-            throw new IllegalArgumentException("Invalid composite path - missing index segment");
-        }
-
-        // Split the path using [] as the separator
+        // Split the path using [*] as the separator
         String basePath = compositePath.substring(0, wildcardIndex);
-        String remainingPath = compositePath.substring(wildcardIndex + 3); // skip "[]"
+        String remainingPath = compositePath.substring(wildcardIndex + 3); // skip "[*]"
         if (remainingPath.startsWith(".")) {
             remainingPath = remainingPath.substring(1);
         }
@@ -168,6 +163,27 @@ public class MultiLevelMap {
         }
 
         return result;
+    }
+
+    /**
+     * Validate that if the path contains wildcard [*], it contains exactly one and returns its index
+     *
+     * @param path the composite path to validate
+     * @Return the index of the wildcard
+     * @throws IllegalArgumentException if multiple or no wildcard[s] are found
+     */
+    private int validateSingleWildcard(String path) {
+        int firstWildcard = path.indexOf("[*]");
+        if (firstWildcard == -1) {
+            // if there is no [*] in the path, error out
+            throw new IllegalArgumentException("Invalid composite path - missing index segment");
+        }
+
+        int secondWildcard = path.indexOf("[*]", firstWildcard + 2);
+        if (secondWildcard != -1) {
+            throw new IllegalArgumentException("Invalid composite path - only one wildcard [] is allowed");
+        }
+        return firstWildcard;
     }
 
     @SuppressWarnings("unchecked")
