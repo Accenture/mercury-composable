@@ -24,6 +24,7 @@ import com.accenture.models.Task;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.AppStarter;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -788,7 +789,7 @@ public class CompileFlows implements EntryPoint {
         return false;
     }
 
-    static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<funcName>.+)\\(.*\\)";
+    static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<macroName>.+)\\(.*\\)";
     static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
 
     private boolean isValidPluggableFunction(String lhs){
@@ -798,9 +799,8 @@ public class CompileFlows implements EntryPoint {
             return false;
         }
 
-        String function = matcher.group("funcName");
-
-        return true; //TODO: check function against Macro
+        String macroName = matcher.group("macroName");
+        return Platform.getInstance().containsSimpleMacro(macroName);
     }
 
     private boolean isPluggableFunction(String lhs){

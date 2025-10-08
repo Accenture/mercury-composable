@@ -64,6 +64,15 @@ public class SimpleClassScanner {
         }
     }
 
+    public List<ClassInfo> getClassesImplementingInterface(String scanPath, Class<?> type) {
+        if (!scanPath.contains(".")) {
+            throw new IllegalArgumentException(EX_START + scanPath + EX_END);
+        }
+        try (ScanResult sr = new ClassGraph().enableAllInfo().acceptPackages(scanPath).scan()) {
+            return new ArrayList<>(sr.getClassesImplementing(type));
+        }
+    }
+
     public Set<String> getPackages(boolean includeBasePackage) {
         Set<String> result = new HashSet<>();
         if (includeBasePackage) {

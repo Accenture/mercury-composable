@@ -42,6 +42,7 @@ public class Platform {
     private static final Logger log = LoggerFactory.getLogger(Platform.class);
     private static final CryptoApi crypto = new CryptoApi();
     private static final ConcurrentMap<String, ServiceDef> registry = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, SimpleMacro<?,?>> simpleMacroRegistry = new ConcurrentHashMap<>();
     private static final String PERSONALITY = "personality";
     private static final String SPRING_NAME = "spring.application.name";
     private static final String APPLICATION_NAME = "application.name";
@@ -348,6 +349,19 @@ public class Platform {
     }
 
     /**
+     * Internal API that returns loaded Macros
+     *
+     * @return registry of all loaded macros
+     */
+    public ConcurrentMap<String, SimpleMacro<?,?>> getLoadedSimpleMacros() {
+        return simpleMacroRegistry;
+    }
+
+    public boolean containsSimpleMacro(String macroName){
+        return simpleMacroRegistry.containsKey(macroName);
+    }
+
+    /**
      * Register a public lambda function with one or more concurrent instances.
      * Its routing path will be published to the global service registry.
      *
@@ -511,6 +525,26 @@ public class Platform {
     public int getConcurrency(String route) {
         ServiceDef service = registry.get(route);
         return service != null? service.getConcurrency() : -1;
+    }
+
+    /**
+     * Register a SimpleMacro that implements the PluggableFunction interface
+     *
+     * @param name The plugin name to be used in event-script `f:<name>`
+     * @param macro The class implementing the macro
+     * @throws IllegalArgumentException when name of macro is not provided
+     */
+    public void registerSimpleMacro(String name, SimpleMacro<?, ?> macro) {
+        if (macro == null) {
+            throw new IllegalArgumentException("Missing Macro to assign");
+        }
+
+        if (simpleMacroRegistry.containsKey(name)) {
+            log.warn("{} SimpleMacro {}", RELOADING, name);
+        }
+
+        // save into local registry
+        simpleMacroRegistry.put(name, macro);
     }
 
     /**

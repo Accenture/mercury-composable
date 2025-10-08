@@ -27,7 +27,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Macro {
+public @interface SimpleMacro {
     String name();
     int instances() default 1;
 }
