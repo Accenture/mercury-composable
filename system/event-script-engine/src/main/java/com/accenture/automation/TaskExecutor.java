@@ -1529,17 +1529,25 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
-        boolean updated = false;
         int colon = getModelTypeIndex(rhs);
         String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
         if (colon != -1) {
             String type = rhs.substring(colon+1).trim();
             Object matched = getValueByType(type, value, "RHS '"+rhs+"'", target);
             target.setElement(selector, matched);
-            updated = true;
-        }
-        if (!updated) {
+        } else {
+            if (selector.startsWith(MODEL_NAMESPACE)) {
+                if (value instanceof Map) {
+                    target.setElement(selector, util.deepCopy((Map<String, Object>) value));
+                    return;
+                }
+                if (value instanceof List) {
+                    target.setElement(selector, util.deepCopy((List<Object>) value));
+                    return;
+                }
+            }
             target.setElement(selector, value);
         }
     }

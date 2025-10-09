@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.24, 10/9/2025
+
+### Added
+
+new deepCopy method in platform-core's Utility class to perform recursive copy of lists and maps.
+
+### Removed
+
+N/A
+
+### Changed
+
+updated event-script-engine's TaskExecutor to perform deep copy of list and map when the target of
+input/output data mapping is a model variable. This allows a model variable with complex data structure
+to be copied by content instead of by "reference".
+
+---
 ## Version 4.3.23, 10/6/2025
 
 ### Added
