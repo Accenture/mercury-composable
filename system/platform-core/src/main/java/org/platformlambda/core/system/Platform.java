@@ -42,7 +42,7 @@ public class Platform {
     private static final Logger log = LoggerFactory.getLogger(Platform.class);
     private static final CryptoApi crypto = new CryptoApi();
     private static final ConcurrentMap<String, ServiceDef> registry = new ConcurrentHashMap<>();
-    private static final ConcurrentMap<String, SimpleMacro<?,?>> simpleMacroRegistry = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, PluginFunction> simplePluginRegistry = new ConcurrentHashMap<>();
     private static final String PERSONALITY = "personality";
     private static final String SPRING_NAME = "spring.application.name";
     private static final String APPLICATION_NAME = "application.name";
@@ -353,12 +353,16 @@ public class Platform {
      *
      * @return registry of all loaded macros
      */
-    public ConcurrentMap<String, SimpleMacro<?,?>> getLoadedSimpleMacros() {
-        return simpleMacroRegistry;
+    public ConcurrentMap<String, PluginFunction> getLoadedSimplePlugins() {
+        return simplePluginRegistry;
     }
 
-    public boolean containsSimpleMacro(String macroName){
-        return simpleMacroRegistry.containsKey(macroName);
+    public PluginFunction getSimplePluginByName(String pluginName){
+        return getLoadedSimplePlugins().get(pluginName);
+    }
+
+    public boolean containsSimplePlugin(String pluginName){
+        return simplePluginRegistry.containsKey(pluginName);
     }
 
     /**
@@ -534,17 +538,17 @@ public class Platform {
      * @param macro The class implementing the macro
      * @throws IllegalArgumentException when name of macro is not provided
      */
-    public void registerSimpleMacro(String name, SimpleMacro<?, ?> macro) {
+    public void registerSimpleMacro(String name, PluginFunction macro) {
         if (macro == null) {
             throw new IllegalArgumentException("Missing Macro to assign");
         }
 
-        if (simpleMacroRegistry.containsKey(name)) {
+        if (simplePluginRegistry.containsKey(name)) {
             log.warn("{} SimpleMacro {}", RELOADING, name);
         }
 
         // save into local registry
-        simpleMacroRegistry.put(name, macro);
+        simplePluginRegistry.put(name, macro);
     }
 
     /**

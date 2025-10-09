@@ -39,12 +39,13 @@ import java.util.regex.Pattern;
  * DO NOT use this directly in your application code.
  * <p>
  * Event Script should start right after essential services
- * Therefore, we set sequence number to 2 and essential services to 0.
+ * Therefore, essential services should be set to 0 and CompileFlows should be set to 5 to allow for future improvements.
+ * All other user-services should start after 5
  * <p>
  * If you have a reason to execute another BeforeApplication module before
  * Event Script starts, you can set it to 1.
  */
-@BeforeApplication(sequence=2)
+@BeforeApplication(sequence=5)
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);
     private static final String INPUT = "input";
@@ -800,7 +801,7 @@ public class CompileFlows implements EntryPoint {
         }
 
         String macroName = matcher.group("macroName");
-        return Platform.getInstance().containsSimpleMacro(macroName);
+        return Platform.getInstance().containsSimplePlugin(macroName);
     }
 
     private boolean isPluggableFunction(String lhs){

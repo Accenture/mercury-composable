@@ -4,7 +4,7 @@ flow:
   ttl: 10s
   exception: 'v1.hello.exception'
 
-first.task: 'my.greeting.task'
+first.task: 'my.arithmetic.task'
 
 tasks:
   - name: 'my.arithmetic.task'

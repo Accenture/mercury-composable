@@ -21,10 +21,7 @@ package com.accenture.automation;
 import com.accenture.models.*;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.Kv;
-import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.models.VarSegment;
+import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -40,6 +37,8 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.util.Arrays.stream;
 
 /**
  * This is reserved for system use.
@@ -140,6 +139,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
     private final int maxModelArraySize;
+    private static final String SIMPLE_PLUGIN_PREFIX = "f:";
 
     private enum OPERATION {
         SIMPLE_COMMAND,
@@ -968,7 +968,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         md.rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), md.source, true);
         boolean inputLike = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT) ||
                 md.lhs.equals(DATA_TYPE) ||
-                md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE);
+                md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE) || md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX);
         if (md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
             md.lhs = md.lhs.toLowerCase();
         }
@@ -1000,7 +1000,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    //TODO: I think this is where we need to call the pluggable function
     private Object getInputDataMappingLhsValue(InputMappingMetadata md, int dynamicListIndex, String dynamicListKey) {
         Object value = getLhsElement(md.lhs, md.source);
         // special cases for simple type matching for a non-exist model variable
@@ -1142,16 +1141,52 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    //TODO: Could be we set it here?
     private Object getLhsElement(String lhs, MultiLevelMap source) {
         int colon = getModelTypeIndex(lhs);
         String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
+
+        if(isPluggableFunction(selector)){
+            return getValueFromSimplePlugin(selector, source);
+        }
+
         Object value = source.getElement(selector);
         if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
             return getValueByType(type, value, "LHS '"+lhs+"'", source);
         }
         return value;
+    }
+
+    private boolean isPluggableFunction(String selector){
+        return selector != null && selector.startsWith("f:");
+    }
+
+    private Object getValueFromSimplePlugin(String selector, MultiLevelMap source){
+        int prefix = selector.indexOf(SIMPLE_PLUGIN_PREFIX);
+        int startParen = selector.indexOf("("), endParen = selector.lastIndexOf(")");
+
+        if(prefix >= 0 && startParen > 0 && endParen > 0){
+            String pluginName = selector.substring(prefix+2, startParen);
+
+            String pluginParams = selector.substring(startParen+1, endParen);
+            List<String> params = Utility.getInstance().split(pluginParams, ",");
+
+            Object[] input = params.stream()
+                    .map(String::trim)
+                    .map(e -> source.getElement(e))
+                    .toArray();
+
+            PluginFunction plugin = Platform.getInstance().getSimplePluginByName(pluginName);
+
+            if(plugin == null){
+                log.error("SimplePlugin '{}' was not found", pluginName);
+                throw new IllegalArgumentException("Unable to process SimplePlugin: " + selector);
+            }
+
+            return plugin.calculate(input);
+        }
+
+        return null;
     }
 
     private Object getDynamicListItem(String dynamicListKey, int dynamicListIndex, MultiLevelMap source) {

@@ -1,7 +1,7 @@
 package org.platformlambda.core.models;
 
 
-public interface SimpleMacro<I, O> {
+public interface PluginFunction {
 
     /**
      * Default interface method for the name of the macro
@@ -12,5 +12,5 @@ public interface SimpleMacro<I, O> {
         return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
 
-    O operate(I input);
+    Object calculate(Object... input);
 }
