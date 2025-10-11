@@ -19,6 +19,7 @@
 package com.accenture.automation;
 
 import com.accenture.models.*;
+import com.accenture.utils.TypeConversionUtils;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.*;
@@ -1359,10 +1360,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private Object handleSimpleOperation(String type, Object value) {
         switch (type) {
             case TEXT_SUFFIX -> {
-                return getTextValue(value);
+                return TypeConversionUtils.getTextValue(value);
             }
             case BINARY_SUFFIX -> {
-                return getBinaryValue(value);
+                return TypeConversionUtils.getBinaryValue(value);
             }
             case BOOLEAN_SUFFIX -> {
                 return TRUE.equalsIgnoreCase(String.valueOf(value));
@@ -1386,55 +1387,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return util.getUuid4();
             }
             case LENGTH_SUFFIX -> {
-                return getLength(value);
+                return TypeConversionUtils.getLength(value);
             }
             case B64_SUFFIX -> {
-                return getB64(value);
+                return TypeConversionUtils.getB64(value);
             }
             default -> throw new IllegalArgumentException("matching type must be " +
                         "substring(start, end), concat, boolean, !, and, or, text, binary, uuid or b64");
         }
-    }
-
-    private String getTextValue(Object value) {
-        return switch (value) {
-            case String str -> str;
-            case byte[] b -> util.getUTF(b);
-            case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsString(map);
-            default -> String.valueOf(value);
-        };
-    }
-
-    private byte[] getBinaryValue(Object value) {
-        return switch (value) {
-            case byte[] b -> b;
-            case String str -> util.getUTF(str);
-            case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
-            default -> util.getUTF(String.valueOf(value));
-        };
-    }
-
-    private int getLength(Object value) {
-        return switch (value) {
-            case null -> 0;
-            case byte[] b -> b.length;
-            case String str -> str.length();
-            case List<?> item -> item.size();
-            default -> String.valueOf(value).length();
-        };
-    }
-
-    private Object getB64(Object value) {
-        if (value instanceof byte[] b) {
-            return util.bytesToBase64(b);
-        } else if (value instanceof String str) {
-            try {
-                return util.base64ToBytes(str);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("invalid base64 text");
-            }
-        }
-        return value;
     }
 
     private String getSubstring(Object value, String command) {

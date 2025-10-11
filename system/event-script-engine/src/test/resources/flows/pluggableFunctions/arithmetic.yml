@@ -11,7 +11,8 @@ tasks:
     input:
       - 'int(6) -> model.first'
       - 'int(2) -> model.second'
-      - 'f:add(model.first, model.second) -> sum'
+      - 'int(3) -> model.third'
+      - 'f:add(model.first, model.second, model.third) -> sum'
       - 'f:multiply(model.first, model.second) -> product'
       - 'f:div(model.first, model.second) -> quotient'
     process: 'no.op'

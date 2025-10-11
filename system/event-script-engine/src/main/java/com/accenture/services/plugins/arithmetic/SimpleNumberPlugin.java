@@ -1,4 +1,4 @@
-package com.accenture.services.plugins;
+package com.accenture.services.plugins.arithmetic;
 
 import org.platformlambda.core.models.PluginFunction;
 

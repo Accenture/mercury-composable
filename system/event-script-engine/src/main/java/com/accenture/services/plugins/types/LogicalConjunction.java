@@ -1,23 +1,26 @@
-package com.accenture.services.plugins;
+package com.accenture.services.plugins.types;
 
+import com.accenture.utils.TypeConversionUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
 import org.platformlambda.core.models.PluginFunction;
 
 import java.util.Arrays;
 
 @SimplePlugin
-public class AddNumbers extends SimpleNumberPlugin {
+public class LogicalConjunction implements PluginFunction {
 
     @Override
     public String getName() {
-        return "add";
+        return "and";
     }
 
     @Override
     public Object calculate(Object... input) {
+        if(input.length == 0){
+            return false;
+        }
+
         return Arrays.stream(input)
-                .map(this::promoteNumber)
-                .reduce(Long::sum)
-                .orElseThrow(() -> new IllegalStateException("Could not add the input: " + Arrays.toString(input)));
+                .allMatch(TypeConversionUtils::convertBoolean);
     }
 }

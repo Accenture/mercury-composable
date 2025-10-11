@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -1412,8 +1413,72 @@ class FlowTests extends TestBase {
         assertNotNull(result);
 
         assertEquals(3, result.size());
-        assertEquals(8, result.get("sum"));
+        assertEquals(11, result.get("sum"));
         assertEquals(12, result.get("product"));
         assertEquals(3, result.get("quotient"));
+    }
+
+    @Test
+    void shouldHandleConversionTypesPluggableFunction() throws InterruptedException, ExecutionException {
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST)
+                .setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/pluggableFunctions/types");
+
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = EventEnvelope.of().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, timeout).get();
+        assertNotNull(res);
+
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+
+        assertEquals("Hello", result.get("string"));
+
+        assertEquals(256, result.get("integer"));
+        assertEquals(256, result.get("integer_convert"));
+
+        assertEquals(9223372036854775807L, result.get("long"));
+        assertEquals(9223372036854775807L, result.get("long_convert"));
+
+        assertEquals(128.5, result.get("float"));
+        assertEquals(128.5, result.get("float_convert"));
+
+        assertEquals(256.75d, result.get("double"));
+        assertEquals(256.75d, result.get("double_convert"));
+
+        assertEquals(true, result.get("bool_true"));
+        assertEquals(false, result.get("bool_false"));
+        assertEquals(true, result.get("bool_convert"));
+
+        assertEquals(false, result.get("and"));
+        assertEquals(true, result.get("or"));
+        assertEquals(true, result.get("not"));
+
+        assertEquals("World!", result.get("substring_one"));
+        assertEquals("World", result.get("substring_two"));
+        assertEquals("Hello World!", result.get("concat"));
+
+        var b64String = "SGVsbG8=";
+
+        var bytes = Base64.getDecoder().decode(b64String);
+        List<Integer> byteList = IntStream.range(0, bytes.length)
+                .map(i -> (int) bytes[i])
+                .boxed()
+                .toList();
+
+        assertEquals(byteList, result.get("to_b64_bytes"));
+        assertEquals(b64String, result.get("to_bytestring"));
+
+
+        UUID id = UUID.fromString((String) result.get("uuid"));
+        assertNotNull(id);
+
+        assertEquals(5, result.get("arr_length"));
+        assertEquals(5, result.get("str_length"));
     }
 }
