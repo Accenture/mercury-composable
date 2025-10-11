@@ -21,7 +21,6 @@ package org.platformlambda.core.system;
 import io.github.classgraph.ClassInfo;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.KeyCertOptions;
@@ -34,11 +33,9 @@ import org.platformlambda.automation.models.AsyncContextHolder;
 import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.automation.services.AsyncHttpResponse;
 import org.platformlambda.automation.util.SimpleHttpUtility;
-import org.platformlambda.core.annotations.BeforeApplication;
-import org.platformlambda.core.annotations.MainApplication;
-import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.annotations.WebSocketService;
+import org.platformlambda.core.annotations.*;
 import org.platformlambda.core.models.*;
+import org.platformlambda.core.models.PluginFunction;
 import org.platformlambda.core.util.*;
 import org.platformlambda.core.websocket.server.MinimalistHttpHandler;
 import org.platformlambda.core.websocket.server.WsHandshakeHandler;
@@ -121,6 +118,7 @@ public class AppStarter {
             log.info("Free memory: {}", freeMemory);
             AppStarter.args = args;
             myInstance = new AppStarter();
+
             // Run "BeforeApplication" modules
             myInstance.doApps(args, false);
             // preload services
