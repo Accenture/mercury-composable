@@ -5,17 +5,17 @@ import org.platformlambda.core.annotations.SimplePlugin;
 import java.util.Arrays;
 
 @SimplePlugin
-public class AddNumbers extends SimpleNumberPlugin {
+public class IncrementNumbers extends SimpleNumberPlugin {
 
     @Override
     public String getName() {
-        return "add";
+        return "increment";
     }
 
     @Override
     public Object calculate(Object... input) {
         return promoteInput(input)
-                .reduce(Long::sum)
-                .orElseThrow(() -> new IllegalStateException("Could not add the input: " + Arrays.toString(input)));
+                .map(l -> l + 1)
+                .toList();
     }
 }

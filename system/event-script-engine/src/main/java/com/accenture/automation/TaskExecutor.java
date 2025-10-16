@@ -1345,7 +1345,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     } else if (selection == OPERATION.AND_COMMAND || selection == OPERATION.OR_COMMAND) {
                         return getLogicalOperation(value, command, data, selection);
                     } else if (selection == OPERATION.BOOLEAN_COMMAND) {
-                        return getBooleanValue(value, command);
+                        return TypeConversionUtils.getBooleanValue(value, command);
                     }
                 } else {
                     throw new IllegalArgumentException("missing close bracket");
@@ -1444,31 +1444,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             return selection == OPERATION.AND_COMMAND ? v1 && v2 : v1 || v2;
         } else {
             throw new IllegalArgumentException("'" + command + "' is not a model variable");
-        }
-    }
-
-    private boolean getBooleanValue(Object value, String command) {
-        List<String> parts = util.split(command, ",=");
-        List<String> filtered = new ArrayList<>();
-        parts.forEach(d -> {
-            var txt = d.trim();
-            if (!txt.isEmpty()) {
-                filtered.add(txt);
-            }
-        });
-        if (!filtered.isEmpty() && filtered.size() < 3) {
-            // Enforce value to a text string where null value will become "null".
-            // Therefore, null value or "null" string in the command is treated as the same.
-            String str = String.valueOf(value);
-            boolean condition = filtered.size() == 1 || TRUE.equalsIgnoreCase(filtered.get(1));
-            String target = filtered.getFirst();
-            if (str.equals(target)) {
-                return condition;
-            } else {
-                return !condition;
-            }
-        } else {
-            throw new IllegalArgumentException("invalid syntax");
         }
     }
 

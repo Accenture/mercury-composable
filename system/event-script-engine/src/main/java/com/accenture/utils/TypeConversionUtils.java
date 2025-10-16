@@ -3,6 +3,7 @@ package com.accenture.utils;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,12 +16,49 @@ public class TypeConversionUtils {
         return util.getUuid4();
     }
 
+    public static Boolean isBoolean(Object input){
+        if(input == null){
+            return false;
+        }
+
+        return switch (input){
+            case Boolean i -> true;
+            case String s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false");
+            default -> false;
+        };
+    }
+
     public static Boolean convertBoolean(Object input){
         return switch (input){
             case Boolean i -> i;
             case String s -> Boolean.parseBoolean(s);
             default -> throw new IllegalArgumentException("Cannot convert input to boolean: " + input);
         };
+    }
+
+    public static boolean getBooleanValue(Object value, String command) {
+        List<String> parts = util.split(command, ",=");
+        List<String> filtered = new ArrayList<>();
+        parts.forEach(d -> {
+            var txt = d.trim();
+            if (!txt.isEmpty()) {
+                filtered.add(txt);
+            }
+        });
+        if (!filtered.isEmpty() && filtered.size() < 3) {
+            // Enforce value to a text string where null value will become "null".
+            // Therefore, null value or "null" string in the command is treated as the same.
+            String str = String.valueOf(value);
+            boolean condition = filtered.size() == 1 || "True".equalsIgnoreCase(filtered.get(1));
+            String target = filtered.getFirst();
+            if (str.equals(target)) {
+                return condition;
+            } else {
+                return !condition;
+            }
+        } else {
+            throw new IllegalArgumentException("invalid syntax - got command: " + command);
+        }
     }
 
     public static Double convertDouble(Object input){

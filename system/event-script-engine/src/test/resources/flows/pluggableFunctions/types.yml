@@ -46,9 +46,18 @@ tasks:
       - 'f:boolean(model.bool_true) -> bool_true'
       - 'f:boolean(model.bool_false) -> bool_false'
       - 'f:boolean(model.string_bool) -> bool_convert'
-      #TODO: handle  `model.someKey:boolean(positive)`
-      #               `model.someKey:boolean(positive=true)`
-      #               `model.someKey:boolean(negative=false)`
+
+      - 'text(Hello=true) -> model.command_one'
+      - 'text(world=true) -> model.command_two'
+      - 'text(null=true) -> model.command_three'
+      - 'text(Hello) -> model.command_four'
+      - 'text(world) -> model.command_five'
+
+      - 'f:boolean(model.text_one, model.command_one) -> bool_command_positive'
+      - 'f:boolean(model.text_one, model.command_two) -> bool_command_negative'
+      - 'f:boolean(model.none, model.command_three) -> bool_command_null'
+      - 'f:boolean(model.text_one, model.command_four) -> bool_command_match'
+      - 'f:boolean(model.text_one, model.command_five) -> bool_command_nonmatch'
 
       - 'f:binary(model.text_one) -> binary'
       - 'int(1) -> model.substring_start'
@@ -57,6 +66,18 @@ tasks:
       - 'f:and(model.bool_true, model.bool_false) -> and'
       - 'f:or(model.bool_true, model.bool_false) -> or'
       - 'f:not(model.bool_false) -> not'
+      - 'f:ternary(model.bool_true, model.text_one, model.text_two) -> positive_ternary'
+      - 'f:ternary(model.bool_false, model.text_one, model.text_two) -> negative_ternary'
+      - 'f:eq(model.text_one, model.text_one) -> positive_eq'
+      - 'f:eq(model.text_one, model.text_two) -> negative_eq'
+
+      - 'int(2) -> model.two'
+      - 'int(3) -> model.three'
+      - 'f:gt(model.three, model.two) -> greater_than_positive'
+      - 'f:gt(model.two, model.three) -> greater_than_negative'
+      - 'f:lt(model.two, model.three) -> less_than_positive'
+      - 'f:lt(model.three, model.two) -> less_than_negative'
+
       - 'f:substring(model.text_two, model.substring_start) -> substring_one'
       - 'f:substring(model.text_two, model.substring_start, model.substring_end) -> substring_two'
       - 'f:concat(model.text_one, model.text_two) -> concat'

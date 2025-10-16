@@ -1,4 +1,4 @@
-package com.accenture.services.plugins.types;
+package com.accenture.services.plugins.logical;
 
 import com.accenture.utils.TypeConversionUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
