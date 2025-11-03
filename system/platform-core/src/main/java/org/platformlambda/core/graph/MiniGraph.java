@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MiniGraph {
     private static final Logger log = LoggerFactory.getLogger(MiniGraph.class);
     private static final Utility util = Utility.getInstance();
-    private final String id = util.getUuid();
+    private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SimpleNode> nodesById = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SimpleConnection> connections = new ConcurrentHashMap<>();
@@ -80,7 +80,7 @@ public class MiniGraph {
      * @return unique ID of the mini-graph
      */
     public String getId() {
-        return id;
+        return graphId;
     }
 
     /**
@@ -105,11 +105,11 @@ public class MiniGraph {
         }
         int count = nodeCount.incrementAndGet();
         var aliasLower = alias.toLowerCase();
-        var id = util.getUuid();
-        graph.addNode(id);
-        var node = new SimpleNode(id, alias, type);
+        var cid = util.getUuid();
+        graph.addNode(cid);
+        var node = new SimpleNode(cid, alias, type);
         nodesByAlias.put(aliasLower, node);
-        nodesById.put(id, node);
+        nodesById.put(cid, node);
         log.debug("Created {} node-{} as {}", type, count, alias);
         return node;
     }
