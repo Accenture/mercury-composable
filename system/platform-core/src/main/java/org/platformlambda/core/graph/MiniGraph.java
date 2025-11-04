@@ -341,7 +341,7 @@ public class MiniGraph {
     }
 
     /**
-     * Fina a connection between two nodes where a connection contains relationships if any.
+     * Find a connection between two nodes where a connection contains relationships if any.
      * Each relationship has type and optional properties.
      *
      * @param sourceAlias of a node
