@@ -66,6 +66,7 @@ Quartz cron expressions are strings used to define schedules for jobs in the Qua
 consist of six or seven sub-expressions (fields) separated by white space, each representing a specific time unit
 in the schedule. Fields of a Quartz Cron Expression:
 
+```text
 Seconds: (0-59)
 Minutes: (0-59)
 Hours: (0-23)
@@ -73,13 +74,15 @@ Day-of-Month: (1-31)
 Month: (1-12 or JAN-DEC)
 Day-of-Week: (1-7 or SUN-SAT)
 Year: (optional, e.g., 1970-2099)
+```
 
 ## Special Characters and Their Meanings:
 
-* (Asterisk): Represents all values within a field. For example, * in the minute field means "every minute."
+```text
+(Asterisk *): Represents all values within a field. For example, * in the minute field means "every minute."
   ? (Question Mark): Used for "no specific value" in either the Day-of-Month or Day-of-Week field, but not both 
                      simultaneously. It indicates that one of these fields should be ignored.
-- (Hyphen): Specifies a range of values. For example, 10-12 in the hour field means "hours 10, 11, and 12."
+(Hyphen -): Specifies a range of values. For example, 10-12 in the hour field means "hours 10, 11, and 12."
   , (Comma): Specifies a list of individual values. For example, MON,WED,FRI in the Day-of-Week field means 
              "Monday, Wednesday, and Friday."
   / (Slash): Used to specify increments. For example, 0/15 in the minute field means "every 15 minutes, starting
@@ -92,6 +95,7 @@ Year: (optional, e.g., 1970-2099)
 
 (Hash): Used in the Day-of-Week field to specify the "nth" instance of a day of the week in the month. 
         For example, 6#3 means "the third Friday of the month."
+```
 
 Examples:
 
