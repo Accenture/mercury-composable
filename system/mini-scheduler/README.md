@@ -36,7 +36,7 @@ Note the the one in the classpath is just an example. Please update the YAML con
 jobs:
   # you can cancel a job from an admin endpoint and restart it anytime
   - name: "demo"
-    description: "execute demo service every minute"
+    description: "execute demo service every ten seconds"
     cron: "0/10 0/1 * 1/1 * ? *"
     service: "hello.world"
     # optional parameter to tell the service what to do
