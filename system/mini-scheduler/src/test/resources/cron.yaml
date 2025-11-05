@@ -1,0 +1,15 @@
+#
+# IMPORTANT:
+# ---------
+# The cron interval must be set to more than 10 seconds
+# because the system will set a random delay of 0 to 9 seconds for racing condition avoidance
+#
+jobs:
+  - name: "demo"
+    description: "execute demo service every 10 seconds"
+    cron: "0/10 0/1 * 1/1 * ? *"
+    service: "hello.world"
+    # optional parameter to tell the service what to do
+    parameters:
+      hello: "world"
+    resolver: "v1.state.resolver"

@@ -10,6 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.25, 11/4/2025
+
+### Added
+
+1. Minimalist property graph ("mini-graph") implemented as a fast in-memory knowledge graph.
+2. Mini-scheduler module with simple user defined clustering feature.
+3. Chapter-10 (mini-graph) in developer's guide.
+
+### Removed
+
+N/A
+
+### Changed
+
+OSS updates:
+
+1. spring boot 3.5.7
+2. vertx 5.0.5
+3. classgraph 4.8.184
+4. reactor-bom 2024.0.11
+5. netty 4.2.7.Final
+6. quartz 2.5.1
+7. junit-bom 6.0.1
+8. bouncycastle 1.82
+
+---
 ## Version 4.3.24, 10/9/2025
 
 ### Added

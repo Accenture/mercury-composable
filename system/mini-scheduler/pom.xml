@@ -3,11 +3,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.accenture</groupId>
-    <artifactId>lambda-example</artifactId>
+    <groupId>org.platformlambda</groupId>
+    <artifactId>mini-scheduler</artifactId>
     <packaging>jar</packaging>
     <version>4.3.25</version>
-    <name>Lambda example using platform-core</name>
+    <name>Simple Scheduler</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -46,15 +46,14 @@
     <dependencies>
         <dependency>
             <groupId>org.platformlambda</groupId>
-            <artifactId>platform-core</artifactId>
+            <artifactId>rest-spring-3</artifactId>
             <version>4.3.25</version>
         </dependency>
 
-        <!-- Optionally, select your optional cloud connector -->
         <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>kafka-connector</artifactId>
-            <version>4.3.25</version>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <version>2.5.1</version>
         </dependency>
 
         <dependency>
@@ -122,19 +121,17 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
+                <artifactId>maven-source-plugin</artifactId>
                 <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
-            </plugin>  
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>3.1.4</version>
-            </plugin>                      
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -142,22 +139,6 @@
                 <configuration>
                     <skipTests>false</skipTests>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <!-- AutoStart will find your Main Application(s) -->
-                <configuration>
-                    <mainClass>org.platformlambda.core.system.AutoStart</mainClass>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>build-info</id>
-                        <goals>
-                            <goal>build-info</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

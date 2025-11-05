@@ -328,6 +328,6 @@ X-Raw-Xml=true
 
 <br/>
 
-|          Chapter-9           |                   Home                    |                 Appendix-II                  |
-|:----------------------------:|:-----------------------------------------:|:--------------------------------------------:|
-| [API Overview](CHAPTER-9.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Reserved names and headers](APPENDIX-II.md) |
+|         Chapter-10          |                   Home                    |                 Appendix-II                  |
+|:---------------------------:|:-----------------------------------------:|:--------------------------------------------:|
+| [Mini-Graph](CHAPTER-10.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Reserved names and headers](APPENDIX-II.md) |

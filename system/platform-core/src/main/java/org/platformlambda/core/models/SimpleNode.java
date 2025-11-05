@@ -58,6 +58,9 @@ public class SimpleNode extends GraphProperties {
         if (type == null || type.isEmpty()) {
             throw new IllegalArgumentException("type cannot be empty");
         }
+        if (types.size() == 1) {
+            throw new IllegalArgumentException("Cannot remove type because a node must have at least one type");
+        }
         types.remove(type);
     }
 }

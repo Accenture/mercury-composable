@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.SimpleNode;
+import org.platformlambda.core.util.Utility;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -50,13 +51,13 @@ class GraphTest {
         var transactionNodes = graph.findNodesByType("transaction");
         assertTrue(transactionNodes.contains(nodeA));
         assertEquals(1, transactionNodes.size());
-        var r01 = graph.findConnectionByAlias("A", "B");
+        var r01 = graph.findConnection("A", "B");
         assertEquals(r1, r01);
-        var r02 = graph.findConnectionByAlias("A", "C");
+        var r02 = graph.findConnection("A", "C");
         assertEquals(r2, r02);
-        var r03 = graph.findConnectionByAlias("C", "D");
+        var r03 = graph.findConnection("C", "D");
         assertEquals(r3, r03);
-        var r04 = graph.findConnectionByAlias("D", "E");
+        var r04 = graph.findConnection("D", "E");
         assertEquals(r4, r04);
         nodeA.addType("hello");
         nodeA.addType("service");
@@ -105,7 +106,7 @@ class GraphTest {
         var r02relation = graph.findRelationByType("demo");
         assertEquals(1, r02relation.size());
         assertEquals(r2relation, r02relation.getFirst());
-        var r2a = graph.findConnectionByAlias(r02relation.getFirst().getSourceAlias(), r02relation.getFirst().getTargetAlias());
+        var r2a = graph.findConnection(r02relation.getFirst().getSourceAlias(), r02relation.getFirst().getTargetAlias());
         assertEquals(r2, r2a);
         var all = r2.getRelations();
         assertEquals(1, all.size());
@@ -178,6 +179,32 @@ class GraphTest {
         assertEquals(1, nodes.size());
         assertEquals(Map.of("test", "message"), nodes.getFirst().getProperties());
         assertEquals(Set.of("transaction", "service"), nodes.getFirst().getTypes());
+    }
+
+    @Test
+    void directionalTest() {
+        var graph = new MiniGraph();
+        System.out.println(graph.getId());
+        assertEquals(Utility.getInstance().getUuid().length(), graph.getId().length());
+        var nodeA = graph.createNode("A", "transaction");
+        var nodeB = graph.createNode("B", "data");
+        var c1 = graph.connect("A", "B");
+        var r1 = c1.addRelation("demo1");
+        r1.addProperty("hello", "world");
+        var c2 = graph.connect("B", "A");
+        c2.addRelation("demo2");
+        var connections = graph.findBiDirectionalConnection("A", "B");
+        assertEquals(2, connections.size());
+        var conn1 = connections.getFirst();
+        var conn2 = connections.getLast();
+        assertEquals(c1, conn1);
+        assertEquals(c2, conn2);
+        assertEquals(nodeA, conn1.getSource());
+        assertEquals(nodeB, conn1.getTarget());
+        assertEquals(nodeB, conn2.getSource());
+        assertEquals(nodeA, conn2.getTarget());
+        assertEquals(r1, conn1.getRelation("demo1"));
+        assertEquals("world", conn1.getRelation("demo1").getProperties().get("hello"));
     }
 
     @Test
@@ -270,20 +297,20 @@ class GraphTest {
     void exceptionTest5() {
         var graph = new MiniGraph();
         IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnectionByAlias(null, "B"));
+                graph.findConnection(null, "B"));
         assertEquals("source alias cannot be null", ex1.getMessage());
         IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnectionByAlias("not found", "X"));
+                graph.findConnection("not found", "X"));
         assertEquals("source node does not exist", ex2.getMessage());
         IllegalArgumentException ex3 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnectionByAlias("test", null));
+                graph.findConnection("test", null));
         assertEquals("target alias cannot be null", ex3.getMessage());
         IllegalArgumentException ex4 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnectionByAlias("A", "A"));
+                graph.findConnection("A", "A"));
         assertEquals("source and target aliases cannot be the same", ex4.getMessage());
         graph.createNode("test", "transaction");
         IllegalArgumentException ex5 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnectionByAlias("test", "hello"));
+                graph.findConnection("test", "hello"));
         assertEquals("target node does not exist", ex5.getMessage());
         IllegalArgumentException ex6 = assertThrows(IllegalArgumentException.class, () ->
                 graph.getNeighbors(null));

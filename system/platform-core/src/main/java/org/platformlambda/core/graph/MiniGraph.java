@@ -348,7 +348,7 @@ public class MiniGraph {
      * @param targetAlias of another node
      * @return a connection
      */
-    public SimpleConnection findConnectionByAlias(String sourceAlias, String targetAlias) {
+    public SimpleConnection findConnection(String sourceAlias, String targetAlias) {
         if (sourceAlias == null) {
             throw new IllegalArgumentException("source alias cannot be null");
         }
@@ -367,6 +367,27 @@ public class MiniGraph {
             throw new IllegalArgumentException("target node does not exist");
         }
         return connections.get(getRelationshipPair(source.getId(), target.getId()));
+    }
+
+    /**
+     * Find bidirectional connections between two nodes where a connection contains relationships if any.
+     * Each relationship has type and optional properties.
+     *
+     * @param sourceAlias of a node
+     * @param targetAlias of another node
+     * @return 0 to 2 connections
+     */
+    public List<SimpleConnection> findBiDirectionalConnection(String sourceAlias, String targetAlias) {
+        List<SimpleConnection> bothDirection = new ArrayList<>();
+        var forward = findConnection(sourceAlias, targetAlias);
+        if (forward != null) {
+            bothDirection.add(forward);
+        }
+        var backward = findConnection(targetAlias, sourceAlias);
+        if (backward != null) {
+            bothDirection.add(backward);
+        }
+        return bothDirection;
     }
 
     /**

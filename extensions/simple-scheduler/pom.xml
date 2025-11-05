@@ -6,19 +6,19 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>simple-scheduler</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.24</version>
+    <version>4.3.25</version>
     <name>Simple Scheduler</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.6</version>
+        <version>3.5.7</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netty.version>4.2.6.Final</netty.version>
+        <netty.version>4.2.7.Final</netty.version>
         <kafka.version>4.0.0</kafka.version>
         <gson.version>2.13.1</gson.version>
         <java.version>21</java.version>
@@ -36,7 +36,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2024.0.6</version>
+                <version>2024.0.11</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.3.24</version>
+            <version>4.3.25</version>
         </dependency>
 
         <dependency>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
-            <version>5.13.4</version>
+            <version>6.0.1</version>
             <type>pom</type>
             <scope>test</scope>
         </dependency>
