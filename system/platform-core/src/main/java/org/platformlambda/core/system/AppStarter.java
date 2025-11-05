@@ -21,7 +21,6 @@ package org.platformlambda.core.system;
 import io.github.classgraph.ClassInfo;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.KeyCertOptions;
