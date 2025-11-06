@@ -19,12 +19,10 @@
 package com.accenture.automation;
 
 import com.accenture.models.*;
+import com.accenture.utils.TypeConversionUtils;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.Kv;
-import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.models.VarSegment;
+import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -40,6 +38,8 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.util.Arrays.stream;
 
 /**
  * This is reserved for system use.
@@ -140,6 +140,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
     private final int maxModelArraySize;
+    private static final String SIMPLE_PLUGIN_PREFIX = "f:";
 
     private enum OPERATION {
         SIMPLE_COMMAND,
@@ -968,7 +969,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         md.rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), md.source, true);
         boolean inputLike = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT) ||
                 md.lhs.equals(DATA_TYPE) ||
-                md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE);
+                md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE) || md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX);
         if (md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
             md.lhs = md.lhs.toLowerCase();
         }
@@ -1144,12 +1145,49 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private Object getLhsElement(String lhs, MultiLevelMap source) {
         int colon = getModelTypeIndex(lhs);
         String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
+
+        if(isPluggableFunction(selector)){
+            return getValueFromSimplePlugin(selector, source);
+        }
+
         Object value = source.getElement(selector);
         if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
             return getValueByType(type, value, "LHS '"+lhs+"'", source);
         }
         return value;
+    }
+
+    private boolean isPluggableFunction(String selector){
+        return selector != null && selector.startsWith("f:");
+    }
+
+    private Object getValueFromSimplePlugin(String selector, MultiLevelMap source){
+        int prefix = selector.indexOf(SIMPLE_PLUGIN_PREFIX);
+        int startParen = selector.indexOf("("), endParen = selector.lastIndexOf(")");
+
+        if(prefix >= 0 && startParen > 0 && endParen > 0){
+            String pluginName = selector.substring(prefix+2, startParen);
+
+            String pluginParams = selector.substring(startParen+1, endParen);
+            List<String> params = Utility.getInstance().split(pluginParams, ",");
+
+            Object[] input = params.stream()
+                    .map(String::trim)
+                    .map(e -> source.getElement(e))
+                    .toArray();
+
+            PluginFunction plugin = Platform.getInstance().getSimplePluginByName(pluginName);
+
+            if(plugin == null){
+                log.error("SimplePlugin '{}' was not found", pluginName);
+                throw new IllegalArgumentException("Unable to process SimplePlugin: " + selector);
+            }
+
+            return plugin.calculate(input);
+        }
+
+        return null;
     }
 
     private Object getDynamicListItem(String dynamicListKey, int dynamicListIndex, MultiLevelMap source) {
@@ -1307,7 +1345,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     } else if (selection == OPERATION.AND_COMMAND || selection == OPERATION.OR_COMMAND) {
                         return getLogicalOperation(value, command, data, selection);
                     } else if (selection == OPERATION.BOOLEAN_COMMAND) {
-                        return getBooleanValue(value, command);
+                        return TypeConversionUtils.getBooleanValue(value, command);
                     }
                 } else {
                     throw new IllegalArgumentException("missing close bracket");
@@ -1322,10 +1360,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private Object handleSimpleOperation(String type, Object value) {
         switch (type) {
             case TEXT_SUFFIX -> {
-                return getTextValue(value);
+                return TypeConversionUtils.getTextValue(value);
             }
             case BINARY_SUFFIX -> {
-                return getBinaryValue(value);
+                return TypeConversionUtils.getBinaryValue(value);
             }
             case BOOLEAN_SUFFIX -> {
                 return TRUE.equalsIgnoreCase(String.valueOf(value));
@@ -1349,55 +1387,14 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return util.getUuid4();
             }
             case LENGTH_SUFFIX -> {
-                return getLength(value);
+                return TypeConversionUtils.getLength(value);
             }
             case B64_SUFFIX -> {
-                return getB64(value);
+                return TypeConversionUtils.getB64(value);
             }
             default -> throw new IllegalArgumentException("matching type must be " +
                         "substring(start, end), concat, boolean, !, and, or, text, binary, uuid or b64");
         }
-    }
-
-    private String getTextValue(Object value) {
-        return switch (value) {
-            case String str -> str;
-            case byte[] b -> util.getUTF(b);
-            case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsString(map);
-            default -> String.valueOf(value);
-        };
-    }
-
-    private byte[] getBinaryValue(Object value) {
-        return switch (value) {
-            case byte[] b -> b;
-            case String str -> util.getUTF(str);
-            case Map<?, ?> map -> SimpleMapper.getInstance().getMapper().writeValueAsBytes(map);
-            default -> util.getUTF(String.valueOf(value));
-        };
-    }
-
-    private int getLength(Object value) {
-        return switch (value) {
-            case null -> 0;
-            case byte[] b -> b.length;
-            case String str -> str.length();
-            case List<?> item -> item.size();
-            default -> String.valueOf(value).length();
-        };
-    }
-
-    private Object getB64(Object value) {
-        if (value instanceof byte[] b) {
-            return util.bytesToBase64(b);
-        } else if (value instanceof String str) {
-            try {
-                return util.base64ToBytes(str);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("invalid base64 text");
-            }
-        }
-        return value;
     }
 
     private String getSubstring(Object value, String command) {
@@ -1447,31 +1444,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             return selection == OPERATION.AND_COMMAND ? v1 && v2 : v1 || v2;
         } else {
             throw new IllegalArgumentException("'" + command + "' is not a model variable");
-        }
-    }
-
-    private boolean getBooleanValue(Object value, String command) {
-        List<String> parts = util.split(command, ",=");
-        List<String> filtered = new ArrayList<>();
-        parts.forEach(d -> {
-            var txt = d.trim();
-            if (!txt.isEmpty()) {
-                filtered.add(txt);
-            }
-        });
-        if (!filtered.isEmpty() && filtered.size() < 3) {
-            // Enforce value to a text string where null value will become "null".
-            // Therefore, null value or "null" string in the command is treated as the same.
-            String str = String.valueOf(value);
-            boolean condition = filtered.size() == 1 || TRUE.equalsIgnoreCase(filtered.get(1));
-            String target = filtered.getFirst();
-            if (str.equals(target)) {
-                return condition;
-            } else {
-                return !condition;
-            }
-        } else {
-            throw new IllegalArgumentException("invalid syntax");
         }
     }
 
