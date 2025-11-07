@@ -23,6 +23,8 @@ import com.google.common.graph.MutableGraph;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.models.SimpleConnection;
 import org.platformlambda.core.models.SimpleRelationship;
+import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MiniGraph {
     private static final Logger log = LoggerFactory.getLogger(MiniGraph.class);
+    private static final String NODE_PREFIX = "nodes[";
+    private static final String CONNECTION_PREFIX = "connections[";
     private static final Utility util = Utility.getInstance();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();
@@ -84,6 +88,237 @@ public class MiniGraph {
     }
 
     /**
+     * Print the graph as a JSON string
+     *
+     * @return json text
+     */
+    public String toString() {
+        var map = exportGraph();
+        return SimpleMapper.getInstance().getMapper().writeValueAsString(map);
+    }
+
+    /**
+     * Export graph as a map of key-values
+     *
+     * @return map
+     */
+    public Map<String, Object> exportGraph() {
+        var allNodes = getNodes();
+        var allConnections = getConnections();
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> nodeList = new ArrayList<>();
+        result.put("nodes", nodeList);
+        List<Map<String, Object>> connectionList = new ArrayList<>();
+        result.put("connections", connectionList);
+        Map<String, Map<String, Object>> nodeMap = new HashMap<>();
+        for (var node: allNodes) {
+            Map<String, Object> nEntry = new HashMap<>();
+            nEntry.put("alias", node.getAlias());
+            nEntry.put("types", new ArrayList<>(node.getTypes()));
+            nEntry.put("properties", util.deepCopy(node.getProperties()));
+            nodeMap.put(node.getAlias(), nEntry);
+        }
+        var nl = new ArrayList<>(nodeMap.keySet());
+        Collections.sort(nl);
+        for (var n : nl) {
+            nodeList.add(nodeMap.get(n));
+        }
+        Map<String, Map<String, Object>> connectionMap = new HashMap<>();
+        for (var conn: allConnections) {
+            Map<String, Object> cEntry = new HashMap<>();
+            cEntry.put("source", conn.getSource().getAlias());
+            cEntry.put("target", conn.getTarget().getAlias());
+            List<Map<String, Object>> relationList = new ArrayList<>();
+            cEntry.put("relations", relationList);
+            Map<String, Map<String, Object>> relationMap = new HashMap<>();
+            for (var relation: conn.getRelations()) {
+                Map<String, Object> inner = new HashMap<>();
+                inner.put("type", relation.getType());
+                inner.put("properties", util.deepCopy(relation.getProperties()));
+                relationMap.put(relation.getType(), inner);
+            }
+            var rl = new ArrayList<>(relationMap.keySet());
+            Collections.sort(rl);
+            for (var r : rl) {
+                relationList.add(relationMap.get(r));
+            }
+            connectionMap.put(getRelationshipPair(conn.getSource().getAlias(), conn.getTarget().getAlias()), cEntry);
+        }
+        var cl = new ArrayList<>(connectionMap.keySet());
+        Collections.sort(cl);
+        for (var c : cl) {
+            connectionList.add(connectionMap.get(c));
+        }
+        return result;
+    }
+
+    /**
+     * Import a map of key-values that represents a graph
+     *
+     * @param map of key-values
+     */
+    public void importGraph(Map<String, Object> map) {
+        try {
+            reset();
+            importNodesAndConnections(map);
+        } catch (IllegalArgumentException e) {
+            reset();
+            throw e;
+        }
+    }
+
+    private void importNodesAndConnections(Map<String, Object> map) {
+        var nodeList = map.get("nodes");
+        var connectionList = map.get("connections");
+        if (nodeList instanceof List<?> nl && connectionList instanceof List<?> cl) {
+            MultiLevelMap mm = new MultiLevelMap(map);
+            importNodes(mm, nl.size());
+            importConnections(mm, cl.size());
+        } else {
+            throw new IllegalArgumentException("type of nodes and connections must be List of key-value maps");
+        }
+    }
+
+    private void importNodes(MultiLevelMap mm, int len) {
+        for (int i=0; i < len; i++) {
+            var alias = mm.getElement(NODE_PREFIX+i+"].alias");
+            if (alias == null) {
+                throw new IllegalArgumentException("missing alias in node entry-"+(i+1));
+            }
+            var types = mm.getElement(NODE_PREFIX+i+"].types");
+            if (types instanceof List<?> tl && !tl.isEmpty()) {
+                var node = createNode(String.valueOf(alias), String.valueOf(tl.getFirst()));
+                if (tl.size() > 1) {
+                    for (int j=1; j < tl.size(); j++) {
+                        node.addType(String.valueOf(tl.get(j)));
+                    }
+                }
+                importNodeProperties(mm, node, i);
+            } else {
+                throw new IllegalArgumentException("invalid types in node entry-"+(i+1));
+            }
+        }
+    }
+
+    private void importNodeProperties(MultiLevelMap mm, SimpleNode node, int i) {
+        var properties = mm.getElement(NODE_PREFIX+i+"].properties");
+        if (properties instanceof Map<?, ?> propMap) {
+            for (var entry : propMap.entrySet()) {
+                node.addProperty(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+    }
+
+    private void importConnections(MultiLevelMap mm, int len) {
+        for (int i=0; i < len; i++) {
+            var source = mm.getElement(CONNECTION_PREFIX+i+"].source");
+            var target = mm.getElement(CONNECTION_PREFIX+i+"].target");
+            if (source == null || target == null) {
+                throw new IllegalArgumentException("invalid source/target alias in connection entry-"+(i+1));
+            }
+            var sourceAlias = String.valueOf(source);
+            var targetAlias = String.valueOf(target);
+            var conn = connect(sourceAlias, targetAlias);
+            var relations = mm.getElement(CONNECTION_PREFIX+i+"].relations");
+            if (relations instanceof List<?> list) {
+                for (int j=0; j < list.size(); j++) {
+                    importRelations(mm, conn, i, j);
+                }
+            }
+        }
+    }
+
+    private void importRelations(MultiLevelMap mm, SimpleConnection conn, int i, int j) {
+        var relationType = mm.getElement(CONNECTION_PREFIX+i+"].relations["+j+"].type");
+        var properties = mm.getElement(CONNECTION_PREFIX+i+"].relations["+j+"].properties");
+        if (relationType instanceof String rt) {
+            var relation = conn.addRelation(rt);
+            if (properties instanceof Map<?, ?> propMap) {
+                for (var entry : propMap.entrySet()) {
+                    relation.addProperty(String.valueOf(entry.getKey()), entry.getValue());
+                }
+            }
+        }
+    }
+
+    public boolean sameAs(MiniGraph that) {
+        return sameNodes(that) && sameConnections(that);
+    }
+
+    private boolean sameNodes(MiniGraph that) {
+        var nodes1 = this.getNodes();
+        var nodes2 = that.getNodes();
+        if (nodes1.size() != nodes2.size()) {
+            return false;
+        }
+        for (var n1: nodes1) {
+            var n2 = that.findNodeByAlias(n1.getAlias());
+            if (n2 == null) {
+                return false;
+            }
+            if (!n1.getTypes().equals(n2.getTypes())) {
+                return false;
+            }
+            if (differentProperties(n1.getProperties(), n2.getProperties())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean sameConnections(MiniGraph that) {
+        var conn1 = this.getConnections();
+        var conn2 = that.getConnections();
+        if (conn1.size() != conn2.size()) {
+            return false;
+        }
+        for (var c1: conn1) {
+            var c2 = that.findConnection(c1.getSource().getAlias(), c1.getTarget().getAlias());
+            if (c2 == null) {
+                return false;
+            }
+            var relations1 = c1.getRelations();
+            var relations2 = c2.getRelations();
+            if (relations1.size() != relations2.size()) {
+                return false;
+            }
+            for (var r1: relations1) {
+                var r2 = c2.getRelation(r1.getType());
+                if (r2 == null) {
+                    return false;
+                }
+                if (differentProperties(r1.getProperties(), r2.getProperties())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean differentProperties(Map<String, Object> map1, Map<String, Object> map2) {
+        var m1 = util.getFlatMap(map1);
+        var m2 = util.getFlatMap(map2);
+        if (m1.size() != m2.size()) {
+            return true;
+        }
+        var k1 = new ArrayList<>(m1.keySet());
+        var k2 = new ArrayList<>(m2.keySet());
+        Collections.sort(k1);
+        Collections.sort(k2);
+        if (!k1.equals(k2)) {
+            return true;
+        }
+        for (var k: k1) {
+            var v1 = m1.get(k);
+            var v2 = m2.get(k);
+            if (!v1.equals(v2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Create a node with alias and type
      *
      * @param alias of the node
@@ -110,7 +345,7 @@ public class MiniGraph {
         var node = new SimpleNode(cid, alias, type);
         nodesByAlias.put(aliasLower, node);
         nodesById.put(cid, node);
-        log.debug("Created {} node-{} as {}", type, count, alias);
+        log.debug("Created {} as {}, total={}", type, alias, count);
         return node;
     }
 
@@ -130,7 +365,8 @@ public class MiniGraph {
             graph.removeNode(node.getId());
             nodesById.remove(node.getId());
             nodesByAlias.remove(alias);
-            log.debug("Removed {}", alias);
+            var count = nodeCount.decrementAndGet();
+            log.debug("Removed {}, total={}", alias, count);
         }
     }
 
@@ -185,6 +421,7 @@ public class MiniGraph {
         for (var n: nodes) {
             removeNode(n.getAlias());
         }
+        nodeCount.set(0);
     }
 
     /**

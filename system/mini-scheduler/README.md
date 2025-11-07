@@ -55,7 +55,7 @@ In this example, there is one scheduled job called "demo" that executes the serv
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>mini-scheduler</artifactId>
-    <version>4.3.25</version>
+    <version>4.3.26</version>
 </dependency>
 ```
 
