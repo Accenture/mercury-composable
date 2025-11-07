@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>mini-scheduler</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.25</version>
+    <version>4.3.26</version>
     <name>Simple Scheduler</name>
 
     <parent>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.3.25</version>
+            <version>4.3.26</version>
         </dependency>
 
         <dependency>

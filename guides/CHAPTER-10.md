@@ -198,6 +198,25 @@ Clear a graph
 graph.reset();
 ```
 
+Export a graph
+
+The exported graph is a map of key-values that you can persist it into an external store.
+If you persist the map as a text file, we recommend using either JSON or YAML format.
+
+```java
+var map = graph.exportGraph();
+```
+
+Import a graph
+
+Once you exported a graph into an external store, you can restore it as a map and import
+it into a new mini-graph.
+
+```java
+var graph = new MiniGraph();
+graph.importGraph(map);
+```
+
 ## Best practiced to release graph memory after use
 
 Mini-graph is memory efficient with its minimalist design.

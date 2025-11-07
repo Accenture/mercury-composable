@@ -23,9 +23,7 @@ import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.util.Utility;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -205,6 +203,43 @@ class GraphTest {
         assertEquals(nodeA, conn2.getTarget());
         assertEquals(r1, conn1.getRelation("demo1"));
         assertEquals("world", conn1.getRelation("demo1").getProperties().get("hello"));
+    }
+
+    @Test
+    void importExportTest() {
+        var graph1 = new MiniGraph();
+        var a1 = graph1.createNode("A", "transaction");
+        a1.addType("service");
+        a1.addProperty("hello", "world");
+        var b1 = graph1.createNode("B", "data");
+        b1.addType("service");
+        b1.addProperty("test", "message");
+        b1.addProperty("graph", "minimalist");
+        graph1.createNode("C", "data");
+        graph1.createNode("D", "data");
+        graph1.createNode("E", "data");
+        graph1.connect("A", "B");
+        graph1.connect("A", "C");
+        var r1 = graph1.connect("C", "D");
+        graph1.connect("D", "E");
+        r1.addRelation("Demo").addProperty("some", "relation");
+        var relation1 = r1.addRelation("Conversion");
+        relation1.addProperty("US", 1);
+        relation1.addProperty("HK", 7.8);
+        Map<String, Object> map1 = graph1.exportGraph();
+        var graph2 = new MiniGraph();
+        graph2.importGraph(map1);
+        Map<String, Object> map2 = graph2.exportGraph();
+        Utility util = Utility.getInstance();
+        var flat1 = util.getFlatMap(map1);
+        var keys1 = new ArrayList<>(flat1.keySet());
+        var flat2 = util.getFlatMap(map2);
+        var keys2 = new ArrayList<>(flat2.keySet());
+        assertEquals(keys1.size(), keys2.size());
+        assertTrue(graph1.sameAs(graph2));
+        var text1 = String.valueOf(graph1);
+        var text2 = String.valueOf(graph2);
+        assertEquals(text1, text2);
     }
 
     @Test
