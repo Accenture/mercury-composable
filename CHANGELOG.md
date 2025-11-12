@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.27, 11/11/2025
+
+### Added
+
+Improved "external state machine" example in the unit test section
+of event-script-engine module.
+
+It illustrates using an external state machine to accumulate result sets
+of concurrent worker instances without racing condition.
+
+### Removed
+
+N/A
+
+### Changed
+
+Minor update to the handling of dynamic fork-n-join use case.
+
+---
 ## Version 4.3.26, 11/7/2025
 
 ### Added

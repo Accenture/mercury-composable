@@ -1147,12 +1147,21 @@ the list of elements and spin up an instance of the "next" task to retrieve the 
 the element in the list. The two special suffixes are relevant only when adding to the model variable configured
 in the "source" parameter.
 
-*Important*:
+*Limitation*:
 
-1. The model variables with special suffixes '.ITEM' and '.INDEX' are virtual objects for the purpose
+1. The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
    of mapping as input arguments to a task. They cannot be used as regular model variables.
+
 2. Dynamic fork-n-join is designed to execute the same task for a list of elements in parallel.
-   It does not support subflow. i.e. the "process" tag of the "next" task cannot be a subflow.
+   It does not support subflow. i.e. the "process" tag of the "next" task must be a regular task.
+   If you have a need to execute a subflow, implement a wrapper task that invokes a subflow programmatically.
+
+3. To avoid state machine data corruption, you should not update any model variable in the
+   output data mapping section of the fork task because the multiple worker instances of the fork task
+   are running in parallel. If you must accumulate the result sets of the fork task instances, you
+   may use an external state machine. An example of this use case is available in the unit test section
+   of the event-script-engine module. Please refer to `forkJoinWithDynamicModeListTest` of FlowTests, 
+   the `ExternalStateMachine` class and the `fork-n-join-with-dynamic-model-test.yml`.
 
 ### Sink task
 

@@ -4,6 +4,7 @@ flow:
   ttl: 30s
 
 first.task: 'my.first.task'
+external.state.machine: 'v1.ext.state.machine'
 
 tasks:
   - name: 'my.first.task'
@@ -37,6 +38,7 @@ tasks:
       - 'result.key1 -> model.key1'
       - 'result.key2 -> model.key2'
       - 'result.item -> model.item'
+      - 'result.item -> ext:append'
     description: 'Hello world'
     execution: sink
 
