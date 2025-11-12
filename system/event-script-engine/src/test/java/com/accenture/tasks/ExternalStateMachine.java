@@ -33,6 +33,8 @@ import java.util.Map;
 /**
  * This external state machine function is configured as a singleton. i.e. instances = 1.
  * Therefore, it would guarantee orderly execution of incoming requests.
+ * <p>
+ * This class can be used as a template to write your own implementation.
  */
 @PreLoad(route = "v1.ext.state.machine")
 public class ExternalStateMachine implements TypedLambdaFunction<Map<String, Object>, Object> {
@@ -69,18 +71,15 @@ public class ExternalStateMachine implements TypedLambdaFunction<Map<String, Obj
         if (traceId == null) {
             throw new IllegalArgumentException("Tracing must be enabled for external state machine");
         }
-        if (!headers.containsKey(KEY)) {
-            throw new IllegalArgumentException("Missing key in headers");
-        }
         String type = headers.get(TYPE);
-        String key = headers.get(KEY);
-        //
+        // default behavior is to retrieve all keys under the same traceId
+        String key = headers.getOrDefault(KEY, "*");
         /*
          * The PUT method must be implemented according to interface contract:
          * key is headers.get("key")
          * value is input.get("data")
          */
-        if (PUT.equals(type)) {
+        if (PUT.equals(type) && !"*".equals(key)) {
             var data = input.get(DATA);
             if (data != null) {
                 var map = (Map<String, Object>) store.get(traceId);
@@ -98,7 +97,6 @@ public class ExternalStateMachine implements TypedLambdaFunction<Map<String, Obj
                     log.info("Save '{}' to store {}", key, traceId);
                 }
                 store.put(traceId, map);
-
                 return true;
             }
         }
@@ -106,23 +104,33 @@ public class ExternalStateMachine implements TypedLambdaFunction<Map<String, Obj
         // you may implement according to your application needs.
         if (GET.equals(type)) {
             Object v = store.get(traceId);
-            if (v instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) v;
-                log.info("Retrieve '{}' from store {}", key, traceId);
-                return map.get(key);
+            // get all keys?
+            if ("*".equals(key)) {
+                return v;
             } else {
-                return null;
+                if (v instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) v;
+                    log.info("Retrieve '{}' from store {}", key, traceId);
+                    return map.get(key);
+                } else {
+                    return null;
+                }
             }
         }
         if (REMOVE.equals(type)) {
-            Object v = store.get(traceId);
-            if (v instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) v;
-                log.info("Remove '{}' from store {}", key, traceId);
-                map.remove(key);
-                return true;
+            // removing all keys means CLEAR
+            if ("*".equals(key)) {
+                type = CLEAR;
             } else {
-                return false;
+                Object v = store.get(traceId);
+                if (v instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) v;
+                    log.info("Remove '{}' from store {}", key, traceId);
+                    map.remove(key);
+                    return true;
+                } else {
+                    return false;
+                }
             }
         }
         if (CLEAR.equals(type)) {
