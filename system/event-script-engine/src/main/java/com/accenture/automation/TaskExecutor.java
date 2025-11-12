@@ -973,7 +973,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             md.lhs = md.lhs.toLowerCase();
         }
         if (md.rhs.startsWith(EXT_NAMESPACE)) {
-            final Object value = inputLike? getLhsElement(md.lhs, md.source) : getConstantValue(md.lhs);
+            final Object value = inputLike? getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey) :
+                                            getConstantValue(md.lhs);
             callExternalStateMachine(flowInstance, task, md.rhs, value);
         } else if (md.rhs.startsWith(MODEL_NAMESPACE)) {
             setInputDataMappingModelVar(md, flowInstance, inputLike);
