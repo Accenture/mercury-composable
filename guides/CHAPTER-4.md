@@ -427,12 +427,15 @@ As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
 
 For example, when running the following task, "flow://my-sub-flow" will be executed like a regular task.
+Since the subflow executes like a regular task, the input data mapping method is consistent. 
+Mapping the input.body as "*" will pass the whole input payload as a map of key-values to the first task
+of the given subflow.
 
 ```yaml
 tasks:
   - input:
       - 'input.path_parameter.user -> header.user'
-      - 'input.body -> body'
+      - 'input.body -> *'
     process: 'flow://my-sub-flow'
     output:
       - 'result -> model.pojo'
@@ -1152,11 +1155,7 @@ in the "source" parameter.
 1. The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
    of mapping as input arguments to a task. They cannot be used as regular model variables.
 
-2. Dynamic fork-n-join is designed to execute the same task for a list of elements in parallel.
-   It does not support subflow. i.e. the "process" tag of the "next" task must be a regular task.
-   If you have a need to execute a subflow, implement a wrapper task that invokes a subflow programmatically.
-
-3. To avoid state machine data corruption, you should not update any model variable in the
+2. To avoid state machine data corruption, you should not update any model variable in the
    output data mapping section of the fork task because the multiple worker instances of the fork task
    are running in parallel. If you must accumulate the result sets of the fork task instances, you
    may use an external state machine. An example of this use case is available in the unit test section

@@ -23,17 +23,18 @@ tasks:
     execution: fork
     source: 'model.dataList'
     next:
-      - 'echo.me'
+      - 'echo.flow'
     join: 'join.task'
 
-  - name: 'echo.me'
+  - name: 'echo.flow'
     input:
       - 'text(hello-world-one) -> key1'
       - 'text(hello-world-two) -> key2'
       - 'model.dataList.ITEM -> item'
       - 'model.dataList.INDEX -> index'
       - 'model.key:uuid -> uuid'
-    process: 'no.op'
+      - 'text(world) -> header.hello'
+    process: 'flow://echo-flow'
     output:
       - 'result.key1 -> model.key1'
       - 'result.key2 -> model.key2'

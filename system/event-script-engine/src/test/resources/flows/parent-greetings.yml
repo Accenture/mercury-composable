@@ -15,17 +15,16 @@ tasks:
     - 'another.flow'
 
   #
-  # The input to a sub-flow must include "header" and "body" that will become the "input" to the sub-flow.
-  # The following example constructs the header and body datasets.
+  # A subflow is treated in the same fashion as a task so you can map argument and header
   #
   - name: 'another.flow'
     input:
-      - 'input.path_parameter.user -> body.user'
-      - 'text(hello world) -> body.greeting'
-      - 'long(12345) -> body.long_number'
-      - 'float(12.345) -> body.float_number'
-      - 'double(12.345) -> body.double_number'
-      - 'boolean(true) -> body.boolean_value'
+      - 'input.path_parameter.user -> user'
+      - 'text(hello world) -> greeting'
+      - 'long(12345) -> long_number'
+      - 'float(12.345) -> float_number'
+      - 'double(12.345) -> double_number'
+      - 'boolean(true) -> boolean_value'
       - 'input.header -> header'
       - 'input.path_parameter.user -> header.user'
       - 'text(ok) -> header.demo'

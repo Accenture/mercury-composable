@@ -6,7 +6,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>api-playground</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.27</version>
+    <version>4.3.28</version>
     <name>API playground using OpenAPI</name>
 
     <parent>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.3.27</version>
+            <version>4.3.28</version>
         </dependency>
 
         <dependency>

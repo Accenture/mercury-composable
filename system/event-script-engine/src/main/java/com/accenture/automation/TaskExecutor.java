@@ -76,6 +76,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String RESULT = "result";
     private static final String DATA_TYPE = "datatype";
     private static final String HEADER = "header";
+    private static final String BODY = "body";
     private static final String RETRY = "@retry";
     private static final String TASK = "task";
     private static final String CODE = "code";
@@ -887,14 +888,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 abortFlow(flowInstance, 500, functionRoute+" not defined");
                 return;
             }
+            Map<String, Object> dataset = new HashMap<>();
+            dataset.put(BODY, md.target.getMap());
             if (!md.optionalHeaders.isEmpty()) {
-                md.target.setElement(HEADER, md.optionalHeaders);
+                dataset.put(HEADER, md.optionalHeaders);
             }
             // execute a subflow
             var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
                                                 .setReplyTo(TaskExecutor.SERVICE_NAME)
                                                 .setHeader(PARENT, flowInstance.id)
-                                                .setHeader(FLOW_ID, flowId).setBody(md.target.getMap())
+                                                .setHeader(FLOW_ID, flowId).setBody(dataset)
                                                 .setCorrelationId(compositeCid);
             var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
             po.send(forward);
