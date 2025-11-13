@@ -10,6 +10,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.28, 11/12/2025
+
+This is a bugfix release to unify the data mapping behavior of regular task and subflow.
+
+For backward compatibility, deprecated syntax will be accepted with a warning log message
+during the event script compilation phase.
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+*Bugfix*: The input data mapping behavior for regular task and subflow was inconsistent.
+Earlier, subflow's input data mapping requires the user to add a "body" namespace.
+
+This release makes subflow executes like a regular task so that the input payload
+can be mapped to the input argument of the first task of a subflow without requiring
+a redundant "body" namespace.
+
+Input headers (namespace input.header) are also mapped correctly to the first task
+of a subflow.
+
+Updated unit tests to demonstrate the consistent input data mapping behavior for subflows.
+
+Chapter 4 of developer guide is also updated.
+
+---
 ## Version 4.3.27, 11/11/2025
 
 ### Added

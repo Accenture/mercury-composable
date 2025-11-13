@@ -640,8 +640,8 @@ class FlowTests extends TestBase {
         // mmBefore contains state_machine (input and model), input_mapping and header
         assertEquals("parent-greetings", mmBefore.getElement("state_machine.input.header.x-flow-id"));
         assertEquals("GET", mmBefore.getElement("state_machine.input.method"));
-        assertEquals(12345, mmBefore.getElement("input_mapping.body.long_number"));
-        assertEquals("test", mmBefore.getElement("input_mapping.body.user"));
+        assertEquals(12345, mmBefore.getElement("input_mapping.long_number"));
+        assertEquals("test", mmBefore.getElement("input_mapping.user"));
         assertEquals("async-http-client", mmBefore.getElement("header.user-agent"));
         assertEquals("ok", mmBefore.getElement("header.demo"));
         // mmAfter contains input, output, model, status, header, result
@@ -992,9 +992,12 @@ class FlowTests extends TestBase {
                 };
         Platform.getInstance().registerPrivate(mockForkTask, f1, 10);
         Platform.getInstance().registerPrivate(mockJoinTask, f2, 10);
-        var mock = new EventScriptMock("fork-n-join-with-dynamic-model-test");
-        mock.assignFunctionRoute("echo.me", mockForkTask);
-        mock.assignFunctionRoute("join.task", mockJoinTask);
+        var mock1 = new EventScriptMock("fork-n-join-with-dynamic-model-test");
+
+        mock1.assignFunctionRoute("join.task", mockJoinTask);
+        var mock2 = new EventScriptMock("echo-flow");
+        mock2.assignFunctionRoute("echo.me", mockForkTask);
+
         var result = forkJoin("/api/fork-n-join-with-dynamic-model/", false);
         assertEquals(5, itemsAndIndexes.size());
         assertEquals(0, itemsAndIndexes.get("one"));

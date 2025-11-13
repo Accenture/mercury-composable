@@ -78,7 +78,6 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Objec
                 result.put(DEMO+3, headers.get(X_FLOW_ID));
             }
             return new EventEnvelope().setBody(result).setHeader(DEMO, "test-header").setStatus(201);
-
         } else {
             // the easiest way for error handling is just throwing an exception
             throw new IllegalArgumentException("Missing user or greeting");

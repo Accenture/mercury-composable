@@ -425,14 +425,13 @@ As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 > Figure 1 - Hierarchy of flows
 
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
-
-For example, when running the following task, "flow://my-sub-flow" will be executed like a regular task.
+Note that the syntax for input and output data mapping for subflow is the same as a regular task.
 
 ```yaml
 tasks:
   - input:
       - 'input.path_parameter.user -> header.user'
-      - 'input.body -> body'
+      - 'input.body -> *'
     process: 'flow://my-sub-flow'
     output:
       - 'result -> model.pojo'
@@ -923,6 +922,9 @@ it will resolve as a Map from the function output event envelope's headers.
 Similarly, when function output namespace `header.` is used, the system will resolve the value from a specific
 key of the function output event envelope's headers.
 
+
+Event flow instances are running in parallel. Within a single flow
+
 ### Function input and output
 
 To support flexible input data mapping, the input to a function must be either `Map<String, Object>` or `PoJo`.
@@ -1108,8 +1110,8 @@ tasks:
 A special version of the fork-n-join pattern is called `dynamic fork-n-join` which refers to parallel processing
 of multiple instances of the same "next" task for each element in a list.
 
-For example, you have a list of 100 elements in an incoming request and each element would be processed by the
-same backend service. You want to process the 100 elements in parallel by multiple instances of a service wraper
+For example, you have a list of 20 elements in an incoming request and each element would be processed by the
+same backend service. You want to process the 20 elements in parallel by multiple instances of a service wraper
 that connects to the backend service.
 
 The use case can be configured like this:
@@ -1152,11 +1154,7 @@ in the "source" parameter.
 1. The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
    of mapping as input arguments to a task. They cannot be used as regular model variables.
 
-2. Dynamic fork-n-join is designed to execute the same task for a list of elements in parallel.
-   It does not support subflow. i.e. the "process" tag of the "next" task must be a regular task.
-   If you have a need to execute a subflow, implement a wrapper task that invokes a subflow programmatically.
-
-3. To avoid state machine data corruption, you should not update any model variable in the
+2. To avoid state machine data corruption, you should not update any model variable in the
    output data mapping section of the fork task because the multiple worker instances of the fork task
    are running in parallel. If you must accumulate the result sets of the fork task instances, you
    may use an external state machine. An example of this use case is available in the unit test section
@@ -1178,17 +1176,28 @@ This task has the tag `execution=sink`.
     execution: sink
 ```
 
-### Special consideration for parallelism
+### Handling task concurrency
+
+When an event flow receives an incoming request, a "flow instance" is created with its own state machine
+using the namespace "model". Tasks within a single flow are executed orderly in a flow instance.
 
 The execution types (parallel and fork-n-join) are designed for parallel processing.
 
-Usually, parallel processing would improve performance. However, spinning up a large number of
-concurrent sessions to a slower backend service may create performance bottleneck. In fact, a 
-massive number of concurrent sessions to a single backend would bring down the target service. 
-This is an unintended "denial of service" attack. 
+In this case, you should not configure the multiple tasks to write to the same model variable because it
+would lead to racing condition and data corruption. Use different model variable names for different parallel
+tasks. Note that the model variable names must be at the top level for concurrent updates.
+i.e. model.mykey instead of model.shared.mykey
 
-The dynamic fork-n-join execution style should be handled with caution because it can easily
-spin up a large number of parallel instances of the same task.
+For dynamic fork-n-join, the same "task" is instantiated multiple times to handle a list of data elements.
+The multiple instances of the same task are running in parallel. Since you cannot configure different model
+variable names for the multiple instances, you should use an "external state machine" to accumulate the
+result sets from the multiple instances of the same task. An example of this use case is available in the
+unit test section of the event-script-engine module. Please refer to `forkJoinWithDynamicModeListTest` of
+FlowTests, the `ExternalStateMachine` class and the `fork-n-join-with-dynamic-model-test.yml`.
+
+While parallel processing would improve performance, spinning up a large number of concurrent sessions to
+a slower backend service may create performance bottleneck. In fact, a massive number of concurrent sessions
+to a single backend would bring down the target service.  This is an unintended "denial of service" attack. 
 
 To control parallelism, you can set a smaller number of concurrent "instances" for the "next" task
 using the "instances" parameter in the "PreLoad" annotation of the task. For example, you have 100

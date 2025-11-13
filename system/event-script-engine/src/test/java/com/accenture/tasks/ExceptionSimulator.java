@@ -20,19 +20,20 @@ package com.accenture.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
 import java.util.HashMap;
 import java.util.Map;
 
 @PreLoad(route = "exception.simulator", instances=10)
-public class ExceptionSimulator implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+public class ExceptionSimulator implements TypedLambdaFunction<Map<String, Object>, Object> {
     private static final String EXCEPTION = "exception";
     private static final String ACCEPT = "accept";
     private static final String ATTEMPT = "attempt";
 
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
+    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws AppException {
         // throw exception as requested
         if (headers.containsKey(EXCEPTION)) {
@@ -53,7 +54,7 @@ public class ExceptionSimulator implements TypedLambdaFunction<Map<String, Objec
                 throw new IllegalArgumentException("Demo Exception");
             }
         }
-        // just echo input when there is no need to throw exception
-        return input;
+        // just echo input and headers when there is no need to throw exception
+        return new EventEnvelope().setBody(input).setHeaders(headers);
     }
 }
