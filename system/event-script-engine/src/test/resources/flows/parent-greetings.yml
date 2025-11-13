@@ -17,10 +17,17 @@ tasks:
   #
   # A subflow is treated in the same fashion as a task so you can map argument and header
   #
+  # Before version 4.3.28, subflow's input data mapping requires the RHS uses the "body." namespace
+  # to map the LHS' value as input argument. This behavior is inconsistent with the input data mapping
+  # for regular task.
+  #
+  # This bug is resolved in version 4.3.28. For backward compatibility, this redundant "body." namespace
+  # is automatically adjusted. A warning message will be logged when the system detects the outdated syntax.
+  #
   - name: 'another.flow'
     input:
       - 'input.path_parameter.user -> user'
-      - 'text(hello world) -> greeting'
+      - 'text(hello world) -> body.greeting'
       - 'long(12345) -> long_number'
       - 'float(12.345) -> float_number'
       - 'double(12.345) -> double_number'

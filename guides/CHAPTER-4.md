@@ -425,11 +425,7 @@ As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 > Figure 1 - Hierarchy of flows
 
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
-
-For example, when running the following task, "flow://my-sub-flow" will be executed like a regular task.
-Since the subflow executes like a regular task, the input data mapping method is consistent. 
-Mapping the input.body as "*" will pass the whole input payload as a map of key-values to the first task
-of the given subflow.
+Note that the syntax for input and output data mapping for subflow is the same as a regular task.
 
 ```yaml
 tasks:

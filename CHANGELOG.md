@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Version 4.3.28, 11/12/2025
 
+This is a bugfix release to unify the data mapping behavior of regular task and subflow.
+
+For backward compatibility, deprecated syntax will be accepted with a warning log message
+during the event script compilation phase.
+
 ### Added
 
 N/A
