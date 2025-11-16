@@ -48,20 +48,18 @@ public abstract class GraphProperties {
 
     protected void validateName(String name) {
         if (!validFormat(name)) {
-            throw new IllegalArgumentException("Invalid syntax for " + name +
-                    " - please use 0-9, A-Z and/or a-z. Optionally with period and/or underline inside.");
+            throw new IllegalArgumentException("Invalid syntax (" + name +
+                    "). Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case");
         }
     }
 
     private boolean validFormat(String str) {
         if (str == null || str.isEmpty()) return false;
-        if (str.startsWith(".") || str.startsWith("_") ||
-                str.contains("..") || str.endsWith(".") || str.endsWith("_")) return false;
         for (int i=0; i < str.length(); i++) {
             if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') ||
                     (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
                     (str.charAt(i) >= 'A' && str.charAt(i) <= 'Z') ||
-                    (str.charAt(i) == '.' || str.charAt(i) == '_'))) {
+                    str.charAt(i) == '_' )) {
                 return false;
             }
         }

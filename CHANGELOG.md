@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.29, 11/16/2025
+
+N/A
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Update name syntax for alias, type and property key for in-memory property graph to
+disallow the use of "." (period or dot character) since "." is used to denote a
+composite key.
+
+---
 ## Version 4.3.28, 11/12/2025
 
 This is a bugfix release to unify the data mapping behavior of regular task and subflow.

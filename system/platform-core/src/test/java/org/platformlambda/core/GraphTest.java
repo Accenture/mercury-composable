@@ -369,4 +369,18 @@ class GraphTest {
                 graph.findPaths("not found"));
         assertEquals("node does not exist", ex12.getMessage());
     }
+
+    @Test
+    void exceptionTest6() {
+        var graph = new MiniGraph();
+        var node = graph.createNode("hello", "world");
+        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
+                node.addType("hello.world"));
+        assertEquals("Invalid syntax (hello.world). " +
+                "Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case", ex1.getMessage());
+        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
+                node.addProperty("my.key", "someValue"));
+        assertEquals("Invalid syntax (my.key). " +
+                "Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case", ex2.getMessage());
+    }
 }
