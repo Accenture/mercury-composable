@@ -349,9 +349,9 @@ public class Platform {
     }
 
     /**
-     * Internal API that returns loaded Macros
+     * Internal API that returns loaded Plugins
      *
-     * @return registry of all loaded macros
+     * @return registry of all loaded plugins
      */
     public ConcurrentMap<String, PluginFunction> getLoadedSimplePlugins() {
         return simplePluginRegistry;
@@ -532,23 +532,23 @@ public class Platform {
     }
 
     /**
-     * Register a SimpleMacro that implements the PluggableFunction interface
+     * Register a SimplePlugin that implements the PluggableFunction interface
      *
      * @param name The plugin name to be used in event-script `f:<name>`
-     * @param macro The class implementing the macro
-     * @throws IllegalArgumentException when name of macro is not provided
+     * @param plugin The class implementing the plugin
+     * @throws IllegalArgumentException when name of plugin is not provided
      */
-    public void registerSimpleMacro(String name, PluginFunction macro) {
-        if (macro == null) {
-            throw new IllegalArgumentException("Missing Macro to assign");
+    public void registerSimplePlugin(String name, PluginFunction plugin) {
+        if (plugin == null) {
+            throw new IllegalArgumentException("Missing Plugin to assign");
         }
 
         if (simplePluginRegistry.containsKey(name)) {
-            log.warn("{} SimpleMacro {}", RELOADING, name);
+            log.warn("{} SimplePlugin {}", RELOADING, name);
         }
 
         // save into local registry
-        simplePluginRegistry.put(name, macro);
+        simplePluginRegistry.put(name, plugin);
     }
 
     /**

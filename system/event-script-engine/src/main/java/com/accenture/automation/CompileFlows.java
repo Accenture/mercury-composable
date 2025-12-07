@@ -790,7 +790,7 @@ public class CompileFlows implements EntryPoint {
         return false;
     }
 
-    static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<macroName>.+)\\(.*\\)";
+    static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<pluginName>.+)\\(.*\\)";
     static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
 
     private boolean isValidPluggableFunction(String lhs){
@@ -800,8 +800,8 @@ public class CompileFlows implements EntryPoint {
             return false;
         }
 
-        String macroName = matcher.group("macroName");
-        return Platform.getInstance().containsSimplePlugin(macroName);
+        String pluginName = matcher.group("pluginName");
+        return Platform.getInstance().containsSimplePlugin(pluginName);
     }
 
     private boolean isPluggableFunction(String lhs){

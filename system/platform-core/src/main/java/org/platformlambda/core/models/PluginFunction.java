@@ -4,7 +4,7 @@ package org.platformlambda.core.models;
 public interface PluginFunction {
 
     /**
-     * Default interface method for the name of the macro
+     * Default interface method for the name of the Plugin
      * @return The name of runtime class in valid camelCase format
      */
     default String getName(){

@@ -1,14 +1,11 @@
 package com.accenture.services.plugins.logical;
 
-import com.accenture.services.plugins.arithmetic.SimpleNumberPlugin;
+import com.accenture.utils.SimplePluginUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
 import org.platformlambda.core.models.PluginFunction;
 
-import java.util.Arrays;
-import java.util.Objects;
-
 @SimplePlugin
-public class GreaterThanOperator extends SimpleNumberPlugin {
+public class GreaterThanOperator implements PluginFunction {
 
     @Override
     public String getName() {
@@ -17,14 +14,13 @@ public class GreaterThanOperator extends SimpleNumberPlugin {
 
     @Override
     public Object calculate(Object... input) {
-        if(input.length == 0){
+        if(input.length != 2){
             throw new IllegalArgumentException("Input is required to compare using 'Greater Than'");
         }
 
-        Long first = promoteNumber(input[0]);
+        Long first = SimplePluginUtils.promoteNumber(input[0]);
+        Long second = SimplePluginUtils.promoteNumber(input[1]);
 
-        return promoteInput(input)
-                .skip(1)
-                .allMatch(next -> first > next); // If Stream is empty, allMatch will still return true
+        return first > second;
     }
 }

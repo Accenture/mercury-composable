@@ -1,10 +1,8 @@
-package com.accenture.services.plugins.types;
+package com.accenture.services.plugins.generators;
 
 import com.accenture.utils.TypeConversionUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
 import org.platformlambda.core.models.PluginFunction;
-
-import java.util.Arrays;
 
 @SimplePlugin
 public class UUIDGenerator implements PluginFunction {

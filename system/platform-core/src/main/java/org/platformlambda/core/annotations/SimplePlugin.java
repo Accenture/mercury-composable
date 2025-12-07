@@ -21,7 +21,7 @@ package org.platformlambda.core.annotations;
 import java.lang.annotation.*;
 
 /**
- * This indicates the class is a Macro to be used as a PluggableFunction for calculations that can be called from
+ * This indicates the class is a Plugin to be used as a PluggableFunction for calculations that can be called from
  * event script. Pluggable functions start with `f:<name>(args...)`
  */
 @Target({ElementType.TYPE})

@@ -1,13 +1,13 @@
 package com.accenture.automation;
 
-import com.accenture.Test;
+import com.accenture.utils.RecursiveClassTypeExaminer;
+import com.accenture.utils.SimplePluginUtils;
 import io.github.classgraph.ClassInfo;
 import org.objectweb.asm.*;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.annotations.SimplePlugin;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.models.PluginFunction;
-import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.SimpleClassScanner;
 
@@ -15,6 +15,7 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
@@ -36,7 +37,10 @@ public class SimplePluginLoader implements EntryPoint {
                                                         .map(Type::getType)
                                                         .map(Type::getClassName)
                                                         .collect(Collectors.toSet());
-    private static final Set<String> ALLOWED_PACKAGES = Set.of("java.lang", "java.util", "java.math", "com.accenture", SimplePlugin.class.getName(), PluginFunction.class.getName());
+    private static final Set<String> ALLOWED_PACKAGES = Set.of("java.lang", "java.util", "java.math", "java.time",
+            SimplePlugin.class.getName(),
+            PluginFunction.class.getName(),
+            SimplePluginUtils.class.getName());
 
     @Override
     public void start(String[] args) {
@@ -55,7 +59,53 @@ public class SimplePluginLoader implements EntryPoint {
     }
 
 
+    protected void analyzeClass(String className, Set<String> allTypes, Set<String> visitedClasses){
+        // Skip if already visited
+        if (visitedClasses.contains(className)) {
+            return;
+        }
+
+        // Skip java.lang to prevent deep recursion
+        if (className.startsWith("java.lang.")) {
+            visitedClasses.add(className);
+            return;
+        }
+
+        visitedClasses.add(className);
+
+        try {
+            ClassReader reader = new ClassReader(className);
+            RecursiveClassTypeExaminer visitor = new RecursiveClassTypeExaminer();
+            reader.accept(visitor, ClassReader.SKIP_CODE);
+
+            // Add types from this class
+            allTypes.addAll(visitor.getTypes());
+
+            // Recursively analyze superclass
+            if (visitor.getSuperClass() != null) {
+                analyzeClass(visitor.getSuperClass(), allTypes, visitedClasses);
+            }
+
+            // Recursively analyze interfaces
+            for (String iface : visitor.getInterfaces()) {
+                analyzeClass(iface, allTypes, visitedClasses);
+            }
+
+        } catch (IOException e) {
+            System.err.println("Warning: Could not load class: " + className);
+        }
+    }
+
     protected Set<String> getUsedTypes(ClassInfo clazz){
+        Set<String> allTypes = new HashSet<>();
+        Set<String> visitedClasses = new HashSet<>();
+
+        analyzeClass(clazz.getName(), allTypes, visitedClasses);
+
+        return allTypes;
+    }
+
+    protected Set<String> getUsedTypesV1(ClassInfo clazz){
         InputStream in = SimplePluginLoader.class.getClassLoader().getResourceAsStream(clazz.getResource().getPath());
         byte[] classBytes = Utility.getInstance().stream2bytes(in);
 
@@ -110,7 +160,7 @@ public class SimplePluginLoader implements EntryPoint {
                 .collect(Collectors.toSet());
 
         if(! blacklisted.isEmpty()){
-            log.warn("Found blacklisted classes when registering plugin: {}", blacklisted);
+            log.warn("Found blacklisted classes {} when registering plugin {}", blacklisted, clazz.getName());
         }
 
         return blacklisted.isEmpty();
@@ -135,8 +185,8 @@ public class SimplePluginLoader implements EntryPoint {
                 Class<?> cls = Class.forName(serviceName);
                 Object o = cls.getDeclaredConstructor().newInstance();
 
-                if(o instanceof PluginFunction macro){
-                    platform.registerSimpleMacro(macro.getName(), macro);
+                if(o instanceof PluginFunction plugin){
+                    platform.registerSimplePlugin(plugin.getName(), plugin);
                 }
                 else {
                     log.error("Unable to preload SimplePlugin {} - {} must implement {}", serviceName, o.getClass(),

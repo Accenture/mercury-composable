@@ -1,11 +1,12 @@
 package com.accenture.services.plugins.arithmetic;
 
+import com.accenture.utils.SimplePluginUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
+import org.platformlambda.core.models.PluginFunction;
 
-import java.util.Arrays;
 
 @SimplePlugin
-public class IncrementNumbers extends SimpleNumberPlugin {
+public class IncrementNumbers implements PluginFunction {
 
     @Override
     public String getName() {
@@ -14,8 +15,10 @@ public class IncrementNumbers extends SimpleNumberPlugin {
 
     @Override
     public Object calculate(Object... input) {
-        return promoteInput(input)
-                .map(l -> l + 1)
-                .toList();
+        if(input.length == 1){
+            return SimplePluginUtils.promoteNumber(input[0]) + 1L;
+        }
+
+        throw new IllegalArgumentException("Expected exactly one Whole Number to increment");
     }
 }

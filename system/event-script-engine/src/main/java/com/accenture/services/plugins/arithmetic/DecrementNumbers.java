@@ -1,11 +1,11 @@
 package com.accenture.services.plugins.arithmetic;
 
+import com.accenture.utils.SimplePluginUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
-
-import java.util.Arrays;
+import org.platformlambda.core.models.PluginFunction;
 
 @SimplePlugin
-public class DecrementNumbers extends SimpleNumberPlugin {
+public class DecrementNumbers implements PluginFunction {
 
     @Override
     public String getName() {
@@ -14,11 +14,10 @@ public class DecrementNumbers extends SimpleNumberPlugin {
 
     @Override
     public Object calculate(Object... input) {
-        Integer[] arr = new Integer[10];
-        arr[0] = 1;
+        if(input.length == 1){
+            return SimplePluginUtils.promoteNumber(input[0]) - 1L;
+        }
 
-        return promoteInput(input)
-                .map(l -> l - 1)
-                .toList();
+        throw new IllegalArgumentException("Expected exactly one Whole Number to decrement");
     }
 }

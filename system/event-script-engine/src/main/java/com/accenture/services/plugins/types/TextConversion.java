@@ -1,6 +1,5 @@
 package com.accenture.services.plugins.types;
 
-import com.accenture.services.plugins.arithmetic.SimpleNumberPlugin;
 import com.accenture.utils.TypeConversionUtils;
 import org.platformlambda.core.annotations.SimplePlugin;
 import org.platformlambda.core.models.PluginFunction;

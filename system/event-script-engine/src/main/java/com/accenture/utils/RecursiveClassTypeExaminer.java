@@ -7,79 +7,69 @@ import java.util.Set;
 
 public class RecursiveClassTypeExaminer extends ClassVisitor {
 
-    private final Set<String> usedTypes = new HashSet<>();
-    private final Set<String> processedClasses = new HashSet<>();
-    private String currentClassName;
+    private final Set<String> types = new HashSet<>();
+    private String superClass;
+    private final Set<String> interfaces = new HashSet<>();
 
-    protected RecursiveClassTypeExaminer(int api) {
+    public RecursiveClassTypeExaminer() {
         super(Opcodes.ASM9);
     }
 
-    private void addType(String descriptor) {
-        if (descriptor == null) return;
-
-        Type type = Type.getType(descriptor);
-        collectTypes(type);
+    public Set<String> getTypes() {
+        return types;
     }
 
-    private void collectTypes(Type type) {
-        switch (type.getSort()) {
-            case Type.OBJECT:
-                usedTypes.add(type.getClassName());
-                break;
-            case Type.ARRAY:
-                collectTypes(type.getElementType());
-                break;
-            case Type.METHOD:
-                collectTypes(type.getReturnType());
-                for (Type argType : type.getArgumentTypes()) {
-                    collectTypes(argType);
-                }
-                break;
+    public String getSuperClass() {
+        return superClass;
+    }
+
+    public Set<String> getInterfaces() {
+        return interfaces;
+    }
+
+    private void addType(Type type) {
+        if (type.getSort() == Type.OBJECT) {
+            types.add(type.getClassName());
+        } else if (type.getSort() == Type.ARRAY) {
+            addType(type.getElementType());
         }
     }
 
-    private void processRecursively(String parent){
-        if(processedClasses.contains(parent)){ // base case
-            return;
-        }
 
-        processedClasses.add(parent);
 
-        if(parent.startsWith("java.lang")){
-            return;
-        }
-
-        //TBC
-    }
 
     @Override
-    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces){
-        if (superName != null && !superName.equals("java/lang/Object")) { // Keep checking the parent for types
-            usedTypes.add(superName.replace('/', '.'));
+    public void visit(int version, int access, String name, String signature,
+                      String superName, String[] interfaceNames) {
+        if (superName != null && !superName.equals("java/lang/Object")) {
+            superClass = superName.replace('/', '.');
+            types.add(superClass);
         }
 
-        if (interfaces != null) {
-            for (String i : interfaces) {
-                usedTypes.add(i.replace('/', '.'));
+        if (interfaceNames != null) {
+            for (String iface : interfaceNames) {
+                String ifaceName = iface.replace('/', '.');
+                interfaces.add(ifaceName);
+                types.add(ifaceName);
             }
         }
-
-        super.visit(version, access, name, signature, superName, interfaces);
     }
 
     @Override
-    public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-        usedTypes.add(Type.getType(descriptor).getClassName());
-        return super.visitField(access, name, descriptor, signature, value);
+    public FieldVisitor visitField(int access, String name, String descriptor,
+                                   String signature, Object value) {
+        addType(Type.getType(descriptor));
+        return null;
     }
+
     @Override
-    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-        Type methodType = Type.getMethodType(descriptor);
-        usedTypes.add(methodType.getReturnType().getClassName());
+    public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                     String signature, String[] exceptions) {
+        Type methodType = Type.getType(descriptor);
+        addType(methodType.getReturnType());
         for (Type argType : methodType.getArgumentTypes()) {
-            usedTypes.add(argType.getClassName());
+            addType(argType);
         }
-        return super.visitMethod(access, name, descriptor, signature, exceptions);
+        return null;
     }
 }
