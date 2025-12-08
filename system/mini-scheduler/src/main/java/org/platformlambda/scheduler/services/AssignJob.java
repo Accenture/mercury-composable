@@ -22,6 +22,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.scheduler.JobLoader;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -43,7 +44,11 @@ public class AssignJob implements Job {
             var uuid = Utility.getInstance().getUuid();
             var po = new PostOffice("job.scheduler", uuid, "JOB "+name);
             var event = new EventEnvelope().setTo(JobExecutor.JOB_EXECUTOR).setHeader(JOB, name);
-            po.sendLater(event, new Date(System.currentTimeMillis() + getRandomizedMillis(name)));
+            if (JobLoader.isDeferredStart()) {
+                po.sendLater(event, new Date(System.currentTimeMillis() + getRandomizedMillis(name)));
+            } else {
+                po.send(event);
+            }
         }
     }
 

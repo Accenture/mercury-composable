@@ -43,6 +43,7 @@ public class JobLoader implements EntryPoint {
     private static final ConcurrentMap<String, ScheduledJob> scheduledJobs = new ConcurrentHashMap<>();
     private static final String JOBS_PREFIX = "jobs[";
     private static final String JOBS = "jobs";
+    private static boolean deferredStart = false;
 
     public static void main(String[] args) {
         AutoStart.main(args);
@@ -50,6 +51,10 @@ public class JobLoader implements EntryPoint {
 
     public static ScheduledJob getJob(String id) {
         return id == null? null : scheduledJobs.get(id);
+    }
+
+    public static boolean isDeferredStart() {
+        return deferredStart;
     }
 
     @Override
@@ -67,6 +72,7 @@ public class JobLoader implements EntryPoint {
 
     @SuppressWarnings("unchecked")
     private void loadConfig(ConfigReader config, int i) {
+        deferredStart = "true".equalsIgnoreCase(config.getProperty("deferred.start", "false"));
         String name = config.getProperty(JOBS_PREFIX +i+"].name");
         String service = config.getProperty(JOBS_PREFIX +i+"].service");
         String schedule = config.getProperty(JOBS_PREFIX +i+"].cron");

@@ -22,3 +22,9 @@ jobs:
     parameters:
       hello: "flow"
     resolver: "v1.state.resolver"
+
+#
+# deferred start adds a randomized delay of 0 to 9 seconds before a scheduled job runs.
+# This reduces the chance of racing condition to a state database.
+#
+deferred.start: true
