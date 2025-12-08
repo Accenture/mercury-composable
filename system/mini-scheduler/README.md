@@ -52,7 +52,7 @@ jobs:
       hello: "flow"
     resolver: "v1.state.resolver"
 ```
-In this example, there is two scheduled jobs (demo-task and demo-flow). The scheduler executes
+In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" and the flow "hello-flow" every 10 seconds.
 
 ## Using this library
