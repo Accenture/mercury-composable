@@ -6,8 +6,8 @@
 #
 jobs:
   - name: "demo-task"
-    description: "execute demo service every 10 seconds"
-    cron: "0/10 0/1 * 1/1 * ? *"
+    description: "execute demo service every 15 seconds"
+    cron: "0/15 0/1 * 1/1 * ? *"
     service: "hello.world"
     # optional parameter to tell the service what to do
     parameters:
@@ -15,10 +15,15 @@ jobs:
     resolver: "v1.state.resolver"
 
   - name: "demo-flow"
-    description: "execute demo service every 10 seconds"
-    cron: "0/10 0/1 * 1/1 * ? *"
+    description: "execute demo service every 25 seconds"
+    cron: "0/25 0/1 * 1/1 * ? *"
     service: "flow://hello-flow"
-    # optional parameter to tell the service what to do
+    # In the demo flow, it has 2 tasks. We use input data mapping to map "db" and "other" parameters accordingly.
+    # See "hello-flow.yml for details.
     parameters:
-      hello: "flow"
+      db:
+        host: "db://demo"
+        feature: "read only"
+      other:
+        demo: "some value"
     resolver: "v1.state.resolver"

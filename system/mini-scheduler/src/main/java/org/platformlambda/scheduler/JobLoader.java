@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@MainApplication
+@MainApplication(sequence = 8)
 public class JobLoader implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(JobLoader.class);
     private static final Utility util = Utility.getInstance();
@@ -73,7 +73,7 @@ public class JobLoader implements EntryPoint {
         String resolver = config.getProperty(JOBS_PREFIX +i+"].resolver");
         Object parameters = config.get(JOBS_PREFIX +i+"].parameters");
         if (name != null && schedule != null && resolver != null && service != null &&
-            util.validServiceName(name) && util.validServiceName(service)) {
+            util.validServiceName(name) && (service.startsWith("flow://") || util.validServiceName(service))) {
             ScheduledJob j = new ScheduledJob(name, service, resolver, schedule);
             if (parameters instanceof Map) {
                 Map<String, Object> map = (Map<String, Object>) parameters;
@@ -102,7 +102,7 @@ public class JobLoader implements EntryPoint {
                     .withSchedule(CronScheduleBuilder.cronSchedule(j.cronSchedule))
                     .forJob(id, JOBS).build();
             scheduler.scheduleJob(trigger);
-            log.info("Scheduled job: {}, service: {}, cron: {}", id, j.service, j.cronSchedule);
+            log.info("Scheduled job: {}, service: {}, statement: {}", id, j.service, j.cronSchedule);
         }
         scheduler.start();
         // shutdown schedule when app stops

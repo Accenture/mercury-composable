@@ -10,7 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.30, 12/7/2025
+
+N/A
+
+### Added
+
+Scheduler-example app to illustrate the use of the mini-scheduler
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Improved mini-scheduler
+2. Update Spring Boot parent to version 3.5.8
+
+---
 ## Version 4.3.29, 11/16/2025
+
+N/A
 
 ### Added
 

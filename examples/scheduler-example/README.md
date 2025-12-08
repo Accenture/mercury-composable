@@ -5,7 +5,7 @@ Simple scheduler that uses YAML configuration for storing "cron" job schedules
 ## Simple clustering
 
 To support multiple application instances for resilience, you can implement a "state resolver" function.
-An example is shown in the StateResolver class under the unit test folder.
+An example is shown in the StateResolver class under the "services" folder.
 
 The state resolver function should persist the time when a task is executed by the scheduler and support
 a query API to test if the previous task has been expired so that it can schedule another one. You may use
@@ -35,8 +35,8 @@ Note the the one in the classpath is just an example. Please update the YAML con
 ```
 jobs:
   - name: "demo-task"
-    description: "execute demo service every 10 seconds"
-    cron: "0/10 0/1 * 1/1 * ? *"
+    description: "execute demo service every 15 seconds"
+    cron: "0/15 0/1 * 1/1 * ? *"
     service: "hello.world"
     # optional parameter to tell the service what to do
     parameters:
@@ -44,30 +44,75 @@ jobs:
     resolver: "v1.state.resolver"
 
   - name: "demo-flow"
-    description: "execute demo service every 10 seconds"
-    cron: "0/10 0/1 * 1/1 * ? *"
+    description: "execute demo service every 25 seconds"
+    cron: "0/25 0/1 * 1/1 * ? *"
     service: "flow://hello-flow"
-    # optional parameter to tell the service what to do
+    # In the demo flow, it has 2 tasks. We use input data mapping to map "db" and "other" parameters accordingly.
+    # See "hello-flow.yml for details.
     parameters:
-      hello: "flow"
+      db:
+        host: "db://demo"
+        feature: "read only"
+      other:
+        demo: "some value"
     resolver: "v1.state.resolver"
 ```
 In this example, there is two scheduled jobs (demo-task and demo-flow). The scheduler executes
-the service "hello.world" and the flow "hello-flow" every 10 seconds.
+the service "hello.world" every 15 seconds and the flow "hello-flow" every 25 seconds.
 
-## Using this library
+## Running this application
 
-1. Add the mini-scheduler dependency in pom.xml.
-2. Implement a "state resolver" function using the route name "v1.state.resolver". Follow the StateResolver.class
-   in the unit test to implement your own state persistence and resolution logic.
-3. Configure a cron.yaml file to schedule your tasks. An example is shown in the unit test's resources folder.
+1. You can run the application class MainApp from the IDE
+2. You may also run the application by building it using `mvn clean package` and then run the application as follows:
 
-```xml
-<dependency>
-    <groupId>org.platformlambda</groupId>
-    <artifactId>mini-scheduler</artifactId>
-    <version>4.3.30</version>
-</dependency>
+```shell
+java -jar target/scheduler-example-4.3.30.jar
+```
+
+The application is pre-configured with 2 scheduled jobs in cron.yaml above.
+
+You can check the running jobs using "GET /api/schedule". It will show something like this:
+
+```json
+{
+  "jobs": [
+    {
+      "start": "2025-12-08T05:03:37.012Z",
+      "name": "demo-task",
+      "end": "2025-12-08T05:03:37.020Z"
+    },
+    {
+      "start": "2025-12-08T05:03:28.007Z",
+      "name": "demo-flow",
+      "end": "2025-12-08T05:03:28.018Z"
+    }
+  ],
+  "time": "2025-12-08T05:03:42.134Z",
+  "message": "GET /api/schedule/{name}"
+}
+```
+
+To query individual job, use "GET /api/schedule/{name}" where name is "demo-flow" or "demo-task".
+A job status report may look like this:
+
+```json
+{
+  "elapsed": "11 ms",
+  "schedule": "0/25 0/1 * 1/1 * ? *",
+  "service": "flow://hello-flow",
+  "name": "demo-flow",
+  "start": "2025-12-08T05:03:59.009Z",
+  "end": "2025-12-08T05:03:59.020Z",
+  "parameters": {
+    "other": {
+      "demo": "some value"
+    },
+    "db": {
+      "feature": "read only",
+      "host": "db://demo"
+    }
+  }
+}
 ```
 
 # cron expression

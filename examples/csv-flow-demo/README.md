@@ -11,12 +11,12 @@ dependencies:
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>csv-flow-adapter</artifactId>
-    <version>4.3.29</version>
+    <version>4.3.30</version>
 </dependency>
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>event-script-engine</artifactId>
-    <version>4.3.29</version>
+    <version>4.3.30</version>
 </dependency>
 ```
 

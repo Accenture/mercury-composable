@@ -1,0 +1,39 @@
+flow:
+  id: 'hello-flow'
+  description: 'Demonstrate scheduled flow'
+  ttl: 10s
+  exception: 'simple.exception.handler'
+
+first.task: 'my.db.task'
+
+tasks:
+  - input:
+      - 'input.body.db -> *'
+      - 'input.header -> header'
+    process: 'my.db.task'
+    output: []
+    description: 'invoke hello.flow function in unit test'
+    execution: sequential
+    next:
+      - 'my.other.task'
+
+  - name: 'my.other.task'
+    input:
+      - 'input.body.other -> *'
+      - 'input.header -> header'
+    process: 'another.task'
+    output:
+      - 'result -> output.body'
+    description: 'invoke hello.flow function in unit test'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'simple.exception.handler' # built-in function
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
+    execution: end

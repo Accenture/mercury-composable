@@ -1,11 +1,14 @@
 # Simple Scheduler
 
-Simple scheduler that uses YAML configuration for storing "cron" job schedules
+Simple scheduler that uses YAML configuration for storing "cron" job schedules.
+
+> This simple schedule is designed to use a minimalist service mesh.
+  If you do not have a minimalist service mesh using Kafka, 
+  please use the `schedule-example` in the "examples" sub-project folder.
 
 ## Cloud native deployment
 
-More than one instance of this application can be deployed.
-When this happens, the multiple instances will run in parallel.
+More than one instance of this application can be deployed and they will run in parallel.
 
 To avoid duplicated job scheduling, the multiple instances will detect the presence of each other
 and elect an leader to execute the scheduled jobs.

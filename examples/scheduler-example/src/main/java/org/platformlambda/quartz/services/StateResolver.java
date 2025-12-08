@@ -16,7 +16,7 @@
 
  */
 
-package com.accenture.services;
+package org.platformlambda.quartz.services;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;

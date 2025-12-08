@@ -6,13 +6,13 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kafka-connector</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.29</version>
+    <version>4.3.30</version>
     <name>Cloud connector for Kafka cluster</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.7</version>
+        <version>3.5.8</version>
         <relativePath/>
     </parent>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.3.29</version>
+            <version>4.3.30</version>
         </dependency>
 
         <dependency>

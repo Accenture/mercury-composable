@@ -33,6 +33,7 @@ public class AssignJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(AssignJob.class);
     private static final CryptoApi crypto = new CryptoApi();
     private static final String JOBS = "jobs.";
+    private static final String JOB = "job";
 
     @Override
     public void execute(JobExecutionContext context) {
@@ -41,15 +42,15 @@ public class AssignJob implements Job {
             var name = key.substring(JOBS.length());
             var uuid = Utility.getInstance().getUuid();
             var po = new PostOffice("job.scheduler", uuid, "JOB "+name);
-            var event = new EventEnvelope().setTo(JobExecutor.ROUTE).setHeader("job", name);
-            po.sendLater(event, new Date(System.currentTimeMillis() + getRandomizedMillis()));
+            var event = new EventEnvelope().setTo(JobExecutor.JOB_EXECUTOR).setHeader(JOB, name);
+            po.sendLater(event, new Date(System.currentTimeMillis() + getRandomizedMillis(name)));
         }
     }
 
-    private long getRandomizedMillis() {
+    private long getRandomizedMillis(String name) {
         // get an integer between 0 and 9
         var seconds = crypto.nextInt(0, 1000) % 10;
-        log.info("Delay job for {} seconds", seconds);
+        log.info("Defer execution of {} for {} seconds", name, seconds);
         return seconds * 1000;
     }
 }
