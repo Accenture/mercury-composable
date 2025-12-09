@@ -12,8 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Version 4.3.31, 12/9/2025
 
-N/A
-
 ### Added
 
 leader election protocol in mini-scheduler for backward compatibility to
@@ -30,8 +28,6 @@ Explicitly release state machine for a flow instance to improve GC efficiency
 ---
 ## Version 4.3.30, 12/7/2025
 
-N/A
-
 ### Added
 
 Scheduler-example app to illustrate the use of the mini-scheduler
@@ -47,8 +43,6 @@ N/A
 
 ---
 ## Version 4.3.29, 11/16/2025
-
-N/A
 
 ### Added
 
