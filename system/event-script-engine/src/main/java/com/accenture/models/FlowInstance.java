@@ -99,8 +99,8 @@ public class FlowInstance {
         }
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope timeoutTask = new EventEnvelope();
-        timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
+        EventEnvelope timeoutTask = new EventEnvelope().setTo(TaskExecutor.SERVICE_NAME)
+                                            .setCorrelationId(id).setHeader(TIMEOUT, true);
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + template.ttl));
     }
 
@@ -152,6 +152,13 @@ public class FlowInstance {
         if (running) {
             running = false;
             EventEmitter.getInstance().cancelFutureEvent(timeoutWatcher);
+            setResponded(true);
+            // explicitly release memory
+            dataset.clear();
+            pipeMap.clear();
+            tasks.clear();
+            metrics.clear();
+            shared.clear();
         }
     }
 

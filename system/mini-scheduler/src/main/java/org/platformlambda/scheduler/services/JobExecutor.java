@@ -23,6 +23,8 @@ import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.scheduler.JobLoader;
@@ -30,6 +32,7 @@ import org.platformlambda.scheduler.models.ScheduledJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -39,12 +42,14 @@ import static org.platformlambda.scheduler.services.JobExecutor.JOB_EXECUTOR;
 @PreLoad(route= JOB_EXECUTOR)
 public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(JobExecutor.class);
-    public static final String JOB_EXECUTOR = "v1.job.executor";
+    public static final String JOB_EXECUTOR = "run.scheduled.job";
+    private static final String SCHEDULER_SERVICE = "cron.scheduler";
     private static final String JOB = "job";
     private static final String TYPE = "type";
     private static final String START = "start";
     private static final String END = "end";
     private static final String EXPIRES = "expires";
+    private static final String OPERATOR = "operator";
     private static final String NAME = "name";
     private static final String SERVICE = "service";
     private static final String SCHEDULE = "schedule";
@@ -66,40 +71,71 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
         } else {
             var name = headers.get(JOB);
+            var operator = headers.get(OPERATOR);
             if (name != null) {
                 ScheduledJob job = JobLoader.getJob(name);
                 if (job != null) {
-                    executeJob(po, job);
+                    if (operator != null) {
+                        log.info("Operator {} runs {} manually", operator, job.name);
+                        executeJob(po, job);
+                    } else {
+                        prepareJob(po, job);
+                    }
                 }
             }
         }
         return null;
     }
 
-    private void executeJob(PostOffice po, ScheduledJob job) throws ExecutionException, InterruptedException {
+    private void prepareJob(PostOffice po, ScheduledJob job) throws ExecutionException, InterruptedException {
         // check if a job has already started by a peer
-        if (readyToExecute(po, job)) {
-            // encode job name in correlationId
-            var cid = Utility.getInstance().getUuid() + "@" + job.name;
-            if (job.service.startsWith(FLOW_PROTOCOL)) {
-                var flowId = job.service.substring(FLOW_PROTOCOL.length());
-                var flow = Flows.getFlow(flowId);
-                if (flow == null) {
-                    log.error("Scheduled flow {} does not exist", job.service);
-                } else {
-                    // map the input.body and input.header to a flow
-                    var dataset = new HashMap<String, Object>();
-                    dataset.put(BODY, job.parameters);
-                    dataset.put(HEADER, Map.of(JOB, job.name));
-                    FlowExecutor.getInstance().launch(po, flowId, dataset, JOB_EXECUTOR, cid);
-                }
+        if (JobLoader.needLeaderElection()) {
+            String me = Platform.getInstance().getOrigin();
+            EventEmitter.getInstance().search(SCHEDULER_SERVICE, true)
+                    .onSuccess(peers -> {
+                        final String selected;
+                        if (peers.size() > 1) {
+                            Collections.sort(peers);
+                            selected = peers.getFirst();
+                        } else  {
+                            selected = String.valueOf(me);
+                        }
+                        if (me.equals(selected)) {
+                            log.info("Ready to run {}", job.name);
+                            executeJob(po, job);
+                        } else {
+                            log.info("Skip {} because peer {} is handling it", job.name, selected);
+                        }
+                    });
+        } else if (readyToExecute(po, job)) {
+            executeJob(po, job);
+        }
+    }
+
+    private void executeJob(PostOffice po, ScheduledJob job) {
+        po.send(new EventEnvelope().setTo(job.resolver).setBody(job.parameters)
+                .setHeader(SCHEDULE, job.cronSchedule)
+                .setHeader(TYPE, START).setHeader(NAME, job.name).setHeader(SERVICE, job.service));
+        // encode job name in correlationId
+        var cid = Utility.getInstance().getUuid() + "@" + job.name;
+        if (job.service.startsWith(FLOW_PROTOCOL)) {
+            var flowId = job.service.substring(FLOW_PROTOCOL.length());
+            var flow = Flows.getFlow(flowId);
+            if (flow == null) {
+                log.error("Scheduled flow {} does not exist", job.service);
             } else {
-                if (po.exists(job.service)) {
-                    po.send(new EventEnvelope().setTo(job.service).setHeader(JOB, job.name)
-                            .setBody(job.parameters).setCorrelationId(cid).setReplyTo(JOB_EXECUTOR));
-                } else {
-                    log.error("Scheduled service {} does not exist", job.service);
-                }
+                // map the input.body and input.header to a flow
+                var dataset = new HashMap<String, Object>();
+                dataset.put(BODY, job.parameters);
+                dataset.put(HEADER, Map.of(JOB, job.name));
+                FlowExecutor.getInstance().launch(po, flowId, dataset, JOB_EXECUTOR, cid);
+            }
+        } else {
+            if (po.exists(job.service)) {
+                po.send(new EventEnvelope().setTo(job.service).setHeader(JOB, job.name)
+                        .setBody(job.parameters).setCorrelationId(cid).setReplyTo(JOB_EXECUTOR));
+            } else {
+                log.error("Scheduled service {} does not exist", job.service);
             }
         }
     }
@@ -109,13 +145,7 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (po.exists(job.resolver)) {
             var event = new EventEnvelope().setTo(job.resolver).setHeader(TYPE, EXPIRES).setHeader(NAME, job.name);
             var result = po.request(event, 5000).get();
-            boolean expired = Boolean.TRUE == result.getBody();
-            if (expired) {
-                po.send(new EventEnvelope().setTo(job.resolver).setBody(job.parameters)
-                        .setHeader(SCHEDULE, job.cronSchedule)
-                        .setHeader(TYPE, START).setHeader(NAME, job.name).setHeader(SERVICE, job.service));
-                return true;
-            }
+            return Boolean.TRUE == result.getBody();
         } else {
             log.error("Resolver service {} does not exist", job.resolver);
         }

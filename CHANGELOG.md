@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.31, 12/9/2025
+
+N/A
+
+### Added
+
+leader election protocol in mini-scheduler for backward compatibility to
+replace the simple-scheduler extension project
+
+### Removed
+
+simple-scheduler extension project
+
+### Changed
+
+Explicitly release state machine for a flow instance to improve GC efficiency
+
+---
 ## Version 4.3.30, 12/7/2025
 
 N/A

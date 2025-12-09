@@ -28,3 +28,12 @@ jobs:
 # This reduces the chance of racing condition to a state database.
 #
 deferred.start: true
+
+#
+# For backward compatibility, set leader.election to true.
+# This enables the use of minimalist service mesh for leader election.
+# Your application must set cloud.connector to a service mesh (e.g. kafka)
+# and call the "platform.connectToCloud()" API in the main application.
+# You would need to add the kafka-connector dependency to turn on a service mesh.
+#
+leader.election: false

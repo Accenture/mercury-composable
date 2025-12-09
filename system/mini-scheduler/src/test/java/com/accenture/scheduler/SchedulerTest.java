@@ -21,10 +21,13 @@ package com.accenture.scheduler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.AppStarter;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.scheduler.services.JobExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,23 +41,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SchedulerTest {
     private static final Logger log = LoggerFactory.getLogger(SchedulerTest.class);
+    private static final BlockingQueue<Map<String, Object>> bench1 = new ArrayBlockingQueue<>(2);
+    private static final BlockingQueue<Map<String, Object>> bench2 = new ArrayBlockingQueue<>(2);
 
     @BeforeAll
     static void setup() {
         AppStarter.main(new String[0]);
-    }
-
-    @AfterAll
-    static void cleanup() {
-        File tempFolder = new File("/tmp/scheduler-states");
-        Utility.getInstance().cleanupDir(tempFolder);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void checkScheduledJobs() throws InterruptedException {
-        final BlockingQueue<Map<String, Object>> bench1 = new ArrayBlockingQueue<>(1);
-        final BlockingQueue<Map<String, Object>> bench2 = new ArrayBlockingQueue<>(1);
         TypedLambdaFunction<Map<String, Object>, Void> f1 = (headers, input, instance) -> {
             log.info("hello.world got {} {}", headers, input);
             bench1.offer(Map.of("body", input, "headers", headers));
@@ -68,6 +60,38 @@ class SchedulerTest {
         Platform platform = Platform.getInstance();
         platform.registerPrivate("hello.world", f1, 1);
         platform.registerPrivate("hello.flow", f2, 1);
+    }
+
+    @AfterAll
+    static void cleanup() {
+        File tempFolder = new File("/tmp/scheduler-states");
+        Utility.getInstance().cleanupDir(tempFolder);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void runJobManually() throws InterruptedException {
+        var name = "demo-task";
+        var uuid = Utility.getInstance().getUuid();
+        var po = new PostOffice("unit.test", uuid, "JOB "+name);
+        var event = new EventEnvelope().setTo(JobExecutor.JOB_EXECUTOR)
+                            .setHeader("job", name).setHeader("operator", "unit.test");
+        po.send(event);
+        var result1 = bench1.poll(20, TimeUnit.SECONDS);
+        assertNotNull(result1);
+        assertTrue(result1.containsKey("body"));
+        assertTrue(result1.containsKey("headers"));
+        var body1 = result1.get("body");
+        var headers1 = result1.get("headers");
+        assertInstanceOf(Map.class, headers1);
+        assertEquals(Map.of("hello", "world"), body1);
+        assertEquals("demo-task", ((Map<String, String>) headers1).get("job"));
+        log.info("Job executed successfully");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void checkScheduledJobs() throws InterruptedException {
         // check scheduled task result
         var result1 = bench1.poll(20, TimeUnit.SECONDS);
         assertNotNull(result1);

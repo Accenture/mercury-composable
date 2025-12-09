@@ -11,9 +11,13 @@ The state resolver function should persist the time when a task is executed by t
 a query API to test if the previous task has been expired so that it can schedule another one. You may use
 a simple key-value store or SQL database as the persistent store.
 
-To reduce racing condition, the scheduler defers a job from 0 to 9 seconds so that application instances
-will run a schedule at a slightly different time. This allows the state resolver to easily detect if a task
-has been scheduled.
+To reduce racing condition, you can set "deferred.start" to true in cron.yaml and the scheduler will defer
+a job from 0 to 9 seconds so that application instances will run a schedule at a slightly different time.
+This allows the state resolver to easily detect if a task has been scheduled.
+
+For backward compatibility, the mini-scheduler can perform a "leader election" to select an application
+instance using a minimalist service mesh (e.g. cloud.connector=kafka). To enable this feature,
+set "leader.election" to true.
 
 (Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
 
@@ -51,6 +55,9 @@ jobs:
     parameters:
       hello: "flow"
     resolver: "v1.state.resolver"
+    
+deferred.start: true
+leader.election: false    
 ```
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" and the flow "hello-flow" every 10 seconds.
@@ -66,7 +73,7 @@ the service "hello.world" and the flow "hello-flow" every 10 seconds.
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>mini-scheduler</artifactId>
-    <version>4.3.30</version>
+    <version>4.3.31</version>
 </dependency>
 ```
 

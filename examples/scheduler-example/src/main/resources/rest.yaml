@@ -4,7 +4,7 @@
 # for the original URL and path parameters
 #
 rest:
-  - service: "v1.schedule.query"
+  - service: "v1.schedule.admin"
     methods: ['GET']
     url: "/api/schedule"
     timeout: 10s
@@ -12,8 +12,8 @@ rest:
     headers: header_1
     tracing: true
 
-  - service: "v1.schedule.query"
-    methods: ['GET']
+  - service: "v1.schedule.admin"
+    methods: ['GET', 'POST']
     url: "/api/schedule/{name}"
     timeout: 10s
     cors: cors_1

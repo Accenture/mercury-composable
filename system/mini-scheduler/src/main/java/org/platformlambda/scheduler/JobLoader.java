@@ -20,7 +20,9 @@ package org.platformlambda.scheduler;
 
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
+import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.AutoStart;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -35,15 +37,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @MainApplication(sequence = 8)
 public class JobLoader implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(JobLoader.class);
     private static final Utility util = Utility.getInstance();
     private static final ConcurrentMap<String, ScheduledJob> scheduledJobs = new ConcurrentHashMap<>();
+    private static final String SCHEDULER_SERVICE = "cron.scheduler";
     private static final String JOBS_PREFIX = "jobs[";
     private static final String JOBS = "jobs";
-    private static boolean deferredStart = false;
+    private static final AtomicBoolean deferredStart = new AtomicBoolean(false);
+    private static final AtomicBoolean leaderElection = new AtomicBoolean(false);
 
     public static void main(String[] args) {
         AutoStart.main(args);
@@ -54,13 +59,25 @@ public class JobLoader implements EntryPoint {
     }
 
     public static boolean isDeferredStart() {
-        return deferredStart;
+        return deferredStart.get();
+    }
+
+    public static boolean needLeaderElection() {
+        return leaderElection.get();
     }
 
     @Override
     public void start(String[] args) throws SchedulerException {
         // load cron job configuration
         ConfigReader config = getConfig();
+        deferredStart.set("true".equalsIgnoreCase(config.getProperty("deferred.start", "false")));
+        leaderElection.set("true".equalsIgnoreCase(config.getProperty("leader.election", "false")));
+        if (leaderElection.get()) {
+            Platform platform = Platform.getInstance();
+            // create a no-op service for leader election
+            LambdaFunction f = (headers, input, instance) -> true;
+            platform.register(SCHEDULER_SERVICE, f, 1);
+        }
         Object o = config.get(JOBS);
         if (o instanceof List<?> list) {
             for (int i=0; i < list.size(); i++) {
@@ -72,14 +89,13 @@ public class JobLoader implements EntryPoint {
 
     @SuppressWarnings("unchecked")
     private void loadConfig(ConfigReader config, int i) {
-        deferredStart = "true".equalsIgnoreCase(config.getProperty("deferred.start", "false"));
         String name = config.getProperty(JOBS_PREFIX +i+"].name");
         String service = config.getProperty(JOBS_PREFIX +i+"].service");
         String schedule = config.getProperty(JOBS_PREFIX +i+"].cron");
         String resolver = config.getProperty(JOBS_PREFIX +i+"].resolver");
         Object parameters = config.get(JOBS_PREFIX +i+"].parameters");
-        if (name != null && schedule != null && resolver != null && service != null &&
-            util.validServiceName(name) && (service.startsWith("flow://") || util.validServiceName(service))) {
+        if (schedule != null && resolver != null && service != null &&
+                validJobName(name) && (service.startsWith("flow://") || util.validServiceName(service))) {
             ScheduledJob j = new ScheduledJob(name, service, resolver, schedule);
             if (parameters instanceof Map) {
                 Map<String, Object> map = (Map<String, Object>) parameters;
@@ -135,5 +151,21 @@ public class JobLoader implements EntryPoint {
             }
         }
         throw new IllegalArgumentException("Scheduler configuration not found in "+paths);
+    }
+
+    private boolean validJobName(String str) {
+        if (str == null || str.isEmpty()) return false;
+        if (str.startsWith(".") || str.startsWith("_") || str.startsWith("-")
+                || str.contains("..")
+                || str.endsWith(".") || str.endsWith("_") || str.endsWith("-")) return false;
+        for (int i=0; i < str.length(); i++) {
+            if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') ||
+                    (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
+                    (str.charAt(i) >= 'A' && str.charAt(i) <= 'Z') ||
+                    (str.charAt(i) == '.' || str.charAt(i) == '_' || str.charAt(i) == '-'))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

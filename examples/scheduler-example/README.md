@@ -11,9 +11,13 @@ The state resolver function should persist the time when a task is executed by t
 a query API to test if the previous task has been expired so that it can schedule another one. You may use
 a simple key-value store or SQL database as the persistent store.
 
-To reduce racing condition, the scheduler defers a job from 0 to 9 seconds so that application instances
-will run a schedule at a slightly different time. This allows the state resolver to easily detect if a task
-has been scheduled.
+To reduce racing condition, you can set "deferred.start" to true in cron.yaml and the scheduler will defer
+a job from 0 to 9 seconds so that application instances will run a schedule at a slightly different time.
+This allows the state resolver to easily detect if a task has been scheduled.
+
+For backward compatibility, the mini-scheduler can perform a "leader election" to select an application
+instance using a minimalist service mesh (e.g. cloud.connector=kafka). To enable this feature,
+set "leader.election" to true.
 
 (Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
 
@@ -56,6 +60,9 @@ jobs:
       other:
         demo: "some value"
     resolver: "v1.state.resolver"
+    
+deferred.start: true
+leader.election: false    
 ```
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" every 15 seconds and the flow "hello-flow" every 25 seconds.
@@ -68,6 +75,8 @@ the service "hello.world" every 15 seconds and the flow "hello-flow" every 25 se
 ```shell
 java -jar target/scheduler-example-4.3.30.jar
 ```
+
+## Admin endpoints
 
 The application is pre-configured with 2 scheduled jobs in cron.yaml above.
 
@@ -114,6 +123,24 @@ A job status report may look like this:
   }
 }
 ```
+
+To run a job manually, you can do "POST /api/schedule/{name}" where name is "demo-flow" or "demo-task".
+Set content-type to "application/json" and put an operator name like this:
+
+```json
+{"operator": "Peter"}
+```
+
+The application will run the job and print a log message like this:
+
+```text
+JobExecutor:79 - Operator Peter runs demo-flow manually
+```
+
+When you run a job manually using this admin endpoint, the job will start without checking if the job has been
+run by another scheduler instance recently.
+
+Manual invocation of job may be used in test environments.
 
 # cron expression
 

@@ -307,7 +307,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void endFlow(FlowInstance flowInstance, boolean normal) {
-        flowInstance.close();
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
         flowInstance.metrics.keySet().forEach(taskRefs::remove);
@@ -319,6 +318,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         List<Map<String, Object>> taskInfo = new ArrayList<>();
         taskList.forEach(info ->
                 taskInfo.add(Map.of("name", info.getRoute(), "spent", info.getElapsed())));
+        // clean up flowInstance states
+        flowInstance.close();
         int totalExecutions = taskList.size();
         var payload = new HashMap<String, Object>();
         var metrics = new HashMap<String, Object>();
