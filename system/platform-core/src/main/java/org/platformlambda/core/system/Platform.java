@@ -42,7 +42,6 @@ public class Platform {
     private static final Logger log = LoggerFactory.getLogger(Platform.class);
     private static final CryptoApi crypto = new CryptoApi();
     private static final ConcurrentMap<String, ServiceDef> registry = new ConcurrentHashMap<>();
-    private static final ConcurrentMap<String, PluginFunction> simplePluginRegistry = new ConcurrentHashMap<>();
     private static final String PERSONALITY = "personality";
     private static final String SPRING_NAME = "spring.application.name";
     private static final String APPLICATION_NAME = "application.name";
@@ -349,23 +348,6 @@ public class Platform {
     }
 
     /**
-     * Internal API that returns loaded Plugins
-     *
-     * @return registry of all loaded plugins
-     */
-    public ConcurrentMap<String, PluginFunction> getLoadedSimplePlugins() {
-        return simplePluginRegistry;
-    }
-
-    public PluginFunction getSimplePluginByName(String pluginName){
-        return getLoadedSimplePlugins().get(pluginName);
-    }
-
-    public boolean containsSimplePlugin(String pluginName){
-        return simplePluginRegistry.containsKey(pluginName);
-    }
-
-    /**
      * Register a public lambda function with one or more concurrent instances.
      * Its routing path will be published to the global service registry.
      *
@@ -529,26 +511,6 @@ public class Platform {
     public int getConcurrency(String route) {
         ServiceDef service = registry.get(route);
         return service != null? service.getConcurrency() : -1;
-    }
-
-    /**
-     * Register a SimplePlugin that implements the PluggableFunction interface
-     *
-     * @param name The plugin name to be used in event-script `f:<name>`
-     * @param plugin The class implementing the plugin
-     * @throws IllegalArgumentException when name of plugin is not provided
-     */
-    public void registerSimplePlugin(String name, PluginFunction plugin) {
-        if (plugin == null) {
-            throw new IllegalArgumentException("Missing Plugin to assign");
-        }
-
-        if (simplePluginRegistry.containsKey(name)) {
-            log.warn("{} SimplePlugin {}", RELOADING, name);
-        }
-
-        // save into local registry
-        simplePluginRegistry.put(name, plugin);
     }
 
     /**

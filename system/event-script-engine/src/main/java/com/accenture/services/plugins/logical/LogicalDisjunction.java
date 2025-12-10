@@ -1,8 +1,8 @@
 package com.accenture.services.plugins.logical;
 
 import com.accenture.utils.TypeConversionUtils;
-import org.platformlambda.core.annotations.SimplePlugin;
-import org.platformlambda.core.models.PluginFunction;
+import com.accenture.models.simplePlugin;
+import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;
 
@@ -17,7 +17,7 @@ public class LogicalDisjunction implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if(input.length == 0){
-            return false;
+            throw new IllegalArgumentException("Input is required to 'OR' values");
         }
 
         return Arrays.stream(input)

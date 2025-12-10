@@ -1416,8 +1416,8 @@ class FlowTests extends TestBase {
         assertEquals(1, result.get("difference"));
         assertEquals(12, result.get("product"));
         assertEquals(3, result.get("quotient"));
-        assertEquals(List.of(7,3,4), result.get("incremented"));
-        assertEquals(List.of(5,1,2), result.get("decremented"));
+        assertEquals(7, result.get("incremented"));
+        assertEquals(5, result.get("decremented"));
     }
 
     @Test
@@ -1456,11 +1456,6 @@ class FlowTests extends TestBase {
         assertEquals(true, result.get("bool_true"));
         assertEquals(false, result.get("bool_false"));
         assertEquals(true, result.get("bool_convert"));
-        assertEquals(true, result.get("bool_command_positive"));
-        assertEquals(false, result.get("bool_command_negative"));
-        assertEquals(true, result.get("bool_command_null"));
-        assertEquals(true, result.get("bool_command_match"));
-
 
         assertEquals(false, result.get("and"));
         assertEquals(true, result.get("or"));

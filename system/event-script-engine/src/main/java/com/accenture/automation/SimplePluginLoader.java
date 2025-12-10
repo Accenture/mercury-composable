@@ -1,14 +1,13 @@
 package com.accenture.automation;
 
+import com.accenture.models.SimplePlugin;
 import com.accenture.utils.RecursiveClassTypeExaminer;
 import com.accenture.utils.SimplePluginUtils;
 import io.github.classgraph.ClassInfo;
 import org.objectweb.asm.*;
 import org.platformlambda.core.annotations.BeforeApplication;
-import org.platformlambda.core.annotations.SimplePlugin;
 import org.platformlambda.core.models.EntryPoint;
-import org.platformlambda.core.models.PluginFunction;
-import org.platformlambda.core.system.Platform;
+import com.accenture.models.PluginFunction;
 import org.platformlambda.core.util.SimpleClassScanner;
 
 import org.platformlambda.core.util.Utility;
@@ -19,8 +18,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +32,8 @@ import java.util.stream.Stream;
 @BeforeApplication(sequence = 3)
 public class SimplePluginLoader implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(SimplePluginLoader.class);
+
+    private static final ConcurrentMap<String, PluginFunction> simplePluginRegistry = new ConcurrentHashMap<>();
 
     private static final Set<String> PRIMITIVE_TYPES = Stream.of(Integer.TYPE, Void.TYPE, Boolean.TYPE, Byte.TYPE,
                                                              Character.TYPE, Short.TYPE, Double.TYPE, Float.TYPE,
@@ -42,6 +46,23 @@ public class SimplePluginLoader implements EntryPoint {
             PluginFunction.class.getName(),
             SimplePluginUtils.class.getName());
 
+    /**
+     * Internal API that returns loaded Plugins
+     *
+     * @return registry of all loaded plugins
+     */
+    public static ConcurrentMap<String, PluginFunction> getLoadedSimplePlugins() {
+        return simplePluginRegistry;
+    }
+
+    public static PluginFunction getSimplePluginByName(String pluginName){
+        return getLoadedSimplePlugins().get(pluginName);
+    }
+
+    public static boolean containsSimplePlugin(String pluginName){
+        return simplePluginRegistry.containsKey(pluginName);
+    }
+
     @Override
     public void start(String[] args) {
         preloadSimplePlugins();
@@ -53,7 +74,7 @@ public class SimplePluginLoader implements EntryPoint {
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
         Set<String> packages = scanner.getPackages(true);
         for (String p : packages) {
-            scanPackageForPlugins(scanner, p);
+            registerPlugins(scanner, p);
         }
         log.info("Preloading Plugins completed");
     }
@@ -167,10 +188,38 @@ public class SimplePluginLoader implements EntryPoint {
     }
 
 
+    /**
+     * Register a SimplePlugin that implements the PluggableFunction interface
+     *
+     * @param plugin The class implementing the plugin, containing the name `f:<name>`
+     * @throws IllegalArgumentException when name of plugin is not provided
+     */
+    protected void registerSimplePlugin(PluginFunction plugin) {
+        if (plugin == null) {
+            throw new IllegalArgumentException("Missing Plugin to assign");
+        }
 
-    protected void scanPackageForPlugins(SimpleClassScanner scanner, String pkg){
-        Platform platform = Platform.getInstance();
+        var name = plugin.getName();
+
+        if (simplePluginRegistry.containsKey(name)) {
+            log.warn("Reloading SimplePlugin {}", name);
+        }
+
+        // save into local registry
+        simplePluginRegistry.put(name, plugin);
+    }
+
+
+    protected void registerPlugins(SimpleClassScanner scanner, String pkg){
+        var plugins = scanPackageForPlugins(scanner, pkg);
+        plugins.forEach(this::registerSimplePlugin);
+    }
+
+
+    protected List<PluginFunction> scanPackageForPlugins(SimpleClassScanner scanner, String pkg){
         List<ClassInfo> services = scanner.getAnnotatedClasses(pkg, SimplePlugin.class);
+
+        List<PluginFunction> pluginFunctions = new LinkedList<>();
 
         for(ClassInfo info: services){
             String serviceName = info.getName();
@@ -186,7 +235,7 @@ public class SimplePluginLoader implements EntryPoint {
                 Object o = cls.getDeclaredConstructor().newInstance();
 
                 if(o instanceof PluginFunction plugin){
-                    platform.registerSimplePlugin(plugin.getName(), plugin);
+                    pluginFunctions.add(plugin);
                 }
                 else {
                     log.error("Unable to preload SimplePlugin {} - {} must implement {}", serviceName, o.getClass(),
@@ -197,6 +246,8 @@ public class SimplePluginLoader implements EntryPoint {
                 log.error("Unable to load SimplePlugin {} - {}", serviceName, e.getMessage());
             }
         }
+
+        return pluginFunctions;
     }
 
 }

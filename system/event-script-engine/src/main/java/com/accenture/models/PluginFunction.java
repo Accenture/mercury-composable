@@ -1,4 +1,4 @@
-package org.platformlambda.core.models;
+package com.accenture.models;
 
 
 public interface PluginFunction {

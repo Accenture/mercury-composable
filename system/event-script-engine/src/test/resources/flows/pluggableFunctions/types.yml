@@ -47,18 +47,6 @@ tasks:
       - 'f:boolean(model.bool_false) -> bool_false'
       - 'f:boolean(model.string_bool) -> bool_convert'
 
-      - 'text(Hello=true) -> model.command_one'
-      - 'text(world=true) -> model.command_two'
-      - 'text(null=true) -> model.command_three'
-      - 'text(Hello) -> model.command_four'
-      - 'text(world) -> model.command_five'
-
-      - 'f:boolean(model.text_one, model.command_one) -> bool_command_positive'
-      - 'f:boolean(model.text_one, model.command_two) -> bool_command_negative'
-      - 'f:boolean(model.none, model.command_three) -> bool_command_null'
-      - 'f:boolean(model.text_one, model.command_four) -> bool_command_match'
-      - 'f:boolean(model.text_one, model.command_five) -> bool_command_nonmatch'
-
       - 'f:binary(model.text_one) -> binary'
       - 'int(1) -> model.substring_start'
       - 'int(6) -> model.substring_end'

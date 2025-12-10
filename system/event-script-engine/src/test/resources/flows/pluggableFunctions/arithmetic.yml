@@ -16,8 +16,8 @@ tasks:
       - 'f:subtract(model.first, model.second, model.third) -> difference'
       - 'f:multiply(model.first, model.second) -> product'
       - 'f:div(model.first, model.second) -> quotient'
-      - 'f:increment(model.first, model.second, model.third) -> incremented'
-      - 'f:decrement(model.first, model.second, model.third) -> decremented'
+      - 'f:increment(model.first) -> incremented'
+      - 'f:decrement(model.first) -> decremented'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

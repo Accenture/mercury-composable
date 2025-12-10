@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.util.Arrays.stream;
 
 /**
  * This is reserved for system use.
@@ -1174,10 +1173,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
             Object[] input = params.stream()
                     .map(String::trim)
-                    .map(e -> source.getElement(e))
+                    .map(source::getElement)
                     .toArray();
 
-            PluginFunction plugin = Platform.getInstance().getSimplePluginByName(pluginName);
+            PluginFunction plugin = SimplePluginLoader.getSimplePluginByName(pluginName);
 
             if(plugin == null){
                 log.error("SimplePlugin '{}' was not found", pluginName);

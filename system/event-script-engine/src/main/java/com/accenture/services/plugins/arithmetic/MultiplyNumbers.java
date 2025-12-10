@@ -1,8 +1,8 @@
 package com.accenture.services.plugins.arithmetic;
 
 import com.accenture.utils.SimplePluginUtils;
-import org.platformlambda.core.annotations.SimplePlugin;
-import org.platformlambda.core.models.PluginFunction;
+import com.accenture.models.simplePlugin;
+import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;
 
@@ -16,6 +16,10 @@ public class MultiplyNumbers implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
+        if(input.length == 0){
+            throw new IllegalArgumentException("Input is required for multiplication");
+        }
+
         return SimplePluginUtils.promoteInput(input)
                 .reduce((l1, l2) -> l1 * l2)
                 .orElseThrow(() -> new IllegalStateException("Could not multiply the input: " + Arrays.toString(input)));

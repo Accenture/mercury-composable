@@ -1,8 +1,8 @@
 package com.accenture.services.plugins.types;
 
 import com.accenture.utils.TypeConversionUtils;
-import org.platformlambda.core.annotations.SimplePlugin;
-import org.platformlambda.core.models.PluginFunction;
+import com.accenture.models.simplePlugin;
+import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;
 
@@ -16,6 +16,9 @@ public class TextConversion implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
+        if(input.length == 0){
+            throw new IllegalArgumentException("Input is required for Text conversion");
+        }
         if(input.length == 1){
             return TypeConversionUtils.getTextValue(input[0]);
         }

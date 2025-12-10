@@ -1,8 +1,8 @@
 package com.accenture.services.plugins.types;
 
 import com.accenture.utils.TypeConversionUtils;
-import org.platformlambda.core.annotations.SimplePlugin;
-import org.platformlambda.core.models.PluginFunction;
+import com.accenture.models.simplePlugin;
+import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;
 import java.util.List;
@@ -17,11 +17,16 @@ public class IntegerConversion implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        List<Integer> output = Arrays.stream(input)
+        if(input.length == 0){
+            throw new IllegalArgumentException("Input is required for Integer conversion");
+        }
+        else if(input.length == 1){
+            return TypeConversionUtils.convertInteger(input[0]);
+        }
+
+        return Arrays.stream(input)
                 .map(TypeConversionUtils::convertInteger)
                 .toList();
-
-        return (output.size() == 1) ? output.getFirst() : output;
     }
 
 

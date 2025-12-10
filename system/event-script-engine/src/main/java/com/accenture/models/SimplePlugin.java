@@ -16,7 +16,7 @@
 
  */
 
-package org.platformlambda.core.annotations;
+package com.accenture.models;
 
 import java.lang.annotation.*;
 

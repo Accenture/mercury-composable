@@ -801,7 +801,7 @@ public class CompileFlows implements EntryPoint {
         }
 
         String pluginName = matcher.group("pluginName");
-        return Platform.getInstance().containsSimplePlugin(pluginName);
+        return SimplePluginLoader.containsSimplePlugin(pluginName);
     }
 
     private boolean isPluggableFunction(String lhs){

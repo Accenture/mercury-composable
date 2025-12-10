@@ -1,8 +1,8 @@
 package com.accenture.services.plugins.arithmetic;
 
 import com.accenture.utils.SimplePluginUtils;
-import org.platformlambda.core.annotations.SimplePlugin;
-import org.platformlambda.core.models.PluginFunction;
+import com.accenture.models.simplePlugin;
+import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;
 

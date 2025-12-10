@@ -4,17 +4,17 @@ import com.accenture.models.simplePlugin;
 import com.accenture.models.PluginFunction;
 
 @SimplePlugin
-public class IsNullOperator implements PluginFunction {
+public class IsNotNullOperator implements PluginFunction {
 
     @Override
     public String getName() {
-        return "isNull";
+        return "notNull";
     }
 
     @Override
     public Object calculate(Object... input) {
         if(input.length == 1){
-            return input[0] == null;
+            return input[0] != null;
         }
 
         throw new IllegalArgumentException("Only one value is accepted");

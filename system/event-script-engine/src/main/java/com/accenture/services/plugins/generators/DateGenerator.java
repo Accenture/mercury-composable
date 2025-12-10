@@ -1,7 +1,7 @@
 package com.accenture.services.plugins.generators;
 
-import org.platformlambda.core.annotations.SimplePlugin;
-import org.platformlambda.core.models.PluginFunction;
+import com.accenture.models.simplePlugin;
+import com.accenture.models.PluginFunction;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
