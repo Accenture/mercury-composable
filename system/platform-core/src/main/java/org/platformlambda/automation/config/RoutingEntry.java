@@ -287,19 +287,20 @@ public class RoutingEntry {
     }
 
     public void load(ConfigReader config) {
+        if (!config.exists(REST)) {
+            log.warn("No user defined REST endpoints found");
+        }
         this.requestFilter = getStaticContentFilter(config);
         this.noCachePages = getNoCacheConfig(config);
-        addDefaultEndpoints(config);
-        sortEndpoints(config);
         if (config.exists(HEADERS)) {
             loadHeaderSection(config);
         }
         if (config.exists(CORS)) {
             loadCorsSection(config);
         }
-        if (config.exists(REST)) {
-            loadRestSection(config);
-        }
+        addDefaultEndpoints(config);
+        sortEndpoints(config);
+        loadRestSection(config);
     }
 
     private void loadHeaderSection(ConfigReader config) {
@@ -350,7 +351,6 @@ public class RoutingEntry {
         Collections.sort(exact);
         if (!exact.isEmpty()) {
             var message = new HashMap<String, Object>();
-            message.put("type", "url");
             message.put("match", "exact");
             message.put("total", exact.size());
             message.put("path", exact);
@@ -371,7 +371,6 @@ public class RoutingEntry {
         Collections.sort(urlPaths);
         if (!urlPaths.isEmpty()) {
             var message = new HashMap<String, Object>();
-            message.put("type", "url");
             message.put("match", "parameters");
             message.put("total", urlPaths.size());
             message.put("path", urlPaths);

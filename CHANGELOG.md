@@ -18,8 +18,9 @@ N/A
 
 ### Removed
 
-Remove dependency of org.lz4:lz4-java from apache's kafka-clients
-due to security vulnerabilities reported for current version 1.8.1
+1. For consistency, retire minimalist HTTP server and use REST automation instead
+2. Remove dependency of org.lz4:lz4-java from apache's kafka-clients
+   due to security vulnerabilities reported for current version 1.8.1
 
 ### Changed
 
