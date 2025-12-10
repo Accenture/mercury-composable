@@ -289,6 +289,8 @@ public class RoutingEntry {
     public void load(ConfigReader config) {
         this.requestFilter = getStaticContentFilter(config);
         this.noCachePages = getNoCacheConfig(config);
+        addDefaultEndpoints(config);
+        sortEndpoints(config);
         if (config.exists(HEADERS)) {
             loadHeaderSection(config);
         }
@@ -387,8 +389,6 @@ public class RoutingEntry {
     }
 
     private void loadRest(ConfigReader config) {
-        addDefaultEndpoints(config);
-        sortEndpoints(config);
         if (config.get(REST) instanceof List<?> items) {
             for (int i = 0; i < items.size(); i++) {
                 Object services = config.get(REST + "[" + i + "]." + SERVICE);
@@ -418,7 +418,7 @@ public class RoutingEntry {
             String url = defaultRest.getProperty(REST+"["+i+"]."+URL_LABEL);
             essentials.put(url+" "+methods, i);
         }
-        Object restEntries = config.get(REST);
+        Object restEntries = config.get(REST, new ArrayList<>());
         List<Object> restList = (List<Object>) restEntries;
         int total = restList.size();
         for (int i=0; i < total; i++) {

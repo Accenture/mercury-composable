@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.32, 12/9/2025
+
+### Added
+
+N/A
+
+### Removed
+
+Remove dependency of org.lz4:lz4-java from apache's kafka-clients
+due to security vulnerabilities reported for current version 1.8.1
+
+### Changed
+
+Load default rest endpoints for actuator services when rest.yaml is not provided
+
+---
 ## Version 4.3.31, 12/9/2025
 
 ### Added
