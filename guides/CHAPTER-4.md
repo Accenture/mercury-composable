@@ -562,7 +562,7 @@ from the key "some.key" in base configuration and the environment variable "ENV_
 ```
 
 > *Note*: The comma character is used as a separator for each key-value pair. If the value contains a comma,
-  the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
+          the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
 
 *2. Mapping values from application.yml*
 
@@ -946,7 +946,7 @@ For example, the following entry tells the system to set the value in "model.dat
 ```
 
 > *Note*: If the value from the left hand side is not a map, the system will ignore the input mapping command and
-print out an error message in the application log.
+          print out an error message in the application log.
 
 ### Setting function input headers
 
@@ -1570,7 +1570,7 @@ to the function implementing the external state machine. The system uses the "ex
 to externalize a state machine's key-value.
 
 > *Note*: The delivery of key-values to the external state machine is asynchronous.
-  Therefore, please assume eventual consistency.
+          Therefore, please assume eventual consistency.
 
 You should implement a user function as the external state machine.
 

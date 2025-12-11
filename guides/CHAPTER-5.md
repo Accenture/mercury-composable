@@ -23,7 +23,7 @@ public class MainApp implements EntryPoint {
 You must have at least one "main application" module because it is mandatory.
 
 > *Note*: Please adjust the parameter "web.component.scan" in application.properties 
-  to point to your user application package(s) in your source code project.
+          to point to your user application package(s) in your source code project.
 
 If your application does not require additional startup logic, you may just print a greeting message.
 

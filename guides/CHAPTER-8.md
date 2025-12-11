@@ -65,7 +65,7 @@ project when necessary.
 When the kafka server is started, it will create a temporary directory "/tmp/kafka-logs".
 
 > *Note*: The kafka server is designed for development purpose only. The kafka message log store
-  will be cleared when the server is restarted.
+          will be cleared when the server is restarted.
 
 ## Prepare the kafka-presence application
 
