@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.33, 12/10/2025
+
+### Added
+
+new parameter "skip.rpc.tracing" to tell the system to skip tracing for certain
+RPC calls. Default is "skip.rpc.tracing=async.http.request" in application.properties
+
+This feature allows unit tests to measure HTTP RPC calls performance.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.32, 12/9/2025
 
 ### Added

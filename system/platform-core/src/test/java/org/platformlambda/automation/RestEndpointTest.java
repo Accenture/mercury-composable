@@ -102,35 +102,37 @@ class RestEndpointTest extends TestBase {
     @Test
     void serviceTest() throws InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;
-        EventEmitter po = EventEmitter.getInstance();
-        AsyncHttpRequest req = new AsyncHttpRequest();
-        req.setMethod("GET");
-        req.setHeader("accept", "application/json");
-        req.setUrl("/api/hello/world?hello world=abc#hello&test=message");
-        req.setQueryParameter("x1", "y");
-        List<String> list = new ArrayList<>();
-        list.add("a");
-        list.add("b");
-        req.setQueryParameter("x2", list);
-        req.setTargetHost("http://127.0.0.1:"+port);
-        req.setTimeoutSeconds(TTL_SECONDS);
-        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
-        EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
-        assert response != null;
-        assertInstanceOf(Map.class, response.getBody());
-        // validate custom content type
-        assertEquals("application/vnd.my.org-v2.1+json; charset=utf-8", response.getHeader("content-type"));
-        MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
-        assertEquals("application/json", map.getElement("headers.accept"));
-        assertEquals(false, map.getElement("https"));
-        assertEquals("/api/hello/world", map.getElement("url"));
-        assertEquals("GET", map.getElement("method"));
-        assertEquals("127.0.0.1", map.getElement("ip"));
-        assertEquals(String.valueOf(TTL_SECONDS * 1000), map.getElement("headers.x-ttl"));
-        assertEquals("y", map.getElement("parameters.query.x1"));
-        assertEquals(list, map.getElement("parameters.query.x2"));
-        // the HTTP request filter will not execute because the request is not a static content request
-        assertNull(response.getHeader("x-filter"));
+        var po = new PostOffice("unit.test", "101", "/HELLO");
+        for (int i=0; i < 2; i++) {
+            AsyncHttpRequest req = new AsyncHttpRequest();
+            req.setMethod("GET");
+            req.setHeader("accept", "application/json");
+            req.setUrl("/api/hello/world?hello world=abc#hello&test=message");
+            req.setQueryParameter("x1", "y");
+            List<String> list = new ArrayList<>();
+            list.add("a");
+            list.add("b");
+            req.setQueryParameter("x2", list);
+            req.setTargetHost("http://127.0.0.1:" + port);
+            req.setTimeoutSeconds(TTL_SECONDS);
+            EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+            EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
+            assert response != null;
+            assertInstanceOf(Map.class, response.getBody());
+            // validate custom content type
+            assertEquals("application/vnd.my.org-v2.1+json; charset=utf-8", response.getHeader("content-type"));
+            MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
+            assertEquals("application/json", map.getElement("headers.accept"));
+            assertEquals(false, map.getElement("https"));
+            assertEquals("/api/hello/world", map.getElement("url"));
+            assertEquals("GET", map.getElement("method"));
+            assertEquals("127.0.0.1", map.getElement("ip"));
+            assertEquals(String.valueOf(TTL_SECONDS * 1000), map.getElement("headers.x-ttl"));
+            assertEquals("y", map.getElement("parameters.query.x1"));
+            assertEquals(list, map.getElement("parameters.query.x2"));
+            // the HTTP request filter will not execute because the request is not a static content request
+            assertNull(response.getHeader("x-filter"));
+        }
     }
 
     @Test

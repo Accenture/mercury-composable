@@ -61,6 +61,7 @@ precedence.
 | modules.autostart                         | list of composable functions to start                                    | Optional    |
 | max.model.array.size                      | max size of a dynamic model variable<br/>as index (Default: 1000)        | Optional    |
 | stack.trace.transport.size                | Depth of stack trace in EventEnvelope<br/>(Default: 10)                  | Optional    |
+| skip.rpc.tracing                          | Comma separated list of routes<br/>(Default: async.http.request)         | Optional    |
 | worker.instances.no.op                    | Maximum instances for `no.op` function<br/>(Default: 500)                | Optional    |
 | worker.instances.resilience.handler       | Maximum instances for `resilience.handler`<br/>(Default: 500)            | Optional    |
 | worker.instances.simple.exception.handler | Maximum instances for `simple.exception.handler`<br/>(Default: 250)      | Optional    |
