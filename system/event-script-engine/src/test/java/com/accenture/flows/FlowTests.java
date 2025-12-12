@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1484,9 +1486,17 @@ class FlowTests extends TestBase {
         assertEquals(byteList, result.get("to_b64_bytes"));
         assertEquals(b64String, result.get("to_bytestring"));
 
+        assertTrue((Boolean) result.get("isNull"));
+        assertTrue((Boolean) result.get("isNotNull"));
+
 
         UUID id = UUID.fromString((String) result.get("uuid"));
         assertNotNull(id);
+
+        String date = (String) result.get("currentTime");
+        assertNotNull(date);
+        ZonedDateTime time = ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME);
+        assertNotNull(time);
 
         assertEquals(5, result.get("arr_length"));
         assertEquals(5, result.get("str_length"));

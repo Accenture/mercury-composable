@@ -74,7 +74,11 @@ tasks:
       - 'model.to_b64_bytes -> to_b64_bytes'
       - 'f:b64(model.to_b64_bytes) -> to_bytestring'
 
+      - 'f:isNull(model.none) -> isNull'
+      - 'f:notNull(model.text_one) -> isNotNull'
+
       - 'f:uuid() -> uuid'
+      - 'f:dateTime() -> currentTime'
       - 'f:length(model.to_b64_bytes) -> arr_length'
       - 'f:length(model.text_one) -> str_length'
     process: 'no.op'

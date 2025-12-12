@@ -86,7 +86,7 @@ public class SimplePluginLoader implements EntryPoint {
             return;
         }
 
-        // Skip java.lang to prevent deep recursion
+        // Stop recursing when we reached java.lang.Object or some other Java library class
         if (className.startsWith("java.lang.")) {
             visitedClasses.add(className);
             return;
@@ -113,7 +113,7 @@ public class SimplePluginLoader implements EntryPoint {
             }
 
         } catch (IOException e) {
-            System.err.println("Warning: Could not load class: " + className);
+            log.warn("Warning: Could not load class: " + className, e);
         }
     }
 
