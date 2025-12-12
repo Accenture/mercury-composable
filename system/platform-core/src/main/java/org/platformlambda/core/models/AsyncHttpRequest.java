@@ -317,6 +317,10 @@ public class AsyncHttpRequest {
         return this;
     }
 
+    public boolean isContentLengthDefined() {
+        return contentLength != -1;
+    }
+
     public int getContentLength() {
         return Math.max(0, contentLength);
     }

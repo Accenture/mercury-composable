@@ -14,10 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-new parameter "skip.rpc.tracing" to tell the system to skip tracing for certain
-RPC calls. Default is "skip.rpc.tracing=async.http.request" in application.properties
-
-This feature allows unit tests to measure HTTP RPC calls performance.
+1. add `isContentLengthDefined()` method to AsyncHttpRequest
+2. new parameter "skip.rpc.tracing" to tell the system to skip tracing for certain
+   RPC calls. Default is "skip.rpc.tracing=async.http.request" in application.properties
+   This feature allows unit tests to measure HTTP RPC calls performance.
 
 ### Removed
 
@@ -25,7 +25,8 @@ N/A
 
 ### Changed
 
-N/A
+Updated AsyncHttpClient to support setting content-length of zero for PUT, POST and PATCH
+methods
 
 ---
 ## Version 4.3.32, 12/9/2025

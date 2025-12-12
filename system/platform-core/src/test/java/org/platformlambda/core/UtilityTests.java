@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.MockPubSub;
 import org.platformlambda.core.system.PubSub;
@@ -537,5 +538,25 @@ class UtilityTests {
         util.cleanupDir(dir);
         assertFalse(dir.exists());
         log.info("Test folder {} removed", dir);
+    }
+
+    @Test
+    void httpRequestContentLengthTest() {
+        AsyncHttpRequest http1 = new AsyncHttpRequest();
+        http1.setMethod("POST");
+        http1.setContentLength(4).setBody("test");
+        var map1 = http1.toMap();
+        AsyncHttpRequest restored1 = new AsyncHttpRequest(map1);
+        assertTrue(restored1.isContentLengthDefined());
+        assertEquals("POST", restored1.getMethod());
+        assertEquals("test", restored1.getBody());
+        // this one does not have content-length defined
+        AsyncHttpRequest http2 = new AsyncHttpRequest();
+        http2.setMethod("PUT");
+        var map2 = http2.toMap();
+        AsyncHttpRequest restored2 = new AsyncHttpRequest(map2);
+        assertFalse(restored2.isContentLengthDefined());
+        assertEquals("PUT", restored2.getMethod());
+        assertNull(restored2.getBody());
     }
 }
