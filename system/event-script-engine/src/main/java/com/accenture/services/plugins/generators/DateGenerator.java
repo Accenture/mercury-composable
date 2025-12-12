@@ -1,6 +1,6 @@
 package com.accenture.services.plugins.generators;
 
-import com.accenture.models.simplePlugin;
+import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
 
 import java.time.ZoneId;

@@ -1,6 +1,6 @@
 package com.accenture.services.plugins.logical;
 
-import com.accenture.models.simplePlugin;
+import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
 
 @SimplePlugin

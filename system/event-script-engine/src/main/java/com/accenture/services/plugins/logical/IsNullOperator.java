@@ -1,7 +1,7 @@
 package com.accenture.services.plugins.logical;
 
-import com.accenture.models.simplePlugin;
 import com.accenture.models.PluginFunction;
+import com.accenture.models.SimplePlugin;
 
 @SimplePlugin
 public class IsNullOperator implements PluginFunction {
@@ -13,7 +13,10 @@ public class IsNullOperator implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        if(input.length == 1){
+        if(input == null){
+            return true;
+        }
+        else if(input.length == 1){
             return input[0] == null;
         }
 

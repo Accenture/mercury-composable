@@ -126,47 +126,6 @@ public class SimplePluginLoader implements EntryPoint {
         return allTypes;
     }
 
-    protected Set<String> getUsedTypesV1(ClassInfo clazz){
-        InputStream in = SimplePluginLoader.class.getClassLoader().getResourceAsStream(clazz.getResource().getPath());
-        byte[] classBytes = Utility.getInstance().stream2bytes(in);
-
-        Set<String> usedTypes = new HashSet<>();
-        ClassReader cr = new ClassReader(classBytes);
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
-
-            @Override
-            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces){
-                if (superName != null && !superName.equals("java/lang/Object")) { // Keep checking the parent for types
-                    usedTypes.add(superName.replace('/', '.'));
-                }
-
-                if (interfaces != null) {
-                    for (String i : interfaces) {
-                        usedTypes.add(i.replace('/', '.'));
-                    }
-                }
-
-                super.visit(version, access, name, signature, superName, interfaces);
-            }
-
-            @Override
-            public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-                usedTypes.add(Type.getType(descriptor).getClassName());
-                return super.visitField(access, name, descriptor, signature, value);
-            }
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                Type methodType = Type.getMethodType(descriptor);
-                usedTypes.add(methodType.getReturnType().getClassName());
-                for (Type argType : methodType.getArgumentTypes()) {
-                    usedTypes.add(argType.getClassName());
-                }
-                return super.visitMethod(access, name, descriptor, signature, exceptions);
-            }
-        }, 0);
-        return usedTypes;
-    }
-
     /**
      * Determines whether we should register plugin. This method is designed to be future-proof.
      * Currently, the only restriction is based on the type of packages included.

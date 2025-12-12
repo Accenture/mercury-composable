@@ -1,7 +1,7 @@
 package com.accenture.services.plugins.types;
 
 import com.accenture.utils.TypeConversionUtils;
-import com.accenture.models.simplePlugin;
+import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
 
 @SimplePlugin
