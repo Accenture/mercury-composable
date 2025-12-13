@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.34, 12/13/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+*Bug fix* for AsyncHttpResponse to render Flux response from a service that
+returns a list of map (key-values). The correct behavior is to return a list of maps
+instead of an empty map.
+
+Earlier versions assume that a streaming HTTP response contains only bytes or text.
+This version supports streaming of maps that originated from a service returning
+a Flux object of PoJos or Maps.
+
+e.g. HTTP response of `Flux<PoJo>` originated from a Spring R2DBC repository service.
+
+---
 ## Version 4.3.33, 12/10/2025
 
 ### Added
