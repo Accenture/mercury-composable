@@ -14,11 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Thread safety mechanism for input/output data mapping per event flow instance.
+Thread safety mechanism for input/output data mapping per event flow instance
 
 ### Removed
 
-N/A
+Redundant thread wrapper for task executor and virtual thread warm-up counter
 
 ### Changed
 
