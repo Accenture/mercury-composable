@@ -1,6 +1,6 @@
 flow:
   id: 'arithmetic'
-  description: 'Simplest flow of one task'
+  description: 'Arithmetic operation using simple plugins f:function()'
   ttl: 10s
   exception: 'v1.hello.exception'
 

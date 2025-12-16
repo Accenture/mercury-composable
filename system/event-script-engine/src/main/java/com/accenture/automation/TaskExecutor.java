@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
@@ -968,7 +967,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         md.rhs = substituteDynamicIndex(entry.substring(sep+2).trim(), md.source, true);
         boolean inputLike = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT) ||
                 md.lhs.equals(DATA_TYPE) ||
-                md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE) || md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX);
+                md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE) ||
+                md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX);
         if (md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
             md.lhs = md.lhs.toLowerCase();
         }
@@ -1144,11 +1144,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private Object getLhsElement(String lhs, MultiLevelMap source) {
         int colon = getModelTypeIndex(lhs);
         String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
-
-        if(isPluggableFunction(selector)){
+        if (isPluggableFunction(selector)) {
             return getValueFromSimplePlugin(selector, source);
         }
-
         Object value = source.getElement(selector);
         if (colon != -1) {
             String type = lhs.substring(colon+1).trim();
@@ -1163,29 +1161,23 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private Object getValueFromSimplePlugin(String selector, MultiLevelMap source){
         int prefix = selector.indexOf(SIMPLE_PLUGIN_PREFIX);
-        int startParen = selector.indexOf("("), endParen = selector.lastIndexOf(")");
-
-        if(prefix >= 0 && startParen > 0 && endParen > 0){
+        int startParen = selector.indexOf("(");
+        int endParen = selector.lastIndexOf(")");
+        if (prefix >= 0 && startParen > 0 && endParen > 0) {
             String pluginName = selector.substring(prefix+2, startParen);
-
             String pluginParams = selector.substring(startParen+1, endParen);
             List<String> params = Utility.getInstance().split(pluginParams, ",");
-
             Object[] input = params.stream()
-                    .map(String::trim)
-                    .map(source::getElement)
-                    .toArray();
-
+                                    .map(String::trim)
+                                    .map(source::getElement)
+                                    .toArray();
             PluginFunction plugin = SimplePluginLoader.getSimplePluginByName(pluginName);
-
-            if(plugin == null){
-                log.error("SimplePlugin '{}' was not found", pluginName);
+            if (plugin == null) {
+                log.error("SimplePlugin '{}' not found", pluginName);
                 throw new IllegalArgumentException("Unable to process SimplePlugin: " + selector);
             }
-
             return plugin.calculate(input);
         }
-
         return null;
     }
 

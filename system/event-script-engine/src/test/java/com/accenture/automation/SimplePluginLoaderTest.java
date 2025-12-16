@@ -40,17 +40,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SimplePluginLoaderTest {
     private static final Logger log = LoggerFactory.getLogger(SimplePluginLoaderTest.class);
 
-    private void doWarmup(Supplier<Object> func){
-        for(int i=0; i < 2; i++){
+    private void doWarmup(Supplier<Object> func) {
+        for (int i=0; i < 2; i++) {
             func.get();
         }
     }
 
-    public static Stream<Arguments> plugins(){
+    public static Stream<Arguments> plugins() {
         Random random = new Random();
         byte[] randomBytes = new byte[32];
         random.nextBytes(randomBytes);
-
         return Stream.of(
                 Arguments.of(new AddNumbers(), new Object[]{2,2}),
                 Arguments.of(new IncrementNumbers(), new Object[]{5}),
@@ -87,17 +86,12 @@ public class SimplePluginLoaderTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("plugins")
-    public void shouldBeSubmillisecondWhenRunningPlugins(PluginFunction func, Object[] params) {
+    void shouldBeSubmillisecondWhenRunningPlugins(PluginFunction func, Object[] params) {
         doWarmup(() -> func.calculate(params));
-
         long start = System.nanoTime();
-
         func.calculate(params);
-
         long delta = (System.nanoTime() - start) / 1000; // nano to micro
-
-        log.info("Delta: {}", delta);
-
+        log.info("Delta for {}: {} microseconds", func.getName(), delta);
         // 1 ms --> 1000 microseconds. SimplePlugin should be sub-millisecond so, less than 1000 microseconds
         assertTrue(delta < 1000, "Should be sub-millisecond response times");
     }

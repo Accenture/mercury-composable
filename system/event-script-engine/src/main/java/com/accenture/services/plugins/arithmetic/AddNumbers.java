@@ -19,7 +19,6 @@ public class AddNumbers implements PluginFunction {
         if(input.length == 0){
             throw new IllegalArgumentException("Input is required for addition");
         }
-
         return SimplePluginUtils.promoteInput(input)
                 .reduce(Long::sum)
                 .orElseThrow(() -> new IllegalStateException("Could not add the input: " + Arrays.toString(input)));

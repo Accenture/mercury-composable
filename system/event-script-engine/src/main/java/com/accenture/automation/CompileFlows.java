@@ -24,7 +24,6 @@ import com.accenture.models.Task;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.AppStarter;
-import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -108,6 +107,8 @@ public class CompileFlows implements EntryPoint {
     private static final String INVALID_TASK = "invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
+    private static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<pluginName>.+)\\(.*\\)";
+    static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
     /**
      * This main class is only used when testing the app from the IDE.
      *
@@ -764,42 +765,37 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
-
-            if(isPluggableFunction(rhs)){
+            if (isPluggableFunction(rhs)) {
                 return false;
-            }
-            else if(isPluggableFunction(lhs)){
+            } else if (isPluggableFunction(lhs)) {
                 return isValidPluggableFunction(lhs);
-            }
-
-            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
-                if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
-                        lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
-                    return true;
-                } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-                    return validKeyValues(lhs);
-                } else {
-                    return (lhs.startsWith(TEXT_TYPE) ||
-                            lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
-                            lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
-                            lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
-                            lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
-                }
+            } else if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
+                return validInputLhs(lhs);
             }
         }
         return false;
     }
 
-    static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<pluginName>.+)\\(.*\\)";
-    static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
+    private boolean validInputLhs(String lhs) {
+        if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
+                lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
+            return true;
+        } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+            return validKeyValues(lhs);
+        } else {
+            return (lhs.startsWith(TEXT_TYPE) ||
+                    lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
+                    lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
+                    lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
+                    lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
+        }
+    }
 
     private boolean isValidPluggableFunction(String lhs){
         var matcher = PLUGGABLE_FUNCTION_PATTERN.matcher(lhs);
-
-        if(! matcher.find()){
+        if (!matcher.find()) {
             return false;
         }
-
         String pluginName = matcher.group("pluginName");
         return SimplePluginLoader.containsSimplePlugin(pluginName);
     }

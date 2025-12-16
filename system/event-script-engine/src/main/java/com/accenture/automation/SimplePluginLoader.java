@@ -10,12 +10,10 @@ import org.platformlambda.core.models.EntryPoint;
 import com.accenture.models.PluginFunction;
 import org.platformlambda.core.util.SimpleClassScanner;
 
-import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,20 +30,17 @@ import java.util.stream.Stream;
 @BeforeApplication(sequence = 3)
 public class SimplePluginLoader implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(SimplePluginLoader.class);
-
     private static final ConcurrentMap<String, PluginFunction> simplePluginRegistry = new ConcurrentHashMap<>();
-
     private static final Set<String> PRIMITIVE_TYPES = Stream.of(Integer.TYPE, Void.TYPE, Boolean.TYPE, Byte.TYPE,
-                                                             Character.TYPE, Short.TYPE, Double.TYPE, Float.TYPE,
-                                                            Long.TYPE)
-                                                        .map(Type::getType)
-                                                        .map(Type::getClassName)
-                                                        .collect(Collectors.toSet());
+                                                                 Character.TYPE, Short.TYPE, Double.TYPE, Float.TYPE,
+                                                                 Long.TYPE)
+                                                            .map(Type::getType)
+                                                            .map(Type::getClassName)
+                                                            .collect(Collectors.toSet());
     private static final Set<String> ALLOWED_PACKAGES = Set.of("java.lang", "java.util", "java.math", "java.time",
-            SimplePlugin.class.getName(),
-            PluginFunction.class.getName(),
-            SimplePluginUtils.class.getName());
-
+                                                            SimplePlugin.class.getName(),
+                                                            PluginFunction.class.getName(),
+                                                            SimplePluginUtils.class.getName());
     /**
      * Internal API that returns loaded Plugins
      *
@@ -68,61 +63,50 @@ public class SimplePluginLoader implements EntryPoint {
         preloadSimplePlugins();
     }
 
-    protected void preloadSimplePlugins() {
-        log.info("Preloading Plugins started");
-
+    private void preloadSimplePlugins() {
+        log.info("Loading plugins");
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
         Set<String> packages = scanner.getPackages(true);
         for (String p : packages) {
             registerPlugins(scanner, p);
         }
-        log.info("Preloading Plugins completed");
+        log.info("Total {} plugins registered", simplePluginRegistry.size());
     }
-
-
-    protected void analyzeClass(String className, Set<String> allTypes, Set<String> visitedClasses){
+    
+    private void analyzeClass(String className, Set<String> allTypes, Set<String> visitedClasses){
         // Skip if already visited
         if (visitedClasses.contains(className)) {
             return;
         }
-
         // Stop recursing when we reached java.lang.Object or some other Java library class
         if (className.startsWith("java.lang.")) {
             visitedClasses.add(className);
             return;
         }
-
         visitedClasses.add(className);
-
         try {
             ClassReader reader = new ClassReader(className);
             RecursiveClassTypeExaminer visitor = new RecursiveClassTypeExaminer();
             reader.accept(visitor, ClassReader.SKIP_CODE);
-
             // Add types from this class
             allTypes.addAll(visitor.getTypes());
-
             // Recursively analyze superclass
             if (visitor.getSuperClass() != null) {
                 analyzeClass(visitor.getSuperClass(), allTypes, visitedClasses);
             }
-
             // Recursively analyze interfaces
             for (String iface : visitor.getInterfaces()) {
                 analyzeClass(iface, allTypes, visitedClasses);
             }
-
         } catch (IOException e) {
             log.warn("Warning: Could not load class: " + className, e);
         }
     }
 
-    protected Set<String> getUsedTypes(ClassInfo clazz){
+    private Set<String> getUsedTypes(ClassInfo clazz){
         Set<String> allTypes = new HashSet<>();
         Set<String> visitedClasses = new HashSet<>();
-
         analyzeClass(clazz.getName(), allTypes, visitedClasses);
-
         return allTypes;
     }
 
@@ -132,20 +116,17 @@ public class SimplePluginLoader implements EntryPoint {
      * @param clazz The clazz we are introspecting
      * @return true if we should register this plugin, false otherwise
      */
-    protected boolean shouldRegisterPlugin(ClassInfo clazz){
+    private boolean shouldRegisterPlugin(ClassInfo clazz){
         Set<String> types = getUsedTypes(clazz);
-        var blacklisted = types.stream()
+        var disallowed = types.stream()
                 .filter(s -> ALLOWED_PACKAGES.stream().noneMatch(s::startsWith))
                 .filter(s -> PRIMITIVE_TYPES.stream().noneMatch(s::equalsIgnoreCase))
                 .collect(Collectors.toSet());
-
-        if(! blacklisted.isEmpty()){
-            log.warn("Found blacklisted classes {} when registering plugin {}", blacklisted, clazz.getName());
+        if (!disallowed.isEmpty()){
+            log.warn("Found disallowed classes {} when registering plugin {}", disallowed, clazz.getName());
         }
-
-        return blacklisted.isEmpty();
+        return disallowed.isEmpty();
     }
-
 
     /**
      * Register a SimplePlugin that implements the PluggableFunction interface
@@ -153,61 +134,48 @@ public class SimplePluginLoader implements EntryPoint {
      * @param plugin The class implementing the plugin, containing the name `f:<name>`
      * @throws IllegalArgumentException when name of plugin is not provided
      */
-    protected void registerSimplePlugin(PluginFunction plugin) {
+    private void registerSimplePlugin(PluginFunction plugin) {
         if (plugin == null) {
             throw new IllegalArgumentException("Missing Plugin to assign");
         }
-
         var name = plugin.getName();
-
         if (simplePluginRegistry.containsKey(name)) {
             log.warn("Reloading SimplePlugin {}", name);
         }
-
         // save into local registry
         simplePluginRegistry.put(name, plugin);
     }
 
-
-    protected void registerPlugins(SimpleClassScanner scanner, String pkg){
+    private void registerPlugins(SimpleClassScanner scanner, String pkg){
         var plugins = scanPackageForPlugins(scanner, pkg);
         plugins.forEach(this::registerSimplePlugin);
     }
 
-
-    protected List<PluginFunction> scanPackageForPlugins(SimpleClassScanner scanner, String pkg){
+    private List<PluginFunction> scanPackageForPlugins(SimpleClassScanner scanner, String pkg){
         List<ClassInfo> services = scanner.getAnnotatedClasses(pkg, SimplePlugin.class);
-
         List<PluginFunction> pluginFunctions = new LinkedList<>();
-
-        for(ClassInfo info: services){
+        for (ClassInfo info: services) {
             String serviceName = info.getName();
-            log.info("Loading Plugin {}", serviceName);
-
-            if(! shouldRegisterPlugin(info)){
-                log.warn("Skipping SimplePlugin {} - utilizes blacklisted types", serviceName);
+            log.info("Found {}", serviceName);
+            if (!shouldRegisterPlugin(info)) {
+                log.warn("Skipping SimplePlugin {} because it uses disallowed types", serviceName);
                 continue;
             }
-
             try {
                 Class<?> cls = Class.forName(serviceName);
                 Object o = cls.getDeclaredConstructor().newInstance();
-
-                if(o instanceof PluginFunction plugin){
+                if (o instanceof PluginFunction plugin) {
                     pluginFunctions.add(plugin);
-                }
-                else {
-                    log.error("Unable to preload SimplePlugin {} - {} must implement {}", serviceName, o.getClass(),
-                            PluginFunction.class.getSimpleName());
+                } else {
+                    log.error("Unable to load SimplePlugin {} - {} must implement {}", serviceName, o.getClass(),
+                                PluginFunction.class.getSimpleName());
                 }
             } catch (ClassNotFoundException | InvocationTargetException | InstantiationException |
                      IllegalAccessException | NoSuchMethodException | IllegalArgumentException e) {
                 log.error("Unable to load SimplePlugin {} - {}", serviceName, e.getMessage());
             }
         }
-
         return pluginFunctions;
     }
-
 }
 
