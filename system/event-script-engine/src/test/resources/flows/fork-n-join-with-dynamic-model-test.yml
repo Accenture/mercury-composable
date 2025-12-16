@@ -40,6 +40,8 @@ tasks:
       - 'result.key2 -> model.key2'
       - 'result.item -> model.item'
       - 'result.item -> ext:append'
+      # test thread safety for state machine in a flow instance
+      - 'result.item -> model.serialized[]'
     description: 'Hello world'
     execution: sink
 
@@ -52,6 +54,7 @@ tasks:
       - 'model.pojo -> *'
       - 'model.key1 -> key1'
       - 'model.key2 -> key2'
+      - 'model.serialized -> serialized'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

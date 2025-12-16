@@ -594,11 +594,6 @@ will be deleted. This allows you to clean up temporary files before your flow fi
 
 An optional prefix "append" may be used to tell the system to append file content instead of overwriting it.
 
-> *Note*: The local file system write operation is not thread-safe. If you have parallel tasks appending
-          to the same file, the integrity of file content is not guaranteed. One way to ensure thread
-          safety is to use singleton pattern. This can be done by setting the number of instances of the
-          task writing to the local file system to 1.
-
 *Decision value*
 
 The "decision" keyword applies to "right hand side" of output data mapping statement in a decision task only
@@ -1149,17 +1144,8 @@ the list of elements and spin up an instance of the "next" task to retrieve the 
 the element in the list. The two special suffixes are relevant only when adding to the model variable configured
 in the "source" parameter.
 
-*Limitation*:
-
-1. The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
-   of mapping as input arguments to a task. They cannot be used as regular model variables.
-
-2. To avoid state machine data corruption, you should not update any model variable in the
-   output data mapping section of the fork task because the multiple worker instances of the fork task
-   are running in parallel. If you must accumulate the result sets of the fork task instances, you
-   may use an external state machine. An example of this use case is available in the unit test section
-   of the event-script-engine module. Please refer to `forkJoinWithDynamicModeListTest` of FlowTests, 
-   the `ExternalStateMachine` class and the `fork-n-join-with-dynamic-model-test.yml`.
+> *Limitation*: The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
+                of mapping as input arguments to a task. They cannot be used as regular model variables.
 
 ### Sink task
 
@@ -1176,35 +1162,31 @@ This task has the tag `execution=sink`.
     execution: sink
 ```
 
-### Handling task concurrency
+## Task concurrency
 
 When an event flow receives an incoming request, a "flow instance" is created with its own state machine
 using the namespace "model". Tasks within a single flow are executed orderly in a flow instance.
 
-The execution types (parallel and fork-n-join) are designed for parallel processing.
+However, the execution types (parallel and fork-n-join) are designed for parallel processing. Java virtual
+thread system is backed by multiple kernel threads. As a result, you should consider thread safety when
+parallel tasks execute.
 
-In this case, you should not configure the multiple tasks to write to the same model variable because it
-would lead to racing condition and data corruption. Use different model variable names for different parallel
-tasks. Note that the model variable names must be at the top level for concurrent updates.
-i.e. model.mykey instead of model.shared.mykey
+While parallel processing would improve performance, spinning up a large number of concurrent tasks to
+make requests to a slower backend service may create performance bottleneck. In fact, a massive number
+of concurrent sessions to a single backend would bring down the target service.
+This is an unintended "denial of service" attack. 
 
-For dynamic fork-n-join, the same "task" is instantiated multiple times to handle a list of data elements.
-The multiple instances of the same task are running in parallel. Since you cannot configure different model
-variable names for the multiple instances, you should use an "external state machine" to accumulate the
-result sets from the multiple instances of the same task. An example of this use case is available in the
-unit test section of the event-script-engine module. Please refer to `forkJoinWithDynamicModeListTest` of
-FlowTests, the `ExternalStateMachine` class and the `fork-n-join-with-dynamic-model-test.yml`.
+To control parallelism, you can set a smaller number of concurrent "instances" for a task
+using the "instances" parameter in the "PreLoad" annotation of the task. For example, if you set
+the maximum instances of a task to 20, the system will not instantiate more than the limit even
+when you have a larger number of event flow instances using the same task route. This allows you
+to manage performance according to available infrastructure resources. This orderly execution is
+guaranteed by the underlying reactive event system.
 
-While parallel processing would improve performance, spinning up a large number of concurrent sessions to
-a slower backend service may create performance bottleneck. In fact, a massive number of concurrent sessions
-to a single backend would bring down the target service.  This is an unintended "denial of service" attack. 
+## State machine thread safety
 
-To control parallelism, you can set a smaller number of concurrent "instances" for the "next" task
-using the "instances" parameter in the "PreLoad" annotation of the task. For example, you have 100
-elements in a list but the maximum instances of the task can be set to 20. This would reduce the
-concurrency to 20, thus allowing you to manage performance according to available infrastructure resources. 
-Therefore, processing 100 elements would require 5 rounds of 20 parallel executions and this orderly
-execution is supported by the underlying reactive event system.
+The state machine is designed to be thread safe during the input/output data mapping phases.
+No special threatment is required when updating the state machine using event script.
 
 ## Pipeline feature
 

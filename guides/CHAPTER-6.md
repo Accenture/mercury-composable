@@ -124,8 +124,17 @@ When using the `rest-spring-3` module, bean and value injection may be used:
 @PreLoad(route = "v1.demo.function")
 public class DemoFunction implements LambdaFunction {
  
+    // field injection method
     @Autowired
     LegacyBean legacyBean;
+
+    private TestBean testBean;
+
+    // setter injection method
+    @Autowired
+    public void setTestBean(TestBean testBean) {
+        this.testBean = testBean;
+    }
  
     @Value("${injected.value}")
     String injectedValue;
@@ -137,8 +146,12 @@ public class DemoFunction implements LambdaFunction {
 }
 ```
 
+Please note that the Spring annotation `@Service` is not required in a composable function.
+The `@PreLoad` annotation will automatically perform autowiring when the "rest-spring-3" dependency
+is included in pom.xml.
+
 > *Note*: This should be done judiciously - Composable functions should have very few dependencies
-          and each injected dependency is a violation of that principle.  
+          and each injected dependency is a violation of this principle.
  
 ### Limitations
  

@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.34</version>
+    <version>4.3.35</version>
     <name>Parent Mercury</name>
 
     <modules>

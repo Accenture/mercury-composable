@@ -398,12 +398,22 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void performOutputDataMapping(OutputMappingMetadata md, FlowInstance flowInstance, Task task) {
-        List<String> mapping = task.output;
-        for (String entry: mapping) {
-            md.sep = entry.lastIndexOf(MAP_TO);
-            if (md.sep > 0) {
-                doOutputDataMappingEntry(md, entry, flowInstance, task);
+        /*
+         * Java virtual thread system is backed by multiple kernel threads.
+         * Therefore, to ensure the state machine is updated in a thread safe manner,
+         * this block applies a thread-safety lock per flow instance.
+         */
+        flowInstance.outputSafety.lock();
+        try {
+            List<String> mapping = task.output;
+            for (String entry : mapping) {
+                md.sep = entry.lastIndexOf(MAP_TO);
+                if (md.sep > 0) {
+                    doOutputDataMappingEntry(md, entry, flowInstance, task);
+                }
             }
+        } finally {
+            flowInstance.outputSafety.unlock();
         }
         // has output data mapping monitor?
         var monitor = task.getMonitorAfterTask();
@@ -949,12 +959,22 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void performInputDataMapping(InputMappingMetadata md, FlowInstance flowInstance, Task task,
                                          int dynamicListIndex, String dynamicListKey) {
-        List<String> mapping = task.input;
-        for (String entry: mapping) {
-            int sep = entry.lastIndexOf(MAP_TO);
-            if (sep > 0) {
-                doInputDataMappingEntry(md, flowInstance, task, entry, sep, dynamicListIndex, dynamicListKey);
+        /*
+         * Java virtual thread system is backed by multiple kernel threads.
+         * Therefore, to ensure the state machine is updated in a thread safe manner,
+         * this block applies a thread-safety lock per flow instance.
+         */
+        flowInstance.inputSafety.lock();
+        try {
+            List<String> mapping = task.input;
+            for (String entry: mapping) {
+                int sep = entry.lastIndexOf(MAP_TO);
+                if (sep > 0) {
+                    doInputDataMappingEntry(md, flowInstance, task, entry, sep, dynamicListIndex, dynamicListKey);
+                }
             }
+        } finally {
+            flowInstance.inputSafety.unlock();
         }
         // has input data mapping monitor?
         var monitor = task.getMonitorBeforeTask();

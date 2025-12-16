@@ -26,8 +26,13 @@ import java.util.Map;
 
 @PreLoad(route = "v1.autowire.test")
 public class AutowireFunction implements LambdaFunction {
+
+    private TestBean testBean;
+
     @Autowired
-    TestBean testBean;
+    public void setTestBean(TestBean testBean) {
+        this.testBean = testBean;
+    }
 
     @Value("${value.injection.test}")
     String injectedValue;

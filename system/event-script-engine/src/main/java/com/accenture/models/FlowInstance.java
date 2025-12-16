@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class FlowInstance {
     private static final Logger log = LoggerFactory.getLogger(FlowInstance.class);
@@ -51,6 +52,8 @@ public class FlowInstance {
     public final ConcurrentMap<String, TaskMetrics> metrics = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
+    public final ReentrantLock inputSafety = new ReentrantLock();
+    public final ReentrantLock outputSafety = new ReentrantLock();
     public final String id = Utility.getInstance().getUuid();
     public final String cid;
     public final String replyTo;
