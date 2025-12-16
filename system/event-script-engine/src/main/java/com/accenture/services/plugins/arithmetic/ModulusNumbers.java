@@ -1,3 +1,21 @@
+/*
+
+    Copyright 2018-2025 Accenture Technology
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+ */
+
 package com.accenture.services.plugins.arithmetic;
 
 import com.accenture.utils.SimplePluginUtils;
@@ -16,15 +34,13 @@ public class ModulusNumbers implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        if(input.length != 2){
+        if (input.length != 2) {
             throw new IllegalArgumentException("Modulus expects only two values but got " + Arrays.toString(input));
         }
-
         SimplePluginUtils.divideByZeroCheck(input[1]);
-
         return SimplePluginUtils.promoteInput(input)
                 .reduce((l1, l2) -> l1 % l2)
-                .orElseThrow(() -> new IllegalStateException("Could not get modulus for the input: " + Arrays.toString(input)));
+                .orElseThrow(() ->
+                        new IllegalStateException("Could not get modulus for the input: " + Arrays.toString(input)));
     }
-
 }

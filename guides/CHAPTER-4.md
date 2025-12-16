@@ -1298,45 +1298,49 @@ In the following example, the system will evaluate both the model.quit and model
 ```
 
 ## Simple Plugins
-When working with Event-Script there are certain use-cases that are not supported natively in flows, such as arithmetic and conditional expressions.
-Typically one would create a [TypedLambdaFunction](CHAPTER-2.md#define-a-function) to support these type of use-cases. 
-This will create a greater cognitive load on the user because of the need to switch between contexts. 
-It will also encourage duplication of code and efforts since the same use-case is often reinvented for all users that utilize event-script
 
-Due to the nature of this problem, and to encourage best practices of S.R.P and D.R.Y, a new concept called `Simple Plugin` has been created. 
-This feature will allow `Simple` atomic operations to be called directly as part of the I/O operations of an Event-Script `Task.`
-This will function in a similar way to `Tags` in `JSTL` and `Components` in `React`. 
+When working with Event-Script there are certain use-cases that are not supported natively in flows, such as arithmetic
+and conditional expressions. Typically one would create a [TypedLambdaFunction](CHAPTER-2.md#define-a-function) to support
+these type of use-cases.  It may lead to duplication of code and efforts since the same use-case is often reinvented
+multiple times.
 
-### Disclosure
-NOTE: There is an expectation that `Simple Plugins` will run very quickly (sub-millisecond) to act on the Input and return an Output.
-In order to enforce this, there is a limited number of Java Packages that are allowed to be imported in a Plugin. 
-We will explicitly deny any packages that could potentially interact with I/O, to prevent blocking the event loop.
+To address this, a new concept called `Simple Plugin` has been introduced since version 4.3.36. 
+This allows `Simple` atomic operations to be called directly as part of the input mapping operations of
+an Event-Script `Task.` This is similar to `Tags` in `JSTL` and `Components` in `React`. 
 
-The only packages that are allowed to be used (besides those used in the Definition below) are 
+### Allowed packages for simple plugins
+
+`Simple Plugins` must run very quickly - typically fraction of a sub-millisecond. 
+To enforce this, the system limits the types of Java Packages that are allowed to be imported in a Plugin. 
+It will explicitly deny any packages that could potentially interact with I/O, to prevent blocking the event loop.
+
+The allowed packages include:
 `java.lang`, `java.util`, `java.math`, `java.time`, along with all java primtives 
-`short`, `int`, `long`, `boolean`, `float`, `char`, `byte`, and `void`
+`short`, `int`, `long`, `boolean`, `float`, `char`, `byte`, and `void`.
 
-### Definition
+### Interface definition
 
-The contract that defines a `SimplePlugin` is split across two Interfaces
+The contract that defines a `SimplePlugin` is split across two Interfaces:
 
+*Annotation*
 
-#### Annotation
-Used to classload all plugins, any class that wishes to be loaded as a `SimplePlugin` will need to be annotated with this annotation
+Used to classload all plugins, any class that wishes to be loaded as a `SimplePlugin` will need to be annotated:
+
 ```java
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface SimplePlugin {
-    int instances() default 1;
-}
+public @interface SimplePlugin { }
 ```
 
+*Interface*
 
-#### Interface
-Used to define the behavior of the Plugin. The work for the plugin is meant to be done in the `Object calculate(Object... input)` method.
-Note that the input utilizes varargs because, for convenience, all parameters that are passed to the function in event-script will be sent to the Plugin.
-The `getName` function is used to name the Plugin for consumption later on. If the function is not implemented, the default behavior is to convert the Class Name to camelCase
+This defines the behavior of the Plugin. The work for the plugin is meant to be done in the 
+`Object calculate(Object... input)` method. Note that the input utilizes variable arguments because,
+for convenience, all parameters that are passed to the function in event-script will be sent to the Plugin.
+
+The `getName` function is used to name the Plugin for consumption later on. If the function is not implemented, 
+the default behavior is to convert the Class Name to camelCase.
 
 ```java
 public interface PluginFunction {
@@ -1355,12 +1359,12 @@ public interface PluginFunction {
 
 ```
 
-### Utilizing Plugins in Event-Script
+### Using Plugins in Event-Script
 
-Utilizing a Plugin is as simple as using the plugin `name` - denoted in the `getName` function of the Plugin, prefixed with `f:`
-(i.e `f:<pluginName(var1, var2)` )
+A plugin function can be configured in the left-hand-side of an input data mapping statement using the `f:` prefix
+with your plugin name. i.e. `f:pluginName(model variables...)`
 
-Example:
+For example:
 
 ```yaml
   - input:
@@ -1375,51 +1379,47 @@ Example:
     execution: end
 ```
 
-### List of Core Plugins
+### Built-in Plugins
 
-Below is a list of all plugins that have been created and will available and loaded when the framework starts.
+| Type                | Plugin `name` | Expected Inputs                                                                                                       |
+|:--------------------|:--------------|:----------------------------------------------------------------------------------------------------------------------|
+| **Arithmetic**      | add           | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | subtract      | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | multiply      | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | div           | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | mod           | Two individual whole numbers                                                                                          |
+| **Arithmetic**      | increment     | A single _whole_ number                                                                                               |
+| **Arithmetic**      | decrement     | A single _whole_ number                                                                                               |
+| **Generator**       | uuid          | None                                                                                                                  |
+| **Generator**       | dateTime      | None required                                                                                                         |
+| **Logical**         | eq            | At least two Objects                                                                                                  |
+| **Logical**         | isNull        | A single Object                                                                                                       |
+| **Logical**         | ternary       | Three variables, the first variable must evaluate to a Boolean                                                        |
+| **Logical**         | and           | At least two boolean                                                                                                  |
+| **Logical**         | or            | At least two boolean                                                                                                  |
+| **Logical**         | not           | A single boolean                                                                                                      |
+| **Logical**         | gt            | Two individual whole numbers                                                                                          |
+| **Logical**         | lt            | Two individual whole numbers                                                                                          |
+| **Type Conversion** | b64           | Either a base64 encoded String, OR a byte[]                                                                           |
+| **Type Conversion** | binary        | Either a byte[], Map or String                                                                                        |
+| **Type Conversion** | length        | Either a byte[], List or String                                                                                       |
+| **Type Conversion** | substring     | Two to three variables.<br/>The first must be a String;<br/>the second must be an integer;<br/>the third is optional. |
+| **Type Conversion** | concat        | At least two Strings to be concatenated                                                                               |
+| **Type Conversion** | boolean       | A list of variables that can evaluate to a boolean                                                                    |
+| **Type Conversion** | double        | A list of variables that can evaluate to a double                                                                     |
+| **Type Conversion** | float         | A list of variables that can evaluate to a float                                                                      |
+| **Type Conversion** | int           | A list of variables that can evaluate to an integer                                                                   |
+| **Type Conversion** | long          | A list of variables that can evaluate to a long integer                                                               |
+| **Type Conversion** | text          | A list of variables that can evaluate to a String                                                                     |
 
+### Writing your own custom Simple Plugins
 
-| Type                | Plugin `name` | Expected Inputs                                                                                                                                                                               | Return type                                                                                                                              | Description                                                                                                                                                                                                                                         |
-|:--------------------|:--------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Arithmetic**      | add           | At least one _whole_ number                                                                                                                                                                   | A single `Long` Integer, the sum of all variables passed                                                                                 | Allows adding multiple numbers together, reduced to the sum all the input numbers. Expects at least one variable                                                                                                                                    |
-| **Arithmetic**      | subtract      | At least one _whole_ number                                                                                                                                                                   | A single `Long` Integer, the difference of all variables passed                                                                          | Allows subtracting multiple numbers together, reduced to the difference between all of the input numbers. Expects at least one variable                                                                                                             |
-| **Arithmetic**      | multiply      | At least one _whole_ number                                                                                                                                                                   | A single `Long` Integer, the product of all variables passed                                                                             | Allows multiplying multiple numbers together, reduced to the product all the input numbers. Expects at least one variable                                                                                                                           |
-| **Arithmetic**      | div           | At least one _whole_ number                                                                                                                                                                   | A single `Long` Integer, the quotient of all variables passed                                                                            | Allows subtracting multiple numbers together, reduced to the quotient of all of the input numbers. Expects at least one variable                                                                                                                    |
-| **Arithmetic**      | mod           | Two individual whole numbers                                                                                                                                                                  | A single `Long` Integer, the modulus of the two variables passed                                                                         | Allows computing the modulus of the two numbers passed in. Expects exactly two numbers, and the second number cannot be zero                                                                                                                        |
-| **Arithmetic**      | increment     | A single _whole_ number                                                                                                                                                                       | A single `Long` Integer incremented by 1                                                                                                 | Allows incrementing the given number from the input by 1. Expects exactly one input variable                                                                                                                                                        |
-| **Arithmetic**      | decrement     | A single _whole_ number                                                                                                                                                                       | A single `Long` Integer decremented by 1                                                                                                 | Allows decrementing the given number from the input by 1. Expects exactly one input variable                                                                                                                                                        |
-| **Generator**       | uuid          | None                                                                                                                                                                                          | A single `String` representing a random UUID                                                                                             | Works similar to the `model.none:uuid -> model.uuid` Type conversion. Expects no input and generates a random UUID                                                                                                                                  |
-| **Generator**       | dateTime      | None required, optionally the first variable can be a valid Date format from `DateTimeFormatter`, the second variable can be a valid `ZoneId` to be used when generating the current datetime | A single `String` representing the current date/time - formatted as an ISO DateTime String                                               | Allows generating a unique datetime string for the current datetime. If no variables are passed the default is standard ISO Datetime format (i.e `2025-12-06T23:16:00.000-05:00`), and the default Zone is based off the SystemDefault (likely UTC) |
-| **Logical**         | eq            | At least one Object                                                                                                                                                                           | A single `Boolean`, true if all passed in objects are equal, false otherwise                                                             | Allows comparing all given variables for equality ( using `.equals`). Expects at least one object as input                                                                                                                                          |
-| **Logical**         | isNull        | A single Object                                                                                                                                                                               | A single `Boolean`, true if the passed in object is null, false otherwise                                                                | Allows comparing a given variable for null. Expects exactly one object as input                                                                                                                                                                     |
-| **Logical**         | ternary       | Three variables, the first variable must evaluate to a Boolean                                                                                                                                | A single Object, the second variable passed-in if the first variable evaluates to `true`, otherwise the third variable                   | Works like a traditional ternary operator `(e == null)? "this" : "that"`. Expects 3 variables, the first must evaluate to a boolean                                                                                                                 |
-| **Logical**         | and           | At least one boolean                                                                                                                                                                          | A single `Boolean`, the result of Logical Conjunction `(true AND false AND true)` of all variables passed                                | Allows for the conjunction of all boolean variables. Expects all variables to evaluate to a Boolean                                                                                                                                                 |
-| **Logical**         | or            | At least one boolean                                                                                                                                                                          | A single `Boolean`, the result of Logical Disjunction `(true OR false OR true)` of all variables passed                                  | Allows for the disjunction of all boolean variables. Expects all variables to evaluate to a Boolean                                                                                                                                                 |
-| **Logical**         | not           | A single boolean                                                                                                                                                                              | A single `Boolean`, the result of Logical Negation `!false` of the variable that was passed                                              | Allows for the negation of the boolean variable that was passed. Expects the variable to evaluate to a Boolean                                                                                                                                      |
-| **Logical**         | gt            | Two individual whole numbers                                                                                                                                                                  | A single `Boolean`, If the first variable is greater than the second number then returns true, false otherwise                           | Allows for the comparison of two numbers to determine which is greater. Expects exactly 2 variables, both variables should evaluate to a whole number                                                                                               |
-| **Logical**         | lt            | Two individual whole numbers                                                                                                                                                                  | A single `Boolean`, If the first variable is less than than the second number then returns true, false otherwise                         | Allows for the comparison of two numbers to determine which is lesser. Expects exactly 2 variables, both variables should evaluate to a whole number                                                                                                |
-| **Type Conversion** | b64           | Either a base64 encoded String, OR a byte[]                                                                                                                                                   | IF one base64-String OR byte[] was passed, then one base64-String OR byte[] will be returned. IF a list was passed, a list is returned   | Works similar to the `model.val:b64 -> model.converted` Type conversion. IF the value is a base-64 encoded string, it will convert to a byte[]. IF it was a byte[], it will convert to a base64-string                                              |
-| **Type Conversion** | binary        | Either a byte[], Map or String                                                                                                                                                                | IF one object was passed then one byte[] will be returned. IF a list was passed, a list of byte[] will be returned                       | Works similar to the `model.val:binary -> model.converted` Type conversion. It will attempt to convert the input to a binary output (a.k.a byte[])                                                                                                  |
-| **Type Conversion** | length        | Either a byte[], List or String                                                                                                                                                               | An Integer denoting the length of the byte[], List or String                                                                             | Works similar to the `model.val:length -> model.total` Type conversion. It will attempt to get the length of the element that is passed in. Expects exactly one argument                                                                            |
-| **Type Conversion** | substring     | Two to three variables, the first must be a String, the second must be an integer, the third is optional                                                                                      | A new substring trimmed between the bounds of the second and third variable                                                              | Works similar to the `model.val:substring(0,5) -> model.sub` Type conversion. It will attempt to trim the provided string based on the bounds. Expects two to three argument, the string to trim, the start index, and the optional end index       |
-| **Type Conversion** | concat        | At least one String to be concatenated                                                                                                                                                        | A single `String`, the result of concatenating all strings that were provided                                                            | Works similar to the `model.val:concat(model.a, model.b) -> model.concat` Type conversion. At least one string is expected to concatenate                                                                                                           |
-| **Type Conversion** | boolean       | A list of variables that can evaluate to a boolean                                                                                                                                            | IF one variable was passed, then one boolean will be returned. For convenience, if a list was passed, then a list of boolean is returned | Works similar to the `model.val:boolean -> model.converted` Type conversion. All variables passed must evaluate to a boolean                                                                                                                        |
-| **Type Conversion** | double        | A list of variables that can evaluate to a double                                                                                                                                             | IF one variable was passed, then one double will be returned. For convenience, if a list was passed, then a list of double is returned   | Works similar to the `model.val:double -> model.converted` Type conversion. All variables passed must evaluate to a double                                                                                                                          |
-| **Type Conversion** | float         | A list of variables that can evaluate to a float                                                                                                                                              | IF one variable was passed, then one float will be returned. For convenience, if a list was passed, then a list of float is returned     | Works similar to the `model.val:float -> model.converted` Type conversion. All variables passed must evaluate to a float                                                                                                                            |
-| **Type Conversion** | int           | A list of variables that can evaluate to an integer                                                                                                                                           | IF one variable was passed, then one integer will be returned. For convenience, if a list was passed, then a list of integer is returned | Works similar to the `model.val:int -> model.converted` Type conversion. All variables passed must evaluate to an integer                                                                                                                           |
-| **Type Conversion** | long          | A list of variables that can evaluate to a long integer                                                                                                                                       | IF one variable was passed, then one long will be returned. For convenience, if a list was passed, then a list of long is returned       | Works similar to the `model.val:long -> model.converted` Type conversion. All variables passed must evaluate to a long integer                                                                                                                      |
-| **Type Conversion** | text          | A list of variables that can evaluate to a String                                                                                                                                             | IF one variable was passed, then one String will be returned. For convenience, if a list was passed, then a list of String is returned   | Works similar to the `model.val:text -> model.converted` Type conversion. All variables passed must evaluate to a String. NOTE: If a map is passed - it will be converted to a JSON string, and a byte[] will be converted to a String              |
+You may create your own plugins. The system will scan all packages defined in `web.component.scan` for 
+any classes that have the `@SimplePlugin` annotation. If your plugin is compliant and is available under
+the given package list, then it will automatically be loaded and available on startup.
+If there are any issues with loading your plugin, an error will be shown in the logs on startup.
 
-
-### Creating a custom Simple Plugin
-
-We encourage the creation of any and all custom plugins. By default we will scan all packages defined in `web.component.scan` for 
-any classes that have the `@SimplePlugin` annotation. If your plugin is compliant and is available under the given package list, then 
-it will automatically be loaded and available on startup. If there are any issues with loading your plugin, an error will be shown in the logs on startup.
-
-NOTE: That if your plugin uses a package that is not on the whitelist defined [here](CHAPTER-4.md#disclosure) then your plugin will not load successfully.
-
+NOTE: If your plugin uses a package that is not on the allowed packages above, your plugin will not load successfully.
 
 ## Handling exception
 
