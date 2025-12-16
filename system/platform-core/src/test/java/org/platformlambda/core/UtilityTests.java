@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.automation.util.SimpleHttpUtility;
 import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.MockPubSub;
 import org.platformlambda.core.system.PubSub;
@@ -61,6 +62,40 @@ class UtilityTests {
         log.info("Reconfigured to COMPACT logging");
         Configurator.reconfigure(URI.create("classpath:log4j2.xml"));
         log.info("Restore to TEXT logging");
+    }
+
+    @Test
+    void deepCopyTest() {
+        var mm = new MultiLevelMap();
+        mm.setElement("hello.world", Map.of("a", List.of(10,20, Map.of("test", "message"))));
+        mm.setElement("hello.list[0]", List.of("x", Map.of("y", 200, "z", List.of(1,2,3))));
+        mm.setElement("hello.list-of-list",
+                        List.of(List.of(0,2,List.of(4,5,6)), "xyz", List.of("1", Map.of("k2", "v2"))));
+        var listWithNull = new ArrayList<>();
+        listWithNull.add(null);
+        listWithNull.add("12345");
+        mm.setElement("list.contains-null", listWithNull);
+        var mapWithNull = new HashMap<>();
+        mapWithNull.put("x", "y");
+        mapWithNull.put("nothing", null);
+        mm.setElement("map-with-null", mapWithNull);
+        Utility util = Utility.getInstance();
+        var result = util.deepCopy(mm.getMap());
+        var flat = util.getFlatMap(result);
+        for (var entry: flat.entrySet()) {
+            assertEquals(entry.getValue(), mm.getElement(entry.getKey()));
+        }
+        var copied = util.deepCopy(mm.getMap());
+        // map's null elements are not copied
+        assertNotEquals(mm.getMap(), copied);
+        mm.removeElement("map-with-null.nothing");
+        // should be the same after removing null element from a map
+        assertEquals(mm.getMap(), copied);
+        // modify the original map
+        mm.setElement("modified", true);
+        // prove that the original map and the cloned map are different
+        assertNotEquals(mm.getMap(), copied);
+        assertNotEquals(mm.getMap().size(), copied.size());
     }
 
     @Test
@@ -503,5 +538,25 @@ class UtilityTests {
         util.cleanupDir(dir);
         assertFalse(dir.exists());
         log.info("Test folder {} removed", dir);
+    }
+
+    @Test
+    void httpRequestContentLengthTest() {
+        AsyncHttpRequest http1 = new AsyncHttpRequest();
+        http1.setMethod("POST");
+        http1.setContentLength(4).setBody("test");
+        var map1 = http1.toMap();
+        AsyncHttpRequest restored1 = new AsyncHttpRequest(map1);
+        assertTrue(restored1.isContentLengthDefined());
+        assertEquals("POST", restored1.getMethod());
+        assertEquals("test", restored1.getBody());
+        // this one does not have content-length defined
+        AsyncHttpRequest http2 = new AsyncHttpRequest();
+        http2.setMethod("PUT");
+        var map2 = http2.toMap();
+        AsyncHttpRequest restored2 = new AsyncHttpRequest(map2);
+        assertFalse(restored2.isContentLengthDefined());
+        assertEquals("PUT", restored2.getMethod());
+        assertNull(restored2.getBody());
     }
 }

@@ -425,14 +425,13 @@ As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 > Figure 1 - Hierarchy of flows
 
 To do this, you can use the flow protocol identifier (`flow://`) to indicate that the task is a flow.
-
-For example, when running the following task, "flow://my-sub-flow" will be executed like a regular task.
+Note that the syntax for input and output data mapping for subflow is the same as a regular task.
 
 ```yaml
 tasks:
   - input:
       - 'input.path_parameter.user -> header.user'
-      - 'input.body -> body'
+      - 'input.body -> *'
     process: 'flow://my-sub-flow'
     output:
       - 'result -> model.pojo'
@@ -563,7 +562,7 @@ from the key "some.key" in base configuration and the environment variable "ENV_
 ```
 
 > *Note*: The comma character is used as a separator for each key-value pair. If the value contains a comma,
-  the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
+          the system cannot parse the key-values correctly. In this case, please use the 2nd method below.
 
 *2. Mapping values from application.yml*
 
@@ -594,11 +593,6 @@ to a file in the local file system. If the left-hand-side (LHS) resolved value i
 will be deleted. This allows you to clean up temporary files before your flow finishes.
 
 An optional prefix "append" may be used to tell the system to append file content instead of overwriting it.
-
-> *Note*: The local file system write operation is not thread-safe. If you have parallel tasks appending
-          to the same file, the integrity of file content is not guaranteed. One way to ensure thread
-          safety is to use singleton pattern. This can be done by setting the number of instances of the
-          task writing to the local file system to 1.
 
 *Decision value*
 
@@ -924,6 +918,9 @@ it will resolve as a Map from the function output event envelope's headers.
 Similarly, when function output namespace `header.` is used, the system will resolve the value from a specific
 key of the function output event envelope's headers.
 
+
+Event flow instances are running in parallel. Within a single flow
+
 ### Function input and output
 
 To support flexible input data mapping, the input to a function must be either `Map<String, Object>` or `PoJo`.
@@ -945,7 +942,7 @@ For example, the following entry tells the system to set the value in "model.dat
 ```
 
 > *Note*: If the value from the left hand side is not a map, the system will ignore the input mapping command and
-print out an error message in the application log.
+          print out an error message in the application log.
 
 ### Setting function input headers
 
@@ -1109,8 +1106,8 @@ tasks:
 A special version of the fork-n-join pattern is called `dynamic fork-n-join` which refers to parallel processing
 of multiple instances of the same "next" task for each element in a list.
 
-For example, you have a list of 100 elements in an incoming request and each element would be processed by the
-same backend service. You want to process the 100 elements in parallel by multiple instances of a service wraper
+For example, you have a list of 20 elements in an incoming request and each element would be processed by the
+same backend service. You want to process the 20 elements in parallel by multiple instances of a service wraper
 that connects to the backend service.
 
 The use case can be configured like this:
@@ -1148,12 +1145,8 @@ the list of elements and spin up an instance of the "next" task to retrieve the 
 the element in the list. The two special suffixes are relevant only when adding to the model variable configured
 in the "source" parameter.
 
-*Important*:
-
-1. The model variables with special suffixes '.ITEM' and '.INDEX' are virtual objects for the purpose
-   of mapping as input arguments to a task. They cannot be used as regular model variables.
-2. Dynamic fork-n-join is designed to execute the same task for a list of elements in parallel.
-   It does not support subflow. i.e. the "process" tag of the "next" task cannot be a subflow.
+> *Limitation*: The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
+                of mapping as input arguments to a task. They cannot be used as regular model variables.
 
 ### Sink task
 
@@ -1170,24 +1163,31 @@ This task has the tag `execution=sink`.
     execution: sink
 ```
 
-### Special consideration for parallelism
+## Task concurrency
 
-The execution types (parallel and fork-n-join) are designed for parallel processing.
+When an event flow receives an incoming request, a "flow instance" is created with its own state machine
+using the namespace "model". Tasks within a single flow are executed orderly in a flow instance.
 
-Usually, parallel processing would improve performance. However, spinning up a large number of
-concurrent sessions to a slower backend service may create performance bottleneck. In fact, a 
-massive number of concurrent sessions to a single backend would bring down the target service. 
+However, the execution types (parallel and fork-n-join) are designed for parallel processing. Java virtual
+thread system is backed by multiple kernel threads. As a result, you should consider thread safety when
+parallel tasks execute.
+
+While parallel processing would improve performance, spinning up a large number of concurrent tasks to
+make requests to a slower backend service may create performance bottleneck. In fact, a massive number
+of concurrent sessions to a single backend would bring down the target service.
 This is an unintended "denial of service" attack. 
 
-The dynamic fork-n-join execution style should be handled with caution because it can easily
-spin up a large number of parallel instances of the same task.
+To control parallelism, you can set a smaller number of concurrent "instances" for a task
+using the "instances" parameter in the "PreLoad" annotation of the task. For example, if you set
+the maximum instances of a task to 20, the system will not instantiate more than the limit even
+when you have a larger number of event flow instances using the same task route. This allows you
+to manage performance according to available infrastructure resources. This orderly execution is
+guaranteed by the underlying reactive event system.
 
-To control parallelism, you can set a smaller number of concurrent "instances" for the "next" task
-using the "instances" parameter in the "PreLoad" annotation of the task. For example, you have 100
-elements in a list but the maximum instances of the task can be set to 20. This would reduce the
-concurrency to 20, thus allowing you to manage performance according to available infrastructure resources. 
-Therefore, processing 100 elements would require 5 rounds of 20 parallel executions and this orderly
-execution is supported by the underlying reactive event system.
+## State machine thread safety
+
+The state machine is designed to be thread safe during the input/output data mapping phases.
+No special threatment is required when updating the state machine using event script.
 
 ## Pipeline feature
 
@@ -1677,7 +1677,7 @@ to the function implementing the external state machine. The system uses the "ex
 to externalize a state machine's key-value.
 
 > *Note*: The delivery of key-values to the external state machine is asynchronous.
-  Therefore, please assume eventual consistency.
+          Therefore, please assume eventual consistency.
 
 You should implement a user function as the external state machine.
 

@@ -1,0 +1,39 @@
+#
+# IMPORTANT:
+# ---------
+# The cron interval must be set to more than 10 seconds
+# because the system will set a random delay of 0 to 9 seconds for racing condition avoidance
+#
+jobs:
+  - name: "demo-task"
+    description: "execute demo service every 10 seconds"
+    cron: "0/10 0/1 * 1/1 * ? *"
+    service: "hello.world"
+    # optional parameter to tell the service what to do
+    parameters:
+      hello: "world"
+    resolver: "v1.state.resolver"
+
+  - name: "demo-flow"
+    description: "execute demo service every 10 seconds"
+    cron: "0/10 0/1 * 1/1 * ? *"
+    service: "flow://hello-flow"
+    # optional parameter to tell the service what to do
+    parameters:
+      hello: "flow"
+    resolver: "v1.state.resolver"
+
+#
+# deferred start adds a randomized delay of 0 to 9 seconds before a scheduled job runs.
+# This reduces the chance of racing condition to a state database.
+#
+deferred.start: true
+
+#
+# For backward compatibility, set leader.election to true.
+# This enables the use of minimalist service mesh for leader election.
+# Your application must set cloud.connector to a service mesh (e.g. kafka)
+# and call the "platform.connectToCloud()" API in the main application.
+# You would need to add the kafka-connector dependency to turn on a service mesh.
+#
+leader.election: false

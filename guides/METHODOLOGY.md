@@ -73,7 +73,7 @@ Immutability is an important guardrail for clean code design. A function cannot 
 its functional scope, thus eliminating the chance of unintended side effects of data interference.
 
 > *Note*: In composable design, task and function can be used interchangeably. In an event flow diagram, we call each
-  step a "task". In application design, we call each step a "function".
+          step a "task". In application design, we call each step a "function".
 
 ## Second principle - zero to one dependency
 
@@ -161,7 +161,7 @@ Sometimes a transaction may be suspended and restarted with different event flow
 be extended to an external datastore so that transaction states can be monitored and recovered operationally.
 
 > *Note*: In Java, we combine the use of native Java 21 virtual thread management with Eclipse Vertx event bus.
-  In Node.js, we use the EventEmitter event bus from the standard library.
+          In Node.js, we use the EventEmitter event bus from the standard library.
 
 ## Event Envelope
 
@@ -236,7 +236,7 @@ A composable function is declared with a "route name" using the "preload" annota
 and Node.js have different syntax for annotation, they use a similar declarative approach.
 
 > *Note*: the "instance" count for each composable function controls execution concurrency in a single application.
-  It can be used with horizontal scaling to optimize use of computing resources.
+          It can be used with horizontal scaling to optimize use of computing resources.
 <br>
 
 |                   Home                    |          Chapter-1           |

@@ -74,6 +74,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String RESULT = "result";
     private static final String DATA_TYPE = "datatype";
     private static final String HEADER = "header";
+    private static final String BODY = "body";
     private static final String RETRY = "@retry";
     private static final String TASK = "task";
     private static final String CODE = "code";
@@ -305,7 +306,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void endFlow(FlowInstance flowInstance, boolean normal) {
-        flowInstance.close();
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
         flowInstance.metrics.keySet().forEach(taskRefs::remove);
@@ -317,6 +317,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         List<Map<String, Object>> taskInfo = new ArrayList<>();
         taskList.forEach(info ->
                 taskInfo.add(Map.of("name", info.getRoute(), "spent", info.getElapsed())));
+        // clean up flowInstance states
+        flowInstance.close();
         int totalExecutions = taskList.size();
         var payload = new HashMap<String, Object>();
         var metrics = new HashMap<String, Object>();
@@ -395,12 +397,22 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private void performOutputDataMapping(OutputMappingMetadata md, FlowInstance flowInstance, Task task) {
-        List<String> mapping = task.output;
-        for (String entry: mapping) {
-            md.sep = entry.lastIndexOf(MAP_TO);
-            if (md.sep > 0) {
-                doOutputDataMappingEntry(md, entry, flowInstance, task);
+        /*
+         * Java virtual thread system is backed by multiple kernel threads.
+         * Therefore, to ensure the state machine is updated in a thread safe manner,
+         * this block applies a thread-safety lock per flow instance.
+         */
+        flowInstance.outputSafety.lock();
+        try {
+            List<String> mapping = task.output;
+            for (String entry : mapping) {
+                md.sep = entry.lastIndexOf(MAP_TO);
+                if (md.sep > 0) {
+                    doOutputDataMappingEntry(md, entry, flowInstance, task);
+                }
             }
+        } finally {
+            flowInstance.outputSafety.unlock();
         }
         // has output data mapping monitor?
         var monitor = task.getMonitorAfterTask();
@@ -886,14 +898,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 abortFlow(flowInstance, 500, functionRoute+" not defined");
                 return;
             }
+            Map<String, Object> dataset = new HashMap<>();
+            dataset.put(BODY, md.target.getMap());
             if (!md.optionalHeaders.isEmpty()) {
-                md.target.setElement(HEADER, md.optionalHeaders);
+                dataset.put(HEADER, md.optionalHeaders);
             }
             // execute a subflow
             var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME)
                                                 .setReplyTo(TaskExecutor.SERVICE_NAME)
                                                 .setHeader(PARENT, flowInstance.id)
-                                                .setHeader(FLOW_ID, flowId).setBody(md.target.getMap())
+                                                .setHeader(FLOW_ID, flowId).setBody(dataset)
                                                 .setCorrelationId(compositeCid);
             var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
             po.send(forward);
@@ -944,12 +958,22 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void performInputDataMapping(InputMappingMetadata md, FlowInstance flowInstance, Task task,
                                          int dynamicListIndex, String dynamicListKey) {
-        List<String> mapping = task.input;
-        for (String entry: mapping) {
-            int sep = entry.lastIndexOf(MAP_TO);
-            if (sep > 0) {
-                doInputDataMappingEntry(md, flowInstance, task, entry, sep, dynamicListIndex, dynamicListKey);
+        /*
+         * Java virtual thread system is backed by multiple kernel threads.
+         * Therefore, to ensure the state machine is updated in a thread safe manner,
+         * this block applies a thread-safety lock per flow instance.
+         */
+        flowInstance.inputSafety.lock();
+        try {
+            List<String> mapping = task.input;
+            for (String entry: mapping) {
+                int sep = entry.lastIndexOf(MAP_TO);
+                if (sep > 0) {
+                    doInputDataMappingEntry(md, flowInstance, task, entry, sep, dynamicListIndex, dynamicListKey);
+                }
             }
+        } finally {
+            flowInstance.inputSafety.unlock();
         }
         // has input data mapping monitor?
         var monitor = task.getMonitorBeforeTask();
@@ -973,7 +997,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             md.lhs = md.lhs.toLowerCase();
         }
         if (md.rhs.startsWith(EXT_NAMESPACE)) {
-            final Object value = inputLike? getLhsElement(md.lhs, md.source) : getConstantValue(md.lhs);
+            final Object value = inputLike? getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey) :
+                                            getConstantValue(md.lhs);
             callExternalStateMachine(flowInstance, task, md.rhs, value);
         } else if (md.rhs.startsWith(MODEL_NAMESPACE)) {
             setInputDataMappingModelVar(md, flowInstance, inputLike);
@@ -1492,17 +1517,25 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
-        boolean updated = false;
         int colon = getModelTypeIndex(rhs);
         String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
         if (colon != -1) {
             String type = rhs.substring(colon+1).trim();
             Object matched = getValueByType(type, value, "RHS '"+rhs+"'", target);
             target.setElement(selector, matched);
-            updated = true;
-        }
-        if (!updated) {
+        } else {
+            if (selector.startsWith(MODEL_NAMESPACE)) {
+                if (value instanceof Map) {
+                    target.setElement(selector, util.deepCopy((Map<String, Object>) value));
+                    return;
+                }
+                if (value instanceof List) {
+                    target.setElement(selector, util.deepCopy((List<Object>) value));
+                    return;
+                }
+            }
             target.setElement(selector, value);
         }
     }

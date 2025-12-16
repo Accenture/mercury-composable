@@ -64,6 +64,8 @@ public class CompileFlows implements EntryPoint {
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String INPUT_NAMESPACE = "input.";
     private static final String OUTPUT_NAMESPACE = "output.";
+    private static final String BODY = "body";
+    private static final String BODY_PREFIX = "body.";
     private static final String MODEL = "model";
     private static final String PARENT = "parent";
     private static final String ROOT = "root";
@@ -250,7 +252,7 @@ public class CompileFlows implements EntryPoint {
 
     private boolean validOutputMapping(String name, List<String> outputList, Task task, FlowConfigMetadata md) {
         boolean isDecisionTask = DECISION.equals(md.execution);
-        List<String> filteredOutputMapping = filterDataMapping(outputList);
+        List<String> filteredOutputMapping = filterDataMapping(outputList, false);
         for (String line : filteredOutputMapping) {
             if (validOutput(line, isDecisionTask)) {
                 task.output.add(line);
@@ -268,7 +270,8 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean validInputMapping(String name, List<String> inputList, Task task, FlowConfigMetadata md) {
-        List<String> filteredInputMapping = filterDataMapping(inputList);
+        List<String> filteredInputMapping = filterDataMapping(inputList,
+                                                              task.getFunctionRoute().startsWith(FLOW_PROTOCOL));
         for (String line : filteredInputMapping) {
             if (validInput(line)) {
                 int sep = line.lastIndexOf(MAP_TO);
@@ -678,32 +681,61 @@ public class CompileFlows implements EntryPoint {
         return found;
     }
 
-    private List<String> filterDataMapping(List<String> entries) {
+    private List<String> filterDataMapping(List<String> entries, boolean isSubFlowInput) {
         List<String> result = new ArrayList<>();
         for (String line: entries) {
             var entry = line.trim();
             if (entry.startsWith(TEXT_TYPE)) {
                 // text constant supports 2-part mapping format only because text constant can include any characters
-                result.add(filterMapping(entry));
+                result.add(filterMapping(isSubFlowInput? removeRedundantBodyPrefix(entry) : entry));
             } else {
-                List<String> parts = new ArrayList<>();
-                while (entry.contains(MAP_TO)) {
-                    var sep = entry.indexOf(MAP_TO);
-                    var first = entry.substring(0, sep).trim();
-                    parts.add(first);
-                    entry = entry.substring(sep + 2).trim();
-                }
-                parts.add(entry);
-                if (parts.size() == 2) {
-                    result.add(filterMapping(parts.getFirst() + SPACED_MAP_TO + parts.get(1)));
-                } else if (parts.size() == 3) {
-                    handleThreePartMapping(parts, result);
-                } else {
-                    result.add("Syntax must be (LHS -> RHS) or (LHS -> model.variable -> RHS)");
-                }
+                filterParts(entry, result, isSubFlowInput);
             }
         }
         return result;
+    }
+
+    private void filterParts(String entry, List<String> result, boolean isSubFlowInput) {
+        List<String> parts = getParts(entry);
+        if (parts.size() == 2) {
+            var twoParts = parts.getFirst() + SPACED_MAP_TO + parts.get(1);
+            result.add(filterMapping(isSubFlowInput? removeRedundantBodyPrefix(twoParts) : twoParts));
+        } else if (parts.size() == 3) {
+            handleThreePartMapping(parts, result);
+        } else {
+            result.add("Syntax must be (LHS -> RHS) or (LHS -> model.variable -> RHS)");
+        }
+    }
+
+    private List<String> getParts(String text) {
+        var entry = text;
+        List<String> parts = new ArrayList<>();
+        while (entry.contains(MAP_TO)) {
+            var sep = entry.indexOf(MAP_TO);
+            var first = entry.substring(0, sep).trim();
+            parts.add(first);
+            entry = entry.substring(sep + 2).trim();
+        }
+        parts.add(entry);
+        return parts;
+    }
+
+    private String removeRedundantBodyPrefix(String entry) {
+        int sep = entry.indexOf(MAP_TO);
+        if (sep > 0) {
+            var lhs = entry.substring(0, sep).trim();
+            var rhs = entry.substring(sep + 2).trim();
+            if (rhs.equals(BODY)) {
+                var result = lhs + " -> *";
+                log.warn("Deprecated 'body' syntax - mapping adjusted to '{}'", result);
+                return result;
+            } else if (rhs.startsWith(BODY_PREFIX)) {
+                var result = lhs + SPACED_MAP_TO + rhs.substring(BODY_PREFIX.length());
+                log.warn("Deprecated 'body.' namespace - mapping adjusted to '{}'", result);
+                return result;
+            }
+        }
+        return entry;
     }
 
     private void handleThreePartMapping(List<String> parts, List<String> result) {

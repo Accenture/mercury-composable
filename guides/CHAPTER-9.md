@@ -691,6 +691,6 @@ API changes.
 For enterprise clients, technical support is available. Please contact your Accenture representative for details.
 <br/>
 
-|                Chapter-8                |                   Home                    |
-|:---------------------------------------:|:-----------------------------------------:|
-| [Minimalist Service Mesh](CHAPTER-8.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | 
+|            Chapter-8            |                   Home                    |         CHAPTER-10          |
+|:-------------------------------:|:-----------------------------------------:|:---------------------------:|
+| [Event over HTTP](CHAPTER-6.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Mini-Graph](CHAPTER-10.md) |

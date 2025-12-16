@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.23</version>
+    <version>4.3.35</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -14,6 +14,7 @@
         <module>system/platform-core</module>
         <module>system/rest-spring-3</module>
         <module>system/event-script-engine</module>
+        <module>system/mini-scheduler</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>
@@ -31,6 +32,7 @@
         <module>examples/rest-spring-3-example</module>
         <module>examples/composable-example</module>
         <module>examples/kotlin-example</module>
+        <module>examples/scheduler-example</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>

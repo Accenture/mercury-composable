@@ -21,16 +21,16 @@ package org.platformlambda.core.models;
 import org.platformlambda.core.services.Telemetry;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is reserved for system use.
@@ -42,8 +42,10 @@ public abstract class InboxBase {
     protected static final ConcurrentMap<String, InboxBase> inboxes = new ConcurrentHashMap<>();
     protected static final String RPC = "rpc";
     protected static final String ANNOTATIONS = "annotations";
+    private static final String SKIP_RPC_TRACING = "skip.rpc.tracing";
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
-    private static final List<String> ZERO_TRACING_FILTER = List.of(ASYNC_HTTP_CLIENT);
+    private static final Set<String> skipTracing = new HashSet<>();
+    private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
     public final String cid = Utility.getInstance().getUuid();
 
@@ -71,7 +73,7 @@ public abstract class InboxBase {
 
     protected void recordTrace(InboxMetadata md) {
         var service = trimOrigin(md.to);
-        if (!ZERO_TRACING_FILTER.contains(service)) {
+        if (!getSkipTracing().contains(service)) {
             try {
                 Map<String, Object> payload = new HashMap<>();
                 Map<String, Object> metrics = new HashMap<>();
@@ -103,6 +105,17 @@ public abstract class InboxBase {
                 log.error("Unable to send to {}", Telemetry.DISTRIBUTED_TRACING, e);
             }
         }
+    }
+
+    private Set<String> getSkipTracing() {
+        if (firstRun.get()) {
+            firstRun.set(false);
+            var config = AppConfigReader.getInstance();
+            var value = config.getProperty(SKIP_RPC_TRACING, ASYNC_HTTP_CLIENT);
+            List<String> skipList = Utility.getInstance().split(value, ", ");
+            skipTracing.addAll(skipList);
+        }
+        return skipTracing;
     }
 
     private String trimOrigin(String route) {

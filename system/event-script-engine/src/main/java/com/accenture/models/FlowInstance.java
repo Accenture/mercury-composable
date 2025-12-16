@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class FlowInstance {
     private static final Logger log = LoggerFactory.getLogger(FlowInstance.class);
@@ -51,6 +52,8 @@ public class FlowInstance {
     public final ConcurrentMap<String, TaskMetrics> metrics = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
+    public final ReentrantLock inputSafety = new ReentrantLock();
+    public final ReentrantLock outputSafety = new ReentrantLock();
     public final String id = Utility.getInstance().getUuid();
     public final String cid;
     public final String replyTo;
@@ -99,8 +102,8 @@ public class FlowInstance {
         }
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope timeoutTask = new EventEnvelope();
-        timeoutTask.setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id).setHeader(TIMEOUT, true);
+        EventEnvelope timeoutTask = new EventEnvelope().setTo(TaskExecutor.SERVICE_NAME)
+                                            .setCorrelationId(id).setHeader(TIMEOUT, true);
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + template.ttl));
     }
 
@@ -152,6 +155,13 @@ public class FlowInstance {
         if (running) {
             running = false;
             EventEmitter.getInstance().cancelFutureEvent(timeoutWatcher);
+            setResponded(true);
+            // explicitly release memory
+            dataset.clear();
+            pipeMap.clear();
+            tasks.clear();
+            metrics.clear();
+            shared.clear();
         }
     }
 

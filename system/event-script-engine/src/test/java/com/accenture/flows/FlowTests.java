@@ -122,16 +122,16 @@ class FlowTests extends TestBase {
 
     @Test
     void externalStateMachineTest() throws InterruptedException, ExecutionException {
-        executeExtStateMachine("/api/ext/state/");
+        executeExtStateMachine("/api/ext/state/", "ext-101");
     }
 
     @Test
     void externalStateMachineFlowTest() throws InterruptedException, ExecutionException {
-        executeExtStateMachine("/api/ext/state/flow/");
+        executeExtStateMachine("/api/ext/state/flow/", "ext-102");
     }
 
     @SuppressWarnings("unchecked")
-    void executeExtStateMachine(String uriPath) throws InterruptedException, ExecutionException {
+    void executeExtStateMachine(String uriPath, String traceId) throws InterruptedException, ExecutionException {
         final long timeout = 8000;
         String placeholder = "test";
         var payload = Map.of("hello", "world");
@@ -139,7 +139,7 @@ class FlowTests extends TestBase {
         request1.setTargetHost(HOST).setMethod("PUT").setHeader("accept", "application/json")
                 .setHeader("content-type", "application/json").setBody(payload);
         request1.setUrl(uriPath+placeholder);
-        EventEmitter po = EventEmitter.getInstance();
+        PostOffice po = new PostOffice("unit.test", traceId, uriPath);
         EventEnvelope req1 = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request1);
         EventEnvelope res1 = po.request(req1, timeout).get();
         assert res1 != null;
@@ -163,6 +163,10 @@ class FlowTests extends TestBase {
         Map<String, Object> result2 = (Map<String, Object>) res2.getBody();
         assertEquals(placeholder, result2.get("user"));
         assertEquals(payload, result2.get("payload"));
+        // we can also programmatically call the external state machine
+        var result = po.request(new EventEnvelope().setTo("v1.ext.state.machine")
+                                .setHeader("type", "clear").setHeader("key", "*"), 5000).get();
+        assertEquals(true, result.getBody());
     }
 
     @SuppressWarnings("unchecked")
@@ -639,8 +643,8 @@ class FlowTests extends TestBase {
         // mmBefore contains state_machine (input and model), input_mapping and header
         assertEquals("parent-greetings", mmBefore.getElement("state_machine.input.header.x-flow-id"));
         assertEquals("GET", mmBefore.getElement("state_machine.input.method"));
-        assertEquals(12345, mmBefore.getElement("input_mapping.body.long_number"));
-        assertEquals("test", mmBefore.getElement("input_mapping.body.user"));
+        assertEquals(12345, mmBefore.getElement("input_mapping.long_number"));
+        assertEquals("test", mmBefore.getElement("input_mapping.user"));
         assertEquals("async-http-client", mmBefore.getElement("header.user-agent"));
         assertEquals("ok", mmBefore.getElement("header.demo"));
         // mmAfter contains input, output, model, status, header, result
@@ -959,10 +963,15 @@ class FlowTests extends TestBase {
         forkJoin("/api/fork-n-join-flows/", true);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void forkJoinWithDynamicModeListTest() throws InterruptedException, ExecutionException {
-        var mockForkedTask = "mock.echo.me";
+        var mockForkTask = "mock.echo.me";
+        var mockJoinTask = "mock.join.task";
         ConcurrentMap<String, Integer> itemsAndIndexes = new ConcurrentHashMap<>();
+        // the mock.echo.one will receive the item and index values.
+        // after execution of each instance of mock.echo.one, the event script will send the item
+        // to an external state machine
         TypedLambdaFunction<Map<String, Object>, Object> f1 =
                 (headers, input, instance) -> {
                     Object item = input.get("item");
@@ -972,20 +981,50 @@ class FlowTests extends TestBase {
                     }
                     return input;
                 };
-        Platform.getInstance().registerPrivate(mockForkedTask, f1, 10);
-        var mock = new EventScriptMock("fork-n-join-with-dynamic-model-test");
-        mock.assignFunctionRoute("echo.me", mockForkedTask);
-        forkJoin("/api/fork-n-join-with-dynamic-model/", false);
+        // The mock.join.task will receive the result set from the flow "fork-n-join-with-dynamic-model-test"
+        // Inside the join task, it will make a Post Office call to retrieve the consolidated items
+        TypedLambdaFunction<Map<String, Object>, Object> f2 =
+                (headers, input, instance) -> {
+                    var po = new PostOffice(headers, instance);
+                    var result = po.request(new EventEnvelope().setTo("v1.ext.state.machine")
+                                                               .setHeader("key", "append")
+                                                               .setHeader("type", "get"), 5000).get();
+                    // add the consolidated result set to the original input
+                    input.put("append", result.getBody());
+                    return input;
+                };
+        Platform.getInstance().registerPrivate(mockForkTask, f1, 10);
+        Platform.getInstance().registerPrivate(mockJoinTask, f2, 10);
+        var mock1 = new EventScriptMock("fork-n-join-with-dynamic-model-test");
+
+        mock1.assignFunctionRoute("join.task", mockJoinTask);
+        var mock2 = new EventScriptMock("echo-flow");
+        mock2.assignFunctionRoute("echo.me", mockForkTask);
+
+        var result = forkJoin("/api/fork-n-join-with-dynamic-model/", false);
         assertEquals(5, itemsAndIndexes.size());
         assertEquals(0, itemsAndIndexes.get("one"));
         assertEquals(1, itemsAndIndexes.get("two"));
         assertEquals(2, itemsAndIndexes.get("three"));
         assertEquals(3, itemsAndIndexes.get("four"));
         assertEquals(4, itemsAndIndexes.get("five"));
+        var data = result.get("append");
+        assertInstanceOf(List.class, data);
+        var list1 = (List<String>) data;
+        assertEquals(5, list1.size());
+        log.info("Consolidated items {} must include one, two, three, four and five", list1);
+        var expected = Set.of("one", "two", "three", "four", "five");
+        // comparing the items as a set because the order is random due to parallelism
+        assertEquals(expected, new HashSet<>(list1));
+        var serialized = result.get("serialized");
+        assertInstanceOf(List.class, serialized);
+        var list2 = (List<String>) data;
+        assertEquals(5, list2.size());
+        assertEquals(expected, new HashSet<>(list2));
     }
 
     @SuppressWarnings("unchecked")
-    void forkJoin(String apiPath, boolean exception) throws InterruptedException, ExecutionException {
+    Map<String, Object> forkJoin(String apiPath, boolean exception) throws InterruptedException, ExecutionException {
         final int UNAUTHORIZED = 401;
         final long timeout = 8000;
         String placeholder = "test";
@@ -1007,6 +1046,7 @@ class FlowTests extends TestBase {
                     "type", "error",
                     "status", UNAUTHORIZED), res.getBody());
             assertEquals(UNAUTHORIZED, res.getStatus());
+            return Collections.EMPTY_MAP;
         } else {
             Map<String, Object> result = (Map<String, Object>) res.getBody();
             PoJo pw = SimpleMapper.getInstance().getMapper().readValue(result, PoJo.class);
@@ -1014,6 +1054,7 @@ class FlowTests extends TestBase {
             assertEquals(placeholder, pw.user);
             assertEquals("hello-world-one", pw.key1);
             assertEquals("hello-world-two", pw.key2);
+            return result;
         }
     }
 

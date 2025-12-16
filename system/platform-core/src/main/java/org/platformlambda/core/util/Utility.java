@@ -356,6 +356,88 @@ public class Utility {
         }
     }
 
+    /**
+     * Perform a deep copy of a Map
+     *
+     * @param src map
+     * @return flat map
+     */
+    public Map<String, Object> deepCopy(Map<String, Object> src) {
+        Map<String, Object> target = new HashMap<>();
+        deepCopy(src, target);
+        return target;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void deepCopy(Map<String, Object> src, Map<String, Object> target) {
+        for (var entry: src.entrySet()) {
+            var k = entry.getKey();
+            var v = entry.getValue();
+            if (v instanceof Map) {
+                target.put(k, deepCopy((Map<String, Object>) v));
+            } else if (v instanceof List) {
+                deepCopyInnerList(k, (List<Object>) v, target);
+            } else if (v != null) {
+                target.put(k, v);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void deepCopyInnerList(String key, List<Object> values, Map<String, Object> target) {
+        if (isSimpleList(values)) {
+            target.put(key, values);
+        } else {
+            List<Object> list = new ArrayList<>();
+            for (Object o : values) {
+                if (o instanceof Map) {
+                    Map<String, Object> inner = new HashMap<>();
+                    list.add(inner);
+                    deepCopy((Map<String, Object>) o, inner);
+                } else if (o instanceof List) {
+                    list.add(deepCopy((List<Object>) o));
+                } else {
+                    list.add(o);
+                }
+            }
+            target.put(key, list);
+        }
+    }
+
+    /**
+     * Perform a deep copy of a list
+     *
+     * @param values in a list
+     * @return a list containing the deeply copied elements
+     */
+    @SuppressWarnings("unchecked")
+    public List<Object> deepCopy(List<Object> values) {
+        if (isSimpleList(values)) {
+            return values;
+        } else {
+            List<Object> list = new ArrayList<>();
+            for (Object o : values) {
+                if (o instanceof Map) {
+                    list.add(deepCopy((Map<String, Object>) o));
+                } else if (o instanceof List) {
+                    list.add(deepCopy((List<Object>) o));
+                } else {
+                    list.add(o);
+                }
+            }
+            return list;
+        }
+    }
+
+    private boolean isSimpleList(List<Object> values) {
+        for (Object o: values) {
+            if (o instanceof Map || o instanceof List) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public String getTimestamp() {
         return getTimestamp(System.currentTimeMillis());
     }

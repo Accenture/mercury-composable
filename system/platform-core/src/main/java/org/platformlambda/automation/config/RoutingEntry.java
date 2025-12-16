@@ -287,6 +287,9 @@ public class RoutingEntry {
     }
 
     public void load(ConfigReader config) {
+        if (!config.exists(REST)) {
+            log.warn("No user defined REST endpoints found");
+        }
         this.requestFilter = getStaticContentFilter(config);
         this.noCachePages = getNoCacheConfig(config);
         if (config.exists(HEADERS)) {
@@ -295,9 +298,9 @@ public class RoutingEntry {
         if (config.exists(CORS)) {
             loadCorsSection(config);
         }
-        if (config.exists(REST)) {
-            loadRestSection(config);
-        }
+        addDefaultEndpoints(config);
+        sortEndpoints(config);
+        loadRestSection(config);
     }
 
     private void loadHeaderSection(ConfigReader config) {
@@ -348,7 +351,6 @@ public class RoutingEntry {
         Collections.sort(exact);
         if (!exact.isEmpty()) {
             var message = new HashMap<String, Object>();
-            message.put("type", "url");
             message.put("match", "exact");
             message.put("total", exact.size());
             message.put("path", exact);
@@ -369,7 +371,6 @@ public class RoutingEntry {
         Collections.sort(urlPaths);
         if (!urlPaths.isEmpty()) {
             var message = new HashMap<String, Object>();
-            message.put("type", "url");
             message.put("match", "parameters");
             message.put("total", urlPaths.size());
             message.put("path", urlPaths);
@@ -387,8 +388,6 @@ public class RoutingEntry {
     }
 
     private void loadRest(ConfigReader config) {
-        addDefaultEndpoints(config);
-        sortEndpoints(config);
         if (config.get(REST) instanceof List<?> items) {
             for (int i = 0; i < items.size(); i++) {
                 Object services = config.get(REST + "[" + i + "]." + SERVICE);
@@ -418,7 +417,7 @@ public class RoutingEntry {
             String url = defaultRest.getProperty(REST+"["+i+"]."+URL_LABEL);
             essentials.put(url+" "+methods, i);
         }
-        Object restEntries = config.get(REST);
+        Object restEntries = config.get(REST, new ArrayList<>());
         List<Object> restList = (List<Object>) restEntries;
         int total = restList.size();
         for (int i=0; i < total; i++) {

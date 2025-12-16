@@ -61,6 +61,7 @@ precedence.
 | modules.autostart                         | list of composable functions to start                                    | Optional    |
 | max.model.array.size                      | max size of a dynamic model variable<br/>as index (Default: 1000)        | Optional    |
 | stack.trace.transport.size                | Depth of stack trace in EventEnvelope<br/>(Default: 10)                  | Optional    |
+| skip.rpc.tracing                          | Comma separated list of routes<br/>(Default: async.http.request)         | Optional    |
 | worker.instances.no.op                    | Maximum instances for `no.op` function<br/>(Default: 500)                | Optional    |
 | worker.instances.resilience.handler       | Maximum instances for `resilience.handler`<br/>(Default: 500)            | Optional    |
 | worker.instances.simple.exception.handler | Maximum instances for `simple.exception.handler`<br/>(Default: 250)      | Optional    |
@@ -98,7 +99,7 @@ To load configuration file from the local file system, use "file:/" instead of "
 The "profiles" parameter defines the file prefix to load profile related configuration files.
 
 > *Note*: The order of the filenames defines the loading sequence where subsequent configuration
-> parameters will override prior ones.
+          parameters will override prior ones.
 
 ## Configuration management
 
@@ -117,8 +118,8 @@ the "src/resources" folder. If still not found, it will search the list of libra
 folders.
 
 > *Note*: The search order for libraries is non-deterministic using the JVM class search path.
-> Therefore, please use unique filenames for resource files in a library that may be used
-> by an application.
+          Therefore, please use unique filenames for resource files in a library that may be used
+          by an application.
 
 The resource file path must be prefixed with the keyword `classpath:`.
 This discovery mechanism applies to all types of files including config files.
@@ -148,6 +149,30 @@ When more than one active profile is needed, you can use a comma separated list 
 
 For Spring Boot compatibility, the filename prefix "application-" is fixed. This is defined
 in the app-config-reader.yml file above.
+
+## Skipping RPC traces
+
+The parameter `skip.rpc.tracing` tells the system to skip telemetry log (traces) for certain
+RPC calls. The default value is `async.http.request` which is the service route of the built-in
+AsyncHttpClient.
+
+This is intentional because outgoing HTTP request is one of the most frequently used feature
+and this reduces volume of the telemetry log. Usually when you issue HTTP RPC calls,
+it is done programmatically inside your composable function and telemetry is available for your
+function already, thus this design avoids duplication of telemetry logging. For example,
+your function may be making a REST API call to an external service.
+
+When AsyncHttpClient ("async.http.request") is used in a "flow" by configuration, 
+telemetry is not suppressed because AsyncHttpClient uses "callback" technique.
+
+To display telemetry for HTTP RPC call, you can set an empty string like this:
+
+```text
+skip.rpc.tracing=
+```
+
+> *Note*: If you have reason to suppress telemetry for other RPC calls, you can update the parameter
+          using a comma separated list.
 
 ## Special handling for PROPERTIES file
 
@@ -206,7 +231,7 @@ mime.types:
 ```
 
 > *Note*: application.properties file cannot be used for the "mime.types" section because it only supports text
-> key-values.
+          key-values.
 
 You may also provide a mime.types section in the `mime-types.yml` configuration under the resources folder
 to override the default configuration in the platform-core library.
@@ -328,6 +353,6 @@ X-Raw-Xml=true
 
 <br/>
 
-|          Chapter-9           |                   Home                    |                 Appendix-II                  |
-|:----------------------------:|:-----------------------------------------:|:--------------------------------------------:|
-| [API Overview](CHAPTER-9.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Reserved names and headers](APPENDIX-II.md) |
+|         Chapter-10          |                   Home                    |                 Appendix-II                  |
+|:---------------------------:|:-----------------------------------------:|:--------------------------------------------:|
+| [Mini-Graph](CHAPTER-10.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Reserved names and headers](APPENDIX-II.md) |

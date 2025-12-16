@@ -211,7 +211,7 @@ public class HelloPoJoEventOverHttpByConfig {
 ```
 
 > *Note*: The target function must declare itself as PUBLIC in the preload annotation. Otherwise, you will get
-  a HTTP-403 exception.
+          a HTTP-403 exception.
 
 ## Advantages
 

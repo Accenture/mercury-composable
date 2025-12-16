@@ -21,7 +21,6 @@ package org.platformlambda.common;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -39,7 +38,6 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
-import org.platformlambda.core.websocket.server.MinimalistHttpHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +62,7 @@ public class TestBase {
     protected static final String HELLO_MOCK = "hello.mock";
     protected static final String HELLO_LIST = "hello.list";
     protected static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
-    protected static final int MINIMALIST_HTTP_PORT = 8020;
     protected static final String APP_ID = Utility.getInstance().getDateUuid()+"-"+System.getProperty("user.name");
-    private static final String SERVICE_LOADED = "http.service.loaded";
     private static final String HTTPS_SERVICE_LOADED = "https.service.loaded";
     private static final int WAIT_INTERVAL = 300;
     private static final String PRIVATE_KEY_PATH = "/tmp/key.pem";
@@ -100,24 +96,12 @@ public class TestBase {
             platform.registerPrivate(HELLO_LIST, (headers, input, instance) ->
                     Collections.singletonList(input), 5);
             platform.makePublic(HELLO_MOCK);
-            // load minimalist HTTP server
-            Vertx vertx = Vertx.vertx();
-            HttpServerOptions options = new HttpServerOptions().setTcpKeepAlive(true);
-            HttpServer server = vertx.createHttpServer(options);
-            server.requestHandler(new MinimalistHttpHandler());
-            server.listen(MINIMALIST_HTTP_PORT)
-                    .onSuccess(service -> platform.registerPrivate(SERVICE_LOADED,
-                                    (headers, input, instance) -> true, 1))
-                    .onFailure(ex -> {
-                        log.error("Unable to start - {}", ex.getMessage());
-                        System.exit(-1);
-                    });
-
             if (generatePrivateKeyAndCert()) {
                 System.setProperty("rest.server.ssl.cert", "file:%s".formatted(CERTIFICATE_PATH));
                 System.setProperty("rest.server.ssl.key", "file:%s".formatted(PRIVATE_KEY_PATH));
                 final String sslCertPath = config.getProperty("rest.server.ssl.cert");
                 final String sslKeyPath = config.getProperty("rest.server.ssl.key");
+                Vertx vertx = Vertx.vertx();
                 HttpServer httpsServer = vertx.createHttpServer(AppStarter.getHttpServerOptions(true, sslCertPath, sslKeyPath));
                 httpsServer.requestHandler(request -> request.response()
                         .putHeader("Content-Type", "text/plain")
@@ -132,7 +116,6 @@ public class TestBase {
                             System.exit(-1);
                         });
             }
-            blockingWait(SERVICE_LOADED, 20);
             blockingWait(HTTPS_SERVICE_LOADED, 20);
             EventEmitter po = EventEmitter.getInstance();
             log.info("Journal ready? {}", po.isJournalEnabled());

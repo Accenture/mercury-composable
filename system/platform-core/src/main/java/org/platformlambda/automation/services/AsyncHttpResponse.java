@@ -34,10 +34,12 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is reserved for system use.
@@ -204,7 +206,7 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
                           AsyncContextHolder holder, HttpResMetadata md) {
         var util = Utility.getInstance();
         md.responseBody = event.getRawBody();
-        if (md.responseBody == null && md.streamId != null) {
+        if (md.streamId != null) {
             handleStreamContent(requestId, response, holder, md);
             return true;
         } else if (md.responseBody instanceof Map) {
@@ -228,21 +230,36 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
 
     private void handleStreamContent(String requestId, HttpServerResponse response,
                                      AsyncContextHolder holder, HttpResMetadata md) {
+        var mapContent = new AtomicBoolean(true);
+        List<Map<?, ?>> listOfMap = new ArrayList<>();
         var util = Utility.getInstance();
         response.setChunked(true);
         FluxConsumer<Object> flux = new FluxConsumer<>(md.streamId, getReadTimeout(md.streamTimeout, holder.timeout));
         flux.consume(data -> {
-            if (data instanceof byte[] b && b.length > 0) {
-                response.write(Buffer.buffer(b));
-            }
-            if (data instanceof String text && !text.isEmpty()) {
-                response.write(text);
+            switch (data) {
+                case byte[] b when b.length > 0 -> {
+                    response.write(Buffer.buffer(b));
+                    mapContent.set(false);
+                }
+                case String text when !text.isEmpty() -> {
+                    response.write(text);
+                    mapContent.set(false);
+                }
+                case Map<?,?> map -> listOfMap.add(map);
+                default -> { }
             }
         }, e -> {
             log.error("Closing stream {} - {}", util.getSimpleRoute(flux.getStreamId()), e.getMessage());
             HttpRouter.closeContext(requestId);
             response.end();
         }, () ->{
+            if (mapContent.get() && !listOfMap.isEmpty()) {
+                var text = SimpleMapper.getInstance().getMapper().writeValueAsString(listOfMap);
+                var content = md.contentType.startsWith(TEXT_HTML)? HTML_START + text + HTML_END : text;
+                response.setChunked(false);
+                response.putHeader(CONTENT_LEN, String.valueOf(content.length()));
+                response.write(content);
+            }
             HttpRouter.closeContext(requestId);
             response.end();
         });

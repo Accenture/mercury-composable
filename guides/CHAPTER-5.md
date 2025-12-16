@@ -23,7 +23,7 @@ public class MainApp implements EntryPoint {
 You must have at least one "main application" module because it is mandatory.
 
 > *Note*: Please adjust the parameter "web.component.scan" in application.properties 
-  to point to your user application package(s) in your source code project.
+          to point to your user application package(s) in your source code project.
 
 If your application does not require additional startup logic, you may just print a greeting message.
 
@@ -147,30 +147,6 @@ Note that the PostOffice instance can be created with tracing information in a U
 The above example tells the system that the sender is "unit.test", the trace ID is 12345
 and the trace path is "POST /api/hello/world".
 
-### Convenient utility classes
-
-The Utility and MultiLevelMap classes are convenient tools for unit tests. In the above example, we use the
-Utility class to convert a date object into a UTC timestamp. It is because date object is serialized as a UTC
-timestamp in an event.
-
-The MultiLevelMap supports reading an element using the convenient "dot and bracket" format.
-
-For example, given a map like this:
-```json
-{
-  "body":
-  {
-    "time": "2023-03-27T18:10:34.234Z",
-    "hello": [1, 2, 3]
-  }
-}
-```
-
-| Example | Command                         | Result                   |
-|:-------:|:--------------------------------|:-------------------------|
-|    1    | map.getElement("body.time")     | 2023-03-27T18:10:34.234Z |
-|    2    | map.getElement("body.hello[2]") | 3                        |
-
 ## Your second unit test
 
 Let's do a unit test for PoJo. In this second unit test, it sends a RPC request to the "hello.pojo" function that
@@ -206,6 +182,39 @@ Note that you can use the built-in serialization API to restore a PoJo like this
 ```java
 SamplePoJo pojo = response.getBody(SamplePoJo.class)
 ```
+
+## Convenient utility classes
+
+The `Utility` and `MultiLevelMap` classes are convenient tools for unit tests. In the above example, we use the
+Utility class to convert a date object into a UTC timestamp. It is because date object is serialized as a UTC
+timestamp in an event.
+
+The `MultiLevelMap` supports reading an element using the convenient "dot and bracket" format.
+
+For example, given a map like this:
+```json
+{
+  "body":
+  {
+    "time": "2023-03-27T18:10:34.234Z",
+    "hello": [1, 2, 3],
+    "complex": [
+      {"key": "value1"},
+      {"key": "value2"}
+    ]
+  }
+}
+```
+
+| Example | Command                                | Result                   |
+|:-------:|:---------------------------------------|:-------------------------|
+|    1    | map.getElement("body.time")            | 2023-03-27T18:10:34.234Z |
+|    2    | map.getElement("body.hello[2]")        | 3                        |
+|    3    | map.getElement("body.complex[1].key")  | value2                   |
+|    4    | map.getElements("body.complex[*].key") | [ value1, value2 ]       |
+
+Example-4 above uses the "getElements" in plural form to indicate that it is retrieving a list of elements
+using a "wildcard" index. For simplicity, it does not support more than one wildcard index in the search path.
 
 ## Event Flow mocking framework
 

@@ -10,6 +10,238 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.35, 12/15/2025
+
+### Added
+
+Thread safety mechanism for input/output data mapping per event flow instance
+
+### Removed
+
+Redundant thread wrapper for task executor and virtual thread warm-up counter
+
+### Changed
+
+N/A
+
+---
+## Version 4.3.34, 12/13/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+*Bug fix* for AsyncHttpResponse to render Flux response from a service that
+returns a list of map (key-values). The correct behavior is to return a list of maps
+instead of an empty map.
+
+Earlier versions assume that a streaming HTTP response contains only bytes or text.
+This version supports streaming of maps that originated from a service returning
+a Flux object of PoJos or Maps.
+
+e.g. HTTP response of `Flux<PoJo>` originated from a Spring R2DBC repository service.
+
+---
+## Version 4.3.33, 12/10/2025
+
+### Added
+
+1. add `isContentLengthDefined()` method to AsyncHttpRequest
+2. new parameter "skip.rpc.tracing" to tell the system to skip tracing for certain
+   RPC calls. Default is "skip.rpc.tracing=async.http.request" in application.properties
+   This feature allows unit tests to measure HTTP RPC calls performance.
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated AsyncHttpClient to support setting content-length of zero for PUT, POST and PATCH
+methods
+
+---
+## Version 4.3.32, 12/9/2025
+
+### Added
+
+N/A
+
+### Removed
+
+1. For consistency, retire minimalist HTTP server and use REST automation instead
+2. Remove dependency of org.lz4:lz4-java from apache's kafka-clients
+   due to security vulnerabilities reported for current version 1.8.1
+
+### Changed
+
+Load default rest endpoints for actuator services when rest.yaml is not provided
+
+---
+## Version 4.3.31, 12/9/2025
+
+### Added
+
+leader election protocol in mini-scheduler for backward compatibility to
+replace the simple-scheduler extension project
+
+### Removed
+
+simple-scheduler extension project
+
+### Changed
+
+Explicitly release state machine for a flow instance to improve GC efficiency
+
+---
+## Version 4.3.30, 12/7/2025
+
+### Added
+
+Scheduler-example app to illustrate the use of the mini-scheduler
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Improved mini-scheduler
+2. Update Spring Boot parent to version 3.5.8
+
+---
+## Version 4.3.29, 11/16/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Update name syntax for alias, type and property key for in-memory property graph to
+disallow the use of "." (period or dot character) since "." is used to denote a
+composite key.
+
+---
+## Version 4.3.28, 11/12/2025
+
+This is a bugfix release to unify the data mapping behavior of regular task and subflow.
+
+For backward compatibility, deprecated syntax will be accepted with a warning log message
+during the event script compilation phase.
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+*Bugfix*: The input data mapping behavior for regular task and subflow was inconsistent.
+Earlier, subflow's input data mapping requires the user to add a "body" namespace.
+
+This release makes subflow executes like a regular task so that the input payload
+can be mapped to the input argument of the first task of a subflow without requiring
+a redundant "body" namespace.
+
+Input headers (namespace input.header) are also mapped correctly to the first task
+of a subflow.
+
+Updated unit tests to demonstrate the consistent input data mapping behavior for subflows.
+
+Chapter 4 of developer guide is also updated.
+
+---
+## Version 4.3.27, 11/11/2025
+
+### Added
+
+Improved "external state machine" example in the unit test section
+of event-script-engine module.
+
+It illustrates using an external state machine to accumulate result sets
+of concurrent worker instances without racing condition.
+
+### Removed
+
+N/A
+
+### Changed
+
+Minor update to the handling of dynamic fork-n-join use case.
+
+---
+## Version 4.3.26, 11/7/2025
+
+### Added
+
+Import and export methods for an in-memory property graph
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.3.25, 11/4/2025
+
+### Added
+
+1. Minimalist property graph ("mini-graph") implemented as a fast in-memory knowledge graph.
+2. Mini-scheduler module with simple user defined clustering feature.
+3. Chapter-10 (mini-graph) in developer's guide.
+
+### Removed
+
+N/A
+
+### Changed
+
+OSS updates:
+
+1. spring boot 3.5.7
+2. vertx 5.0.5
+3. classgraph 4.8.184
+4. reactor-bom 2024.0.11
+5. netty 4.2.7.Final
+6. quartz 2.5.1
+7. junit-bom 6.0.1
+8. bouncycastle 1.82
+
+---
+## Version 4.3.24, 10/9/2025
+
+### Added
+
+new deepCopy method in platform-core's Utility class to perform recursive copy of lists and maps.
+
+### Removed
+
+N/A
+
+### Changed
+
+updated event-script-engine's TaskExecutor to perform deep copy of list and map when the target of
+input/output data mapping is a model variable. This allows a model variable with complex data structure
+to be copied by content instead of by "reference".
+
+---
 ## Version 4.3.23, 10/6/2025
 
 ### Added

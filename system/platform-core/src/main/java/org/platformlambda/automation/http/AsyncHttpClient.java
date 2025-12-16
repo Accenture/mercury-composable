@@ -362,12 +362,11 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpHeaders http) {
         // set user-agent for this HTTP client
         http.set(USER_AGENT, USER_AGENT_NAME);
-        // set content-length if needed
-        var len = request.getContentLength();
+        // set content-length, including zero, if needed
         var method = request.getMethod();
-        if (len > 0 && request.getStreamRoutes().isEmpty() &&
+        if (request.isContentLengthDefined() && request.getStreamRoutes().isEmpty() &&
                 (POST.equals(method) || PUT.equals(method) || PATCH.equals(method))) {
-            http.set(CONTENT_LENGTH, len);
+            http.set(CONTENT_LENGTH, request.getContentLength());
         }
         Map<String, String> reqHeaders = request.getHeaders();
         // convert authentication session info into HTTP request headers

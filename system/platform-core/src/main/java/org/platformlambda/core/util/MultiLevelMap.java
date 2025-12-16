@@ -121,30 +121,32 @@ public class MultiLevelMap {
         return element == null? defaultValue : element;
     }
 
+    /**
+     * Get a list of elements using a wildcard index.
+     * e.g. hello[*].world will return values of hello[0].world and hello[1].world if hello has 2 elements
+     *
+     * @param compositePath using dot-bracket convention with a wildcard index
+     * @return list of elements
+     */
     @SuppressWarnings("unchecked")
     public List<Object> getElements(String compositePath) {
         if (compositePath == null || compositePath.isEmpty()) {
             return new ArrayList<>();
         }
-
         validateCompositePathSyntax(compositePath);
         int wildcardIndex = validateSingleWildcard(compositePath);
-
         // Split the path using [*] as the separator
         String basePath = compositePath.substring(0, wildcardIndex);
         String remainingPath = compositePath.substring(wildcardIndex + 3); // skip "[*]"
         if (remainingPath.startsWith(".")) {
             remainingPath = remainingPath.substring(1);
         }
-
         Object baseArray = getElement(basePath);
         if (!(baseArray instanceof List)) {
             return new ArrayList<>();
         }
-
         List<Object> array = (List<Object>) baseArray;
         List<Object> result = new ArrayList<>();
-
         // iterate through the list
         for (int i = 0; i < array.size(); i++) {
             String elementPath;
@@ -155,13 +157,11 @@ public class MultiLevelMap {
                 // Otherwise build the element path by concatenating the base path, index, and remaining path.
                 elementPath = basePath + "[" + i + "]." + remainingPath;
             }
-
             Object element = getElement(elementPath);
             if (element != null) {
                 result.add(element);
             }
         }
-
         return result;
     }
 
@@ -169,7 +169,7 @@ public class MultiLevelMap {
      * Validate that if the path contains wildcard [*], it contains exactly one and returns its index
      *
      * @param path the composite path to validate
-     * @Return the index of the wildcard
+     * @return the index of the wildcard
      * @throws IllegalArgumentException if multiple or no wildcard[s] are found
      */
     private int validateSingleWildcard(String path) {
@@ -178,7 +178,6 @@ public class MultiLevelMap {
             // if there is no [*] in the path, error out
             throw new IllegalArgumentException("Invalid composite path - missing index segment");
         }
-
         int secondWildcard = path.indexOf("[*]", firstWildcard + 2);
         if (secondWildcard != -1) {
             throw new IllegalArgumentException("Invalid composite path - only one wildcard [] is allowed");
