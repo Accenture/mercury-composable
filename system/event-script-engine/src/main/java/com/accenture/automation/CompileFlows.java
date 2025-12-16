@@ -31,18 +31,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  * <p>
  * Event Script should start right after essential services
- * Therefore, we set sequence number to 2 and essential services to 0.
+ * Therefore, essential services should be set to 0 and CompileFlows should be set to 5 to allow for future improvements.
+ * All other user-services should start after 5
  * <p>
  * If you have a reason to execute another BeforeApplication module before
  * Event Script starts, you can set it to 1.
  */
-@BeforeApplication(sequence=2)
+@BeforeApplication(sequence=5)
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);
     private static final String INPUT = "input";
@@ -107,6 +109,8 @@ public class CompileFlows implements EntryPoint {
     private static final String INVALID_TASK = "invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
+    private static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<pluginName>.+)\\(.*\\)";
+    static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
     /**
      * This main class is only used when testing the app from the IDE.
      *
@@ -793,22 +797,43 @@ public class CompileFlows implements EntryPoint {
         if (sep > 0) {
             String lhs = input.substring(0, sep).trim();
             String rhs = input.substring(sep+2).trim();
-            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
-                if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
-                        lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
-                    return true;
-                } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-                    return validKeyValues(lhs);
-                } else {
-                    return (lhs.startsWith(TEXT_TYPE) ||
-                            lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
-                            lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
-                            lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
-                            lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
-                }
+            if (isPluggableFunction(rhs)) {
+                return false;
+            } else if (isPluggableFunction(lhs)) {
+                return isValidPluggableFunction(lhs);
+            } else if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
+                return validInputLhs(lhs);
             }
         }
         return false;
+    }
+
+    private boolean validInputLhs(String lhs) {
+        if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
+                lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
+            return true;
+        } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+            return validKeyValues(lhs);
+        } else {
+            return (lhs.startsWith(TEXT_TYPE) ||
+                    lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
+                    lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
+                    lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
+                    lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
+        }
+    }
+
+    private boolean isValidPluggableFunction(String lhs){
+        var matcher = PLUGGABLE_FUNCTION_PATTERN.matcher(lhs);
+        if (!matcher.find()) {
+            return false;
+        }
+        String pluginName = matcher.group("pluginName");
+        return SimplePluginLoader.containsSimplePlugin(pluginName);
+    }
+
+    private boolean isPluggableFunction(String lhs){
+        return lhs.matches(PLUGGABLE_FUNCTION_REGEX); // Should match f:func(...args), where args is optional
     }
 
     private boolean validModel(String key) {

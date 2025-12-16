@@ -40,9 +40,12 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -1430,5 +1433,97 @@ class FlowTests extends TestBase {
                 flowExecutor.request("unit.test", traceId, "INTERNAL /flow/test",
                                         flowId, dataset, correlationId, timeout));
         assertEquals(error, ex.getMessage());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void shouldHandleArithmeticPluggableFunction() throws InterruptedException, ExecutionException {
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST)
+                .setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/pluggableFunctions/arithmetic");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = EventEnvelope.of().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, timeout).get();
+        assertNotNull(res);
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertNotNull(result);
+        assertEquals(11, result.get("sum"));
+        assertEquals(1, result.get("difference"));
+        assertEquals(12, result.get("product"));
+        assertEquals(3, result.get("quotient"));
+        assertEquals(7, result.get("incremented"));
+        assertEquals(5, result.get("decremented"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void shouldHandleConversionTypesPluggableFunction() throws InterruptedException, ExecutionException {
+        final long timeout = 8000;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST)
+                .setMethod("GET")
+                .setHeader("accept", "application/json")
+                .setUrl("/api/pluggableFunctions/types");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = EventEnvelope.of().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope res = po.request(req, timeout).get();
+        assertNotNull(res);
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals("Hello", result.get("string"));
+        assertEquals(256, result.get("integer"));
+        assertEquals(256, result.get("integer_convert"));
+        assertEquals(9223372036854775807L, result.get("long"));
+        assertEquals(9223372036854775807L, result.get("long_convert"));
+        assertEquals(128.5, result.get("float"));
+        assertEquals(128.5, result.get("float_convert"));
+        assertEquals(256.75d, result.get("double"));
+        assertEquals(256.75d, result.get("double_convert"));
+        // break into another function to satisfy SonarQube requirement
+        checkTypeAssertion(result);
+    }
+
+    private void checkTypeAssertion(Map<String, Object> result) {
+        assertEquals(true, result.get("bool_true"));
+        assertEquals(false, result.get("bool_false"));
+        assertEquals(true, result.get("bool_convert"));
+        assertEquals(false, result.get("and"));
+        assertEquals(true, result.get("or"));
+        assertEquals(true, result.get("not"));
+        assertEquals("Hello", result.get("positive_ternary"));
+        assertEquals(" World!", result.get("negative_ternary"));
+        assertEquals(true, result.get("positive_eq"));
+        assertEquals(false, result.get("negative_eq"));
+        assertEquals(true, result.get("greater_than_positive"));
+        assertEquals(false, result.get("greater_than_negative"));
+        assertEquals(true, result.get("less_than_positive"));
+        assertEquals(false, result.get("less_than_negative"));
+        assertEquals("World!", result.get("substring_one"));
+        assertEquals("World", result.get("substring_two"));
+        assertEquals("Hello World!", result.get("concat"));
+        var b64String = "SGVsbG8=";
+        var bytes = Base64.getDecoder().decode(b64String);
+        List<Integer> byteList = IntStream.range(0, bytes.length)
+                .map(i -> (int) bytes[i])
+                .boxed()
+                .toList();
+        assertEquals(byteList, result.get("to_b64_bytes"));
+        assertEquals(b64String, result.get("to_bytestring"));
+        assertTrue((Boolean) result.get("isNull"));
+        assertTrue((Boolean) result.get("isNotNull"));
+        UUID id = UUID.fromString((String) result.get("uuid"));
+        assertNotNull(id);
+        String date = (String) result.get("currentTime");
+        assertNotNull(date);
+        ZonedDateTime time = ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME);
+        assertNotNull(time);
+        assertEquals(5, result.get("arr_length"));
+        assertEquals(5, result.get("str_length"));
     }
 }
