@@ -1007,11 +1007,17 @@ class FlowTests extends TestBase {
         assertEquals(4, itemsAndIndexes.get("five"));
         var data = result.get("append");
         assertInstanceOf(List.class, data);
-        var list = (List<String>) data;
-        assertEquals(5, list.size());
-        log.info("Consolidated items {} must include one, two, three, four and five", list);
+        var list1 = (List<String>) data;
+        assertEquals(5, list1.size());
+        log.info("Consolidated items {} must include one, two, three, four and five", list1);
+        var expected = Set.of("one", "two", "three", "four", "five");
         // comparing the items as a set because the order is random due to parallelism
-        assertEquals(Set.of("one", "two", "three", "four", "five"), new HashSet<>(list));
+        assertEquals(expected, new HashSet<>(list1));
+        var serialized = result.get("serialized");
+        assertInstanceOf(List.class, serialized);
+        var list2 = (List<String>) data;
+        assertEquals(5, list2.size());
+        assertEquals(expected, new HashSet<>(list2));
     }
 
     @SuppressWarnings("unchecked")

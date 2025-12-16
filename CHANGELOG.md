@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+Thread safety mechanism for input/output data mapping per event flow instance.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.3.34, 12/13/2025
+
+### Added
+
 N/A
 
 ### Removed
