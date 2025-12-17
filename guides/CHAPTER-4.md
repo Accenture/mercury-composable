@@ -1145,8 +1145,15 @@ the list of elements and spin up an instance of the "next" task to retrieve the 
 the element in the list. The two special suffixes are relevant only when adding to the model variable configured
 in the "source" parameter.
 
-> *Limitation*: The model variables with special suffixes '.ITEM' and '.INDEX' are computed values for the purpose
-                of mapping as input arguments to a task. They cannot be used as regular model variables.
+The model variables with special suffixes `.ITEM` and `.INDEX` are computed values for the purpose of mapping
+as input arguments to a task. They cannot be used to evaluate "Runtime model variables". 
+
+However, you can map them as a regular model variable.
+For example, the following mapping appends the computed index value to the model variable array "model.index".
+
+```yaml
+ - 'model.elements.INDEX -> model.index[]'
+```
 
 ### Sink task
 
@@ -1188,6 +1195,8 @@ guaranteed by the underlying reactive event system.
 
 The state machine is designed to be thread safe during the input/output data mapping phases.
 No special threatment is required when updating the state machine using event script.
+
+This includes parent state machine that may be updated by some concurrent running subflows.
 
 ## Pipeline feature
 

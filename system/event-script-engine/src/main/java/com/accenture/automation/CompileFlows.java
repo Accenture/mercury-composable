@@ -69,6 +69,8 @@ public class CompileFlows implements EntryPoint {
     private static final String MODEL = "model";
     private static final String PARENT = "parent";
     private static final String ROOT = "root";
+    private static final String MODEL_PARENT = "model.parent.";
+    private static final String MODEL_ROOT = "model.root.";
     private static final String MODEL_NAMESPACE = "model.";
     private static final String NEGATE_MODEL = "!model.";
     private static final String RESULT_NAMESPACE = "result.";
@@ -250,28 +252,9 @@ public class CompileFlows implements EntryPoint {
         }
     }
 
-    private boolean validOutputMapping(String name, List<String> outputList, Task task, FlowConfigMetadata md) {
-        boolean isDecisionTask = DECISION.equals(md.execution);
-        List<String> filteredOutputMapping = filterDataMapping(outputList, false);
-        for (String line : filteredOutputMapping) {
-            if (validOutput(line, isDecisionTask)) {
-                task.output.add(line);
-            } else {
-                log.error("Skip invalid task {} in {} that has invalid output mapping - {}",
-                        md.uniqueTaskName, name, line);
-                return false;
-            }
-        }
-        if (isDecisionTask && task.nextSteps.size() < 2) {
-            log.error("Decision task {} in {} must have at least 2 next tasks", md.uniqueTaskName, name);
-            return false;
-        }
-        return true;
-    }
-
     private boolean validInputMapping(String name, List<String> inputList, Task task, FlowConfigMetadata md) {
         List<String> filteredInputMapping = filterDataMapping(inputList,
-                                                              task.getFunctionRoute().startsWith(FLOW_PROTOCOL));
+                task.getFunctionRoute().startsWith(FLOW_PROTOCOL));
         for (String line : filteredInputMapping) {
             if (validInput(line)) {
                 int sep = line.lastIndexOf(MAP_TO);
@@ -281,11 +264,36 @@ public class CompileFlows implements EntryPoint {
                             md.uniqueTaskName, name, line);
                 }
                 task.input.add(line);
+                if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
+                    task.enableInputParentRef();
+                }
             } else {
                 log.error("Skip invalid task {} in {} that has invalid input mapping - {}",
                         md.uniqueTaskName, name, line);
                 return false;
             }
+        }
+        return true;
+    }
+
+    private boolean validOutputMapping(String name, List<String> outputList, Task task, FlowConfigMetadata md) {
+        boolean isDecisionTask = DECISION.equals(md.execution);
+        List<String> filteredOutputMapping = filterDataMapping(outputList, false);
+        for (String line : filteredOutputMapping) {
+            if (validOutput(line, isDecisionTask)) {
+                task.output.add(line);
+                if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
+                    task.enableOutputParentRef();
+                }
+            } else {
+                log.error("Skip invalid task {} in {} that has invalid output mapping - {}",
+                        md.uniqueTaskName, name, line);
+                return false;
+            }
+        }
+        if (isDecisionTask && task.nextSteps.size() < 2) {
+            log.error("Decision task {} in {} must have at least 2 next tasks", md.uniqueTaskName, name);
+            return false;
         }
         return true;
     }

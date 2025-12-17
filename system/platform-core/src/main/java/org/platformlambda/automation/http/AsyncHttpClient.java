@@ -345,6 +345,14 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (queryParams != null) {
             md.queryString = md.queryString == null? queryParams : md.queryString + "&" + queryParams;
         }
+        // render path parameters
+        var pathParameters = request.getPathParameters();
+        for (var entry : pathParameters.entrySet()) {
+            var key = "{"+entry.getKey()+"}";
+            if (md.rawUri.contains(key)) {
+                md.rawUri = md.rawUri.replace(key, entry.getValue());
+            }
+        }
         // reconstruct full URI
         var sb = new StringBuilder();
         sb.append(md.rawUri);

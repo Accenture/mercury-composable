@@ -107,6 +107,15 @@ public class FlowInstance {
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + template.ttl));
     }
 
+    public FlowInstance resolveAncestor() {
+        return this.parentId == null? this : resolveParent(this.parentId);
+    }
+
+    /**
+     * Resolve the first ancestor
+     * @param parentId of a parent flow
+     * @return ancestor by recursion
+     */
     private FlowInstance resolveParent(String parentId) {
         var parent = Flows.getFlowInstance(parentId);
         if (parent == null) {

@@ -996,11 +996,9 @@ class FlowTests extends TestBase {
         Platform.getInstance().registerPrivate(mockForkTask, f1, 10);
         Platform.getInstance().registerPrivate(mockJoinTask, f2, 10);
         var mock1 = new EventScriptMock("fork-n-join-with-dynamic-model-test");
-
         mock1.assignFunctionRoute("join.task", mockJoinTask);
         var mock2 = new EventScriptMock("echo-flow");
         mock2.assignFunctionRoute("echo.me", mockForkTask);
-
         var result = forkJoin("/api/fork-n-join-with-dynamic-model/", false);
         assertEquals(5, itemsAndIndexes.size());
         assertEquals(0, itemsAndIndexes.get("one"));
@@ -1012,15 +1010,34 @@ class FlowTests extends TestBase {
         assertInstanceOf(List.class, data);
         var list1 = (List<String>) data;
         assertEquals(5, list1.size());
-        log.info("Consolidated items {} must include one, two, three, four and five", list1);
+        log.info("Consolidated items must include [one, two, three, four and five]");
         var expected = Set.of("one", "two", "three", "four", "five");
         // comparing the items as a set because the order is random due to parallelism
         assertEquals(expected, new HashSet<>(list1));
         var serialized = result.get("serialized");
         assertInstanceOf(List.class, serialized);
-        var list2 = (List<String>) data;
+        var list2 = (List<String>) serialized;
         assertEquals(5, list2.size());
         assertEquals(expected, new HashSet<>(list2));
+        log.info("Serialized items {}", serialized);
+        var parentItems = result.get("parent_items");
+        assertInstanceOf(List.class, parentItems);
+        var list3 = (List<String>) parentItems;
+        assertEquals(5, list3.size());
+        assertEquals(expected, new HashSet<>(list3));
+        log.info("Parent items {}", parentItems);
+        var indexes = result.get("indexes");
+        assertInstanceOf(List.class, indexes);
+        var list4 = (List<Integer>) indexes;
+        assertEquals(5, list4.size());
+        assertEquals(Set.of(0,1,2,3,4), new HashSet<>(list4));
+        log.info("Indexes {}", indexes);
+        var parentIndexes = result.get("parent_indexes");
+        assertInstanceOf(List.class, parentIndexes);
+        var list5 = (List<Integer>) parentIndexes;
+        assertEquals(5, list5.size());
+        assertEquals(Set.of(0,1,2,3,4), new HashSet<>(list5));
+        log.info("Parent indexes {}", parentIndexes);
     }
 
     @SuppressWarnings("unchecked")
