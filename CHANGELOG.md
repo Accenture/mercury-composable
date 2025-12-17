@@ -10,12 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
-## Version 4.3.37, 12/16/2025
+## Version 4.3.37, 12/17/2025
 
 ### Added
 
 1. AsyncHttpClient now supports path parameter rendering of URI. e.g. /api/book/{id}
-2. Thread safety mechanism for input/output data mapping when updating a parent state machine
+2. AsyncHttpRequest now supports bulk setting of path and query parameters
+3. Thread safety mechanism for input/output data mapping when updating a parent state machine
    in a subflow.
 
 ### Removed
