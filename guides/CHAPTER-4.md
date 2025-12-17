@@ -1161,7 +1161,7 @@ For example,
 
 The 1st entry appends the computed index value to the model variable array "model.index".
 The 2nd entry convert the computed value of the current element represented by model.elements.ITEM.
-Assuming the current element is a map of key-values, the 3rd and 4th entries maps two key-values
+Assuming the current element is a map of key-values, the 3rd and 4th entries map the two key-values
 to the input argument host and port.
 
 ### Sink task
