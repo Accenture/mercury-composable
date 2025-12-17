@@ -35,6 +35,8 @@ public class Task {
     public final String service;
     // execution: decision, response, end, sequential, parallel
     public final String execution;
+    private boolean inputParentRef = false;
+    private boolean outputParentRef = false;
     private long delay = -1;
     private String functionRoute;
     private String delayVar = null;
@@ -58,6 +60,22 @@ public class Task {
         this.service = service;
         this.functionRoute = functionRoute == null? service : functionRoute;
         this.execution = execution;
+    }
+
+    public boolean hasInputParentRef() {
+        return inputParentRef;
+    }
+
+    public void enableInputParentRef() {
+        this.inputParentRef = true;
+    }
+
+    public boolean hasOutputParentRef() {
+        return outputParentRef;
+    }
+
+    public void enableOutputParentRef() {
+        this.outputParentRef = true;
     }
 
     public String getFunctionRoute() {

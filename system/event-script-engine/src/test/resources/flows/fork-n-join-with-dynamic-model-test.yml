@@ -32,6 +32,7 @@ tasks:
       - 'text(hello-world-two) -> key2'
       - 'model.dataList.ITEM -> item'
       - 'model.dataList.INDEX -> index'
+      - 'model.dataList.INDEX -> model.index[]'
       - 'model.key:uuid -> uuid'
       - 'text(world) -> header.hello'
     process: 'flow://echo-flow'
@@ -55,6 +56,10 @@ tasks:
       - 'model.key1 -> key1'
       - 'model.key2 -> key2'
       - 'model.serialized -> serialized'
+      # test thread safety for parent state machine in subflows
+      - 'model.parent.serialized -> parent_items'
+      - 'model.parent.index -> parent_indexes'
+      - 'model.index -> indexes'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

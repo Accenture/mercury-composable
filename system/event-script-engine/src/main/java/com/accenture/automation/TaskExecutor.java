@@ -402,7 +402,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          * Therefore, to ensure the state machine is updated in a thread safe manner,
          * this block applies a thread-safety lock per flow instance.
          */
-        flowInstance.outputSafety.lock();
+        var ancestor = flowInstance.resolveAncestor();
+        var useParentModel = task.hasOutputParentRef() && !ancestor.id.equals(flowInstance.id);
+        flowInstance.modelSafety.lock();
+        if (useParentModel) {
+            ancestor.modelSafety.lock();
+        }
         try {
             List<String> mapping = task.output;
             for (String entry : mapping) {
@@ -412,7 +417,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
             }
         } finally {
-            flowInstance.outputSafety.unlock();
+            if (useParentModel) {
+                ancestor.modelSafety.unlock();
+            }
+            flowInstance.modelSafety.unlock();
         }
         // has output data mapping monitor?
         var monitor = task.getMonitorAfterTask();
@@ -963,7 +971,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          * Therefore, to ensure the state machine is updated in a thread safe manner,
          * this block applies a thread-safety lock per flow instance.
          */
-        flowInstance.inputSafety.lock();
+        var ancestor = flowInstance.resolveAncestor();
+        var useParentModel = task.hasInputParentRef() && !ancestor.id.equals(flowInstance.id);
+        flowInstance.modelSafety.lock();
+        if (useParentModel) {
+            ancestor.modelSafety.lock();
+        }
         try {
             List<String> mapping = task.input;
             for (String entry: mapping) {
@@ -973,7 +986,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
             }
         } finally {
-            flowInstance.inputSafety.unlock();
+            if (useParentModel) {
+                ancestor.modelSafety.unlock();
+            }
+            flowInstance.modelSafety.unlock();
         }
         // has input data mapping monitor?
         var monitor = task.getMonitorBeforeTask();
@@ -996,19 +1012,34 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
             md.lhs = md.lhs.toLowerCase();
         }
+        final Object value = inputLike?
+                        getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey) : getConstantValue(md.lhs);
         if (md.rhs.startsWith(EXT_NAMESPACE)) {
-            final Object value = inputLike? getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey) :
-                                            getConstantValue(md.lhs);
             callExternalStateMachine(flowInstance, task, md.rhs, value);
         } else if (md.rhs.startsWith(MODEL_NAMESPACE)) {
-            setInputDataMappingModelVar(md, flowInstance, inputLike);
+            setInputDataMappingModelVar(md, flowInstance, value, inputLike);
         } else if (inputLike) {
-            final Object value = getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey);
             if (value != null) {
                 setInputDataMappingRhs(entry, md, value);
             }
         } else {
             setInputDataMappingRhsAsConstant(md);
+        }
+    }
+
+    private void setInputDataMappingModelVar(InputMappingMetadata md, FlowInstance flowInstance,
+                                             Object value, boolean inputLike) {
+        Map<String, Object> modelOnly = new HashMap<>();
+        modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
+        MultiLevelMap model = new MultiLevelMap(modelOnly);
+        if (inputLike) {
+            if (value == null) {
+                removeModelElement(md.rhs, model);
+            } else {
+                setRhsElement(value, md.rhs, model);
+            }
+        } else {
+            setConstantValue(md.lhs, md.rhs, model);
         }
     }
 
@@ -1069,22 +1100,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         if (!valid) {
             log.error("Invalid input mapping '{}' - expect: Map, actual: {}", entry, value.getClass().getSimpleName());
-        }
-    }
-
-    private void setInputDataMappingModelVar(InputMappingMetadata md, FlowInstance flowInstance, boolean inputLike) {
-        Map<String, Object> modelOnly = new HashMap<>();
-        modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
-        MultiLevelMap model = new MultiLevelMap(modelOnly);
-        if (inputLike) {
-            Object value = getLhsElement(md.lhs, md.source);
-            if (value == null) {
-                removeModelElement(md.rhs, model);
-            } else {
-                setRhsElement(value, md.rhs, model);
-            }
-        } else {
-            setConstantValue(md.lhs, md.rhs, model);
         }
     }
 

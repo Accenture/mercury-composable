@@ -10,9 +10,11 @@ tasks:
     input:
       - 'input.body -> *'
       - 'input.header -> header'
+      - 'input.body.index -> model.parent.index[]'
     process: 'no.op'
     output:
       - 'header -> output.header'
       - 'result -> output.body'
+      - 'result.item -> model.parent.serialized[]'
     description: 'Hello World'
     execution: end

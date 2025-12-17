@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.36</version>
+    <version>4.3.37</version>
     <name>Mercury platform-core module</name>
 
     <parent>
@@ -44,7 +44,6 @@
     </dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty-http</artifactId>

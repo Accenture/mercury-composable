@@ -107,8 +107,10 @@ class RestEndpointTest extends TestBase {
             AsyncHttpRequest req = new AsyncHttpRequest();
             req.setMethod("GET");
             req.setHeader("accept", "application/json");
-            req.setUrl("/api/hello/world?hello world=abc#hello&test=message");
+            // demonstrate path parameter rendering
+            req.setUrl("/api/hello/{id}?hello world=abc#hello&test=message");
             req.setQueryParameter("x1", "y");
+            req.setPathParameter("id", "world");
             List<String> list = new ArrayList<>();
             list.add("a");
             list.add("b");

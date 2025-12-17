@@ -383,9 +383,17 @@ public class AsyncHttpRequest {
         return caseInsensitiveGet(pathParams, key);
     }
 
+    public AsyncHttpRequest setPathParameters(Map<String, String> pathParameters) {
+        if (pathParameters == null || pathParameters.isEmpty()) {
+            return this;
+        }
+        pathParameters.forEach(this::setPathParameter);
+        return this;
+    }
+
     public AsyncHttpRequest setPathParameter(String key, String value) {
         // filter out CR and LF
-        var v = value == null? "" : value.replace("\r", "").replace("\n", "");
+        var v = value == null ? "" : value.replace("\r", "").replace("\n", "");
         pathParams.put(key, v);
         return this;
     }
@@ -529,6 +537,14 @@ public class AsyncHttpRequest {
         return Collections.emptyList();
     }
 
+    public AsyncHttpRequest setQueryParameters(Map<String, Object> queryParameters) {
+        if (queryParameters == null || queryParameters.isEmpty()) {
+            return this;
+        }
+        queryParameters.forEach(this::setQueryParameter);
+        return this;
+    }
+
     @SuppressWarnings({"rawtypes"})
     public AsyncHttpRequest setQueryParameter(String key, Object value) {
         if (key != null) {
@@ -640,18 +656,20 @@ public class AsyncHttpRequest {
     private void fromMap(Object input) {
         if (input instanceof AsyncHttpRequest source) {
             copy(source);
-        } else if (input instanceof Map<?, ?> map) {
-            copyHeadersFromMap(map);
-            copyKeyValuesFromMap(map);
-            copyFileMetadataFromMap(map);
-            if (map.containsKey(PARAMETERS)) {
-                Map<String, Object> parameters = (Map<String, Object>) map.get(PARAMETERS);
-                if (parameters.containsKey(PATH)) {
-                    pathParams = (Map<String, String>) parameters.get(PATH);
-                }
-                if (parameters.containsKey(QUERY)) {
-                    queryParams = (Map<String, Object>) parameters.get(QUERY);
-                }
+            return;
+        }
+        if (!(input instanceof Map<?, ?> map)) {
+            return;
+        }
+        copyHeadersFromMap(map);
+        copyKeyValuesFromMap(map);
+        copyFileMetadataFromMap(map);
+        if (map.containsKey(PARAMETERS) && map.get(PARAMETERS) instanceof Map<?, ?> parameters) {
+            if (parameters.containsKey(PATH) && parameters.get(PATH) instanceof Map<?, ?> pathMap) {
+                setPathParameters((Map<String, String>) pathMap);
+            }
+            if (parameters.containsKey(QUERY) && parameters.get(QUERY) instanceof Map<?, ?> queryMap) {
+                setQueryParameters((Map<String, Object>) queryMap);
             }
         }
     }
