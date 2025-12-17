@@ -401,14 +401,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          * Java virtual thread system is backed by multiple kernel threads.
          * Therefore, to ensure the state machine is updated in a thread safe manner,
          * this block applies a thread-safety lock per flow instance.
-         *
-         * When the data mapping involves a parent model, use the ancestor's lock.
          */
         var ancestor = flowInstance.resolveAncestor();
         var useParentModel = task.hasOutputParentRef() && !ancestor.id.equals(flowInstance.id);
-        flowInstance.outputSafety.lock();
+        flowInstance.modelSafety.lock();
         if (useParentModel) {
-            ancestor.outputSafety.lock();
+            ancestor.modelSafety.lock();
         }
         try {
             List<String> mapping = task.output;
@@ -420,9 +418,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
         } finally {
             if (useParentModel) {
-                ancestor.outputSafety.unlock();
+                ancestor.modelSafety.unlock();
             }
-            flowInstance.outputSafety.unlock();
+            flowInstance.modelSafety.unlock();
         }
         // has output data mapping monitor?
         var monitor = task.getMonitorAfterTask();
@@ -972,14 +970,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          * Java virtual thread system is backed by multiple kernel threads.
          * Therefore, to ensure the state machine is updated in a thread safe manner,
          * this block applies a thread-safety lock per flow instance.
-         *
-         * When the data mapping involves a parent model, use the ancestor's lock.
          */
         var ancestor = flowInstance.resolveAncestor();
         var useParentModel = task.hasInputParentRef() && !ancestor.id.equals(flowInstance.id);
-        flowInstance.inputSafety.lock();
+        flowInstance.modelSafety.lock();
         if (useParentModel) {
-            ancestor.inputSafety.lock();
+            ancestor.modelSafety.lock();
         }
         try {
             List<String> mapping = task.input;
@@ -991,9 +987,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
         } finally {
             if (useParentModel) {
-                ancestor.inputSafety.unlock();
+                ancestor.modelSafety.unlock();
             }
-            flowInstance.inputSafety.unlock();
+            flowInstance.modelSafety.unlock();
         }
         // has input data mapping monitor?
         var monitor = task.getMonitorBeforeTask();
