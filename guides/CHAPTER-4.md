@@ -1148,12 +1148,21 @@ in the "source" parameter.
 The model variables with special suffixes `.ITEM` and `.INDEX` are computed values for the purpose of mapping
 as input arguments to a task. They cannot be used to evaluate "Runtime model variables". 
 
-However, you can map them as a regular model variable.
-For example, the following mapping appends the computed index value to the model variable array "model.index".
+However, you can map them as regular model variables and further addressing is viable.
+
+For example, 
 
 ```yaml
  - 'model.elements.INDEX -> model.index[]'
+ - 'model.elements.ITEM -> model.myItem'
+ - 'model.myItem.host -> host'
+ - 'model.myItem.port -> port'
 ```
+
+The 1st entry appends the computed index value to the model variable array "model.index".
+The 2nd entry convert the computed value of the current element represented by model.elements.ITEM.
+Assuming the current element is a map of key-values, the 3rd and 4th entries maps two key-values
+to the input argument host and port.
 
 ### Sink task
 
