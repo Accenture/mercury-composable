@@ -404,8 +404,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          *
          * When the data mapping involves a parent model, use the ancestor's lock.
          */
-        var instance = task.hasOutputParentRef()? flowInstance.resolveAncestor() : flowInstance;
-        instance.outputSafety.lock();
+        var ancestor = flowInstance.resolveAncestor();
+        var useParentModel = task.hasOutputParentRef() && !ancestor.id.equals(flowInstance.id);
+        flowInstance.outputSafety.lock();
+        if (useParentModel) {
+            ancestor.outputSafety.lock();
+        }
         try {
             List<String> mapping = task.output;
             for (String entry : mapping) {
@@ -415,7 +419,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
             }
         } finally {
-            instance.outputSafety.unlock();
+            if (useParentModel) {
+                ancestor.outputSafety.unlock();
+            }
+            flowInstance.outputSafety.unlock();
         }
         // has output data mapping monitor?
         var monitor = task.getMonitorAfterTask();
@@ -968,8 +975,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          *
          * When the data mapping involves a parent model, use the ancestor's lock.
          */
-        var instance = task.hasInputParentRef()? flowInstance.resolveAncestor() : flowInstance;
-        instance.inputSafety.lock();
+        var ancestor = flowInstance.resolveAncestor();
+        var useParentModel = task.hasInputParentRef() && !ancestor.id.equals(flowInstance.id);
+        flowInstance.inputSafety.lock();
+        if (useParentModel) {
+            ancestor.inputSafety.lock();
+        }
         try {
             List<String> mapping = task.input;
             for (String entry: mapping) {
@@ -979,7 +990,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 }
             }
         } finally {
-            instance.inputSafety.unlock();
+            if (useParentModel) {
+                ancestor.inputSafety.unlock();
+            }
+            flowInstance.inputSafety.unlock();
         }
         // has input data mapping monitor?
         var monitor = task.getMonitorBeforeTask();
