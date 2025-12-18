@@ -110,7 +110,7 @@ class RestEndpointTest extends TestBase {
             // demonstrate path parameter rendering
             req.setUrl("/api/hello/{id}?hello world=abc#hello&test=message");
             req.setQueryParameter("x1", "y");
-            req.setPathParameter("id", "world");
+            req.setPathParameter("id", "world").setPathParameter("non_existent", "ok");
             List<String> list = new ArrayList<>();
             list.add("a");
             list.add("b");
