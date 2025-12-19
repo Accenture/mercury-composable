@@ -35,14 +35,16 @@ Update OSS versions:
 4. Guava 33.5.0-jre
 5. Reactor-bom 2025.0.1
 6. Vertx 5.0.6
+7. Kafka-client 4.1.1
 
 ---
-## Version 4.3.37, 12/16/2025
+## Version 4.3.37, 12/17/2025
 
 ### Added
 
-1. AsyncHttpClient now supports path parameter rendering of URI. e.g. /api/book/{id}
-2. Thread safety mechanism for input/output data mapping when updating a parent state machine
+1. AsyncHttpClient supports path parameter rendering of URI. e.g. /api/book/{id}
+2. AsyncHttpRequest supports bulk setting of path and query parameters
+3. Thread safety mechanism for input/output data mapping when updating a parent state machine
    in a subflow.
 
 ### Removed
