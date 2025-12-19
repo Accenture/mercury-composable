@@ -10,13 +10,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
-## Version 4.3.37, 12/17/2025
+## Version 4.3.38, 12/18/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+
+Sync up to Nettry 4.2.9.Final due to security vulnerability in version 4.2.8.Final and earlier:
+- CRLF Injection vulnerability in io.netty.handler.codec.http.HttpRequestEncoder 
+  (CVE-2025-67735 - CRLF injection)
+
+Update OSS versions:
+
+1. Spring Boot 3.5.9
+2. Netty 4.2.9.Final
+3. Gson 2.13.2
+4. Guava 33.5.0-jre
+5. Reactor-bom 2025.0.1
+6. Vertx 5.0.6
+
+---
+## Version 4.3.37, 12/16/2025
 
 ### Added
 
 1. AsyncHttpClient now supports path parameter rendering of URI. e.g. /api/book/{id}
-2. AsyncHttpRequest now supports bulk setting of path and query parameters
-3. Thread safety mechanism for input/output data mapping when updating a parent state machine
+2. Thread safety mechanism for input/output data mapping when updating a parent state machine
    in a subflow.
 
 ### Removed

@@ -5,22 +5,22 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>rest-spring-3-example</artifactId>
-    <version>4.3.37</version>
+    <version>4.3.38</version>
     <packaging>jar</packaging>
     <name>Spring Boot 3 example using platform-core</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.8</version>
+        <version>3.5.9</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netty.version>4.2.7.Final</netty.version>
-        <kafka.version>4.0.0</kafka.version>
-        <gson.version>2.13.1</gson.version>
+        <netty.version>4.2.9.Final</netty.version>
+        <kafka.version>4.1.1</kafka.version>
+        <gson.version>2.13.2</gson.version>
         <java.version>21</java.version>
     </properties>
 
@@ -36,7 +36,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2024.0.11</version>
+                <version>2025.0.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -47,14 +47,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.3.37</version>
+            <version>4.3.38</version>
         </dependency>
 
         <!-- Optionally, select your optional cloud connector -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>kafka-connector</artifactId>
-            <version>4.3.37</version>
+            <version>4.3.38</version>
         </dependency>
 
         <dependency>
