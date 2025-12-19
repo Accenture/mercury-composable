@@ -23,9 +23,8 @@ N/A
 ### Changed
 
 
-Sync up to Nettry 4.2.9.Final due to security vulnerability in version 4.2.8.Final and earlier:
-- CRLF Injection vulnerability in io.netty.handler.codec.http.HttpRequestEncoder 
-  (CVE-2025-67735 - CRLF injection)
+Sync up to Netty 4.2.9.Final due to security vulnerability in version 4.2.8.Final and earlier:
+CRLF Injection vulnerability in io.netty.handler.codec.http.HttpRequestEncoder (CVE-2025-67735)
 
 Update OSS versions:
 
