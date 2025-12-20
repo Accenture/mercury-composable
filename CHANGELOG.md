@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
-## Version 4.3.38, 12/18/2025
+## Version 4.3.39, 12/20/2025
 
 ### Added
 
@@ -22,6 +22,20 @@ N/A
 
 ### Changed
 
+Update OSS version for apache log4j2 to 2.25.3 using pom.xml's properties
+
+---
+## Version 4.3.38, 12/18/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
 
 Sync up to Netty 4.2.9.Final due to security vulnerability in version 4.2.8.Final and earlier:
 CRLF Injection vulnerability in io.netty.handler.codec.http.HttpRequestEncoder (CVE-2025-67735)
