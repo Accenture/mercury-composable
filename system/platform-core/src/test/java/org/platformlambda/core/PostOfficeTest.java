@@ -63,6 +63,22 @@ class PostOfficeTest extends TestBase {
     private static final String X_TTL = "x-ttl";
 
     @Test
+    void getHelloPoJo() throws ExecutionException, InterruptedException {
+        var name = "Peter";
+        var address = "100 World Blvd";
+        PostOffice po = PostOffice.trackable("unit.test", "5", "TEST /api/hello/pojo");
+        var req = new EventEnvelope().setTo("hello.pojo").setHeader("name", name).setHeader("address", address);
+        var res = po.request(req, 5000).get();
+        assertInstanceOf(Map.class, res.getBody());
+        var restored = res.restoreBodyAsPoJo();
+        assertInstanceOf(PoJo.class, restored.getBody());
+        // Note that the "restoreBodyAsPoJo" method updates the original EventEnvelope too
+        var pojo = (PoJo) res.getBody();
+        assertEquals(name, pojo.getName());
+        assertEquals(address, pojo.getAddress());
+    }
+
+    @Test
     void getNonStandardErrorResponse() throws ExecutionException, InterruptedException {
         AppConfigReader config = AppConfigReader.getInstance();
         String port = config.getProperty("server.port");

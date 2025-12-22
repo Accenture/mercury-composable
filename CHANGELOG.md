@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.40, 12/22/2025
+
+### Added
+
+getBodyAsPoJo() method added to EventEnvelope for best effort restoration of
+original PoJo.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.39, 12/20/2025
 
 ### Added

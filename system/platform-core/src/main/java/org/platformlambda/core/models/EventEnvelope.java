@@ -255,6 +255,24 @@ public class EventEnvelope {
     }
 
     /**
+     * Best effort to restore body as a PoJo
+     * when the original class name is transported and
+     * the class can be resolved.
+     *
+     * @return this
+     */
+    public EventEnvelope restoreBodyAsPoJo() {
+        if (!util.isPoJo(body) && type != null && type.contains(".") && !type.startsWith("java.")) {
+            try {
+                setBody(getBody(Class.forName(type)));
+            } catch (ClassNotFoundException e) {
+                log.warn("Unable to restore body as {}", type);
+            }
+        }
+        return this;
+    }
+
+    /**
      * Convert body to another class type
      * (Best effort conversion - some fields may be lost if interface contracts are not compatible)
      * <p>
