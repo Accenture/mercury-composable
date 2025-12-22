@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-getBodyAsPoJo() method added to EventEnvelope for best effort restoration of
+restoreBodyAsPoJo() method added to EventEnvelope for best effort restoration of
 original PoJo.
 
 ### Removed
