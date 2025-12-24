@@ -23,6 +23,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import org.platformlambda.core.util.ElasticQueue;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,12 @@ public class ServiceQueue {
     private static final String HASH = "#";
     private static final String PUBLIC = "PUBLIC";
     private static final String PRIVATE = "PRIVATE";
+    private static final int UUID_LENGTH = Utility.getInstance().getUuid().length();
+    private static final String CALLBACK_PREFIX = "callback.";
+    private static final String STREAM_PREFIX = "stream.";
+    private static final String STREAM_IN = ".in";
+    private static final int CALLBACK_LENGTH = CALLBACK_PREFIX.length() + UUID_LENGTH;
+    private static final int STREAM_IN_LENGTH = STREAM_PREFIX.length() + UUID_LENGTH + STREAM_IN.length();
     private final ElasticQueue elasticQueue;
     private final ServiceDef service;
     private final String readyPrefix;
@@ -51,12 +58,16 @@ public class ServiceQueue {
     private final ConcurrentMap<String, Boolean> idx = new ConcurrentHashMap<>();
     private final List<WorkerQueues> workers = new ArrayList<>();
     private MessageConsumer<Object> consumer;
+    private boolean isControlRoute = false;
     private boolean buffering = true;
     private boolean stopped = false;
 
     public ServiceQueue(ServiceDef service) {
         this.service = service;
         String route = service.getRoute();
+        this.isControlRoute =  service.isStream() ||
+                (route.startsWith(CALLBACK_PREFIX) && route.length() == CALLBACK_LENGTH) ||
+                (route.startsWith(STREAM_PREFIX) && route.length() == STREAM_IN_LENGTH && route.endsWith(STREAM_IN));
         this.readyPrefix = READY + ":" + route + HASH;
         this.elasticQueue = new ElasticQueue(route);
         // create consumer
@@ -66,7 +77,7 @@ public class ServiceQueue {
             streamRoute = route + HASH + 1;
             var worker = new StreamQueue(service, streamRoute);
             workers.add(worker);
-            log.info("{} {} started as stream function", service.isPrivate() ? PRIVATE : PUBLIC, route);
+            log.debug("{} {} started as stream function", service.isPrivate() ? PRIVATE : PUBLIC, route);
         } else {
             streamRoute = null;
             int instances = service.getConcurrency();
@@ -75,14 +86,27 @@ public class ServiceQueue {
                 var worker = new WorkerDispatcher(service, route + HASH + n, n);
                 workers.add(worker);
             }
-            printInitLog(route, instances, service.isKernelThread());
+            var type = service.isKernelThread()? "kernel" : "virtual";
+            if (instances == 1) {
+                startupLog(route, type);
+            } else {
+                startupLog(route, instances, type);
+            }
         }
     }
 
-    private void printInitLog(String route, int instances, boolean isKernel) {
-        var type = isKernel? "kernel" : "virtual";
-        if (instances == 1) {
+    private void startupLog(String route, String type) {
+        if (this.isControlRoute) {
+            log.debug("{} {} started as {} thread", service.isPrivate() ? PRIVATE : PUBLIC, route, type);
+        } else {
             log.info("{} {} started as {} thread", service.isPrivate() ? PRIVATE : PUBLIC, route, type);
+        }
+    }
+
+    private void startupLog(String route, int instances, String type) {
+        if (this.isControlRoute) {
+            log.debug("{} {} with {} instances started as {} threads",
+                    service.isPrivate() ? PRIVATE : PUBLIC, route, instances, type);
         } else {
             log.info("{} {} with {} instances started as {} threads",
                     service.isPrivate() ? PRIVATE : PUBLIC, route, instances, type);
@@ -121,7 +145,11 @@ public class ServiceQueue {
             elasticQueue.destroy();
             consumer = null;
             stopped = true;
-            log.info("{} stopped", service.getRoute());
+            if (this.isControlRoute) {
+                log.debug("{} stopped", service.getRoute());
+            } else {
+                log.info("{} stopped", service.getRoute());
+            }
         }
     }
 

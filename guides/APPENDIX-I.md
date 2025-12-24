@@ -54,7 +54,8 @@ precedence.
 | max.virtual.topics                        | Max virtual topics = partitions * topics<br/>(Default: 288)              | Connector   |
 | max.closed.user.groups                    | Number of closed user groups<br/>(Default: 10, range: 3 - 30)            | Connector   |
 | closed.user.group                         | Closed user group. (Default: 1)                                          | Connector   |
-| transient.data.store                      | Default: "/tmp/reactive"                                                 | Optional    |
+| async.http.temp                           | Temp folder. Default: "/tmp/async-http-temp"                             | Optional    |
+| transient.data.store                      | Temp folder. Default: "/tmp/reactive"                                    | Optional    |
 | running.in.cloud                          | Default: false (set to true if containerized)                            | Optional    |
 | deferred.commit.log                       | Default: false (for unit tests only)                                     | Optional    |
 | kernel.thread.pool                        | Default: 100. Not more than 200.                                         | Optional    |

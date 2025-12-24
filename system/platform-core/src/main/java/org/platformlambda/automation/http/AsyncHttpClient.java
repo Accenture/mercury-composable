@@ -107,7 +107,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         AppConfigReader config = AppConfigReader.getInstance();
         var timeout = config.getProperty("http.client.connection.timeout", "5000");
         connectTimeout = Math.max(2000, util.str2int(timeout));
-        String temp = config.getProperty("app.temp.dir", "/tmp/composable/java/temp-streams");
+        String temp = config.getProperty("async.http.temp", "/tmp/async-http-temp");
         tempDir = new File(temp);
         if (!tempDir.exists() && tempDir.mkdirs()) {
             log.info("Temporary work directory {} created", tempDir);

@@ -249,7 +249,16 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
                 default -> { }
             }
         }, e -> {
-            log.error("Closing stream {} - {}", util.getSimpleRoute(flux.getStreamId()), e.getMessage());
+            var message = e.getMessage() == null ? "null" : e.getMessage().replace('"', '\'');
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", 500);
+            error.put("message", message);
+            error.put("type", "error");
+            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(error);
+            var content = md.contentType.startsWith(TEXT_HTML)? HTML_START + text + HTML_END : text;
+            response.setChunked(false);
+            response.putHeader(CONTENT_LEN, String.valueOf(content.length()));
+            response.write(content);
             HttpRouter.closeContext(requestId);
             response.end();
         }, () ->{

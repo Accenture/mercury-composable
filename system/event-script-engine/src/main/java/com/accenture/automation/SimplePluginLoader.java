@@ -82,7 +82,7 @@ public class SimplePluginLoader implements EntryPoint {
     }
 
     private void preloadSimplePlugins() {
-        log.info("Loading plugins");
+        log.debug("Loading plugins");
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
         Set<String> packages = scanner.getPackages(true);
         for (String p : packages) {
@@ -158,7 +158,7 @@ public class SimplePluginLoader implements EntryPoint {
         }
         var name = plugin.getName();
         if (simplePluginRegistry.containsKey(name)) {
-            log.warn("Reloading SimplePlugin {}", name);
+            log.warn("Reloading SimplePlugin {} - please check duplicated plugin name", name);
         }
         // save into local registry
         simplePluginRegistry.put(name, plugin);
@@ -174,7 +174,7 @@ public class SimplePluginLoader implements EntryPoint {
         List<PluginFunction> pluginFunctions = new LinkedList<>();
         for (ClassInfo info: services) {
             String serviceName = info.getName();
-            log.info("Found {}", serviceName);
+            log.debug("Found {}", serviceName);
             if (!shouldRegisterPlugin(info)) {
                 log.warn("Skipping SimplePlugin {} because it uses disallowed types", serviceName);
                 continue;

@@ -83,7 +83,7 @@ public class ObjectStreamIO {
         Platform platform = Platform.getInstance();
         if (initCounter.incrementAndGet() == 1) {
             platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredStreams());
-            log.info("Housekeeper started");
+            log.debug("Housekeeper started");
         }
         if (initCounter.get() > 10000) {
             initCounter.set(10);
@@ -100,7 +100,7 @@ public class ObjectStreamIO {
         streams.put(in, new StreamInfo(expirySeconds));
         platform.registerPrivateStream(out, publisher);
         String timer = util.elapsedTime(expirySeconds * 1000L);
-        log.info("Stream {} created, idle expiry {}", id, timer);
+        log.debug("Stream {} created, idle expiry {}", id, timer);
     }
 
     /**
@@ -179,7 +179,7 @@ public class ObjectStreamIO {
                     String createdTime = util.date2str(new Date(info.getCreated()));
                     String updatedTime = util.date2str(new Date(info.getUpdated()));
                     String idle = util.elapsedTime(info.getExpiryMills());
-                    log.warn("{} expired. Inactivity for {} ({} - {})", id, idle, createdTime, updatedTime);
+                    log.debug("{} expired. Inactivity for {} ({} - {})", id, idle, createdTime, updatedTime);
                     po.send(id, new Kv(TYPE, CLOSE));
                 } catch (Exception e) {
                     log.error("Unable to remove expired {} - {}", id, e.getMessage());

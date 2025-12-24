@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.41, 12/24/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Bugfix for AsyncHttpResponse to catch runtime exception from a Flux response
+2. Print Flux stream creation and closure events in debug mode to reduce log volume
+
+---
 ## Version 4.3.40, 12/22/2025
 
 ### Added
