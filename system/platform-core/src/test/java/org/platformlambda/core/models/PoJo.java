@@ -25,6 +25,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 public class PoJo {
@@ -42,6 +43,7 @@ public class PoJo {
     private Timestamp sqlTimestamp;
     private java.sql.Date sqlDate;
     private java.sql.Time sqlTime;
+    private java.time.OffsetDateTime offsetDateTime;
 
     public int getNumber() {
         return number;
@@ -153,5 +155,13 @@ public class PoJo {
 
     public void setSqlTime(Time sqlTime) {
         this.sqlTime = sqlTime;
+    }
+
+    public OffsetDateTime getOffsetDateTime() {
+        return offsetDateTime;
+    }
+
+    public void setOffsetDateTime(OffsetDateTime offsetDateTime) {
+        this.offsetDateTime = offsetDateTime;
     }
 }

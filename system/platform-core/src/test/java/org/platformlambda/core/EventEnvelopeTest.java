@@ -1,5 +1,6 @@
 package org.platformlambda.core;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
@@ -12,14 +13,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class EventEnvelopeTest {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelopeTest.class);
     private static final String SET_COOKIE = "set-cookie";
+
+    @Test
+    void offsetDateTimeTest() {
+        Utility util = Utility.getInstance();
+        EventEnvelope event = new EventEnvelope();
+        PoJo po = new PoJo();
+        OffsetDateTime now = OffsetDateTime.now();
+        po.setOffsetDateTime(now);
+        event.setBody(po);
+        event.setType(po.getClass().getName());
+        byte[] b = event.toBytes();
+        EventEnvelope restored = new EventEnvelope(b);
+        restored.restoreBodyAsPoJo();
+        Object o = restored.getBody();
+        assertInstanceOf(PoJo.class, o);
+        var pojo = (PoJo) o;
+        // convert to utc because the OffsetDateTime is based on local timezone
+        var utc1 = util.str2date(now.toString());
+        var utc2 = util.str2date(pojo.getOffsetDateTime().toString());
+        assertEquals(utc1, utc2);
+    }
 
     @Test
     void cookieTest() {

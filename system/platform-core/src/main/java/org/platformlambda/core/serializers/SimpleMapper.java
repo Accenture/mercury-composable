@@ -25,9 +25,7 @@ import org.platformlambda.core.util.Utility;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 
 public class SimpleMapper {
@@ -95,14 +93,17 @@ public class SimpleMapper {
         // UTC date
         builder.registerTypeAdapter(Date.class, new UtcSerializer());
         builder.registerTypeAdapter(Date.class, new UtcDeserializer());
-        // local datetime, date and time
+        // local datetime, date and time for database data types (TIMESTAMP, DATE and TIME)
         builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer());
         builder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer());
         builder.registerTypeAdapter(LocalDate.class, new LocalDateSerializer());
         builder.registerTypeAdapter(LocalDate.class, new LocalDateDeserializer());
         builder.registerTypeAdapter(LocalTime.class, new LocalTimeSerializer());
         builder.registerTypeAdapter(LocalTime.class, new LocalTimeDeserializer());
-        // SQL timestamp, date and time
+        // offset datetime for database data type (TIMESTAMPTZ)
+        builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeSerializer());
+        builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeDeserializer());
+        // SQL timestamp, date and time for legacy database data types
         builder.registerTypeAdapter(java.sql.Timestamp.class, new SqlTimestampSerializer());
         builder.registerTypeAdapter(java.sql.Timestamp.class, new SqlTimestampDeserializer());
         builder.registerTypeAdapter(java.sql.Date.class, new SqlDateSerializer());
@@ -219,6 +220,23 @@ public class SimpleMapper {
         @Override
         public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             return Utility.getInstance().str2LocalDateTime(json.getAsString());
+        }
+    }
+
+    private static class OffsetDateTimeSerializer implements JsonSerializer<OffsetDateTime> {
+
+        @Override
+        public JsonElement serialize(OffsetDateTime date, Type type, JsonSerializationContext context) {
+            return new JsonPrimitive(date.toString());
+        }
+    }
+
+    private static class OffsetDateTimeDeserializer implements JsonDeserializer<OffsetDateTime> {
+
+        @Override
+        public OffsetDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            var date = Utility.getInstance().str2date(json.getAsString());
+            return date.toInstant().atOffset(ZoneOffset.UTC);
         }
     }
 
