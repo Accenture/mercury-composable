@@ -53,12 +53,12 @@ public class ServiceQueue {
     private final ServiceDef service;
     private final String readyPrefix;
     private final String streamRoute;
+    private final boolean isControlRoute;
     private final EventBus system;
     private final ConcurrentLinkedQueue<String> fifo = new ConcurrentLinkedQueue<>();
     private final ConcurrentMap<String, Boolean> idx = new ConcurrentHashMap<>();
     private final List<WorkerQueues> workers = new ArrayList<>();
     private MessageConsumer<Object> consumer;
-    private boolean isControlRoute = false;
     private boolean buffering = true;
     private boolean stopped = false;
 
@@ -119,18 +119,6 @@ public class ServiceQueue {
 
     public ServiceDef getService() {
         return service;
-    }
-
-    public int getFreeWorkers() {
-        return idx.size();
-    }
-
-    public long getReadCounter() {
-        return elasticQueue.getReadCounter();
-    }
-
-    public long getWriteCounter() {
-        return elasticQueue.getWriteCounter();
     }
 
     public void stop() {
