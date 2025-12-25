@@ -232,7 +232,6 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
                                      AsyncContextHolder holder, HttpResMetadata md) {
         var mapContent = new AtomicBoolean(true);
         List<Map<?, ?>> listOfMap = new ArrayList<>();
-        var util = Utility.getInstance();
         response.setChunked(true);
         FluxConsumer<Object> flux = new FluxConsumer<>(md.streamId, getReadTimeout(md.streamTimeout, holder.timeout));
         flux.consume(data -> {
@@ -256,6 +255,7 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
             error.put("type", "error");
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(error);
             var content = md.contentType.startsWith(TEXT_HTML)? HTML_START + text + HTML_END : text;
+            response.setStatusCode(500);
             response.setChunked(false);
             response.putHeader(CONTENT_LEN, String.valueOf(content.length()));
             response.write(content);
