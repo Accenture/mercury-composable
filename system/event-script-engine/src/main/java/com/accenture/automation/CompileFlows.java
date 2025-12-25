@@ -213,7 +213,7 @@ public class CompileFlows implements EntryPoint {
     private void validateEntry(String name, Flow entry, ConfigReader reader, int taskCount) {
         boolean endTaskFound = false;
         for (int i=0; i < taskCount; i++) {
-            var md = getConfigMetadata(name, reader, i);
+            var md = getConfigMetadata(reader, i);
             Task task = new Task(md.uniqueTaskName, md.functionRoute, md.execution);
             validateDelayParameter(md, entry, task);
             if (md.taskException instanceof String te) {
@@ -505,8 +505,8 @@ public class CompileFlows implements EntryPoint {
         }
     }
 
-    private static FlowConfigMetadata getConfigMetadata(String name, ConfigReader reader, int i) {
-        var md = new FlowConfigMetadata(name, reader, i);
+    private static FlowConfigMetadata getConfigMetadata(ConfigReader reader, int i) {
+        var md = new FlowConfigMetadata(reader, i);
         if (md.uniqueTaskName.contains("://") && !md.uniqueTaskName.startsWith(FLOW_PROTOCOL)) {
             throw new IllegalArgumentException(String.format("%s name=%s. Syntax is flow://{flow-name}",
                     INVALID_TASK, md.uniqueTaskName));
@@ -923,12 +923,9 @@ public class CompileFlows implements EntryPoint {
     }
 
     private static class FlowConfigMetadata {
-        String name;
         List<?> input;
         List<?> output;
-        String taskName;
         String functionRoute;
-        String taskDesc;
         String execution;
         String delay;
         String taskException;
@@ -937,8 +934,7 @@ public class CompileFlows implements EntryPoint {
         String uniqueTaskName;
         String source;
 
-        FlowConfigMetadata(String name, ConfigReader reader, int i) {
-            this.name = name;
+        FlowConfigMetadata(ConfigReader reader, int i) {
             Object vInput = reader.get(TASKS+"["+i+"]."+INPUT, new ArrayList<>());
             Object vOutput = reader.get(TASKS+"["+i+"]."+OUTPUT, new ArrayList<>());
             String vTaskName = reader.getProperty(TASKS+"["+i+"]."+NAME);
@@ -954,9 +950,7 @@ public class CompileFlows implements EntryPoint {
             isValidTaskConfiguration(vInput, vOutput, vUniqueTaskName, vTaskDesc, vExecution, i);
             this.input = (List<?>) vInput;
             this.output = (List<?>) vOutput;
-            this.taskName = vTaskName;
             this.functionRoute = vFunctionRoute;
-            this.taskDesc = String.valueOf(vTaskDesc);
             this.execution = String.valueOf(vExecution);
             this.delay = vDelay;
             if (vTaskException instanceof String e) {

@@ -226,6 +226,11 @@ class EventEnvelopeTest {
         List<String> list = (List<String>) stackList.get("stack");
         assertTrue(list.getFirst().contains("IllegalArgumentException"));
         assertTrue(list.get(1).startsWith("at"));
+        compareSourceAndTarget(source, target);
+    }
+
+    private void compareSourceAndTarget(EventEnvelope source, EventEnvelope target) {
+        String hello = "hello";
         MultiLevelMap map = new MultiLevelMap(target.toMap());
         assertEquals(hello, map.getElement("body.name"));
         // when event envelope is serialized, it will become very compact
@@ -257,7 +262,6 @@ class EventEnvelopeTest {
         log.info("Serialized event envelope size = {}", target.toBytes().length);
     }
 
-    @SuppressWarnings("rawtypes")
     @Test
     void numberInMapTest() {
         Map<String, Object> map = new HashMap<>();

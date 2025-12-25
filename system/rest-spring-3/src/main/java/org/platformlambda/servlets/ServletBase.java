@@ -59,7 +59,6 @@ public abstract class ServletBase extends HttpServlet {
             response.sendError(404, "Resource not found");
             return;
         }
-        final String origin = appOrigin == null? myOrigin : appOrigin;
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope event = new EventEnvelope().setHeader(TYPE, type);
         String accept = request.getHeader(ACCEPT);
@@ -72,41 +71,7 @@ public abstract class ServletBase extends HttpServlet {
         event.setHeader(ACCEPT_CONTENT, accept).setTo(ActuatorServices.ACTUATOR_SERVICES);
         AsyncContext context = request.startAsync();
         Future<EventEnvelope> result = po.asyncRequest(event, 10000);
-        result.onSuccess(evt -> {
-            Utility util = Utility.getInstance();
-            HttpServletResponse res = (HttpServletResponse) context.getResponse();
-            res.setStatus(evt.getStatus());
-            final Object data = evt.getRawBody();
-            final String contentType = evt.getHeaders().getOrDefault(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-            final byte[] b;
-            if (MediaType.TEXT_PLAIN_VALUE.equals(contentType) && data instanceof String text) {
-                res.setContentType(MediaType.TEXT_PLAIN_VALUE);
-                b = util.getUTF(text);
-            } else {
-                if (MediaType.APPLICATION_XML_VALUE.equals(contentType)) {
-                    res.setContentType(MediaType.APPLICATION_XML_VALUE);
-                    if (data instanceof Map) {
-                        b = util.getUTF(xml.write(data));
-                    } else {
-                        b = util.getUTF(data == null? "" : data.toString());
-                    }
-                } else {
-                    res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    if (data instanceof Map) {
-                        b = SimpleMapper.getInstance().getMapper().writeValueAsBytes(data);
-                    } else {
-                        b = util.getUTF(data == null? "" : data.toString());
-                    }
-                }
-            }
-            res.setContentLength(b.length);
-            try {
-                res.getOutputStream().write(b);
-            } catch (IOException e) {
-                log.error("Unable to send HTTP response", e);
-            }
-            context.complete();
-        });
+        result.onSuccess(evt -> handleResponse(evt, context));
         result.onFailure(ex -> {
             HttpServletResponse res = (HttpServletResponse) context.getResponse();
             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -117,6 +82,47 @@ public abstract class ServletBase extends HttpServlet {
             }
             context.complete();
         });
+    }
+
+    private void handleResponse(EventEnvelope evt, AsyncContext context) {
+        Utility util = Utility.getInstance();
+        HttpServletResponse res = (HttpServletResponse) context.getResponse();
+        res.setStatus(evt.getStatus());
+        final Object data = evt.getRawBody();
+        final String contentType = evt.getHeaders().getOrDefault(CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        final byte[] b;
+        if (MediaType.TEXT_PLAIN_VALUE.equals(contentType) && data instanceof String text) {
+            res.setContentType(MediaType.TEXT_PLAIN_VALUE);
+            b = util.getUTF(text);
+        } else {
+            b = composeXmlOrJson(res, contentType, data);
+        }
+        res.setContentLength(b.length);
+        try {
+            res.getOutputStream().write(b);
+        } catch (IOException e) {
+            log.error("Unable to send HTTP response", e);
+        }
+        context.complete();
+    }
+
+    private byte[] composeXmlOrJson(HttpServletResponse res, String contentType, Object data) {
+        Utility util = Utility.getInstance();
+        if (MediaType.APPLICATION_XML_VALUE.equals(contentType)) {
+            res.setContentType(MediaType.APPLICATION_XML_VALUE);
+            if (data instanceof Map) {
+                return util.getUTF(xml.write(data));
+            } else {
+                return util.getUTF(data == null? "" : data.toString());
+            }
+        } else {
+            res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            if (data instanceof Map) {
+                return SimpleMapper.getInstance().getMapper().writeValueAsBytes(data);
+            } else {
+                return util.getUTF(data == null? "" : data.toString());
+            }
+        }
     }
 
     private boolean isIntranetAddress(HttpServletRequest request) {

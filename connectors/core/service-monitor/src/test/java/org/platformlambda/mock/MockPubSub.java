@@ -38,7 +38,6 @@ public class MockPubSub implements PubSubProvider {
         for (String item: map.keySet()) {
             topicStore.put(item, 1);
         }
-
     }
 
     @Override
@@ -111,7 +110,6 @@ public class MockPubSub implements PubSubProvider {
     @Override
     public void subscribe(String topic, int partition, LambdaFunction listener, String... parameters) {
         String route = topic+"."+partition;
-        EventEmitter po = EventEmitter.getInstance();
         Platform platform = Platform.getInstance();
         platform.registerPrivate(route, listener, 1);
         subscriptions.put(topic, listener);

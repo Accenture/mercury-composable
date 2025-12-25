@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.42, 12/25/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Minor refactoring to satisfy SonarQube complexity rule
+2. Remove unused imports and local variables
+3. Log warning when a stream expires
+
+---
 ## Version 4.3.41, 12/24/2025
 
 ### Added

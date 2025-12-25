@@ -68,7 +68,6 @@ class ObjectStreamTest extends TestBase {
         FluxPublisher<Map<String, Object>> fluxRelay = new FluxPublisher<>(filtered, timeToLive);
         String streamId = fluxRelay.publish();
         // Blocking queue is used in Unit Test for demo purpose only
-        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final List<Object> messages = new ArrayList<>();
         // Step 4 - calling function creates consumer from a streamId
         var po = new PostOffice("unit.test", "202", "STREAM /low/level");
@@ -274,7 +273,6 @@ class ObjectStreamTest extends TestBase {
         // The minimum timeout is one second if you set it to a smaller value
         ObjectStreamIO unused = new ObjectStreamIO(0);
         assertEquals(1, unused.getExpirySeconds());
-        String unusedStream = unused.getInputStreamId().substring(0, unused.getInputStreamId().indexOf('@'));
         // create a stream with 3 second expiry
         EventPublisher publisher = new EventPublisher(3000);
         publisher.publish(text);

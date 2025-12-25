@@ -229,11 +229,10 @@ public class WorkerHandler {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private void sendResponse(ProcessStatus ps, Object result, EventEnvelope event, ProcessMetadata md, long begin) {
         EventEmitter po = EventEmitter.getInstance();
         boolean skipResponse = false;
-        if (result instanceof Mono mono) {
+        if (result instanceof Mono<?> mono) {
             skipResponse = true;
             // set reactive to defer service acknowledgement until Mono is complete
             ps.setReactive();
@@ -247,7 +246,7 @@ public class WorkerHandler {
          * The response contract is two headers containing x-stream-id and x-ttl.
          * The response body is an empty map.
          */
-        if (result instanceof Flux flux) {
+        if (result instanceof Flux<?> flux) {
             resultSet = Collections.emptyMap();
             handleFlexResponse(flux, md.response, md.expiry);
         }

@@ -23,7 +23,6 @@ import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;
-import java.util.List;
 
 @SimplePlugin
 public class DoubleConversion implements PluginFunction {

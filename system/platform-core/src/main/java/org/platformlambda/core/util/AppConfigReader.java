@@ -47,7 +47,6 @@ public class AppConfigReader implements ConfigBase {
      * <p>
      * Note that you can provide one or both files in the "resources" folder.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     private AppConfigReader() {
         ConfigReader.setBaseConfig(config);
         try (InputStream in = AppConfigReader.class.getResourceAsStream("/"+APP_CONFIG_READER_YML)) {
@@ -60,7 +59,7 @@ public class AppConfigReader implements ConfigBase {
             Map<String, Object> m = yaml.load(data.contains("\t")? data.replace("\t", "  ") : data);
             Object fileList = m.get(RESOURCES);
             String profilePrefix = m.get(PROFILES) instanceof String prefix? prefix : "classpath:/application-";
-            if (fileList instanceof List list) {
+            if (fileList instanceof List<?> list) {
                 final Map<String, Object> consolidated = new HashMap<>();
                 // load base configuration file(s)
                 list.forEach(filename -> mergeConfig(consolidated, filename.toString()));

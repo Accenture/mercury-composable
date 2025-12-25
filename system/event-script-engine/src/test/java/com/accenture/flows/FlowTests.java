@@ -1373,7 +1373,7 @@ class FlowTests extends TestBase {
         assertEquals(Map.of("key1", "hello-world-one", "key2", "hello-world-two"), result);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void internalFlowTest() throws ExecutionException, InterruptedException {
         final String ORIGINATOR = "unit.test";

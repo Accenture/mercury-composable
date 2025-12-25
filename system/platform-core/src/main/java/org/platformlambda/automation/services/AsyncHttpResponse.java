@@ -31,8 +31,6 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.FluxConsumer;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,8 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @EventInterceptor
 public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Void> {
-    private static final Logger log = LoggerFactory.getLogger(AsyncHttpResponse.class);
-
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "application/xml";
@@ -245,7 +241,7 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
                     mapContent.set(false);
                 }
                 case Map<?,?> map -> listOfMap.add(map);
-                default -> { }
+                default -> { /* no-op */ }
             }
         }, e -> {
             var message = e.getMessage() == null ? "null" : e.getMessage().replace('"', '\'');

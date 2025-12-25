@@ -317,7 +317,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         if (md.host.isEmpty()) {
             throw new IllegalArgumentException("Unable to resolve target host as domain or IP address");
         }
-        md.port = md.url.getPort();
         String path = md.url.getPath();
         if (!path.isEmpty()) {
             throw new IllegalArgumentException("Target host must not contain URI path");
@@ -674,6 +673,5 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         HttpMethod httpMethod;
         boolean secure;
         String host;
-        int port;
     }
 }

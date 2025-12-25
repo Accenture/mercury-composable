@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Controller skeleton demo code borrowed from https://github.com/spring-guides/gs-rest-service
  */
-@SuppressWarnings("rawtypes")
 @RestController
 public class GreetingController {
 	private final AtomicLong counter = new AtomicLong();

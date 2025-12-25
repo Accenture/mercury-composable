@@ -82,6 +82,7 @@ public class AppStarter {
     private static final String CLASSPATH = "classpath:";
     private static final String COMPACT_LOG4J = "log4j2-compact.xml";
     private static final String JSON_LOG4J = "log4j2-json.xml";
+    private static final String IS_FALSE = "false";
     private static final String DEFAULT_INSTANCES = "-1";
     private static final int MAX_SEQ = 999;
     private static boolean loaded = false;
@@ -346,7 +347,7 @@ public class AppStarter {
             if ("true".equals(config.getProperty(PRELOAD_PREFIX+i+"].keep-original"))) {
                 routes.add(original);
             }
-            result.put(original, new PreLoadInfo(original, instances, routes));
+            result.put(original, new PreLoadInfo(instances, routes));
         } else {
             throw new IllegalArgumentException(PRELOAD_PREFIX+i+"].routes must be a list");
         }
@@ -517,13 +518,13 @@ public class AppStarter {
         }
         // start HTTP/websocket server
         final AppConfigReader config = AppConfigReader.getInstance();
-        final boolean rest = "true".equals(config.getProperty("rest.automation", "false"));
+        final boolean rest = "true".equals(config.getProperty("rest.automation", IS_FALSE));
         if (rest || !wsLambdas.isEmpty()) {
             final Utility util = Utility.getInstance();
             final int port = util.str2int(config.getProperty("websocket.server.port",
                                     config.getProperty("rest.server.port",
                                     config.getProperty("server.port", "8085"))));
-            final boolean sslEnabled = "true".equals(config.getProperty("rest.server.ssl-enabled", "false"));
+            final boolean sslEnabled = "true".equals(config.getProperty("rest.server.ssl-enabled", IS_FALSE));
             if (port > 0) {
                 // create a dedicated vertx event loop instance for the HTTP server
                 final Vertx vertx = Vertx.vertx();
@@ -637,7 +638,7 @@ public class AppStarter {
     private ConfigReader getRestConfig() {
         Utility util = Utility.getInstance();
         AppConfigReader reader = AppConfigReader.getInstance();
-        boolean rest = "true".equals(reader.getProperty("rest.automation", "false"));
+        boolean rest = "true".equals(reader.getProperty("rest.automation", IS_FALSE));
         List<String> paths = util.split(reader.getProperty("yaml.rest.automation",
                 "classpath:/rest.yaml"), ", ");
         Map<String, Boolean> uniqueKeys = new HashMap<>();
@@ -778,12 +779,10 @@ public class AppStarter {
     }
 
     private static class PreLoadInfo {
-        String original;
         int instances;
         Set<String> routes;
 
-        PreLoadInfo(String original, int instances, Set<String> routes) {
-            this.original = original;
+        PreLoadInfo(int instances, Set<String> routes) {
             this.instances = instances;
             this.routes = routes;
         }
