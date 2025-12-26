@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2018-2025 Accenture Technology
+    Copyright 2018-2026 Accenture Technology
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -258,8 +258,9 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
             HttpRouter.closeContext(requestId);
             response.end();
         }, () ->{
-            if (mapContent.get() && !listOfMap.isEmpty()) {
-                var text = SimpleMapper.getInstance().getMapper().writeValueAsString(listOfMap);
+            if (mapContent.get()) {
+                var mapper = SimpleMapper.getInstance().getMapper();
+                var text = listOfMap.isEmpty()? "[]" : mapper.writeValueAsString(listOfMap);
                 var content = md.contentType.startsWith(TEXT_HTML)? HTML_START + text + HTML_END : text;
                 response.setChunked(false);
                 response.putHeader(CONTENT_LEN, String.valueOf(content.length()));

@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.43, 12/26/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. AsyncHttpResponse returns empty list when Flex object is empty
+2. Update year to 2026 in copyright notice
+
+---
 ## Version 4.3.42, 12/25/2025
 
 ### Added
