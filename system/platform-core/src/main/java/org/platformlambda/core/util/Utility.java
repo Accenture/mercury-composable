@@ -870,10 +870,7 @@ public class Utility {
         if (str == null) {
             return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }
-        if (str.endsWith("Z") || str.contains("+")) {
-            Date date = str2date(str);
-            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        } else {
+        if (isLocalDateTime(str)) {
             if (str.length() >= 16 && str.charAt(10) != 'T') {
                 str = str.substring(0, 10) + "T" + str.substring(11);
             }
@@ -882,6 +879,9 @@ public class Utility {
             } catch (DateTimeParseException e) {
                 return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             }
+        } else {
+            Date date = str2date(str);
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }
     }
 
@@ -909,7 +909,10 @@ public class Utility {
              * 6. 2015-01-06T01:02:03
              * 7. 2015-01-06T01:02:03.123
              */
-            if (str.length() >= 16 && str.charAt(10) != 'T') {
+            if (str.length() == 10) {
+                // assume "start of day" if missing time segment
+                str += "T00:00";
+            } else if (str.length() >= 16 && str.charAt(10) != 'T') {
                 // ensure 'T' as the separator between date and time
                 str = str.substring(0, 10) + "T" + str.substring(11);
             }

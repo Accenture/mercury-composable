@@ -70,6 +70,10 @@ class EventEnvelopeTest {
         Instant instant = zonedDateTime.toInstant();
         Date restored = Date.from(instant);
         assertEquals(utc, restored);
+        // validate that local date time without time segment will be converted to "start of day"
+        map.put("local_date_time", "2025-12-27");
+        pojo = SimpleMapper.getInstance().getMapper().readValue(map, PoJo.class);
+        assertEquals("2025-12-27T00:00", String.valueOf(pojo.getLocalDateTime()));
     }
 
     @Test
