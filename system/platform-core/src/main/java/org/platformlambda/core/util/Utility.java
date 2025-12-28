@@ -897,10 +897,7 @@ public class Utility {
                 return new Date(0).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
             }
         }
-        if (str.endsWith("Z") || str.contains("+")) {
-            Date date = str2date(str);
-            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        } else {
+        if (isLocalDateTime(str)) {
             /*
              * Support multiple variance of ISO-8601 without time zone
              *
@@ -913,9 +910,13 @@ public class Utility {
              * 7. 2015-01-06T01:02:03.123
              */
             if (str.length() >= 16 && str.charAt(10) != 'T') {
+                // ensure 'T' as the separator between date and time
                 str = str.substring(0, 10) + "T" + str.substring(11);
             }
             return parseLocalDateTime(str, throwException);
+        } else {
+            Date date = str2date(str);
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         }
     }
 
@@ -936,32 +937,32 @@ public class Utility {
             return new Date(Long.parseLong(str));
         }
         /*
-         * Support multiple variance of ISO-8601
-         * (Note that when time zone is not given, it is set to +0000)
+         * If no time zone information, consider the input as a local timestamp.
          *
+         * Variances of local timestamp
          * 1. 2015-01-06
-         * 2. 2015-01-06 01:02:03
-         * 3. 2015-01-06T01:02:03
-         * 4. 2015-01-06T01:02:03Z
-         * 5. 2015-01-06T01:02:03+0000
-         * 6. 2015-01-06T01:02:03+00:00
-         * 7. 2015-01-06T01:02:03.123Z
-         * 8. 2015-01-06T01:02:03.123+0000
-         * 9. 2015-01-06T01:02:03.123+00:00
+         * 2. 2015-01-06T01:02
+         * 3. 2015-01-06 01:02:03
+         * 4. 2015-01-06T01:02:03
+         */
+        if (isLocalDateTime(str)) {
+            var local = str2LocalDateTime(str, throwException);
+            return Date.from(local.atZone(ZoneId.systemDefault()).toInstant());
+        }
+        /*
+         * Variances of ISO-8601
+         * 1. 2015-01-06T01:02:03Z
+         * 2. 2015-01-06T01:02:03+0000
+         * 3. 2015-01-06T01:02:03+00:00
+         * 4. 2015-01-06T01:02:03.123Z
+         * 5. 2015-01-06T01:02:03.123+0000
+         * 6. 2015-01-06T01:02:03.123+00:00
          *
          * DO NOT CHANGE the string substitution sequence below
          */
-        // zero fill time and skip fields
-        if (str.length() == 10) {
-            str += "T00:00:00+0000";
-        }
-        // change SPACE to T if needed
-        if (str.length() > 11 && str.charAt(10) == ' ') {
+        if (str.length() > 11) {
+            // ensure T as a separator between date and time
             str = str.substring(0, 10) + "T" + str.substring(11);
-        }
-        // use UTC timezone if not specified
-        if (str.length() == 19) {
-            str += ZERO_TIMEZONE;
         }
         // normalize UTC "Z" indicator to +0000
         if (str.endsWith("Z")) {
@@ -970,13 +971,14 @@ public class Utility {
         // precision up to milliseconds only and drop microseconds if any
         int dot = str.indexOf('.');
         if (dot == 19) {
+            // validation for "isLocalDateTime" above guarantees there is a time zone ("Z", "+" or "-")
             int sep = str.indexOf('+', 19);
             if (sep == -1) {
                 sep = str.indexOf('-', 19);
             }
             String ms = normalizeMs(sep > 0? str.substring(dot, sep) : str.substring(dot));
             // remove colon from timezone
-            String timezone = sep == -1? ZERO_TIMEZONE : str.substring(sep).replace(":", "");
+            String timezone = str.substring(sep).replace(":", "");
             str = str.substring(0, dot) + ms + timezone;
         }
         return parseZonedDateTime(str, dot, throwException);
@@ -994,6 +996,16 @@ public class Utility {
                 return new Date(0);
             }
         }
+    }
+
+    private boolean isLocalDateTime(String str) {
+        // UTC or positive timezone?
+        if (str.contains("Z") || str.contains("+")) {
+            return false;
+        }
+        // Negative timezone: Does it have a minus sign after column 8?
+        int minus = str.lastIndexOf('-');
+        return minus < 8;
     }
 
     public boolean isDigits(String str) {

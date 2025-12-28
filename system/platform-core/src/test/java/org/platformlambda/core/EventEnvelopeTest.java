@@ -5,6 +5,7 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
@@ -12,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +41,35 @@ class EventEnvelopeTest {
         var utc1 = util.str2date(now.toString());
         var utc2 = util.str2date(pojo.getOffsetDateTime().toString());
         assertEquals(utc1, utc2);
+    }
+
+    @Test
+    void localDateTimeToUtcConversionTest() {
+        var util = Utility.getInstance();
+        var localDateTime = LocalDateTime.now();
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.systemDefault());
+        Instant instant = zonedDateTime.toInstant();
+        Date utc = Date.from(instant);
+        // set localDateTime into map
+        Map<String, Object> map = new HashMap<>();
+        map.put("date", localDateTime);
+        var pojo = SimpleMapper.getInstance().getMapper().readValue(map, PoJo.class);
+        log.info("Comparing LocalDateTime({}) with Date({})", localDateTime, pojo.getDate());
+        assertEquals(util.date2str(utc), util.date2str(pojo.getDate()));
+    }
+
+    @Test
+    void utcToLocalDateTimeConversionTest() {
+        var utc = new Date();
+        // set localDateTime into map
+        Map<String, Object> map = new HashMap<>();
+        map.put("local_date_time", utc);
+        var pojo = SimpleMapper.getInstance().getMapper().readValue(map, PoJo.class);
+        log.info("Comparing Date({}) with LocalDateTime({})", utc, pojo.getLocalDateTime());
+        ZonedDateTime zonedDateTime = pojo.getLocalDateTime().atZone(ZoneId.systemDefault());
+        Instant instant = zonedDateTime.toInstant();
+        Date restored = Date.from(instant);
+        assertEquals(utc, restored);
     }
 
     @Test

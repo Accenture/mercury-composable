@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.44, 12/27/2025
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Earlier a time stamp is assumed to be a UTC time when time zone information is not given.
+i.e. assume to be "+0000" or "Z". This would create incorrect time when converting between
+LocalDateTime and Date objects.
+
+This release corrects this in the Utility class as follows:
+
+If time zone suffix is not given in a timestamp, the serializer will assume it
+to be a local date time and convert accordingly.
+
+---
 ## Version 4.3.43, 12/26/2025
 
 ### Added
