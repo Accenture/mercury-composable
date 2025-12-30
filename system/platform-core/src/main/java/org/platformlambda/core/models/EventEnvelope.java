@@ -256,13 +256,12 @@ public class EventEnvelope {
 
     /**
      * Best effort to restore body as a PoJo
-     * when the original class name is transported and
-     * the class can be resolved.
+     * when the original class name is transported and the class can be resolved.
      *
      * @return this
      */
     public EventEnvelope restoreBodyAsPoJo() {
-        if (!util.isPoJo(body) && type != null && type.contains(".") && !type.startsWith("java.")) {
+        if (body instanceof Map && type != null && type.contains(".") && !type.startsWith("java.")) {
             try {
                 setBody(getBody(Class.forName(type)));
             } catch (ClassNotFoundException e) {
@@ -288,7 +287,7 @@ public class EventEnvelope {
      * Convert body to a list of PoJo
      *
      * @param toValueType target class type
-     * @return list of pojo
+     * @return list of PoJo
      * @param <T> class type
      */
     public <T> List<T> getBodyAsListOfPoJo(Class<T> toValueType) {
