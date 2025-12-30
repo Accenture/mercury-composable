@@ -102,7 +102,7 @@ class RestEndpointTest extends TestBase {
     @Test
     void serviceTest() throws InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;
-        var po = new PostOffice("unit.test", "101", "/HELLO");
+        var po = PostOffice.trackable("unit.test", "101", "/HELLO");
         for (int i=0; i < 2; i++) {
             AsyncHttpRequest req = new AsyncHttpRequest();
             req.setMethod("GET");

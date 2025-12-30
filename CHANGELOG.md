@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.45, 12/29/2025
+
+### Added
+
+N/A
+
+### Removed
+
+Remove outdated documentation that refers to KotlinLambdaFunction
+
+### Changed
+
+Enhanced interoperability with legacy Mercury version 2 and 3 for PoJo class name transport
+
+---
 ## Version 4.3.44, 12/27/2025
 
 ### Added

@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class WorkerHandler {
     private static final Logger log = LoggerFactory.getLogger(WorkerHandler.class);
     private static final Utility util = Utility.getInstance();
+    private static final String CASTING_ERROR = "cannot be cast to class org.platformlambda.core.models.EventEnvelope";
     private static final String ID = "id";
     private static final String PATH = "path";
     private static final String SUCCESS = "success";
@@ -166,33 +167,39 @@ public class WorkerHandler {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private ProcessStatus processEvent(EventEnvelope event, String rpc) {
-        Map<String, String> eventHeaders = event.getHeaders();
         ProcessStatus ps = new ProcessStatus();
         ProcessMetadata md = new ProcessMetadata();
-        md.input.put(HEADERS, eventHeaders);
+        md.input.put(HEADERS, event.getHeaders());
         md.input.put(BODY, event.getRawBody());
         md.inputOutput.put(INPUT, md.input);
         TypedLambdaFunction f = def.getFunction();
         final long begin = System.nanoTime();
+        final Object body = prepareInputBody(event);
+        // Insert READ only metadata into function input headers
+        Map<String, String> parameters = new HashMap<>(event.getHeaders());
+        parameters.put(MY_ROUTE, parentRoute);
+        if (event.getTraceId() != null) {
+            parameters.put(MY_TRACE_ID, event.getTraceId());
+        }
+        if (event.getTracePath() != null) {
+            parameters.put(MY_TRACE_PATH, event.getTracePath());
+        }
         try {
-            /*
-             * If the service is an interceptor or the input argument is EventEnvelope,
-             * we will pass the original event envelope instead of the message body.
-             */
-            final SimpleObjectMapper inputMapper = getMapper(true);
-            var cls = def.getInputClass() != null ? def.getInputClass() : def.getPoJoClass();
-            final Object inputBody = (useEnvelope || (interceptor && cls == null)) ?
-                    event : getInputBody(event, cls, inputMapper);
-            // Insert READ only metadata into function input headers
-            Map<String, String> parameters = new HashMap<>(eventHeaders);
-            parameters.put(MY_ROUTE, parentRoute);
-            if (event.getTraceId() != null) {
-                parameters.put(MY_TRACE_ID, event.getTraceId());
+            Object result;
+            try {
+                result = f.handleEvent(parameters, body, instance);
+            } catch (ClassCastException ce) {
+                // special case when the TypedLambdaFunction is defined in-line instead of a class
+                if (ce.getMessage().contains(CASTING_ERROR)) {
+                    var holder = new EventEnvelope().setBody(body);
+                    if (event.getType() != null) {
+                        holder.setType(event.getType());
+                    }
+                    result = f.handleEvent(parameters, holder, instance);
+                } else {
+                    throw ce;
+                }
             }
-            if (event.getTracePath() != null) {
-                parameters.put(MY_TRACE_PATH, event.getTracePath());
-            }
-            Object result = f.handleEvent(parameters, inputBody, instance);
             md.diff = getExecTime(begin);
             String replyTo = event.getReplyTo();
             if (replyTo != null) {
@@ -212,7 +219,6 @@ public class WorkerHandler {
         long rpcTimeout = util.str2long(rpc);
         // if it is a callback instead of an RPC call, use default timeout of 30 minutes
         md.expiry = rpcTimeout < 0 ? DEFAULT_TIMEOUT : rpcTimeout;
-        md.response = new EventEnvelope();
         md.response.setTo(replyTo).setTags(event.getTags()).setFrom(def.getRoute());
         /*
          * Preserve correlation ID and extra information
@@ -259,7 +265,12 @@ public class WorkerHandler {
         md.inputOutput.put(OUTPUT, md.output);
         try {
             if (!interceptor && !skipResponse && !simulatedStreamTimeout) {
-                po.send(encodeTraceAnnotations(md.response).setExecutionTime(md.diff));
+                var encoded = encodeTraceAnnotations(md.response).setExecutionTime(md.diff);
+                if (result instanceof EventEnvelope evt && evt.getType() != null) {
+                    encoded.setType(evt.getType());
+                    encoded.setBody(evt.getBody());
+                }
+                po.send(encoded);
             }
         } catch (Exception e2) {
             ps.setUnDelivery(e2.getMessage());
@@ -366,6 +377,12 @@ public class WorkerHandler {
         }));
     }
 
+    private Object prepareInputBody(EventEnvelope event) {
+        final SimpleObjectMapper inputMapper = getMapper(true);
+        var cls = def.getInputClass() != null ? def.getInputClass() : def.getPoJoClass();
+        return (useEnvelope || (interceptor && cls == null)) ? event : getInputBody(event, cls, inputMapper);
+    }
+
     private Object getInputBody(EventEnvelope event, Class<?> cls, SimpleObjectMapper inputMapper) {
         if (event.getRawBody() instanceof Map && cls != null) {
             return getMapBody(event, cls, inputMapper);
@@ -440,10 +457,15 @@ public class WorkerHandler {
         };
     }
 
-    private void sendMonoResponse(EventEnvelope response, Object data, long begin) {
+    private void sendMonoResponse(EventEnvelope response, Object result, long begin) {
         EventEmitter po = EventEmitter.getInstance();
-        updateResponse(response, data);
-        po.send(encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin)));
+        updateResponse(response, result);
+        var encoded = encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin));
+        if (result instanceof EventEnvelope evt && evt.getType() != null) {
+            encoded.setType(evt.getType());
+            encoded.setBody(evt.getBody());
+        }
+        po.send(encoded);
     }
 
     private EventEnvelope prepareErrorResponse(EventEnvelope event, Throwable e) {
@@ -473,6 +495,9 @@ public class WorkerHandler {
                  * 1. payload
                  * 2. key-values (as headers)
                  */
+                if (resultEvent.getType() != null) {
+                    response.setType(resultEvent.getType());
+                }
                 renderOutputBody(resultEvent.getOriginalBody(), serializer, response);
                 for (Map.Entry<String, String> kv: headers.entrySet()) {
                     String k = kv.getKey();
@@ -554,7 +579,7 @@ public class WorkerHandler {
         Map<String, Object> input = new HashMap<>();
         Map<String, Object> output = new HashMap<>();
         Map<String, Object> inputOutput = new HashMap<>();
-        EventEnvelope response;
+        EventEnvelope response = new EventEnvelope();
         long expiry;
         float diff;
     }

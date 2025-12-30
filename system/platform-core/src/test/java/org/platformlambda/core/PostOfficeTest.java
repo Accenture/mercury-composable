@@ -66,7 +66,7 @@ class PostOfficeTest extends TestBase {
     void getHelloPoJo() throws ExecutionException, InterruptedException {
         var name = "Peter";
         var address = "100 World Blvd";
-        PostOffice po = PostOffice.trackable("unit.test", "5", "TEST /api/hello/pojo");
+        var po = PostOffice.trackable("unit.test", "5", "TEST /api/hello/pojo");
         var req = new EventEnvelope().setTo("hello.pojo").setHeader("name", name).setHeader("address", address);
         var res = po.request(req, 5000).get();
         assertInstanceOf(Map.class, res.getBody());
@@ -76,6 +76,61 @@ class PostOfficeTest extends TestBase {
         var pojo = (PoJo) res.getBody();
         assertEquals(name, pojo.getName());
         assertEquals(address, pojo.getAddress());
+    }
+
+    @Test
+    void testPoJoInlineTransport() throws ExecutionException, InterruptedException {
+        // legacy pojo class name transport for backward compatibility with Mercury version 2
+        var tempRoute1 = "legacy.pojo.inline.1";
+        var name = "Peter";
+        TypedLambdaFunction<EventEnvelope, Object> f1 =
+                ((headers, input, instance) -> input);
+        var platform = Platform.getInstance();
+        platform.registerPrivate(tempRoute1, f1, 1);
+        PoJo poJo = new PoJo();
+        poJo.setName(name);
+        var po = PostOffice.trackable("unit.test", "2001", "TEST /untyped/class/inline");
+        var req = new EventEnvelope().setTo(tempRoute1).setBody(poJo);
+        var res = po.request(req, 5000).get().restoreBodyAsPoJo();
+        assertEquals(PoJo.class.getName(), res.getType());
+        assertInstanceOf(PoJo.class, res.getBody());
+        var restored = (PoJo) res.getBody();
+        assertEquals(name, restored.getName());
+        log.info("Validated PoJo transport (Inline TypedLambdaFunction) - {}", res.getType());
+        platform.release(tempRoute1);
+        // validate that async send also transports PoJo class name
+        var tempRoute2 = "legacy.pojo.inline.2";
+        BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        TypedLambdaFunction<EventEnvelope, Object> f2 =
+                ((headers, input, instance) -> {
+                    bench.offer(input);
+                    platform.release(tempRoute2);
+                    return input;
+                });
+        platform.registerPrivate(tempRoute2, f2, 2);
+        po.send(new EventEnvelope().setTo(tempRoute2).setBody(poJo));
+        EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
+        assertNotNull(result);
+        result.restoreBodyAsPoJo();
+        assertEquals(PoJo.class.getName(), result.getType());
+        var restored2 = (PoJo) result.getBody();
+        assertEquals(name, restored2.getName());
+    }
+
+    @Test
+    void testPoJoClassTransport() throws ExecutionException, InterruptedException {
+        // legacy pojo class name transport for backward compatibility with Mercury version 2
+        var name = "Mary";
+        PoJo poJo = new PoJo();
+        poJo.setName(name);
+        var po = PostOffice.trackable("unit.test", "2002", "TEST /untyped/class/regular");
+        var req = new EventEnvelope().setTo("legacy.pojo.class.validator").setBody(poJo);
+        var res = po.request(req, 5000).get().restoreBodyAsPoJo();
+        assertEquals(PoJo.class.getName(), res.getType());
+        assertInstanceOf(PoJo.class, res.getBody());
+        var restored = (PoJo) res.getBody();
+        assertEquals(name, restored.getName());
+        log.info("Validated PoJo transport (Regular TypedLambdaFunction) - {}", res.getType());
     }
 
     @Test
@@ -105,7 +160,7 @@ class PostOfficeTest extends TestBase {
         final var data = Map.of("hello", "world");
         for (int i=0; i < 12; i++) {
             EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data);
-            PostOffice po = new PostOffice("unit.test", "100", "TEST /api/mono");
+            PostOffice po = PostOffice.trackable("unit.test", "100", "TEST /api/mono");
             EventEnvelope response = po.eRequest(request, 5000).get();
             assertEquals(200, response.getStatus());
             assertEquals(data, response.getBody());
@@ -115,7 +170,7 @@ class PostOfficeTest extends TestBase {
     @Test
     void testMonoFunctionWithNullPayload() throws ExecutionException, InterruptedException {
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO);
-        PostOffice po = new PostOffice("unit.test", "101", "TEST /api/mono");
+        PostOffice po = PostOffice.trackable("unit.test", "101", "TEST /api/mono");
         EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNull(response.getBody());
@@ -126,7 +181,7 @@ class PostOfficeTest extends TestBase {
         final var data = Map.of("hello", "test");
         final var message = "hello test";
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_MONO).setBody(data).setHeader("exception", message);
-        PostOffice po = new PostOffice("unit.test", "102", "TEST /error/mono");
+        PostOffice po = PostOffice.trackable("unit.test", "102", "TEST /error/mono");
         EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(400, response.getStatus());
         assertEquals(message, response.getError());
@@ -141,7 +196,7 @@ class PostOfficeTest extends TestBase {
         final var data = new PoJo();
         data.setName("hello");
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data);
-        PostOffice po = new PostOffice("unit.test", "103", "TEST /api/flux");
+        PostOffice po = PostOffice.trackable("unit.test", "103", "TEST /api/flux");
         EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));
@@ -199,7 +254,7 @@ class PostOfficeTest extends TestBase {
         final var data = Map.of("hello", "test");
         final var message = "hello test";
         EventEnvelope request = new EventEnvelope().setTo(REACTIVE_FLUX).setBody(data).setHeader("exception", message);
-        PostOffice po = new PostOffice("unit.test", "104", "TEST /error/flux");
+        PostOffice po = PostOffice.trackable("unit.test", "104", "TEST /error/flux");
         EventEnvelope response = po.eRequest(request, 5000).get();
         assertEquals(200, response.getStatus());
         assertNotNull(response.getHeader(X_STREAM_ID));

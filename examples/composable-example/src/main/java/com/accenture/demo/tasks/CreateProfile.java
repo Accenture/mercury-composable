@@ -18,6 +18,7 @@
 
 package com.accenture.demo.tasks;
 
+import com.accenture.demo.models.Profile;
 import com.accenture.demo.models.ProfileConfirmation;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 @PreLoad(route="v1.create.profile", instances=10)
-public class CreateProfile implements TypedLambdaFunction<Map<String, Object>, ProfileConfirmation> {
+public class CreateProfile implements TypedLambdaFunction<Profile, ProfileConfirmation> {
 
     private static final Utility util = Utility.getInstance();
     private static final String REQUIRED_FIELDS = "required_fields";
@@ -43,8 +44,8 @@ public class CreateProfile implements TypedLambdaFunction<Map<String, Object>, P
      * @return profile confirmation object
      */
     @Override
-    public ProfileConfirmation handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        if (!input.containsKey("id")) {
+    public ProfileConfirmation handleEvent(Map<String, String> headers, Profile input, int instance) {
+        if (input.id == null) {
             throw new IllegalArgumentException("Missing id");
         }
         String requiredFields = headers.get(REQUIRED_FIELDS);
@@ -55,7 +56,7 @@ public class CreateProfile implements TypedLambdaFunction<Map<String, Object>, P
         if (protectedFields == null) {
             throw new IllegalArgumentException("Missing protected_fields");
         }
-        MultiLevelMap data = new MultiLevelMap(input);
+        MultiLevelMap data = new MultiLevelMap(input.toMap());
         List<String> fields = util.split(requiredFields, ", ");
         for (String f: fields) {
             if (!data.exists(f)) {

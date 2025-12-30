@@ -30,10 +30,8 @@ class EventEnvelopeTest {
         OffsetDateTime now = OffsetDateTime.now();
         po.setOffsetDateTime(now);
         event.setBody(po);
-        event.setType(po.getClass().getName());
         byte[] b = event.toBytes();
-        EventEnvelope restored = new EventEnvelope(b);
-        restored.restoreBodyAsPoJo();
+        EventEnvelope restored = new EventEnvelope(b).restoreBodyAsPoJo();
         Object o = restored.getBody();
         assertInstanceOf(PoJo.class, o);
         var pojo = (PoJo) o;

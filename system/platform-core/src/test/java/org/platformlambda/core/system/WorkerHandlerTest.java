@@ -38,7 +38,7 @@ class WorkerHandlerTest extends TestBase {
             throw new NoClassDefFoundError("Missing library dependency");
         };
         var platform = Platform.getInstance();
-        var po = new PostOffice("unit.test", "404", "TEST /no/class/def");
+        var po = PostOffice.trackable("unit.test", "404", "TEST /no/class/def");
         platform.registerPrivate(route, f, 1);
         var result = po.eRequest(new EventEnvelope().setTo(route).setBody("ok"), 5000).get();
         assertEquals(500, result.getStatus());
@@ -56,7 +56,7 @@ class WorkerHandlerTest extends TestBase {
         };
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);
-        PostOffice po = new PostOffice("unit.test", "10", "TEST /function/" + demoFunction);
+        PostOffice po = PostOffice.trackable("unit.test", "10", "TEST /function/" + demoFunction);
         EventEnvelope res = po.eRequest(new EventEnvelope().setTo(demoFunction)
                 .setBody(Map.of()), timeout)
                 .get();
@@ -75,7 +75,7 @@ class WorkerHandlerTest extends TestBase {
         };
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);
-        PostOffice po = new PostOffice("unit.test", "10", "TEST /function/" + demoFunction);
+        PostOffice po = PostOffice.trackable("unit.test", "10", "TEST /function/" + demoFunction);
         EventEnvelope res = po.eRequest(new EventEnvelope().setTo(demoFunction).setBody(Map.of()), timeout).get();
         assertNotNull(res);
         assertEquals(500, res.getStatus());
@@ -93,7 +93,7 @@ class WorkerHandlerTest extends TestBase {
         };
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);
-        PostOffice po = new PostOffice("unit.test", "10", "TEST /function/" + demoFunction);
+        PostOffice po = PostOffice.trackable("unit.test", "10", "TEST /function/" + demoFunction);
         EventEnvelope res = po.eRequest(new EventEnvelope().setTo(demoFunction).setBody(Map.of()), timeout).get();
         assertNotNull(res);
         assertEquals(500, res.getStatus());

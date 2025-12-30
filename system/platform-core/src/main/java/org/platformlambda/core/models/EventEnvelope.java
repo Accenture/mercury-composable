@@ -266,7 +266,7 @@ public class EventEnvelope {
             try {
                 setBody(getBody(Class.forName(type)));
             } catch (ClassNotFoundException e) {
-                log.warn("Unable to restore body as {}", type);
+                log.warn("Unable to restore body as {} because class not found", type);
             }
         }
         return this;
@@ -584,7 +584,14 @@ public class EventEnvelope {
                 return setBody(request.toMap());
             }
             case Date d -> payload = util.date2str(d);
-            case null, default -> payload = body;
+            case null -> payload = null;
+            default -> {
+                payload = body;
+                // transport PoJo class name
+                if (util.isPoJo(body)) {
+                    setType(body.getClass().getName());
+                }
+            }
         }
         this.originalPayload = payload;
         this.body = payload;

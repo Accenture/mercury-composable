@@ -21,11 +21,10 @@ package org.platformlambda.core.models;
 import org.platformlambda.core.exception.AppException;
 
 /**
- * You can add this interface to your TypedLambdaFunction or KotlinLambdaFunction
- * to catch object casting exception.
+ * You can add this interface to your TypedLambdaFunction to catch object casting exception.
  * <p>
  *     The system will do best effort to map PoJo if you define a PoJo or a Map
- *     as input in the TypedLambdaFunction (or KotlinLambdaFunction).
+ *     as input in a TypedLambdaFunction.
  * <p>
  *     This is designed to catch casting of Java primitive to a Map or PoJo since
  *     it is not possible to do meaningful mapping.
@@ -40,5 +39,5 @@ import org.platformlambda.core.exception.AppException;
  */
 public interface MappingExceptionHandler {
 
-    void onError(String route, AppException error, EventEnvelope event, int instance);
+    void onError(String incomingRoute, AppException error, EventEnvelope event, int instance);
 }

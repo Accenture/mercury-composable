@@ -70,7 +70,7 @@ class ObjectStreamTest extends TestBase {
         // Blocking queue is used in Unit Test for demo purpose only
         final List<Object> messages = new ArrayList<>();
         // Step 4 - calling function creates consumer from a streamId
-        var po = new PostOffice("unit.test", "202", "STREAM /low/level");
+        var po = PostOffice.trackable("unit.test", "202", "STREAM /low/level");
         Platform platform = Platform.getInstance();
         platform.registerPrivate(TemporaryInbox.TEMPORARY_INBOX, new TemporaryInbox(), 1);
         platform.registerPrivate(Telemetry.DISTRIBUTED_TRACING, new Telemetry(), 1);

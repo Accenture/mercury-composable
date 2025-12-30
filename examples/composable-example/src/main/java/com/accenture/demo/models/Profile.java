@@ -29,12 +29,17 @@ public class Profile {
     public String address;
     public String telephone;
 
-    public Profile(Map<String, Object> kv) {
-        Profile profile = SimpleMapper.getInstance().getMapper().readValue(kv, Profile.class);
-        this.id = profile.id;
-        this.name = profile.name;
-        this.address= profile.address;
-        this.telephone = profile.telephone;
+    public static Profile create(int id, String name, String address, String telephone) {
+        var profile = new Profile();
+        profile.id = id;
+        profile.name = name;
+        profile.address = address;
+        profile.telephone = telephone;
+        return profile;
     }
 
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> toMap() {
+        return SimpleMapper.getInstance().getMapper().readValue(this, Map.class);
+    }
 }

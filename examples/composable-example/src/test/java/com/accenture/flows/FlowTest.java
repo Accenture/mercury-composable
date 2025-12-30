@@ -54,8 +54,7 @@ class FlowTest extends TestBase {
         assertEquals("Profile no-such-profile not found", data.get("message"));
         assertEquals("error", data.get("type"));
         // create a profile
-        Profile profile = new Profile(Map.of("id", 300, "name", "Peter",
-                        "address", "100 World Blvd", "telephone", "888-123-0000"));
+        Profile profile = Profile.create(300, "Peter", "100 World Blvd", "888-123-0000");
         AsyncHttpRequest request1 = new AsyncHttpRequest();
         request1.setTargetHost(HOST).setMethod("POST")
                 .setHeader("content-type", "application/json")

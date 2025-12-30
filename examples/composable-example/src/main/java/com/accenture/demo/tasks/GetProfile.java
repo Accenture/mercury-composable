@@ -38,7 +38,7 @@ public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Prof
     private static final String JSON_EXT = ".json";
 
     @Override
-    public Profile handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws Exception {
+    public Profile handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         if (!headers.containsKey(PROFILE_ID)) {
             throw new AppException(400, "Missing profile_id");
         }

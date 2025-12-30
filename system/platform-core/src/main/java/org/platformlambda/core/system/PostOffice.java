@@ -214,7 +214,7 @@ public class PostOffice {
      * User application may add key-values to a trace using this method
      * <p>
      * Please note that trace annotation feature is available inside a user function
-     * that implements LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction
+     * that implements LambdaFunction or TypedLambdaFunction
      *
      * @param key of the annotation
      * @param value of the annotation
@@ -229,7 +229,7 @@ public class PostOffice {
      * User application may add a map of key-values to a trace using this method
      * <p>
      * Please note that trace annotation feature is available inside a user function
-     * that implements LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction
+     * that implements LambdaFunction or TypedLambdaFunction
      *
      * @param key of the annotation
      * @param value of the annotation
@@ -244,7 +244,7 @@ public class PostOffice {
      * User application may add a list of values to a trace using this method
      * <p>
      * Please note that trace annotation feature is available inside a user function
-     * that implements LambdaFunction, TypedLambdaFunction or KotlinLambdaFunction
+     * that implements LambdaFunction or TypedLambdaFunction
      *
      * @param key of the annotation
      * @param value of the annotation

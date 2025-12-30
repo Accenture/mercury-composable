@@ -70,7 +70,7 @@ class EventHttpTest extends TestBase {
         String hello = "hello";
         EventEnvelope save = new EventEnvelope().setTo(route).setHeader("type", "save").setBody(hello)
                 .setReplyTo(blockingEventWait);
-        PostOffice po = new PostOffice("unit.test", "1200001", "EVENT /save/then/get");
+        PostOffice po = PostOffice.trackable("unit.test", "1200001", "EVENT /save/then/get");
         po.send(save);
         Object serviceResponse = wait1.poll(5, TimeUnit.SECONDS);
         assertEquals("saved", serviceResponse);
@@ -90,7 +90,7 @@ class EventHttpTest extends TestBase {
         int numberThree = 3;
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "anyone");
-        PostOffice po = new PostOffice("unit.test", "123", "TEST /remote/event");
+        PostOffice po = PostOffice.trackable("unit.test", "123", "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setTo("hello.world")
                 .setBody(numberThree).setHeader("hello", "world");
         Future<EventEnvelope> response = po.asyncRequest(event, timeout, securityHeaders,
@@ -110,7 +110,7 @@ class EventHttpTest extends TestBase {
         String payload = "123456789.".repeat(10000);
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long timeout = 3000;
-        PostOffice po = new PostOffice("unit.test", "1230", "TEST /remote/event/large");
+        PostOffice po = PostOffice.trackable("unit.test", "1230", "TEST /remote/event/large");
         EventEnvelope event = new EventEnvelope();
         event.setTo("hello.world").setBody(payload).setHeader("hello", "world");
         Map<String, String> securityHeaders = new HashMap<>();
@@ -134,7 +134,7 @@ class EventHttpTest extends TestBase {
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         long timeout = 3000;
         int numberThree = 3;
-        PostOffice po = new PostOffice("unit.test", "12002", "TEST /remote/event/oneway");
+        PostOffice po = PostOffice.trackable("unit.test", "12002", "TEST /remote/event/oneway");
         EventEnvelope event = new EventEnvelope();
         event.setTo("hello.world").setBody(numberThree).setHeader("hello", "world");
         Map<String, String> securityHeaders = new HashMap<>();
@@ -160,7 +160,7 @@ class EventHttpTest extends TestBase {
         int numberThree = 3;
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        PostOffice po = new PostOffice("unit.test", traceId, "TEST /remote/event");
+        PostOffice po = PostOffice.trackable("unit.test", traceId, "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setBody(numberThree).setHeader("hello", "world");
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 po.asyncRequest(event, timeout, securityHeaders,
@@ -174,7 +174,7 @@ class EventHttpTest extends TestBase {
         long timeout = 3000;
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        PostOffice po = new PostOffice("unit.test", traceId, "TEST /remote/event");
+        PostOffice po = PostOffice.trackable("unit.test", traceId, "TEST /remote/event");
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 po.asyncRequest(null, timeout, securityHeaders,
                         "http://127.0.0.1:"+port+"/api/event", true));
@@ -189,7 +189,7 @@ class EventHttpTest extends TestBase {
         int numberThree = 3;
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        PostOffice po = new PostOffice("unit.test", traceId, "TEST /remote/event");
+        PostOffice po = PostOffice.trackable("unit.test", traceId, "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setTo("some.dummy.route")
                 .setBody(numberThree).setHeader("hello", "world");
         Future<EventEnvelope> response = po.asyncRequest(event, timeout, securityHeaders,
@@ -250,7 +250,7 @@ class EventHttpTest extends TestBase {
         int numberThree = 3;
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        PostOffice po = new PostOffice("unit.test", "123", "TEST /remote/event");
+        PostOffice po = PostOffice.trackable("unit.test", "123", "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setTo("hello.world")
                 .setBody(numberThree).setHeader("hello", "world");
         // prove that po.request and po.eRequest return the same result from different worker instances
@@ -282,7 +282,7 @@ class EventHttpTest extends TestBase {
         int numberThree = 3;
         Map<String, String> securityHeaders = new HashMap<>();
         securityHeaders.put("Authorization", "demo");
-        PostOffice po = new PostOffice("unit.test", "123", "TEST /remote/event");
+        PostOffice po = PostOffice.trackable("unit.test", "123", "TEST /remote/event");
         EventEnvelope event = new EventEnvelope().setTo("hello.world")
                 .setBody(numberThree).setHeader("hello", "world");
         Future<EventEnvelope> response = po.asyncRequest(event, timeout, securityHeaders,
