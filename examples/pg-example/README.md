@@ -11,6 +11,9 @@ Before you run this example application, please ensure that you have a PostGreSQ
 the following parameters in application.properties accordingly. Then use `mvn clean package` to build your application
 or run the application's MainApp from your IDE.
 
+Please set your username and password in the environment variables PG_USER and PG_PASSWORD before you run
+this example application.
+
 ```properties
 #
 # Add your organization package path for Spring R2DBC configurator to scan for repositories
