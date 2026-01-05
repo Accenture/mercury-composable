@@ -151,11 +151,6 @@ and its libraries.
 
 Please note that EntityManager and the DbQuery classes have been retired.
 
-# Running the unit tests
-
-You must have a "kp-config.properties" file in the "/tmp/config/hybrid" folder. The azure-connector uses
-it to resolve credentials from the KP config system.
-
 # Database timestamp fields
 
 PostGreSQL supports LocalDateTime (TIMESTAMP) and UTC (TIMESTAMPTZ).
