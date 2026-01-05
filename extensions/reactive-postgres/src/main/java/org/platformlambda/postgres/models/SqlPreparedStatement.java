@@ -138,9 +138,14 @@ public abstract class SqlPreparedStatement {
      *              e.g. Date would map to TIMESTAMP
      */
     public void bindParameter(int key, Object value) {
-        var dataType = getDataType(value);
-        parameters.put(key, value instanceof byte[] bytes? Utility.getInstance().bytesToBase64(bytes) : value);
-        classMapping.put(String.valueOf(key), dataType);
+        if (value == null) {
+            // best effort to bind parameter value as null
+            bindNullParameter(key, String.class);
+        } else {
+            var dataType = getDataType(value);
+            parameters.put(key, value instanceof byte[] bytes ? Utility.getInstance().bytesToBase64(bytes) : value);
+            classMapping.put(String.valueOf(key), dataType);
+        }
     }
 
     /**
@@ -150,10 +155,15 @@ public abstract class SqlPreparedStatement {
      *              e.g. Date would map to TIMESTAMP
      */
     public void bindParameter(String name, Object value) {
-        var dataType = getDataType(value);
-        var normalized = value instanceof byte[] bytes? Utility.getInstance().bytesToBase64(bytes) : value;
-        namedParams.put(name, normalized);
-        classMapping.put(name, dataType);
+        if (value == null) {
+            // best effort to bind parameter value as null
+            bindNullParameter(name, String.class);
+        } else {
+            var dataType = getDataType(value);
+            var normalized = value instanceof byte[] bytes ? Utility.getInstance().bytesToBase64(bytes) : value;
+            namedParams.put(name, normalized);
+            classMapping.put(name, dataType);
+        }
     }
 
     /**
