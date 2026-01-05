@@ -15,6 +15,9 @@
         <module>system/rest-spring-3</module>
         <module>system/event-script-engine</module>
         <module>system/mini-scheduler</module>
+        
+        <!-- Reactive R2DBC reference library -->
+        <module>extensions/reactive-postgres</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>
