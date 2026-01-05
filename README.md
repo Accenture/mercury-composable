@@ -14,7 +14,7 @@ For Java, please visit [Mercury Composable for Java](https://github.com/Accentur
 For Node.js, please browse [Mercury Composable for Node](https://github.com/Accenture/mercury-nodejs)
 and [Composable-example](https://github.com/Accenture/mercury-composable-examples)
 
-July 2025
+January 2026
 
 # Optimized for Human
 
