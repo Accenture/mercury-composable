@@ -126,7 +126,7 @@ Please refer to Spring R2DBC for additional details. Both Atomic request and tra
 # Connection pool
 
 There is a single parameter in application.properties. Please be conservative in the pool size.
-It should be a small number less than 100. Otherwise, the Azure database may run out of connections.
+It should be a small number less than 100. Otherwise, your PostGreSQL database may run out of connections.
 
 ```properties
 postgres.connection.pool=25
