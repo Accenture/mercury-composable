@@ -23,7 +23,8 @@ N/A
 
 ### Changed
 
-Refactored WebLoader class to satisfy SonarQube complexity requirement
+1. Refactored WebLoader class to satisfy SonarQube complexity requirement
+2. Update msgPack to version 0.9.11 to address a reported security vulnerability
 
 ---
 ## Version 4.3.46, 12/30/2025
