@@ -70,7 +70,11 @@ public class SimpleClassScanner {
         List<String> packages = Utility.getInstance().split(reader.getProperty(WEB_COMPONENT_SCAN), ", []");
         for (String p : packages) {
             if (p.contains(".")) {
-                result.add(normalizePackage(p));
+                // avoid duplicated package paths
+                var userPackage = normalizePackagePath(p);
+                if (!isCovered(userPackage)) {
+                    result.add(userPackage);
+                }
             } else {
                 throw new IllegalArgumentException(EX_START + p + EX_END);
             }
@@ -80,13 +84,29 @@ public class SimpleClassScanner {
         return result;
     }
 
-    private String normalizePackage(String text) {
-        // Spring wild card package
-        if (text.contains("**")) {
-            return text;
+    /**
+     * Check if the user package covered by the base package
+     *
+     * @param packageName in web.component.scan
+     * @return true if covered
+     */
+    private boolean isCovered(String packageName) {
+        for (String p : BASE_PACKAGE) {
+            if (packageName.startsWith(p)) {
+                return true;
+            }
         }
-        // normalize regular package path
-        List<String> parts = Utility.getInstance().split(text, ".");
+        return false;
+    }
+
+    /**
+     * Normalize package path with dot format
+     *
+     * @param packageName in web.component.scan
+     * @return formatted path
+     */
+    private String normalizePackagePath(String packageName) {
+        List<String> parts = Utility.getInstance().split(packageName, ".");
         StringBuilder sb = new StringBuilder();
         for (String p: parts) {
             sb.append(p);
