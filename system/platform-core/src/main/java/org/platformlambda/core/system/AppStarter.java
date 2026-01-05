@@ -165,7 +165,7 @@ public class AppStarter {
         // find and execute optional preparation modules
         Utility util = Utility.getInstance();
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-        Set<String> packages = scanner.getPackages(true);
+        Set<String> packages = scanner.getPackages();
         Map<String, Class<?>> steps = new HashMap<>();
         var counter = new AtomicInteger(0);
         for (String p : packages) {
@@ -359,7 +359,7 @@ public class AppStarter {
         Utility util = Utility.getInstance();
         Map<String, PreLoadInfo> preloadOverride = getPreloadOverride();
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-        Set<String> packages = scanner.getPackages(true);
+        Set<String> packages = scanner.getPackages();
         for (String p : packages) {
             List<ClassInfo> services = scanner.getAnnotatedClasses(p, PreLoad.class);
             for (ClassInfo info : services) {
@@ -511,7 +511,7 @@ public class AppStarter {
     private void startHttpServerIfAny() {
         // find and execute optional preparation modules
         final SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-        final Set<String> packages = scanner.getPackages(true);
+        final Set<String> packages = scanner.getPackages();
         for (String p : packages) {
             List<ClassInfo> services = scanner.getAnnotatedClasses(p, WebSocketService.class);
             prepareWebsocketServices(services);

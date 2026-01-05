@@ -46,9 +46,9 @@ public class SimpleClassScanner {
         return INSTANCE;
     }
 
-    public List<ClassInfo> getAnnotatedClasses(Class<? extends Annotation> type, boolean includeBasePackage) {
+    public List<ClassInfo> getAnnotatedClasses(Class<? extends Annotation> type) {
         List<ClassInfo> result = new ArrayList<>();
-        Set<String> packages = getPackages(includeBasePackage);
+        Set<String> packages = getPackages();
         for (String p : packages) {
             result.addAll(getAnnotatedClasses(p, type));
         }
@@ -64,33 +64,28 @@ public class SimpleClassScanner {
         }
     }
 
-    public Set<String> getPackages(boolean includeBasePackage) {
-        Set<String> result = new HashSet<>();
-        if (includeBasePackage) {
-            result.addAll(Arrays.asList(BASE_PACKAGE));
-        }
-        // add user packages from web.component.scan
-        result.addAll(getScanComponents());
-        return result;
-    }
-
-    private Set<String> getScanComponents() {
+    public Set<String> getPackages() {
         Set<String> result = new HashSet<>();
         AppConfigReader reader = AppConfigReader.getInstance();
         List<String> packages = Utility.getInstance().split(reader.getProperty(WEB_COMPONENT_SCAN), ", []");
         for (String p : packages) {
-            if (!isBasePackage(p)) {
-                if (!p.contains(".")) {
-                    throw new IllegalArgumentException(EX_START + p + EX_END);
-                } else {
-                    result.add(normalizePackage(p));
-                }
+            if (p.contains(".")) {
+                result.add(normalizePackage(p));
+            } else {
+                throw new IllegalArgumentException(EX_START + p + EX_END);
             }
         }
+        // guarantee that scan package includes the base packages
+        result.addAll(Arrays.asList(BASE_PACKAGE));
         return result;
     }
 
     private String normalizePackage(String text) {
+        // Spring wild card package
+        if (text.contains("**")) {
+            return text;
+        }
+        // normalize regular package path
         List<String> parts = Utility.getInstance().split(text, ".");
         StringBuilder sb = new StringBuilder();
         for (String p: parts) {
@@ -98,14 +93,5 @@ public class SimpleClassScanner {
             sb.append('.');
         }
         return sb.toString();
-    }
-
-    private boolean isBasePackage(String namespace) {
-        for (String p: BASE_PACKAGE) {
-            if (namespace.startsWith(p)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

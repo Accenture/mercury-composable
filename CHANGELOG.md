@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.47, 1/4/2026
+
+### Added
+
+Reactive PostGreSQL R2DBC library in the "extensions" folder and a sample pg-example in the
+examples subproject folder.
+
+### Removed
+
+N/A
+
+### Changed
+
+Refactored WebLoader class to satisfy SonarQube complexity requirement
+
+---
 ## Version 4.3.46, 12/30/2025
 
 ### Added

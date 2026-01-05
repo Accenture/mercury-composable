@@ -224,7 +224,7 @@ public class Platform {
                 List<String> serviceList = Utility.getInstance().split(cloudServices, ", ");
                 if (!serviceList.isEmpty()) {
                     SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-                    List<ClassInfo> services = scanner.getAnnotatedClasses(CloudService.class, true);
+                    List<ClassInfo> services = scanner.getAnnotatedClasses(CloudService.class);
                     loadCloudServices(serviceList, services);
                 }
             }
@@ -270,7 +270,7 @@ public class Platform {
                 startCloudServices();
             } else {
                 SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-                List<ClassInfo> services = scanner.getAnnotatedClasses(CloudConnector.class, true);
+                List<ClassInfo> services = scanner.getAnnotatedClasses(CloudConnector.class);
                 if (!startService(name, services, true)) {
                     log.error("Cloud connector ({}) not found", name);
                 }

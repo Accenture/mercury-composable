@@ -84,7 +84,7 @@ public class SimplePluginLoader implements EntryPoint {
     private void preloadSimplePlugins() {
         log.debug("Loading plugins");
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-        Set<String> packages = scanner.getPackages(true);
+        Set<String> packages = scanner.getPackages();
         for (String p : packages) {
             registerPlugins(scanner, p);
         }

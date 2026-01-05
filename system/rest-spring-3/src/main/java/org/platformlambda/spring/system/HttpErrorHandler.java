@@ -92,18 +92,7 @@ public class HttpErrorHandler implements ErrorController {
         error.put(TYPE, status < 300? OK : ERROR);
         error.put(MESSAGE, message);
         error.put(STATUS, status);
-        final String contentType;
-        if (accept == null) {
-            contentType = MediaType.APPLICATION_JSON_VALUE;
-        } else if (accept.contains(MediaType.TEXT_HTML_VALUE)) {
-            contentType = MediaType.TEXT_HTML_VALUE;
-        } else if (accept.contains(MediaType.APPLICATION_XML_VALUE)) {
-            contentType = MediaType.APPLICATION_XML_VALUE;
-        } else if (accept.contains(MediaType.APPLICATION_JSON_VALUE) || accept.contains(ACCEPT_ANY)) {
-            contentType = MediaType.APPLICATION_JSON_VALUE;
-        } else {
-            contentType = MediaType.TEXT_PLAIN_VALUE;
-        }
+        var contentType = getContentType(accept);
         response.setStatus(status);
         response.setCharacterEncoding(UTF8);
         response.setContentType(contentType);
@@ -124,5 +113,21 @@ public class HttpErrorHandler implements ErrorController {
         } else {
             response.getOutputStream().write(util.getUTF(xmlWriter.write(ERROR, error)));
         }
+    }
+
+    private static String getContentType(String accept) {
+        final String contentType;
+        if (accept == null) {
+            contentType = MediaType.APPLICATION_JSON_VALUE;
+        } else if (accept.contains(MediaType.TEXT_HTML_VALUE)) {
+            contentType = MediaType.TEXT_HTML_VALUE;
+        } else if (accept.contains(MediaType.APPLICATION_XML_VALUE)) {
+            contentType = MediaType.APPLICATION_XML_VALUE;
+        } else if (accept.contains(MediaType.APPLICATION_JSON_VALUE) || accept.contains(ACCEPT_ANY)) {
+            contentType = MediaType.APPLICATION_JSON_VALUE;
+        } else {
+            contentType = MediaType.TEXT_PLAIN_VALUE;
+        }
+        return contentType;
     }
 }

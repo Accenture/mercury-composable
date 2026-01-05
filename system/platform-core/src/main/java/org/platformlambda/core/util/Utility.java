@@ -972,7 +972,7 @@ public class Utility {
             str = str.substring(0, str.length()-1)+ZERO_TIMEZONE;
         }
         // precision up to milliseconds only and drop microseconds if any
-        int dot = str.indexOf('.');
+        int dot = str.lastIndexOf('.');
         if (dot == 19) {
             // validation for "isLocalDateTime" above guarantees there is a time zone ("Z", "+" or "-")
             int sep = str.indexOf('+', 19);
