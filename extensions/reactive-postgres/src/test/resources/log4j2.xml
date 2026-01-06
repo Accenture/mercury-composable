@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger:%line - %msg%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="${env:LOG_LEVEL:-INFO}" additivity="false">
+            <AppenderRef ref="Console" />
+        </Root>
+
+        <!-- Enable INFO logging for Telemetry -->
+        <logger name="org.platformlambda.core.services.Telemetry" level="INFO" />
+        <!-- Suppress error log during unit test tear down because of a Windows issue with embedded PostGreSQL -->
+        <logger name="io.r2dbc.postgresql.client.ReactorNettyClient" level="FATAL" />
+
+    </Loggers>
+</Configuration>

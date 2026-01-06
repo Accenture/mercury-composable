@@ -2,7 +2,7 @@
 
 This is a reactive version of the PostGreSQL database client using Spring R2DBC.
 
-# Building this library
+## Building this library
 
 Before you build this library, please ensure that you have a PostGreSQL server running and update the following
 parameters in application.properties accordingly. Then run `mvn clean install` to build the library in your
@@ -31,7 +31,7 @@ postgres.password={$PG_PASSWORD}
 postgres.ssl=false
 ```
 
-# Database access patterns
+## Database access patterns
 
 This module supports four ways to access PostGreSQL:
 
@@ -74,7 +74,7 @@ The Flux class is a reactive stream of records (the PoJo specified in your datab
 table model). The Mono class is a reactive object of a single record or an Integer indicating the number
 of rows inserted, updated or deleted.
 
-# Database client API
+## Database client API
 
 The repository pattern provides simple configuration of atomic database requests.
 
@@ -95,7 +95,7 @@ PostGreSQL prepared statement supports 2 ways of parameter binding
 2. Named parameter - you use the ":name" syntax as a named parameter in a SQL statement where "name" is an identifier
    of the parameter. 
 
-# Autowiring
+## Autowiring
 
 You can use Spring autowiring in a LambdaFunction or TypedLambdaFunction. DO NOT add the "@Service"
 annotation because the platform foundation code will automate the wiring for you. The "@PreLoad" annotation is
@@ -106,24 +106,24 @@ Spring ecosystem.
 
 See the HttpTestEndpoint and DbDemoFunction for how autowiring is done.
 
-# Simple use cases
+## Simple use cases
 
 The Unit Test "ReactiveDbTest" class is designed as a worked example for the four database access methods. 
 
 Please review the models, repositories, composable functions and the unit tests for details.
 
-# pg-schema.sql
+## pg-schema.sql
 
 The default SQL initialization script is available in both the main/resources and test/resources folders.
 The one in the main/resources is need to ensure the health check DB table is available.
 
 The unit test's version of the pg-schema.sql is used to create a temp table to read/write test records.
 
-# R2DBC documentation
+## R2DBC documentation
 
 Please refer to Spring R2DBC for additional details. Both Atomic request and transaction are supported.
 
-# Connection pool
+## Connection pool
 
 There is a single parameter in application.properties. Please be conservative in the pool size.
 It should be a small number less than 100. Otherwise, your PostGreSQL database may run out of connections.
@@ -132,26 +132,26 @@ It should be a small number less than 100. Otherwise, your PostGreSQL database m
 postgres.connection.pool=25
 ```
 
-# Avoid blocking code
+## Avoid blocking code
 
 Please NEVER use the ".block()" method in reactive pattern. The "block()" API will stop the rest
 of the system from running smoothly. Java virtual thread system is designed for reactive and very fast
 execution of functions. Any blocking code will break the JVM.
 
-# The subscribe() method
+## The subscribe() method
 
 Usually, you do not need to invoke the "subscribe()" method because the platform foundation code will
 subscribe to a Flux or Mono response. When you use subscribe(), the response will NOT be returned to the
 calling function.
 
-# JPA not supported
+## JPA not supported
 
 Java Persistence Adapter (JPA) is blocking code and, thus it is not supported in the new Platform version 4
 and its libraries.
 
 Please note that EntityManager and the DbQuery classes have been retired.
 
-# Database timestamp fields
+## Database timestamp fields
 
 PostGreSQL supports LocalDateTime (TIMESTAMP) and UTC (TIMESTAMPTZ).
 
@@ -159,7 +159,7 @@ The system will convert timestamps between LocalDateTime and UTC Date objects au
 
 The conversion is based on the default system time zone in the deployed Kubernetes' POD.
 
-# SQL statement execution debug logging
+## SQL statement execution debug logging
 
 Add the following key-values if you want to see what SQL statements have been executed in your code.
 
@@ -172,3 +172,15 @@ Add the following key-values if you want to see what SQL statements have been ex
 logging.level.io.r2dbc.postgresql.QUERY=DEBUG
 logging.level.io.r2dbc.postgresql.PARAM=DEBUG
 ```
+
+## Known issue for unit test in Windows
+
+During the "teardown" phase when running the ReactiveDbTest under Windows OS, a fatal PostGreSQL server log
+"terminating connection due to administrator command" is shown and the ReactorNettyClient class will print
+out "error" log message about SocketException. The ReactorNettyClient log is suppressed using a custom log4j.xml
+in the test/resources folder.
+
+These database error logs do not affect the orderly shutdown of the embedded PostGreSQL server. Therefore, the error
+log can be safely ignored.
+
+This issue does not occur when running unit tests in a Mac OS-X or Linux machine.

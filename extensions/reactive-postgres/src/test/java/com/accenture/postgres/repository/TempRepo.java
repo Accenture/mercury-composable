@@ -27,6 +27,6 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface TempRepo extends R2dbcRepository<TempTestData, Integer> {
 
-    @Query("SELECT * FROM TEMP_UNIT_TEST_TABLE WHERE id = :id")
+    @Query("SELECT * FROM temp_unit_test_table WHERE id = :id")
     Flux<TempTestData> getRecordById(String id);
 }
