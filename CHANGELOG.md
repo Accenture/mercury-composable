@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.48, 1/7/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix - WorkerHandler in platform-core updated to catch unexpected exception in
+input payload processing.
+
+---
 ## Version 4.3.47, 1/6/2026
 
 ### Added

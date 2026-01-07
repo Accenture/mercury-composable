@@ -287,6 +287,9 @@ class ReactiveDbTest {
         rec = mapper.readValue(records.getFirst(), HealthCheck.class);
         assertEquals(now, rec.created);
         assertEquals(new Date(minusOneMinute), rec.updated);
+        // prove that we can do SQL statement without parameters
+        records = sql.query(po, "SELECT * FROM health_check");
+        assertFalse(records.isEmpty());
         // finally delete the record
         var deleted = sql.update(po, SQL_DELETE, id);
         assertEquals(1, deleted);

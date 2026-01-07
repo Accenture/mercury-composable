@@ -174,17 +174,17 @@ public class WorkerHandler {
         md.inputOutput.put(INPUT, md.input);
         TypedLambdaFunction f = def.getFunction();
         final long begin = System.nanoTime();
-        final Object body = prepareInputBody(event);
-        // Insert READ only metadata into function input headers
-        Map<String, String> parameters = new HashMap<>(event.getHeaders());
-        parameters.put(MY_ROUTE, parentRoute);
-        if (event.getTraceId() != null) {
-            parameters.put(MY_TRACE_ID, event.getTraceId());
-        }
-        if (event.getTracePath() != null) {
-            parameters.put(MY_TRACE_PATH, event.getTracePath());
-        }
         try {
+            final Object body = prepareInputBody(event);
+            // Insert READ only metadata into function input headers
+            Map<String, String> parameters = new HashMap<>(event.getHeaders());
+            parameters.put(MY_ROUTE, parentRoute);
+            if (event.getTraceId() != null) {
+                parameters.put(MY_TRACE_ID, event.getTraceId());
+            }
+            if (event.getTracePath() != null) {
+                parameters.put(MY_TRACE_PATH, event.getTracePath());
+            }
             Object result;
             try {
                 result = f.handleEvent(parameters, body, instance);
