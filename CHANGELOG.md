@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
-## Version 4.3.47, 1/4/2026
+## Version 4.3.47, 1/6/2026
 
 ### Added
 
@@ -25,6 +25,10 @@ N/A
 
 1. Refactored WebLoader class to satisfy SonarQube complexity requirement
 2. Update msgPack to version 0.9.11 to address a reported security vulnerability
+3. Update asm to version 9.9.1
+4. SimplePluginLoader - load plugin classes using getResourceAsStream() instead of
+   getSystemResourceAsStream(). The latter fails to read data class streams from
+   a packaged JAR file built by the Spring Boot packager.
 
 ---
 ## Version 4.3.46, 12/30/2025

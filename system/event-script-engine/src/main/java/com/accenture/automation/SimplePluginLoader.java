@@ -102,22 +102,26 @@ public class SimplePluginLoader implements EntryPoint {
             return;
         }
         visitedClasses.add(className);
-        try {
-            ClassReader reader = new ClassReader(className);
-            RecursiveClassTypeExaminer visitor = new RecursiveClassTypeExaminer();
-            reader.accept(visitor, ClassReader.SKIP_CODE);
-            // Add types from this class
-            allTypes.addAll(visitor.getTypes());
-            // Recursively analyze superclass
-            if (visitor.getSuperClass() != null) {
-                analyzeClass(visitor.getSuperClass(), allTypes, visitedClasses);
+        String classPath = className.replace('.', '/') + ".class";
+        var stream = this.getClass().getClassLoader().getResourceAsStream(classPath);
+        if (stream != null) {
+            try (stream) {
+                ClassReader reader = new ClassReader(stream);
+                RecursiveClassTypeExaminer visitor = new RecursiveClassTypeExaminer();
+                reader.accept(visitor, ClassReader.SKIP_CODE);
+                // Add types from this class
+                allTypes.addAll(visitor.getTypes());
+                // Recursively analyze superclass
+                if (visitor.getSuperClass() != null) {
+                    analyzeClass(visitor.getSuperClass(), allTypes, visitedClasses);
+                }
+                // Recursively analyze interfaces
+                for (String iFace : visitor.getInterfaces()) {
+                    analyzeClass(iFace, allTypes, visitedClasses);
+                }
+            } catch (IOException e) {
+                log.error("Unable to analyze class ({})", className, e);
             }
-            // Recursively analyze interfaces
-            for (String iface : visitor.getInterfaces()) {
-                analyzeClass(iface, allTypes, visitedClasses);
-            }
-        } catch (IOException e) {
-            log.warn("Warning: Could not load class: " + className, e);
         }
     }
 
