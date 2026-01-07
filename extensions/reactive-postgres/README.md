@@ -153,11 +153,57 @@ Please note that EntityManager and the DbQuery classes have been retired.
 
 ## Database timestamp fields
 
-PostGreSQL supports LocalDateTime (TIMESTAMP) and UTC (TIMESTAMPTZ).
+PostGreSQL supports LocalDateTime (TIMESTAMP) and OffsetDateTime (TIMESTAMPTZ).
 
-The system will convert timestamps between LocalDateTime and UTC Date objects automatically.
+The system will convert timestamps between LocalDateTime and OffsetDateTime objects automatically.
+OffsetDateTime can be replaced with the `java.util.Date` class when UTC is preferred.
 
 The conversion is based on the default system time zone in the deployed Kubernetes' POD.
+
+## Composite index key
+
+Composite index key must be defined in the pg-schema.sql
+
+For example,
+
+```sql
+CREATE TABLE IF NOT EXISTS demo_table (
+        id VARCHAR(40),
+        sequence INT,
+        name VARCHAR(100) NOT NULL,
+        address VARCHAR(256) NOT NULL,
+        created TIMESTAMP NOT NULL,
+        PRIMARY KEY (id, sequence)
+    );
+```
+
+In the above example, the composite key is (id, sequence).
+
+For the corresponding data entity (model), you can annotate part of the composite key, says just the "id".
+
+```java
+@Table(name = "demo_table")
+public class DemoData {
+
+    @Id
+    public String id;
+    public int sequence;
+    public String name;
+    public String address;
+    public Date created;
+}
+```
+
+The "Id" declaration is needed to ensure the `repo.save(entity)` method works as expected.
+i.e. when the ID field is null, it will insert. Otherwise, it will update.
+
+It is recommended to use the repo.save() method for update only. For insertion, you may use the helper class
+`PqRequest` like this:
+
+```java
+var sql = new PgRequest(TIMEOUT);
+var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);
+```
 
 ## SQL statement execution debug logging
 
