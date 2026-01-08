@@ -23,8 +23,6 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.system.AutoStart;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public abstract class TestBase {
 
     protected static final String HTTP_REQUEST = "async.http.request";
@@ -33,16 +31,13 @@ public abstract class TestBase {
     protected static int springPort;
     protected static int restPort;
 
-    private static final AtomicInteger startCounter = new AtomicInteger(0);
 
     @BeforeAll
     public static void setup() {
-        if (startCounter.incrementAndGet() == 1) {
-            Utility util = Utility.getInstance();
-            AppConfigReader config = AppConfigReader.getInstance();
-            springPort = util.str2int(config.getProperty("server.port", "8085"));
-            restPort = util.str2int(config.getProperty("rest.server.port", "8086"));
-            AutoStart.main(new String[0]);
-        }
+        Utility util = Utility.getInstance();
+        AppConfigReader config = AppConfigReader.getInstance();
+        springPort = util.str2int(config.getProperty("server.port", "8085"));
+        restPort = util.str2int(config.getProperty("rest.server.port", "8086"));
+        AutoStart.main(new String[0]);
     }
 }

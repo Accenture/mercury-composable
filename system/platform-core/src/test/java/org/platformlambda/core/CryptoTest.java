@@ -89,7 +89,7 @@ class CryptoTest {
 
     @Test
     void invalidRsaKeyLength() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        var ex = assertThrows(IllegalArgumentException.class,
                                             () -> crypto.generateRsaKey(1000));
         assertEquals("Key size must be one of [2048, 3072, 4096]", ex.getMessage());
     }

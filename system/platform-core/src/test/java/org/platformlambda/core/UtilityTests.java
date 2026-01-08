@@ -124,9 +124,9 @@ class UtilityTests {
 
     @Test
     void setServerPersonality() {
-        ServerPersonality personality = ServerPersonality.getInstance();
-        String message = "Personality cannot be null";
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> personality.setType(null));
+        var personality = ServerPersonality.getInstance();
+        var message = "Personality cannot be null";
+        var ex = assertThrows(IllegalArgumentException.class, () -> personality.setType(null));
         assertEquals(message, ex.getMessage());
     }
 

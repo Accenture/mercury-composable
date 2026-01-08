@@ -16,15 +16,10 @@
 
  */
 
-package org.platformlambda.demo.common;
+package com.accenture.models;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.platformlambda.core.system.AutoStart;
+public class UnapprovedObject {
 
-public class TestBase {
-
-    @BeforeAll
-    static void setup() {
-        AutoStart.main(new String[0]);
-    }
+    public String name;
+    public String address;
 }

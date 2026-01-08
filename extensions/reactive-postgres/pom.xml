@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>reactive-postgres</artifactId>
-    <version>4.3.48</version>
+    <version>4.3.49</version>
     <packaging>jar</packaging>
     <name>Reactive R2DBC sample module</name>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>rest-spring-3</artifactId>
-            <version>4.3.48</version>
+            <version>4.3.49</version>
         </dependency>
 
         <dependency>
@@ -214,6 +214,9 @@
                 <version>3.5.4</version>
                 <configuration>
                     <skipTests>false</skipTests>
+                    <environmentVariables>
+                        <PG_USER>postgres</PG_USER>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>

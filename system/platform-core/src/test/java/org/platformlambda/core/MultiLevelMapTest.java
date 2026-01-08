@@ -104,7 +104,7 @@ class MultiLevelMapTest {
         assertEquals("test3", map.getElement("hello.world[2]"));
         assertEquals("test4", map.getElement("hello.world[3]"));
         assertEquals("test5", map.getElement("hello.world[4]"));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        var ex = assertThrows(IllegalArgumentException.class,
                                         () -> map.setElement("[]hello.world[]", "invalid"));
         assertEquals("Invalid composite path - missing first element", ex.getMessage());
     }

@@ -245,128 +245,95 @@ class GraphTest {
     @Test
     void exceptionTest1() {
         var graph = new MiniGraph();
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                graph.createNode(null, "transaction"));
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> graph.createNode(null, "transaction"));
         assertEquals("alias must not be empty", ex1.getMessage());
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                graph.createNode("", "transaction"));
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> graph.createNode("", "transaction"));
         assertEquals("alias must not be empty", ex2.getMessage());
-        IllegalArgumentException ex3 = assertThrows(IllegalArgumentException.class, () ->
-                graph.createNode("test", null));
+        var ex3 = assertThrows(IllegalArgumentException.class, () -> graph.createNode("test", null));
         assertEquals("type must not be empty", ex3.getMessage());
-        IllegalArgumentException ex4 = assertThrows(IllegalArgumentException.class, () ->
-                graph.createNode("test", ""));
+        var ex4 = assertThrows(IllegalArgumentException.class, () -> graph.createNode("test", ""));
         assertEquals("type must not be empty", ex4.getMessage());
         graph.createNode("test", "transaction");
-        IllegalArgumentException ex5 = assertThrows(IllegalArgumentException.class, () ->
-                graph.createNode("test", "hello"));
+        var ex5 = assertThrows(IllegalArgumentException.class, () -> graph.createNode("test", "hello"));
         assertEquals("alias test already exists", ex5.getMessage());
-        IllegalArgumentException ex6 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeNode(null));
+        var ex6 = assertThrows(IllegalArgumentException.class, () -> graph.removeNode(null));
         assertEquals("alias must not be empty", ex6.getMessage());
-        IllegalArgumentException ex7 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeNode(""));
+        var ex7 = assertThrows(IllegalArgumentException.class, () -> graph.removeNode(""));
         assertEquals("alias must not be empty", ex7.getMessage());
     }
 
     @Test
     void exceptionTest2() {
         var graph = new MiniGraph();
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeConnection(null, "B"));
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> graph.removeConnection(null, "B"));
         assertEquals("source alias cannot be null", ex1.getMessage());
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeConnection("not found", "X"));
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> graph.removeConnection("not found", "X"));
         assertEquals("source node does not exist", ex2.getMessage());
-        IllegalArgumentException ex3 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeConnection("test", null));
+        var ex3 = assertThrows(IllegalArgumentException.class, () -> graph.removeConnection("test", null));
         assertEquals("target alias cannot be null", ex3.getMessage());
-        IllegalArgumentException ex4 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeConnection("A", "A"));
+        var ex4 = assertThrows(IllegalArgumentException.class, () -> graph.removeConnection("A", "A"));
         assertEquals("source and target aliases cannot be the same", ex4.getMessage());
         graph.createNode("test", "transaction");
-        IllegalArgumentException ex5 = assertThrows(IllegalArgumentException.class, () ->
-                graph.removeConnection("test", "hello"));
+        var ex5 = assertThrows(IllegalArgumentException.class, () -> graph.removeConnection("test", "hello"));
         assertEquals("target node does not exist", ex5.getMessage());
     }
 
     @Test
     void exceptionTest3() {
         var graph = new MiniGraph();
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findNodeByAlias(null));
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> graph.findNodeByAlias(null));
         assertEquals("alias cannot be null", ex1.getMessage());
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findNodeById(null));
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> graph.findNodeById(null));
         assertEquals("id cannot be null", ex2.getMessage());
-        IllegalArgumentException ex3 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findNodesByType(null));
+        var ex3 = assertThrows(IllegalArgumentException.class, () -> graph.findNodesByType(null));
         assertEquals("type cannot be empty", ex3.getMessage());
-        IllegalArgumentException ex4 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findNodesByProperty(null, "test"));
+        var ex4 = assertThrows(IllegalArgumentException.class, () -> graph.findNodesByProperty(null, "test"));
         assertEquals("key cannot be empty", ex4.getMessage());
     }
 
     @Test
     void exceptionTest4() {
         var graph = new MiniGraph();
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                graph.connect(null, "B"));
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> graph.connect(null, "B"));
         assertEquals("source alias cannot be null", ex1.getMessage());
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                graph.connect("not found", "X"));
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> graph.connect("not found", "X"));
         assertEquals("source node does not exist", ex2.getMessage());
-        IllegalArgumentException ex3 = assertThrows(IllegalArgumentException.class, () ->
-                graph.connect("test", null));
+        var ex3 = assertThrows(IllegalArgumentException.class, () -> graph.connect("test", null));
         assertEquals("target alias cannot be null", ex3.getMessage());
-        IllegalArgumentException ex4 = assertThrows(IllegalArgumentException.class, () ->
-                graph.connect("A", "A"));
+        var ex4 = assertThrows(IllegalArgumentException.class, () -> graph.connect("A", "A"));
         assertEquals("source and target aliases cannot be the same", ex4.getMessage());
         graph.createNode("test", "transaction");
-        IllegalArgumentException ex5 = assertThrows(IllegalArgumentException.class, () ->
-                graph.connect("test", "hello"));
+        var ex5 = assertThrows(IllegalArgumentException.class, () -> graph.connect("test", "hello"));
         assertEquals("target node does not exist", ex5.getMessage());
     }
 
     @Test
     void exceptionTest5() {
         var graph = new MiniGraph();
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnection(null, "B"));
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> graph.findConnection(null, "B"));
         assertEquals("source alias cannot be null", ex1.getMessage());
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnection("not found", "X"));
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> graph.findConnection("not found", "X"));
         assertEquals("source node does not exist", ex2.getMessage());
-        IllegalArgumentException ex3 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnection("test", null));
+        var ex3 = assertThrows(IllegalArgumentException.class, () -> graph.findConnection("test", null));
         assertEquals("target alias cannot be null", ex3.getMessage());
-        IllegalArgumentException ex4 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnection("A", "A"));
+        var ex4 = assertThrows(IllegalArgumentException.class, () -> graph.findConnection("A", "A"));
         assertEquals("source and target aliases cannot be the same", ex4.getMessage());
         graph.createNode("test", "transaction");
-        IllegalArgumentException ex5 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findConnection("test", "hello"));
+        var ex5 = assertThrows(IllegalArgumentException.class, () -> graph.findConnection("test", "hello"));
         assertEquals("target node does not exist", ex5.getMessage());
-        IllegalArgumentException ex6 = assertThrows(IllegalArgumentException.class, () ->
-                graph.getNeighbors(null));
+        var ex6 = assertThrows(IllegalArgumentException.class, () -> graph.getNeighbors(null));
         assertEquals("alias cannot be null", ex6.getMessage());
-        IllegalArgumentException ex7 = assertThrows(IllegalArgumentException.class, () ->
-                graph.getForwardLinks(null));
+        var ex7 = assertThrows(IllegalArgumentException.class, () -> graph.getForwardLinks(null));
         assertEquals("alias cannot be null", ex7.getMessage());
-        IllegalArgumentException ex8 = assertThrows(IllegalArgumentException.class, () ->
-                graph.getBackwardLinks(null));
+        var ex8 = assertThrows(IllegalArgumentException.class, () -> graph.getBackwardLinks(null));
         assertEquals("alias cannot be null", ex8.getMessage());
-        IllegalArgumentException ex9 = assertThrows(IllegalArgumentException.class, () ->
-                graph.getNeighbors("not found"));
+        var ex9 = assertThrows(IllegalArgumentException.class, () -> graph.getNeighbors("not found"));
         assertEquals("node does not exist", ex9.getMessage());
-        IllegalArgumentException ex10 = assertThrows(IllegalArgumentException.class, () ->
-                graph.getForwardLinks("not found"));
+        var ex10 = assertThrows(IllegalArgumentException.class, () -> graph.getForwardLinks("not found"));
         assertEquals("node does not exist", ex10.getMessage());
-        IllegalArgumentException ex11 = assertThrows(IllegalArgumentException.class, () ->
-                graph.getBackwardLinks("not found"));
+        var ex11 = assertThrows(IllegalArgumentException.class, () -> graph.getBackwardLinks("not found"));
         assertEquals("node does not exist", ex11.getMessage());
-        IllegalArgumentException ex12 = assertThrows(IllegalArgumentException.class, () ->
-                graph.findPaths("not found"));
+        var ex12 = assertThrows(IllegalArgumentException.class, () -> graph.findPaths("not found"));
         assertEquals("node does not exist", ex12.getMessage());
     }
 
@@ -374,12 +341,10 @@ class GraphTest {
     void exceptionTest6() {
         var graph = new MiniGraph();
         var node = graph.createNode("hello", "world");
-        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () ->
-                node.addType("hello.world"));
+        var ex1 = assertThrows(IllegalArgumentException.class, () -> node.addType("hello.world"));
         assertEquals("Invalid syntax (hello.world). " +
                 "Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case", ex1.getMessage());
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class, () ->
-                node.addProperty("my.key", "someValue"));
+        var ex2 = assertThrows(IllegalArgumentException.class, () -> node.addProperty("my.key", "someValue"));
         assertEquals("Invalid syntax (my.key). " +
                 "Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case", ex2.getMessage());
     }

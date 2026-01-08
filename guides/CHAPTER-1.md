@@ -439,9 +439,21 @@ Please update the following in the application.properties (or application.yml) t
 web.component.scan=your.package.name
 ```
 
-> You should replace "your.package.name" with the real package name(s) that you use in your application.
-  Usually this is your organization software ID or "namespace".
-  "web.component.scan" is a comma separated list of package names.
+Note that `web.component.scan` is a comma separated list of package names.
+Classes under the web.component.scan will be scanned for composable functions.
+
+Please replace "your.package.name" with the real package name(s) that you use in your application.
+Usually this is your organization "namespaces".
+
+The composable system can coexist with the Spring ecosystem including Spring Boot. When you use
+Spring Boot, the web.component.scan with more than one package will be ignored by Spring.
+However, you can use the `spring.component.scan` parameter to tell Spring to scan another package
+for servlets.
+
+## Approved packages
+
+The "web.component.scan" is also used to tell the system that the classes in these packages are safe to be
+mapped into PoJos.
 
 ## Deploy your application
 

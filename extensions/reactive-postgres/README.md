@@ -52,14 +52,14 @@ For example, if your organization package name is "my.org", the parameter would 
 #
 # Add your organization package path for Spring R2DBC configurator to scan for repositories
 #
-postgres.repository.scan=my.org
+postgres.repository.scan=org.yourcompany
 ```
 
 You should also update the `web.component.scan` to include your organization package path if you have user functions
 under your own organization path.
 
 ```properties
-web.component.scan=my.org
+web.component.scan=org.yourcompany
 ```
 
 Please review the TempTestData class and TempRepo interface in the "src/test/models" and "src/test/repository" folders.

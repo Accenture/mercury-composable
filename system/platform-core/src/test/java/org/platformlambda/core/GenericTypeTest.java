@@ -257,8 +257,7 @@ class GenericTypeTest {
         byte[] b = event.toBytes();
         EventEnvelope restored = new EventEnvelope(b);
         assertEquals(100, restored.getBody());
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                                () -> restored.getBody(PoJoVariance.class));
+        var ex = assertThrows(IllegalArgumentException.class, () -> restored.getBody(PoJoVariance.class));
         assertEquals(message, ex.getMessage());
     }
 }

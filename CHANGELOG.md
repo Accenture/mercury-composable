@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.49, 1/7/2026
+
+### Added
+
+1. New "spring.component.scan" added to RestServer annotation for Spring to scan servlets
+2. PoJo object restoration is restricted to approved packages in "web.component.scan"
+   parameter only 
+
+### Removed
+
+N/A
+
+### Changed
+
+AppStart will execute only once so that there is no need to protect it from multiple
+invocation in unit tests.
+
+---
 ## Version 4.3.48, 1/7/2026
 
 ### Added

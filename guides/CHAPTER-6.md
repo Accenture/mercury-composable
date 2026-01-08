@@ -10,12 +10,12 @@ There are two ways to do that:
 
 ## Add platform-core to an existing Spring Boot application
 
-For option 1, the platform-core library can co-exist with Spring Boot. You can write code specific to Spring Boot
-and the Spring framework ecosystem. Please make sure you add the following startup code to your Spring Boot
-main application like this:
+For the first option, the platform-core library can co-exist with Spring Boot. You can write code specific
+to Spring Boot and the Spring framework ecosystem. Please make sure you add the following startup code to
+your Spring Boot main application like this:
 
 ```java
-@ComponentScan({"org.platformlambda", "${web.component.scan}"})
+@ComponentScan("${spring.component.scan:none}"})
 @SpringBootApplication
 public class MyMainApp extends SpringBootServletInitializer {
 
@@ -27,25 +27,28 @@ public class MyMainApp extends SpringBootServletInitializer {
 }
 ```
 
-We suggest running `AutoStart.main` before the `SpringApplication.run` statement. This would allow the platform-core
-foundation code to load the event-listener functions into memory before Spring Boot starts.
+The `spring.component.scan` parameter tells Spring to scan a package for Spring components.
+
+We suggest running `AutoStart.main` before the `SpringApplication.run` statement. This would allow the
+platform-core foundation code to load the event-listener functions into memory before Spring Boot starts.
 
 ## Use the rest-spring library in your application
 
-The `rest-spring-3` subproject is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
+The second option is to add the `rest-spring-3` dependency to your composable application.
+The rest-spring-3 library is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
 HTTP servlet engine.
 
-You can add it to your application and turn it into a pre-configured Spring Boot 3 application.
+This turns your composable application into a pre-configured Spring Boot 3 application.
 It provides consistent behavior for XML and JSON serializaation and exception handling.
 
 The RestServer class in the rest-spring-3 library is used to bootstrap a Spring Boot application.
 
-However, Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
-use cases, please implement your own Spring Boot initializer.
+Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
+use cases, please use the sample MainAPp implement your own Spring Boot initializer.
 
-You can add the "spring.boot.main" parameter in the application.properties to point to your Spring Boot initializer
-main class. Note that the default value is "org.platformlambda.rest.RestServer" that points to the system provided
-Spring Boot initializer.
+You can add the "spring.boot.main" parameter in the application.properties to point to your own Spring Boot
+initializer main class. Note that the default value is "org.platformlambda.rest.RestServer" that points to
+the system provided Spring Boot initializer.
 
 ```shell
 spring.boot.main=org.platformlambda.rest.RestServer
@@ -54,7 +57,7 @@ spring.boot.main=org.platformlambda.rest.RestServer
 The Spring Boot initialization main class must have at least the following annotations:
 
 ```java
-@ComponentScan({"org.platformlambda", "${web.component.scan}"})
+@ComponentScan({"org.platformlambda", "${spring.component.scan:none}"})
 @SpringBootApplication
 ```
 

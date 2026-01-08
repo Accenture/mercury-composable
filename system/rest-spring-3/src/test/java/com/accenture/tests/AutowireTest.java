@@ -29,7 +29,8 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-public class AutowireTest extends TestBase {
+class AutowireTest extends TestBase {
+
     @Test
     void testAutoWirePreloadedFunction() throws InterruptedException, ExecutionException {
         var po = new PostOffice("unit.test", "12345", "TEST v1.autowire.test");

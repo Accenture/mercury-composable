@@ -31,22 +31,17 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestBase {
     protected static final String HTTP_CLIENT = "async.http.request";
     protected static int port;
 
-    private static final AtomicInteger startCounter = new AtomicInteger(0);
-
     @BeforeAll
     public static void setup() {
-        if (startCounter.incrementAndGet() == 1) {
-            Utility util = Utility.getInstance();
-            AppConfigReader config = AppConfigReader.getInstance();
-            port = util.str2int(config.getProperty("server.port", "8080"));
-            AutoStart.main(new String[0]);
-        }
+        Utility util = Utility.getInstance();
+        AppConfigReader config = AppConfigReader.getInstance();
+        port = util.str2int(config.getProperty("server.port", "8080"));
+        AutoStart.main(new String[0]);        
     }
 
     protected EventEnvelope httpGet(String host, String path, Map<String, String> headers)

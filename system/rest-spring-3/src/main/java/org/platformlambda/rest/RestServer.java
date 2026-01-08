@@ -32,7 +32,7 @@ import org.springframework.context.annotation.ComponentScan;
  * The AppLoader will invoke user written MainApplication classes accordingly.
  */
 @ServletComponentScan({"org.platformlambda"})
-@ComponentScan({"org.platformlambda", "${web.component.scan}"})
+@ComponentScan({"org.platformlambda", "${web.component.scan:none}", "${spring.component.scan:none}"})
 @ImportAutoConfiguration
 @SpringBootApplication
 public class RestServer extends SpringBootServletInitializer {

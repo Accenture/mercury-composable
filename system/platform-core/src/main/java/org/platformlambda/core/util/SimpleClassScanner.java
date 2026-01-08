@@ -21,21 +21,28 @@ package org.platformlambda.core.util;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  */
 public class SimpleClassScanner {
+    private static final Logger log = LoggerFactory.getLogger(SimpleClassScanner.class);
     private static final String WEB_COMPONENT_SCAN = "web.component.scan";
     private static final String PLATFORM_LAMBDA = "org.platformlambda.";
     private static final String ACCENTURE_COM = "com.accenture.";
     private static final String[] BASE_PACKAGE = {PLATFORM_LAMBDA, ACCENTURE_COM};
     private static final String EX_START = "Invalid package path (";
     private static final String EX_END = ")";
+    private static final Set<String> scanPackages = new HashSet<>();
+    private static final Set<String> approvedPackages = new HashSet<>();
+    private static final AtomicBoolean loaded = new AtomicBoolean(false);
     private static final SimpleClassScanner INSTANCE = new SimpleClassScanner();
 
     private SimpleClassScanner() {
@@ -65,23 +72,34 @@ public class SimpleClassScanner {
     }
 
     public Set<String> getPackages() {
-        Set<String> result = new HashSet<>();
-        AppConfigReader reader = AppConfigReader.getInstance();
-        List<String> packages = Utility.getInstance().split(reader.getProperty(WEB_COMPONENT_SCAN), ", []");
-        for (String p : packages) {
-            if (p.contains(".")) {
-                // avoid duplicated package paths
-                var userPackage = normalizePackagePath(p);
-                if (!isCovered(userPackage)) {
-                    result.add(userPackage);
+        if (!loaded.get() && scanPackages.isEmpty()) {
+            loaded.set(true);
+            AppConfigReader reader = AppConfigReader.getInstance();
+            List<String> packages = Utility.getInstance().split(reader.getProperty(WEB_COMPONENT_SCAN), ", []");
+            for (String p : packages) {
+                if (p.contains(".")) {
+                    var userPackage = normalizePackagePath(p);
+                    approvedPackages.add(userPackage);
+                    if (!isCovered(userPackage)) {
+                        scanPackages.add(userPackage);
+                    }
+                } else {
+                    throw new IllegalArgumentException(EX_START + p + EX_END);
                 }
-            } else {
-                throw new IllegalArgumentException(EX_START + p + EX_END);
             }
+            // guarantee that scan package includes the base packages
+            scanPackages.addAll(Arrays.asList(BASE_PACKAGE));
+            approvedPackages.add(PLATFORM_LAMBDA);
+            log.info("Approved packages - {}", approvedPackages);
         }
-        // guarantee that scan package includes the base packages
-        result.addAll(Arrays.asList(BASE_PACKAGE));
-        return result;
+        return scanPackages;
+    }
+
+    public Set<String> getApprovedPackages() {
+        if (!loaded.get() && scanPackages.isEmpty()) {
+            getPackages();
+        }
+        return approvedPackages;
     }
 
     /**

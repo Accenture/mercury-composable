@@ -51,7 +51,6 @@ import java.util.Date;
 @EnableR2dbcRepositories(basePackages = {"org.platformlambda", "${postgres.repository.scan}"})
 public class ReactivePgConfig extends AbstractR2dbcConfiguration {
     private static final Logger log = LoggerFactory.getLogger(ReactivePgConfig.class);
-    private static final String TEST_VALUE = "postgres";
 
     private ConnectionFactory pool;
 
@@ -73,10 +72,13 @@ public class ReactivePgConfig extends AbstractR2dbcConfiguration {
             throw new IllegalArgumentException("Invalid postgres.host - "+host);
         }
         int port = util.str2int(config.getProperty("postgres.port"));
-        String user = config.getProperty("postgres.user", TEST_VALUE);
-        String password = config.getProperty("postgres.password",  TEST_VALUE);
-        if (TEST_VALUE.equals(user) && TEST_VALUE.equals(password)) {
-            log.warn("Test values used for postgres credentials. Please update credentials.");
+        String user = config.getProperty("postgres.user");
+        String password = config.getProperty("postgres.password");
+        if (user == null) {
+            throw new IllegalArgumentException("Missing postgres.user");
+        }
+        if (password == null) {
+            log.error("Did you forget to set postgres.password?");
         }
         boolean ssl = "true".equals(config.getProperty("postgres.ssl", "true"));
         var builder = PostgresqlConnectionConfiguration.builder().host(host).port(port).database(db)

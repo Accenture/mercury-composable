@@ -79,7 +79,7 @@ class XmlParserFeatureTest {
                              "<stockCheck><productId>&xxe;</productId></stockCheck>";
         DocumentBuilder dBuilder = dbf.newDocumentBuilder();
         dBuilder.setErrorHandler(null);
-        SAXParseException ex = assertThrows(SAXParseException.class,
+        var ex = assertThrows(SAXParseException.class,
                 () -> dBuilder.parse(new ByteArrayInputStream(problematic.getBytes(StandardCharsets.UTF_8))));
         assertTrue(ex.getMessage().contains("DOCTYPE is disallowed"));
     }

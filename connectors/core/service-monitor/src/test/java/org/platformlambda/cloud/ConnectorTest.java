@@ -59,7 +59,7 @@ class ConnectorTest extends TestBase {
     private static final AtomicBoolean firstRun = new AtomicBoolean(true);
 
     @BeforeEach
-    public void waitForMockCloud() throws InterruptedException {
+    void waitForMockCloud() throws InterruptedException {
         if (firstRun.get()) {
             firstRun.set(false);
             final int WAIT = 20;

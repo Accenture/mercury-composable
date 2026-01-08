@@ -1,5 +1,6 @@
 package org.platformlambda.core;
 
+import com.accenture.models.UnapprovedObject;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
@@ -23,16 +24,30 @@ class EventEnvelopeTest {
     private static final String SET_COOKIE = "set-cookie";
 
     @Test
+    void validateClassPackage() {
+        var obj = new UnapprovedObject();
+        obj.name = "someone";
+        obj.address = "200 New York Blvd";
+        var event = new EventEnvelope();
+        event.setBody(obj);
+        byte[] b = event.toBytes();
+        var restored = new EventEnvelope(b);
+        var ex = assertThrows(IllegalArgumentException.class, restored::restoreBodyAsPoJo);
+        var expected = UnapprovedObject.class.getName() +" does not belong to an approved package";
+        assertEquals(expected, ex.getMessage());
+    }
+
+    @Test
     void offsetDateTimeTest() {
-        Utility util = Utility.getInstance();
-        EventEnvelope event = new EventEnvelope();
-        PoJo po = new PoJo();
-        OffsetDateTime now = OffsetDateTime.now();
+        var util = Utility.getInstance();
+        var event = new EventEnvelope();
+        var po = new PoJo();
+        var now = OffsetDateTime.now();
         po.setOffsetDateTime(now);
         event.setBody(po);
         byte[] b = event.toBytes();
-        EventEnvelope restored = new EventEnvelope(b).restoreBodyAsPoJo();
-        Object o = restored.getBody();
+        var restored = new EventEnvelope(b).restoreBodyAsPoJo();
+        var o = restored.getBody();
         assertInstanceOf(PoJo.class, o);
         var pojo = (PoJo) o;
         // convert to utc because the OffsetDateTime is based on local timezone

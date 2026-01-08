@@ -487,7 +487,7 @@ class PostOfficeTest extends TestBase {
         assertEquals("Timeout for "+timeout+" ms", result.getBody());
         // timeout is thrown as an ExecutionException wrapping a TimeoutException
         assertThrows(ExecutionException.class, () -> po.request(request, timeout, true).get());
-        ExecutionException e = assertThrows(ExecutionException.class, () ->
+        var e = assertThrows(ExecutionException.class, () ->
                                             po.eRequest(request, timeout, true).get());
         assertNotNull(e);
         assertEquals(ExecutionException.class, e.getClass());
@@ -686,8 +686,8 @@ class PostOfficeTest extends TestBase {
     void registerInvalidRoute() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                platform.register("invalidFormat", noOp, 1));
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                    platform.register("invalidFormat", noOp, 1));
         assertEquals("Invalid route - use 0-9, a-z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
@@ -696,15 +696,14 @@ class PostOfficeTest extends TestBase {
     void registerNullRoute() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                platform.register(null, noOp, 1));
+        var ex = assertThrows(IllegalArgumentException.class, () -> platform.register(null, noOp, 1));
         assertEquals("Missing service routing path", ex.getMessage());
     }
 
     @Test
     void registerNullService() {
         Platform platform = Platform.getInstance();
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        var ex = assertThrows(IllegalArgumentException.class, () ->
                 platform.register("no.service", null, 1));
         assertEquals("Missing LambdaFunction instance", ex.getMessage());
     }
@@ -713,8 +712,8 @@ class PostOfficeTest extends TestBase {
     void reservedExtensionNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                platform.register("nothing.com", noOp, 1));
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                    platform.register("nothing.com", noOp, 1));
         assertEquals("Invalid route nothing.com which is use a reserved extension", ex.getMessage());
     }
 
@@ -722,8 +721,8 @@ class PostOfficeTest extends TestBase {
     void reservedFilenameNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                platform.register("thumbs.db", noOp, 1));
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                    platform.register("thumbs.db", noOp, 1));
         assertEquals("Invalid route thumbs.db which is a reserved Windows filename", ex.getMessage());
     }
 
@@ -757,8 +756,7 @@ class PostOfficeTest extends TestBase {
     void emptyRouteNotAllowed() {
         Platform platform = Platform.getInstance();
         LambdaFunction noOp = (headers, input, instance) -> true;
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                platform.register("", noOp, 1));
+        var ex = assertThrows(IllegalArgumentException.class, () -> platform.register("", noOp, 1));
         assertEquals("Invalid route - use 0-9, a-z, period, hyphen or underscore characters",
                 ex.getMessage());
     }
