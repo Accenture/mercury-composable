@@ -22,7 +22,7 @@ As per Snyk scan recommendation, remove the restoreBodyAsBody() method from Even
 to avoid potential security vulnerability caused by automated class restoration.
 
 To restore body to PoJo, the application can compare the classname transported by the
-event to a pre-defined classes before restoring a PoJo. This eliminates the chance
+event to a pre-defined class before restoring a PoJo. This eliminates the chance
 of arbitrary PoJo restoration.
 
 This is demonstrated in the reactive-postgres subproject.
