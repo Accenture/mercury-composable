@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-1. New "spring.component.scan" added to RestServer annotation for Spring to scan servlets
+1. New "spring.component.scan" added to RestServer annotation for Spring to scan components
 2. PoJo object restoration is restricted to approved packages in "web.component.scan"
    parameter only 
 
