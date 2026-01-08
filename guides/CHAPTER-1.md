@@ -450,11 +450,6 @@ Spring Boot, the web.component.scan with more than one package will be ignored b
 However, you can use the `spring.component.scan` parameter to tell Spring to scan another package
 for servlets.
 
-## Approved packages
-
-The "web.component.scan" is also used to tell the system that the classes in these packages are safe to be
-mapped into PoJos.
-
 ## Deploy your application
 
 Composable design can be used to create microservices. You can put related functions in a bounded context with

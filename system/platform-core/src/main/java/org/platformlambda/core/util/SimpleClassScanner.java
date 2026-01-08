@@ -41,7 +41,6 @@ public class SimpleClassScanner {
     private static final String EX_START = "Invalid package path (";
     private static final String EX_END = ")";
     private static final Set<String> scanPackages = new HashSet<>();
-    private static final Set<String> approvedPackages = new HashSet<>();
     private static final AtomicBoolean loaded = new AtomicBoolean(false);
     private static final SimpleClassScanner INSTANCE = new SimpleClassScanner();
 
@@ -79,7 +78,6 @@ public class SimpleClassScanner {
             for (String p : packages) {
                 if (p.contains(".")) {
                     var userPackage = normalizePackagePath(p);
-                    approvedPackages.add(userPackage);
                     if (!isCovered(userPackage)) {
                         scanPackages.add(userPackage);
                     }
@@ -89,17 +87,8 @@ public class SimpleClassScanner {
             }
             // guarantee that scan package includes the base packages
             scanPackages.addAll(Arrays.asList(BASE_PACKAGE));
-            approvedPackages.add(PLATFORM_LAMBDA);
-            log.info("Approved packages - {}", approvedPackages);
         }
         return scanPackages;
-    }
-
-    public Set<String> getApprovedPackages() {
-        if (!loaded.get() && scanPackages.isEmpty()) {
-            getPackages();
-        }
-        return approvedPackages;
     }
 
     /**

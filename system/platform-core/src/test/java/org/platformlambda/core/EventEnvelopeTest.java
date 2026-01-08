@@ -1,6 +1,18 @@
+/*
+    Copyright 2018-2026 Accenture Technology
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+        http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+ */
+
 package org.platformlambda.core;
 
-import com.accenture.models.UnapprovedObject;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
@@ -24,20 +36,6 @@ class EventEnvelopeTest {
     private static final String SET_COOKIE = "set-cookie";
 
     @Test
-    void validateClassPackage() {
-        var obj = new UnapprovedObject();
-        obj.name = "someone";
-        obj.address = "200 New York Blvd";
-        var event = new EventEnvelope();
-        event.setBody(obj);
-        byte[] b = event.toBytes();
-        var restored = new EventEnvelope(b);
-        var ex = assertThrows(IllegalArgumentException.class, restored::restoreBodyAsPoJo);
-        var expected = UnapprovedObject.class.getName() +" does not belong to an approved package";
-        assertEquals(expected, ex.getMessage());
-    }
-
-    @Test
     void offsetDateTimeTest() {
         var util = Utility.getInstance();
         var event = new EventEnvelope();
@@ -46,13 +44,12 @@ class EventEnvelopeTest {
         po.setOffsetDateTime(now);
         event.setBody(po);
         byte[] b = event.toBytes();
-        var restored = new EventEnvelope(b).restoreBodyAsPoJo();
-        var o = restored.getBody();
-        assertInstanceOf(PoJo.class, o);
-        var pojo = (PoJo) o;
+        var restored = new EventEnvelope(b);
+        assertEquals(PoJo.class.getName(), restored.getType());
+        var o = restored.getBody(PoJo.class);
         // convert to utc because the OffsetDateTime is based on local timezone
         var utc1 = util.str2date(now.toString());
-        var utc2 = util.str2date(pojo.getOffsetDateTime().toString());
+        var utc2 = util.str2date(o.getOffsetDateTime().toString());
         assertEquals(utc1, utc2);
     }
 

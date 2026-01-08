@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.50, 1/8/2026
+
+### Added
+
+N/A
+
+### Removed
+
+As per Snyk scan recommendation, remove the restoreBodyAsBody() method from EventEnvelope
+to avoid potential security vulnerability caused by automated class restoration.
+
+To restore body to PoJo, the application can compare the classname transported by the
+event to a pre-defined classes before restoring a PoJo. This eliminates the chance
+of arbitrary PoJo restoration.
+
+This is demonstrated in the reactive-postgres subproject.
+
+### Changed
+
+Unit tests associated with the restoreBodyAsPoJo feature.
+
+---
 ## Version 4.3.49, 1/7/2026
 
 ### Added

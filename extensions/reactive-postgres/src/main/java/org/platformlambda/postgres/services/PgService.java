@@ -33,11 +33,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.r2dbc.core.DatabaseClient;
 
 import java.util.Map;
+import java.util.Optional;
 
 @PreLoad(route = PgService.ROUTE, instances = 200)
 public class PgService implements TypedLambdaFunction<EventEnvelope, Object> {
     private static final Logger log = LoggerFactory.getLogger(PgService.class);
     public static final String ROUTE = "postgres.service";
+    private static final String PG_QUERY_CLASS = PgQueryStatement.class.getName();
+    private static final String PG_UPDATE_CLASS = PgUpdateStatement.class.getName();
 
     private DatabaseClient client;
 
@@ -60,8 +63,8 @@ public class PgService implements TypedLambdaFunction<EventEnvelope, Object> {
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
-        input.restoreBodyAsPoJo();
-        if (input.getBody() instanceof PgQueryStatement query) {
+        Object clazz = restorePoJo(input);
+        if (clazz instanceof PgQueryStatement query) {
             var sql = bindParamsToStatement(client.sql(query.getStatement()), query);
             return sql.map(r -> {
                 if (r instanceof Row row) {
@@ -72,11 +75,22 @@ public class PgService implements TypedLambdaFunction<EventEnvelope, Object> {
                 }
             }).all().collectList();
         }
-        if (input.getBody() instanceof PgUpdateStatement update) {
+        if (clazz instanceof PgUpdateStatement update) {
             var sql = bindParamsToStatement(client.sql(update.getStatement()), update);
             return sql.fetch().rowsUpdated().map(count -> Map.of("row_updated", count));
         }
         throw new IllegalArgumentException("Unknown statement type");
+    }
+
+    private Object restorePoJo(EventEnvelope input) {
+        var type = input.getType();
+        if (PG_QUERY_CLASS.equals(type)) {
+            return input.getBody(PgQueryStatement.class);
+        }
+        if (PG_UPDATE_CLASS.equals(type)) {
+            return input.getBody(PgUpdateStatement.class);
+        }
+        return Optional.empty();
     }
 
     private DatabaseClient.GenericExecuteSpec bindParamsToStatement(DatabaseClient.GenericExecuteSpec sql,

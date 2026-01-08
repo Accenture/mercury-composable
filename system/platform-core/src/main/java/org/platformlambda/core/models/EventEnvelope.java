@@ -17,7 +17,6 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.AppConfigReader;
-import org.platformlambda.core.util.SimpleClassScanner;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -253,37 +252,6 @@ public class EventEnvelope {
      */
     public Object getBody() {
         return isOptional()? Optional.ofNullable(body) : body;
-    }
-
-    /**
-     * Best effort to restore body as a PoJo
-     * when the original class name is transported and the class can be resolved.
-     *
-     * @return this
-     */
-    public EventEnvelope restoreBodyAsPoJo() {
-        if (body instanceof Map && type != null && type.contains(".") && !type.startsWith("java.")) {
-            if (isAllowedClass(type)) {
-                try {
-                    setBody(getBody(Class.forName(type)));
-                } catch (ClassNotFoundException e) {
-                    log.warn("Unable to restore body as {} because class not found", type);
-                }
-            } else {
-                throw new IllegalArgumentException(type + " does not belong to an approved package");
-            }
-        }
-        return this;
-    }
-
-    private boolean isAllowedClass(String className) {
-        var approvedPackages = SimpleClassScanner.getInstance().getApprovedPackages();
-        for (String p : approvedPackages) {
-            if (className.startsWith(p)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

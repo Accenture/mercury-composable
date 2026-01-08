@@ -18,11 +18,9 @@
 
 package com.accenture.postgres.tests;
 
-import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import com.accenture.postgres.models.TempTestData;
+import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterAll;
-import org.platformlambda.postgres.models.HealthCheck;
-import org.platformlambda.postgres.support.PgRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -34,6 +32,8 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.postgres.models.HealthCheck;
+import org.platformlambda.postgres.support.PgRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,10 +155,7 @@ class ReactiveDbTest {
         // the original class name is also transported by the RPC call
         assertEquals(TempTestData.class.getName(), result.getType());
         // therefore we can just restore it
-        result.restoreBodyAsPoJo();
-        // now the event body becomes a PoJo
-        assertInstanceOf(TempTestData.class, result.getBody());
-        var rec = (TempTestData) result.getBody();
+        var rec = result.getBody(TempTestData.class);
         assertEquals("001", rec.id);
         assertEquals("Mary", rec.name);
         assertEquals("100 World Blvd", rec.address);
@@ -173,9 +170,8 @@ class ReactiveDbTest {
         // read the new record. Ask demo function to read record using database client API
         var request3 = new EventEnvelope().setTo(DEMO_FUNCTION).setHeader(TYPE, READ_BY_CLIENT).setHeader(ID, "B20");
         var result3 = po.request(request3, 5000).get();
-        result3.restoreBodyAsPoJo();
-        assertInstanceOf(TempTestData.class, result3.getBody());
-        var rec3 = (TempTestData) result3.getBody();
+        assertEquals(TempTestData.class.getName(), result3.getType());
+        var rec3 = result3.getBody(TempTestData.class);
         assertEquals(data.id, rec3.id);
         assertEquals(data.name, rec3.name);
         assertEquals(data.address, rec3.address);
@@ -185,10 +181,9 @@ class ReactiveDbTest {
         data.created = new Date();
         var request4 = new EventEnvelope().setTo(DEMO_FUNCTION).setHeader(TYPE, UPDATE).setBody(data);
         var result4 = po.request(request4, 5000).get();
+        assertEquals(TempTestData.class.getName(), result4.getType());
         // compare the updated record
-        result4.restoreBodyAsPoJo();
-        assertInstanceOf(TempTestData.class, result4.getBody());
-        var rec4 = (TempTestData) result4.getBody();
+        var rec4 = result4.getBody(TempTestData.class);
         assertEquals(data.id, rec4.id);
         assertEquals(data.name, rec4.name);
         assertEquals(data.address, rec4.address);
@@ -287,6 +282,9 @@ class ReactiveDbTest {
         rec = mapper.readValue(records.getFirst(), HealthCheck.class);
         assertEquals(now, rec.created);
         assertEquals(new Date(minusOneMinute), rec.updated);
+        // prove that we can do SQL statement without parameters
+        records = sql.query(po, "SELECT * FROM health_check");
+        assertFalse(records.isEmpty());
         // finally delete the record
         var deleted = sql.update(po, SQL_DELETE, id);
         assertEquals(1, deleted);

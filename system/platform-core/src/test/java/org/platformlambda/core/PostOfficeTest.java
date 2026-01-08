@@ -70,10 +70,9 @@ class PostOfficeTest extends TestBase {
         var req = new EventEnvelope().setTo("hello.pojo").setHeader("name", name).setHeader("address", address);
         var res = po.request(req, 5000).get();
         assertInstanceOf(Map.class, res.getBody());
-        var restored = res.restoreBodyAsPoJo();
-        assertInstanceOf(PoJo.class, restored.getBody());
-        // Note that the "restoreBodyAsPoJo" method updates the original EventEnvelope too
-        var pojo = (PoJo) res.getBody();
+        assertEquals(PoJo.class.getName(), res.getType());
+        // safe to restore PoJo
+        var pojo = res.getBody(PoJo.class);
         assertEquals(name, pojo.getName());
         assertEquals(address, pojo.getAddress());
     }
@@ -91,10 +90,9 @@ class PostOfficeTest extends TestBase {
         poJo.setName(name);
         var po = PostOffice.trackable("unit.test", "2001", "TEST /untyped/class/inline");
         var req = new EventEnvelope().setTo(tempRoute1).setBody(poJo);
-        var res = po.request(req, 5000).get().restoreBodyAsPoJo();
+        var res = po.request(req, 5000).get();
         assertEquals(PoJo.class.getName(), res.getType());
-        assertInstanceOf(PoJo.class, res.getBody());
-        var restored = (PoJo) res.getBody();
+        var restored = res.getBody(PoJo.class);
         assertEquals(name, restored.getName());
         log.info("Validated PoJo transport (Inline TypedLambdaFunction) - {}", res.getType());
         platform.release(tempRoute1);
@@ -111,9 +109,8 @@ class PostOfficeTest extends TestBase {
         po.send(new EventEnvelope().setTo(tempRoute2).setBody(poJo));
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
         assertNotNull(result);
-        result.restoreBodyAsPoJo();
         assertEquals(PoJo.class.getName(), result.getType());
-        var restored2 = (PoJo) result.getBody();
+        var restored2 = result.getBody(PoJo.class);
         assertEquals(name, restored2.getName());
     }
 
@@ -125,10 +122,9 @@ class PostOfficeTest extends TestBase {
         poJo.setName(name);
         var po = PostOffice.trackable("unit.test", "2002", "TEST /untyped/class/regular");
         var req = new EventEnvelope().setTo("legacy.pojo.class.validator").setBody(poJo);
-        var res = po.request(req, 5000).get().restoreBodyAsPoJo();
+        var res = po.request(req, 5000).get();
         assertEquals(PoJo.class.getName(), res.getType());
-        assertInstanceOf(PoJo.class, res.getBody());
-        var restored = (PoJo) res.getBody();
+        var restored = res.getBody(PoJo.class);
         assertEquals(name, restored.getName());
         log.info("Validated PoJo transport (Regular TypedLambdaFunction) - {}", res.getType());
     }
