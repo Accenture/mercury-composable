@@ -232,9 +232,6 @@ public class MultiLevelMap {
      * @return this
      */
     public MultiLevelMap setElement(String compositePath, Object value) {
-        if (compositePath.startsWith("$")) {
-            throw new IllegalArgumentException("Path must not start with '$'");
-        }
         validateCompositePathSyntax(compositePath);
         var normalizedPath = compositePath.contains("[]")? appendIndex(compositePath) : compositePath;
         setElement(normalizedPath, value, multiLevels, false);
