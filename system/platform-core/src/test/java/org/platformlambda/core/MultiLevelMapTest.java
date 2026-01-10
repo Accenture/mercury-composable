@@ -36,17 +36,7 @@ class MultiLevelMapTest {
     @Test
     void readWriteTest() {
         Utility util = Utility.getInstance();
-        var base = new HashMap<String, Object>();
-        base.put("hello", "world");
-        var mm = new MultiLevelMap(base);
-        mm.setElement("test.boolean", false);
-        mm.setElement("x.y.z", 100);
-        var list1 = new ArrayList<Integer>();
-        list1.add(1);
-        list1.add(2);
-        list1.add(3);
-        mm.setElement("a.b.c", list1);
-        mm.setElement("a.b.c[4].hello", "world");
+        var mm = getSampleMultiLevelMap();
         // retrieve the elements
         var one = mm.getElement("a.b.c[0]");
         assertEquals(1, one);
@@ -74,18 +64,40 @@ class MultiLevelMapTest {
         assertEquals("message2", mm.getElement("a.b.c[4].test2"));
         assertTrue(mm.exists("test.boolean"));
         assertEquals(false, mm.getElement("test.boolean"));
-
         var helloWorldList = List.of(Map.of("hello", "world"), Map.of("hello", "world"));
         mm.setElement("a.b.c[5].array_key", helloWorldList);
         assertEquals("world", mm.getElement("a.b.c[5].array_key[1].hello"));
-        assertThrows(IllegalArgumentException.class, () -> mm.getElements("a.b.c[5].array_key[1].hello"));
-        assertThrows(IllegalArgumentException.class, () -> mm.getElements("a.b.c[5].array_key[*][*].hello"));
-        assertEquals(List.of("world", "world"), mm.getElements("a.b.c[5].array_key[*].hello"));
-        assertEquals(helloWorldList, mm.getElements("a.b.c[5].array_key[*]"));
-        assertEquals(helloWorldList, mm.getElement("a.b.c[5].array_key"));
+        jsonPathTest(mm, helloWorldList);
+    }
 
+    private void jsonPathTest(MultiLevelMap mm, List<?> helloWorldList) {
+        assertEquals(List.of("world", "world"), mm.getElement("$.a.b.c[5].array_key[*].hello"));
+        assertEquals(helloWorldList, mm.getElement("$.a.b.c[5].array_key"));
         mm.setElement("a.b.c[6].array_key[]", Map.of("hello", "single_array"));
-        assertEquals(List.of("single_array"), mm.getElements("a.b.c[6].array_key[*].hello"));
+        var searchResult1 = mm.getElement("$.a.b.c[6].array_key[*].hello");
+        assertInstanceOf(List.class, searchResult1);
+        assertEquals(List.of("single_array"), searchResult1);
+        mm.setElement("a.b.X", 120);
+        var searchResult2 = mm.getElement("$.a.b.*");
+        assertInstanceOf(List.class, searchResult2);
+        var mm2 = new MultiLevelMap(Map.of("result", searchResult2));
+        assertEquals(120, mm2.getElement("result[1]"));
+        assertEquals(mm.getElement("a.b.c"), mm2.getElement("result[0]"));
+    }
+
+    private MultiLevelMap getSampleMultiLevelMap() {
+        var base = new HashMap<String, Object>();
+        base.put("hello", "world");
+        var mm = new MultiLevelMap(base);
+        mm.setElement("test.boolean", false);
+        mm.setElement("x.y.z", 100);
+        var list1 = new ArrayList<Integer>();
+        list1.add(1);
+        list1.add(2);
+        list1.add(3);
+        mm.setElement("a.b.c", list1);
+        mm.setElement("a.b.c[4].hello", "world");
+        return mm;
     }
 
     @Test

@@ -1,0 +1,26 @@
+flow:
+  id: 'header-and-json-path-test'
+  description: 'Test input data mapping of headers'
+  ttl: 10s
+
+first.task: 'no.op'
+
+#
+# "jsonpath($.input.body.hello)" is actually the same as "input.body.hello"
+# The basic retrieval method using "input.body.hello" is more efficient than JSON-Path
+# It is here for testing JSON-Path feature only.
+#
+# You should use JSON-Path for more complex use cases
+#
+tasks:
+  - input:
+      # this pass all input headers as an input map
+      - 'input.header -> *'
+      - 'jsonpath($.input.body.hello) -> body'
+    process: 'no.op'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+      - 'jsonpath($.input.body.list) -> output.body.extra'
+    description: 'Return result'
+    execution: end

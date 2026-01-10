@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.51, 1/9/2026
+
+### Added
+
+1. Support of JSON-Path in MultiLevelMap's getElement method
+2. Add "jsonpath(path)" feature in event script's left-hand-side for input/output data mapping 
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.50, 1/8/2026
 
 ### Added

@@ -206,15 +206,17 @@ For example, given a map like this:
 }
 ```
 
-| Example | Command                                | Result                   |
-|:-------:|:---------------------------------------|:-------------------------|
-|    1    | map.getElement("body.time")            | 2023-03-27T18:10:34.234Z |
-|    2    | map.getElement("body.hello[2]")        | 3                        |
-|    3    | map.getElement("body.complex[1].key")  | value2                   |
-|    4    | map.getElements("body.complex[*].key") | [ value1, value2 ]       |
+| Example | Command                               | Result                       |
+|:-------:|:--------------------------------------|:-----------------------------|
+|    1    | map.getElement("body.time")           | 2023-03-27T18:10:34.234Z     |
+|    2    | map.getElement("body.hello[2]")       | 3                            |
+|    3    | map.getElement("body.complex[1].key") | value2                       |
+|    4    | map.getElement("$.body.complex[*]")   | [{key=value1}, {key=value2}] |
 
-Example-4 above uses the "getElements" in plural form to indicate that it is retrieving a list of elements
-using a "wildcard" index. For simplicity, it does not support more than one wildcard index in the search path.
+The basic retrieval method `map.getElement("body.complex")` is more efficient
+than JSON-Path of `map.getElement("$.body.complex[*]")`. Example-4 is for
+illustration purpose only. You should use JSON-Path syntax for more sophisticated
+search only when the basic retrieval method does not address your need.
 
 ## Event Flow mocking framework
 

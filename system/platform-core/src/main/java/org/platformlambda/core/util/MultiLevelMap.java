@@ -18,6 +18,9 @@
 
 package org.platformlambda.core.util;
 
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -121,70 +124,6 @@ public class MultiLevelMap {
         return element == null? defaultValue : element;
     }
 
-    /**
-     * Get a list of elements using a wildcard index.
-     * e.g. hello[*].world will return values of hello[0].world and hello[1].world if hello has 2 elements
-     *
-     * @param compositePath using dot-bracket convention with a wildcard index
-     * @return list of elements
-     */
-    @SuppressWarnings("unchecked")
-    public List<Object> getElements(String compositePath) {
-        if (compositePath == null || compositePath.isEmpty()) {
-            return new ArrayList<>();
-        }
-        validateCompositePathSyntax(compositePath);
-        int wildcardIndex = validateSingleWildcard(compositePath);
-        // Split the path using [*] as the separator
-        String basePath = compositePath.substring(0, wildcardIndex);
-        String remainingPath = compositePath.substring(wildcardIndex + 3); // skip "[*]"
-        if (remainingPath.startsWith(".")) {
-            remainingPath = remainingPath.substring(1);
-        }
-        Object baseArray = getElement(basePath);
-        if (!(baseArray instanceof List)) {
-            return new ArrayList<>();
-        }
-        List<Object> array = (List<Object>) baseArray;
-        List<Object> result = new ArrayList<>();
-        // iterate through the list
-        for (int i = 0; i < array.size(); i++) {
-            String elementPath;
-            if (remainingPath.isEmpty()) {
-                // If there is no remaining path, build the element path directly from the base path and index.
-                elementPath = basePath + "[" + i + "]";
-            } else {
-                // Otherwise build the element path by concatenating the base path, index, and remaining path.
-                elementPath = basePath + "[" + i + "]." + remainingPath;
-            }
-            Object element = getElement(elementPath);
-            if (element != null) {
-                result.add(element);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Validate that if the path contains wildcard [*], it contains exactly one and returns its index
-     *
-     * @param path the composite path to validate
-     * @return the index of the wildcard
-     * @throws IllegalArgumentException if multiple or no wildcard[s] are found
-     */
-    private int validateSingleWildcard(String path) {
-        int firstWildcard = path.indexOf("[*]");
-        if (firstWildcard == -1) {
-            // if there is no [*] in the path, error out
-            throw new IllegalArgumentException("Invalid composite path - missing index segment");
-        }
-        int secondWildcard = path.indexOf("[*]", firstWildcard + 2);
-        if (secondWildcard != -1) {
-            throw new IllegalArgumentException("Invalid composite path - only one wildcard [] is allowed");
-        }
-        return firstWildcard;
-    }
-
     @SuppressWarnings("unchecked")
     private Object getListElement(List<Integer> indexes, List<Object> data) {
         List<Object> current = data;
@@ -209,9 +148,17 @@ public class MultiLevelMap {
     }
 
     private Object getElement(String path, Map<String, Object> map) {
-        if (path == null || map == null || map.isEmpty()) return NOT_FOUND;
+        if (path == null || map == null || path.isEmpty() || map.isEmpty()) return NOT_FOUND;
         if (map.containsKey(path)) {
             return map.get(path);
+        }
+        if (path.startsWith("$")) {
+            try {
+                var v = JsonPath.read(multiLevels, path);
+                return v instanceof net.minidev.json.JSONArray array? new ArrayList<>(array) : v;
+            } catch (PathNotFoundException e) {
+                return NOT_FOUND;
+            }
         }
         if (!isComposite(path)) {
             return NOT_FOUND;
@@ -285,6 +232,9 @@ public class MultiLevelMap {
      * @return this
      */
     public MultiLevelMap setElement(String compositePath, Object value) {
+        if (compositePath.startsWith("$")) {
+            throw new IllegalArgumentException("Path must not start with '$'");
+        }
         validateCompositePathSyntax(compositePath);
         var normalizedPath = compositePath.contains("[]")? appendIndex(compositePath) : compositePath;
         setElement(normalizedPath, value, multiLevels, false);

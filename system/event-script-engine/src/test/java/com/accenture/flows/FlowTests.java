@@ -311,11 +311,12 @@ class FlowTests extends TestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void headerTest() throws ExecutionException, InterruptedException {
+    void headerAndJsonPathTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
         AsyncHttpRequest request = new AsyncHttpRequest();
-        request.setTargetHost(HOST).setMethod("GET")
-                .setHeader("accept", "application/json")
+        request.setTargetHost(HOST).setMethod("POST")
+                .setHeader("accept", "application/json").setHeader("content-type", "application/json")
+                .setBody(Map.of("hello", "world", "list", List.of("a", "b")))
                 .setUrl("/api/header/test");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -323,9 +324,12 @@ class FlowTests extends TestBase {
         assertInstanceOf(Map.class, result.getBody());
         Map<String, Object> body = (Map<String, Object>) result.getBody();
         // verify that input headers are mapped to the function's input body
-        assertEquals("header-test", body.get("x-flow-id"));
+        assertEquals("header-and-json-path-test", body.get("x-flow-id"));
         assertEquals("async-http-client", body.get("user-agent"));
         assertEquals("application/json", body.get("accept"));
+        // prove that json-path search is successful for input and output data mapping
+        assertEquals("world", body.get("body"));
+        assertEquals(List.of("a", "b"), body.get("extra"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1380,8 +1384,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         Utility util = Utility.getInstance();
         String traceId = util.getUuid();
-        // the "header-test" flow maps the input.header to function input body, thus the input.body is ignored
-        String flowId = "header-test";
+        String flowId = "header-and-json-path-test";
         Map<String, Object> headers = new HashMap<>();
         headers.put("user-agent", "internal-flow");
         headers.put("accept", "application/json");
@@ -1395,14 +1398,14 @@ class FlowTests extends TestBase {
         assertInstanceOf(Map.class, result1.getBody());
         Map<String, Object> body1 = (Map<String, Object>) result1.getBody();
         // verify that input headers are mapped to the function's input body
-        assertEquals("header-test", body1.get("x-flow-id"));
+        assertEquals("header-and-json-path-test", body1.get("x-flow-id"));
         assertEquals("internal-flow", body1.get("user-agent"));
         assertEquals("application/json", body1.get("accept"));
         EventEnvelope result2 = flowExecutor.request(ORIGINATOR, flowId, dataset, util.getUuid(), timeout).get();
         assertInstanceOf(Map.class, result2.getBody());
         Map<String, Object> body2 = (Map<String, Object>) result2.getBody();
         // verify that input headers are mapped to the function's input body
-        assertEquals("header-test", body2.get("x-flow-id"));
+        assertEquals("header-and-json-path-test", body2.get("x-flow-id"));
         assertEquals("internal-flow", body2.get("user-agent"));
         assertEquals("application/json", body2.get("accept"));
         // do it again asynchronously
@@ -1424,7 +1427,7 @@ class FlowTests extends TestBase {
                         dataset, util.getUuid());
         Map<String, Object> response = bench.poll(5, TimeUnit.SECONDS);
         assertNotNull(response);
-        assertEquals("header-test", response.get("x-flow-id"));
+        assertEquals("header-and-json-path-test", response.get("x-flow-id"));
         assertEquals("internal-flow", response.get("user-agent"));
         assertEquals("application/json", response.get("accept"));
     }
