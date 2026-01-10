@@ -749,6 +749,18 @@ data mapping statements are the same as:
 - 'result.item2 -> model.items[1]'
 ```
 
+### JSON Path
+
+If basic retrieval method using the dot-bracket convention does not address your need, you may use
+JSON-Path retrieval method in the left-hand-side for input/output data mapping.
+
+```yaml
+- 'jsonpath($.input.body.some.data.*) -> model.data'
+```
+
+Note that the basic retrieval method is more efficient than the JSON-Path method. Therefore, you
+should apply JSON-Path only when the use case requires it. 
+
 ### Simple type matching and conversion
 
 Event script's state machine supports simple type matching and conversion for the model namespace.

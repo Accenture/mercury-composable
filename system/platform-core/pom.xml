@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.50</version>
+    <version>4.3.51</version>
     <name>Mercury platform-core module</name>
 
     <parent>
@@ -71,6 +71,24 @@
                     <artifactId>jackson-core</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.10.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.9.1</version>
         </dependency>
 
         <dependency>

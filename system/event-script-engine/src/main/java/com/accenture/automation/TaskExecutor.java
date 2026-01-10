@@ -87,6 +87,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String EXT_NAMESPACE = "ext:";
     private static final String INPUT_HEADER_NAMESPACE = "input.header.";
     private static final String HEADER_NAMESPACE = "header.";
+    private static final String SIMPLE_PLUGIN_PREFIX = "f:";
+    private static final String JSON_PATH_TYPE = "jsonpath($";
     private static final String TEXT_TYPE = "text(";
     private static final String INTEGER_TYPE = "int(";
     private static final String LONG_TYPE = "long(";
@@ -139,7 +141,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String AND_TYPE = "and(";
     private static final String OR_TYPE = "or(";
     private final int maxModelArraySize;
-    private static final String SIMPLE_PLUGIN_PREFIX = "f:";
 
     private enum OPERATION {
         SIMPLE_COMMAND,
@@ -520,7 +521,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         md.rhs = substituteDynamicIndex(entry.substring(md.sep+2).trim(), md.consolidated, true);
         final Object value;
         boolean isInput = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT);
-        if (isInput || md.lhs.startsWith(MODEL_NAMESPACE) ||
+        if (isInput || md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(JSON_PATH_TYPE) ||
                 md.lhs.equals(HEADER) || md.lhs.startsWith(HEADER_NAMESPACE) ||
                 md.lhs.equals(STATUS) || md.lhs.equals(DATA_TYPE) ||
                 md.lhs.equals(RESULT) || md.lhs.startsWith(RESULT_NAMESPACE)) {
@@ -1008,7 +1009,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         boolean inputLike = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT) ||
                 md.lhs.equals(DATA_TYPE) ||
                 md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE) ||
-                md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX);
+                md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX) || md.lhs.startsWith(JSON_PATH_TYPE);
         if (md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
             md.lhs = md.lhs.toLowerCase();
         }
@@ -1182,6 +1183,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private Object getLhsElement(String lhs, MultiLevelMap source) {
+        if (lhs.startsWith(JSON_PATH_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
+            return source.getElement(lhs.substring(JSON_PATH_TYPE.length()-1,  lhs.length()-1));
+        }
         int colon = getModelTypeIndex(lhs);
         String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
         if (isPluggableFunction(selector)) {
