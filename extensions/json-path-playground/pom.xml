@@ -4,10 +4,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.accenture</groupId>
-    <artifactId>lambda-example</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>json-path-playground</artifactId>
     <version>4.3.52</version>
-    <name>Lambda example using platform-core</name>
+    <packaging>jar</packaging>
+    <name>JSON-Path Playground</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -48,13 +48,6 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.3.52</version>
-        </dependency>
-
-        <!-- Optionally, select your optional cloud connector -->
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>kafka-connector</artifactId>
             <version>4.3.52</version>
         </dependency>
 
@@ -120,22 +113,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
-            </plugin>  
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>3.1.4</version>
-            </plugin>                      
+            </plugin>           
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

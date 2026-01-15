@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Websocket Client Demo</title>
+    <title>JSON-Path Playground</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" >
@@ -10,12 +10,14 @@
         /*
          * This is a sample javascript code to connect to the demo websocket endpoint
          * Please note that your browser application must implement the following:
-         * 1. Connection URL is /ws/demo/hello
+         * 1. Connection URL is /ws/json/path
          * 2. Keep-alive protocol.
          */
+        const MAX_ITEMS = 30;
+        var inputs = [];
         var setupEnterKey = true;
         var msg = [];
-        var max_items = 15;
+
         var connected = false;
         var ws = null;
         var ping = null;
@@ -34,7 +36,7 @@
         function show(input) {
             // push input as the first item in the array
             msg.unshift(input);
-            while (msg.length > max_items) {
+            while (msg.length > MAX_ITEMS) {
                 msg.pop();
             }
             var s = ''
@@ -79,42 +81,58 @@
             document.getElementById('connect').style.display = "inline"
         }
 
+        function saveInput(input) {
+            // push input as the first item in the array
+            inputs.unshift(input);
+            while (inputs.length > MAX_ITEMS) {
+                inputs.pop();
+            }
+        }
+
+        function rotateInput(up) {
+            if (up) {
+                const first = inputs.shift();
+                inputs.push(first);
+                return first;
+            } else {
+                const last = inputs.pop();
+                inputs.unshift(last);
+                return last;
+            }
+        }
+
         function connectToEdge() {
             if (setupEnterKey) {
                 setupEnterKey = false;
-                var input = document.getElementById('app');
-                input.addEventListener("keyup", function(event) {
-                  // Number 13 is the "Enter" key on the keyboard
-                  if (event.keyCode === 13) {
-                    // Cancel the default action, if needed
-                    event.preventDefault();
-                    if (input.value.length > 0) {
-                        if (ws != null && connected) {
-                            ws.send(input.value);
-                        } else {
-                            show("Not connected - input ("+input.value+") ignored");
+                var data = document.getElementById('json');
+                var query = document.getElementById('app');
+                query.addEventListener("keyup", ({key}) => {
+                    if (connected) {
+                        if (key == 'ArrowUp') {
+                            query.value = rotateInput(true);
                         }
-                        input.value = "";
+                        if (key == 'ArrowDown') {
+                            query.value = rotateInput(false);
+                        }
+                        if (key === "Enter") {
+                            var text = query.value.trim();
+                            if (text.length > 0) {
+                                ws.send(query.value);
+                                saveInput(query.value);
+                                if (query.value == 'load') {
+                                    ws.send(data.value.length > 0? data.value : 'none');
+                                }
+                            }
+                            query.value = "";
+                        }
+                    } else {
+                        show("Not connected - input ("+query.value+") ignored");
                     }
-                  }
-                });
-                var url_input = document.getElementById('ws_url');
-                url_input.addEventListener("keyup", function(event) {
-                  if (event.keyCode === 13) {
-                    event.preventDefault();
-                    if (url_input.value.length > 0 && !connected) {
-                        connectToEdge();
-                    }
-                  }
                 });
             }
-
-            if ("WebSocket" in window) {
+            if ("WebSocket" in globalThis) {
                 document.getElementById('message').style.display = "block";
-                var wsUrl = document.getElementById('ws_url').value;
-                if (wsUrl.length == 0) {
-                    wsUrl = "ws://127.0.0.1:8086/ws/hello/100";
-                }
+                var wsUrl = '$WS_URL';
                 if (connected) {
                     show(eventWithTimestamp("error", "already connected"));
                     document.getElementById('resume').style.display = "inline";
@@ -137,7 +155,10 @@
                 };
 
                 ws.onmessage = function(evt) {
-                    show(evt.data);
+                    // hide ping protocol
+                    if (!evt.data.startsWith('{"type":"ping"')) {
+                        show(evt.data);
+                    }
                 };
 
                 ws.onclose = function(evt) {
@@ -163,25 +184,26 @@
 
 <div class="container">
     <br/>
-    <h4 style="color: #3cb371">Websocket Client Demo</h4>
+    <h4 style="color: #3cb371">JSON-Path Playground</h4>
     <div id="target_url"></div>
     <br/>
     <div class="input-group">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <label for="app"><span class="input-group-text">Message</span></label>
+                <label for="app"><span class="input-group-text">Command</span></label>
             </div>
-
             <input id="app" type="text" class="form-control" name="app" placeholder="Enter your test message once it is connected">
         </div>
     </div>
-    <div id="connect" class="input-group">
+    <div class="input-group">
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <label for="ws_url"><span class="input-group-text">Websocket URL</span></label>
+                <label for="json"><span class="input-group-text">JSON/XML</span></label>
             </div>
-            <input id="ws_url" type="text" class="form-control" name="app" placeholder="ws://127.0.0.1:8086/ws/hello/100">
+            <textarea id="json" class="form-control" name="json" rows="3" cols="50" placeholder="Paste your JSON/XML payload here"></textarea>
         </div>
+    </div>
+    <div id="connect" class="input-group">
         <button type="button" class="btn btn-primary" onclick="javascript:connectToEdge()">Start</button>
     </div>
     <button id="disconnect" style="display: none" type="button" class="btn btn-warning" onclick="javascript:disconnectFromEdge()">Stop Service</button>
