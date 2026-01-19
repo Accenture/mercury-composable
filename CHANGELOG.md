@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.53, 1/18/2026
+
+### Added
+
+Support of SQL transaction in "reactive-postgres" extension.
+This allows a set of SQL statements to be executed together as a single transaction.
+Any exception would result in an automatic rollback operation.
+
+### Removed
+
+N/A
+
+### Changed
+
+Upgrade Vertx-Core to version 5.0.7 due to security vulnerability in version 5.0.6.
+
+---
 ## Version 4.3.52, 1/14/2026
 
 ### Added

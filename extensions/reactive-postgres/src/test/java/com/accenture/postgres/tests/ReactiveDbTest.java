@@ -276,19 +276,26 @@ class ReactiveDbTest {
         var revisedTimestamp = new Timestamp(minusOneMinute);
         var updated = sql.update(po, SQL_UPDATE, revisedTimestamp, id);
         assertEquals(1, updated);
-        // read the updated record to validate the updated timestamp
+        // Test transaction with two SQL statements:
+        // The first SQL changes the time to minus-two-minutes and the second one changes it back to minus-one-minute
+        var minusTwoMinute = now.getTime() - 120000;
+        var anotherTime = new Timestamp(minusTwoMinute);
+        var transaction = sql.transaction(po, List.of(SQL_UPDATE, SQL_UPDATE),
+                List.of(List.of(anotherTime, id), List.of(revisedTimestamp, id)));
+        assertEquals(List.of(1, 1), transaction);
+        // Read the updated record to validate the updated timestamp
         records = sql.query(po, SQL_READ, id);
         assertEquals(1, records.size());
         rec = mapper.readValue(records.getFirst(), HealthCheck.class);
         assertEquals(now, rec.created);
         assertEquals(new Date(minusOneMinute), rec.updated);
-        // prove that we can do SQL statement without parameters
+        // Prove that we can do SQL statement without parameters
         records = sql.query(po, "SELECT * FROM health_check");
         assertFalse(records.isEmpty());
-        // finally delete the record
+        // Finally delete the record
         var deleted = sql.update(po, SQL_DELETE, id);
         assertEquals(1, deleted);
-        // confirm the record has been deleted
+        // Confirm the record has been deleted
         records = sql.query(po, SQL_READ, id);
         assertEquals(0, records.size());
     }

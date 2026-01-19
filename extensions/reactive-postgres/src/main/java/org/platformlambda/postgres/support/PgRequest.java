@@ -19,7 +19,9 @@
 package org.platformlambda.postgres.support;
 
 import org.platformlambda.postgres.models.PgQueryStatement;
+import org.platformlambda.postgres.models.PgTransactionStatement;
 import org.platformlambda.postgres.models.PgUpdateStatement;
+import org.platformlambda.postgres.models.SqlPreparedStatement;
 import org.platformlambda.postgres.services.PgService;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
@@ -30,26 +32,29 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class PgRequest {
+    private static final String ROW_UPDATED = "row_updated";
+    private static final String UPDATED = "updated";
     private final long timeout;
 
     public PgRequest(long timeout) {
         this.timeout = timeout;
     }
 
+    /**
+     * Perform a SQL query
+     *
+     * @param po PostOffice
+     * @param sql statement
+     * @param parameters if any
+     * @return list of records. Empty if not found.
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> query(PostOffice po, String sql, Object... parameters)
                                                     throws ExecutionException, InterruptedException {
         var req = new PgQueryStatement(sql);
-        if (parameters.length == 1 && parameters[0] instanceof Map) {
-            // named parameters
-            var namedParams = (Map<String, Object>) parameters[0];
-            for (var entry : namedParams.entrySet()) {
-                req.bindParameter(entry.getKey(), entry.getValue());
-            }
-        } else {
-            // positional parameters
-            req.bindParameters(parameters);
-        }
+        bindParameters(req, parameters);
         var result = po.request(new EventEnvelope().setTo(PgService.ROUTE).setBody(req), timeout).get();
         if (!result.hasError() && result.getBody() instanceof List) {
             return (List<Map<String, Object>>) result.getBody();
@@ -59,9 +64,71 @@ public class PgRequest {
         throw new AppException(status, String.valueOf(result.getBody()));
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Perform an insert, update or delete
+     *
+     * @param po PostOffice
+     * @param sql statement
+     * @param parameters if any
+     * @return number of rows updated
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
     public int update(PostOffice po, String sql, Object... parameters) throws ExecutionException, InterruptedException {
         var req = new PgUpdateStatement(sql);
+        bindParameters(req, parameters);
+        var result = po.request(new EventEnvelope().setTo(PgService.ROUTE).setBody(req), timeout).get();
+        if (!result.hasError() && result.getBody() instanceof Map<?, ?> map &&
+                map.get(ROW_UPDATED) instanceof Integer count) {
+            return count;
+        }
+        // in case of database exception
+        var status = result.getStatus() == 200? 400 : result.getStatus();
+        throw new AppException(status, String.valueOf(result.getBody()));
+    }
+
+    /**
+     * Perform a transaction with one or more SQL statement of insert, update or delete
+     *
+     * @param po PostOffice
+     * @param sqlList list of SQL statement
+     * @param parameterList, optional list if parameters for each statement.
+     *                       null element to indicate no parameters for the specific statement.
+     * @return list of numbers of row updated for each SQL statement in the list
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
+    @SuppressWarnings("unchecked")
+    public List<Integer> transaction(PostOffice po, List<String> sqlList, List<List<Object>> parameterList)
+            throws ExecutionException, InterruptedException {
+        if (sqlList == null || sqlList.isEmpty()) {
+            throw new AppException(400, "Missing SQL statements");
+        }
+        var statements = new PgTransactionStatement();
+        int n = 0;
+        for (var sql : sqlList) {
+            var req = new PgUpdateStatement(sql);
+            if (parameterList != null && parameterList.size() > n) {
+                var param = parameterList.get(n);
+                if (param != null) {
+                    bindParameters(req, param.toArray());
+                }
+            }
+            statements.addStatement(req);
+            n++;
+        }
+        var result = po.request(new EventEnvelope().setTo(PgService.ROUTE).setBody(statements), timeout).get();
+        if (!result.hasError() && result.getBody() instanceof Map<?, ?> map &&
+                map.get(UPDATED) instanceof List<?> countList) {
+            return (List<Integer>) countList;
+        }
+        // in case of database exception
+        var status = result.getStatus() == 200? 400 : result.getStatus();
+        throw new AppException(status, String.valueOf(result.getBody()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void bindParameters(SqlPreparedStatement req, Object... parameters) {
         if (parameters.length == 1 && parameters[0] instanceof Map) {
             // named parameters
             var namedParams = (Map<String, Object>) parameters[0];
@@ -72,12 +139,5 @@ public class PgRequest {
             // positional parameters
             req.bindParameters(parameters);
         }
-        var result = po.request(new EventEnvelope().setTo(PgService.ROUTE).setBody(req), timeout).get();
-        if (!result.hasError() && result.getBody() instanceof Map<?, ?> map && map.containsKey("row_updated")) {
-            return (int) map.get("row_updated");
-        }
-        // in case of database exception
-        var status = result.getStatus() == 200? 400 : result.getStatus();
-        throw new AppException(status, String.valueOf(result.getBody()));
     }
 }
