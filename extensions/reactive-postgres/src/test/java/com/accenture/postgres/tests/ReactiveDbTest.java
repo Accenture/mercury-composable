@@ -18,6 +18,7 @@
 
 package com.accenture.postgres.tests;
 
+import com.accenture.db2.support.Db2Request;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterAll;
 import org.platformlambda.postgres.models.HealthCheck;
@@ -63,8 +64,13 @@ class ReactiveDbTest {
                                                 " VALUES ($1, $2, $3, $4, $5)";
     private static final String SQL_UPDATE = "UPDATE health_check SET updated = $1 WHERE id = $2";
     private static final String SQL_DELETE = "DELETE FROM health_check WHERE id = $1";
+    // mock DB2 statements
+    private static final String DB2_READ = "SELECT * FROM health_check WHERE id = :id";
+    private static final String DB2_INSERT = "INSERT INTO health_check " +
+            "(id, app_name, app_instance, created, updated)" +
+            " VALUES (:id, :app_name, :app_instance, :created, :updated)";
+    private static final String DB2_UPDATE = "UPDATE health_check SET updated = :updated WHERE id = :id";
     private static final long TIMEOUT = 5000;
-
     private static EmbeddedPostgres embeddedPostgres;
 
     @BeforeAll
@@ -298,6 +304,35 @@ class ReactiveDbTest {
         // Confirm the record has been deleted
         records = sql.query(po, SQL_READ, id);
         assertEquals(0, records.size());
+    }
+
+    @Test
+    void db2MockTest() throws ExecutionException, InterruptedException {
+        var id = util.getUuid();
+        var name = "unit test";
+        var instance = "unit test instance";
+        var now = new Date();
+        var timestamp = new Timestamp(now.getTime());
+        // Except for unit test where the PostOffice is hardcoded.
+        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)
+        var po = PostOffice.trackable("unit.test", "600", "TEST /mock/db2");
+        var sql = new Db2Request(TIMEOUT);
+        var data = Map.of("id", id, "app_name", name, "app_instance", instance,
+                "created", timestamp, "updated", timestamp);
+        var count = sql.update(po, DB2_INSERT, data);
+        assertEquals(1, count);
+        var records = sql.query(po, DB2_READ, Map.of("id", id));
+        assertEquals(1, records.size());
+        var mapper = SimpleMapper.getInstance().getMapper();
+        var rec = mapper.readValue(records.getFirst(), HealthCheck.class);
+        assertEquals(id, rec.id);
+        assertEquals(name, rec.appName);
+        assertEquals(instance, rec.appInstance);
+        assertEquals(now, rec.created);
+        var minusOneMinute = now.getTime() - 60000;
+        var revisedTimestamp = new Timestamp(minusOneMinute);
+        var updated = sql.update(po, DB2_UPDATE, Map.of("updated", revisedTimestamp, "id", id));
+        assertEquals(1, updated);
     }
 
     private int getPort() {

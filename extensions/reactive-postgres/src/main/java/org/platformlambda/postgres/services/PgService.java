@@ -21,7 +21,7 @@ package org.platformlambda.postgres.services;
 import org.platformlambda.postgres.models.PgQueryStatement;
 import org.platformlambda.postgres.models.PgTransactionStatement;
 import org.platformlambda.postgres.models.PgUpdateStatement;
-import org.platformlambda.postgres.models.SqlPreparedStatement;
+import org.platformlambda.db.SqlPreparedStatement;
 import org.platformlambda.postgres.support.RowParser;
 import io.r2dbc.spi.Row;
 import org.platformlambda.core.annotations.PreLoad;

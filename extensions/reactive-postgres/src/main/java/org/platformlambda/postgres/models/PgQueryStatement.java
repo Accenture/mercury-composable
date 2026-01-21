@@ -18,16 +18,20 @@
 
 package org.platformlambda.postgres.models;
 
+import org.platformlambda.db.SqlPreparedStatement;
+
 public class PgQueryStatement extends SqlPreparedStatement {
 
     public PgQueryStatement() {
         this.type = QUERY;
         this.indexBase = 0;
+        this.numberedIndex = true;
     }
 
     public PgQueryStatement(String sql) {
         this.type = QUERY;
         this.indexBase = 0;
+        this.numberedIndex = true;
         this.statement = sql;
     }
 }

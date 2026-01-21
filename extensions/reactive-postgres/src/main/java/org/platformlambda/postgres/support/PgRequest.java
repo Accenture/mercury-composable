@@ -21,7 +21,7 @@ package org.platformlambda.postgres.support;
 import org.platformlambda.postgres.models.PgQueryStatement;
 import org.platformlambda.postgres.models.PgTransactionStatement;
 import org.platformlambda.postgres.models.PgUpdateStatement;
-import org.platformlambda.postgres.models.SqlPreparedStatement;
+import org.platformlambda.db.SqlPreparedStatement;
 import org.platformlambda.postgres.services.PgService;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;

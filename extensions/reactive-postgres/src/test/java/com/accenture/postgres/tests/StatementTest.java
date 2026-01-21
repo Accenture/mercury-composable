@@ -18,6 +18,7 @@
 
 package com.accenture.postgres.tests;
 
+import com.accenture.db2.models.Db2QueryStatement;
 import org.platformlambda.postgres.models.PgQueryStatement;
 import org.platformlambda.postgres.models.PgUpdateStatement;
 import org.junit.jupiter.api.Test;
@@ -28,10 +29,43 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.*;
 
 class StatementTest {
+
+    @Test
+    void convertNamedParametersPostGreSQL() {
+        var sql = "select * from users where id = :id and name = :name";
+        var statement = new PgQueryStatement(sql);
+        statement.bindParameter("id", 100);
+        statement.bindParameter("name", "John");
+        statement.convertNamedParamsToIndex();
+        assertEquals(sql.replace(":id", "$1").replace(":name", "$2"),
+                        statement.getStatement());
+        assertTrue(statement.getNamedParams().isEmpty());
+        assertFalse(statement.getParameters().isEmpty());
+        assertEquals(100, statement.getOriginalParameter(0));
+        assertEquals("John", statement.getOriginalParameter(1));
+        assertEquals(2, statement.getClassMapping().size());
+    }
+
+    @Test
+    void convertNamedParametersDb2() {
+        var sql = "select * from users where id = :id and name = :name and code = :id";
+        var statement = new Db2QueryStatement(sql);
+        statement.bindParameter("id", 100);
+        statement.bindParameter("name", "John");
+        statement.convertNamedParamsToIndex();
+        assertEquals(sql.replace(":id", "?").replace(":name", "?"),
+                        statement.getStatement());
+        assertTrue(statement.getNamedParams().isEmpty());
+        assertFalse(statement.getParameters().isEmpty());
+        // prove that repeated parameter can be mapped correctly
+        assertEquals(100, statement.getOriginalParameter(1));
+        assertEquals("John", statement.getOriginalParameter(2));
+        assertEquals(100, statement.getOriginalParameter(3));
+        assertEquals(3, statement.getClassMapping().size());
+    }
 
     @SuppressWarnings("unchecked")
     @Test
