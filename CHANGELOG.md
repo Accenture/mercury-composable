@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 1. getSimpleType() method in EventEnvelope for easy comparison with class's simple name
-2. pre-proessing of parameters with list values for named parameters in reactive-postgres
+2. pre-processing of parameters with list values for named parameters in reactive-postgres
 
 ### Removed
 
@@ -1148,7 +1148,7 @@ N/A
 ### Added
 
 1. Code example to illustrate how to write your own Flow Adapters
-2. "modules.autostart" feature to invoke composable functions and libaries at start up.
+2. "modules.autostart" feature to invoke composable functions and libraries at start up.
 
 ### Removed
 

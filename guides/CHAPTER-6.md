@@ -39,12 +39,12 @@ The rest-spring-3 library is a pre-configured Spring Boot 3 library with WebFlux
 HTTP servlet engine.
 
 This turns your composable application into a pre-configured Spring Boot 3 application.
-It provides consistent behavior for XML and JSON serializaation and exception handling.
+It provides consistent behavior for XML and JSON serialization and exception handling.
 
 The RestServer class in the rest-spring-3 library is used to bootstrap a Spring Boot application.
 
 Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
-use cases, please use the sample MainAPp implement your own Spring Boot initializer.
+use cases, please use the sample MainApp to implement your own Spring Boot initializer.
 
 You can add the "spring.boot.main" parameter in the application.properties to point to your own Spring Boot
 initializer main class. Note that the default value is "org.platformlambda.rest.RestServer" that points to

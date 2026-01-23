@@ -45,7 +45,7 @@ yaml.rest.automation=file:/tmp/config/rest.yaml, classpath:/rest.yaml
 
 ## Duplicated REST endpoints
 
-The system will detect duplicated REST endpoint configuation. If there is a duplicated entry, it will
+The system will detect duplicated REST endpoint configuration. If there is a duplicated entry, it will
 abort the REST endpoint rendering. Your unit tests will fail because REST endpoints are not enabled.
 
 The application log may look like this:

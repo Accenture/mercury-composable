@@ -196,7 +196,7 @@ to the user first. It then encrypts and saves the profile into a data store.
 ![Event Flow Diagram](./diagrams/get-profile.png)
 
 Figure 3 demonstrates the case to retrieve a profile. It retrieves an encrypted profile and then passes it to
-the decryption decryption function to return "clear text" of the profile to the user.
+the decryption function to return "clear text" of the profile to the user.
 
 > Figure 4 - Delete a profile
 
