@@ -219,6 +219,12 @@ logging.level.io.r2dbc.postgresql.QUERY=DEBUG
 logging.level.io.r2dbc.postgresql.PARAM=DEBUG
 ```
 
+## Pre-processing of parameters with lists
+
+For named parameters, the system will convert a parameter with a list of values (number or string)
+to update the SQL statement directly. This convenient feature eliminates the need for pre-processing
+at application level.
+
 ## Known issue for unit test in Windows
 
 During the "teardown" phase when running the ReactiveDbTest under Windows OS, a fatal PostGreSQL server log

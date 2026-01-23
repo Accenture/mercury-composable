@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.54, 1/22/2026
+
+### Added
+
+1. getSimpleType() method in EventEnvelope for easy comparison with class's simple name
+2. pre-proessing of parameters with list values for named parameters in reactive-postgres
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.53, 1/18/2026
 
 ### Added

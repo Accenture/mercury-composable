@@ -59,17 +59,18 @@ class ReactiveDbTest {
     private static final String UPDATE = "update";
     private static final String ID = "id";
     private static final String SQL_READ = "SELECT * FROM health_check WHERE id = $1";
+    private static final String SQL_READ_IN_LIST = "SELECT * FROM health_check WHERE id IN (:id_list)";
     private static final String SQL_INSERT = "INSERT INTO health_check " +
                                                 "(id, app_name, app_instance, created, updated)" +
                                                 " VALUES ($1, $2, $3, $4, $5)";
     private static final String SQL_UPDATE = "UPDATE health_check SET updated = $1 WHERE id = $2";
     private static final String SQL_DELETE = "DELETE FROM health_check WHERE id = $1";
     // mock DB2 statements
-    private static final String DB2_READ = "SELECT * FROM health_check WHERE id = :id";
-    private static final String DB2_INSERT = "INSERT INTO health_check " +
+    private static final String NAMED_READ = "SELECT * FROM health_check WHERE id = :id";
+    private static final String NAMED_INSERT = "INSERT INTO health_check " +
             "(id, app_name, app_instance, created, updated)" +
             " VALUES (:id, :app_name, :app_instance, :created, :updated)";
-    private static final String DB2_UPDATE = "UPDATE health_check SET updated = :updated WHERE id = :id";
+    private static final String NAMED_UPDATE = "UPDATE health_check SET updated = :updated WHERE id = :id";
     private static final long TIMEOUT = 5000;
     private static EmbeddedPostgres embeddedPostgres;
 
@@ -290,7 +291,12 @@ class ReactiveDbTest {
                 List.of(List.of(anotherTime, id), List.of(revisedTimestamp, id)));
         assertEquals(List.of(1, 1), transaction);
         // Read the updated record to validate the updated timestamp
-        records = sql.query(po, SQL_READ, id);
+        // also test list parameter conversion
+        var ex = assertThrows(Exception.class, () ->
+                    sql.query(po, SQL_READ_IN_LIST, Map.of("id_list", List.of(id, 100))));
+        assertEquals("IllegalArgumentException", ex.getClass().getSimpleName());
+        assertEquals("List parameter must be of the same type", ex.getMessage());
+        records = sql.query(po, SQL_READ_IN_LIST, Map.of("id_list", List.of(id)));
         assertEquals(1, records.size());
         rec = mapper.readValue(records.getFirst(), HealthCheck.class);
         assertEquals(now, rec.created);
@@ -319,9 +325,9 @@ class ReactiveDbTest {
         var sql = new Db2Request(TIMEOUT);
         var data = Map.of("id", id, "app_name", name, "app_instance", instance,
                 "created", timestamp, "updated", timestamp);
-        var count = sql.update(po, DB2_INSERT, data);
+        var count = sql.update(po, NAMED_INSERT, data);
         assertEquals(1, count);
-        var records = sql.query(po, DB2_READ, Map.of("id", id));
+        var records = sql.query(po, NAMED_READ, Map.of("id", id));
         assertEquals(1, records.size());
         var mapper = SimpleMapper.getInstance().getMapper();
         var rec = mapper.readValue(records.getFirst(), HealthCheck.class);
@@ -331,8 +337,14 @@ class ReactiveDbTest {
         assertEquals(now, rec.created);
         var minusOneMinute = now.getTime() - 60000;
         var revisedTimestamp = new Timestamp(minusOneMinute);
-        var updated = sql.update(po, DB2_UPDATE, Map.of("updated", revisedTimestamp, "id", id));
+        var updated = sql.update(po, NAMED_UPDATE, Map.of("updated", revisedTimestamp, "id", id));
         assertEquals(1, updated);
+        // test list parameter conversion
+        var echo = sql.query(po, SQL_READ_IN_LIST, Map.of("id_list", List.of(id, id+"x")));
+        assertEquals(1, echo.size());
+        var echoedStatement = (String) echo.getFirst().get("sql");
+        var expected = "SELECT * FROM health_check WHERE id IN ('"+id+"', '"+id+"x')";
+        assertEquals(expected, echoedStatement);
     }
 
     private int getPort() {

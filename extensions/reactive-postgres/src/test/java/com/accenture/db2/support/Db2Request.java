@@ -27,6 +27,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.db.SqlPreparedStatement;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -131,11 +132,22 @@ public class Db2Request {
         throw new AppException(status, String.valueOf(result.getBody()));
     }
 
-    @SuppressWarnings("unchecked")
     private void bindParameters(SqlPreparedStatement req, Object... parameters) {
-        if (parameters.length == 1 && parameters[0] instanceof Map) {
+        if (parameters.length == 1 && parameters[0] instanceof Map<?,?> mapParams) {
             // named parameters
-            var namedParams = (Map<String, Object>) parameters[0];
+            var namedParams = new HashMap<String, Object>();
+            mapParams.keySet().forEach(name -> namedParams.put(String.valueOf(name), mapParams.get(name)));
+            var listParams = new HashMap<String, String>();
+            for (var entry : namedParams.entrySet()) {
+                if (entry.getValue() instanceof List<?> values) {
+                    listParams.put(entry.getKey(), list2str(values));
+                }
+            }
+            // remove the named parameter of list values and update the SQL statement directly
+            listParams.keySet().forEach(name -> {
+                namedParams.remove(name);
+                req.setStatement(req.getStatement().replace(":"+name, listParams.get(name)));
+            });
             for (var entry : namedParams.entrySet()) {
                 req.bindParameter(entry.getKey(), entry.getValue());
             }
@@ -143,5 +155,26 @@ public class Db2Request {
             // positional parameters
             req.bindParameters(parameters);
         }
+    }
+
+    private String list2str(List<?> values) {
+        var type1 = false;
+        var type2 = false;
+        var sb = new StringBuilder();
+        for (Object v : values) {
+            if (v instanceof Number) {
+                sb.append(v);
+                type1 = true;
+            } else {
+                var normalized = String.valueOf(v).replace("'", "''");
+                sb.append('\'').append(normalized).append('\'');
+                type2 = true;
+            }
+            sb.append(", ");
+        }
+        if (type1 && type2) {
+            throw new IllegalArgumentException("List parameter must be of the same type");
+        }
+        return sb.isEmpty()? "" : sb.substring(0, sb.length() - 2);
     }
 }

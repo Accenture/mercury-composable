@@ -46,6 +46,7 @@ class EventEnvelopeTest {
         byte[] b = event.toBytes();
         var restored = new EventEnvelope(b);
         assertEquals(PoJo.class.getName(), restored.getType());
+        assertEquals(PoJo.class.getSimpleName(), restored.getSimpleType());
         var o = restored.getBody(PoJo.class);
         // convert to utc because the OffsetDateTime is based on local timezone
         var utc1 = util.str2date(now.toString());

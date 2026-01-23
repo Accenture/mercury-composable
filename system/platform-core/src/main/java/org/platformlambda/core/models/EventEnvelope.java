@@ -228,6 +228,10 @@ public class EventEnvelope {
         return type;
     }
 
+    public String getSimpleType() {
+        return type != null && type.contains(".")? type.substring(type.lastIndexOf(".")+1) : type;
+    }
+
     public boolean isOptional() {
         return tags.containsKey(OPTIONAL);
     }

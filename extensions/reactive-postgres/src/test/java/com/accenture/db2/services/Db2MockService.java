@@ -59,11 +59,19 @@ public class Db2MockService implements TypedLambdaFunction<EventEnvelope, Object
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         Object clazz = restorePoJo(input);
-        if (clazz instanceof Db2QueryStatement query &&
-            query.getOriginalParameter(1) instanceof String id) {
-            return healthCheck.id != null && healthCheck.id.equals(id) ? List.of(healthCheck) : Collections.emptyList();
+        if (clazz instanceof Db2QueryStatement query) {
+            log.info("EXECUTE {}", query.getStatement());
+            if (query.getOriginalParameter(1) instanceof String id) {
+                return healthCheck.id != null && healthCheck.id.equals(id) ?
+                        List.of(healthCheck) : Collections.emptyList();
+            }
+            // for unit test, echo the SQL query with list params
+            if (query.getOriginalParameter(1) == null) {
+                return List.of(Map.of("sql", query.getStatement()));
+            }
         }
         if (clazz instanceof Db2UpdateStatement update) {
+            log.info("EXECUTE {}", update.getStatement());
             if (update.getStatement().startsWith("INSERT INTO")) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("id", update.getOriginalParameter(1));
@@ -76,6 +84,7 @@ public class Db2MockService implements TypedLambdaFunction<EventEnvelope, Object
             return Map.of(ROW_UPDATED, 1, "class", update);
         }
         if (clazz instanceof Db2TransactionStatement transaction) {
+            log.info("EXECUTE {}", transaction.getStatements().getFirst().getStatement());
             return Map.of(UPDATED, 1, "class", transaction);
         }
         throw new IllegalArgumentException("Unknown statement type");
