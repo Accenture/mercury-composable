@@ -32,7 +32,7 @@ yaml.cron=file:/tmp/config/cron.yaml, classpath:/cron.yaml
 In this example, it assumes the configuration file is available in "/tmp/config/cron.yaml".
 If it is not there, it will use the default one in the classpath.
 
-Note the the one in the classpath is just an example. Please update the YAML configuration accordingly.
+Note that the one in the classpath is just an example. Please update the YAML configuration accordingly.
 
 ## Sample cron.yaml
 

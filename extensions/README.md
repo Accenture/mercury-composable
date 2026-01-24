@@ -15,7 +15,7 @@ It supports four ways to access PostGreSQL:
 To use this library, please build it from source using `mvn clean install` or publish it
 to your organization artifactory.
 
-You may then use the the pg-example as a template to use the reactive PostGreSQL library.
+You may then use the pg-example as a template to use the reactive PostGreSQL library.
 
 ## API playground
 

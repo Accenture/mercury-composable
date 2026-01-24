@@ -1,4 +1,4 @@
-﻿# Event Script Syntax
+# Event Script Syntax
 
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
@@ -234,7 +234,7 @@ the binary payload. Please refer to [Appendix-III](../guides/APPENDIX-III.md)
 ## Task is a composable function
 
 Each task in a flow must have a corresponding composable function. You can assign a task name to the function
-using the `Preload` annotation like this.
+using the `PreLoad` annotation like this.
 
 ```java
 @PreLoad(route="greeting.demo", instances=10)
@@ -247,7 +247,7 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<S
 }
 ```
 
-The "route" in the `Preload` annotation is the task name. The "instances" define the maximum number of "workers" that
+The "route" in the `PreLoad` annotation is the task name. The "instances" define the maximum number of "workers" that
 the function can handle concurrently. The system is designed to be reactive and the function does not consume memory
 and CPU resources until an event arrives.
 
@@ -1215,7 +1215,7 @@ guaranteed by the underlying reactive event system.
 ## State machine thread safety
 
 The state machine is designed to be thread safe during the input/output data mapping phases.
-No special threatment is required when updating the state machine using event script.
+No special treatment is required when updating the state machine using event script.
 
 This includes parent state machine that may be updated by some concurrent running subflows.
 
