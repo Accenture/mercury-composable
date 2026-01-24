@@ -59,7 +59,7 @@ public abstract class SqlPreparedStatement {
     protected static final String QUERY = "query";
     protected static final String UPDATE = "update";
     protected String statement;
-    protected Map<Integer, Object> parameters = new HashMap<>();
+    protected Map<Integer, Object> positionParams = new HashMap<>();
     protected Map<String, Object> namedParams = new HashMap<>();
     protected Map<String, String> classMapping = new HashMap<>();
     protected Map<Integer, String> nullParams = new HashMap<>();
@@ -94,7 +94,7 @@ public abstract class SqlPreparedStatement {
     }
 
     public Map<Integer, Object> getParameters() {
-        return parameters;
+        return positionParams;
     }
 
     /**
@@ -102,7 +102,7 @@ public abstract class SqlPreparedStatement {
      * @param parameters of indexes and values
      */
     public void setParameters(Map<Integer, Object> parameters) {
-        this.parameters = parameters;
+        this.positionParams = parameters;
     }
 
     public Map<Integer, String> getNullParams() {
@@ -142,6 +142,45 @@ public abstract class SqlPreparedStatement {
     }
 
     /**
+     * Bind named parameters
+     *
+     * @param params as name-value pairs
+     */
+    public void bindNamedParameters(Map<String, Object> params) {
+        // named parameters
+        var provided = new HashMap<>(params);
+        // pre-processing of list values
+        var listParams = new HashMap<String, String>();
+        for (var entry : provided.entrySet()) {
+            if (entry.getValue() instanceof List<?> values) {
+                listParams.put(entry.getKey(), list2str(values));
+            }
+        }
+        // update the SQL statement with list values, if any
+        listParams.keySet().forEach(name -> {
+            provided.remove(name);
+            setStatement(getStatement().replace(":"+name, listParams.get(name)));
+        });
+        for (var entry : provided.entrySet()) {
+            bindParameter(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Bind a variable number of parameter values, append if current parameters are not empty
+     * @param values to bind as parameters
+     */
+    public void bindParameters(Object... values) {
+        if (values.length == 1 && values[0] instanceof Map<?, ?> provided) {
+            var params = new HashMap<String, Object>();
+            provided.keySet().forEach(name -> params.put(String.valueOf(name), provided.get(name)));
+            bindNamedParameters(params);
+        } else {
+            bindParametersFrom(positionParams.size() + indexBase, values);
+        }
+    }
+
+    /**
      * Bind a value to a parameter (as "?" in a SQL statement)
      * @param key is the index starting 1
      * @param value must be an object compatible with the corresponding column data type
@@ -153,7 +192,7 @@ public abstract class SqlPreparedStatement {
             bindNullParameter(key, String.class);
         } else {
             var dataType = getDataType(value);
-            parameters.put(key, value instanceof byte[] bytes ? Utility.getInstance().bytesToBase64(bytes) : value);
+            positionParams.put(key, value instanceof byte[] bytes ? Utility.getInstance().bytesToBase64(bytes) : value);
             classMapping.put(String.valueOf(key), dataType);
         }
     }
@@ -174,14 +213,6 @@ public abstract class SqlPreparedStatement {
             namedParams.put(name, normalized);
             classMapping.put(name, dataType);
         }
-    }
-
-    /**
-     * Bind a variable number of parameter values, append if current parameters are not empty
-     * @param values to bind as parameters
-     */
-    public void bindParameters(Object... values) {
-        bindParametersFrom(parameters.size() + indexBase, values);
     }
 
     /**
@@ -229,7 +260,7 @@ public abstract class SqlPreparedStatement {
     }
 
     public Object getOriginalParameter(int idx) {
-        var value = parameters.get(idx);
+        var value = positionParams.get(idx);
         var dataType = classMapping.get(String.valueOf(idx));
         return restoreOriginalParameter(value, dataType);
     }
@@ -519,5 +550,26 @@ public abstract class SqlPreparedStatement {
 
     private boolean isWord(char c) {
         return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_');
+    }
+
+    private String list2str(List<?> values) {
+        var type1 = false;
+        var type2 = false;
+        var sb = new StringBuilder();
+        for (Object v : values) {
+            if (v instanceof Number) {
+                sb.append(v);
+                type1 = true;
+            } else {
+                var normalized = String.valueOf(v).replace("'", "''");
+                sb.append('\'').append(normalized).append('\'');
+                type2 = true;
+            }
+            sb.append(", ");
+        }
+        if (type1 && type2) {
+            throw new IllegalArgumentException("List parameter must be of the same type");
+        }
+        return sb.isEmpty()? "" : sb.substring(0, sb.length() - 2);
     }
 }
