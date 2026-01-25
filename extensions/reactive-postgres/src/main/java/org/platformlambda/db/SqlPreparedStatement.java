@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This is the base class for db2-pool and pg-pool to extend for their specific use cases
+ * This is the base class for extending to specific use cases:
+ * e.g. PgQueryStatement and PgUpdateStatement
  */
 public abstract class SqlPreparedStatement {
     private static final String TYPE_BYTES = "bytes";
