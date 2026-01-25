@@ -27,6 +27,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,8 +79,11 @@ class StatementTest {
         var mapper = SimpleMapper.getInstance().getMapper();
         var query = new PgQueryStatement();
         query.setStatement(sql);
-        query.bindParameters(hello);
+        query.bindParameter(0, hello);
+        // the bindParameters method must be the last one of binding if you have bind individual parameter(s) earlier
         query.bindParameters(world, address, date);
+        var ex = assertThrows(IllegalArgumentException.class, () -> query.bindParameters(hello));
+        assertEquals("Parameters have been bound", ex.getMessage());
         Map<String, Object> map = mapper.readValue(query, Map.class);
         var restored = mapper.readValue(map, PgQueryStatement.class);
         assertEquals(sql, restored.getStatement());
@@ -111,5 +115,28 @@ class StatementTest {
         assertEquals(util.bytesToBase64(util.getUTF(hello)), restored.getNamedParams().get("data"));
         assertInstanceOf(byte[].class, restored.getOriginalParameter("data"));
         assertEquals(hello, util.getUTF((byte[]) restored.getOriginalParameter("data")));
+    }
+
+    @Test
+    void numberedIndexParamWithListValueTest() {
+        // the case for PostGreSQL
+        var sql = "SELECT * FROM test WHERE name = $2 and seq IN ($1)";
+        var query = new PgQueryStatement(sql);
+        query.bindParameters(List.of(1, 2, 3), "hello");
+        // position parameters for SQL statement is converted to named parameters and list values are pre-processed
+        assertEquals("SELECT * FROM test WHERE name = :p2 and seq IN (1, 2, 3)", query.getStatement());
+        assertEquals(Map.of ("p2", "hello"), query.getNamedParams());
+    }
+
+    @Test
+    void positionIndexParamWithListValueTest() {
+        // the case for DB2
+        var sql = "SELECT * FROM test WHERE name = ? and seq IN (?)";
+        var query = new Db2QueryStatement(sql);
+        query.bindParameters("hello", List.of(1, 2, 3));
+        // position parameters for SQL statement is first converted to named parameters for list value pre-processing
+        // and then converted back to position parameters because DB2 does not support named parameters
+        assertEquals("SELECT * FROM test WHERE name = ? and seq IN (1, 2, 3)", query.getStatement());
+        assertEquals(Map.of(1, "hello"), query.getParameters());
     }
 }

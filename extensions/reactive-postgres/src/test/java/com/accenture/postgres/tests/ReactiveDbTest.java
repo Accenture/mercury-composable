@@ -59,7 +59,8 @@ class ReactiveDbTest {
     private static final String UPDATE = "update";
     private static final String ID = "id";
     private static final String SQL_READ = "SELECT * FROM health_check WHERE id = $1";
-    private static final String SQL_READ_IN_LIST = "SELECT * FROM health_check WHERE id IN (:id_list)";
+    private static final String SQL_READ_NAMED_LIST = "SELECT * FROM health_check WHERE id IN (:id_list)";
+    private static final String SQL_READ_POS_LIST = "SELECT * FROM health_check WHERE updated = ? AND id IN (?)";
     private static final String SQL_INSERT = "INSERT INTO health_check " +
                                                 "(id, app_name, app_instance, created, updated)" +
                                                 " VALUES ($1, $2, $3, $4, $5)";
@@ -293,10 +294,10 @@ class ReactiveDbTest {
         // Read the updated record to validate the updated timestamp
         // also test list parameter conversion
         var ex = assertThrows(Exception.class, () ->
-                    sql.query(po, SQL_READ_IN_LIST, Map.of("id_list", List.of(id, 100))));
+                    sql.query(po, SQL_READ_NAMED_LIST, Map.of("id_list", List.of(id, 100))));
         assertEquals("IllegalArgumentException", ex.getClass().getSimpleName());
         assertEquals("List parameter must be of the same type", ex.getMessage());
-        records = sql.query(po, SQL_READ_IN_LIST, Map.of("id_list", List.of(id)));
+        records = sql.query(po, SQL_READ_NAMED_LIST, Map.of("id_list", List.of(id)));
         assertEquals(1, records.size());
         rec = mapper.readValue(records.getFirst(), HealthCheck.class);
         assertEquals(now, rec.created);
@@ -340,10 +341,10 @@ class ReactiveDbTest {
         var updated = sql.update(po, NAMED_UPDATE, Map.of("updated", revisedTimestamp, "id", id));
         assertEquals(1, updated);
         // test list parameter conversion
-        var echo = sql.query(po, SQL_READ_IN_LIST, Map.of("id_list", List.of(id, id+"x")));
+        var echo = sql.query(po, SQL_READ_POS_LIST, new Timestamp(minusOneMinute), List.of(id, id+"x"));
         assertEquals(1, echo.size());
         var echoedStatement = (String) echo.getFirst().get("sql");
-        var expected = "SELECT * FROM health_check WHERE id IN ('"+id+"', '"+id+"x')";
+        var expected = "SELECT * FROM health_check WHERE updated = ? AND id IN ('"+id+"', '"+id+"x')";
         assertEquals(expected, echoedStatement);
     }
 

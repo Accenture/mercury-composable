@@ -23,15 +23,18 @@ import org.platformlambda.db.SqlPreparedStatement;
 public class PgQueryStatement extends SqlPreparedStatement {
 
     public PgQueryStatement() {
-        this.type = QUERY;
-        this.indexBase = 0;
-        this.numberedIndex = true;
+        setFeatures();
     }
 
     public PgQueryStatement(String sql) {
+        setFeatures();
+        this.statement = sql;
+    }
+
+    private void setFeatures() {
         this.type = QUERY;
         this.indexBase = 0;
         this.numberedIndex = true;
-        this.statement = sql;
+        this.supportNamedParameters = true;
     }
 }

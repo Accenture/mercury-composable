@@ -23,15 +23,18 @@ import org.platformlambda.db.SqlPreparedStatement;
 public class Db2QueryStatement extends SqlPreparedStatement {
 
     public Db2QueryStatement() {
-        this.type = QUERY;
-        this.indexBase = 1;
-        this.numberedIndex = false;
+        setFeatures();
     }
 
     public Db2QueryStatement(String sql) {
+        setFeatures();
+        this.statement = sql;
+    }
+
+    private void setFeatures() {
         this.type = QUERY;
         this.indexBase = 1;
         this.numberedIndex = false;
-        this.statement = sql;
+        this.supportNamedParameters = false;
     }
 }

@@ -25,9 +25,7 @@ import com.accenture.db2.services.Db2MockService;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
-import org.platformlambda.db.SqlPreparedStatement;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -57,7 +55,6 @@ public class Db2Request {
                                                     throws ExecutionException, InterruptedException {
         var req = new Db2QueryStatement(sql);
         req.bindParameters(parameters);
-        req.convertNamedParamsToIndex();
         var result = po.request(new EventEnvelope().setTo(MOCK_SERVICE).setBody(req), timeout).get();
         if (!result.hasError() && result.getBody() instanceof List) {
             return (List<Map<String, Object>>) result.getBody();
@@ -80,7 +77,6 @@ public class Db2Request {
     public int update(PostOffice po, String sql, Object... parameters) throws ExecutionException, InterruptedException {
         var req = new Db2UpdateStatement(sql);
         req.bindParameters(parameters);
-        req.convertNamedParamsToIndex();
         var result = po.request(new EventEnvelope().setTo(MOCK_SERVICE).setBody(req), timeout).get();
         if (!result.hasError() && result.getBody() instanceof Map<?, ?> map &&
                 map.get(ROW_UPDATED) instanceof Integer count) {
@@ -118,7 +114,6 @@ public class Db2Request {
                     req.bindParameters(param.toArray());
                 }
             }
-            req.convertNamedParamsToIndex();
             statements.addStatement(req);
             n++;
         }

@@ -30,6 +30,7 @@ import org.platformlambda.postgres.models.HealthCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 @PreLoad(route = Db2MockService.ROUTE, instances = 200)
@@ -65,8 +66,8 @@ public class Db2MockService implements TypedLambdaFunction<EventEnvelope, Object
                 return healthCheck.id != null && healthCheck.id.equals(id) ?
                         List.of(healthCheck) : Collections.emptyList();
             }
-            // for unit test, echo the SQL query with list params
-            if (query.getOriginalParameter(1) == null) {
+            // for unit test, echo the SQL query with list values
+            if (query.getOriginalParameter(1) == null || query.getOriginalParameter(1) instanceof Timestamp) {
                 return List.of(Map.of("sql", query.getStatement()));
             }
         }

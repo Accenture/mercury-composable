@@ -70,8 +70,10 @@ public abstract class SqlPreparedStatement {
     // e.g. PostGreSQL R2DBC uses the "$n" syntax and DB2 JDBC uses the "?" syntax.
     // This value is used when doing conversion from named to index parameters.
     protected boolean numberedIndex = false;
+    protected boolean supportNamedParameters = false;
     // named parameter conversion is allowed only once
     private boolean converted = false;
+    private boolean bindComplete = false;
 
     public String getType() {
         return type;
@@ -143,31 +145,42 @@ public abstract class SqlPreparedStatement {
 
     /**
      * Bind named parameters
+     * (This must be the last bind method if you have bound individual parameters earlier)
      *
      * @param params as name-value pairs
      */
     public void bindNamedParameters(Map<String, Object> params) {
-        // named parameters
-        var provided = new HashMap<>(params);
-        // pre-processing of list values
-        var listParams = new HashMap<String, String>();
-        for (var entry : provided.entrySet()) {
-            if (entry.getValue() instanceof List<?> values) {
-                listParams.put(entry.getKey(), list2str(values));
+        if (bindComplete) {
+            throw new IllegalArgumentException("Parameters have been bound");
+        } else {
+            bindComplete = true;
+            // named parameters
+            var provided = new HashMap<>(params);
+            // pre-processing of list values
+            var listParams = new HashMap<String, String>();
+            for (var entry : provided.entrySet()) {
+                if (entry.getValue() instanceof List<?> values) {
+                    listParams.put(entry.getKey(), list2str(values));
+                }
             }
-        }
-        // update the SQL statement with list values, if any
-        listParams.keySet().forEach(name -> {
-            provided.remove(name);
-            setStatement(getStatement().replace(":"+name, listParams.get(name)));
-        });
-        for (var entry : provided.entrySet()) {
-            bindParameter(entry.getKey(), entry.getValue());
+            // update the SQL statement with list values, if any
+            listParams.keySet().forEach(name -> {
+                provided.remove(name);
+                setStatement(getStatement().replace(":" + name, listParams.get(name)));
+            });
+            for (var entry : provided.entrySet()) {
+                bindParameter(entry.getKey(), entry.getValue());
+            }
+            if (!supportNamedParameters) {
+                convertNamedParamsToIndex();
+            }
         }
     }
 
     /**
      * Bind a variable number of parameter values, append if current parameters are not empty
+     * (This must be the last bind method if you have bound individual parameters earlier)
+     *
      * @param values to bind as parameters
      */
     public void bindParameters(Object... values) {
@@ -176,8 +189,59 @@ public abstract class SqlPreparedStatement {
             provided.keySet().forEach(name -> params.put(String.valueOf(name), provided.get(name)));
             bindNamedParameters(params);
         } else {
-            bindParametersFrom(positionParams.size() + indexBase, values);
+            var listPos = getPositionsForListValues(values);
+            // Parameters contain list values?
+            if (listPos.contains(true)) {
+                // convert position parameters into named parameters
+                int n = 1;
+                Map<String, Object> params = new HashMap<>();
+                for (var v : values) {
+                    params.put("p"+n, v);
+                    n++;
+                }
+                // update SQL statement
+                if (numberedIndex) {
+                    transformNumberedIndex(listPos);
+                } else {
+                    transformQuestionMarkIndex(listPos);
+                }
+                bindNamedParameters(params);
+            } else {
+                bindParametersFrom(positionParams.size() + indexBase, values);
+            }
         }
+    }
+
+    private void transformNumberedIndex(List<Boolean> listPos) {
+        for (int i = listPos.size(); i > 0; i--) {
+            var paramIndex = "$" + i;
+            if (statement.contains(paramIndex)) {
+                statement = statement.replace(paramIndex, ":p" + i);
+            } else {
+                throw new IllegalArgumentException("Parameter " + paramIndex + " not found");
+            }
+        }
+    }
+
+    private void transformQuestionMarkIndex(List<Boolean> listPos) {
+        for (int i = 0; i < listPos.size(); i++) {
+            var seq = i + 1;
+            var q = statement.indexOf('?');
+            if (q == -1) {
+                throw new IllegalArgumentException("Parameter " + seq + " not found");
+            } else {
+                statement = statement.substring(0, q) + (":p" + seq) + statement.substring(q + 1);
+            }
+        }
+    }
+
+    private List<Boolean> getPositionsForListValues(Object... values) {
+        int n = 0;
+        var result = new ArrayList<Boolean>();
+        for (Object value : values) {
+            result.add(n++, value instanceof List);
+        }
+        return result;
     }
 
     /**
@@ -217,18 +281,25 @@ public abstract class SqlPreparedStatement {
 
     /**
      * Bind a variable number of parameter values from a given index
-     * (DB2 JDBC parameter index starts from 1 and PostGreSQL R2DBC parameter index starts from 0)
+     * 1. DB2 JDBC parameter index starts from 1 and PostGreSQL R2DBC parameter index starts from 0
+     * 2. This must be the last bind method if you have bound individual parameters using bindParameter(number, value)
+     *    method earlier
      *
      * @param start index
      * @param values to bind as parameters
      */
     public void bindParametersFrom(int start, Object... values) {
-        if (start < 0) {
-            throw new IllegalArgumentException("Start index must not be negative");
-        }
-        int n = start;
-        for  (Object value : values) {
-            bindParameter(n++, value);
+        if (bindComplete) {
+            throw new IllegalArgumentException("Parameters have been bound");
+        } else {
+            bindComplete = true;
+            if (start < 0) {
+                throw new IllegalArgumentException("Start index must not be negative");
+            }
+            int n = start;
+            for (Object value : values) {
+                bindParameter(n++, value);
+            }
         }
     }
 
@@ -453,7 +524,11 @@ public abstract class SqlPreparedStatement {
     }
 
     /**
-     * Convert SQL statement with named parameters into indexed SQL statement and parameters
+     * This method enables use of named parameters even when the underlying DB library does not do so.
+     * (It converts named parameters into indexed SQL statement and parameters)
+     * <p>
+     * If you are using the bindParameters method, it will invoke this automatically.
+     * This is required after you bind individual parameters manually.
      */
     public void convertNamedParamsToIndex() {
         if (!converted) {

@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.55, 1/24/2026
+
+### Added
+
+Pre-processing of parameters with list values for positional parameters in reactive-postgres,
+making use of list values consistent for both named and positional parameter methods.
+
+### Removed
+
+N/A
+
+### Changed
+
+Refactor reactive-postgres project by moving list value processing logic from PgRequest to the
+base class of SqlPreparedStatement class so that it can be used to extend future DB libraries. 
+
+---
 ## Version 4.3.54, 1/22/2026
 
 ### Added
