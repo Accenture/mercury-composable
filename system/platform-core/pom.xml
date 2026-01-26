@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.55</version>
+    <version>4.3.56</version>
     <name>Mercury platform-core module</name>
 
     <parent>

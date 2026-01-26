@@ -310,8 +310,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         Flows.closeFlowInstance(flowInstance.id);
         // clean up task references and release memory
         flowInstance.metrics.keySet().forEach(taskRefs::remove);
-        String traceId = flowInstance.getTraceId();
-        String logId = traceId != null? traceId : flowInstance.id;
         long diff = Math.max(0, System.currentTimeMillis() - flowInstance.getStartMillis());
         String formatted = Utility.getInstance().elapsedTime(diff);
         List<TaskMetrics> taskList = new ArrayList<>(flowInstance.tasks);
@@ -320,29 +318,32 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 taskInfo.add(Map.of("name", info.getRoute(), "spent", info.getElapsed())));
         // clean up flowInstance states
         flowInstance.close();
-        int totalExecutions = taskList.size();
-        var payload = new HashMap<String, Object>();
-        var metrics = new HashMap<String, Object>();
-        var annotations = new HashMap<String, Object>();
-        payload.put("trace", metrics);
-        payload.put("annotations", annotations);
-        metrics.put("origin", Platform.getInstance().getOrigin());
-        metrics.put("id", logId);
-        metrics.put("service", TaskExecutor.SERVICE_NAME);
-        metrics.put("from", EventScriptManager.SERVICE_NAME);
-        metrics.put("exec_time", (float) diff);
-        metrics.put("start", util.date2str(new Date(flowInstance.getStartMillis())));
-        metrics.put("path", flowInstance.getTracePath());
-        metrics.put(STATUS, normal? 200 : 400);
-        metrics.put("success", normal);
-        if (!normal) {
-            metrics.put("exception", "Flow aborted");
+        // Print event flow summary if tracing is enabled
+        if (flowInstance.getTraceId() != null) {
+            int totalExecutions = taskList.size();
+            var payload = new HashMap<String, Object>();
+            var metrics = new HashMap<String, Object>();
+            var annotations = new HashMap<String, Object>();
+            payload.put("trace", metrics);
+            payload.put("annotations", annotations);
+            metrics.put("origin", Platform.getInstance().getOrigin());
+            metrics.put("id", flowInstance.getTraceId());
+            metrics.put("service", TaskExecutor.SERVICE_NAME);
+            metrics.put("from", EventScriptManager.SERVICE_NAME);
+            metrics.put("exec_time", (float) diff);
+            metrics.put("start", util.date2str(new Date(flowInstance.getStartMillis())));
+            metrics.put("path", flowInstance.getTracePath());
+            metrics.put(STATUS, normal ? 200 : 400);
+            metrics.put("success", normal);
+            if (!normal) {
+                metrics.put("exception", "Flow aborted");
+            }
+            annotations.put("execution", "Run " + totalExecutions +
+                    " task" + (totalExecutions == 1 ? "" : "s") + " in " + formatted);
+            annotations.put("tasks", taskInfo);
+            annotations.put("flow", flowInstance.getFlow().id);
+            EventEmitter.getInstance().send(new EventEnvelope().setTo(DISTRIBUTED_TRACING).setBody(payload));
         }
-        annotations.put("execution", "Run " + totalExecutions +
-                        " task" + (totalExecutions == 1? "" : "s") + " in " + formatted);
-        annotations.put("tasks", taskInfo);
-        annotations.put("flow", flowInstance.getFlow().id);
-        EventEmitter.getInstance().send(new EventEnvelope().setTo(DISTRIBUTED_TRACING).setBody(payload));
     }
 
     private void handleCallback(TaskReference ref, String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq) {

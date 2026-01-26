@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.56, 1/26/2026
+
+### Added
+
+SQL batch method in PgRequest wrapper in reactive-postgres subproject
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix: Suppress printing of event flow summary via Telemetry when tracing is disabled for an
+        event trigger. e.g. the trigger may come from a REST endpoint where tracing=false
+        in rest.yaml
+
+---
 ## Version 4.3.55, 1/24/2026
 
 ### Added
