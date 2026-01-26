@@ -80,13 +80,11 @@ public class PgHealth implements LambdaFunction {
             var now = System.currentTimeMillis();
             var readReq = new PgRequest(TIMEOUT);
             var readResult = readReq.query(po, SQL_READ, Map.of("id", id));
-            log.info("Read result: {}", readResult);
             if (readResult.isEmpty()) {
                 // insert one if no health record
                 var timestamp = new Timestamp(now);
                 var request = new PgRequest(TIMEOUT);
                 var count = request.update(po, SQL_INSERT, id, appName, appInstance, timestamp, timestamp);
-                log.info("Insert result: {}", count);
                 var diff = Math.abs(System.currentTimeMillis() - now);
                 if (count == 1) {
                     sb.append("Insert (").append(diff).append(" ms)");
@@ -131,7 +129,7 @@ public class PgHealth implements LambdaFunction {
                 log.info("No outdated health records found");
             }
         } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+            log.error("Unable to remove outdated health records", e);
         }
     }
 }

@@ -119,6 +119,9 @@ public class PgRequest {
             throw new AppException(400, "Missing SQL statement");
         }
         var pList = parameterList == null? List.of() : parameterList;
+        if (pList.isEmpty()) {
+            throw new AppException(400, "Missing list of lists of parameters");
+        }
         var sqlList = new ArrayList<String>();
         for (int i=0; i < pList.size(); i++) {
             sqlList.add(sql);
