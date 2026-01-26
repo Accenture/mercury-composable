@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/APPENDIX-III/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Appendix-III - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Appendix-III";
+        var mkdocs_page_input_path = "guides/APPENDIX-III.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/APPENDIX-III/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Chapter-1</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Chapter-2</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Chapter-5</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Chapter-10</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Appendix-III</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#actuator-endpoints">Actuator endpoints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#system-provided-rest-endpoints">System provided REST endpoints</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#custom-health-services">Custom health services</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#asynchttpclient-service">AsyncHttpClient service</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send-http-request-body-for-http-put-post-and-patch-methods">Send HTTP request body for HTTP PUT, POST and PATCH methods</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send-http-request-body-as-a-stream">Send HTTP request body as a stream</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#read-http-response-body-stream">Read HTTP response body stream</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#rendering-a-small-payload-of-streaming-content">Rendering a small payload of streaming content</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#content-length-for-http-request">Content length for HTTP request</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#multipart-file-upload">Multipart file upload</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#using-asynchttpclient-by-configuration">Using AsyncHttpClient by configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#starting-a-flow-programmatically">Starting a flow programmatically</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writing-your-own-flow-adapters">Writing your own Flow Adapters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#application-log-format">Application log format</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#customize-log4j-configuration">Customize log4j configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handling-numbers-in-a-map">Handling numbers in a Map</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Appendix-III</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="actuators-http-client-and-more">Actuators, HTTP client and More</h1>
+<h2 id="actuator-endpoints">Actuator endpoints</h2>
+<p>The following are actuator endpoints:</p>
+<pre><code>GET /info
+GET /info/routes
+GET /info/lib
+GET /env
+GET /health
+GET /livenessprobe
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Endpoint</th>
+<th style="text-align: left;">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">/info</td>
+<td style="text-align: left;">Describe the application</td>
+</tr>
+<tr>
+<td style="text-align: left;">/info/routes</td>
+<td style="text-align: left;">List all private and public function route names</td>
+</tr>
+<tr>
+<td style="text-align: left;">/info/lib</td>
+<td style="text-align: left;">List libraries packed with this executable</td>
+</tr>
+<tr>
+<td style="text-align: left;">/env</td>
+<td style="text-align: left;">Show selected environment variables and application parameters</td>
+</tr>
+<tr>
+<td style="text-align: left;">/health</td>
+<td style="text-align: left;">Application health check endpoint</td>
+</tr>
+<tr>
+<td style="text-align: left;">/livenessprobe</td>
+<td style="text-align: left;">Check if application is running normally</td>
+</tr>
+</tbody>
+</table>
+<h2 id="system-provided-rest-endpoints">System provided REST endpoints</h2>
+<p>When REST automation is turned on, the following essential REST endpoints will be provided if they are
+not configured in rest.yaml. The "POST /api/event" is used for Event-Over-HTTP protocol and the others
+are actuator endpoints.</p>
+<p>To override the default parameters such as timeout, tracing and authentication, you can configure them
+in rest.yaml.</p>
+<pre><code class="language-yaml">rest:
+  - service: &quot;event.api.service&quot;
+    methods: ['POST']
+    url: &quot;/api/event&quot;
+    timeout: 60s
+    tracing: true
+
+  - service: &quot;info.actuator.service&quot;
+    methods: ['GET']
+    url: &quot;/info&quot;
+    timeout: 10s
+
+  - service: &quot;lib.actuator.service&quot;
+    methods: ['GET']
+    url: &quot;/info/lib&quot;
+    timeout: 10s
+
+  - service: &quot;routes.actuator.service&quot;
+    methods: ['GET']
+    url: &quot;/info/routes&quot;
+    timeout: 10s
+
+  - service: &quot;health.actuator.service&quot;
+    methods: ['GET']
+    url: &quot;/health&quot;
+    timeout: 10s
+
+  - service: &quot;liveness.actuator.service&quot;
+    methods: ['GET']
+    url: &quot;/livenessprobe&quot;
+    timeout: 10s
+
+  - service: &quot;env.actuator.service&quot;
+    methods: ['GET']
+    url: &quot;/env&quot;
+    timeout: 10s
+</code></pre>
+<blockquote>
+<p><em>Note</em>: When using the rest-spring-3 library, the actuator endpoints are always available from the
+          Spring Boot's HTTP port and they cannot be changed.</p>
+</blockquote>
+<h2 id="custom-health-services">Custom health services</h2>
+<p>You can extend the "/health" endpoint by implementing and registering lambda functions to be added to the 
+"health check" dependencies.</p>
+<pre><code class="language-properties">mandatory.health.dependencies=cloud.connector.health, demo.health
+optional.health.dependencies=other.service.health
+</code></pre>
+<p>Your custom health service must respond to the following requests:</p>
+<ol>
+<li>Info request (type=info) - it should return a map that includes service name and href (protocol, hostname and port)</li>
+<li>Health check (type=health) - it should return a text string or a Map of the health check. e.g. read/write test result. 
+   If health check fails, you can throw AppException with status code and error message.</li>
+</ol>
+<blockquote>
+<p><em>Note</em>: The "href" entry in the health service's response should tell the operator about the target URL
+          if the dependency connects to a cloud platform service such as Kafka, Redis, etc.</p>
+</blockquote>
+<p>A sample health service is available in the <code>DemoHealth</code> class of the <code>composable-example</code> project as follows:</p>
+<pre><code class="language-java">@PreLoad(route=&quot;demo.health&quot;, instances=5)
+public class DemoHealth implements LambdaFunction {
+
+    private static final String TYPE = &quot;type&quot;;
+    private static final String INFO = &quot;info&quot;;
+    private static final String HEALTH = &quot;health&quot;;
+
+    @Override
+    public Object handleEvent(Map&lt;String, String&gt; headers, Object input, int instance) {
+        /*
+         * The interface contract for a health check service includes both INFO and HEALTH responses.
+         * It must return a Map.
+         */
+        if (INFO.equals(headers.get(TYPE))) {
+            Map&lt;String, Object&gt; about = new HashMap&lt;&gt;();
+            about.put(&quot;service&quot;, &quot;demo.service&quot;);
+            about.put(&quot;href&quot;, &quot;http://127.0.0.1&quot;);
+            return about;
+        }
+        if (HEALTH.equals(headers.get(TYPE))) {
+            /*
+             * This is a place-holder for checking a downstream service.
+             *
+             * Please implement your own logic to test if a downstream service is running fine.
+             * If running, just return health status as a String or a Map.
+             *
+             * Otherwise,
+             *      throw new AppException(status, message)
+             */
+            return Map.of(&quot;demo&quot;, &quot;I am running fine&quot;);
+        }
+        throw new IllegalArgumentException(&quot;type must be info or health&quot;);
+    }
+}
+</code></pre>
+<h2 id="asynchttpclient-service">AsyncHttpClient service</h2>
+<p>The "async.http.request" function can be used as a non-blocking HTTP client.</p>
+<p>To make an HTTP request to an external REST endpoint, you can create an HTTP request object using the
+<code>AsyncHttpRequest</code> class and make an async RPC call to the "async.http.request" function like this:</p>
+<pre><code class="language-java">PostOffice po = new PostOffice(headers, instance);
+AsyncHttpRequest req = new AsyncHttpRequest();
+req.setMethod(&quot;GET&quot;);
+req.setHeader(&quot;accept&quot;, &quot;application/json&quot;);
+req.setUrl(&quot;/api/hello/world?hello world=abc&quot;);
+req.setQueryParameter(&quot;x1&quot;, &quot;y&quot;);
+List&lt;String&gt; list = new ArrayList&lt;&gt;();
+list.add(&quot;a&quot;);
+list.add(&quot;b&quot;);
+req.setQueryParameter(&quot;x2&quot;, list);
+req.setTargetHost(&quot;http://127.0.0.1:8083&quot;);
+EventEnvelope request = new EventEnvelope().setTo(&quot;async.http.request&quot;).setBody(req);
+EventEnvelope res = po.request(request, 5000).get();
+// the response is a Java Future and the result is an EventEnvelope
+</code></pre>
+<p>By default, your user function is running in a virtual thread.
+While the RPC call looks like synchronous, the po.request API will run in non-blocking mode in the same fashion
+as the "async/await" pattern.</p>
+<p>For reactive programming, you can use the "asyncRequest" API like this:</p>
+<pre><code class="language-java">PostOffice po = new PostOffice(headers, instance);
+AsyncHttpRequest req = new AsyncHttpRequest();
+req.setMethod(&quot;GET&quot;);
+req.setHeader(&quot;accept&quot;, &quot;application/json&quot;);
+req.setUrl(&quot;/api/hello/world?hello world=abc&quot;);
+req.setQueryParameter(&quot;x1&quot;, &quot;y&quot;);
+List&lt;String&gt; list = new ArrayList&lt;&gt;();
+list.add(&quot;a&quot;);
+list.add(&quot;b&quot;);
+req.setQueryParameter(&quot;x2&quot;, list);
+req.setTargetHost(&quot;http://127.0.0.1:8083&quot;);
+EventEnvelope request = new EventEnvelope().setTo(&quot;async.http.request&quot;).setBody(req);
+Future&lt;EventEnvelope&gt; res = po.asyncRequest(request, 5000);
+res.onSuccess(response -&gt; {
+   // do something with the result 
+});
+</code></pre>
+<h2 id="send-http-request-body-for-http-put-post-and-patch-methods">Send HTTP request body for HTTP PUT, POST and PATCH methods</h2>
+<p>For most cases, you can just set a HashMap into the request body and specify content-type as JSON or XML.
+The system will perform serialization properly.</p>
+<p>Example code may look like this:</p>
+<pre><code class="language-java">AsyncHttpRequest req = new AsyncHttpRequest();
+req.setMethod(&quot;POST&quot;);
+req.setHeader(&quot;accept&quot;, &quot;application/json&quot;);
+req.setHeader(&quot;content-type&quot;, &quot;application/json&quot;);
+req.setUrl(&quot;/api/book&quot;);
+req.setTargetHost(&quot;https://service_provider_host&quot;);
+req.setBody(mapOfKeyValues);
+// where keyValues is a HashMap
+</code></pre>
+<h2 id="send-http-request-body-as-a-stream">Send HTTP request body as a stream</h2>
+<p>For larger payload, you may use the streaming method. See sample code below:</p>
+<pre><code class="language-java">int len;
+byte[] buffer = new byte[4096];
+FileInputStream in = new FileInputStream(myFile);
+EventPublisher publisher = new EventPublisher(timeoutInMIlls);
+while ((len = in.read(buffer, 0, buffer.length)) != -1) {
+    publisher.publish(buffer, 0, len);
+}
+// closing the output stream would send a EOF signal to the stream
+publisher.publishCompletion();
+// tell the HTTP client to read the input stream by setting the streamId in the AsyncHttpRequest object
+req.setStreamRoute(publisher.getStreamId());
+</code></pre>
+<h2 id="read-http-response-body-stream">Read HTTP response body stream</h2>
+<p>If content length is not given, the response body would arrive as a stream.</p>
+<p>Your application should check if the HTTP response header "stream" exists. Its value is the input "streamId".</p>
+<p>You can process the input stream using the FluxConsumer class like this.
+Please note that the FluxConsumer is typed. If you do not know the data type for the stream content, use
+<code>Object</code> for untyped read and test the object type of the incoming messages in the content stream.</p>
+<pre><code class="language-java">String streamId = headers.get(&quot;stream&quot;);
+long ttl = 10000; // anticipated time in milliseconds to stream the content
+FluxConsumer&lt;Map&lt;String, Object&gt;&gt; fc = new FluxConsumer&lt;&gt;(streamId, ttl);
+fc.consume(
+    data -&gt; {
+        // handle incoming message
+    },
+    e -&gt; {
+        // handle exception where e is a Throwable
+    },
+    () -&gt; {
+        // handle stream completion
+    }
+);
+</code></pre>
+<p>By default, a user function is executed in a virtual thread which effectively is an "async" function and
+the PostOffice "request" API operates in the non-blocking "await" mode.</p>
+<h2 id="rendering-a-small-payload-of-streaming-content">Rendering a small payload of streaming content</h2>
+<p>If the streaming HTTP response is certain to be a small payload (i.e. Kilobytes), you can optimize
+the rendering by adding the HTTP request header (X-Small-Payload-As-Bytes=true) in the AsyncHttpRequest object.</p>
+<pre><code class="language-java">AsyncHttpRequest req = new AsyncHttpRequest();
+req.setMethod(&quot;GET&quot;);
+req.setUrl(&quot;/api/some/binary/content&quot;);
+req.setTargetHost(&quot;https://service_provider_host&quot;);
+req.setHeader(&quot;X-Small-Payload-As-Bytes&quot;, &quot;true&quot;);
+</code></pre>
+<p>Note that the AsyncHttpClient will insert a custom HTTP response header "X-Content-Length" to show the size
+of the payload.</p>
+<blockquote>
+<p>IMPORTANT: This optimization does not validate the size of the streaming content. Therefore, it is possible for
+             the streaming content to trigger an "out of memory" exception. You must make sure the streaming content
+             is small enough before using the "X-Small-Payload-As-Bytes" HTTP request header.</p>
+</blockquote>
+<h2 id="content-length-for-http-request">Content length for HTTP request</h2>
+<p>If you do not set the "Content-Length" HTTP header, the AsyncHttpClient will use the "chunking" method to send
+your payload for PUT, POST and PATCH methods.</p>
+<p>If you set the "Content-Length" HTTP header, it must be a correct size of the payload when rendered as a byte array.
+Setting an incorrect value would produce suboptimal outcome.</p>
+<p>For file upload using the streaming method, please refer to the section of "Send HTTP request body as a stream" above.
+Note that the "Content-Length" HTTP header will be ignored by the AsyncHttpClient so that the system can compute
+the correct value.</p>
+<h2 id="multipart-file-upload">Multipart file upload</h2>
+<p>The "multipart/form-data" file upload protocol is supported for client side and server side.</p>
+<p>You can upload single file or multiple files in a single HTTP request.</p>
+<ol>
+<li>Client side is handled by the AsyncHttpClient composable function with the route name "async.http.request".</li>
+<li>Server side is processed by the <code>handleMultiPartContent</code> method in the HttpRouter class.</li>
+</ol>
+<p>Please refer to the <code>FileUploadDemo</code> class in the "lambda-example" for a REST endpoint reference implementation
+and the <code>MultiPartFileUploadTest</code> class in the unit tests for the client side handling.</p>
+<h2 id="using-asynchttpclient-by-configuration">Using AsyncHttpClient by configuration</h2>
+<p>The "async.http.request" service can be used as a task in a flow. The following flow configuration example
+illustrates using it as a task.</p>
+<pre><code class="language-yaml">flow:
+  id: 'http-client-by-config'
+  description: 'Demonstrate use of the Async HTTP client using configuration means'
+  ttl: 10s
+
+first.task: 'http.client'
+
+tasks:
+  - name: 'http.client'
+    input:
+      - 'text(/api/echo/test) -&gt; url'
+      - 'text(PUT) -&gt; method'
+      - 'text(http://127.0.0.1:${server.port}) -&gt; host'
+      - 'input.body -&gt; body'
+      - 'text(world) -&gt; parameters.query.hello'
+      - 'text(application/json) -&gt; headers.content-type'
+      - 'text(application/json) -&gt; headers.accept'
+    process: 'async.http.request'
+    output:
+      - 'text(application/json) -&gt; output.header.content-type'
+      - 'result -&gt; output.body'
+    description: 'Return result'
+    execution: end
+</code></pre>
+<p>The interface contract for the AsyncHttpClient is the AsyncHttpRequest object. The following table lists
+the parameters where parameters.query, body and cookies are optional.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Usage</th>
+<th style="text-align: left;">Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">method</td>
+<td style="text-align: left;">HTTP method</td>
+<td style="text-align: left;">GET</td>
+</tr>
+<tr>
+<td style="text-align: left;">host</td>
+<td style="text-align: left;">Protocol and domain name (or IP address)</td>
+<td style="text-align: left;">https://demo.platformlambda.org</td>
+</tr>
+<tr>
+<td style="text-align: left;">url</td>
+<td style="text-align: left;">URI path</td>
+<td style="text-align: left;">/api/hello/world</td>
+</tr>
+<tr>
+<td style="text-align: left;">parameters.query</td>
+<td style="text-align: left;">Query parameter key-value</td>
+<td style="text-align: left;">parameters.query.hello=world</td>
+</tr>
+<tr>
+<td style="text-align: left;">headers</td>
+<td style="text-align: left;">HTTP request headers</td>
+<td style="text-align: left;">headers.content-type=application/json</td>
+</tr>
+<tr>
+<td style="text-align: left;">body</td>
+<td style="text-align: left;">HTTP request body for PUT, POST and PATCH</td>
+<td style="text-align: left;">{"hello": "world"}</td>
+</tr>
+<tr>
+<td style="text-align: left;">cookies</td>
+<td style="text-align: left;">Cookie key-value</td>
+<td style="text-align: left;">cookies.session-id=12345</td>
+</tr>
+</tbody>
+</table>
+<h2 id="starting-a-flow-programmatically">Starting a flow programmatically</h2>
+<p>To start an "event" flow from a unit test, you may use the helper class "FlowExecutor" under the "Event Script" module.</p>
+<p>Examples of some APIs are as follows:</p>
+<pre><code class="language-java">// launch a flow asychronously
+public void launch(String originator, String flowId, Map&lt;String, Object&gt; dataset,
+                       String correlationId);
+// launch a flow asychronously with tracing
+public void launch(String originator, String traceId, String tracePath, String flowId,
+                       Map&lt;String, Object&gt; dataset, String correlationId);
+// launch a flow asychronously and tracing
+public void launch(PostOffice po, String flowId, Map&lt;String, Object&gt; dataset,
+                        String correlationId);
+// launch a flow with callback and tracing
+public void launch(PostOffice po, String flowId, Map&lt;String, Object&gt; dataset,
+                        String replyTo, String correlationId);
+// launch a flow and expect a future response
+public Future&lt;EventEnvelope&gt; request(PostOffice po, String flowId, Map&lt;String, Object&gt; dataset,
+                                     String correlationId, long timeout);
+</code></pre>
+<p>The following unit test emulates a HTTP request to the flow named "header-test".</p>
+<pre><code class="language-java">@Test
+public void internalFlowTest() throws ExecutionException, InterruptedException {
+    final long TIMEOUT = 8000;
+    String traceId = Utility.getInstance().getUuid();
+    String cid = Utility.getInstance().getUuid();
+    PostOffice po = new PostOffice(&quot;unit.test&quot;, traceId, &quot;INTERNAL /flow/test&quot;);
+    String flowId = &quot;header-test&quot;;
+    Map&lt;String, Object&gt; headers = new HashMap&lt;&gt;();
+    Map&lt;String, Object&gt; dataset = new HashMap&lt;&gt;();
+    dataset.put(&quot;header&quot;, headers);
+    dataset.put(&quot;body&quot;, Map.of(&quot;hello&quot;, &quot;world&quot;));
+    headers.put(&quot;user-agent&quot;, &quot;internal-flow&quot;);
+    headers.put(&quot;accept&quot;, &quot;application/json&quot;);
+    headers.put(&quot;x-flow-id&quot;, flowId);
+    FlowExecutor flowExecutor = FlowExecutor.getInstance();
+    EventEnvelope result = flowExecutor.request(po, flowId, dataset, cid, TIMEOUT).get();
+    assertInstanceOf(Map.class, result.getBody());
+    Map&lt;String, Object&gt; body = (Map&lt;String, Object&gt;) result.getBody();
+    // verify that input headers are mapped to the function's input body
+    assertEquals(&quot;header-test&quot;, body.get(&quot;x-flow-id&quot;));
+    assertEquals(&quot;internal-flow&quot;, body.get(&quot;user-agent&quot;));
+    assertEquals(&quot;application/json&quot;, body.get(&quot;accept&quot;));
+}
+</code></pre>
+<p>The dataset must contain at least the "body" key-value so that input data mapping is possible in a flow.</p>
+<p>For the built-in HTTP flow adapter, the dataset would contain the following:</p>
+<pre><code class="language-java">// convert HTTP context to flow &quot;input&quot; dataset
+Map&lt;String, Object&gt; dataset = new HashMap&lt;&gt;();
+dataset.put(&quot;header&quot;, request.getHeaders());
+dataset.put(&quot;body&quot;, request.getBody());
+dataset.put(&quot;cookie&quot;, request.getCookies());
+dataset.put(&quot;path_parameter&quot;, request.getPathParameters());
+dataset.put(&quot;method&quot;, request.getMethod());
+dataset.put(&quot;uri&quot;, request.getUrl());
+dataset.put(&quot;query&quot;, request.getQueryParameters());
+dataset.put(&quot;stream&quot;, request.getStreamRoute());
+dataset.put(&quot;ip&quot;, request.getRemoteIp());
+dataset.put(&quot;filename&quot;, request.getFileName());
+dataset.put(&quot;session&quot;, request.getSessionInfo());
+</code></pre>
+<p>If you write your own Kafka flow adapter, the dataset should contain headers and body mapped with a Kafka event.</p>
+<p>For other flow adapters, you may use different set of key-values.</p>
+<h2 id="writing-your-own-flow-adapters">Writing your own Flow Adapters</h2>
+<p>Please browse the csv-flow-adapter and csv-flow-demo subprojects in the examples project folder for hints in
+writing your own flow adapters to address your specific requirements.</p>
+<h2 id="application-log-format">Application log format</h2>
+<p>The system supports 3 types of log formats. You can set "log.format" parameter in application.properties to change
+the log format or override it at runtime using the Java "-D" argument. e.g.</p>
+<pre><code class="language-shell">java -Dlog.format=json -jar myapp.jar
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Format</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">text</td>
+<td style="text-align: left;">this is the default log format</td>
+</tr>
+<tr>
+<td style="text-align: left;">json</td>
+<td style="text-align: left;">application log will be printed in JSON format with line feed and indentation</td>
+</tr>
+<tr>
+<td style="text-align: left;">compact</td>
+<td style="text-align: left;">JSON format without line feed and indentation</td>
+</tr>
+</tbody>
+</table>
+<p>text and json formats are for human readers and compact format is designed for log analytics system.</p>
+<p>To leverge the advantage of json log format, your application may log JSON using the
+parameter formatter <code>{}</code> with a single Map parameter like this:</p>
+<pre><code class="language-java">var message = new HashMap&lt;&gt;();
+message.put(&quot;id&quot;, id);
+message.put(&quot;status&quot;, &quot;completed&quot;);
+message.put(&quot;notes&quot;, &quot;Just a demo&quot;);
+log.info(&quot;{}&quot;, message);
+</code></pre>
+<h2 id="customize-log4j-configuration">Customize log4j configuration</h2>
+<p>The log4j configuration templates are available in the main "resources" folder of the platform-core.
+If you want to adjust the "loggers" section in log4j, please copy the required XML files to
+the main "resources" folder in your application.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">File</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">log4j2.xml</td>
+<td style="text-align: left;">this is the default configuration file for logging in text format</td>
+</tr>
+<tr>
+<td style="text-align: left;">log4j2-json.xml</td>
+<td style="text-align: left;">configuration file for logging in JSON format</td>
+</tr>
+<tr>
+<td style="text-align: left;">log4j2-compact.xml</td>
+<td style="text-align: left;">configuration file for logging in COMPACT format</td>
+</tr>
+</tbody>
+</table>
+<p>The default log4j2.xml configuration file looks like this:</p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;Configuration status=&quot;INFO&quot;&gt;
+    &lt;Appenders&gt;
+        &lt;Console name=&quot;Console&quot; target=&quot;SYSTEM_OUT&quot;&gt;
+            &lt;PatternLayout pattern=&quot;%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger:%line - %msg%n&quot; /&gt;
+        &lt;/Console&gt;
+    &lt;/Appenders&gt;
+    &lt;Loggers&gt;
+        &lt;Root level=&quot;${env:LOG_LEVEL:-INFO}&quot; additivity=&quot;false&quot;&gt;
+            &lt;AppenderRef ref=&quot;Console&quot; /&gt;
+        &lt;/Root&gt;
+
+        &lt;!-- Enable INFO logging for Telemetry --&gt;
+        &lt;logger name=&quot;org.platformlambda.core.services.Telemetry&quot; level=&quot;INFO&quot; /&gt;
+    &lt;/Loggers&gt;
+&lt;/Configuration&gt;
+</code></pre>
+<p>In the "loggers" section, you can expand the class list to tell log4j which classes to log
+and at what level.</p>
+<p>Please note that the "AppenderRef" must point to the same "Appenders" in the XML file.</p>
+<h2 id="handling-numbers-in-a-map">Handling numbers in a Map</h2>
+<p>The system assumes each key of a Map object to be a text string. If you use integer as a key,
+it will be converted to a text string. The assumed Map class is <code>Map&lt;String, Object&gt;</code>.</p>
+<p>Numbers in a value are handled differently in two cases.</p>
+<p><em>Serialization of an event envelope</em>: this is done using the MsgPack protocol for binary
+JSON. The serialization process is optimized for performance and payload size. As a result,
+a small number that is declared as Long will be serialized as an Integer (Long uses 8 bytes
+and Integer uses 2 or 4 bytes).</p>
+<p><em>Serialization of nested Map in a PoJo</em>: this is done using the GSON library. It is optimized
+for type matching. Integers are treated as Long numbers.</p>
+<p>If you want to enforce Integer or Long, please design a PoJo to fit your use case.</p>
+<p>However, floating point numbers (Float and Double) are rendered without type matching.</p>
+<p>For untyped numbers, you may use the convenient type conversion methods in the platform-core's
+Utility class. For examples, util.str2int and util.str2long.
+<br/></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Appendix-II</th>
+<th style="text-align: center;">Home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../APPENDIX-II/">Reserved names and headers</a></td>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../APPENDIX-II/" class="btn btn-neutral float-left" title="Appendix-II"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../CHANGELOG/" class="btn btn-neutral float-right" title="Release notes">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../APPENDIX-II/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../CHANGELOG/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

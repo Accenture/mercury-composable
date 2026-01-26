@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/CHAPTER-5/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Chapter-5 - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Chapter-5";
+        var mkdocs_page_input_path = "guides/CHAPTER-5.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/CHAPTER-5/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Chapter-1</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Chapter-2</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Chapter-5</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#main-application">Main application</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writing-your-functions">Writing your functions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#http-forwarding">HTTP forwarding</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sending-http-request-event-to-more-than-one-service">Sending HTTP request event to more than one service</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writing-your-first-unit-test">Writing your first unit test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#your-second-unit-test">Your second unit test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#convenient-utility-classes">Convenient utility classes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#event-flow-mocking-framework">Event Flow mocking framework</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#inspecting-the-state-machine-using-eventscriptmock">Inspecting the state machine using EventScriptMock</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deployment">Deployment</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#distributed-tracing">Distributed tracing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#request-response-journaling">Request-response journaling</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#performance-tuning">Performance tuning</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#performance-metrics">Performance metrics</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Chapter-10</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Appendix-III</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Chapter-5</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="build-test-and-deploy">Build, Test and Deploy</h1>
+<p>The first step in writing an application is to create an entry point for your application.</p>
+<h2 id="main-application">Main application</h2>
+<p>A minimalist main application template is shown as follows:</p>
+<pre><code class="language-java">@MainApplication
+public class MainApp implements EntryPoint {
+   public static void main(String[] args) {
+      AutoStart.main(args);
+   }
+   @Override
+   public void start(String[] args) {
+        // your startup logic here
+      log.info(&quot;Started&quot;);
+   }
+}
+</code></pre>
+<p>You must have at least one "main application" module because it is mandatory.</p>
+<blockquote>
+<p><em>Note</em>: Please adjust the parameter "web.component.scan" in application.properties 
+          to point to your user application package(s) in your source code project.</p>
+</blockquote>
+<p>If your application does not require additional startup logic, you may just print a greeting message.</p>
+<p>The <code>AutoStart.main()</code> statement in the "main" method is used when you want to start your application within the IDE.
+You can "right-click" the main method and select "run".</p>
+<p>You can also build and run the application from command line like this:</p>
+<pre><code class="language-shell">cd sandbox/mercury-composable/examples/lambda-example
+mvn clean package
+java -jar target/lambda-example-4.0.16.jar
+</code></pre>
+<p>The lambda-example is a sample application that you can use as a template to write your own code. Please review
+the pom.xml and the source directory structure.</p>
+<p>In the lambda-example project root, you will find the following directories:</p>
+<pre><code class="language-shell">src/main/java
+src/test/java
+</code></pre>
+<p>Since all functions are connected using the in-memory event bus, you can test any function by sending events
+from a unit test.</p>
+<h2 id="writing-your-functions">Writing your functions</h2>
+<p>Please follow the step-by-step learning guide in <a href="../CHAPTER-1/">Chapter-1</a> to write your own functions. You can then
+configure new REST endpoints to use your new functions.</p>
+<p>In <a href="../CHAPTER-2/">Chapter-2</a>, we have discussed the two function execution strategies to optimize your application
+to the full potential of stability, performance and throughput.</p>
+<h2 id="http-forwarding">HTTP forwarding</h2>
+<p>In <a href="../CHAPTER-3/">Chapter-3</a>, we have presented the configuration syntax for the "rest.yaml" REST automation 
+definition file. Please review the sample rest.yaml file in the lambda-example project. You may notice that
+it has an entry for HTTP forwarding. The following entry in the sample rest.yaml file illustrates an HTTP 
+forwarding endpoint. In HTTP forwarding, you can replace the "service" route name with a direct HTTP target host.
+You can do "URL rewrite" to change the URL path to the target endpoint path. In the below example, 
+<code>/api/v1/*</code> will be mapped to <code>/api/*</code> in the target endpoint.</p>
+<pre><code class="language-yaml">  - service: &quot;http://127.0.0.1:${rest.server.port}&quot;
+    trust_all_cert: true
+    methods: ['GET', 'PUT', 'POST']
+    url: &quot;/api/v1/*&quot;
+    url_rewrite: ['/api/v1', '/api']
+    timeout: 20
+    cors: cors_1
+    headers: header_1
+    tracing: true
+</code></pre>
+<h2 id="sending-http-request-event-to-more-than-one-service">Sending HTTP request event to more than one service</h2>
+<p>One feature in REST automation "rest.yaml" configuration is that you can configure more than one function in the
+"service" section. In the following example, there are two function route names ("hello.world" and "hello.copy"). 
+The first one "hello.world" is the primary service provider. The second one "hello.copy" will receive a copy of 
+the incoming event.</p>
+<p>This feature allows you to write new version of a function without disruption to current functionality. Once you are
+happy with the new version of function, you can route the endpoint directly to the new version by updating the
+"rest.yaml" configuration file.</p>
+<pre><code class="language-yaml">  - service: [&quot;hello.world&quot;, &quot;hello.copy&quot;]
+</code></pre>
+<h2 id="writing-your-first-unit-test">Writing your first unit test</h2>
+<p>Please refer to "rpcTest" method in the "HelloWorldTest" class in the lambda-example to get started.</p>
+<p>In unit test, we want to start the main application so that all the functions are ready for tests.</p>
+<p>First, we write a "TestBase" class to use the BeforeClass setup method to start the main application like this:</p>
+<pre><code class="language-java">public class TestBase {
+
+    private static final AtomicInteger seq = new AtomicInteger(0);
+
+    @BeforeClass
+    public static void setup() {
+        if (seq.incrementAndGet() == 1) {
+            AutoStart.main(new String[0]);
+        }
+    }
+}
+</code></pre>
+<p>The atomic integer "seq" is used to ensure the main application entry point is executed only once.</p>
+<p>A typical unit test may look like this:</p>
+<pre><code class="language-java">@SuppressWarnings(&quot;unchecked&quot;)
+@Test
+public void rpcTest() throws InterruptedException, ExecutionException {
+    Utility util = Utility.getInstance();
+    String NAME = &quot;hello&quot;;
+    String ADDRESS = &quot;world&quot;;
+    String TELEPHONE = &quot;123-456-7890&quot;;
+    DemoPoJo pojo = new DemoPoJo(NAME, ADDRESS, TELEPHONE);
+    PostOffice po = new PostOffice(&quot;unit.test&quot;, &quot;12345&quot;, &quot;POST /api/hello/world&quot;);
+    EventEnvelope request = new EventEnvelope().setTo(&quot;hello.world&quot;).setBody(pojo.toMap());
+    EventEnvelope response = po.request(request, 8000).get();
+    assert response != null;
+    assertInstanceOf(Map.class, response.getBody());
+    MultiLevelMap map = new MultiLevelMap((Map&lt;String, Object&gt;) response.getBody());
+    assertEquals(NAME, map.getElement(&quot;body.name&quot;));
+    assertEquals(ADDRESS, map.getElement(&quot;body.address&quot;));
+    assertEquals(TELEPHONE, map.getElement(&quot;body.telephone&quot;));
+    assertEquals(util.date2str(pojo.time), map.getElement(&quot;body.time&quot;));
+}
+</code></pre>
+<p>Note that the PostOffice instance can be created with tracing information in a Unit Test.
+The above example tells the system that the sender is "unit.test", the trace ID is 12345
+and the trace path is "POST /api/hello/world".</p>
+<h2 id="your-second-unit-test">Your second unit test</h2>
+<p>Let's do a unit test for PoJo. In this second unit test, it sends a RPC request to the "hello.pojo" function that
+is designed to return a SamplePoJo object with some mock data.</p>
+<p>Please refer to "pojoRpcTest" method in the "PoJoTest" class in the lambda-example for details.</p>
+<p>The unit test verifies that the "hello.pojo" has correctly returned the SamplePoJo object with the pre-defined 
+mock value.</p>
+<pre><code class="language-java">@Test
+public void pojoRpcTest() throws InterruptedException {
+    Integer ID = 1;
+    String NAME = &quot;Simple PoJo class&quot;;
+    String ADDRESS = &quot;100 World Blvd, Planet Earth&quot;;
+    BlockingQueue&lt;EventEnvelope&gt; bench = new ArrayBlockingQueue&lt;&gt;(1);
+    PostOffice po = new PostOffice(&quot;unit.test&quot;, &quot;20001&quot;, &quot;GET /api/hello/pojo&quot;);
+    EventEnvelope request = new EventEnvelope().setTo(&quot;hello.pojo&quot;).setHeader(&quot;id&quot;, &quot;1&quot;);
+    po.asyncRequest(request, 8000).onSuccess(bench::add);
+    EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+    assert response != null;
+    assertEquals(HashMap.class, response.getBody().getClass());
+    SamplePoJo pojo = response.getBody(SamplePoJo.class);
+    assertEquals(ID, pojo.getId());
+    assertEquals(NAME, pojo.getName());
+    assertEquals(ADDRESS, pojo.getAddress());
+}
+</code></pre>
+<p>Note that you can use the built-in serialization API to restore a PoJo like this:</p>
+<pre><code class="language-java">SamplePoJo pojo = response.getBody(SamplePoJo.class)
+</code></pre>
+<h2 id="convenient-utility-classes">Convenient utility classes</h2>
+<p>The <code>Utility</code> and <code>MultiLevelMap</code> classes are convenient tools for unit tests. In the above example, we use the
+Utility class to convert a date object into a UTC timestamp. It is because date object is serialized as a UTC
+timestamp in an event.</p>
+<p>The <code>MultiLevelMap</code> supports reading an element using the convenient "dot and bracket" format.</p>
+<p>For example, given a map like this:</p>
+<pre><code class="language-json">{
+  &quot;body&quot;:
+  {
+    &quot;time&quot;: &quot;2023-03-27T18:10:34.234Z&quot;,
+    &quot;hello&quot;: [1, 2, 3],
+    &quot;complex&quot;: [
+      {&quot;key&quot;: &quot;value1&quot;},
+      {&quot;key&quot;: &quot;value2&quot;}
+    ]
+  }
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Example</th>
+<th style="text-align: left;">Command</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">map.getElement("body.time")</td>
+<td style="text-align: left;">2023-03-27T18:10:34.234Z</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: left;">map.getElement("body.hello[2]")</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td style="text-align: left;">map.getElement("body.complex[1].key")</td>
+<td style="text-align: left;">value2</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td style="text-align: left;">map.getElement("$.body.complex[*]")</td>
+<td style="text-align: left;">[{key=value1}, {key=value2}]</td>
+</tr>
+</tbody>
+</table>
+<p>The basic retrieval method <code>map.getElement("body.complex")</code> is more efficient
+than JSON-Path of <code>map.getElement("$.body.complex[*]")</code>. Example-4 is for
+illustration purpose only. You should use JSON-Path syntax for more sophisticated
+search only when the basic retrieval method does not address your need.</p>
+<h2 id="event-flow-mocking-framework">Event Flow mocking framework</h2>
+<p>We recommend using Event Script to write Composable application for highest level of decoupling.
+Event Script supports sophisticated event choreography by configuration.</p>
+<p>In Event Script, you have a event flow configuration and a few Composable functions in an application.
+Composable functions are self-contained with zero dependencies with other composable functions. 
+You can invoke an event flow from an event flow adapter.</p>
+<p>The most common flow adapter is the "HTTP flow adapter" and it is available as a built-in module in
+the event-script-engine module in the system. You can associate many REST endpoints to the HTTP flow
+adapter.</p>
+<p>Since function routes for each composable function is defined in a event flow configuration and the same
+function route may be used for more than one task in the flow, the system provides a mock helper class
+called "EventScriptMock" to let your unit tests to override a task's function routes during test.</p>
+<p>In the following unit test example for a "pipeline" test, we created a mock function "my.mock.function"
+to override the "no.op" function that is associated with the first task "echo.one" in a pipeline.</p>
+<p>The original "no.op" function is an echo function. The mocked function increments a counter
+in addition to just echoing the input payload. In this fashion, the unit test can count the number
+of iteration of a pipeline to validate the looping feature of a pipeline.</p>
+<p>The unit test programmatically registers the mock function and then release it from the event loop
+when the test finishes.</p>
+<pre><code class="language-java">    @SuppressWarnings(&quot;unchecked&quot;)
+    @Test
+    void pipelineForLoopTest() throws InterruptedException {
+        Platform platform = Platform.getInstance();
+        // The first task of the flow &quot;for-loop-test&quot; is &quot;echo.one&quot; that is using &quot;no.op&quot;.
+        // We want to override no.op with my.mock.function to demonstrate mocking a function
+        // for a flow.
+        var ECHO_ONE = &quot;echo.one&quot;;
+        var MOCK_FUNCTION = &quot;my.mock.function&quot;;
+        var iteration = new AtomicInteger(0);
+        LambdaFunction f = (headers, body, instance) -&gt; {
+            var n = iteration.incrementAndGet();
+            log.info(&quot;Iteration-{} {}&quot;, n, body);
+            return body;
+        };
+        platform.registerPrivate(MOCK_FUNCTION, f, 1);
+        // override the function for the task &quot;echo.one&quot; to the mock function
+        var mock = new EventScriptMock(&quot;for-loop-test&quot;);
+        var previousRoute = mock.getFunctionRoute(ECHO_ONE);
+        var currentRoute = mock.assignFunctionRoute(ECHO_ONE, MOCK_FUNCTION).getFunctionRoute(ECHO_ONE);
+        assertEquals(&quot;no.op&quot;, previousRoute);
+        assertEquals(MOCK_FUNCTION, currentRoute);
+        final BlockingQueue&lt;EventEnvelope&gt; bench = new ArrayBlockingQueue&lt;&gt;(1);
+        final long TIMEOUT = 8000;
+        String USER = &quot;test-user&quot;;
+        int SEQ = 100;
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod(&quot;GET&quot;).setHeader(&quot;accept&quot;, &quot;application/json&quot;);
+        request.setUrl(&quot;/api/for-loop/&quot;+USER).setQueryParameter(&quot;seq&quot;, SEQ);
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, TIMEOUT).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map&lt;String, Object&gt; result = (Map&lt;String, Object&gt;) res.getBody();
+        assertTrue(result.containsKey(&quot;data&quot;));
+        PoJo pojo = SimpleMapper.getInstance().getMapper().readValue(result.get(&quot;data&quot;), PoJo.class);
+        assertEquals(SEQ, pojo.sequence);
+        assertEquals(USER, pojo.user);
+        assertEquals(3, result.get(&quot;n&quot;));
+        assertEquals(3, iteration.get());
+        platform.release(MOCK_FUNCTION);
+    }
+</code></pre>
+<p>When the event flow finishes, you will see an "end-of-flow" report like this. It shows that the function
+route for the "echo.one" task has been changed to "my.mock.function". This end-of-flow log is useful
+during application development and tests so that the developer knows exactly which function has been
+executed.</p>
+<pre><code class="language-log">Flow for-loop-test (0afcf555fc4141f4a16393422e468dc9) completed. Run 11 tasks in 28 ms. 
+[ sequential.one, 
+  echo.one(my.mock.function), 
+  echo.two(no.op), 
+  echo.three(no.op), 
+  echo.one(my.mock.function), 
+  echo.two(no.op), 
+  echo.three(no.op), 
+  echo.one(my.mock.function), 
+  echo.two(no.op), 
+  echo.three(no.op), 
+  echo.four(no.op) ]
+</code></pre>
+<h2 id="inspecting-the-state-machine-using-eventscriptmock">Inspecting the state machine using EventScriptMock</h2>
+<p>The state machine of a "flow instance" is not accessible directly by a user task. To inspect the state machine
+in a unit test, you can use the <code>setMonitorBeforeTask</code> and <code>setMonitorAfterTask</code> methods. The former tells the
+system to send a copy of the state machine to a composable function after "input data mapping" but before entering
+a task. The latter sends a copy of the state machine to a composable function after a task is completed.</p>
+<p>The following code segment from a unit test illustrates this feature. The function "before.task.monitor" will get
+a copy of the state machine before "my.task" executes. Similarly, the function "after.task.monitor" will obtain
+a copy of the state machine after "my.task" finishes execution.</p>
+<pre><code class="language-java">var platform = Platform.getInstance();
+var mock = new EventScriptMock(&quot;parent-greetings&quot;);
+TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Void&gt; f1 =
+        (headers, input, instance) -&gt; {
+            before.add(input);
+            return null;
+        };
+platform.registerPrivate(&quot;before.task.monitor&quot;, f1, 1);
+TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Void&gt; f2 =
+        (headers, input, instance) -&gt; {
+            after.add(input);
+            return null;
+        };
+platform.registerPrivate(&quot;after.task.monitor&quot;, f2, 1);
+mock.setMonitorBeforeTask(&quot;my.task&quot;, &quot;before.task.monitor&quot;)
+    .setMonitorAfterTask(&quot;my.task&quot;, &quot;after.task.monitor&quot;);
+</code></pre>
+<h2 id="deployment">Deployment</h2>
+<p>The pom.xml is pre-configured to generate an executable JAR. The following is extracted from the pom.xml.</p>
+<p>The main class is <code>AutoStart</code> that will load the "main application" and use it as the entry point to
+run the application.</p>
+<pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+    &lt;configuration&gt;
+        &lt;mainClass&gt;org.platformlambda.core.system.AutoStart&lt;/mainClass&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;id&gt;build-info&lt;/id&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;build-info&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;
+</code></pre>
+<p>Composable application is designed to be deployable using Kubernetes or serverless.</p>
+<p>A sample Dockerfile for an executable JAR may look like this:</p>
+<pre><code class="language-shell">FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu
+EXPOSE 8083
+WORKDIR /app
+COPY target/rest-spring-3-example-4.2.3.jar .
+ENTRYPOINT [&quot;java&quot;,&quot;-jar&quot;,&quot;rest-spring-3-example-4.2.3.jar&quot;]
+</code></pre>
+<h2 id="distributed-tracing">Distributed tracing</h2>
+<p>The system has a built-in distributed tracing feature. You can enable tracing for any REST endpoint by adding
+"tracing=true" in the endpoint definition in the "rest.yaml" configuration file.</p>
+<p>You may also upload performance metrics from the distributed tracing data to your favorite telemetry system dashboard.</p>
+<p>To do that, you can implement a custom metrics function with the route name <code>distributed.trace.forwarder</code>.</p>
+<p>The input to the function will be a HashMap like this:</p>
+<pre><code class="language-shell">trace={path=/api/upload/demo, service=hello.upload, success=true, 
+       origin=2023032731e2a5eeae8f4da09f3d9ac6b55fb0a4, 
+       exec_time=77.462, start=2023-03-27T19:38:30.061Z, 
+       from=http.request, id=12345, round_trip=132.296, status=200}
+</code></pre>
+<p>The system will detect if <code>distributed.trace.forwarder</code> is available. If yes, it will forward performance metrics
+from distributed trace to your custom function.</p>
+<h2 id="request-response-journaling">Request-response journaling</h2>
+<p>Optionally, you may also implement a custom audit function named <code>transaction.journal.recorder</code> to monitor 
+request-response payloads.</p>
+<p>To enable journaling, please add this to the application.properties file.</p>
+<pre><code class="language-properties">journal.yaml=classpath:/journal.yaml
+</code></pre>
+<p>and add the "journal.yaml" configuration file to the project's resources folder with content like this:</p>
+<pre><code class="language-yaml">journal:
+  - &quot;my.test.function&quot;
+  - &quot;another.function&quot;
+</code></pre>
+<p>In the above example, the "my.test.function" and "another.function" will be monitored and their request-response
+payloads will be forwarded to your custom audit function. The input to your audit function will be a HashMap
+containing the performance metrics data and a "journal" section with the request and response payloads in clear form.</p>
+<blockquote>
+<p><em>IMPORTANT</em>: journaling may contain sensitive personally identifiable data and secrets. Please check
+  security compliance before storing them into access restricted audit data store.</p>
+</blockquote>
+<h2 id="performance-tuning">Performance tuning</h2>
+<p>The composable framework is designed for high concurrency using virtual threads and new channel I/O (NIO).</p>
+<p>As a result, it can generate a massive volume of outgoing traffic to your system of records. If not managed properly,
+massive parallelism can actually degrade overall performance because it can become a form of unintended
+"denial of service" attack.</p>
+<p>Composable applications are, by definition, cloud native. You can scale your applications horizontally.</p>
+<p>In addition, composable functions in each application instance can be scaled vertically using Java virtual thread
+technology. Back-pressure is automated so your application usually does not need to do advanced coding to do flow
+control.</p>
+<p>For each composable function, you can define concurrency using the "instances" parameter in the "PreLoad" class
+annotation. Note that if the function makes outgoing calls to an external dependency that is slow, it can consume
+"worker" threads very quickly because the "workers" are waiting for a response from the external dependency.</p>
+<p>Therefore, you should increase the concurrency count to adjust for your performance requirement.</p>
+<p>If you configure parallel processing, especially when using the parallel pipeline method, it can spin up instances
+of composable functions in an "uncontrolled" manner. It would result in making too many parallel requests to an
+external dependency. For external system that runs using legacy technology, it can easily be overwhelmed,
+resulting in performance bottleneck. It can block the calling functions from a composable application and
+thus the outcome can be suboptimal.</p>
+<p>When configuring parallel calls, please consider end-to-end connectivity and potential bottlenecks.</p>
+<p>Since event flow instances are already running in parallel, configuring parallel requests within a single event flow
+would reduce performance. An orderly executed pipeline would be faster than a parallel pipeline that is
+"uncontrolled". On the other hands, fork-n-join uses a predetermined number of parallel tasks and it is easier
+to control parallelism.</p>
+<p>Performance tuning is an art than a science. A holistic view of end-to-end performance and careful configuration
+of parallelism would yield good outcome.</p>
+<h2 id="performance-metrics">Performance metrics</h2>
+<p>The built-in telemetry system offers basic performance metrics that can be visualized with a telemetry dashboard.</p>
+<p>For more advanced performance metrics, you may refer to the "end-of-flow" performance report. It states the
+sequence of task execution and their elapsed time that includes execution time of a function, routing overheads
+and all system overheads. It may look like this when you configure "log.format=json" in application.properties.</p>
+<pre><code class="language-json">{
+  &quot;level&quot;: &quot;INFO&quot;,
+  &quot;time&quot;: &quot;2025-08-27 18:39:25.683&quot;,
+  &quot;source&quot;: &quot;org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)&quot;,
+  &quot;thread&quot;: 336,
+  &quot;message&quot;: {
+    &quot;trace&quot;: {
+      &quot;path&quot;: &quot;GET /api/profile/100&quot;,
+      &quot;service&quot;: &quot;task.executor&quot;,
+      &quot;success&quot;: true,
+      &quot;origin&quot;: &quot;20250828c022812c67294a63871942c568a9e277&quot;,
+      &quot;exec_time&quot;: 7.0,
+      &quot;start&quot;: &quot;2025-08-28T01:39:25.674Z&quot;,
+      &quot;from&quot;: &quot;event.script.manager&quot;,
+      &quot;id&quot;: &quot;9c0934a98dcf4ab1ae4b5b7b389f6d31&quot;,
+      &quot;status&quot;: 200
+    },
+    &quot;annotations&quot;: {
+      &quot;execution&quot;: &quot;Run 2 tasks in 7 ms&quot;,
+      &quot;tasks&quot;: [
+        {
+          &quot;name&quot;: &quot;v1.get.profile&quot;,
+          &quot;spent&quot;: 2.982
+        },
+        {
+          &quot;name&quot;: &quot;v1.decrypt.fields&quot;,
+          &quot;spent&quot;: 1.313
+        }
+      ],
+      &quot;flow&quot;: &quot;get-profile&quot;
+    }
+  }
+}
+</code></pre>
+<p><br/></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Chapter-4</th>
+<th style="text-align: center;">Home</th>
+<th style="text-align: center;">Chapter-6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../CHAPTER-4/">Event Script Syntax</a></td>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+<td style="text-align: center;"><a href="../CHAPTER-6/">Spring Boot</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../CHAPTER-4/" class="btn btn-neutral float-left" title="Chapter-4"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../CHAPTER-6/" class="btn btn-neutral float-right" title="Chapter-6">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../CHAPTER-4/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../CHAPTER-6/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
