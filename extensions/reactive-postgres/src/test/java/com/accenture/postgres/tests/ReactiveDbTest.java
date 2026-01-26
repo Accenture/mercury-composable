@@ -288,8 +288,7 @@ class ReactiveDbTest {
         // The first SQL changes the time to minus-two-minutes and the second one changes it back to minus-one-minute
         var minusTwoMinute = now.getTime() - 120000;
         var anotherTime = new Timestamp(minusTwoMinute);
-        var transaction = sql.transaction(po, List.of(SQL_UPDATE, SQL_UPDATE),
-                List.of(List.of(anotherTime, id), List.of(revisedTimestamp, id)));
+        var transaction = sql.batch(po, SQL_UPDATE, List.of(List.of(anotherTime, id), List.of(revisedTimestamp, id)));
         assertEquals(List.of(1, 1), transaction);
         // Read the updated record to validate the updated timestamp
         // also test list parameter conversion

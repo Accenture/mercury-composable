@@ -26,6 +26,7 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -52,6 +53,12 @@ public class PgRequest {
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> query(PostOffice po, String sql, Object... parameters)
                                                     throws ExecutionException, InterruptedException {
+        if (po == null) {
+            throw new AppException(400, "Missing PostOffice");
+        }
+        if (sql == null) {
+            throw new AppException(400, "Missing SQL statement");
+        }
         var req = new PgQueryStatement(sql);
         req.bindParameters(parameters);
         var result = po.request(new EventEnvelope().setTo(PgService.ROUTE).setBody(req), timeout).get();
@@ -74,6 +81,12 @@ public class PgRequest {
      * @throws InterruptedException in case of error
      */
     public int update(PostOffice po, String sql, Object... parameters) throws ExecutionException, InterruptedException {
+        if (po == null) {
+            throw new AppException(400, "Missing PostOffice");
+        }
+        if (sql == null) {
+            throw new AppException(400, "Missing SQL statement");
+        }
         var req = new PgUpdateStatement(sql);
         req.bindParameters(parameters);
         var result = po.request(new EventEnvelope().setTo(PgService.ROUTE).setBody(req), timeout).get();
@@ -84,6 +97,33 @@ public class PgRequest {
         // in case of database exception
         var status = result.getStatus() == 200? 400 : result.getStatus();
         throw new AppException(status, String.valueOf(result.getBody()));
+    }
+
+    /**
+     * A convenient method to allow execution of the same SQL statement for multiple insert, update or delete
+     *
+     * @param po PostOffice
+     * @param sql SQL statement for multiple execution
+     * @param parameterList, optional list if parameters for each statement.
+     *                       null element to indicate no parameters for the specific statement.
+     * @return list of numbers of row updated for each SQL statement in the list
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
+    public List<Integer> batch(PostOffice po, String sql, List<List<Object>> parameterList)
+            throws ExecutionException, InterruptedException {
+        if (po == null) {
+            throw new AppException(400, "Missing PostOffice");
+        }
+        if (sql == null) {
+            throw new AppException(400, "Missing SQL statement");
+        }
+        var pList = parameterList == null? List.of() : parameterList;
+        var sqlList = new ArrayList<String>();
+        for (int i=0; i < pList.size(); i++) {
+            sqlList.add(sql);
+        }
+        return transaction(po, sqlList, parameterList);
     }
 
     /**
