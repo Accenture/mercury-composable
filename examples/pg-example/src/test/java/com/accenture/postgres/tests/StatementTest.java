@@ -44,8 +44,7 @@ class StatementTest {
         var mapper = SimpleMapper.getInstance().getMapper();
         var query = new PgQueryStatement();
         query.setStatement(sql);
-        query.bindParameters(hello);
-        query.bindParameters(world, address, date);
+        query.bindParameters(hello, world, address, date);
         Map<String, Object> map = mapper.readValue(query, Map.class);
         var restored = mapper.readValue(map, PgQueryStatement.class);
         assertEquals(sql, restored.getStatement());
