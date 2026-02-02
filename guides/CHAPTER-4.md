@@ -755,7 +755,7 @@ If basic retrieval method using the dot-bracket convention does not address your
 JSON-Path retrieval method in the left-hand-side for input/output data mapping.
 
 ```yaml
-- 'jsonpath($.input.body.some.data.*) -> model.data'
+- '$.input.body.some.data.* -> model.data'
 ```
 
 Note that the basic retrieval method is more efficient than the JSON-Path method. Therefore, you
@@ -905,8 +905,10 @@ log additional information.
 | Type             | Keyword          | Comment                                    |
 |:-----------------|:-----------------|:-------------------------------------------|
 | Flow ID          | `model.flow`     | The ID of the event flow config            |
+| Instance ID      | `model.instance` | The ID of the event flow instance          |
 | Trace ID         | `model.trace`    | Optional traceId when tracing is turned on |
 | Correlation ID   | `model.cid`      | Correlation ID of the inbound request      |
+| Time to live     | `model.ttl`      | TTL for a flow instance in milliseconds    |
 
 ### Special handling for header
 

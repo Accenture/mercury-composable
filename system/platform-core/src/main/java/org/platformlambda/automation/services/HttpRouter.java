@@ -598,7 +598,7 @@ public class HttpRouter {
                 }
             }).endHandler(end -> {
                 fileSizes.add(fileLen.get());
-                streamIds.add(stream.getInputStreamId());
+                streamIds.add(stream.getStreamId());
                 stream.close();
             });
         }).endHandler(end -> {
@@ -637,10 +637,10 @@ public class HttpRouter {
                     int size = total.get();
                     req.setContentLength(size);
                     if (size > 0) {
-                        req.setStreamRoute(stream.getInputStreamId())
+                        req.setStreamRoute(stream.getStreamId())
                                 .setHeader(X_TTL, String.valueOf(stream.getPublisher().getTimeToLive()));
-                        stream.close();
                     }
+                    stream.close();
                     sendRequestToService(request, requestEvent.setHttpRequest(req));
                 }
             }).endHandler(end -> complete.set(true));

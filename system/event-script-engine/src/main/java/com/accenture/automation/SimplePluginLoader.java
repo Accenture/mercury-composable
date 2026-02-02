@@ -19,8 +19,8 @@
 package com.accenture.automation;
 
 import com.accenture.models.SimplePlugin;
-import com.accenture.utils.RecursiveClassTypeExaminer;
-import com.accenture.utils.SimplePluginUtils;
+import com.accenture.util.RecursiveClassTypeExaminer;
+import com.accenture.util.SimplePluginUtils;
 import io.github.classgraph.ClassInfo;
 import org.objectweb.asm.*;
 import org.platformlambda.core.annotations.BeforeApplication;

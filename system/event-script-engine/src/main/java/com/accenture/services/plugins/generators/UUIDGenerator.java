@@ -18,7 +18,7 @@
 
 package com.accenture.services.plugins.generators;
 
-import com.accenture.utils.TypeConversionUtils;
+import com.accenture.util.TypeConversionUtils;
 import com.accenture.models.SimplePlugin;
 import com.accenture.models.PluginFunction;
 

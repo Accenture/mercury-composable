@@ -21,21 +21,28 @@ package org.platformlambda.automation.models;
 import org.platformlambda.core.system.EventPublisher;
 
 public class StreamHolder {
-    private final EventPublisher publisher;
+    private EventPublisher publisher;
+    private final long timeout;
 
     public StreamHolder(int timeoutSeconds) {
-        this.publisher = new EventPublisher(timeoutSeconds * 1000L);
+        this.timeout = timeoutSeconds * 1000L;
     }
 
     public EventPublisher getPublisher() {
+        // create stream on-demand to avoid starting a stream with no content
+        if (publisher == null) {
+            this.publisher = new EventPublisher(timeout);
+        }
         return publisher;
     }
 
-    public String getInputStreamId() {
-        return publisher.getStreamId();
+    public String getStreamId() {
+        return getPublisher().getStreamId();
     }
 
     public void close() {
-        publisher.publishCompletion();
+        if (publisher != null) {
+            publisher.publishCompletion();
+        }
     }
 }

@@ -19,7 +19,7 @@
 package com.accenture.services.plugins.arithmetic;
 
 import com.accenture.models.SimplePlugin;
-import com.accenture.utils.SimplePluginUtils;
+import com.accenture.util.SimplePluginUtils;
 import com.accenture.models.PluginFunction;
 
 import java.util.Arrays;

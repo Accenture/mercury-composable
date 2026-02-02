@@ -10,6 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.57, 2/1/2026
+
+### Added
+
+1. DataMappingHelper class added to event-script-engine
+2. added flow metadata 'model.ttl' (flow TTL in milliseconds)
+
+### Removed
+
+1. Adjustment for redundant "body." namespace from parent flow to a subflow is no longer required
+2. The jsonpath() syntax is replaced with native JSON-Path command syntax in left hand side
+   of I/O data mapping
+
+### Changed
+
+1. Refactored CompileFlows and TaskExecutor to use DataMapperHelper
+2. Spring Boot to version 3.5.10
+3. reactor-bom to version 2025.0.2
+4. Junit-bom to version 6.0.2
+
+---
 ## Version 4.3.56, 1/26/2026
 
 ### Added

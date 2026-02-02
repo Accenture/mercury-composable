@@ -19,7 +19,8 @@
 package com.accenture.automation;
 
 import com.accenture.models.*;
-import com.accenture.utils.TypeConversionUtils;
+import com.accenture.util.DataMappingHelper;
+import com.accenture.models.SimpleFileDescriptor;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.*;
@@ -48,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     public static final String SERVICE_NAME = "task.executor";
     private static final Logger log = LoggerFactory.getLogger(TaskExecutor.class);
+    private static final DataMappingHelper helper = DataMappingHelper.getInstance();
     private static final ConcurrentMap<String, TaskReference> taskRefs = new ConcurrentHashMap<>();
     private static final Utility util = Utility.getInstance();
     private static final String DISTRIBUTED_TRACING = "distributed.tracing";
@@ -88,21 +90,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String INPUT_HEADER_NAMESPACE = "input.header.";
     private static final String HEADER_NAMESPACE = "header.";
     private static final String SIMPLE_PLUGIN_PREFIX = "f:";
-    private static final String JSON_PATH_TYPE = "jsonpath($";
-    private static final String TEXT_TYPE = "text(";
-    private static final String INTEGER_TYPE = "int(";
-    private static final String LONG_TYPE = "long(";
-    private static final String FLOAT_TYPE = "float(";
-    private static final String DOUBLE_TYPE = "double(";
-    private static final String BOOLEAN_TYPE = "boolean(";
-    private static final String CLASSPATH_TYPE = "classpath(";
+    private static final String DOLLAR_TYPE = "$";
     private static final String FILE_TYPE = "file(";
-    private static final String MAP_TYPE = "map(";
-    private static final String CLOSE_BRACKET = ")";
-    private static final String TEXT_FILE = "text:";
-    private static final String JSON_FILE = "json:";
-    private static final String BINARY_FILE = "binary:";
-    private static final String APPEND_MODE = "append:";
     private static final String MAP_TO = "->";
     private static final String ALL = "*";
     private static final String END = "end";
@@ -123,40 +112,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String BREAK = "break";
     private static final String INCREMENT = "++";
     private static final String DECREMENT = "--";
-    private static final String TEXT_SUFFIX = "text";
-    private static final String BINARY_SUFFIX = "binary";
-    private static final String B64_SUFFIX = "b64";
-    private static final String INTEGER_SUFFIX = "int";
-    private static final String LONG_SUFFIX = "long";
-    private static final String FLOAT_SUFFIX = "float";
-    private static final String DOUBLE_SUFFIX = "double";
     private static final String BOOLEAN_SUFFIX = "boolean";
     private static final String UUID_SUFFIX = "uuid";
     private static final String ITEM_SUFFIX = ".ITEM";
     private static final String INDEX_SUFFIX = ".INDEX";
-    private static final String LENGTH_SUFFIX = "length";
-    private static final String NEGATE_SUFFIX = "!";
-    private static final String SUBSTRING_TYPE = "substring(";
-    private static final String CONCAT_TYPE = "concat(";
-    private static final String AND_TYPE = "and(";
-    private static final String OR_TYPE = "or(";
     private final int maxModelArraySize;
-
-    private enum OPERATION {
-        SIMPLE_COMMAND,
-        SUBSTRING_COMMAND,
-        CONCAT_COMMAND,
-        AND_COMMAND,
-        OR_COMMAND,
-        BOOLEAN_COMMAND
-    }
-
-    private enum FILE_MODE {
-        TEXT,
-        BINARY,
-        JSON,
-        APPEND
-    }
 
     public TaskExecutor() {
         AppConfigReader config = AppConfigReader.getInstance();
@@ -522,23 +482,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         md.rhs = substituteDynamicIndex(entry.substring(md.sep+2).trim(), md.consolidated, true);
         final Object value;
         boolean isInput = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT);
-        if (isInput || md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(JSON_PATH_TYPE) ||
+        if (isInput || md.lhs.startsWith(MODEL_NAMESPACE) ||
+                md.lhs.startsWith(DOLLAR_TYPE) ||
                 md.lhs.equals(HEADER) || md.lhs.startsWith(HEADER_NAMESPACE) ||
                 md.lhs.equals(STATUS) || md.lhs.equals(DATA_TYPE) ||
                 md.lhs.equals(RESULT) || md.lhs.startsWith(RESULT_NAMESPACE)) {
-            value = getLhsElement(md.lhs, md.consolidated);
+            value = helper.getLhsElement(md.lhs, md.consolidated);
             if (value == null) {
                 removeModelElement(md.rhs, md.consolidated);
             }
         } else {
-            value = getConstantValue(md.lhs);
+            value = helper.getConstantValue(md.lhs);
         }
         return value;
     }
 
     private void setOutputDataMappingFile(OutputMappingMetadata md, Object value) {
         SimpleFileDescriptor fd = new SimpleFileDescriptor(md.rhs);
-        boolean append = fd.mode == FILE_MODE.APPEND;
+        boolean append = fd.mode == SimpleFileDescriptor.FILE_MODE.APPEND;
         File f = new File(fd.fileName);
         // automatically create parent folder
         boolean fileFound = f.exists();
@@ -1010,12 +971,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         boolean inputLike = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT) ||
                 md.lhs.equals(DATA_TYPE) ||
                 md.lhs.startsWith(MODEL_NAMESPACE) || md.lhs.startsWith(ERROR_NAMESPACE) ||
-                md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX) || md.lhs.startsWith(JSON_PATH_TYPE);
+                md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX) ||
+                md.lhs.startsWith(DOLLAR_TYPE);
         if (md.lhs.startsWith(INPUT_HEADER_NAMESPACE)) {
             md.lhs = md.lhs.toLowerCase();
         }
         final Object value = inputLike?
-                        getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey) : getConstantValue(md.lhs);
+                        getInputDataMappingLhsValue(md, dynamicListIndex, dynamicListKey) : helper.getConstantValue(md.lhs);
         if (md.rhs.startsWith(EXT_NAMESPACE)) {
             callExternalStateMachine(flowInstance, task, md.rhs, value);
         } else if (md.rhs.startsWith(MODEL_NAMESPACE)) {
@@ -1049,7 +1011,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         // Assume left hand side is a constant
         if (md.rhs.startsWith(HEADER_NAMESPACE)) {
             String k = md.rhs.substring(HEADER_NAMESPACE.length());
-            Object v = getConstantValue(md.lhs);
+            Object v = helper.getConstantValue(md.lhs);
             if (!k.isEmpty() && v != null) {
                 md.optionalHeaders.put(k, v.toString());
             }
@@ -1059,7 +1021,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private Object getInputDataMappingLhsValue(InputMappingMetadata md, int dynamicListIndex, String dynamicListKey) {
-        Object value = getLhsElement(md.lhs, md.source);
+        Object value = helper.getLhsElement(md.lhs, md.source);
         // special cases for simple type matching for a non-exist model variable
         if (value == null && md.lhs.startsWith(MODEL_NAMESPACE)) {
             value = getValueFromNonExistModel(md.lhs);
@@ -1172,7 +1134,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (colon != -1) {
             String key = rhs.substring(0, colon);
             String type = rhs.substring(colon+1);
-            Object value = getValueByType(type, null, "?", model);
+            Object value = helper.getValueByType(type, null, "?", model);
             if (value != null) {
                 setRhsElement(value, key, model);
             } else {
@@ -1181,49 +1143,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else {
             model.removeElement(rhs);
         }
-    }
-
-    private Object getLhsElement(String lhs, MultiLevelMap source) {
-        if (lhs.startsWith(JSON_PATH_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-            return source.getElement(lhs.substring(JSON_PATH_TYPE.length()-1,  lhs.length()-1));
-        }
-        int colon = getModelTypeIndex(lhs);
-        String selector = colon == -1? lhs : lhs.substring(0, colon).trim();
-        if (isPluggableFunction(selector)) {
-            return getValueFromSimplePlugin(selector, source);
-        }
-        Object value = source.getElement(selector);
-        if (colon != -1) {
-            String type = lhs.substring(colon+1).trim();
-            return getValueByType(type, value, "LHS '"+lhs+"'", source);
-        }
-        return value;
-    }
-
-    private boolean isPluggableFunction(String selector){
-        return selector != null && selector.startsWith("f:");
-    }
-
-    private Object getValueFromSimplePlugin(String selector, MultiLevelMap source){
-        int prefix = selector.indexOf(SIMPLE_PLUGIN_PREFIX);
-        int startParen = selector.indexOf("(");
-        int endParen = selector.lastIndexOf(")");
-        if (prefix >= 0 && startParen > 0 && endParen > 0) {
-            String pluginName = selector.substring(prefix+2, startParen);
-            String pluginParams = selector.substring(startParen+1, endParen);
-            List<String> params = Utility.getInstance().split(pluginParams, ",");
-            Object[] input = params.stream()
-                                    .map(String::trim)
-                                    .map(source::getElement)
-                                    .toArray();
-            PluginFunction plugin = SimplePluginLoader.getSimplePluginByName(pluginName);
-            if (plugin == null) {
-                log.error("SimplePlugin '{}' not found", pluginName);
-                throw new IllegalArgumentException("Unable to process SimplePlugin: " + selector);
-            }
-            return plugin.calculate(input);
-        }
-        return null;
     }
 
     private Object getDynamicListItem(String dynamicListKey, int dynamicListIndex, MultiLevelMap source) {
@@ -1341,209 +1260,13 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private OPERATION getMappingType(String type) {
-        if (type.startsWith(SUBSTRING_TYPE)) {
-            return OPERATION.SUBSTRING_COMMAND;
-        } else if (type.startsWith(CONCAT_TYPE)) {
-            return OPERATION.CONCAT_COMMAND;
-        } else if (type.startsWith(AND_TYPE)) {
-            return OPERATION.AND_COMMAND;
-        } else if (type.startsWith(OR_TYPE)) {
-            return OPERATION.OR_COMMAND;
-        } else if (type.startsWith(BOOLEAN_TYPE)) {
-            return OPERATION.BOOLEAN_COMMAND;
-        } else {
-            return OPERATION.SIMPLE_COMMAND;
-        }
-    }
-
-    private Object getValueByType(String type, Object value, String path, MultiLevelMap data) {
-        try {
-            var selection = getMappingType(type);
-            if (selection == OPERATION.SIMPLE_COMMAND) {
-                return handleSimpleOperation(type, value);
-            } else {
-                if (type.endsWith(CLOSE_BRACKET)) {
-                    String command = type.substring(type.indexOf('(') + 1, type.length() - 1).trim();
-                    /*
-                     * substring(start, end)]
-                     * substring(start)
-                     * concat(parameter...) where parameters are model variable or text constant
-                     * boolean(value=true)
-                     * boolean(value) is same as boolean(value=true)
-                     * and(model.anotherKey)
-                     * or(model.anotherKey)
-                     */
-                    if (selection == OPERATION.SUBSTRING_COMMAND) {
-                        return getSubstring(value, command);
-                    } else if (selection == OPERATION.CONCAT_COMMAND) {
-                        return getConcatString(value, command, data);
-                    } else if (selection == OPERATION.AND_COMMAND || selection == OPERATION.OR_COMMAND) {
-                        return getLogicalOperation(value, command, data, selection);
-                    } else if (selection == OPERATION.BOOLEAN_COMMAND) {
-                        return TypeConversionUtils.getBooleanValue(value, command);
-                    }
-                } else {
-                    throw new IllegalArgumentException("missing close bracket");
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            log.error("Unable to do {} of {} - {}", type, path, e.getMessage());
-        }
-        return value;
-    }
-
-    private Object handleSimpleOperation(String type, Object value) {
-        switch (type) {
-            case TEXT_SUFFIX -> {
-                return TypeConversionUtils.getTextValue(value);
-            }
-            case BINARY_SUFFIX -> {
-                return TypeConversionUtils.getBinaryValue(value);
-            }
-            case BOOLEAN_SUFFIX -> {
-                return TRUE.equalsIgnoreCase(String.valueOf(value));
-            }
-            case NEGATE_SUFFIX -> {
-                return !(TRUE.equalsIgnoreCase(String.valueOf(value)));
-            }
-            case INTEGER_SUFFIX -> {
-                return util.str2int(String.valueOf(value));
-            }
-            case LONG_SUFFIX -> {
-                return util.str2long(String.valueOf(value));
-            }
-            case FLOAT_SUFFIX -> {
-                return util.str2float(String.valueOf(value));
-            }
-            case DOUBLE_SUFFIX -> {
-                return util.str2double(String.valueOf(value));
-            }
-            case UUID_SUFFIX -> {
-                return util.getUuid4();
-            }
-            case LENGTH_SUFFIX -> {
-                return TypeConversionUtils.getLength(value);
-            }
-            case B64_SUFFIX -> {
-                return TypeConversionUtils.getB64(value);
-            }
-            default -> throw new IllegalArgumentException("matching type must be " +
-                        "substring(start, end), concat, boolean, !, and, or, text, binary, uuid or b64");
-        }
-    }
-
-    private String getSubstring(Object value, String command) {
-        List<String> parts = util.split(command, ", ");
-        if (!parts.isEmpty() && parts.size() < 3) {
-            if (value instanceof String str) {
-                int start = util.str2int(parts.getFirst());
-                int end = parts.size() == 1 ? str.length() : util.str2int(parts.get(1));
-                if (end > start && start >= 0 && end <= str.length()) {
-                    return str.substring(start, end);
-                } else {
-                    throw new IllegalArgumentException("index out of bound");
-                }
-            } else {
-                throw new IllegalArgumentException("value is not a string");
-            }
-        } else {
-            throw new IllegalArgumentException("invalid syntax");
-        }
-    }
-
-    private String getConcatString(Object value, String command, MultiLevelMap data) {
-        List<String> parts = tokenizeConcatParameters(command);
-        if (parts.isEmpty()) {
-            throw new IllegalArgumentException("parameters must be model variables and/or text constants");
-        } else {
-            StringBuilder sb = new StringBuilder();
-            var str = String.valueOf(value);
-            sb.append(str);
-            for (String p: parts) {
-                if (p.startsWith(TEXT_TYPE)) {
-                    sb.append(p, TEXT_TYPE.length(), p.length()-1);
-                }
-                if (p.startsWith(MODEL_NAMESPACE)) {
-                    var v = String.valueOf(data.getElement(p));
-                    sb.append(v);
-                }
-            }
-            return sb.toString();
-        }
-    }
-
-    private boolean getLogicalOperation(Object value, String command, MultiLevelMap data, OPERATION selection) {
-        if (command.startsWith(MODEL_NAMESPACE) && command.length() > MODEL_NAMESPACE.length()) {
-            boolean v1 = TRUE.equals(String.valueOf(value));
-            boolean v2 = TRUE.equals(String.valueOf(data.getElement(command)));
-            return selection == OPERATION.AND_COMMAND ? v1 && v2 : v1 || v2;
-        } else {
-            throw new IllegalArgumentException("'" + command + "' is not a model variable");
-        }
-    }
-
-    private List<String> tokenizeConcatParameters(String text) {
-        List<String> result = new ArrayList<>();
-        var md = new CommandHolder(text.trim());
-        while (!md.command.isEmpty()) {
-            if (md.command.startsWith(MODEL_NAMESPACE)) {
-                var o = getConcatParamModel(result, md);
-                if (o.isPresent()) {
-                    return o.get();
-                }
-            } else if (md.command.startsWith(TEXT_TYPE)) {
-                var o = getConcatParamText(result, md);
-                if (o.isPresent()) {
-                    return o.get();
-                }
-            } else {
-                return Collections.emptyList();
-            }
-        }
-        return result;
-    }
-
-    private Optional<List<String>> getConcatParamText(List<String> result, CommandHolder md) {
-        int close = md.command.indexOf(CLOSE_BRACKET);
-        if (close == 1) {
-            return Optional.of(Collections.emptyList());
-        } else {
-            result.add(md.command.substring(0, close+1));
-            int sep = md.command.indexOf(',', close);
-            if (sep == -1) {
-                return Optional.of(result);
-            } else {
-                md.command = md.command.substring(sep+1).trim();
-                return Optional.empty();
-            }
-        }
-    }
-
-    private Optional<List<String>> getConcatParamModel(List<String> result, CommandHolder md) {
-        int sep = md.command.indexOf(',');
-        if (sep == -1) {
-            result.add(md.command);
-            return Optional.of(result);
-        } else {
-            var token = md.command.substring(0, sep).trim();
-            if (token.equals(MODEL_NAMESPACE)) {
-                return Optional.of(Collections.emptyList());
-            } else {
-                result.add(token);
-                md.command = md.command.substring(sep + 1).trim();
-                return Optional.empty();
-            }
-        }
-    }
-
     @SuppressWarnings("unchecked")
     private void setRhsElement(Object value, String rhs, MultiLevelMap target) {
         int colon = getModelTypeIndex(rhs);
         String selector = colon == -1? rhs : rhs.substring(0, colon).trim();
         if (colon != -1) {
             String type = rhs.substring(colon+1).trim();
-            Object matched = getValueByType(type, value, "RHS '"+rhs+"'", target);
+            Object matched = helper.getValueByType(type, value, "RHS '"+rhs+"'", target);
             target.setElement(selector, matched);
         } else {
             if (selector.startsWith(MODEL_NAMESPACE)) {
@@ -1560,139 +1283,12 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private Object getConstantValue(String lhs) {
-        int last = lhs.lastIndexOf(CLOSE_BRACKET);
-        if (last > 0) {
-            if (lhs.startsWith(TEXT_TYPE)) {
-                return lhs.substring(TEXT_TYPE.length(), last);
-            } else if (lhs.startsWith(INTEGER_TYPE)) {
-                return util.str2int(lhs.substring(INTEGER_TYPE.length(), last).trim());
-            } else if (lhs.startsWith(LONG_TYPE)) {
-                return util.str2long(lhs.substring(LONG_TYPE.length(), last).trim());
-            } else if (lhs.startsWith(FLOAT_TYPE)) {
-                return util.str2float(lhs.substring(FLOAT_TYPE.length(), last).trim());
-            } else if (lhs.startsWith(DOUBLE_TYPE)) {
-                return util.str2double(lhs.substring(DOUBLE_TYPE.length(), last).trim());
-            } else if (lhs.startsWith(BOOLEAN_TYPE)) {
-                return TRUE.equalsIgnoreCase(lhs.substring(BOOLEAN_TYPE.length(), last).trim());
-            } else if (lhs.startsWith(MAP_TYPE)) {
-                return getConstantMapValue(lhs, last);
-            } else if (lhs.startsWith(FILE_TYPE)) {
-                return getConstantFileValue(lhs);
-            } else if (lhs.startsWith(CLASSPATH_TYPE)) {
-                return getConstantClassPathValue(lhs);
-            }
-        }
-        return null;
-    }
-
-    private Object getConstantFileValue(String lhs) {
-        SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
-        File f = new File(fd.fileName);
-        if (f.exists() && !f.isDirectory() && f.canRead()) {
-            if (fd.mode == FILE_MODE.TEXT) {
-                return util.file2str(f);
-            } else if (fd.mode == FILE_MODE.JSON) {
-                return getJsonFileContent(lhs, util.file2str(f));
-            } else {
-                return util.file2bytes(f);
-            }
-        } else {
-            return null;
-        }
-    }
-
-    private Object getJsonFileContent(String lhs, String content) {
-        var mapper = SimpleMapper.getInstance().getMapper();
-        try {
-            String json = content.trim();
-            if (json.startsWith("[") && json.endsWith("]")) {
-                return mapper.readValue(json, List.class);
-            }
-            if (json.startsWith("{") && json.endsWith("}")) {
-                return mapper.readValue(json, Map.class);
-            }
-        } catch (Exception e) {
-            log.warn("Unable to decode JSON file {} - {}", lhs, e.getMessage());
-        }
-        return content;
-    }
-
-    private Object getConstantClassPathValue(String lhs) {
-        SimpleFileDescriptor fd = new SimpleFileDescriptor(lhs);
-        InputStream in = this.getClass().getResourceAsStream(fd.fileName);
-        if (in != null) {
-            if (fd.mode == FILE_MODE.TEXT) {
-                return util.stream2str(in);
-            } else if (fd.mode == FILE_MODE.JSON) {
-                return getJsonFileContent(lhs, util.stream2str(in));
-            } else {
-                return util.stream2bytes(in);
-            }
-        } else {
-            return null;
-        }
-    }
-
-    private Object getConstantMapValue(String lhs, int last) {
-        String ref = lhs.substring(MAP_TYPE.length(), last).trim();
-        if (ref.contains("=") || ref.contains(",")) {
-            List<String> keyValues = util.split(ref, ",");
-            Map<String, Object> map = new HashMap<>();
-            for (String kv: keyValues) {
-                int eq = kv.indexOf('=');
-                String k = eq == -1? kv.trim() : kv.substring(0, eq).trim();
-                String v = eq == -1? "" : kv.substring(eq+1).trim();
-                if (!k.isEmpty()) {
-                    map.put(k, v);
-                }
-            }
-            return map;
-        } else {
-            return AppConfigReader.getInstance().get(ref);
-        }
-    }
-
     private void setConstantValue(String lhs, String rhs, MultiLevelMap target) {
-        Object value = getConstantValue(lhs);
+        Object value = helper.getConstantValue(lhs);
         if (value != null) {
             setRhsElement(value, rhs, target);
         } else {
             removeModelElement(rhs, target);
-        }
-    }
-
-    private static class SimpleFileDescriptor {
-        private final String fileName;
-        private final FILE_MODE mode;
-
-        public SimpleFileDescriptor(String value) {
-            int last = value.lastIndexOf(CLOSE_BRACKET);
-            int offset = 0;
-            if (value.startsWith(FILE_TYPE)) {
-                offset = FILE_TYPE.length();
-            } else if (value.startsWith(CLASSPATH_TYPE)) {
-                offset = CLASSPATH_TYPE.length();
-            }
-            final String name;
-            final String filePath = value.substring(offset, last).trim();
-            if (filePath.startsWith(TEXT_FILE)) {
-                name = filePath.substring(TEXT_FILE.length());
-                mode = FILE_MODE.TEXT;
-            } else if (filePath.startsWith(JSON_FILE)) {
-                name = filePath.substring(JSON_FILE.length());
-                mode = FILE_MODE.JSON;
-            } else if (filePath.startsWith(BINARY_FILE)) {
-                name = filePath.substring(BINARY_FILE.length());
-                mode = FILE_MODE.BINARY;
-            } else if (filePath.startsWith(APPEND_MODE)) {
-                name = filePath.substring(APPEND_MODE.length());
-                mode = FILE_MODE.APPEND;
-            } else {
-                name = filePath;
-                mode = FILE_MODE.BINARY;
-            }
-            fileName = name.startsWith("/")? name : "/".concat(name);
         }
     }
 
@@ -1718,14 +1314,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
         InputMappingMetadata(Map<String, Object> combined) {
             this.source = new MultiLevelMap(combined);
-        }
-    }
-
-    private static class CommandHolder {
-        String command;
-
-        CommandHolder(String command) {
-            this.command = command;
         }
     }
 }

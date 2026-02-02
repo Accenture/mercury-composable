@@ -16,7 +16,7 @@
 
  */
 
-package com.accenture.utils;
+package com.accenture.util;
 
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;

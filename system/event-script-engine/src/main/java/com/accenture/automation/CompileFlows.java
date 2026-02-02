@@ -21,6 +21,7 @@ package com.accenture.automation;
 import com.accenture.models.Flow;
 import com.accenture.models.Flows;
 import com.accenture.models.Task;
+import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.AppStarter;
@@ -31,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * This is reserved for system use.
@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 @BeforeApplication(sequence=5)
 public class CompileFlows implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(CompileFlows.class);
+    private static final DataMappingHelper helper = DataMappingHelper.getInstance();
     private static final String INPUT = "input";
     private static final String PROCESS = "process";
     private static final String NAME = "name";
@@ -54,41 +55,18 @@ public class CompileFlows implements EntryPoint {
     private static final String DESCRIPTION = "description";
     private static final String EXECUTION = "execution";
     private static final String SOURCE = "source";
-    private static final String DATA_TYPE = "datatype";
-    private static final String RESULT = "result";
-    private static final String STATUS = "status";
     private static final String DECISION = "decision";
     private static final String DELAY = "delay";
     private static final String EXCEPTION = "exception";
     private static final String LOOP = "loop";
     private static final String FLOW_PROTOCOL = "flow://";
     private static final String INPUT_NAMESPACE = "input.";
-    private static final String OUTPUT_NAMESPACE = "output.";
-    private static final String BODY = "body";
-    private static final String BODY_PREFIX = "body.";
-    private static final String MODEL = "model";
-    private static final String PARENT = "parent";
-    private static final String ROOT = "root";
     private static final String MODEL_PARENT = "model.parent.";
     private static final String MODEL_ROOT = "model.root.";
     private static final String MODEL_NAMESPACE = "model.";
     private static final String NEGATE_MODEL = "!model.";
-    private static final String RESULT_NAMESPACE = "result.";
-    private static final String HEADER_NAMESPACE = "header.";
-    private static final String HEADER = "header";
-    private static final String ERROR_NAMESPACE = "error.";
     private static final String EXT_NAMESPACE = "ext:";
-    private static final String JSON_PATH_TYPE = "jsonpath($";
     private static final String TEXT_TYPE = "text(";
-    private static final String INTEGER_TYPE = "int(";
-    private static final String LONG_TYPE = "long(";
-    private static final String FLOAT_TYPE = "float(";
-    private static final String DOUBLE_TYPE = "double(";
-    private static final String BOOLEAN_TYPE = "boolean(";
-    private static final String CLASSPATH_TYPE = "classpath(";
-    private static final String FILE_TYPE = "file(";
-    private static final String MAP_TYPE = "map(";
-    private static final String CLOSE_BRACKET = ")";
     private static final String MAP_TO = "->";
     private static final String SPACED_MAP_TO = " -> ";
     private static final String TASKS = "tasks";
@@ -112,8 +90,6 @@ public class CompileFlows implements EntryPoint {
     private static final String INVALID_TASK = "invalid task";
     private static final String[] EXECUTION_TYPES = {DECISION, RESPONSE, END,
                                                      SEQUENTIAL, PARALLEL, PIPELINE, FORK, SINK};
-    private static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<pluginName>.+)\\(.*\\)";
-    static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
     /**
      * This main class is only used when testing the app from the IDE.
      *
@@ -254,10 +230,9 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean validInputMapping(String name, List<String> inputList, Task task, FlowConfigMetadata md) {
-        List<String> filteredInputMapping = filterDataMapping(inputList,
-                task.getFunctionRoute().startsWith(FLOW_PROTOCOL));
+        List<String> filteredInputMapping = filterDataMapping(inputList);
         for (String line : filteredInputMapping) {
-            if (validInput(line)) {
+            if (helper.validInput(line)) {
                 int sep = line.lastIndexOf(MAP_TO);
                 String rhs = line.substring(sep + 2).trim();
                 if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
@@ -279,9 +254,9 @@ public class CompileFlows implements EntryPoint {
 
     private boolean validOutputMapping(String name, List<String> outputList, Task task, FlowConfigMetadata md) {
         boolean isDecisionTask = DECISION.equals(md.execution);
-        List<String> filteredOutputMapping = filterDataMapping(outputList, false);
+        List<String> filteredOutputMapping = filterDataMapping(outputList);
         for (String line : filteredOutputMapping) {
-            if (validOutput(line, isDecisionTask)) {
+            if (helper.validOutput(line, isDecisionTask)) {
                 task.output.add(line);
                 if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
                     task.enableOutputParentRef();
@@ -690,25 +665,25 @@ public class CompileFlows implements EntryPoint {
         return found;
     }
 
-    private List<String> filterDataMapping(List<String> entries, boolean isSubFlowInput) {
+    private List<String> filterDataMapping(List<String> entries) {
         List<String> result = new ArrayList<>();
         for (String line: entries) {
             var entry = line.trim();
             if (entry.startsWith(TEXT_TYPE)) {
                 // text constant supports 2-part mapping format only because text constant can include any characters
-                result.add(filterMapping(isSubFlowInput? removeRedundantBodyPrefix(entry) : entry));
+                result.add(filterMapping(entry));
             } else {
-                filterParts(entry, result, isSubFlowInput);
+                filterParts(entry, result);
             }
         }
         return result;
     }
 
-    private void filterParts(String entry, List<String> result, boolean isSubFlowInput) {
+    private void filterParts(String entry, List<String> result) {
         List<String> parts = getParts(entry);
         if (parts.size() == 2) {
             var twoParts = parts.getFirst() + SPACED_MAP_TO + parts.get(1);
-            result.add(filterMapping(isSubFlowInput? removeRedundantBodyPrefix(twoParts) : twoParts));
+            result.add(filterMapping(twoParts));
         } else if (parts.size() == 3) {
             handleThreePartMapping(parts, result);
         } else {
@@ -727,24 +702,6 @@ public class CompileFlows implements EntryPoint {
         }
         parts.add(entry);
         return parts;
-    }
-
-    private String removeRedundantBodyPrefix(String entry) {
-        int sep = entry.indexOf(MAP_TO);
-        if (sep > 0) {
-            var lhs = entry.substring(0, sep).trim();
-            var rhs = entry.substring(sep + 2).trim();
-            if (rhs.equals(BODY)) {
-                var result = lhs + " -> *";
-                log.warn("Deprecated 'body' syntax - mapping adjusted to '{}'", result);
-                return result;
-            } else if (rhs.startsWith(BODY_PREFIX)) {
-                var result = lhs + SPACED_MAP_TO + rhs.substring(BODY_PREFIX.length());
-                log.warn("Deprecated 'body.' namespace - mapping adjusted to '{}'", result);
-                return result;
-            }
-        }
-        return entry;
     }
 
     private void handleThreePartMapping(List<String> parts, List<String> result) {
@@ -799,128 +756,6 @@ public class CompileFlows implements EntryPoint {
     private String trimTypeQualifier(String lhs) {
         var step1 = lhs.startsWith("!")? lhs.substring(1) : lhs;
         return step1.contains(":")? step1.substring(0, step1.indexOf(':')) : step1;
-    }
-
-    private boolean validInput(String input) {
-        int sep = input.lastIndexOf(MAP_TO);
-        if (sep > 0) {
-            String lhs = input.substring(0, sep).trim();
-            String rhs = input.substring(sep+2).trim();
-            if (isPluggableFunction(rhs)) {
-                return false;
-            } else if (isPluggableFunction(lhs)) {
-                return isValidPluggableFunction(lhs);
-            } else if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
-                return validInputLhs(lhs);
-            }
-        }
-        return false;
-    }
-
-    private boolean validInputLhs(String lhs) {
-        if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
-                lhs.startsWith(MODEL_NAMESPACE) || lhs.startsWith(ERROR_NAMESPACE)) {
-            return true;
-        } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-            return validKeyValues(lhs);
-        } else {
-            return (lhs.startsWith(TEXT_TYPE) || lhs.startsWith(JSON_PATH_TYPE) ||
-                    lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
-                    lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
-                    lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
-                    lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
-        }
-    }
-
-    private boolean isValidPluggableFunction(String lhs){
-        var matcher = PLUGGABLE_FUNCTION_PATTERN.matcher(lhs);
-        if (!matcher.find()) {
-            return false;
-        }
-        String pluginName = matcher.group("pluginName");
-        return SimplePluginLoader.containsSimplePlugin(pluginName);
-    }
-
-    private boolean isPluggableFunction(String lhs){
-        return lhs.matches(PLUGGABLE_FUNCTION_REGEX); // Should match f:func(...args), where args is optional
-    }
-
-    private boolean validModel(String key) {
-        Utility util = Utility.getInstance();
-        List<String> parts = util.split(key, "!: ()");
-        if (parts.isEmpty()) {
-            return false;
-        } else {
-            // "model" alone to access the whole model dataset is not allowed
-            if (MODEL.equals(parts.getFirst())) {
-                return false;
-            }
-            // Both model.parent and model.root point to the same root state machine.
-            // Accessing the whole parent namespace is not allowed.
-            if (parts.getFirst().startsWith(MODEL_NAMESPACE)) {
-                List<String> segments = util.split(parts.getFirst(), ".");
-                return segments.size() != 1 && (segments.size() != 2 ||
-                        (!PARENT.equals(segments.get(1)) && !ROOT.equals(segments.get(1))));
-            }
-            return true;
-        }
-    }
-
-    private boolean validKeyValues(String text) {
-        int last = text.lastIndexOf(CLOSE_BRACKET);
-        String ref = text.substring(MAP_TYPE.length(), last).trim();
-        if (ref.contains("=") || ref.contains(",")) {
-            List<String> keyValues = Utility.getInstance().split(ref, ",");
-            Set<String> keys = new HashSet<>();
-            for (String kv: keyValues) {
-                int eq = kv.indexOf('=');
-                String k = eq == -1? kv.trim() : kv.substring(0, eq).trim();
-                if (k.isEmpty()) {
-                    return false;
-                } else {
-                    keys.add(k);
-                }
-            }
-            return keys.size() == keyValues.size();
-        } else {
-            return !ref.isEmpty();
-        }
-    }
-
-    private boolean validOutput(String output, boolean isDecision) {
-        int sep = output.lastIndexOf(MAP_TO);
-        if (sep > 0) {
-            String lhs = output.substring(0, sep).trim();
-            String rhs = output.substring(sep+2).trim();
-            if (validModel(lhs) && validModel(rhs) && !lhs.equals(rhs)) {
-                return validOutputLhs(lhs) && validOutputRhs(rhs, isDecision);
-            }
-        }
-        return false;
-    }
-
-    private boolean validOutputLhs(String lhs) {
-        if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
-                lhs.startsWith(MODEL_NAMESPACE) || lhs.equals(DATA_TYPE) ||
-                lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE) ||
-                lhs.equals(STATUS) ||
-                lhs.equals(HEADER) || lhs.startsWith(HEADER_NAMESPACE)) {
-            return true;
-        } else if (lhs.startsWith(MAP_TYPE) && lhs.endsWith(CLOSE_BRACKET)) {
-            return validKeyValues(lhs);
-        } else {
-            return (lhs.startsWith(TEXT_TYPE) || lhs.startsWith(JSON_PATH_TYPE) ||
-                    lhs.startsWith(FILE_TYPE) || lhs.startsWith(CLASSPATH_TYPE) ||
-                    lhs.startsWith(INTEGER_TYPE) || lhs.startsWith(LONG_TYPE) ||
-                    lhs.startsWith(FLOAT_TYPE) || lhs.startsWith(DOUBLE_TYPE) ||
-                    lhs.startsWith(BOOLEAN_TYPE)) && lhs.endsWith(CLOSE_BRACKET);
-        }
-    }
-
-    private boolean validOutputRhs(String rhs, boolean isDecision) {
-        return (rhs.equals(DECISION) && isDecision) || rhs.startsWith(FILE_TYPE) ||
-                rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE) ||
-                rhs.startsWith(EXT_NAMESPACE);
     }
 
     private static class FlowConfigMetadata {

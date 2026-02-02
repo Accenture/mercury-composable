@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>kotlin-example</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.56</version>
+    <version>4.3.57</version>
     <name>Composable example written in Kotlin</name>
 
     <parent>
@@ -38,7 +38,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.1</version>
+                <version>2025.0.2</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -49,13 +49,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.3.56</version>
+            <version>4.3.57</version>
         </dependency>
 
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
-            <version>6.0.1</version>
+            <version>6.0.2</version>
             <type>pom</type>
             <scope>test</scope>
         </dependency>

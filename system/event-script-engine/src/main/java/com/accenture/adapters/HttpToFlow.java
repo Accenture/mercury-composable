@@ -29,8 +29,7 @@ import org.platformlambda.core.system.PostOffice;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.accenture.utils.EventScriptConstants.ENV_INSTANCES_PREFIX;
-
+import static org.platformlambda.core.util.common.PlatformConstants.ENV_INSTANCES_PREFIX;
 
 /**
  * This is reserved for system use.

@@ -40,6 +40,7 @@ public class FlowInstance {
     private static final String TIMEOUT = "timeout";
     private static final String INSTANCE = "instance";
     private static final String CID_TAG = "cid";
+    private static final String TTL_TAG = "ttl";
     private static final String TRACE = "trace";
     private static final String PARENT = "parent";
     private static final String ROOT = "root";
@@ -83,6 +84,7 @@ public class FlowInstance {
         ConcurrentMap<String, Object> model = new ConcurrentHashMap<>();
         model.put(INSTANCE, id);
         model.put(CID_TAG, cid);
+        model.put(TTL_TAG, template.ttl);
         model.put(FLOW, flowId);
         // "parent" and "root" are aliases to the shared state machine in the root
         if (parentId == null) {
