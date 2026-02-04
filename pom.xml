@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.57</version>
+    <version>4.3.58</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -16,9 +16,9 @@
         <module>system/event-script-engine</module>
         <module>system/mini-scheduler</module>
         
-        <!-- Reactive R2DBC reference library -->
+        <!-- Extensions -->
+        <module>extensions/data-dictionary-query</module>
         <module>extensions/reactive-postgres</module>
-        <!-- JSON-Path playground -->
         <module>extensions/json-path-playground</module>
 
         <!-- Core cloud libraries -->
@@ -38,6 +38,7 @@
         <module>examples/composable-example</module>
         <module>examples/kotlin-example</module>
         <module>examples/scheduler-example</module>
+        <module>examples/data-dictionary-query-example</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>

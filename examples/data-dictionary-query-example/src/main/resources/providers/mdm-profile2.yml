@@ -1,0 +1,22 @@
+#
+# Master data management (MDM)
+#
+# input data mapping is protocol skill dependent.
+#
+# For HTTP target,
+# 1. you can map an input parameter to a key-value in the HTTP request body
+# 2. use "query." to map to a query parameter
+# 3. use "path_parameter." to map to a path parameter
+# 4. use "header." to map to a HTTP header
+#
+provider:
+  protocol: 'mdm'
+  service: 'profile2'
+  url: 'http://127.0.0.1:${rest.server.port}/api/mdm/profile/{id}'
+  method: 'GET'
+  skills:
+    - 'oauth2-bearer'
+  headers:
+    - 'accept: application/json'
+  input:
+    - 'person_id -> path_parameter.id'

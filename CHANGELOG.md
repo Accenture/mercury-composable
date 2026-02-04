@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.58, 2/3/2026
+
+### Added
+
+Data Dictionary Query Method
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix to obtain version information from META-INF/MANIFEST.MF resource file
+
+---
 ## Version 4.3.57, 2/1/2026
 
 ### Added

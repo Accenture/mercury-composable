@@ -30,15 +30,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.jar.Manifest;
 
 public class Utility {
     private static final Logger log = LoggerFactory.getLogger(Utility.class);
@@ -64,7 +62,7 @@ public class Utility {
     private static final String MESSAGE = "message";
     private static final String BOOT_INF_LIB = "BOOT-INF/lib";
     private static final String META_INF_MAVEN = "META-INF/maven";
-    private static final String META_INF = "META-INF";
+    private static final String META_INF_MANIFEST = "META-INF/MANIFEST.MF";
     private static final String JAR = "jar";
     private static final String PROPERTIES = "properties";
     private static final String APP_VERSION = "info.app.version";
@@ -107,9 +105,11 @@ public class Utility {
         try (ScanResult scan = new ClassGraph().acceptPathsNonRecursive(BOOT_INF_LIB).scan()) {
             ResourceList resources = scan.getResourcesWithExtension(JAR);
             for (Resource r: resources) {
-                String name = r.getPath();
-                name = name.substring(0, name.length() - JAR.length() - 1);
-                list.add(name.contains("/")? name.substring(name.lastIndexOf('/') + 1) : name);
+                try (r) {
+                    String name = r.getPath();
+                    name = name.substring(0, name.length() - JAR.length() - 1);
+                    list.add(name.contains("/") ? name.substring(name.lastIndexOf('/') + 1) : name);
+                }
             }
         }
         return list;
@@ -120,15 +120,17 @@ public class Utility {
         try (ScanResult scan = new ClassGraph().acceptPaths(META_INF_MAVEN).scan()) {
             ResourceList resources = scan.getResourcesWithExtension(PROPERTIES);
             for (Resource r: resources) {
-                String name = r.getPath();
-                if (name.endsWith("/pom.properties")) {
-                    Properties p = new Properties();
-                    p.load(new ByteArrayInputStream(stream2bytes(r.open())));
-                    String groupId = p.getProperty("groupId");
-                    String artifactId = p.getProperty("artifactId");
-                    String version = p.getProperty("version");
-                    if (groupId != null && artifactId != null && version != null) {
-                        list.add(groupId+" / "+artifactId+"-"+version);
+                try (r) {
+                    String name = r.getPath();
+                    if (name.endsWith("/pom.properties")) {
+                        Properties p = new Properties();
+                        p.load(new ByteArrayInputStream(stream2bytes(r.open())));
+                        String groupId = p.getProperty("groupId");
+                        String artifactId = p.getProperty("artifactId");
+                        String version = p.getProperty("version");
+                        if (groupId != null && artifactId != null && version != null) {
+                            list.add(groupId + " / " + artifactId + "-" + version);
+                        }
                     }
                 }
             }
@@ -143,6 +145,10 @@ public class Utility {
             synchronized (SINGLETON) {
                 AppConfigReader reader = AppConfigReader.getInstance();
                 appVersion = reader.getProperty(APP_VERSION, DEFAULT_APP_VERSION);
+                var v = getVersionFromManifest();
+                if (v != null) {
+                    appVersion = v;
+                }
                 List<String> list = new ArrayList<>();
                 List<String> jars = getJarsFromSpringBootPackage();
                 if (jars.isEmpty()) {
@@ -156,12 +162,6 @@ public class Utility {
                     list.addAll(jars);
                 }
                 Collections.sort(list);
-                if (!list.isEmpty()) {
-                    var v = getVersionFromManifest();
-                    if (v != null) {
-                        appVersion = v;
-                    }
-                }
                 libs.addAll(list);
                 if (libs.isEmpty()) {
                     libs.add("Are you running the app from classpath?");
@@ -172,17 +172,17 @@ public class Utility {
     }
 
     private String getVersionFromManifest() {
-        try (ScanResult scan = new ClassGraph().acceptPathsNonRecursive(META_INF).scan()) {
-            ResourceList resources = scan.getResourcesWithExtension(".MF");
-            for (Resource r: resources) {
-                if (r.getPath().equals("META-INF/MANIFEST.MF")) {
-                    Properties p = new Properties();
-                    p.load(new ByteArrayInputStream(stream2bytes(r.open())));
-                    return p.getProperty("Implementation-Version");
+        // Manifest information available from compiled JAR or bundle only
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream(META_INF_MANIFEST)) {
+            if (in != null) {
+                var manifest = new Manifest(in);
+                var version = manifest.getMainAttributes().getValue("Implementation-Version");
+                if (version != null) {
+                    return version;
                 }
             }
         } catch (IOException e) {
-            // ok to ignore
+            log.error("Unable to load MANIFEST.MF", e);
         }
         return null;
     }
@@ -1359,8 +1359,8 @@ public class Utility {
         String text = original;
         while (true) {
             int bracketStart = text.lastIndexOf(begin);
-            int bracketEnd = text.lastIndexOf(end);
-            if (bracketStart != -1 && bracketEnd != -1 && bracketEnd > bracketStart) {
+            int bracketEnd = bracketStart == -1? -1 : text.indexOf(end, bracketStart);
+            if (bracketStart != -1 && bracketEnd != -1) {
                 result.add(new VarSegment(bracketStart, bracketEnd + 1));
                 text = original.substring(0, bracketStart);
             } else if (bracketStart != -1) {

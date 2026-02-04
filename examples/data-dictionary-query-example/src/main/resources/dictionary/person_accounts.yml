@@ -1,0 +1,10 @@
+#
+# Bank account numbers
+#
+dictionary:
+  id: 'person_accounts'
+  target: 'mdm://profile'
+  input:
+    - 'person_id'
+  output:
+    - 'response.accounts'

@@ -1,0 +1,13 @@
+#
+# Profile name
+#
+# output data mapping uses Event Script syntax and the result set is available in "response"
+# i.e. you can use simple data mapping in dot-bracket format or JSON-Path "$" format
+#
+dictionary:
+  id: 'person_name'
+  target: 'mdm://profile'
+  input:
+    - 'person_id'
+  output:
+    - 'response.profile.name'
