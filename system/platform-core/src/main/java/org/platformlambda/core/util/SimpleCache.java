@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This is reserved for system use.
@@ -46,6 +47,7 @@ public class SimpleCache {
     private static final ConcurrentMap<String, SimpleCache> COLLECTION = new ConcurrentHashMap<>();
     private static final AtomicInteger INIT_COUNTER = new AtomicInteger(0);
     private static final AtomicBoolean NOT_RUNNING = new AtomicBoolean(true);
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
     private final String name;
     private final long expiry;
@@ -70,17 +72,22 @@ public class SimpleCache {
      * @param expiryMs timer
      * @return simple cache object
      */
-    public static synchronized SimpleCache createCache(String name, long expiryMs) {
-        SimpleCache simpleCache = getInstance(name);
-        if (simpleCache != null) {
+    public static SimpleCache createCache(String name, long expiryMs) {
+        SAFETY.lock();
+        try {
+            SimpleCache simpleCache = getInstance(name);
+            if (simpleCache != null) {
+                return simpleCache;
+            }
+            long expiryTimer = Math.max(expiryMs, MIN_EXPIRY);
+            simpleCache = new SimpleCache(name, expiryTimer);
+            COLLECTION.put(name, simpleCache);
+            String timer = Utility.getInstance().elapsedTime(expiryTimer);
+            log.info("Created cache ({}), expiry {}", name, timer);
             return simpleCache;
+        } finally {
+            SAFETY.unlock();
         }
-        long expiryTimer = Math.max(expiryMs, MIN_EXPIRY);
-        simpleCache = new SimpleCache(name, expiryTimer);
-        COLLECTION.put(name, simpleCache);
-        String timer = Utility.getInstance().elapsedTime(expiryTimer);
-        log.info("Created cache ({}), expiry {}", name, timer);
-        return simpleCache;
     }
 
     public static SimpleCache getInstance(String name) {

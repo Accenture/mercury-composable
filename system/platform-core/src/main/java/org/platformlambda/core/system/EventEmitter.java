@@ -696,8 +696,9 @@ public class EventEmitter {
     }
 
     private void routeEventSameMemorySpace(EventEnvelope event, TargetRoute target) {
-        EventBus system = Platform.getInstance().getEventSystem();
-        if (Platform.isCloudSelected() && event.getBroadcastLevel() == 1 && !CLOUD_CONNECTOR.equals(event.getTo())) {
+        Platform platform = Platform.getInstance();
+        EventBus system = platform.getEventSystem();
+        if (platform.isCloudSelected() && event.getBroadcastLevel() == 1 && !CLOUD_CONNECTOR.equals(event.getTo())) {
             TargetRoute cloud = getCloudRoute();
             if (cloud != null) {
                 if (cloud.isCloud()) {
@@ -1396,7 +1397,7 @@ public class EventEmitter {
             return true;
         }
         // check if the remote service is reachable
-        if (Platform.isCloudSelected() &&
+        if (platform.isCloudSelected() &&
                 (platform.hasRoute(ServiceDiscovery.SERVICE_QUERY) || platform.hasRoute(CLOUD_CONNECTOR))) {
             if (destination.contains(".")) {
                 ConcurrentMap<String, String> targets = cloudRoutes.get(destination);
@@ -1432,7 +1433,7 @@ public class EventEmitter {
             if (!remoteOnly && platform.hasRoute(actualRoute)) {
                 platform.getVirtualThreadExecutor().submit(() ->
                         promise.complete(Collections.singletonList(platform.getOrigin())));
-            } else if (Platform.isCloudSelected()) {
+            } else if (platform.isCloudSelected()) {
                 searchCloud(promise, actualRoute);
             } else {
                 platform.getVirtualThreadExecutor().submit(() -> promise.complete(Collections.emptyList()));

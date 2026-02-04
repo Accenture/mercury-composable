@@ -36,7 +36,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.jar.Manifest;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Utility {
     private static final Logger log = LoggerFactory.getLogger(Utility.class);
@@ -62,11 +62,8 @@ public class Utility {
     private static final String MESSAGE = "message";
     private static final String BOOT_INF_LIB = "BOOT-INF/lib";
     private static final String META_INF_MAVEN = "META-INF/maven";
-    private static final String META_INF_MANIFEST = "META-INF/MANIFEST.MF";
     private static final String JAR = "jar";
     private static final String PROPERTIES = "properties";
-    private static final String APP_VERSION = "info.app.version";
-    private static final String DEFAULT_APP_VERSION = "1.0.0";
     private static final String[] RESERVED_FILENAMES = {"thumbs.db"};
     private static final String[] RESERVED_EXTENSIONS = {
             ".con", ".prn", ".aux", ".nul", ".com", ".exe",
@@ -86,10 +83,9 @@ public class Utility {
     private static final int ONE_MINUTE = 60;
     private static final int ONE_HOUR = 60 * ONE_MINUTE;
     private static final int ONE_DAY = 24 * ONE_HOUR;
-    private static final Object SINGLETON = new Object[0];
-    private static String appVersion = "unknown";
-    private final List<String> libs = new ArrayList<>();
-    private boolean loaded = false;
+    private static String appVersion;
+    private static final List<String> libs = new ArrayList<>();
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final Utility instance = new Utility();
 
     private Utility() {
@@ -141,24 +137,17 @@ public class Utility {
     }
 
     private void scanLibInfo() {
-        if (!loaded) {
-            synchronized (SINGLETON) {
-                AppConfigReader reader = AppConfigReader.getInstance();
-                appVersion = reader.getProperty(APP_VERSION, DEFAULT_APP_VERSION);
-                var v = getVersionFromManifest();
-                if (v != null) {
-                    appVersion = v;
-                }
+        SAFETY.lock();
+        try {
+            if (libs.isEmpty()) {
                 List<String> list = new ArrayList<>();
                 List<String> jars = getJarsFromSpringBootPackage();
                 if (jars.isEmpty()) {
                     List<String> pom = getMavenProperties();
                     if (!pom.isEmpty()) {
-                        libs.add("--- "+META_INF_MAVEN+" ---");
                         list.addAll(pom);
                     }
                 } else {
-                    libs.add("--- "+BOOT_INF_LIB+" ---");
                     list.addAll(jars);
                 }
                 Collections.sort(list);
@@ -167,28 +156,15 @@ public class Utility {
                     libs.add("Are you running the app from classpath?");
                 }
             }
-            loaded = true;
+        } finally {
+            SAFETY.unlock();
         }
-    }
-
-    private String getVersionFromManifest() {
-        // Manifest information available from compiled JAR or bundle only
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream(META_INF_MANIFEST)) {
-            if (in != null) {
-                var manifest = new Manifest(in);
-                var version = manifest.getMainAttributes().getValue("Implementation-Version");
-                if (version != null) {
-                    return version;
-                }
-            }
-        } catch (IOException e) {
-            log.error("Unable to load MANIFEST.MF", e);
-        }
-        return null;
     }
 
     public String getVersion() {
-        scanLibInfo();
+        if (appVersion == null) {
+            appVersion = ManifestReader.getVersionFromManifest();
+        }
         return appVersion;
     }
 

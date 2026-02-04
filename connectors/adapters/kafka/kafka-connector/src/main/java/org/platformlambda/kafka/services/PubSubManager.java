@@ -40,10 +40,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class PubSubManager implements PubSubProvider {
     private static final Logger log = LoggerFactory.getLogger(PubSubManager.class);
-
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final MsgPack msgPack = new MsgPack();
     private static final String TYPE = "type";
     private static final String PARTITIONS = "partitions";
@@ -57,7 +58,7 @@ public class PubSubManager implements PubSubProvider {
     private long totalEvents = 0;
     private final Properties baseProperties;
     private final String cloudManager;
-    private Map<String, String> preAllocatedTopics;
+    private final Map<String, String> preAllocatedTopics;
     private String producerId = null;
     private KafkaProducer<String, byte[]> producer = null;
 
@@ -231,29 +232,39 @@ public class PubSubManager implements PubSubProvider {
         closeProducer();
     }
 
-    private synchronized void startProducer() {
-        if (producer == null) {
-            // create unique ID from origin ID by dropping date prefix and adding a sequence suffix
-            String id = (Platform.getInstance().getOrigin()+"ps"+(seq.incrementAndGet())).substring(8);
-            Properties properties = getProperties();
-            properties.put(ProducerConfig.CLIENT_ID_CONFIG, id);
-            producer = new KafkaProducer<>(properties);
-            producerId = properties.getProperty(ProducerConfig.CLIENT_ID_CONFIG);
-            log.info("Producer {} ready", properties.getProperty(ProducerConfig.CLIENT_ID_CONFIG));
+    private void startProducer() {
+        SAFETY.lock();
+        try {
+            if (producer == null) {
+                // create unique ID from origin ID by dropping date prefix and adding a sequence suffix
+                String id = (Platform.getInstance().getOrigin() + "ps" + (seq.incrementAndGet())).substring(8);
+                Properties properties = getProperties();
+                properties.put(ProducerConfig.CLIENT_ID_CONFIG, id);
+                producer = new KafkaProducer<>(properties);
+                producerId = properties.getProperty(ProducerConfig.CLIENT_ID_CONFIG);
+                log.info("Producer {} ready", properties.getProperty(ProducerConfig.CLIENT_ID_CONFIG));
+            }
+        } finally {
+            SAFETY.unlock();
         }
     }
 
-    private synchronized void closeProducer() {
-        if (producer != null) {
-            try {
-                producer.close();
-                log.info("Producer {} released, delivered: {}", producerId, totalEvents);
-            } catch (Exception e) {
-                // ok to ignore
+    private void closeProducer() {
+        SAFETY.lock();
+        try {
+            if (producer != null) {
+                try {
+                    producer.close();
+                    log.info("Producer {} released, delivered: {}", producerId, totalEvents);
+                } catch (Exception e) {
+                    // ok to ignore
+                }
+                producer = null;
+                producerId = null;
+                totalEvents = 0;
             }
-            producer = null;
-            producerId = null;
-            totalEvents = 0;
+        } finally {
+            SAFETY.unlock();
         }
     }
 
@@ -262,7 +273,6 @@ public class PubSubManager implements PubSubProvider {
         publish(topic, -1, headers, body);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void publish(String topic, int partition, Map<String, String> headers, Object body) {
         ConnectorConfig.validateTopicName(topic);
@@ -280,40 +290,45 @@ public class PubSubManager implements PubSubProvider {
             for (var entry: eventHeaders.entrySet()) {
                 headerList.add(new RecordHeader(entry.getKey(), util.getUTF(entry.getValue())));
             }
-            final byte[] payload;
-            switch (body) {
-                case byte[] bytes -> {
-                    payload = bytes;
-                    headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.BYTES_DATA)));
-                }
-                case String s -> {
-                    payload = util.getUTF(s);
-                    headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.TEXT_DATA)));
-                }
-                case Map m -> {
-                    try {
-                        payload = msgPack.pack(m);
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-                    headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.MAP_DATA)));
-                }
-                case List data -> {
-                    try {
-                        payload = msgPack.pack(data);
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-                    headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.LIST_DATA)));
-                }
-                case null, default -> {
-                    // other primitive and PoJo are serialized as JSON string
-                    payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(body);
-                    headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.TEXT_DATA)));
-                }
-            }
-            sendEvent(topic, partition, headerList, payload);
+            sendEvent(topic, partition, headerList, constructPayload(headerList, body));
         }
+    }
+
+    private byte[] constructPayload(List<Header> headerList, Object body) {
+        Utility util = Utility.getInstance();
+        final byte[] payload;
+        switch (body) {
+            case byte[] bytes -> {
+                payload = bytes;
+                headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.BYTES_DATA)));
+            }
+            case String s -> {
+                payload = util.getUTF(s);
+                headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.TEXT_DATA)));
+            }
+            case Map<?, ?> m -> {
+                try {
+                    payload = msgPack.pack(m);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(e);
+                }
+                headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.MAP_DATA)));
+            }
+            case List<?> data -> {
+                try {
+                    payload = msgPack.pack(data);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(e);
+                }
+                headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.LIST_DATA)));
+            }
+            case null, default -> {
+                // other primitive and PoJo are serialized as JSON string
+                payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(body);
+                headerList.add(new RecordHeader(EventProducer.DATA_TYPE, util.getUTF(EventProducer.TEXT_DATA)));
+            }
+        }
+        return payload;
     }
 
     @Override
@@ -329,7 +344,7 @@ public class PubSubManager implements PubSubProvider {
             if (parameters.length == 3 && !Utility.getInstance().isNumeric(parameters[2])) {
                 throw new IllegalArgumentException("topic offset must be numeric");
             }
-            if (subscribers.containsKey(topicPartition) || Platform.getInstance().hasRoute(topicPartition)) {
+            if (subscribers.containsKey(topicPartition)) {
                 String tp = (topic + (partition < 0? "" : " partition " + partition)).toLowerCase();
                 throw new IllegalArgumentException(tp+" is already subscribed");
             }

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The Mercury platform provides abstraction of the underlying event stream system
@@ -43,6 +44,7 @@ public class PubSub {
     private static final Logger log = LoggerFactory.getLogger(PubSub.class);
     private static final String SYSTEM = "system";
     private static final ConcurrentMap<String, PubSub> instances = new ConcurrentHashMap<>();
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private final ConcurrentMap<String, SubscriberDetails> currentSubscribers = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SubscriberDetails> suspendedSubscribers = new ConcurrentHashMap<>();
 
@@ -78,15 +80,20 @@ public class PubSub {
      * @param clusterName for referring to an event stream cluster
      * @return PubSub handler instance
      */
-    public static synchronized PubSub getInstance(String clusterName) {
-        if (!instances.containsKey(clusterName)) {
-            PubSub ps = new PubSub();
-            ps.instanceName = clusterName;
-            instances.put(clusterName, ps);
-            log.info("Created new PubSub instance ({})", clusterName);
-            return ps;
-        } else {
-            return instances.get(clusterName);
+    public static PubSub getInstance(String clusterName) {
+        SAFETY.lock();
+        try {
+            if (!instances.containsKey(clusterName)) {
+                PubSub ps = new PubSub();
+                ps.instanceName = clusterName;
+                instances.put(clusterName, ps);
+                log.info("Created new PubSub instance ({})", clusterName);
+                return ps;
+            } else {
+                return instances.get(clusterName);
+            }
+        } finally {
+            SAFETY.unlock();
         }
     }
 
@@ -94,9 +101,14 @@ public class PubSub {
      * Obtain the default pub/sub cluster handler instance ('system')
      * @return PubSub handler instance
      */
-    public static synchronized PubSub getInstance() {
-        // the default instance is 'system'
-        return getInstance(SYSTEM);
+    public static PubSub getInstance() {
+        SAFETY.lock();
+        try {
+            // the default instance is 'system'
+            return getInstance(SYSTEM);
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**

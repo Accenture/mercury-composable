@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Platform {
     private static final Logger log = LoggerFactory.getLogger(Platform.class);
@@ -53,8 +54,6 @@ public class Platform {
     private static final String INVALID_ROUTE = "Invalid route ";
     private static final String RELOADING = "Reloading";
     private static String originId;
-    private static boolean cloudSelected = false;
-    private static boolean cloudServicesStarted = false;
     private static String appId;
     private static Vertx vertx;
     private static EventBus system;
@@ -63,8 +62,11 @@ public class Platform {
     private static SimpleCache cache;
     private final long startTime = System.currentTimeMillis();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
-    private static final Platform INSTANCE = new Platform();
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private String applicationName = null;
+    private boolean cloudSelected = false;
+    private boolean cloudServicesStarted = false;
+    private static final Platform INSTANCE = new Platform();
 
     private Platform() {
         // singleton
@@ -214,20 +216,25 @@ public class Platform {
      * <p>
      *     Call this function only when you want to start cloud services without a cloud connector.
      */
-    public synchronized void startCloudServices() {
-        if (!Platform.cloudServicesStarted) {
-            // guarantee to execute once
-            Platform.cloudServicesStarted = true;
-            AppConfigReader reader = AppConfigReader.getInstance();
-            String cloudServices = reader.getProperty(EventEmitter.CLOUD_SERVICES);
-            if (cloudServices != null) {
-                List<String> serviceList = Utility.getInstance().split(cloudServices, ", ");
-                if (!serviceList.isEmpty()) {
-                    SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-                    List<ClassInfo> services = scanner.getAnnotatedClasses(CloudService.class);
-                    loadCloudServices(serviceList, services);
+    public void startCloudServices() {
+        SAFETY.lock();
+        try {
+            if (!cloudServicesStarted) {
+                // guarantee to execute once
+                cloudServicesStarted = true;
+                AppConfigReader reader = AppConfigReader.getInstance();
+                String cloudServices = reader.getProperty(EventEmitter.CLOUD_SERVICES);
+                if (cloudServices != null) {
+                    List<String> serviceList = Utility.getInstance().split(cloudServices, ", ");
+                    if (!serviceList.isEmpty()) {
+                        SimpleClassScanner scanner = SimpleClassScanner.getInstance();
+                        List<ClassInfo> services = scanner.getAnnotatedClasses(CloudService.class);
+                        loadCloudServices(serviceList, services);
+                    }
                 }
             }
+        } finally {
+            SAFETY.unlock();
         }
     }
 
@@ -251,30 +258,35 @@ public class Platform {
         }
     }
 
-    public static boolean isCloudSelected() {
-        return Platform.cloudSelected;
+    public boolean isCloudSelected() {
+        return cloudSelected;
     }
 
     /**
      * This will connect the app instance to a network event stream system
      * based on the "cloud.connector" parameter in the application.properties
      */
-    public synchronized void connectToCloud() {
-        if (!Platform.cloudSelected) {
-            // guarantee to execute once
-            Platform.cloudSelected = true;
-            AppConfigReader reader = AppConfigReader.getInstance();
-            String name = reader.getProperty(EventEmitter.CLOUD_CONNECTOR, "none");
-            if ("none".equalsIgnoreCase(name)) {
-                // there are no cloud connector. Check if there are cloud services.
-                startCloudServices();
-            } else {
-                SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-                List<ClassInfo> services = scanner.getAnnotatedClasses(CloudConnector.class);
-                if (!startService(name, services, true)) {
-                    log.error("Cloud connector ({}) not found", name);
+    public void connectToCloud() {
+        SAFETY.lock();
+        try {
+            if (!cloudSelected) {
+                // guarantee to execute once
+                cloudSelected = true;
+                AppConfigReader reader = AppConfigReader.getInstance();
+                String name = reader.getProperty(EventEmitter.CLOUD_CONNECTOR, "none");
+                if ("none".equalsIgnoreCase(name)) {
+                    // there are no cloud connector. Check if there are cloud services.
+                    startCloudServices();
+                } else {
+                    SimpleClassScanner scanner = SimpleClassScanner.getInstance();
+                    List<ClassInfo> services = scanner.getAnnotatedClasses(CloudConnector.class);
+                    if (!startService(name, services, true)) {
+                        log.error("Cloud connector ({}) not found", name);
+                    }
                 }
             }
+        } finally {
+            SAFETY.unlock();
         }
     }
 
