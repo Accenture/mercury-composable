@@ -961,13 +961,15 @@ For convenience there is a way to utilize the `*` notation with List, or other t
 considerations when it comes to utilizing something other than `Map<String, Object>` or Pojo.
 
 1. Utilizing a `*` with something other than a Map or Pojo object will cause other input properties to be ignored
-    ```yaml
-     - input:
-        - 'text(Hello) -> model.list[0].user'
-        - 'text(World) -> model.list[1].user'
-        - 'model.list -> *'
-        - 'model.other_var -> other'
-   ```
+
+```yaml
+  - input:
+    - 'text(Hello) -> model.list[0].user'
+    - 'text(World) -> model.list[1].user'
+    - 'model.list -> *'
+    - 'model.other_var -> other'
+```
+
    In the above example `other` will not be passed
 
 2. When attempting to read the input as a `List<T>` in your Lambda function you should type the input appropriately
