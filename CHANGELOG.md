@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.60, 2/5/2026
+
+### Added
+
+1. Worked example in Unit Test to demonstrate "nested questions" in the data-dictionary-query project.
+2. For consistency, enforce data dictionary syntax for output data mapping in
+   the Data Dictionary Query project. Incoming request will be rejected if RHS is not given. 
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.59, 2/4/2026
 
 ### Added

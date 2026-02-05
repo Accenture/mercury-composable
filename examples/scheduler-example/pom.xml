@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>scheduler-example</artifactId>
     <packaging>jar</packaging>
-    <version>4.3.59</version>
+    <version>4.3.60</version>
     <name>Example app for mini-scheduler</name>
 
     <parent>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>mini-scheduler</artifactId>
-            <version>4.3.59</version>
+            <version>4.3.60</version>
         </dependency>
 
         <dependency>

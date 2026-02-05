@@ -7,4 +7,4 @@ dictionary:
   input:
     - 'person_id'
   output:
-    - 'response.accounts'
+    - 'response.accounts -> result.person_accounts'

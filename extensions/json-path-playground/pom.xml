@@ -5,7 +5,7 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>json-path-playground</artifactId>
-    <version>4.3.59</version>
+    <version>4.3.60</version>
     <packaging>jar</packaging>
     <name>JSON-Path Playground</name>
 
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.3.59</version>
+            <version>4.3.60</version>
         </dependency>
 
         <dependency>

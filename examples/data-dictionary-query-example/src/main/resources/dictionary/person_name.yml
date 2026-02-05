@@ -10,4 +10,4 @@ dictionary:
   input:
     - 'person_id'
   output:
-    - 'response.profile.name'
+    - 'response.profile.name -> result.person_name'

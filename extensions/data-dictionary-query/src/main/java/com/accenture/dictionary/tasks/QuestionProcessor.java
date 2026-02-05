@@ -264,14 +264,16 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
 
     private void mapResponse(String itemId, List<String> output, MultiLevelMap dataset, MultiLevelMap mm) {
         var helper = DataMappingHelper.getInstance();
-        for (var k: output) {
-            var entry = k.contains(ARROW)? k : k + ARROW + RESULT_NAMESPACE + itemId;
+        for (var entry: output) {
             var sep = entry.lastIndexOf(ARROW);
+            if (sep == -1) {
+                throw new IllegalArgumentException("Missing RHS of data dictionary output mapping in '" + entry + "'");
+            }
             var lhs = entry.substring(0, sep).trim();
             var rhs = entry.substring(sep+ARROW.length()).trim();
             var value = helper.getLhsElement(lhs, entry.startsWith("$") ||
                         entry.startsWith(RESPONSE_NAMESPACE) || entry.startsWith(RESPONSE_INDEX)? mm : dataset);
-            mapResponseToResult(itemId, rhs, k, dataset, mm, value);
+            mapResponseToResult(itemId, rhs, entry, dataset, mm, value);
         }
     }
 

@@ -1,0 +1,13 @@
+#
+# Accounts
+#
+provider:
+  protocol: 'dd'
+  service: 'demo'
+  url: 'http://127.0.0.1:${rest.server.port}/api/data/get-accounts'
+  method: 'POST'
+  headers:
+    - 'accept: application/json'
+    - 'content-type: application/json'
+  input:
+    - 'person_id -> person_id'

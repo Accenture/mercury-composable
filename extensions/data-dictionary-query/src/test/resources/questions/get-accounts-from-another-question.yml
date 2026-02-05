@@ -1,0 +1,26 @@
+purpose: "Retrieve a person's name and a list of accounts"
+
+#
+# The question section contains one or more questions to be executed orderly
+#
+question:
+  - id: 'another-question'
+    input:
+      - 'input.body.person_id -> person_id'
+    output:
+      - 'person_account_details'
+
+#
+# The concurrency value tells the system to control the number of parallel operation
+# when spinning up requests based on the "for_each" directive.
+# (default is 5 if not given. Min is 1 and max is 30 to avoid overwhelming a target service)
+#
+concurrency: 3
+#
+# Mapping result set to output
+#
+answer:
+  - 'result.id -> output.body.id'
+  - 'result.name -> output.body.name'
+  - 'result.accounts -> output.body.accounts'
+  - 'result.details -> output.body.details'

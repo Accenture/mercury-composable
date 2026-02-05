@@ -143,4 +143,31 @@ class IntegrationTest {
         assertEquals("account", body.get("protocol"));
         assertEquals("details", body.get("service"));
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void callingAnotherQuestion() throws ExecutionException, InterruptedException {
+        var uri = "/api/data/get-accounts-from-another-question";
+        var request = new AsyncHttpRequest();
+        request.setMethod("POST").setTargetHost(host).setUrl(uri);
+        request.setHeader("Accept", "application/json").setHeader("Content-Type", "application/json");
+        request.setBody(Map.of("person_id", 100));
+        var po = PostOffice.trackable("unit.test", "500", "TEST /nested/question");
+        var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request);
+        var response = po.request(event, 8000).get();
+        assertEquals(200, response.getStatus());
+        assertInstanceOf(Map.class, response.getBody());
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        var mm = new MultiLevelMap(body);
+        assertEquals(List.of("a101", "b202", "c303", "d400", "e500"), mm.getElement("accounts"));
+        assertEquals(100, mm.getElement("id"));
+        var details = mm.getElement("details");
+        assertInstanceOf(List.class, details);
+        var balances = mm.getElement("$.details[*].balance");
+        assertInstanceOf(List.class, balances);
+        var balanceList = (List<Double>) balances;
+        Collections.sort(balanceList);
+        assertEquals(List.of(6000.0, 6020.68, 8200.0, 25032.13, 120000.0), balanceList);
+        assertEquals("Peter", mm.getElement("name"));
+    }
 }
