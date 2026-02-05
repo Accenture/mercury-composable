@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.59, 2/4/2026
+
+### Added
+
+Enhanced wildcard support for input data mapping in event script.
+This allows the mapping of an object to be the whole input to a task.
+
+Earlier wildcard `input.body -> *` is supported when the left-hand-side is a Map.
+This version supports List and primitives.
+
+### Removed
+
+N/A
+
+### Changed
+
+Chapter 4 (Event Script Syntax) of the Developer Guide is updated accordingly.
+
+---
 ## Version 4.3.58, 2/4/2026
 
 ### Added
