@@ -62,7 +62,8 @@ public class Platform {
     private static SimpleCache cache;
     private final long startTime = System.currentTimeMillis();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
-    private static final ReentrantLock SAFETY = new ReentrantLock();
+    private static final ReentrantLock SAFETY1 = new ReentrantLock();
+    private static final ReentrantLock SAFETY2 = new ReentrantLock();
     private String applicationName = null;
     private boolean cloudSelected = false;
     private boolean cloudServicesStarted = false;
@@ -217,7 +218,7 @@ public class Platform {
      *     Call this function only when you want to start cloud services without a cloud connector.
      */
     public void startCloudServices() {
-        SAFETY.lock();
+        SAFETY1.lock();
         try {
             if (!cloudServicesStarted) {
                 // guarantee to execute once
@@ -234,7 +235,7 @@ public class Platform {
                 }
             }
         } finally {
-            SAFETY.unlock();
+            SAFETY1.unlock();
         }
     }
 
@@ -267,7 +268,7 @@ public class Platform {
      * based on the "cloud.connector" parameter in the application.properties
      */
     public void connectToCloud() {
-        SAFETY.lock();
+        SAFETY2.lock();
         try {
             if (!cloudSelected) {
                 // guarantee to execute once
@@ -286,7 +287,7 @@ public class Platform {
                 }
             }
         } finally {
-            SAFETY.unlock();
+            SAFETY2.unlock();
         }
     }
 
