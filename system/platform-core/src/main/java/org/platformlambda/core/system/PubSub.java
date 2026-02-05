@@ -102,13 +102,8 @@ public class PubSub {
      * @return PubSub handler instance
      */
     public static PubSub getInstance() {
-        SAFETY.lock();
-        try {
-            // the default instance is 'system'
-            return getInstance(SYSTEM);
-        } finally {
-            SAFETY.unlock();
-        }
+        // the default instance is 'system'
+        return getInstance(SYSTEM);
     }
 
     /**
