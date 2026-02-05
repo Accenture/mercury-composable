@@ -1,0 +1,28 @@
+flow:
+  id: 'show-data-specs'
+  description: 'Data specs endpoint'
+  ttl: 10s
+  exception: 'v1.hello.exception'
+
+first.task: 'v1.show.data.dict'
+
+tasks:
+  - input:
+      - 'input.path_parameter.id -> header.data'
+    process: 'v1.show.data.dict'
+    output:
+      - 'int(200) -> output.status'
+      - 'result -> output.body'
+    description: 'Show data specs'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'v1.hello.exception'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
+    execution: end

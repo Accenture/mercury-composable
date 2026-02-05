@@ -44,11 +44,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 @CloudConnector(name="kafka")
 public class KafkaConnector implements CloudSetup {
     private static final Logger log = LoggerFactory.getLogger(KafkaConnector.class);
-
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final String SYSTEM = "system";
     private static final String CLOUD_CLIENT_PROPERTIES = "cloud.client.properties";
     public static final String BROKER_URL = "bootstrap.servers";
@@ -56,54 +57,59 @@ public class KafkaConnector implements CloudSetup {
 
     private static final ConcurrentMap<String, Properties> allProperties = new ConcurrentHashMap<>();
 
-    public static synchronized Properties getKafkaProperties(String location) {
-        // default location is cloud.client.properties
-        Properties properties = allProperties.get(location);
-        if (properties == null) {
-            properties = new Properties();
-            /*
-             * Retrieve kafka.properties from the local file system.
-             * This assumes the configuration is created by CI/CD or a wrapper for kafka connector.
-             */
-            ConfigReader config = null;
-            try {
-                config = ConnectorConfig.getConfig(location,
-                        "file:/tmp/config/kafka.properties,classpath:/kafka.properties");
-            } catch (IllegalArgumentException e) {
-                log.error("Unable to find kafka properties - {}", e.getMessage());
-                System.exit(-1);
-            }
-            Map<String, Object> kv = config.getCompositeKeyValues();
-            for (var entry : kv.entrySet()) {
-                properties.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
-            }
-            String brokerUrls = properties.getProperty(BROKER_URL);
-            List<String> brokers = Utility.getInstance().split(brokerUrls, ",");
-            if (brokers.isEmpty()) {
-                log.error("Unable to setup kafka - missing {}", BROKER_URL);
-                System.exit(-1);
-            }
-            if (brokers.size() > 1) {
-                Collections.sort(brokers);
-            }
-            /*
-             * Ping Kafka cluster when the application starts up.
-             * This assumes the broker list is constant over the lifetime of the application.
-             */
-            try {
-                // try 2 times to check if kafka cluster is available
-                if (!kafkaReachable(brokers, 2)) {
-                    throw new IllegalArgumentException("Unreachable");
+    public static Properties getKafkaProperties(String location) {
+        SAFETY.lock();
+        try {
+            // default location is cloud.client.properties
+            Properties properties = allProperties.get(location);
+            if (properties == null) {
+                properties = new Properties();
+                /*
+                 * Retrieve kafka.properties from the local file system.
+                 * This assumes the configuration is created by CI/CD or a wrapper for kafka connector.
+                 */
+                ConfigReader config = null;
+                try {
+                    config = ConnectorConfig.getConfig(location,
+                            "file:/tmp/config/kafka.properties,classpath:/kafka.properties");
+                } catch (IllegalArgumentException e) {
+                    log.error("Unable to find kafka properties - {}", e.getMessage());
+                    System.exit(-1);
                 }
-            } catch (IllegalArgumentException e) {
-                log.error("Kafka cluster failure {} - {}", brokers, e.getMessage());
-                System.exit(-1);
+                Map<String, Object> kv = config.getCompositeKeyValues();
+                for (var entry : kv.entrySet()) {
+                    properties.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
+                }
+                String brokerUrls = properties.getProperty(BROKER_URL);
+                List<String> brokers = Utility.getInstance().split(brokerUrls, ",");
+                if (brokers.isEmpty()) {
+                    log.error("Unable to setup kafka - missing {}", BROKER_URL);
+                    System.exit(-1);
+                }
+                if (brokers.size() > 1) {
+                    Collections.sort(brokers);
+                }
+                /*
+                 * Ping Kafka cluster when the application starts up.
+                 * This assumes the broker list is constant over the lifetime of the application.
+                 */
+                try {
+                    // try 2 times to check if kafka cluster is available
+                    if (!kafkaReachable(brokers, 2)) {
+                        throw new IllegalArgumentException("Unreachable");
+                    }
+                } catch (IllegalArgumentException e) {
+                    log.error("Kafka cluster failure {} - {}", brokers, e.getMessage());
+                    System.exit(-1);
+                }
+                ConnectorConfig.setServiceName("kafka");
+                ConnectorConfig.setDisplayUrl(brokers.getFirst());
+                allProperties.put(location, properties);
             }
-            ConnectorConfig.setServiceName("kafka");
-            ConnectorConfig.setDisplayUrl(brokers.getFirst());
-            allProperties.put(location, properties);
+            return properties;
+        } finally {
+            SAFETY.unlock();
         }
-        return properties;
     }
 
     @Override

@@ -1,0 +1,17 @@
+#
+# Account details
+#
+dictionary:
+  id: 'account_details'
+  target: 'account://details'
+  input:
+    - 'person_id'
+    - 'account_id'
+  output:
+    - 'response.account.details -> result.account_details'
+#
+# you can select a subset of the response using the model namespace for data mapping
+#
+#    - 'response.account.details.balance -> model.account.balance'
+#    - 'response.account.details.type -> model.account.type'
+#    - 'model.account -> result.account_details'

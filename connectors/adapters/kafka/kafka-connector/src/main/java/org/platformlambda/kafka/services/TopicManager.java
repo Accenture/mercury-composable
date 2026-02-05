@@ -33,10 +33,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class TopicManager implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(TopicManager.class);
-
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final String TYPE = "type";
     private static final String PARTITIONS = "partitions";
     private static final String TOPIC = "topic";
@@ -65,61 +66,69 @@ public class TopicManager implements LambdaFunction {
         }
     }
 
-    private synchronized void startAdmin() {
-        if (admin == null) {
-            seq++;
-            Properties properties = new Properties();
-            properties.putAll(baseProperties);
-            properties.put(AdminClientConfig.CLIENT_ID_CONFIG, "admin-"+ Platform.getInstance().getOrigin()+"-"+seq);
-            admin = AdminClient.create(properties);
-            log.info("AdminClient-{} ready", seq);
-            lastAccess = System.currentTimeMillis();
+    private void startAdmin() {
+        SAFETY.lock();
+        try {
+            if (admin == null) {
+                seq++;
+                Properties properties = new Properties();
+                properties.putAll(baseProperties);
+                properties.put(AdminClientConfig.CLIENT_ID_CONFIG, "admin-" + Platform.getInstance().getOrigin() + "-" + seq);
+                admin = AdminClient.create(properties);
+                log.info("AdminClient-{} ready", seq);
+                lastAccess = System.currentTimeMillis();
+            }
+        }  finally {
+            SAFETY.unlock();
         }
     }
 
-    private synchronized void stopAdmin() {
-        if (admin != null) {
-            try {
-                admin.close();
-                log.info("AdminClient-{} closed, processed: {}", seq, processed);
-            } catch (Exception e) {
-                // ok to ignore
+    private void stopAdmin() {
+        SAFETY.lock();
+        try {
+            if (admin != null) {
+                try {
+                    admin.close();
+                    log.info("AdminClient-{} closed, processed: {}", seq, processed);
+                } catch (Exception e) {
+                    // ok to ignore
+                }
+                processed = 0;
+                admin = null;
             }
-            processed = 0;
-            admin = null;
+        } finally {
+            SAFETY.unlock();
         }
     }
 
     @Override
     public Object handleEvent(Map<String, String> headers, Object input, int instance) {
-        if (headers.containsKey(TYPE)) {
-            if (LIST.equals(headers.get(TYPE))) {
-                return listTopics();
+        if (LIST.equals(headers.get(TYPE))) {
+            return listTopics();
+        }
+        if (EXISTS.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
+            String origin = headers.get(TOPIC);
+            return topicExists(origin);
+        }
+        if (PARTITIONS.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
+            String origin = headers.get(TOPIC);
+            return topicPartitions(origin);
+        }
+        if (CREATE.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
+            int partitions = headers.containsKey(PARTITIONS)?
+                                Math.max(1, Utility.getInstance().str2int(headers.get(PARTITIONS))) : 1;
+            createTopic(headers.get(TOPIC), partitions);
+            return true;
+        }
+        if (DELETE.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
+            String origin = headers.get(TOPIC);
+            if (topicExists(origin)) {
+                deleteTopic(origin);
             }
-            if (EXISTS.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
-                String origin = headers.get(TOPIC);
-                return topicExists(origin);
-            }
-            if (PARTITIONS.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
-                String origin = headers.get(TOPIC);
-                return topicPartitions(origin);
-            }
-            if (CREATE.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
-                int partitions = headers.containsKey(PARTITIONS)?
-                                    Math.max(1, Utility.getInstance().str2int(headers.get(PARTITIONS))) : 1;
-                createTopic(headers.get(TOPIC), partitions);
-                return true;
-            }
-            if (DELETE.equals(headers.get(TYPE)) && headers.containsKey(TOPIC)) {
-                String origin = headers.get(TOPIC);
-                if (topicExists(origin)) {
-                    deleteTopic(origin);
-                }
-                return true;
-            }
-            if (STOP.equals(headers.get(TYPE))) {
-                stopAdmin();
-            }
+            return true;
+        }
+        if (STOP.equals(headers.get(TYPE))) {
+            stopAdmin();
         }
         return false;
     }
@@ -201,31 +210,7 @@ public class TopicManager implements LambdaFunction {
         try {
             int currentPartitions = topicPartitions(topic);
             if (currentPartitions == -1) {
-                int replication = getReplicationFactor();
-                int partitionCount = Math.max(1, partitions);
-                CreateTopicsResult createTask = admin.createTopics(
-                        Collections.singletonList(new NewTopic(topic, partitionCount, (short) replication)));
-                createTask.all().get();
-                processed++;
-                // check if creation is successful
-                boolean found = false;
-                // try a few times due to eventual consistency
-                for (int i=0; i < 10; i++) {
-                    found = topicExists(topic);
-                    if (found) {
-                        break;
-                    } else {
-                        Thread.sleep(1000);
-                        log.warn("Newly created {} not found. Scanning it again.", topic);
-                    }
-                }
-                if (found) {
-                    log.info("Created {} with {} partition{}, replication factor of {}",
-                            topic, partitionCount, partitionCount == 1? "" : "s", replication);
-                } else {
-                    log.error("Unable to create {} after a few attempts", topic);
-                    System.exit(-1);
-                }
+                createTopicPartitions(topic, partitions);
             } else {
                 log.warn("{} with {} partition{} already exists", topic, currentPartitions,
                         currentPartitions == 1? "" : "s");
@@ -233,6 +218,34 @@ public class TopicManager implements LambdaFunction {
         } catch (Exception e) {
             log.error("Unable to create {} - {}", topic, e.getMessage());
             throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    private void createTopicPartitions(String topic, int partitions) throws InterruptedException, ExecutionException {
+        int replication = getReplicationFactor();
+        int partitionCount = Math.max(1, partitions);
+        CreateTopicsResult createTask = admin.createTopics(
+                Collections.singletonList(new NewTopic(topic, partitionCount, (short) replication)));
+        createTask.all().get();
+        processed++;
+        // check if creation is successful
+        boolean found = false;
+        // try a few times due to eventual consistency
+        for (int i=0; i < 10; i++) {
+            found = topicExists(topic);
+            if (found) {
+                break;
+            } else {
+                Thread.sleep(1000);
+                log.warn("Newly created {} not found. Scanning it again.", topic);
+            }
+        }
+        if (found) {
+            log.info("Created {} with {} partition{}, replication factor of {}",
+                    topic, partitionCount, partitionCount == 1? "" : "s", replication);
+        } else {
+            log.error("Unable to create {} after a few attempts", topic);
+            System.exit(-1);
         }
     }
 
@@ -309,5 +322,4 @@ public class TopicManager implements LambdaFunction {
             });
         }
     }
-
 }

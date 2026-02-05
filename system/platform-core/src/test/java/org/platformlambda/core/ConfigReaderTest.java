@@ -46,7 +46,7 @@ class ConfigReaderTest {
     }
 
     @Test
-    void pathTraveralTest() {
+    void pathTraversalTest() {
         var ex = assertThrows(IllegalArgumentException.class, () -> new ConfigReader("file:/tmp/../opt/hi.txt"));
         assertEquals("Relative parent file path not allowed", ex.getMessage());
     }
