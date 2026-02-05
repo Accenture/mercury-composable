@@ -1,5 +1,6 @@
 flows:
   - 'body-test.yml'
+  - 'wildcard-conversion-test.yml'
   - 'header-and-json-path-test.yml'
   - 'file-vault-test.yml'
   - 'simple-circuit-breaker.yml'
