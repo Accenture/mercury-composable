@@ -870,7 +870,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return;
             }
             Map<String, Object> dataset = new HashMap<>();
-            dataset.put(BODY, md.target.getMap());
+            dataset.put(BODY, unwrapBodyIfWildcard(md));
             if (!md.optionalHeaders.isEmpty()) {
                 dataset.put(HEADER, md.optionalHeaders);
             }
@@ -886,7 +886,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             var po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
             var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
-                                            .setCorrelationId(compositeCid).setBody(md.target.getMap());
+                                            .setCorrelationId(compositeCid)
+                                            .setBody(unwrapBodyIfWildcard(md));
             md.optionalHeaders.forEach(event::setHeader);
             // execute task by sending event
             if (deferred > 0) {
@@ -895,6 +896,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 po.send(event);
             }
         }
+    }
+
+    private Object unwrapBodyIfWildcard(InputMappingMetadata md){
+        var map = md.target.getMap();
+        return map.containsKey(ALL) ? map.get(ALL) : map;
     }
 
     @SuppressWarnings("unchecked")
@@ -1044,8 +1050,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (ALL.equals(md.rhs)) {
             if (value instanceof Map) {
                 md.target.reload((Map<String, Object>) value);
-            } else {
-                valid = false;
+            }
+            else {
+                md.target.setElement(ALL, value);
             }
         } else if (md.rhs.equals(HEADER)) {
             if (value instanceof Map) {

@@ -341,6 +341,12 @@ rest:
     cors: cors_1
     headers: header_1
     tracing: true
+
+  - service: "http.flow.adapter"
+    methods: [ 'POST' ]
+    url: "/api/wildcard-conversion/test"
+    flow: 'wildcard-conversion-test'
+    timeout: 10s
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

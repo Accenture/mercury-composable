@@ -1,4 +1,4 @@
-# Event Script Syntax
+﻿# Event Script Syntax
 
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
@@ -955,8 +955,47 @@ For example, the following entry tells the system to set the value in "model.dat
       - 'model.dataset -> *'
 ```
 
-> *Note*: If the value from the left hand side is not a map, the system will ignore the input mapping command and
-          print out an error message in the application log.
+#### Special consideration for Lists as input
+
+For convenience there is a way to utilize the `*` notation with List, or other types, but there are some special 
+considerations when it comes to utilizing something other than `Map<String, Object>` or Pojo.
+
+1. Utilizing a `*` with something other than a Map or Pojo object will cause other input properties to be ignored
+    ```yaml
+     - input:
+        - 'text(Hello) -> model.list[0].user'
+        - 'text(World) -> model.list[1].user'
+        - 'model.list -> *'
+        - 'model.other_var -> other'
+   ```
+   In the above example `other` will not be passed
+
+2. When attempting to read the input as a `List<T>` in your Lambda function you should type the input appropriately
+and utilize `pojoClass` property on preLoad if utilizing a list of complex objects
+
+When using Lists of complex Objects 
+```java
+@PreLoad(route = "hello.world", inputPojoClass = PoJo.class)
+public class HelloWorld implements TypedLambdaFunction<List<PoJo>, List<PoJo>> {
+
+    @Override
+    public List<PoJo> handleEvent(Map<String, String> headers, List<PoJo> input, int instance) throws Exception {
+        //...
+    }
+}
+```
+
+When using Lists of simple Objects
+```java
+@PreLoad(route = "hello.world")
+public class HelloWorld implements TypedLambdaFunction<List<String>, List<String>> {
+
+    @Override
+    public List<String> handleEvent(Map<String, String> headers, List<String> input, int instance) throws Exception {
+        //...
+    }
+}
+```
 
 ### Setting function input headers
 
