@@ -1335,7 +1335,7 @@ public class Utility {
         String text = original;
         while (true) {
             int bracketStart = text.lastIndexOf(begin);
-            int bracketEnd = bracketStart == -1? -1 : text.indexOf(end, bracketStart);
+            int bracketEnd = bracketStart == -1? -1 : findEndBracket(text, bracketStart + begin.length(), end);
             if (bracketStart != -1 && bracketEnd != -1) {
                 result.add(new VarSegment(bracketStart, bracketEnd + 1));
                 text = original.substring(0, bracketStart);
@@ -1348,5 +1348,27 @@ public class Utility {
         // restore to original order since the text parsing is in reverse order
         Collections.reverse(result);
         return result;
+    }
+
+    private int findEndBracket(String text, int start, String end) {
+        // handle special case of nested parameters combined with environment variables
+        if (end.equals("}")) {
+            int bracketStart = text.indexOf('{', start);
+            int bracketEnd = text.indexOf('}', start);
+            if (bracketEnd == -1) {
+                return -1;
+            } else {
+                if (bracketStart == -1) {
+                    return bracketEnd;
+                } else {
+                    if (bracketEnd > bracketStart) {
+                        return findEndBracket(text, bracketEnd+1, end);
+                    } else {
+                        return bracketEnd;
+                    }
+                }
+            }
+        }
+        return text.indexOf(end, start);
     }
 }

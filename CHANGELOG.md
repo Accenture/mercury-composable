@@ -24,7 +24,8 @@ N/A
 
 ### Changed
 
-N/A
+Improved environment variable parsing algorithm in ConfigReader and Utility.
+Support nested parameters inside default value of an environment variable.
 
 ---
 ## Version 4.3.59, 2/4/2026

@@ -164,9 +164,16 @@ class ConfigReaderTest {
     }
 
     @Test
-    void getDefaultValueWithControlCharacters() {
-        ConfigReader reader = new ConfigReader("classpath:/test.properties");
+    void getDefaultValueForEnvVariable() {
+        ConfigReader reader = new ConfigReader("classpath:/test-env-var-with-params.properties");
         String value = reader.getProperty("property.three");
+        assertEquals("someDefaultValue/{test1}/{test2}", value);
+    }
+
+    @Test
+    void getDefaultValueWithControlCharacters() {
+        ConfigReader reader = new ConfigReader("classpath:/test-env-var-with-params.properties");
+        String value = reader.getProperty("property.four");
         assertEquals("someDefaultValue/{test1}/{test2}", value);
     }
 
