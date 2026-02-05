@@ -900,7 +900,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private Object unwrapBodyIfWildcard(InputMappingMetadata md){
         var map = md.target.getMap();
-        return map.containsKey(ALL) ? map.get(ALL) : map;
+        var value = map.get(ALL);
+        return value != null ? value : map;
     }
 
     @SuppressWarnings("unchecked")
@@ -1050,8 +1051,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (ALL.equals(md.rhs)) {
             if (value instanceof Map) {
                 md.target.reload((Map<String, Object>) value);
-            }
-            else {
+            } else {
                 md.target.setElement(ALL, value);
             }
         } else if (md.rhs.equals(HEADER)) {

@@ -1556,14 +1556,12 @@ class FlowTests extends TestBase {
                 .setHeader("content-type", "application/json")
                 .setBody(Map.of())
                 .setUrl("/api/wildcard-conversion/test");
-
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
         EventEnvelope result = po.request(req, 8_000).get();
         // Take return value as PoJo
         assertInstanceOf(List.class, result.getBody());
-
-        List restored = result.getBody(List.class);
+        List<?> restored = result.getBody(List.class);
         assertEquals(Map.of("user", "foo", "sequence", 0), restored.getFirst());
         assertEquals(Map.of("user", "bar", "sequence", 0), restored.get(1));
     }
