@@ -48,7 +48,7 @@ public class MiniGraph {
     private final MutableGraph<String> graph = GraphBuilder.directed().allowsSelfLoops(false).build();
     private final AtomicInteger nodeCount = new AtomicInteger();
     private final int maxNodes;
-    private SimpleNode root;
+    private SimpleNode rootNode;
 
     /**
      * Create a mini-graph instance with default maximum of 500 nodes
@@ -322,10 +322,10 @@ public class MiniGraph {
     }
 
     public SimpleNode createRootNode() {
-        if (root == null) {
+        if (rootNode == null) {
             return createNode(ROOT, ROOT);
         } else {
-            return root;
+            return rootNode;
         }
     }
 
@@ -365,7 +365,7 @@ public class MiniGraph {
         nodesByAlias.put(aliasLower, node);
         nodesById.put(cid, node);
         if (ROOT.equals(aliasLower)) {
-            root = node;
+            rootNode = node;
         }
         log.debug("Created {} as {}, total={}", type, alias, count);
         return node;
@@ -389,7 +389,7 @@ public class MiniGraph {
             nodesByAlias.remove(alias);
             var count = nodeCount.decrementAndGet();
             if (ROOT.equals(alias)) {
-                root = null;
+                rootNode = null;
             }
             log.debug("Removed {}, total={}", alias, count);
         }
