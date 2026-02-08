@@ -36,8 +36,7 @@ public class TypeConversionUtils {
         if(input == null){
             return false;
         }
-
-        return switch (input){
+        return switch (input) {
             case Boolean i -> true;
             case String s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false");
             default -> false;
@@ -45,7 +44,7 @@ public class TypeConversionUtils {
     }
 
     public static Boolean convertBoolean(Object input){
-        return switch (input){
+        return switch (input) {
             case Boolean i -> i;
             case String s -> Boolean.parseBoolean(s);
             default -> throw new IllegalArgumentException("Cannot convert input to boolean: " + input);
@@ -78,7 +77,7 @@ public class TypeConversionUtils {
     }
 
     public static Double convertDouble(Object input){
-        return switch (input){
+        return switch (input) {
             case Double i -> i;
             case String s -> Double.parseDouble(s);
             default -> throw new IllegalArgumentException("Cannot convert input to double: " + input);
@@ -94,7 +93,7 @@ public class TypeConversionUtils {
     }
 
     public static Long convertLong(Object input){
-        return switch (input){
+        return switch (input) {
             case Long i -> i;
             case String s -> Long.parseLong(s);
             default -> throw new IllegalArgumentException("Cannot convert input to long: " + input);
@@ -102,7 +101,7 @@ public class TypeConversionUtils {
     }
 
     public static Float convertFloat(Object input){
-        return switch (input){
+        return switch (input) {
             case Float i -> i;
             case String s -> Float.parseFloat(s);
             default -> throw new IllegalArgumentException("Cannot convert input to float: " + input);

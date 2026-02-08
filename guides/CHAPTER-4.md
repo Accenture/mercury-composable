@@ -1435,7 +1435,7 @@ public interface PluginFunction {
 ### Using Plugins in Event-Script
 
 A plugin function can be configured in the left-hand-side of an input data mapping statement using the `f:` prefix
-with your plugin name. i.e. `f:pluginName(model variables...)`
+with your plugin name. i.e. `f:pluginName(model_variables...)`
 
 For example:
 
@@ -1484,6 +1484,57 @@ For example:
 | **Type Conversion** | int           | A list of variables that can evaluate to an integer                                                                   |
 | **Type Conversion** | long          | A list of variables that can evaluate to a long integer                                                               |
 | **Type Conversion** | text          | A list of variables that can evaluate to a String                                                                     |
+| **Type Conversion** | listOfMap     | Re-arrange list elements into a list of maps. See notes below.
+
+*Note*: The `listOfMap(map, label)` plugin re-arranges list elements into a list of maps.
+
+JSON-Path wildcard search would generate a list of elements.
+When multiple JSON-Path searches are conducted, the result is a combined map of lists.
+The listOfMap function normalizes the map back to the original data structure
+for easy consumption by a user application.
+
+For example, the combined key-values after JSON-Path searches:
+
+```json
+{
+  "hello": {
+    "world": [
+      1,
+      2,
+      3
+    ],
+    "test": [
+      "a",
+      "b",
+      "c"
+    ]
+  }
+}
+```
+
+Re-arranged key-values using listOfMap(map, label):
+
+```json
+{
+  "hello": [
+    {
+      "world": 1,
+      "test": "a"
+    },
+    {
+      "world": 2,
+      "test": "b"
+    },
+    {
+      "world": 3,
+      "test": "c"
+    }
+  ]
+}
+```
+
+For details, please refer to configuration example in header-and-json-path-test.yml and the unit test 
+`headerAndJsonPathTest()` in the FlowTests class of the event-script-engine module.
 
 ### Writing your own custom Simple Plugins
 
@@ -1492,7 +1543,7 @@ any classes that have the `@SimplePlugin` annotation. If your plugin is complian
 the given package list, then it will automatically be loaded and available on startup.
 If there are any issues with loading your plugin, an error will be shown in the logs on startup.
 
-NOTE: If your plugin uses a package that is not on the allowed packages above, your plugin will not load successfully.
+*Note*: If your plugin uses a package that is not on the allowed packages above, your plugin will not load successfully.
 
 ## Handling exception
 

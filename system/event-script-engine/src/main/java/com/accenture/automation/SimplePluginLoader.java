@@ -26,6 +26,7 @@ import org.objectweb.asm.*;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import com.accenture.models.PluginFunction;
+import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.SimpleClassScanner;
 
 import org.slf4j.Logger;
@@ -58,6 +59,7 @@ public class SimplePluginLoader implements EntryPoint {
     private static final Set<String> ALLOWED_PACKAGES = Set.of("java.lang", "java.util", "java.math", "java.time",
                                                             SimplePlugin.class.getName(),
                                                             PluginFunction.class.getName(),
+                                                            MultiLevelMap.class.getName(),
                                                             SimplePluginUtils.class.getName());
     /**
      * Internal API that returns loaded Plugins

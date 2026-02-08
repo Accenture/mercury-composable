@@ -31,12 +31,14 @@ class GraphTest {
 
     @Test
     void nodeTest() {
-        var graph = new MiniGraph();
+        var graph = getGraphWithRootNode();
+        graph.getRootNode().addType("hello");
         var nodeA = graph.createNode("A", "transaction");
         var nodeB = graph.createNode("B", "data");
         var nodeC = graph.createNode("C", "data");
         var nodeD = graph.createNode("D", "data");
         var nodeE = graph.createNode("E", "data");
+        graph.connect("root", "A");
         var r1 = graph.connect("A", "B");
         // connection between 2 nodes is unique. It will return the existing one.
         var r1a = graph.connect("A", "B");
@@ -73,7 +75,8 @@ class GraphTest {
         var neighborsToA = graph.getNeighbors("A");
         var neighborsAliases = new ArrayList<String>();
         neighborsToA.forEach(n -> neighborsAliases.add(n.getAlias()));
-        assertEquals(2, neighborsAliases.size());
+        assertEquals(3, neighborsAliases.size());
+        assertTrue(neighborsAliases.contains("root"));
         assertTrue(neighborsAliases.contains("B"));
         assertTrue(neighborsAliases.contains("C"));
         validatePaths1(graph);
@@ -84,7 +87,19 @@ class GraphTest {
         // removing node-D will remove its forward and backward connections. node-E becomes an orphan.
         graph.removeNode("D");
         validatePath3(graph);
+        var rootNode = graph.getRootNode();
+        assertEquals(Set.of("root", "hello"), rootNode.getTypes());
         graph.reset();
+    }
+
+    private MiniGraph getGraphWithRootNode() {
+        var graph = new MiniGraph();
+        var root = graph.createRootNode();
+        var types = root.getTypes();
+        // default type is "root" for root node
+        assertEquals(1, types.size());
+        assertTrue(types.contains("root"));
+        return graph;
     }
 
     private void compareNodes(MiniGraph graph,SimpleNode nodeB, SimpleNode nodeC, SimpleNode nodeD, SimpleNode nodeE) {
@@ -112,11 +127,11 @@ class GraphTest {
     }
 
     private void validatePaths1(MiniGraph graph) {
-        // [[A], [B, C], [D], [E]]
+        // [[A], [B, root, C], [D], [E]]
         var pathsFromA = graph.findPaths("A");
         assertEquals(4, pathsFromA.size());
         assertEquals(1, pathsFromA.getFirst().size());
-        assertEquals(2, pathsFromA.get(1).size());
+        assertEquals(3, pathsFromA.get(1).size());
         assertEquals(1, pathsFromA.get(2).size());
         assertEquals(1, pathsFromA.get(3).size());
         assertEquals("A", pathsFromA.getFirst().getFirst());
@@ -129,26 +144,27 @@ class GraphTest {
     private void validateNodesThenRemoveConnection(MiniGraph graph) {
         // get all nodes
         var nodes = graph.getNodes();
-        assertEquals(5, nodes.size());
+        assertEquals(6, nodes.size());
+        assertTrue(nodes.contains(graph.findNodeByAlias("root")));
         assertTrue(nodes.contains(graph.findNodeByAlias("A")));
         assertTrue(nodes.contains(graph.findNodeByAlias("B")));
         assertTrue(nodes.contains(graph.findNodeByAlias("C")));
         assertTrue(nodes.contains(graph.findNodeByAlias("D")));
         assertTrue(nodes.contains(graph.findNodeByAlias("E")));
         var connections = graph.getConnections();
-        assertEquals(4, connections.size());
+        assertEquals(5, connections.size());
         // now remove a connection
         graph.removeConnection("C", "D");
         var connections2 = graph.getConnections();
-        assertEquals(3, connections2.size());
+        assertEquals(4, connections2.size());
     }
 
     private void validatePaths2(MiniGraph graph) {
-        // [[A], [B, C]] and [[E], [D]] are 2 disjointed graphs
+        // [[A], [C, root, B]]
         var pathsFromA2 = graph.findPaths("A");
         assertEquals(2, pathsFromA2.size());
         assertEquals(1, pathsFromA2.getFirst().size());
-        assertEquals(2, pathsFromA2.get(1).size());
+        assertEquals(3, pathsFromA2.get(1).size());
         assertEquals("A", pathsFromA2.getFirst().getFirst());
         assertTrue(pathsFromA2.get(1).contains("B"));
         assertTrue(pathsFromA2.get(1).contains("C"));
@@ -182,7 +198,6 @@ class GraphTest {
     @Test
     void directionalTest() {
         var graph = new MiniGraph();
-        System.out.println(graph.getId());
         assertEquals(Utility.getInstance().getUuid().length(), graph.getId().length());
         var nodeA = graph.createNode("A", "transaction");
         var nodeB = graph.createNode("B", "data");
@@ -255,11 +270,13 @@ class GraphTest {
         assertEquals("type must not be empty", ex4.getMessage());
         graph.createNode("test", "transaction");
         var ex5 = assertThrows(IllegalArgumentException.class, () -> graph.createNode("test", "hello"));
-        assertEquals("alias test already exists", ex5.getMessage());
+        assertEquals("alias 'test' already exists", ex5.getMessage());
         var ex6 = assertThrows(IllegalArgumentException.class, () -> graph.removeNode(null));
         assertEquals("alias must not be empty", ex6.getMessage());
         var ex7 = assertThrows(IllegalArgumentException.class, () -> graph.removeNode(""));
         assertEquals("alias must not be empty", ex7.getMessage());
+        var ex8 = assertThrows(IllegalArgumentException.class, () -> graph.createNode("input", "data"));
+        assertEquals("alias 'input' is a reserved name", ex8.getMessage());
     }
 
     @Test

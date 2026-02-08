@@ -481,8 +481,9 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         md.lhs = substituteDynamicIndex(entry.substring(0, md.sep).trim(), md.consolidated, false);
         md.rhs = substituteDynamicIndex(entry.substring(md.sep+2).trim(), md.consolidated, true);
         final Object value;
-        boolean isInput = md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT);
-        if (isInput || md.lhs.startsWith(MODEL_NAMESPACE) ||
+        if (md.lhs.startsWith(INPUT_NAMESPACE) || md.lhs.equalsIgnoreCase(INPUT) ||
+                md.lhs.startsWith(MODEL_NAMESPACE) ||
+                md.lhs.startsWith(SIMPLE_PLUGIN_PREFIX) ||
                 md.lhs.startsWith(DOLLAR_TYPE) ||
                 md.lhs.equals(HEADER) || md.lhs.startsWith(HEADER_NAMESPACE) ||
                 md.lhs.equals(STATUS) || md.lhs.equals(DATA_TYPE) ||

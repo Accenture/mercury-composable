@@ -22,6 +22,7 @@ import com.accenture.adapters.FlowExecutor;
 import com.accenture.mock.EventScriptMock;
 import com.accenture.models.PoJo;
 import com.accenture.setup.TestBase;
+import com.accenture.util.DataMappingHelper;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -52,6 +53,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class FlowTests extends TestBase {
     private static final Logger log = LoggerFactory.getLogger(FlowTests.class);
     private static final String HTTP_CLIENT = "async.http.request";
+
+    @Test
+    void getLhsConstant() {
+        var empty = new MultiLevelMap();
+        var helper = DataMappingHelper.getInstance();
+        // getLhsOrConstant will resolve constant if any
+        var result = helper.getLhsOrConstant("text(hello)", empty);
+        assertEquals("hello", result);
+    }
 
     @SuppressWarnings("unchecked")
     @Test
@@ -313,10 +323,14 @@ class FlowTests extends TestBase {
     @Test
     void headerAndJsonPathTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
+        var data = List.of(Map.of("world", "1", "test", "a"),
+                Map.of("world", "2", "test", "b"),
+                Map.of("world", "3", "test", "c"));
+
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
                 .setHeader("accept", "application/json").setHeader("content-type", "application/json")
-                .setBody(Map.of("hello", "world", "list", List.of("a", "b")))
+                .setBody(Map.of("hello", "world", "list", data))
                 .setUrl("/api/header/test");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -329,7 +343,11 @@ class FlowTests extends TestBase {
         assertEquals("application/json", body.get("accept"));
         // prove that json-path search is successful for input and output data mapping
         assertEquals("world", body.get("body"));
-        assertEquals(List.of("a", "b"), body.get("extra"));
+        // after JSON-Path wildcard search, the array elements are grouped at the lowest level
+        assertEquals(Map.of("list", Map.of("world", List.of("1", "2", "3"), "test", List.of("a", "b", "c"))),
+                    body.get("jp"));
+        // f:listOfMap() restores the original data structure
+        assertEquals(Map.of("list", data), body.get("normalized"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1416,8 +1434,8 @@ class FlowTests extends TestBase {
         final String CALLBACK = "internal.flow.callback";
         final BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
         LambdaFunction f = (eventHeaders, body, instance) -> {
-            if (body instanceof Map m) {
-                bench.add(m);
+            if (body instanceof Map) {
+                bench.add((Map<String, Object>) body);
             }
             return null;
         };

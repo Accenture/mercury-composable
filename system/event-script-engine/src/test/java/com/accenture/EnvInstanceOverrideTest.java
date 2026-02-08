@@ -16,7 +16,7 @@
 
  */
 
- package com.accenture;
+package com.accenture;
 
 import com.accenture.adapters.HttpToFlow;
 import com.accenture.services.Resilience4Flow;
@@ -61,7 +61,6 @@ class EnvInstanceOverrideTest extends TestBase {
                 Integer.parseInt(reader.getProperty(Resilience4Flow.ENV_INSTANCE_PROPERTY)),
                 routeToInstancesMap.get(Resilience4Flow.ROUTE)
         );
-
         assertEquals(
                 Integer.parseInt(reader.getProperty(SimpleExceptionHandler.ENV_INSTANCE_PROPERTY)),
                 routeToInstancesMap.get(SimpleExceptionHandler.ROUTE)
@@ -71,11 +70,9 @@ class EnvInstanceOverrideTest extends TestBase {
     @Test
     void shouldNotReplaceInstanceIfNoOverride(){
         assertFalse(reader.exists(HttpToFlow.ENV_INSTANCE_PROPERTY));
-
         assertEquals(
                 200,
                 routeToInstancesMap.get(HttpToFlow.ROUTE)
         );
-
     }
 }

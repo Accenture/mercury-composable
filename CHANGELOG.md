@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.61, 2/7/2026
+
+### Added
+
+1. `listOfMap(map, label)` plugin for event script
+2. Root node feature added to MiniGraph
+3. getLhsOrConstant() method in event-script-engine's helper function
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Reject JSON/XML input in JSON-Path playground when payload > 64,000 characters
+2. Update CompileFlows and TaskExecutor to allow execution of event script plugins in LHS
+   of input and output mapping entries
+
+---
 ## Version 4.3.60, 2/5/2026
 
 ### Added

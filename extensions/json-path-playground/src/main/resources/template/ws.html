@@ -14,6 +14,7 @@
          * 2. Keep-alive protocol.
          */
         const MAX_ITEMS = 30;
+        const MAX_BUFFER = 64000;
         var inputs = [];
         var setupEnterKey = true;
         var msg = [];
@@ -120,7 +121,13 @@
                                 ws.send(query.value);
                                 saveInput(query.value);
                                 if (query.value == 'load') {
-                                    ws.send(data.value.length > 0? data.value : 'none');
+                                    if (data.value.length == 0) {
+                                        show("ERROR: please paste JSON/XML payload in input text area\n");
+                                    } else if (data.value.length > MAX_BUFFER) {
+                                        show("ERROR: please reduce JSON/XML payload size. It must be less than "+MAX_BUFFER+" characters\n");
+                                    } else {
+                                        ws.send(data.value);
+                                    }
                                 }
                             }
                             query.value = "";

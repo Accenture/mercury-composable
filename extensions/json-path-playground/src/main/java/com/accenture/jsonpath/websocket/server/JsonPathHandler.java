@@ -39,7 +39,7 @@ public class JsonPathHandler implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(JsonPathHandler.class);
     private static final SimpleXmlParser xml = new SimpleXmlParser();
     private static final ConcurrentMap<String, Object> textMap = new ConcurrentHashMap<>();
-    private static final String RESULT = "result";
+    private static final String RESPONSE = "response";
     
     /**
      * This function will be rendered as a web-socket listener
@@ -163,26 +163,26 @@ public class JsonPathHandler implements LambdaFunction {
         Map<String, Object> map = new HashMap<>();
         if (message.startsWith("<") && message.endsWith(">")) {
             try {
-                map.put(RESULT, xml.parse(message));
+                map.put(RESPONSE, xml.parse(message));
             } catch (Exception e) {
                 return e.getMessage();
             }
         }
         if (message.startsWith("{") && message.endsWith("}")) {
             try {
-                map.put(RESULT, mapper.readValue(message, Map.class));
+                map.put(RESPONSE, mapper.readValue(message, Map.class));
             } catch (Exception e) {
                 return e.getMessage();
             }
         }
         if (message.startsWith("[") && message.endsWith("]")) {
             try {
-                map.put(RESULT, mapper.readValue(message, List.class));
+                map.put(RESPONSE, mapper.readValue(message, List.class));
             } catch (Exception e) {
                 return e.getMessage();
             }
         }
-        if (map.containsKey(RESULT)) {
+        if (map.containsKey(RESPONSE)) {
             try {
                 var mm = new MultiLevelMap(map);
                 textMap.put(route, mm);

@@ -177,6 +177,14 @@ class ConfigReaderTest {
         assertEquals("someDefaultValue/{test1}/{test2}", value);
     }
 
+    @Test
+    void getDefaultValueWithControlCharactersWithoutBracket() {
+        ConfigReader reader = new ConfigReader("classpath:/test-env-var-with-params.properties");
+        String value = reader.getProperty("property.five");
+        // there is no end bracket so the env variable cannot be resolved
+        assertEquals("${no.property:someDefaultValue/{test1}/{test2} intentionally missing end bracket", value);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void dotFormatterTest() {

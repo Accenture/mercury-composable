@@ -38,6 +38,8 @@ public class MiniGraph {
     private static final Logger log = LoggerFactory.getLogger(MiniGraph.class);
     private static final String NODE_PREFIX = "nodes[";
     private static final String CONNECTION_PREFIX = "connections[";
+    private static final String ROOT = "root";
+    private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result");
     private static final Utility util = Utility.getInstance();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();
@@ -46,6 +48,7 @@ public class MiniGraph {
     private final MutableGraph<String> graph = GraphBuilder.directed().allowsSelfLoops(false).build();
     private final AtomicInteger nodeCount = new AtomicInteger();
     private final int maxNodes;
+    private SimpleNode root;
 
     /**
      * Create a mini-graph instance with default maximum of 500 nodes
@@ -318,6 +321,18 @@ public class MiniGraph {
         return false;
     }
 
+    public SimpleNode createRootNode() {
+        if (root == null) {
+            return createNode(ROOT, ROOT);
+        } else {
+            return root;
+        }
+    }
+
+    public SimpleNode getRootNode() {
+        return findNodeByAlias(ROOT);
+    }
+
     /**
      * Create a node with alias and type
      *
@@ -332,19 +347,26 @@ public class MiniGraph {
         if (type == null || type.isEmpty()) {
             throw new IllegalArgumentException("type must not be empty");
         }
-        if (nodesByAlias.containsKey(alias)) {
-            throw new IllegalArgumentException("alias "+alias+" already exists");
+        var aliasLower = alias.toLowerCase();
+        if (RESERVED_NAMES.contains(aliasLower)) {
+            throw new IllegalArgumentException("alias '"+aliasLower+"' is a reserved name");
+        }
+        if (nodesByAlias.containsKey(aliasLower)) {
+            throw new IllegalArgumentException("alias '"+aliasLower+"' already exists");
         }
         if (nodeCount.get() > maxNodes) {
             throw new IllegalArgumentException("max number of nodes is "+maxNodes);
         }
         int count = nodeCount.incrementAndGet();
-        var aliasLower = alias.toLowerCase();
+
         var cid = util.getUuid();
         graph.addNode(cid);
         var node = new SimpleNode(cid, alias, type);
         nodesByAlias.put(aliasLower, node);
         nodesById.put(cid, node);
+        if (ROOT.equals(aliasLower)) {
+            root = node;
+        }
         log.debug("Created {} as {}, total={}", type, alias, count);
         return node;
     }
@@ -366,6 +388,9 @@ public class MiniGraph {
             nodesById.remove(node.getId());
             nodesByAlias.remove(alias);
             var count = nodeCount.decrementAndGet();
+            if (ROOT.equals(alias)) {
+                root = null;
+            }
             log.debug("Removed {}, total={}", alias, count);
         }
     }

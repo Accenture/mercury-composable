@@ -93,7 +93,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             int sep = entry.lastIndexOf(ARROW);
             var lhs = entry.substring(0, sep).trim();
             var rhs = entry.substring(sep + ARROW.length()).trim();
-            var value = helper.getLhsElement(lhs, dataset);
+            var value = helper.getLhsOrConstant(lhs, dataset);
             if (value != null) {
                 dataset.setElement(rhs, value);
             }
@@ -126,7 +126,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         var sep = forEachElement.lastIndexOf(ARROW);
         var lhs = forEachElement.substring(0, sep).trim();
         var rhs = forEachElement.substring(sep+ARROW.length()).trim();
-        var value = helper.getLhsElement(lhs, dataset);
+        var value = helper.getLhsOrConstant(lhs, dataset);
         if (value instanceof List<?> valueList) {
             var each = new ServiceParameters();
             for (var element : valueList) {
@@ -271,7 +271,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             }
             var lhs = entry.substring(0, sep).trim();
             var rhs = entry.substring(sep+ARROW.length()).trim();
-            var value = helper.getLhsElement(lhs, entry.startsWith("$") ||
+            var value = helper.getLhsOrConstant(lhs, entry.startsWith("$") ||
                         entry.startsWith(RESPONSE_NAMESPACE) || entry.startsWith(RESPONSE_INDEX)? mm : dataset);
             mapResponseToResult(itemId, rhs, entry, dataset, mm, value);
         }
@@ -302,7 +302,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             var sep = text.lastIndexOf(ARROW);
             var lhs = text.substring(0, sep).trim();
             var rhs = text.substring(sep+ARROW.length()).trim();
-            var value = helper.getLhsElement(lhs, dataset);
+            var value = helper.getLhsOrConstant(lhs, dataset);
             if (value != null) {
                 dataset.setElement(rhs.startsWith(MODEL_NAMESPACE)? rhs : PARA_NAMESPACE + rhs, copyOf(value));
             }

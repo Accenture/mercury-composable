@@ -205,6 +205,7 @@ public class DataMappingHelper {
 
     private boolean validOutputLhs(String lhs) {
         if (lhs.equals(INPUT) || lhs.startsWith(INPUT_NAMESPACE) ||
+                isPluggableFunction(lhs) ||
                 lhs.startsWith(JSON_PATH_TYPE) ||
                 lhs.startsWith(MODEL_NAMESPACE) || lhs.equals(DATA_TYPE) ||
                 lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE) ||
@@ -226,6 +227,14 @@ public class DataMappingHelper {
         return (rhs.equals(DECISION) && isDecision) || rhs.startsWith(FILE_TYPE) ||
                 rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE) ||
                 rhs.startsWith(EXT_NAMESPACE);
+    }
+
+    public Object getLhsOrConstant(String lhs, MultiLevelMap source) {
+        Object constant = getConstantValue(lhs);
+        if (constant != null) {
+            return constant;
+        }
+        return getLhsElement(lhs, source);
     }
 
     public Object getLhsElement(String lhs, MultiLevelMap source) {
