@@ -101,12 +101,14 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                                                         "sec-fetch-mode", "sec-fetch-site", "sec-fetch-user" };
     private final File tempDir;
     private final int connectTimeout;
+    private final boolean relaxedHeaderSize;
 
     public AsyncHttpClient() {
         Utility util = Utility.getInstance();
         AppConfigReader config = AppConfigReader.getInstance();
         var timeout = config.getProperty("http.client.connection.timeout", "5000");
         connectTimeout = Math.max(2000, util.str2int(timeout));
+        relaxedHeaderSize = "true".equals(config.getProperty("oversize.http.response.header", "false"));
         String temp = config.getProperty("async.http.temp", "/tmp/async-http-temp");
         tempDir = new File(temp);
         if (!tempDir.exists() && tempDir.mkdirs()) {
@@ -209,6 +211,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         HttpClient client = HttpClient.create()
                             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
                             .headers(h -> updateHttpHeaders(po, request, h));
+        // override default of 8 KB to 16 KB - use this with caution
+        if (relaxedHeaderSize) {
+            client.httpResponseDecoder(spec -> spec.maxHeaderSize(16 * 1024));
+        }
         int timeout = request.getTimeoutSeconds();
         client.responseTimeout(Duration.ofSeconds(timeout));
         if (md.secure) {

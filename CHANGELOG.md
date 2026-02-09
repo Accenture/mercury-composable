@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. `listOfMap(map, label)` plugin for event script
 2. Root node feature added to MiniGraph
 3. getLhsOrConstant() method in event-script-engine's helper function
+4. optional `oversize.http.response.header` parameter in application.properties
 
 ### Removed
 
