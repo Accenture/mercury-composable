@@ -236,8 +236,92 @@
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.875rem;
   line-height: 1.5;
-  white-space: pre-wrap;
+}
+
+.consoleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.consoleTitle {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.consoleControls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.controlButton {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.controlButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
+.controlButton:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.consoleMessage {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s;
+}
+
+.consoleMessage:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.messageIcon {
+  font-size: 1rem;
+}
+
+.messageContent {
   word-wrap: break-word;
+  color: #e2e8f0;
+}
+
+.messageTime {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.messageType-error .messageContent {
+  color: #fca5a5;
+}
+
+.messageType-info .messageContent {
+  color: #93c5fd;
+}
+
+.messageType-welcome .messageContent {
+  color: #86efac;
+}
+
+.emptyConsole {
+  color: #64748b;
+  text-align: center;
+  padding: 2rem;
 }
 
 /* Responsive design */

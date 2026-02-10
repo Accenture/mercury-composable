@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import styles from './JsonPathPlayground.module.css';
+import { parseMessage, getMessageIcon } from '../utils/messageParser';
 
 const MAX_ITEMS = 30;
 const MAX_BUFFER = 64000;
@@ -28,11 +29,29 @@ export default function JsonPathPlayground() {
   // Command history state
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   // --- Mutable References ---
   const wsRef = useRef(null);
   const pingIntervalRef = useRef(null);
   const wsUrl = useRef(getWebSocketURL());
+  const consoleRef = useRef(null);
+
+  // --- Console Message Component ---
+  const ConsoleMessage = ({ message }) => {
+    const parsed = parseMessage(message);
+    const icon = getMessageIcon(parsed.type);
+
+    return (
+      <div className={`${styles.consoleMessage} ${styles[`messageType-${parsed.type}`]}`}>
+        <span className={styles.messageIcon}>{icon}</span>
+        <span className={styles.messageContent}>{parsed.message}</span>
+        {parsed.time && (
+          <span className={styles.messageTime}>{parsed.time}</span>
+        )}
+      </div>
+    );
+  };
 
   // --- Connection Status Component ---
   const ConnectionStatus = ({ connected, url }) => (
@@ -54,6 +73,13 @@ export default function JsonPathPlayground() {
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
     };
   }, []);
+
+  // --- Auto-scroll Effect ---
+  useEffect(() => {
+    if (autoScroll && consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [messages, autoScroll]);
 
   // --- Helper Functions ---
   const getTimestamp = () => {
@@ -123,6 +149,17 @@ export default function JsonPathPlayground() {
     } else {
       addMessage(eventWithTimestamp("error", "already disconnected"));
     }
+  };
+
+  // --- Console Control Handlers ---
+  const handleCopyConsole = () => {
+    const text = messages.join('\n');
+    navigator.clipboard.writeText(text);
+    alert('Console copied to clipboard!');
+  };
+
+  const handleClearConsole = () => {
+    setMessages([]);
   };
 
   // --- Event Handlers ---
@@ -242,9 +279,45 @@ export default function JsonPathPlayground() {
         <div className={styles.rightPanel}>
           {showConsole && (
             <div className={styles.card}>
-              <pre className={styles.console}>
-                {messages.join('\n')}
-              </pre>
+              <div className={styles.consoleHeader}>
+                <span className={styles.consoleTitle}>Console Output</span>
+                <div className={styles.consoleControls}>
+                  <button
+                    className={styles.controlButton}
+                    onClick={() => setAutoScroll(!autoScroll)}
+                    title={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
+                    aria-label={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
+                  >
+                    {autoScroll ? '⏸️' : '▶️'}
+                  </button>
+                  <button
+                    className={styles.controlButton}
+                    onClick={handleCopyConsole}
+                    title="Copy console output"
+                    aria-label="Copy console output to clipboard"
+                  >
+                    📋
+                  </button>
+                  <button
+                    className={styles.controlButton}
+                    onClick={handleClearConsole}
+                    title="Clear console"
+                    aria-label="Clear console"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+              <div className={styles.console} ref={consoleRef} role="log" aria-live="polite">
+                {messages.map((msg, idx) => (
+                  <ConsoleMessage key={idx} message={msg} />
+                ))}
+                {messages.length === 0 && (
+                  <div className={styles.emptyConsole}>
+                    No messages yet. Click "Start" to connect.
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
