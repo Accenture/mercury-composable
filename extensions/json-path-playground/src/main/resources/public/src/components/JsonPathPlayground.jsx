@@ -3,6 +3,7 @@ import styles from './JsonPathPlayground.module.css';
 import { parseMessage, getMessageIcon } from '../utils/messageParser';
 import { validateJSON, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ToastContainer } from './Toast';
 
 const MAX_ITEMS = 30;
@@ -46,11 +47,11 @@ export default function JsonPathPlayground() {
   
   // Input states
   const [command, setCommand] = useState('');
-  const [payload, setPayload] = useState('');
+  const [payload, setPayload] = useLocalStorage('jsonpath-last-payload', '');
   const [payloadValidation, setPayloadValidation] = useState({ valid: true, error: null });
   
   // Command history state
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useLocalStorage('jsonpath-command-history', []);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [autoScroll, setAutoScroll] = useState(true);
 
