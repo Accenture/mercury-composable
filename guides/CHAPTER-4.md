@@ -1484,9 +1484,9 @@ For example:
 | **Type Conversion** | int           | A list of variables that can evaluate to an integer                                                                   |
 | **Type Conversion** | long          | A list of variables that can evaluate to a long integer                                                               |
 | **Type Conversion** | text          | A list of variables that can evaluate to a String                                                                     |
-| **Type Conversion** | listOfMap     | Re-arrange list elements into a list of maps. See notes below.
+| **Type Conversion** | listOfMap     | Convert "a map of lists" to "a list of maps". See notes below.                                                        |
 
-*Note*: The `listOfMap(map, label)` plugin re-arranges list elements into a list of maps.
+*Note*: The `listOfMap(map)` plugin re-arranges a map of lists back to a list of maps.
 
 JSON-Path wildcard search would generate a list of elements.
 When multiple JSON-Path searches are conducted, the result is a combined map of lists.
@@ -1512,26 +1512,26 @@ For example, the combined key-values after JSON-Path searches:
 }
 ```
 
-Re-arranged key-values using listOfMap(map, label):
+Re-arranged key-values using listOfMap(map):
 
 ```json
-{
-  "hello": [
-    {
-      "world": 1,
-      "test": "a"
-    },
-    {
-      "world": 2,
-      "test": "b"
-    },
-    {
-      "world": 3,
-      "test": "c"
-    }
-  ]
-}
+[
+  {
+    "world": 1,
+    "test": "a"
+  },
+  {
+    "world": 2,
+    "test": "b"
+  },
+  {
+    "world": 3,
+    "test": "c"
+  }
+]
 ```
+
+If the original data structure does not contain a map of lists, the plugin will return an empty list.
 
 For details, please refer to configuration example in header-and-json-path-test.yml and the unit test 
 `headerAndJsonPathTest()` in the FlowTests class of the event-script-engine module.

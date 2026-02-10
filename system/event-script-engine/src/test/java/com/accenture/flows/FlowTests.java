@@ -323,10 +323,10 @@ class FlowTests extends TestBase {
     @Test
     void headerAndJsonPathTest() throws ExecutionException, InterruptedException {
         final long timeout = 8000;
+        // input data structure is a list of maps
         var data = List.of(Map.of("world", "1", "test", "a"),
                 Map.of("world", "2", "test", "b"),
                 Map.of("world", "3", "test", "c"));
-
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
                 .setHeader("accept", "application/json").setHeader("content-type", "application/json")
@@ -344,10 +344,9 @@ class FlowTests extends TestBase {
         // prove that json-path search is successful for input and output data mapping
         assertEquals("world", body.get("body"));
         // after JSON-Path wildcard search, the array elements are grouped at the lowest level
-        assertEquals(Map.of("list", Map.of("world", List.of("1", "2", "3"), "test", List.of("a", "b", "c"))),
-                    body.get("jp"));
-        // f:listOfMap() restores the original data structure
-        assertEquals(Map.of("list", data), body.get("normalized"));
+        assertEquals(Map.of("world", List.of("1", "2", "3"), "test", List.of("a", "b", "c")), body.get("list"));
+        // f:listOfMap() restores the original data structure into a list of maps
+        assertEquals(data, body.get("normalized"));
     }
 
     @SuppressWarnings("unchecked")

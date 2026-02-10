@@ -213,10 +213,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                             .headers(h -> updateHttpHeaders(po, request, h));
         // override default of 8 KB to 16 KB - use this with caution
         if (relaxedHeaderSize) {
-            client.httpResponseDecoder(spec -> spec.maxHeaderSize(16 * 1024));
+            client = client.httpResponseDecoder(spec -> spec.maxHeaderSize(16 * 1024));
         }
-        int timeout = request.getTimeoutSeconds();
-        client.responseTimeout(Duration.ofSeconds(timeout));
+        client = client.responseTimeout(Duration.ofSeconds(request.getTimeoutSeconds()));
         if (md.secure) {
             if (request.isTrustAllCert()) {
                 Http11SslContextSpec http11Context = Http11SslContextSpec.forClient()
@@ -224,7 +223,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 SslContext sslContext = http11Context.sslContext();
                 client = client.secure(spec -> spec.sslContext(sslContext));
             } else {
-                client.secure();
+                client = client.secure();
             }
         }
         var sender = client.request(md.httpMethod).uri(request.getTargetHost() + uri);

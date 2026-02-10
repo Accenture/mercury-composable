@@ -22,14 +22,16 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import org.platformlambda.core.util.MultiLevelMap;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @SimplePlugin
 public class ListOfMap implements PluginFunction {
+    private static final String DATA = "d";
 
     /**
-     * Re-arrange list elements into a list of maps
+     * Convert map of lists to list of maps
      * <p>
      * e.g. FROM this data structure:
      * {
@@ -48,8 +50,7 @@ public class ListOfMap implements PluginFunction {
      * }
      * <p>
      * TO this data structure:
-     * {
-     *   "hello": [
+     *   [
      *     {
      *       "world": 1,
      *       "test": "a"
@@ -63,38 +64,42 @@ public class ListOfMap implements PluginFunction {
      *       "test": "c"
      *     }
      *   ]
-     * }
      *
-     * @param input data structure containing list of items
-     * @return re-arranged data structure containing list of maps
+     * @param input data structure containing a map of lists
+     * @return re-arranged data structure containing list of maps or empty list if not resolved
      */
-    @SuppressWarnings("unchecked")
     @Override
     public Object calculate(Object... input) {
-        if (input.length != 2) {
-            throw new IllegalArgumentException("Input must have two arguments");
+        if (input.length == 1 && input[0] instanceof Map<?, ?> data) {
+            var map = findMapOfLists(data);
+            if (!map.isEmpty()) {
+                return normalize(map);
+            }
         }
-        if (input[0] instanceof Map && input[1] instanceof String) {
-            var map = (Map<String, Object>) input[0];
-            var key = String.valueOf(input[1]);
-            return normalize(new MultiLevelMap(map), key).getMap();
-        } else {
-            return input[0];
-        }
+        return Collections.emptyList();
     }
 
-    private MultiLevelMap normalize(MultiLevelMap mm, String key) {
+    private Object normalize(Map<?, ?> map) {
         var target = new MultiLevelMap();
-        var map = mm.getElement(key);
-        if (map instanceof Map<?, ?> m) {
-            for (Map.Entry<?, ?> entry : m.entrySet()) {
-                if (entry.getKey() instanceof String && entry.getValue() instanceof List<?> items) {
-                    for (int i=0; i<items.size(); i++) {
-                        target.setElement(key+"["+i+"]." + entry.getKey(), items.get(i));
-                    }
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (entry.getValue() instanceof List<?> items) {
+                for (int i=0; i < items.size(); i++) {
+                    target.setElement(DATA+"["+i+"]." + entry.getKey(), items.get(i));
                 }
             }
         }
-        return target.getMap().isEmpty()? mm : target;
+        return target.getMap().isEmpty()? Collections.emptyList() : target.getElement(DATA);
+    }
+
+    private Map<?, ?> findMapOfLists(Map<?, ?> map) {
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (entry.getValue() instanceof List) {
+                return map;
+            }
+            if (entry.getValue() instanceof Map<?, ?> inner) {
+                return findMapOfLists(inner);
+            }
+        }
+        return Collections.emptyMap();
     }
 }

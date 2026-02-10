@@ -60,6 +60,7 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
     protected static final String RESPONSE_NAMESPACE = "response.";
     protected static final String PROVIDER = "provider";
     protected static final String PROVIDER_NAMESPACE = "provider.";
+    protected static final String PROVIDER_DEFAULT = "provider.default";
     protected static final String FOR_EACH = "each";
     protected static final String ERROR_CODE = "error.code";
     protected static final String ERROR_MESSAGE = "error.message";
@@ -186,7 +187,7 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
         if (target == null) {
             var config = AppConfigReader.getInstance();
             var name = PROVIDER_NAMESPACE + protocol;
-            var ts = config.getProperty(name);
+            var ts = config.getProperty(name, config.getProperty(PROVIDER_DEFAULT, "simple.http.service"));
             if (util.validServiceName(ts)) {
                 targetServiceStore.put(protocol, ts);
                 return ts;
