@@ -70,7 +70,6 @@ public class ListOfMap implements PluginFunction {
      */
     @Override
     public Object calculate(Object... input) {
-        System.out.println(input[0]);
         if (input.length == 1 && input[0] instanceof Map<?, ?> data) {
             var map = findMapOfLists(data);
             if (!map.isEmpty()) {
