@@ -1,10 +1,30 @@
 import { useState, useEffect, useRef } from 'react';
 import styles from './JsonPathPlayground.module.css';
 import { parseMessage, getMessageIcon } from '../utils/messageParser';
+import { validateJSON, formatJSON } from '../utils/validators';
 
 const MAX_ITEMS = 30;
 const MAX_BUFFER = 64000;
 const PING_INTERVAL = 30000;
+
+// Sample data for quick loading
+const SAMPLE_DATA = {
+  simple: JSON.stringify({ name: "John Doe", age: 30, city: "New York" }, null, 2),
+  nested: JSON.stringify({
+    user: {
+      name: "Jane Smith",
+      profile: {
+        email: "jane@example.com",
+        address: { city: "San Francisco", country: "USA" }
+      }
+    }
+  }, null, 2),
+  array: JSON.stringify([
+    { id: 1, name: "Item 1", status: "active" },
+    { id: 2, name: "Item 2", status: "pending" },
+    { id: 3, name: "Item 3", status: "inactive" }
+  ], null, 2)
+};
 
 // Determine WebSocket URL based on environment
 const getWebSocketURL = () => {
@@ -25,6 +45,7 @@ export default function JsonPathPlayground() {
   // Input states
   const [command, setCommand] = useState('');
   const [payload, setPayload] = useState('');
+  const [payloadValidation, setPayloadValidation] = useState({ valid: true, error: null });
   
   // Command history state
   const [history, setHistory] = useState([]);
@@ -80,6 +101,16 @@ export default function JsonPathPlayground() {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
     }
   }, [messages, autoScroll]);
+
+  // --- Payload Validation Effect ---
+  useEffect(() => {
+    if (payload) {
+      const validation = validateJSON(payload);
+      setPayloadValidation(validation);
+    } else {
+      setPayloadValidation({ valid: true, error: null });
+    }
+  }, [payload]);
 
   // --- Helper Functions ---
   const getTimestamp = () => {
@@ -161,6 +192,27 @@ export default function JsonPathPlayground() {
   const handleClearConsole = () => {
     setMessages([]);
   };
+
+  const handleFormatPayload = () => {
+    const formatted = formatJSON(payload);
+    setPayload(formatted);
+  };
+
+  // --- Sample Buttons Component ---
+  const SampleButtons = ({ onLoad }) => (
+    <div className={styles.sampleButtons}>
+      <span className={styles.sampleLabel}>Quick load:</span>
+      {Object.keys(SAMPLE_DATA).map(key => (
+        <button
+          key={key}
+          className={styles.sampleButton}
+          onClick={() => onLoad(SAMPLE_DATA[key])}
+        >
+          {key}
+        </button>
+      ))}
+    </div>
+  );
 
   // --- Event Handlers ---
   const handleKeyDown = (e) => {
@@ -245,15 +297,38 @@ export default function JsonPathPlayground() {
           
           <div className={styles.card}>
             <div className={styles.inputGroup}>
-              <label htmlFor="payload" className={styles.label}>JSON/XML</label>
+              <div className={styles.labelRow}>
+                <label htmlFor="payload" className={styles.label}>JSON/XML Payload</label>
+                <div className={styles.payloadControls}>
+                  <span className={styles.charCounter}>
+                    {payload.length} / {MAX_BUFFER}
+                  </span>
+                  {payload && (
+                    <span className={styles.validationIcon}>
+                      {payloadValidation.valid ? '✅' : '❌'}
+                    </span>
+                  )}
+                  <button
+                    className={styles.formatButton}
+                    onClick={handleFormatPayload}
+                    disabled={!payload || !payloadValidation.valid}
+                  >
+                    Format
+                  </button>
+                </div>
+              </div>
               <textarea
                 id="payload"
-                className={styles.textarea}
+                className={`${styles.textarea} ${!payloadValidation.valid ? styles.textareaError : ''}`}
                 rows="8"
                 placeholder="Paste your JSON/XML payload here"
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
               />
+              {!payloadValidation.valid && (
+                <div className={styles.errorMessage}>{payloadValidation.error}</div>
+              )}
+              <SampleButtons onLoad={setPayload} />
             </div>
           </div>
           

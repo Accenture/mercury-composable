@@ -137,6 +137,49 @@
   margin-bottom: 1rem;
 }
 
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.payloadControls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.charCounter {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.validationIcon {
+  font-size: 1rem;
+}
+
+.formatButton {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.formatButton:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.formatButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .label {
   display: block;
   margin-bottom: 0.5rem;
@@ -171,6 +214,46 @@
 .textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.textareaError {
+  border-color: var(--danger-color);
+}
+
+.errorMessage {
+  color: var(--danger-color);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.sampleButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sampleLabel {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.sampleButton {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sampleButton:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
 }
 
 .buttonGroup {
