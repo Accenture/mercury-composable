@@ -2,11 +2,11 @@ import styles from './Navigation.module.css';
 
 export default function Navigation() {
   const links = [
-    { href: '/info', label: 'Info', icon: 'ℹ️' },
-    { href: '/info/lib', label: 'Libraries', icon: '📚' },
-    { href: '/info/routes', label: 'Services', icon: '🔀' },
-    { href: '/health', label: 'Health', icon: '💚' },
-    { href: '/env', label: 'Environment', icon: '⚙️' }
+    { href: '/info', label: 'INFO' },
+    { href: '/info/lib', label: 'LIBRARIES'},
+    { href: '/info/routes', label: 'SERVICES'},
+    { href: '/health', label: 'HEALTH'},
+    { href: '/env', label: 'ENVIRONMENT'}
   ];
 
   return (

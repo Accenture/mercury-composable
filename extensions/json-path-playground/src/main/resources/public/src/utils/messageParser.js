@@ -27,3 +27,16 @@ export const getMessageIcon = (type) => {
   };
   return icons[type] || '•';
 };
+
+export const tryParseJSON = (str) => {
+  try {
+    const parsed = JSON.parse(str);
+    // Only consider it JSON if it's an object or array, not primitives
+    if (typeof parsed === 'object' && parsed !== null) {
+      return { isJSON: true, data: parsed };
+    }
+  } catch {
+    // Not valid JSON
+  }
+  return { isJSON: false, data: null };
+};

@@ -297,6 +297,35 @@
   line-height: 1.5;
 }
 
+/* Override react-json-view-lite styles for dark theme */
+.console :global(.json-view-wrapper) {
+  color: #e2e8f0;
+}
+
+.console :global(.json-view-wrapper .json-view--property) {
+  color: #93c5fd;
+}
+
+.console :global(.json-view-wrapper .json-view--string) {
+  color: #86efac;
+}
+
+.console :global(.json-view-wrapper .json-view--number) {
+  color: #fbbf24;
+}
+
+.console :global(.json-view-wrapper .json-view--boolean) {
+  color: #c084fc;
+}
+
+.console :global(.json-view-wrapper .json-view--null) {
+  color: #94a3b8;
+}
+
+.console :global(.json-view-wrapper .json-view--expandable) {
+  cursor: pointer;
+}
+
 .consoleHeader {
   display: flex;
   justify-content: space-between;
@@ -357,6 +386,38 @@
 .messageContent {
   word-wrap: break-word;
   color: #e2e8f0;
+  flex: 1;
+}
+
+.jsonViewWrapper {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
+  margin: 0.25rem 0;
+}
+
+.jsonContainer {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.jsonLabel {
+  color: #93c5fd !important;
+}
+
+.jsonString {
+  color: #86efac !important;
+}
+
+.jsonNumber {
+  color: #fbbf24 !important;
+}
+
+.jsonBoolean {
+  color: #c084fc !important;
+}
+
+.jsonNull {
+  color: #94a3b8 !important;
 }
 
 .messageTime {
