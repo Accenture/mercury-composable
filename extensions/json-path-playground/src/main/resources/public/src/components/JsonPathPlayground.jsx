@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import styles from './JsonPathPlayground.module.css';
 import { parseMessage, getMessageIcon } from '../utils/messageParser';
 import { validateJSON, formatJSON } from '../utils/validators';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from './Toast';
 
 const MAX_ITEMS = 30;
 const MAX_BUFFER = 64000;
@@ -51,6 +53,9 @@ export default function JsonPathPlayground() {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [autoScroll, setAutoScroll] = useState(true);
+
+  // Toast notifications
+  const { toasts, addToast, removeToast } = useToast();
 
   // --- Mutable References ---
   const wsRef = useRef(null);
@@ -140,12 +145,12 @@ export default function JsonPathPlayground() {
   // --- Connection Logic ---
   const connectToEdge = () => {
     if (!window.WebSocket) {
-      addMessage("WebSocket NOT supported by your Browser");
+      addToast('WebSocket not supported by your browser', 'error');
       return;
     }
 
     if (connected) {
-      addMessage(eventWithTimestamp("error", "already connected"));
+      addToast('Already connected', 'error');
       return;
     }
 
@@ -156,6 +161,7 @@ export default function JsonPathPlayground() {
     ws.onopen = () => {
       addMessage(eventWithTimestamp("info", "connected"));
       setConnected(true);
+      addToast('Connected to WebSocket', 'success');
       ws.send(JSON.stringify({ type: 'welcome' }));
       pingIntervalRef.current = setInterval(keepAlive, PING_INTERVAL);
     };
@@ -170,6 +176,7 @@ export default function JsonPathPlayground() {
       setConnected(false);
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
       addMessage(eventWithTimestamp("info", `disconnected - (${evt.code}) ${evt.reason}`));
+      addToast('Disconnected from WebSocket', 'info');
       wsRef.current = null;
     };
   };
@@ -186,11 +193,12 @@ export default function JsonPathPlayground() {
   const handleCopyConsole = () => {
     const text = messages.join('\n');
     navigator.clipboard.writeText(text);
-    alert('Console copied to clipboard!');
+    addToast('Console copied to clipboard!', 'success');
   };
 
   const handleClearConsole = () => {
     setMessages([]);
+    addToast('Console cleared', 'info');
   };
 
   const handleFormatPayload = () => {
@@ -263,6 +271,8 @@ export default function JsonPathPlayground() {
 
   return (
     <div className={styles.wrapper}>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      
       <header className={styles.header}>
         <h1 className={styles.title}>JSON-Path Playground</h1>
         
