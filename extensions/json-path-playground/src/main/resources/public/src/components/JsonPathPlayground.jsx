@@ -43,6 +43,7 @@ export default function JsonPathPlayground() {
   // --- UI & Application State ---
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
   
   // Input states
@@ -155,11 +156,13 @@ export default function JsonPathPlayground() {
       return;
     }
 
+    setConnecting(true);
     setShowConsole(true);
     const ws = new WebSocket(wsUrl.current);
     wsRef.current = ws;
 
     ws.onopen = () => {
+      setConnecting(false);
       addMessage(eventWithTimestamp("info", "connected"));
       setConnected(true);
       addToast('Connected to WebSocket', 'success');
@@ -173,7 +176,12 @@ export default function JsonPathPlayground() {
       }
     };
 
+    ws.onerror = () => {
+      setConnecting(false);
+    };
+
     ws.onclose = (evt) => {
+      setConnecting(false);
       setConnected(false);
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
       addMessage(eventWithTimestamp("info", `disconnected - (${evt.code}) ${evt.reason}`));
@@ -344,9 +352,14 @@ export default function JsonPathPlayground() {
           </div>
           
           <div className={styles.buttonGroup}>
-            {!connected && (
+            {!connected && !connecting && (
               <button className={`${styles.button} ${styles.buttonPrimary}`} onClick={connectToEdge}>
                 Start
+              </button>
+            )}
+            {connecting && (
+              <button className={`${styles.button} ${styles.buttonPrimary}`} disabled>
+                Connecting...
               </button>
             )}
             {connected && (
@@ -354,7 +367,7 @@ export default function JsonPathPlayground() {
                 Stop Service
               </button>
             )}
-            {showConsole && !connected && (
+            {showConsole && !connected && !connecting && (
               <button className={`${styles.button} ${styles.buttonWarning}`} onClick={() => setShowConsole(false)}>
                 Clear & Hide Console
               </button>
