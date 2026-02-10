@@ -46,34 +46,10 @@
 }
 
 .title {
-  color: #3cb371;
+  color: var(--primary-color);
   font-size: 1.75rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
-}
-
-.linkSection {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.link {
-  color: #007bff;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.link:hover {
-  color: #0056b3;
-  text-decoration: underline;
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid #dee2e6;
-  margin: 1.5rem 0;
+  margin-bottom: 0;
 }
 
 .statusCard {

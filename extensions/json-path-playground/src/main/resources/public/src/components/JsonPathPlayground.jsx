@@ -5,6 +5,7 @@ import { validateJSON, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ToastContainer } from './Toast';
+import Navigation from './Navigation';
 
 const MAX_ITEMS = 30;
 const MAX_BUFFER = 64000;
@@ -284,14 +285,7 @@ export default function JsonPathPlayground() {
       
       <header className={styles.header}>
         <h1 className={styles.title}>JSON-Path Playground</h1>
-        
-        <nav className={styles.linkSection}>
-          <a href="/info" className={styles.link}>INFO endpoint</a>
-          <a href="/info/lib" className={styles.link}>Library dependency list</a>
-          <a href="/info/routes" className={styles.link}>Service list</a>
-          <a href="/health" className={styles.link}>Health endpoint</a>
-          <a href="/env" className={styles.link}>Environment endpoint</a>
-        </nav>
+        <Navigation />
       </header>
 
       <div className={styles.container}>
