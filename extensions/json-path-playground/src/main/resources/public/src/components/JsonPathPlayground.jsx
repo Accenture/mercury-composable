@@ -6,7 +6,7 @@ import { useToast } from '../hooks/useToast';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
-import { JsonView, defaultStyles } from 'react-json-view-lite';
+import { JsonView, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 
 const MAX_ITEMS = 30;
@@ -84,8 +84,8 @@ export default function JsonPathPlayground() {
                 data={jsonCheck.data} 
                 shouldExpandNode={(level) => level < 2}
                 style={{
-                  ...defaultStyles,
-                  container: `${defaultStyles.container} ${styles.jsonContainer}`,
+                  ...darkStyles,
+                  container: `${darkStyles.container} ${styles.jsonContainer}`,
                   label: styles.jsonLabel,
                   stringValue: styles.jsonString,
                   numberValue: styles.jsonNumber,

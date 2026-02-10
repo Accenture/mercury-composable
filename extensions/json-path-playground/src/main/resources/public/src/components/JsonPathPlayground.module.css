@@ -294,36 +294,8 @@
   overflow-y: auto;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.875rem;
+  font-weight: bold;
   line-height: 1.5;
-}
-
-/* Override react-json-view-lite styles for dark theme */
-.console :global(.json-view-wrapper) {
-  color: #e2e8f0;
-}
-
-.console :global(.json-view-wrapper .json-view--property) {
-  color: #93c5fd;
-}
-
-.console :global(.json-view-wrapper .json-view--string) {
-  color: #86efac;
-}
-
-.console :global(.json-view-wrapper .json-view--number) {
-  color: #fbbf24;
-}
-
-.console :global(.json-view-wrapper .json-view--boolean) {
-  color: #c084fc;
-}
-
-.console :global(.json-view-wrapper .json-view--null) {
-  color: #94a3b8;
-}
-
-.console :global(.json-view-wrapper .json-view--expandable) {
-  cursor: pointer;
 }
 
 .consoleHeader {
@@ -351,7 +323,7 @@
   border-radius: 0.25rem;
   padding: 0.25rem 0.5rem;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.75rem;
   transition: all 0.2s;
 }
 
