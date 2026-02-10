@@ -34,6 +34,19 @@ export default function JsonPathPlayground() {
   const pingIntervalRef = useRef(null);
   const wsUrl = useRef(getWebSocketURL());
 
+  // --- Connection Status Component ---
+  const ConnectionStatus = ({ connected, url }) => (
+    <div className={styles.statusCard}>
+      <div className={styles.statusIndicator}>
+        <span className={`${styles.statusDot} ${connected ? styles.connected : styles.disconnected}`} />
+        <span className={styles.statusText}>
+          {connected ? 'Connected' : 'Disconnected'}
+        </span>
+      </div>
+      <span className={styles.statusUrl}>{url}</span>
+    </div>
+  );
+
   // --- Cleanup on Unmount ---
   useEffect(() => {
     return () => {
@@ -160,74 +173,82 @@ export default function JsonPathPlayground() {
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>JSON-Path Playground</h1>
-      
-      <nav className={styles.linkSection}>
-        <a href="/info" className={styles.link}>INFO endpoint</a>
-        <a href="/info/lib" className={styles.link}>Library dependency list</a>
-        <a href="/info/routes" className={styles.link}>Service list</a>
-        <a href="/health" className={styles.link}>Health endpoint</a>
-        <a href="/env" className={styles.link}>Environment endpoint</a>
-      </nav>
+    <div className={styles.wrapper}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>JSON-Path Playground</h1>
+        
+        <nav className={styles.linkSection}>
+          <a href="/info" className={styles.link}>INFO endpoint</a>
+          <a href="/info/lib" className={styles.link}>Library dependency list</a>
+          <a href="/info/routes" className={styles.link}>Service list</a>
+          <a href="/health" className={styles.link}>Health endpoint</a>
+          <a href="/env" className={styles.link}>Environment endpoint</a>
+        </nav>
+      </header>
 
-      <hr className={styles.divider} />
-      
-      <div className={styles.statusBar}>
-        {connected ? `Connected to ${wsUrl.current}` : `Disconnected from ${wsUrl.current}`}
+      <div className={styles.container}>
+        <div className={styles.leftPanel}>
+          <ConnectionStatus connected={connected} url={wsUrl.current} />
+          
+          <div className={styles.card}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="command" className={styles.label}>Command</label>
+              <input
+                id="command"
+                type="text"
+                className={styles.input}
+                placeholder="Enter your test message once it is connected"
+                value={command}
+                onChange={(e) => setCommand(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={!connected}
+              />
+            </div>
+          </div>
+          
+          <div className={styles.card}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="payload" className={styles.label}>JSON/XML</label>
+              <textarea
+                id="payload"
+                className={styles.textarea}
+                rows="8"
+                placeholder="Paste your JSON/XML payload here"
+                value={payload}
+                onChange={(e) => setPayload(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className={styles.buttonGroup}>
+            {!connected && (
+              <button className={`${styles.button} ${styles.buttonPrimary}`} onClick={connectToEdge}>
+                Start
+              </button>
+            )}
+            {connected && (
+              <button className={`${styles.button} ${styles.buttonWarning}`} onClick={disconnectFromEdge}>
+                Stop Service
+              </button>
+            )}
+            {showConsole && !connected && (
+              <button className={`${styles.button} ${styles.buttonWarning}`} onClick={() => setShowConsole(false)}>
+                Clear & Hide Console
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.rightPanel}>
+          {showConsole && (
+            <div className={styles.card}>
+              <pre className={styles.console}>
+                {messages.join('\n')}
+              </pre>
+            </div>
+          )}
+        </div>
       </div>
-
-      <div className={styles.inputGroup}>
-        <label htmlFor="command" className={styles.label}>Command</label>
-        <input
-          id="command"
-          type="text"
-          className={styles.input}
-          placeholder="Enter your test message once it is connected"
-          value={command}
-          onChange={(e) => setCommand(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={!connected}
-        />
-      </div>
-
-      <div className={styles.inputGroup}>
-        <label htmlFor="payload" className={styles.label}>JSON/XML</label>
-        <textarea
-          id="payload"
-          className={styles.textarea}
-          rows="3"
-          placeholder="Paste your JSON/XML payload here"
-          value={payload}
-          onChange={(e) => setPayload(e.target.value)}
-        />
-      </div>
-
-      <div className={styles.buttonGroup}>
-        {!connected && (
-          <button className={`${styles.button} ${styles.buttonPrimary}`} onClick={connectToEdge}>
-            Start
-          </button>
-        )}
-        {connected && (
-          <button className={`${styles.button} ${styles.buttonWarning}`} onClick={disconnectFromEdge}>
-            Stop Service
-          </button>
-        )}
-        {showConsole && !connected && (
-          <button className={`${styles.button} ${styles.buttonWarning}`} onClick={() => setShowConsole(false)}>
-            Clear & Hide Console
-          </button>
-        )}
-      </div>
-
-      <hr className={styles.divider} />
-
-      {showConsole && (
-        <pre className={styles.console}>
-          {messages.join('\n')}
-        </pre>
-      )}
     </div>
   );
 }
