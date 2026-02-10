@@ -188,9 +188,6 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
             var config = AppConfigReader.getInstance();
             var name = PROVIDER_NAMESPACE + protocol;
             var ts = config.getProperty(name, config.getProperty(PROVIDER_DEFAULT, "simple.http.service"));
-            if (ts == null) {
-                throw new IllegalArgumentException("Missing '"+name+"' or '"+PROVIDER_DEFAULT+"'");
-            }
             if (util.validServiceName(ts)) {
                 targetServiceStore.put(protocol, ts);
                 return ts;
