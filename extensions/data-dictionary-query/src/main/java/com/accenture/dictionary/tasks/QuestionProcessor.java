@@ -102,7 +102,12 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (mappedResult == null) {
             throw new IllegalArgumentException("No result resolved for " + questionId);
         }
-        return mappedResult;
+        var response = new EventEnvelope().setBody(mappedResult);
+        var mappedHeaders = dataset.getElement(OUTPUT_HEADER);
+        if (mappedHeaders instanceof Map<?, ?> map) {
+            map.forEach((key, value) -> response.setHeader(String.valueOf(key), value));
+        }
+        return response;
     }
 
     private void executeQuestions(PostOffice po, MultiLevelMap dataset, QuestionSpecs questionSpecs, long timeout)

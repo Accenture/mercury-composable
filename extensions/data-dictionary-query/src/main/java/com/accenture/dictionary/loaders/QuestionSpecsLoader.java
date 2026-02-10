@@ -50,11 +50,10 @@ public class QuestionSpecsLoader {
         if (!purpose.isEmpty() && questions instanceof List<?> questionList &&
                 answer instanceof List<?> answerList && !questionList.isEmpty() && !answerList.isEmpty()) {
             QuestionSpecs qs = new QuestionSpecs(questionId, purpose, concurrency);
-            var resultStack = new ArrayList<String>();
             int n = 0;
             for (Object question : questionList) {
                 n++;
-                qs.addQuestion(getEachQuestion(n, questionId, question, resultStack));
+                qs.addQuestion(getEachQuestion(n, questionId, question));
             }
             qs.addAnswer(getValidatedAnswerList(questionId, answerList));
             return qs;
@@ -63,7 +62,7 @@ public class QuestionSpecsLoader {
         }
     }
 
-    private Question getEachQuestion(int n, String questionId, Object question, List<String> resultStack) {
+    private Question getEachQuestion(int n, String questionId, Object question) {
         if (question instanceof Map<?, ?> entry) {
             var id = entry.get("id");
             var input = entry.get("input");
@@ -71,7 +70,7 @@ public class QuestionSpecsLoader {
             if (id instanceof String identifier && !identifier.isEmpty() &&
                     input instanceof List<?> inputList && output instanceof List<?> outputList &&
                     !inputList.isEmpty() && !outputList.isEmpty()) {
-                return prepareEachQuestion(n, entry, questionId, identifier, inputList, outputList, resultStack);
+                return prepareEachQuestion(n, entry, questionId, identifier, inputList, outputList);
             }
         }
         throw new IllegalArgumentException("Invalid question entry -"+n+" for "+questionId);
@@ -88,19 +87,18 @@ public class QuestionSpecsLoader {
     }
 
     private Question prepareEachQuestion(int n, Map<?, ?> entry, String questionId, String identifier,
-                                         List<?> inputList, List<?> outputList, List<String> resultStack) {
+                                         List<?> inputList, List<?> outputList) {
         var forEachEntry = getForEach(entry.get("for_each"));
-        validateForEachEntry(questionId, forEachEntry, resultStack);
+        validateForEachEntry(questionId, forEachEntry);
         Question q = new Question(identifier, forEachEntry);
         for (Object e : inputList) {
             var text = String.valueOf(e);
-            validateInput(questionId, text, resultStack);
+            validateInput(questionId, text);
             q.addInput(text);
         }
         for (Object e : outputList) {
             var text = String.valueOf(e);
             validateOutput(questionId, text);
-            resultStack.add(text);
             q.addOutput(text);
         }
         if (countInputParameters(q) == 0) {
@@ -142,14 +140,14 @@ public class QuestionSpecsLoader {
         return result;
     }
 
-    private void validateInput(String questionId, String text, List<String> resultStack) {
+    private void validateInput(String questionId, String text) {
         if (!text.contains(ARROW)) {
             throw new IllegalArgumentException("Invalid input in "+questionId+" - missing '->'");
         }
         var lhs = text.substring(0, text.indexOf(ARROW)).trim();
-        if (invalidInputLhs(lhs, resultStack)) {
+        if (invalidInputLhs(lhs)) {
             throw new IllegalArgumentException("Invalid input in "+questionId+
-                                                " - must start with input.body. or input.header. or previous result.");
+                                " - must start with input.body. or input.header. or prior result.");
         }
     }
 
@@ -162,19 +160,22 @@ public class QuestionSpecsLoader {
         }
     }
 
-    private boolean invalidInputLhs(String text, List<String> resultStack) {
+    private boolean invalidInputLhs(String text) {
         if (text.startsWith(RESULT)) {
-            var parameter = text.substring(RESULT.length());
-            return !resultStack.contains(parameter);
+            return false;
         } else {
             return !helper.validInput(text + " " + ARROW + " placeholder");
         }
     }
 
-    private void validateForEachEntry(String questionId, String text, List<String> resultStack) {
+    private void validateForEachEntry(String questionId, String text) {
         if (text != null) {
-            var lhs = text.substring(0, text.indexOf(ARROW)).trim();
-            if (invalidInputLhs(lhs, resultStack)) {
+            int sep = text.indexOf(ARROW);
+            if (sep == -1) {
+                throw new IllegalArgumentException("Invalid 'for_each' in "+questionId+" - missing '->'");
+            }
+            var lhs = text.substring(0, sep).trim();
+            if (invalidInputLhs(lhs)) {
                 throw new IllegalArgumentException("Invalid 'for_each' LHS in " + questionId +
                         " - must start with input.body. or input.header. or previous result.");
             }

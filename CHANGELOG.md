@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.62, 2/9/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Bugfix for QuestionSpecsLoader in data-dictionary-query module.
+   Refactored validation logic for the "for_each" entry in a complex question.
+2. Support output mapping of headers in data-dictionary-query module.
+
+---
 ## Version 4.3.61, 2/7/2026
 
 ### Added

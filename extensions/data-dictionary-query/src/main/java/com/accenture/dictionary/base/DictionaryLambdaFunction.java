@@ -51,10 +51,10 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
     protected static final String MODEL_NAMESPACE = "model.";
     protected static final String INPUT = "input";
     protected static final String OUTPUT_BODY = "output.body";
+    protected static final String OUTPUT_HEADER = "output.header";
     protected static final String PARAMETER = "parameter";
     protected static final String PARA_NAMESPACE = "parameter.";
     protected static final String RESULT = "result";
-    protected static final String RESULT_NAMESPACE = "result.";
     protected static final String RESPONSE = "response";
     protected static final String RESPONSE_INDEX = "response[";
     protected static final String RESPONSE_NAMESPACE = "response.";
