@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.63, 2/10/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Improved ListOfMap plugin for event-script-engine
+2. AsyncHttpClient supports setting maximum header size up to 16 KB
+
+---
 ## Version 4.3.62, 2/9/2026
 
 ### Added
