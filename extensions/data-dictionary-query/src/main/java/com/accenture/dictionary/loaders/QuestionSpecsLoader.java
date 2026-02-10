@@ -177,7 +177,7 @@ public class QuestionSpecsLoader {
             var lhs = text.substring(0, sep).trim();
             if (invalidInputLhs(lhs)) {
                 throw new IllegalArgumentException("Invalid 'for_each' LHS in " + questionId +
-                        " - must start with input.body. or input.header. or previous result.");
+                        " - must start with input.body. or input.header. or prior result.");
             }
         }
     }
