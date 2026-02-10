@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-N/A
+Default data provider configuration `provider.default` in application.properties
+for data-dictionary-query module
 
 ### Removed
 
