@@ -156,8 +156,8 @@ export default function JsonPathPlayground() {
 
   const addMessage = (newMsg) => {
     setMessages((prev) => {
-      const updated = [newMsg, ...prev];
-      if (updated.length > MAX_ITEMS) updated.pop();
+      const updated = [...prev, newMsg];
+      if (updated.length > MAX_ITEMS) updated.shift();
       return updated;
     });
   };
