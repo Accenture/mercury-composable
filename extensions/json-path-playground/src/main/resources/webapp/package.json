@@ -1,5 +1,5 @@
 {
-  "name": "json-path-playground",
+  "name": "json-path-playground-webapp",
   "version": "1.0.0",
   "description": "A lightweight React-based JSON-Path playground for testing and debugging",
   "type": "module",
@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:prod": "vite build && npm run copy:dist",
-    "copy:dist": "cp -r dist/* ./"
+    "clean": "rm -rf ../public/*",
+    "build:spring": "npm run build && npm run deploy",
+    "deploy": "cp -r dist/* ../public/"
   },
   "dependencies": {
     "react": "^19.0.0",

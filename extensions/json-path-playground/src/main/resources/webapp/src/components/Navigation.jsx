@@ -21,7 +21,7 @@ export default function Navigation() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span className={styles.navIcon}>{link.icon}</span>
+            {link.icon && <span className={styles.navIcon}>{link.icon}</span>}
             <span className={styles.navText}>{link.label}</span>
           </a>
         ))}

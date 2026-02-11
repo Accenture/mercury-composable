@@ -359,7 +359,7 @@ export default function JsonPathPlayground() {
                 id="command"
                 type="text"
                 className={styles.input}
-                placeholder="Enter your test message once it is connected"
+                placeholder={!connected ? "Enter your test message once it is connected" : "Enter command (Up Arrow for history)"}
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 onKeyDown={handleKeyDown}
