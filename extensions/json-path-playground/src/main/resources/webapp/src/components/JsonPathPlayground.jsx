@@ -15,8 +15,8 @@ const PING_INTERVAL = 30000;
 
 // Sample data for quick loading
 const SAMPLE_DATA = {
-  simple: JSON.stringify({ name: "John Doe", age: 30, city: "New York" }, null, 2),
-  nested: JSON.stringify({
+  json_simple: JSON.stringify({ name: "John Doe", age: 30, city: "New York" }, null, 2),
+  json_nested: JSON.stringify({
     user: {
       name: "Jane Smith",
       profile: {
@@ -25,11 +25,46 @@ const SAMPLE_DATA = {
       }
     }
   }, null, 2),
-  array: JSON.stringify([
+  json_array: JSON.stringify([
     { id: 1, name: "Item 1", status: "active" },
     { id: 2, name: "Item 2", status: "pending" },
     { id: 3, name: "Item 3", status: "inactive" }
-  ], null, 2)
+  ], null, 2),
+  xml_simple: `<?xml version="1.0" encoding="UTF-8"?>
+<person>
+  <name>John Doe</name>
+  <age>30</age>
+  <city>New York</city>
+</person>`,
+  xml_nested: `<?xml version="1.0" encoding="UTF-8"?>
+<user>
+  <name>Jane Smith</name>
+  <profile>
+    <email>jane@example.com</email>
+    <address>
+      <city>San Francisco</city>
+      <country>USA</country>
+    </address>
+  </profile>
+</user>`,
+  xml_array: `<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <id>1</id>
+    <name>Item 1</name>
+    <status>active</status>
+  </item>
+  <item>
+    <id>2</id>
+    <name>Item 2</name>
+    <status>pending</status>
+  </item>
+  <item>
+    <id>3</id>
+    <name>Item 3</name>
+    <status>inactive</status>
+  </item>
+</items>`
 };
 
 // Determine WebSocket URL based on environment
@@ -240,20 +275,44 @@ export default function JsonPathPlayground() {
   };
 
   // --- Sample Buttons Component ---
-  const SampleButtons = ({ onLoad }) => (
-    <div className={styles.sampleButtons}>
-      <span className={styles.sampleLabel}>Quick load:</span>
-      {Object.keys(SAMPLE_DATA).map(key => (
-        <button
-          key={key}
-          className={styles.sampleButton}
-          onClick={() => onLoad(SAMPLE_DATA[key])}
-        >
-          {key}
-        </button>
-      ))}
-    </div>
-  );
+  const SampleButtons = ({ onLoad }) => {
+    const jsonSamples = Object.keys(SAMPLE_DATA).filter(k => k.startsWith('json_'));
+    const xmlSamples = Object.keys(SAMPLE_DATA).filter(k => k.startsWith('xml_'));
+    
+    const formatLabel = (key) => {
+      return key.replace(/^(json|xml)_/, '').replace(/_/g, ' ');
+    };
+
+    return (
+      <div className={styles.sampleButtons}>
+        <span className={styles.sampleLabel}>Quick load:</span>
+        <div className={styles.sampleGroup}>
+          <span className={styles.sampleGroupLabel}>JSON:</span>
+          {jsonSamples.map(key => (
+            <button
+              key={key}
+              className={styles.sampleButton}
+              onClick={() => onLoad(SAMPLE_DATA[key])}
+            >
+              {formatLabel(key)}
+            </button>
+          ))}
+        </div>
+        <div className={styles.sampleGroup}>
+          <span className={styles.sampleGroupLabel}>XML:</span>
+          {xmlSamples.map(key => (
+            <button
+              key={key}
+              className={styles.sampleButton}
+              onClick={() => onLoad(SAMPLE_DATA[key])}
+            >
+              {formatLabel(key)}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // --- Event Handlers ---
   const handleKeyDown = (e) => {
@@ -323,6 +382,11 @@ export default function JsonPathPlayground() {
                   <span className={styles.charCounter}>
                     {payload.length} / {MAX_BUFFER}
                   </span>
+                  {payload && payloadValidation.type && (
+                    <span className={styles.typeIndicator}>
+                      {payloadValidation.type.toUpperCase()}
+                    </span>
+                  )}
                   {payload && (
                     <span className={styles.validationIcon}>
                       {payloadValidation.valid ? '✅' : '❌'}
@@ -331,7 +395,8 @@ export default function JsonPathPlayground() {
                   <button
                     className={styles.formatButton}
                     onClick={handleFormatPayload}
-                    disabled={!payload || !payloadValidation.valid}
+                    disabled={!payload || payloadValidation.type !== 'json'}
+                    title={payloadValidation.type === 'xml' ? 'Format only available for JSON' : 'Format JSON'}
                   >
                     Format
                   </button>
