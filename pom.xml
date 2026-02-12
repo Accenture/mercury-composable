@@ -19,7 +19,6 @@
         <!-- Extensions -->
         <module>extensions/data-dictionary-query</module>
         <module>extensions/reactive-postgres</module>
-        <module>extensions/json-path-playground</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>
@@ -42,7 +41,7 @@
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>
-
     </modules>
+
 </project>
 
