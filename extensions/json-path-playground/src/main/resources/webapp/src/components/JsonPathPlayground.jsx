@@ -1,0 +1,510 @@
+import { useState, useEffect, useRef } from 'react';
+import styles from './JsonPathPlayground.module.css';
+import { parseMessage, getMessageIcon, tryParseJSON } from '../utils/messageParser';
+import { validateJSON, formatJSON } from '../utils/validators';
+import { useToast } from '../hooks/useToast';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { ToastContainer } from './Toast';
+import Navigation from './Navigation';
+import { JsonView, darkStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
+
+const MAX_ITEMS = 30;
+const MAX_BUFFER = 64000;
+const PING_INTERVAL = 30000;
+
+// Sample data for quick loading
+const SAMPLE_DATA = {
+  json_simple: JSON.stringify({ name: "John Doe", age: 30, city: "New York" }, null, 2),
+  json_nested: JSON.stringify({
+    user: {
+      name: "Jane Smith",
+      profile: {
+        email: "jane@example.com",
+        address: { city: "San Francisco", country: "USA" }
+      }
+    }
+  }, null, 2),
+  json_array: JSON.stringify([
+    { id: 1, name: "Item 1", status: "active" },
+    { id: 2, name: "Item 2", status: "pending" },
+    { id: 3, name: "Item 3", status: "inactive" }
+  ], null, 2),
+  xml_simple: `<?xml version="1.0" encoding="UTF-8"?>
+<person>
+  <name>John Doe</name>
+  <age>30</age>
+  <city>New York</city>
+</person>`,
+  xml_nested: `<?xml version="1.0" encoding="UTF-8"?>
+<user>
+  <name>Jane Smith</name>
+  <profile>
+    <email>jane@example.com</email>
+    <address>
+      <city>San Francisco</city>
+      <country>USA</country>
+    </address>
+  </profile>
+</user>`,
+  xml_array: `<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <id>1</id>
+    <name>Item 1</name>
+    <status>active</status>
+  </item>
+  <item>
+    <id>2</id>
+    <name>Item 2</name>
+    <status>pending</status>
+  </item>
+  <item>
+    <id>3</id>
+    <name>Item 3</name>
+    <status>inactive</status>
+  </item>
+</items>`
+};
+
+// Determine WebSocket URL based on environment
+const getWebSocketURL = () => {
+  if (import.meta.env.DEV) {
+    // Development mode - proxy will handle this
+    return `ws://localhost:3000/ws/json/path`;
+  }
+  // Production - use the current host
+  return `ws://${window.location.host}/ws/json/path`;
+};
+
+export default function JsonPathPlayground() {
+  // --- UI & Application State ---
+  const [messages, setMessages] = useState([]);
+  const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [showConsole, setShowConsole] = useState(false);
+  
+  // Input states
+  const [command, setCommand] = useState('');
+  const [payload, setPayload] = useLocalStorage('jsonpath-last-payload', '');
+  const [payloadValidation, setPayloadValidation] = useState({ valid: true, error: null });
+  
+  // Command history state
+  const [history, setHistory] = useLocalStorage('jsonpath-command-history', []);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  // Toast notifications
+  const { toasts, addToast, removeToast } = useToast();
+
+  // --- Mutable References ---
+  const wsRef = useRef(null);
+  const pingIntervalRef = useRef(null);
+  const wsUrl = useRef(getWebSocketURL());
+  const consoleRef = useRef(null);
+
+  // --- Console Message Component ---
+  const ConsoleMessage = ({ message }) => {
+    const parsed = parseMessage(message);
+    const icon = getMessageIcon(parsed.type);
+    const jsonCheck = tryParseJSON(parsed.message);
+
+    return (
+      <div className={`${styles.consoleMessage} ${styles[`messageType-${parsed.type}`]}`}>
+        <span className={styles.messageIcon}>{icon}</span>
+        <div className={styles.messageContent}>
+          {jsonCheck.isJSON ? (
+            <div className={styles.jsonViewWrapper}>
+              <JsonView 
+                data={jsonCheck.data} 
+                shouldExpandNode={(level) => level < 2}
+                style={{
+                  ...darkStyles,
+                  container: `${darkStyles.container} ${styles.jsonContainer}`,
+                  label: styles.jsonLabel,
+                  stringValue: styles.jsonString,
+                  numberValue: styles.jsonNumber,
+                  booleanValue: styles.jsonBoolean,
+                  nullValue: styles.jsonNull,
+                }}
+              />
+            </div>
+          ) : (
+            <span>{parsed.message}</span>
+          )}
+        </div>
+        {parsed.time && (
+          <span className={styles.messageTime}>{parsed.time}</span>
+        )}
+      </div>
+    );
+  };
+
+  // --- Connection Status Component ---
+  const ConnectionStatus = ({ connected, url }) => (
+    <div className={styles.statusCard}>
+      <div className={styles.statusIndicator}>
+        <span className={`${styles.statusDot} ${connected ? styles.connected : styles.disconnected}`} />
+        <span className={styles.statusText}>
+          {connected ? 'Connected' : 'Disconnected'}
+        </span>
+      </div>
+      <span className={styles.statusUrl}>{url}</span>
+    </div>
+  );
+
+  // --- Cleanup on Unmount ---
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+    };
+  }, []);
+
+  // --- Auto-scroll Effect ---
+  useEffect(() => {
+    if (autoScroll && consoleRef.current) {
+      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    }
+  }, [messages, autoScroll]);
+
+  // --- Payload Validation Effect ---
+  useEffect(() => {
+    if (payload) {
+      const validation = validateJSON(payload);
+      setPayloadValidation(validation);
+    } else {
+      setPayloadValidation({ valid: true, error: null });
+    }
+  }, [payload]);
+
+  // --- Helper Functions ---
+  const getTimestamp = () => {
+    const s = new Date().toString();
+    const gmt = s.indexOf('GMT');
+    return gmt > 0 ? s.substring(0, gmt).trim() : s;
+  };
+
+  const eventWithTimestamp = (type, message) => {
+    return JSON.stringify({ type, message, time: getTimestamp() });
+  };
+
+  const addMessage = (newMsg) => {
+    setMessages((prev) => {
+      const updated = [...prev, newMsg];
+      if (updated.length > MAX_ITEMS) updated.shift();
+      return updated;
+    });
+  };
+
+  const keepAlive = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(eventWithTimestamp("ping", "keep alive"));
+    }
+  };
+
+  // --- Connection Logic ---
+  const connectToEdge = () => {
+    if (!window.WebSocket) {
+      addToast('WebSocket not supported by your browser', 'error');
+      return;
+    }
+
+    if (connected) {
+      addToast('Already connected', 'error');
+      return;
+    }
+
+    setConnecting(true);
+    setShowConsole(true);
+    const ws = new WebSocket(wsUrl.current);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setConnecting(false);
+      addMessage(eventWithTimestamp("info", "connected"));
+      setConnected(true);
+      addToast('Connected to WebSocket', 'success');
+      ws.send(JSON.stringify({ type: 'welcome' }));
+      pingIntervalRef.current = setInterval(keepAlive, PING_INTERVAL);
+    };
+
+    ws.onmessage = (evt) => {
+      if (!evt.data.startsWith('{"type":"ping"')) {
+        addMessage(evt.data);
+      }
+    };
+
+    ws.onerror = () => {
+      setConnecting(false);
+    };
+
+    ws.onclose = (evt) => {
+      setConnecting(false);
+      setConnected(false);
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      addMessage(eventWithTimestamp("info", `disconnected - (${evt.code}) ${evt.reason}`));
+      addToast('Disconnected from WebSocket', 'info');
+      wsRef.current = null;
+    };
+  };
+
+  const disconnectFromEdge = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    } else {
+      addMessage(eventWithTimestamp("error", "already disconnected"));
+    }
+  };
+
+  // --- Console Control Handlers ---
+  const handleCopyConsole = () => {
+    const text = messages.join('\n');
+    navigator.clipboard.writeText(text);
+    addToast('Console copied to clipboard!', 'success');
+  };
+
+  const handleClearConsole = () => {
+    setMessages([]);
+    addToast('Console cleared', 'info');
+  };
+
+  const handleFormatPayload = () => {
+    const formatted = formatJSON(payload);
+    setPayload(formatted);
+  };
+
+  // --- Sample Buttons Component ---
+  const SampleButtons = ({ onLoad }) => {
+    const jsonSamples = Object.keys(SAMPLE_DATA).filter(k => k.startsWith('json_'));
+    const xmlSamples = Object.keys(SAMPLE_DATA).filter(k => k.startsWith('xml_'));
+    
+    const formatLabel = (key) => {
+      return key.replace(/^(json|xml)_/, '').replace(/_/g, ' ');
+    };
+
+    return (
+      <div className={styles.sampleButtons}>
+        <span className={styles.sampleLabel}>Quick load:</span>
+        <div className={styles.sampleGroup}>
+          <span className={styles.sampleGroupLabel}>JSON:</span>
+          {jsonSamples.map(key => (
+            <button
+              key={key}
+              className={styles.sampleButton}
+              onClick={() => onLoad(SAMPLE_DATA[key])}
+            >
+              {formatLabel(key)}
+            </button>
+          ))}
+        </div>
+        <div className={styles.sampleGroup}>
+          <span className={styles.sampleGroupLabel}>XML:</span>
+          {xmlSamples.map(key => (
+            <button
+              key={key}
+              className={styles.sampleButton}
+              onClick={() => onLoad(SAMPLE_DATA[key])}
+            >
+              {formatLabel(key)}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // --- Event Handlers ---
+  const handleKeyDown = (e) => {
+    if (!connected) return;
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (history.length > 0 && historyIndex < history.length - 1) {
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+        setCommand(history[newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        setCommand(history[newIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setCommand('');
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const text = command.trim();
+      
+      if (text.length > 0) {
+        wsRef.current.send(text);
+        
+        // Update history
+        setHistory((prev) => [text, ...prev].slice(0, MAX_ITEMS));
+        setHistoryIndex(-1);
+
+        // Handle special 'load' command
+        if (text === 'load') {
+          if (payload.length === 0) {
+            addMessage("ERROR: please paste JSON/XML payload in input text area");
+          } else if (payload.length > MAX_BUFFER) {
+            addMessage(`ERROR: please reduce JSON/XML payload size. It must be less than ${MAX_BUFFER} characters`);
+          } else {
+            wsRef.current.send(payload);
+          }
+        }
+      }
+      setCommand(''); // Clear input after sending
+    }
+  };
+
+  return (
+    <div className={styles.wrapper}>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      
+      <header className={styles.header}>
+        <h1 className={styles.title}>JSON-Path Playground</h1>
+        <Navigation />
+      </header>
+
+      <div className={styles.container}>
+        <div className={styles.leftPanel}>
+          <ConnectionStatus connected={connected} url={wsUrl.current} />
+          
+          <div className={styles.card}>
+            <div className={styles.inputGroup}>
+              <div className={styles.labelRow}>
+                <label htmlFor="payload" className={styles.label}>JSON/XML Payload</label>
+                <div className={styles.payloadControls}>
+                  <span className={styles.charCounter}>
+                    {payload.length} / {MAX_BUFFER}
+                  </span>
+                  {payload && payloadValidation.type && (
+                    <span className={styles.typeIndicator}>
+                      {payloadValidation.type.toUpperCase()}
+                    </span>
+                  )}
+                  {payload && (
+                    <span className={styles.validationIcon}>
+                      {payloadValidation.valid ? '✅' : '❌'}
+                    </span>
+                  )}
+                  <button
+                    className={styles.formatButton}
+                    onClick={handleFormatPayload}
+                    disabled={!payload || payloadValidation.type !== 'json'}
+                    title={payloadValidation.type === 'xml' ? 'Format only available for JSON' : 'Format JSON'}
+                  >
+                    Format
+                  </button>
+                </div>
+              </div>
+              <textarea
+                id="payload"
+                className={`${styles.textarea} ${!payloadValidation.valid ? styles.textareaError : ''}`}
+                rows="8"
+                placeholder="Paste your JSON/XML payload here"
+                value={payload}
+                onChange={(e) => setPayload(e.target.value)}
+              />
+              {!payloadValidation.valid && (
+                <div className={styles.errorMessage}>{payloadValidation.error}</div>
+              )}
+              <SampleButtons onLoad={setPayload} />
+            </div>
+          </div>
+
+          <div className={styles.card}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="command" className={styles.label}>Command</label>
+              <input
+                id="command"
+                type="text"
+                className={styles.input}
+                placeholder={!connected ? "Enter your test message once it is connected" : "Enter command (Up Arrow for history)"}
+                value={command}
+                onChange={(e) => setCommand(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={!connected}
+              />
+            </div>
+          </div>
+          
+          
+          
+          <div className={styles.buttonGroup}>
+            {!connected && !connecting && (
+              <button className={`${styles.button} ${styles.buttonPrimary}`} onClick={connectToEdge}>
+                Start
+              </button>
+            )}
+            {connecting && (
+              <button className={`${styles.button} ${styles.buttonPrimary}`} disabled>
+                Connecting...
+              </button>
+            )}
+            {connected && (
+              <button className={`${styles.button} ${styles.buttonWarning}`} onClick={disconnectFromEdge}>
+                Stop Service
+              </button>
+            )}
+            {showConsole && !connected && !connecting && (
+              <button className={`${styles.button} ${styles.buttonWarning}`} onClick={() => setShowConsole(false)}>
+                Clear & Hide Console
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.rightPanel}>
+          {showConsole && (
+            <div className={styles.card}>
+              <div className={styles.consoleHeader}>
+                <span className={styles.consoleTitle}>Console Output</span>
+                <div className={styles.consoleControls}>
+                  <button
+                    className={styles.controlButton}
+                    onClick={() => setAutoScroll(!autoScroll)}
+                    title={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
+                    aria-label={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
+                  >
+                    {autoScroll ? 'Disable AutoScroll' : 'Enable AutoScroll'}
+                  </button>
+                  <button
+                    className={styles.controlButton}
+                    onClick={handleCopyConsole}
+                    title="Copy console output"
+                    aria-label="Copy console output to clipboard"
+                  >
+                    Copy Output
+                  </button>
+                  <button
+                    className={styles.controlButton}
+                    onClick={handleClearConsole}
+                    title="Clear console"
+                    aria-label="Clear console"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className={styles.console} ref={consoleRef} role="log" aria-live="polite">
+                {messages.map((msg, idx) => (
+                  <ConsoleMessage key={idx} message={msg} />
+                ))}
+                {messages.length === 0 && (
+                  <div className={styles.emptyConsole}>
+                    No messages yet. Click "Start" to connect.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
