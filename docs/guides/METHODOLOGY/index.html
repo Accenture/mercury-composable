@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/METHODOLOGY/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Methodology - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Methodology";
+        var mkdocs_page_input_path = "guides/METHODOLOGY.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/METHODOLOGY/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Methodology</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#methodology">Methodology</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#events-at-the-center-of-the-modern-enterprise">Events at the center of the modern enterprise</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#first-principle-input-process-output">First principle - "input-process-output"</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#second-principle-zero-to-one-dependency">Second principle - zero to one dependency</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#third-principle-platform-abstraction">Third principle - platform abstraction</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fourth-principle-event-choreography">Fourth principle - event choreography</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#application-development">Application development</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#seamless-transition-from-product-to-application-design">Seamless transition from product to application design</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#application-packaging-and-deployment">Application packaging and deployment</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#smaller-memory-footprint">Smaller memory footprint</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#composable-framework">Composable framework</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#event-envelope">Event Envelope</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#language-neutral">Language neutral</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#functional-isolation">Functional isolation</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Chapter-1</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Chapter-2</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Chapter-5</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Chapter-10</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Appendix-III</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Methodology</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="background">Background</h1>
+<p>The high level concept of composable architecture was advocated by Gartner in 2022.</p>
+<p>At the platform level, composable architecture refers to loosely coupled platform services, utilities, and
+business applications. With modular design, you can assemble platform components and applications to create
+new use cases or to adjust for ever-changing business environment and requirements. Domain driven design (DDD),
+Command Query Responsibility Segregation (CQRS) and Microservices patterns are the popular tools that architects
+use to build composable architecture. You may deploy application in container, serverless or other means.</p>
+<p>At the application level, composable application means that an application is assembled from modular software
+components or functions that are self-contained and pluggable. You can mix-n-match functions to form new applications.
+You can retire outdated functions without adverse side effect to a production system. Multiple versions of a function
+can exist, and you can decide how to route user requests to different versions of a function. Applications would be
+easier to design, develop, maintain, deploy, and scale.</p>
+<p>In 2023, Accenture extended its event-driven development framework, codename "Mercury", to become the first
+implementation of a Composable framework to realize the goal of composable architecture and application design.</p>
+<p>Before we take a deep dive of the mercury-composable framework, let's review Composable Methodology first.</p>
+<h2 id="methodology">Methodology</h2>
+<p>The Composable Methodology takes a different approach in software development that empowers and aligns product owners,
+business analysts, technology architects and software engineers.</p>
+<p>Historically, there is a disconnect between product features and application design because product is user and
+business focused but application design is technology oriented. Product owners have almost no direct control over
+the quality of the user applications that are supposed to address business requirements. There is a communication
+barrier between the two domains in most projects. It requires a lot of iterations to get things right. The lack of
+direct connection between business domain and technical domain also leads to higher technical debts that are not just
+limited to imperfect coding.</p>
+<p>Composable methodology addresses this fundamental issue by connecting the two domains seamlessly.</p>
+<p>Before developers write a line of code, we start a project from product design. The output from a product design
+is a business transaction event flow diagram, ideally from a tactical Event Storming workshop or a more relaxed
+white boarding discussion among product owners, business domain experts and technology architects.</p>
+<blockquote>
+<p>Figure 1 - Event Flow Diagram</p>
+</blockquote>
+<p><img alt="Event Flow Diagram" src="../diagrams/event-flow-diagram.png" /></p>
+<p>As shown in Figure 1, a transaction flow diagram has a start point and an end point. Each processing step is called
+a "task". Some tasks would do calculation and some tasks would make decision to pass to the next steps.</p>
+<blockquote>
+<p><em>Note</em>: Task types include decision, response, end, sequential, parallel, fork-n-join, sink and pipeline.</p>
+</blockquote>
+<p>The product team designs a transaction flow to address a business use case and presents it as a diagram.
+Naturally, this is how a human designer thinks. We don't want to prematurely adjust the business requirements
+to any infrastructural limitation.</p>
+<h2 id="events-at-the-center-of-the-modern-enterprise">Events at the center of the modern enterprise</h2>
+<p>In Domain Driven Design, it is well accepted that business transactions and their intermediate objects can be
+represented as "events".</p>
+<p>An event is a holder of a business object that may be a transaction request, a transaction response, a data object
+or any intermediate data representation. Generally, a data object is a structure of key-values.</p>
+<p>For simplicity, we will call a transaction flow diagram as "Event Flow Diagram" from now on.</p>
+<h2 id="first-principle-input-process-output">First principle - "input-process-output"</h2>
+<p>The first principle of composable application design is that each task (also called "function") is self-contained
+and its input and output are immutable.</p>
+<p>Self-containment means that the task or function does not need to know the world outside its functional scope, thus
+making the function as pure as "input-process-output". i.e. given some input, the task or function will carry out
+some business logic to generate some output according to functional specification.</p>
+<p>Immutability is an important guardrail for clean code design. A function cannot change the business object outside
+its functional scope, thus eliminating the chance of unintended side effects of data interference.</p>
+<blockquote>
+<p><em>Note</em>: In composable design, task and function can be used interchangeably. In an event flow diagram, we call each
+          step a "task". In application design, we call each step a "function".</p>
+</blockquote>
+<h2 id="second-principle-zero-to-one-dependency">Second principle - zero to one dependency</h2>
+<p>The second principle is that each function should have zero dependency with other user functions.</p>
+<p>To connect to the world outside its functional scope, a function may have one and only one dependency with a platform
+or infrastructure component function. In composable design, a library can be packaged as a reusable composable
+function.</p>
+<p>A function consumes a platform component or library by sending an event to the component instead of tight coupling
+with a direct method call. Decoupling between functions and components promotes non-blocking, asynchronous and
+parallel operation that yields higher performance and throughput.</p>
+<h2 id="third-principle-platform-abstraction">Third principle - platform abstraction</h2>
+<p>Since composable functions are self-contained and independent, they can be reused and repackaged into different
+applications to serve different purposes. Therefore, composable functions are, by definition, plug-n-play.</p>
+<p>The platform and infrastructure layers are encapsulated as <code>adapters</code>, <code>gateways</code> and <code>wrappers</code>.
+Figure 1 illustrates this architectural principle by connecting an event flow to the user through an event flow
+adapter. For example, a "HTTP Flow Adapter" serves both inbound request and outbound response. A "Kafka Flow Adapter"
+uses one topic for inbound and another topic for outbound events.</p>
+<h2 id="fourth-principle-event-choreography">Fourth principle - event choreography</h2>
+<p>Without direct coupling, a composable development framework must support "Event Choreography" so that we can
+connect the various user composable functions, platform components and libraries together and route the events
+according to an event flow diagram for each use case.</p>
+<h2 id="application-development">Application development</h2>
+<p>Once we have drawn the event flow diagrams for different use cases, we can create user stories for each composable
+function and assign the development of each function to a developer or a pair of developers if using pair-programming.</p>
+<p>Composable methodology embraces "Test Driven Development (TDD)". Since each function is self-contained, it is TDD
+friendly because the developer does not need to deal with external dependencies for unit tests. It is the first
+principle of "input-process-output".</p>
+<p>This methodology allows us to scale our application development resources much better than traditional approach
+because developers do not need to know details of dependencies, thus avoiding hard code and reducing technical debts.</p>
+<p>For integration tests, it is easy to mock platform, infrastructure, database and HTTP resources by assigning
+mock functions to some tasks in an event flow. This greatly simplifies integration mocking.</p>
+<h2 id="seamless-transition-from-product-to-application-design">Seamless transition from product to application design</h2>
+<p>Event flow diagram describes the product and each composable function contains the specific processing logic.
+Data attributes in an event flowing from one function to another provide the clarity for product designers and
+application engineers to communicate effectively.</p>
+<h2 id="application-packaging-and-deployment">Application packaging and deployment</h2>
+<p>Composable functions are independent and isolated. We can package related functions for an event flow in a single
+executable. A senior developer or architect can decide how to package related functions to reduce memory footprint
+and to scale efficiently and horizontally.</p>
+<h2 id="smaller-memory-footprint">Smaller memory footprint</h2>
+<p>By design, composable functions are granular in nature. They are registered to an "event loop" on-demand. i.e.
+a function is executed when an event arrives. Without multiple levels of tight coupling, each piece of user code
+consumes memory efficiently. Memory is released to the system as soon as the function finishes execution.</p>
+<h2 id="composable-framework">Composable framework</h2>
+<p>To realize the composable design principles, a low-latency in-memory event system is available at the core
+of the Mercury-Composable framework.</p>
+<blockquote>
+<p>Figure 2 - Composable Framework</p>
+</blockquote>
+<p><img alt="Composable Framework" src="../diagrams/composable-framework.png" /></p>
+<p>As illustrated in Figure 2, event choreography for an event flow is described as an "Event Flow Configuration".
+An "Event Manager" is implemented as part of a low-latency in-memory event system. Composable functions
+(aka "task" in an event flow) ride on the in-memory event system so that the event manager can invoke them by
+sending events.</p>
+<p>Since composable functions are self-contained, the event manager performs input/output data mapping to and from
+the functional scope of a composable function. This flexible data mapping allows developers to write more generic
+code that responds to different input dataset, thus promoting software reusability.</p>
+<p>An in-memory state machine will be created for each execution of a transaction or "event flow". It is used for holding
+transaction "states" and temporary data objects.</p>
+<p>Sometimes a transaction may be suspended and restarted with different event flows. The in-memory state machine can
+be extended to an external datastore so that transaction states can be monitored and recovered operationally.</p>
+<blockquote>
+<p><em>Note</em>: In Java, we combine the use of native Java 21 virtual thread management with Eclipse Vertx event bus.
+          In Node.js, we use the EventEmitter event bus from the standard library.</p>
+</blockquote>
+<h2 id="event-envelope">Event Envelope</h2>
+<p>We use a standard "Event Envelope" to transport an event over the in-memory event bus. An event envelope contains
+three parts: (1) body, (2) headers and (3) metadata.</p>
+<p>Event body is used to transport a business object. In Java, it may be a PoJo or a HashMap. In node.js, it is a JSON
+object.</p>
+<p>Headers can be used to carry additional parameters to tell the user composable function what to do.</p>
+<p>Examples for metadata include performance metrics, status, exception, optional tracing information, and
+correlation ID.</p>
+<h2 id="language-neutral">Language neutral</h2>
+<p>The event flow configuration syntax and event envelope serialization scheme are standardized for polyglot deployment.
+The event flow configuration rides on YAML and event envelope serialization uses binary JSON ("MsgPack").</p>
+<p>For higher serialization efficiency, the intermediate format is using "key-value" maps. JSON string is only used at
+the inbound and outbound flow adapters.</p>
+<h2 id="functional-isolation">Functional isolation</h2>
+<p>Each function must implement the Composable interface. In Java, it is called "TypedLambdaFunction".
+In Node.js, it is called "Composable".</p>
+<p>The composable interface enforces a single "handleEvent" method where the function can access the event's headers
+and body.</p>
+<p>By design, each composable function is invoked by events. It is running parallel with other user functions.
+This non-blocking asynchronous execution architecture delivers higher performance than traditional coding approach
+with direct method invocation.</p>
+<p>While each function is executed in an event-driven and reactive manner, the user application code inside each
+composable function may use any coding style including object-oriented design, functional or reactive.</p>
+<p>Functional isolation means that you can use any open source or commercial library or framework in your user
+function without concerns about thread safety or unintended side effect.</p>
+<p>In Java, a composable function may look like this:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;my.first.function&quot;, instances = 10)
+public class MyFirstFunction implements TypedLambdaFunction&lt;MyPoJo, AnotherPoJo&gt; {
+
+    @Override
+    public AnotherPojo handleEvent(Map&lt;String, String&gt; headers, MyPoJo input, int instance) {
+        // your business logic here
+        return result;
+    }
+}
+</code></pre>
+<p>In Node.js, it may look like this:</p>
+<pre><code class="language-java">export class MyFirstFunction implements Composable {
+
+    @preload('my.first.function', 10)
+    initialize(): Composable {
+        return this;
+    }
+
+    async handleEvent(evt: EventEnvelope) {
+        // your business logic here
+        return result;
+    }
+</code></pre>
+<p>A composable function is declared with a "route name" using the "preload" annotation. While Java
+and Node.js have different syntax for annotation, they use a similar declarative approach.</p>
+<blockquote>
+<p><em>Note</em>: the "instance" count for each composable function controls execution concurrency in a single application.
+          It can be used with horizontal scaling to optimize use of computing resources.
+<br></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Home</th>
+<th style="text-align: center;">Chapter-1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+<td style="text-align: center;"><a href="../CHAPTER-1/">Introduction</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../.." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../CHAPTER-1/" class="btn btn-neutral float-right" title="Chapter-1">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../.." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../CHAPTER-1/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
