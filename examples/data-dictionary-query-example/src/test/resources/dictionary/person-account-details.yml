@@ -5,7 +5,7 @@
 # i.e. you can use simple data mapping in dot-bracket format or JSON-Path "$" format
 #
 dictionary:
-  id: 'person_account_details'
+  id: 'person-account-details'
   target: 'dd://demo'
   input:
     - 'person_id'

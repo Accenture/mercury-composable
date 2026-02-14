@@ -8,7 +8,7 @@ question:
     input:
       - 'input.body.person_id -> person_id'
     output:
-      - 'person_account_details'
+      - 'person-account-details'
 
 #
 # The concurrency value tells the system to control the number of parallel operation

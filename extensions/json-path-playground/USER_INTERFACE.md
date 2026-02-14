@@ -1,25 +1,27 @@
 # JSON-Path Playground - React Frontend
 
-A lightweight React-based web application for testing and debugging JSON-Path queries in real-time via WebSocket connections.
+A lightweight React-based web application for testing and debugging JSON-Path queries in real-time via
+WebSocket connections.
 
 ## Location
 
-This React application is located at `src/main/resources/webapp/` and builds into `src/main/resources/public/` which is served by the Spring Boot backend.
+This React application is located at `src/main/resources/webapp/` and builds into `src/main/resources/public/` 
+which is served by the Playground backend.
 
 ## Prerequisites
 
 - Node.js 22+ recommended
 - npm or yarn package manager
-- Spring Boot backend running on port 8085
+- JSON-Path Playground backend running on port 8085
 
 ## Quick Start
 
 ### Development Mode
 
-**Terminal 1 - Start Spring Boot Backend:**
+**Terminal 1 - Start Playground Backend:**
 ```bash
 # From project root: json-path-playground/
-java -jar target/json-path-playground-4.3.62.jar
+java -jar target/json-path-playground-4.3.64.jar
 ```
 
 **Terminal 2 - Start Vite Dev Server:**
@@ -36,33 +38,34 @@ All WebSocket and API requests are automatically proxied from port 3000 → 8085
 ### Production Build
 
 ```bash
-# From: src/main/resources/webapp/
-npm run build:spring
+# From: webapp/
+npm run clean
+npm run build:deploy
 ```
 
 This will:
 1. Build the optimized production bundle to `dist/`
-2. Copy all files to `../public/`
+2. Copy all files to `../src/main/resources/public/`
 
-Then rebuild Spring Boot:
+Then rebuild the Playground backend app:
 ```bash
 # From project root
 mvn clean package
-java -jar target/json-path-playground-4.3.62.jar
+java -jar target/json-path-playground-4.3.64.jar
 ```
 
 **Access:** http://localhost:8085
 
 ## Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start Vite dev server with HMR on port 3000 |
-| `npm run build` | Build production bundle to `dist/` |
-| `npm run build:spring` | Build and deploy to `../public/` |
-| `npm run deploy` | Copy `dist/*` to `../public/` |
-| `npm run clean` | Clean the `../public/` folder |
-| `npm run preview` | Preview production build locally |
+| Script                 | Description                                         |
+|------------------------|-----------------------------------------------------|
+| `npm run dev`          | Start Vite dev server with HMR on port 3000         |
+| `npm run build`        | Build production bundle to `dist/`                  |
+| `npm run build:deploy` | Build and deploy to `../src/main/resources/public/` |
+| `npm run deploy`       | Copy `dist/*` to `../src/main/resources/public/`    |
+| `npm run clean`        | Clean the `../src/main/resources/public/` folder    |
+| `npm run preview`      | Preview production build locally                    |
 
 ## Directory Structure
 
@@ -86,7 +89,7 @@ src/main/resources/
 
 ## Proxy Configuration
 
-The Vite dev server proxies these endpoints to Spring Boot (port 8085):
+The Vite dev server proxies these endpoints to the Playground backend (port 8085):
 
 - `/ws/*` - WebSocket connections
 - `/info/*` - Info endpoints  
@@ -147,4 +150,4 @@ Update `vite.config.js` to modify:
 
 ## License
 
-Part of the Mercury Composable open-source library.
+Apache 2.0

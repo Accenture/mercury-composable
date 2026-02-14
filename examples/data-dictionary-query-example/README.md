@@ -49,7 +49,7 @@ An example configuration file is shown below.
 
 ```yaml
 dictionary:
-  id: 'account_details'
+  id: 'account-details'
   target: 'account://details'
   input:
     - 'person_id'
@@ -104,6 +104,13 @@ A provider configuration contains protocol, service, url, method, skills, header
 5. "skills" refer to a list of organization's specific requirements such as OAuth 2.0, API key, JWT, etc.
 6. "headers" is list of optional HTTP request headers
 7. "input" is a list of input data mappings.
+
+### Naming convention
+
+All data dictionary IDs, data provider IDs and question IDs and their corresponding configuration filenames
+should use hyphen instead of underscore between words.
+
+This distinguishes them from the snake_case or camelCase data labels in input and output.
 
 ### Pluggable provider implementation
 
@@ -292,24 +299,27 @@ print(r.text)
   "questions": [
     {
       "output": [
-        "person_name",
-        "person_accounts"
+        "person-name",
+        "person-accounts"
       ],
       "input": [
         "input.body.person_id -> person_id"
       ],
+      "for_each": [],
       "id": "get-accounts"
     },
     {
       "output": [
-        "account_details"
+        "account-details"
       ],
       "input": [
         "input.body.person_id -> person_id",
         "model.account_id -> account_id"
       ],
-      "id": "fetch-account-details",
-      "for_each_element": "result.person_accounts -> model.account_id"
+      "for_each": [
+        "result.person_accounts -> model.account_id"
+      ],
+      "id": "fetch-account-details"
     }
   ],
   "answers": [

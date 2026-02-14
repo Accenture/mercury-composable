@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "clean": "rm -rf ../public/*",
-    "build:spring": "npm run build && npm run deploy",
-    "deploy": "cp -r dist/* ../public/"
+    "clean": "rm -rf ../src/main/resources/public/*",
+    "build:deploy": "npm run build && npm run deploy",
+    "deploy": "cp -r dist/* ../src/main/resources/public/"
   },
   "dependencies": {
     "react": "^19.0.0",

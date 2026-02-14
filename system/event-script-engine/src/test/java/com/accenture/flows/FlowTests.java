@@ -327,10 +327,11 @@ class FlowTests extends TestBase {
         var data = List.of(Map.of("world", "1", "test", "a"),
                 Map.of("world", "2", "test", "b"),
                 Map.of("world", "3", "test", "c"));
+        var additional = Map.of("more", List.of("X", "Y", "Z"));
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
                 .setHeader("accept", "application/json").setHeader("content-type", "application/json")
-                .setBody(Map.of("hello", "world", "list", data))
+                .setBody(Map.of("hello", "world", "list", data, "more", additional))
                 .setUrl("/api/header/test");
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
@@ -346,7 +347,14 @@ class FlowTests extends TestBase {
         // after JSON-Path wildcard search, the array elements are grouped at the lowest level
         assertEquals(Map.of("world", List.of("1", "2", "3"), "test", List.of("a", "b", "c")), body.get("list"));
         // f:listOfMap() restores the original data structure into a list of maps
-        assertEquals(data, body.get("normalized"));
+        assertEquals(data, body.get("normalized1"));
+        assertEquals(data, body.get("normalized2"));
+        var combined = List.of(Map.of("world", "1", "test", "a", "more", "X"),
+                Map.of("world", "2", "test", "b", "more", "Y"),
+                Map.of("world", "3", "test", "c", "more", "Z"));
+        assertEquals(combined, body.get("more"));
+        assertEquals(Map.of("hello", "world"), body.get("map"));
+        assertEquals(List.of(Map.of("test", 1), Map.of("test", 1)), body.get("updated_list_map"));
     }
 
     @SuppressWarnings("unchecked")

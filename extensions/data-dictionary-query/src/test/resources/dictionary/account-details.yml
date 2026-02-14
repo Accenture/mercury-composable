@@ -2,11 +2,12 @@
 # Account details
 #
 dictionary:
-  id: 'account_details'
+  id: 'account-details'
   target: 'account://details'
   input:
     - 'person_id'
     - 'account_id'
+    - 'hello_id'
   output:
 #    - 'response.account.details -> result.account_details'
 

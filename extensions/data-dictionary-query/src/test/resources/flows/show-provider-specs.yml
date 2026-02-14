@@ -4,13 +4,13 @@ flow:
   ttl: 10s
   exception: 'simple.exception.handler'
 
-first.task: 'v1.show.provider'
+first.task: 'show.data.provider'
 
 tasks:
   - input:
       - 'input.path_parameter.protocol -> header.protocol'
       - 'input.path_parameter.service -> header.service'
-    process: 'v1.show.provider'
+    process: 'show.data.provider'
     output:
       - 'int(200) -> output.status'
       - 'result -> output.body'

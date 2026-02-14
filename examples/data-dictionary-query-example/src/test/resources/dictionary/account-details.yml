@@ -2,7 +2,7 @@
 # Account details
 #
 dictionary:
-  id: 'account_details'
+  id: 'account-details'
   target: 'account://details'
   input:
     - 'person_id'

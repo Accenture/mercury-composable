@@ -22,6 +22,7 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -147,5 +148,117 @@ public class TypeConversionUtils {
             }
         }
         return value;
+    }
+
+    public static Map<String, Object> deepCopy(Map<String, Object> value) {
+        return util.deepCopy(value);
+    }
+
+    public static List<Object> deepCopy(List<Object> value) {
+        return util.deepCopy(value);
+    }
+
+    /* Following methods are reserved for ListOfMap() and UpdateListOfMap() plugins */
+
+    /**
+     * Find the first occurrence of a map containing a list
+     * (the input is usually result from a JSON-Path search)
+     * @param input of list elements
+     * @return closest map of list elements
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> findMapOfLists(Map<String, Object> input) {
+        for (Map.Entry<String, Object> entry : input.entrySet()) {
+            if (entry.getValue() instanceof List) {
+                return input;
+            }
+            if (entry.getValue() instanceof Map<?, ?> inner) {
+                return findMapOfLists((Map<String, Object>) inner);
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    /**
+     * Prepare a list of Maps that contains the inner map containing list elements
+     *
+     * @param input of objects to the ListOfMap or UpdateListOfMap plugins
+     * @return list of maps excluding the first argument
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Map<String, Object>> prepareMerge(Object[] input) {
+        var size = ((List<Object>) input[0]).size();
+        var subsequentOnes = new ArrayList<Map<String, Object>>();
+        for (int i = 1; i < input.length; i++) {
+            if (input[i] instanceof Map<?,?> data) {
+                var map = TypeConversionUtils.findMapOfLists((Map<String, Object>) data);
+                if (!map.isEmpty()) {
+                    if (validDataStructure(map, size)) {
+                        subsequentOnes.add(map);
+                    } else {
+                        return Collections.emptyList();
+                    }
+                }
+            }
+        }
+        return subsequentOnes;
+    }
+
+    private static boolean validDataStructure(Map<String, Object> map, int size) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (entry.getValue() instanceof List<?> list) {
+                if (list.size() != size) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Merge a list of "maps of list elements" with the first argument
+     *
+     * @param first argument that is a list of maps
+     * @param additional maps of list elements
+     * @return merged list
+     */
+    @SuppressWarnings("unchecked")
+    public static Object merge(List<Object> first, List<Map<String, Object>> additional) {
+        var size = first.size();
+        var copy = util.deepCopy(first);
+        for (int i = 0; i < size; i++) {
+            var baseMap = (Map<String, Object>) copy.get(i);
+            for (Map<String, Object> additionalMap : additional) {
+                for (Map.Entry<String, Object> entry : additionalMap.entrySet()) {
+                    var key = String.valueOf(entry.getKey());
+                    var listValue = (List<Object>) entry.getValue();
+                    if (size == listValue.size()) {
+                        baseMap.put(key, listValue.get(i));
+                    }
+                }
+            }
+        }
+        return copy;
+    }
+
+    /**
+     * Validate and return the size of the first argument
+     *
+     * @param first argument that is a list of maps
+     * @return true if valid
+     */
+    public static boolean validateFirstArgument(Object first) {
+        if (first instanceof List<?> list && !list.isEmpty()) {
+            for (Object item : list) {
+                if (!(item instanceof Map)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 }

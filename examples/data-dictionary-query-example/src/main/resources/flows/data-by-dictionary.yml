@@ -2,16 +2,16 @@ flow:
   id: 'data-by-dictionary'
   description: 'Data dictionary query method'
   ttl: 10s
-  exception: 'v1.hello.exception'
+  exception: 'simple.exception.handler'
 
-first.task: 'v1.question.processor'
+first.task: 'data.question.processor'
 
 tasks:
   - input:
       # pass flow instance ID so the task can access the input and model namespaces in the flow instance
       - 'model.instance -> header.instance'
       - 'input.path_parameter.question_id -> header.question'
-    process: 'v1.question.processor'
+    process: 'data.question.processor'
     output:
       - 'result.status -> output.status'
       - 'result -> output.body'
@@ -22,7 +22,7 @@ tasks:
       - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'
-    process: 'v1.hello.exception'
+    process: 'simple.exception.handler'
     output:
       - 'result.status -> output.status'
       - 'result -> output.body'

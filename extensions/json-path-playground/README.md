@@ -11,15 +11,19 @@ To run this application, do `java -jar target/json-path-playground-{version}.jar
 ## User guide
 
 1. Visit http://127.0.0.1:8085 to get started
-2. Select "Playground" from home page
-3. Click "Start" to connect to playground
-4. Paste JSON (or XML) text into text area
-5. Type "help" in command input box for more instruction
-6. Enter "load" to load the JSON/XML text and render it into a JSON object
-7. The JSON object will be populated in a `response` node. 
-8. Type `response` to try out simple retrieval command 
-9. Enter `$.response` to try out the first JSON-Path command
+2. Click "Start" to connect to playground
+3. Paste JSON (or XML) text into text area
+4. Type "help" in command input box for more instruction
+5. Enter "load" to load the JSON/XML text and render it into a JSON object
+6. The JSON object will be populated in a `response` node. 
+7. Type `response` to try out simple retrieval command 
+8Enter `$.response` to try out the first JSON-Path command
 
+## React UI for the playground
+
+For your convenience, we have pre-built the playground UI app in the resources/public folder.
+
+If you want to build the UI from source, please refer to [React UI](USER_INTERFACE.md) for details
 
 ## Simple retrieval command
 

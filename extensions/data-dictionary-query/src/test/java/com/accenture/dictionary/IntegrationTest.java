@@ -107,7 +107,7 @@ class IntegrationTest {
     @SuppressWarnings("unchecked")
     @Test
     void dataSpecEndpointTest() throws ExecutionException, InterruptedException {
-        var uri = "/api/specs/data/person_name";
+        var uri = "/api/specs/data/person-name";
         var request = new AsyncHttpRequest();
         request.setMethod("GET").setTargetHost(host).setUrl(uri);
         request.setHeader("Accept", "application/json");
@@ -119,7 +119,7 @@ class IntegrationTest {
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertInstanceOf(List.class, body.get("input"));
         assertInstanceOf(List.class, body.get("output"));
-        assertEquals("person_name", body.get("id"));
+        assertEquals("person-name", body.get("id"));
         assertEquals("mdm://profile", body.get("target"));
     }
 

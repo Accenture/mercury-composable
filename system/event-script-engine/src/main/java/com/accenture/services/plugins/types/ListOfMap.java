@@ -20,6 +20,7 @@ package com.accenture.services.plugins.types;
 
 import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
+import com.accenture.util.TypeConversionUtils;
 import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.Collections;
@@ -64,42 +65,43 @@ public class ListOfMap implements PluginFunction {
      *       "test": "c"
      *     }
      *   ]
+     * When there are more than one map of lists, combine all maps of lists into one list of maps.
      *
-     * @param input data structure containing a map of lists
-     * @return re-arranged data structure containing list of maps or empty list if not resolved
+     * @param input is one or more maps of lists
+     * @return converted data structure containing list of maps or empty list if not resolved
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Object calculate(Object... input) {
-        if (input.length == 1 && input[0] instanceof Map<?, ?> data) {
-            var map = findMapOfLists(data);
+        if (input.length > 0 && input[0] instanceof Map<?, ?> data) {
+            var map = TypeConversionUtils.findMapOfLists((Map<String, Object>) data);
             if (!map.isEmpty()) {
-                return normalize(map);
+                var first = normalize(map);
+                if (input.length > 1 && !first.isEmpty()) {
+                    // override first argument as a normalized list of map and merge with the subsequent arguments
+                    input[0] = first;
+                    var toBeMerged = TypeConversionUtils.prepareMerge(input);
+                    if (!toBeMerged.isEmpty()) {
+                        return TypeConversionUtils.merge(first, toBeMerged);
+                    }
+                } else {
+                    return first;
+                }
             }
         }
         return Collections.emptyList();
     }
 
-    private Object normalize(Map<?, ?> map) {
+    @SuppressWarnings("unchecked")
+    private List<Object> normalize(Map<String, Object> map) {
         var target = new MultiLevelMap();
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
             if (entry.getValue() instanceof List<?> items) {
                 for (int i=0; i < items.size(); i++) {
                     target.setElement(DATA+"["+i+"]." + entry.getKey(), items.get(i));
                 }
             }
         }
-        return target.getMap().isEmpty()? Collections.emptyList() : target.getElement(DATA);
-    }
-
-    private Map<?, ?> findMapOfLists(Map<?, ?> map) {
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (entry.getValue() instanceof List) {
-                return map;
-            }
-            if (entry.getValue() instanceof Map<?, ?> inner) {
-                return findMapOfLists(inner);
-            }
-        }
-        return Collections.emptyMap();
+        return target.getMap().isEmpty()? Collections.emptyList() : (List<Object>) target.getElement(DATA);
     }
 }

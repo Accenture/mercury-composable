@@ -118,11 +118,12 @@ public class DataMappingHelper {
         return false;
     }
 
-    private boolean isPluggableFunction(String lhs){
-        return lhs.matches(PLUGGABLE_FUNCTION_REGEX); // Should match f:func(...args), where args is optional
+    private boolean isPluggableFunction(String lhs) {
+        // reduce overheads with simple text comparison
+        return lhs.startsWith(SIMPLE_PLUGIN_PREFIX);
     }
 
-    private boolean isValidPluggableFunction(String lhs){
+    private boolean isValidPluggableFunction(String lhs) {
         var matcher = PLUGGABLE_FUNCTION_PATTERN.matcher(lhs);
         if (!matcher.find()) {
             return false;
@@ -365,7 +366,7 @@ public class DataMappingHelper {
             List<String> params = Utility.getInstance().split(pluginParams, ",");
             Object[] input = params.stream()
                     .map(String::trim)
-                    .map(source::getElement)
+                    .map(lhs -> isPluggableFunction(lhs)? null : getLhsOrConstant(lhs, source))
                     .toArray();
             PluginFunction plugin = SimplePluginLoader.getSimplePluginByName(pluginName);
             if (plugin == null) {

@@ -23,13 +23,16 @@ import java.util.List;
 
 public class Question {
     public final String id;
-    public final String forEachElement;
+    public final List<String> forEach = new ArrayList<>();
     public final List<String> input = new ArrayList<>();
     public final List<String> output = new ArrayList<>();
 
-    public Question(String id, String forEachElement) {
+    public Question(String id) {
         this.id = id;
-        this.forEachElement = forEachElement;
+    }
+
+    public void addForEach(String entry) {
+        forEach.add(entry);
     }
 
     public void addInput(String entry) {

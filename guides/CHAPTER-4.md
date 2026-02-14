@@ -1454,39 +1454,43 @@ For example:
 
 ### Built-in Plugins
 
-| Type                | Plugin `name` | Expected Inputs                                                                                                       |
-|:--------------------|:--------------|:----------------------------------------------------------------------------------------------------------------------|
-| **Arithmetic**      | add           | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | subtract      | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | multiply      | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | div           | At least two _whole_ numbers                                                                                          |
-| **Arithmetic**      | mod           | Two individual whole numbers                                                                                          |
-| **Arithmetic**      | increment     | A single _whole_ number                                                                                               |
-| **Arithmetic**      | decrement     | A single _whole_ number                                                                                               |
-| **Generator**       | uuid          | None                                                                                                                  |
-| **Generator**       | dateTime      | None required                                                                                                         |
-| **Logical**         | eq            | At least two Objects                                                                                                  |
-| **Logical**         | isNull        | A single Object                                                                                                       |
-| **Logical**         | ternary       | Three variables, the first variable must evaluate to a Boolean                                                        |
-| **Logical**         | and           | At least two boolean                                                                                                  |
-| **Logical**         | or            | At least two boolean                                                                                                  |
-| **Logical**         | not           | A single boolean                                                                                                      |
-| **Logical**         | gt            | Two individual whole numbers                                                                                          |
-| **Logical**         | lt            | Two individual whole numbers                                                                                          |
-| **Type Conversion** | b64           | Either a base64 encoded String, OR a byte[]                                                                           |
-| **Type Conversion** | binary        | Either a byte[], Map or String                                                                                        |
-| **Type Conversion** | length        | Either a byte[], List or String                                                                                       |
-| **Type Conversion** | substring     | Two to three variables.<br/>The first must be a String;<br/>the second must be an integer;<br/>the third is optional. |
-| **Type Conversion** | concat        | At least two Strings to be concatenated                                                                               |
-| **Type Conversion** | boolean       | A list of variables that can evaluate to a boolean                                                                    |
-| **Type Conversion** | double        | A list of variables that can evaluate to a double                                                                     |
-| **Type Conversion** | float         | A list of variables that can evaluate to a float                                                                      |
-| **Type Conversion** | int           | A list of variables that can evaluate to an integer                                                                   |
-| **Type Conversion** | long          | A list of variables that can evaluate to a long integer                                                               |
-| **Type Conversion** | text          | A list of variables that can evaluate to a String                                                                     |
-| **Type Conversion** | listOfMap     | Convert "a map of lists" to "a list of maps". See notes below.                                                        |
+| Type                | Plugin `name`   | Expected Inputs                                                                                                       |
+|:--------------------|:----------------|:----------------------------------------------------------------------------------------------------------------------|
+| **Arithmetic**      | add             | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | subtract        | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | multiply        | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | div             | At least two _whole_ numbers                                                                                          |
+| **Arithmetic**      | mod             | Two individual whole numbers                                                                                          |
+| **Arithmetic**      | increment       | A single _whole_ number                                                                                               |
+| **Arithmetic**      | decrement       | A single _whole_ number                                                                                               |
+| **Generator**       | uuid            | None                                                                                                                  |
+| **Generator**       | dateTime        | None required                                                                                                         |
+| **Logical**         | eq              | At least two Objects                                                                                                  |
+| **Logical**         | isNull          | A single Object                                                                                                       |
+| **Logical**         | ternary         | Three variables, the first variable must evaluate to a Boolean                                                        |
+| **Logical**         | and             | At least two boolean                                                                                                  |
+| **Logical**         | or              | At least two boolean                                                                                                  |
+| **Logical**         | not             | A single boolean                                                                                                      |
+| **Logical**         | gt              | Two individual whole numbers                                                                                          |
+| **Logical**         | lt              | Two individual whole numbers                                                                                          |
+| **Type Conversion** | b64             | Either a base64 encoded String, OR a byte[]                                                                           |
+| **Type Conversion** | binary          | Either a byte[], Map or String                                                                                        |
+| **Type Conversion** | length          | Either a byte[], List or String                                                                                       |
+| **Type Conversion** | substring       | Two to three variables.<br/>The first must be a String;<br/>the second must be an integer;<br/>the third is optional. |
+| **Type Conversion** | concat          | At least two Strings to be concatenated                                                                               |
+| **Type Conversion** | boolean         | A list of variables that can evaluate to a boolean                                                                    |
+| **Type Conversion** | double          | A list of variables that can evaluate to a double                                                                     |
+| **Type Conversion** | float           | A list of variables that can evaluate to a float                                                                      |
+| **Type Conversion** | int             | A list of variables that can evaluate to an integer                                                                   |
+| **Type Conversion** | long            | A list of variables that can evaluate to a long integer                                                               |
+| **Type Conversion** | text            | A list of variables that can evaluate to a String                                                                     |
+| **Type Conversion** | listOfMap       | Convert "a map of lists" to "a list of maps"                                                                          |
+| **Type Conversion** | updateListOfMap | Update "a list of maps" with "maps of lists"                                                                          |
+| **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps"                                                                  |
 
-*Note*: The `listOfMap(map)` plugin re-arranges a map of lists back to a list of maps.
+*Notes*: The listOfMap and updateListOfMap plugins are designed to handle the search result of JSON-Path.
+
+The `listOfMap(map1, map2, ...)` plugin re-arranges one or more maps of lists back to a list of maps.
 
 JSON-Path wildcard search would generate a list of elements.
 When multiple JSON-Path searches are conducted, the result is a combined map of lists.
@@ -1532,6 +1536,55 @@ Re-arranged key-values using listOfMap(map):
 ```
 
 If the original data structure does not contain a map of lists, the plugin will return an empty list.
+
+The `updateListOfMap(list, map1, map2, ...)` plugin merges a list of maps with maps of lists.
+The list of maps may be a prior result of a ListOfMap operation.
+
+```json
+// Merge this data structure:
+[
+  {
+    "world": 1,
+    "test": "a"
+  },
+  {
+    "world": 2,
+    "test": "b"
+  },
+  {
+    "world": 3,
+     "test": "c"
+   }
+]
+// with:
+{
+  "more": [
+    "X",
+    "Y",
+    "Z"
+  ]
+}
+// becomes:
+[
+  {
+    "world": 1,
+    "test": "a",
+     "more": "X"
+  },
+  {
+    "world": 2,
+    "test": "b",
+    "more": "Y"
+  },
+  {
+    "world": 3,
+    "test": "c",
+    "more": "Z"
+  }
+]
+```
+
+If the list sizes do not match, the plugin will return an empty list.
 
 For details, please refer to configuration example in header-and-json-path-test.yml and the unit test 
 `headerAndJsonPathTest()` in the FlowTests class of the event-script-engine module.

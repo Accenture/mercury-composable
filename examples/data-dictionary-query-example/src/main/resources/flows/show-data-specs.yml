@@ -2,14 +2,14 @@ flow:
   id: 'show-data-specs'
   description: 'Data specs endpoint'
   ttl: 10s
-  exception: 'v1.hello.exception'
+  exception: 'simple.exception.handler'
 
-first.task: 'v1.show.data.dict'
+first.task: 'show.data.dict'
 
 tasks:
   - input:
       - 'input.path_parameter.id -> header.data'
-    process: 'v1.show.data.dict'
+    process: 'show.data.dict'
     output:
       - 'int(200) -> output.status'
       - 'result -> output.body'
@@ -20,7 +20,7 @@ tasks:
       - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'
-    process: 'v1.hello.exception'
+    process: 'simple.exception.handler'
     output:
       - 'result.status -> output.status'
       - 'result -> output.body'

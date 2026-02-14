@@ -797,12 +797,14 @@ public class AppStarter {
                 long now = System.currentTimeMillis();
                 for (String id : list) {
                     AsyncContextHolder holder = contexts.get(id);
-                    long t1 = holder.lastAccess;
-                    if (now - t1 > holder.timeout) {
-                        log.warn("Async HTTP Context {} timeout for {} ms", id, now - t1);
-                        SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
-                        httpUtil.sendError(id, holder.request, 408,
-                                "Timeout for " + (holder.timeout / 1000) + " seconds");
+                    if (holder != null) {
+                        long t1 = holder.lastAccess;
+                        if (now - t1 > holder.timeout) {
+                            log.warn("Async HTTP Context {} timeout for {} ms", id, now - t1);
+                            SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
+                            httpUtil.sendError(id, holder.request, 408,
+                                    "Timeout for " + (holder.timeout / 1000) + " seconds");
+                        }
                     }
                 }
             }

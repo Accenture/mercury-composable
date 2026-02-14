@@ -73,7 +73,7 @@ the service "hello.world" and the flow "hello-flow" every 10 seconds.
 <dependency>
     <groupId>org.platformlambda</groupId>
     <artifactId>mini-scheduler</artifactId>
-    <version>4.3.63</version>
+    <version>4.3.64</version>
 </dependency>
 ```
 

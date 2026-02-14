@@ -8,15 +8,16 @@ question:
     input:
       - 'input.body.person_id -> person_id'
     output:
-      - 'person_name'
-      - 'person_accounts'
+      - 'person-name'
+      - 'person-accounts'
   - id: 'fetch-account-details'
-    for_each: 'result.person_accounts -> model.account_id'
+    for_each:
+      - 'result.person_accounts -> model.account_id'
     input:
       - 'input.body.person_id -> person_id' # redundant statement but it does not matter
       - 'model.account_id -> account_id'
     output:
-      - 'account_details'
+      - 'account-details'
 
 #
 # The concurrency value tells the system to control the number of parallel operation
@@ -30,5 +31,8 @@ concurrency: 3
 answer:
   - 'input.body.person_id -> output.body.person_id'
   - 'result.person_name -> output.body.name'
-  - 'result.person_accounts -> output.body.account_id'
-  - 'result.account_details -> output.body.account_details'
+  - 'result.person_accounts -> model.ids.account_id'
+  # demonstrate simple data transformation - removing the "id" field from result.account_details
+  - 'f:removeKey(result.account_details, text(id)) -> model.account_details'
+  # adding model.ids that contains the map of account_id to model.account_details
+  - 'f:updateListOfMap(model.account_details, model.ids) -> output.body.account_details'

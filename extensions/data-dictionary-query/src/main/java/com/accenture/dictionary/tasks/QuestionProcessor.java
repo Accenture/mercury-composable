@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-@PreLoad(route="v1.question.processor", instances=200)
+@PreLoad(route="data.question.processor", instances=200)
 public class QuestionProcessor extends DictionaryLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(QuestionProcessor.class);
     private static final Utility util = Utility.getInstance();
@@ -113,10 +113,10 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
     private void executeQuestions(PostOffice po, MultiLevelMap dataset, QuestionSpecs questionSpecs, long timeout)
             throws ExecutionException, InterruptedException {
         for (var question : questionSpecs.questions) {
-            if (question.forEachElement == null) {
+            if (question.forEach.isEmpty()) {
                 doRegularQuestion(po, question, dataset, timeout);
             } else {
-                doArrayQuestion(questionSpecs.concurrency, po, question, dataset, question.forEachElement, timeout);
+                doArrayQuestion(questionSpecs.concurrency, po, question, dataset, timeout);
             }
             if (dataset.exists(ERROR_CODE)) {
                 break;
@@ -125,31 +125,55 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
     }
     
     private void doArrayQuestion(int concurrency, PostOffice po, Question question,
-                                 MultiLevelMap dataset, String forEachElement, long timeout)
+                                 MultiLevelMap dataset, long timeout)
             throws ExecutionException, InterruptedException {
-        var helper = DataMappingHelper.getInstance();
-        var sep = forEachElement.lastIndexOf(ARROW);
-        var lhs = forEachElement.substring(0, sep).trim();
-        var rhs = forEachElement.substring(sep+ARROW.length()).trim();
-        var value = helper.getLhsOrConstant(lhs, dataset);
-        if (value instanceof List<?> valueList) {
-            var each = new ServiceParameters();
-            for (var element : valueList) {
-                var key = rhs.startsWith(MODEL_NAMESPACE)? rhs : PARA_NAMESPACE + rhs;
-                dataset.setElement(key, element);
-                mapArrayQuestion(question, dataset, each);
-            }
-            Deque<EventEnvelope> stack = new ArrayDeque<>();
-            for (Map<String, Object> required : each.parameters) {
-                var request = new EventEnvelope().setTo(each.service);
-                request.setHeader(PROVIDER, each.item.target).setHeader(TIMEOUT, timeout).setBody(required);
-                stack.add(request);
-            }
-            runConcurrentRequests(concurrency, po, stack, dataset, each.item, timeout);
-        } else {
-            var clazz = value == null? "null" : value.getClass();
-            throw new IllegalArgumentException("Expect " + lhs + " to be a list but got " + clazz);
+        Map<String, List<?>> mappings = getForEachMapping(question, dataset);
+        if (mappings.isEmpty()) {
+            throw new IllegalArgumentException("No data mapping resolved using the 'for_each' entries " + question.id);
         }
+        // when there is more than one for_each entry, the list values resolved are of the same size
+        var each = new ServiceParameters();
+        var rhsList = new ArrayList<>(mappings.keySet());
+        var size = mappings.get(rhsList.getFirst()).size();
+        for (int i=0; i < size; i++) {
+            for (var rhs : rhsList) {
+                Object value = mappings.get(rhs).get(i);
+                var key = rhs.startsWith(MODEL_NAMESPACE) ? rhs : PARA_NAMESPACE + rhs;
+                dataset.setElement(key, value);
+            }
+            mapArrayQuestion(question, dataset, each);
+        }
+        Deque<EventEnvelope> stack = new ArrayDeque<>();
+        for (Map<String, Object> required : each.parameters) {
+            var request = new EventEnvelope().setTo(each.service);
+            request.setHeader(PROVIDER, each.item.target).setHeader(TIMEOUT, timeout).setBody(required);
+            stack.add(request);
+        }
+        runConcurrentRequests(concurrency, po, stack, dataset, each.item, timeout);
+    }
+
+    private Map<String, List<?>> getForEachMapping(Question question, MultiLevelMap dataset) {
+        int size = -1;
+        var helper = DataMappingHelper.getInstance();
+        Map<String, List<?>> mappings = new HashMap<>();
+        for (var entry : question.forEach) {
+            var sep = entry.lastIndexOf(ARROW);
+            var lhs = entry.substring(0, sep).trim();
+            var rhs = entry.substring(sep+ARROW.length()).trim();
+            var value = helper.getLhsOrConstant(lhs, dataset);
+            if (value instanceof List<?> list) {
+                if (size == -1) {
+                    size = list.size();
+                } else if (size != list.size()) {
+                    throw new IllegalArgumentException("Inconsistent array size for LHS values of 'for_each' entries");
+                }
+                mappings.put(rhs, list);
+            } else if (value != null) {
+                var key = rhs.startsWith(MODEL_NAMESPACE) ? rhs : PARA_NAMESPACE + rhs;
+                dataset.setElement(key, value);
+            }
+        }
+        return mappings;
     }
 
     private void runConcurrentRequests(int concurrency, PostOffice po, Deque<EventEnvelope> stack,

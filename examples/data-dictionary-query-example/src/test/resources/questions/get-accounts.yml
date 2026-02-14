@@ -8,15 +8,16 @@ question:
     input:
       - 'input.body.person_id -> person_id'
     output:
-      - 'person_name'
-      - 'person_accounts'
+      - 'person-name'
+      - 'person-accounts'
   - id: 'fetch-account-details'
-    for_each: 'result.person_accounts -> model.account_id'
+    for_each:
+      - 'result.person_accounts -> model.account_id'
     input:
       - 'input.body.person_id -> person_id' # redundant statement but it does not matter
       - 'model.account_id -> account_id'
     output:
-      - 'account_details'
+      - 'account-details'
 
 #
 # The concurrency value tells the system to control the number of parallel operation

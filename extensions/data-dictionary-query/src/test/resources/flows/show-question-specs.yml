@@ -4,12 +4,12 @@ flow:
   ttl: 10s
   exception: 'simple.exception.handler'
 
-first.task: 'v1.show.question'
+first.task: 'show.data.question'
 
 tasks:
   - input:
       - 'input.path_parameter.id -> header.question'
-    process: 'v1.show.question'
+    process: 'show.data.question'
     output:
       - 'int(200) -> output.status'
       - 'result -> output.body'

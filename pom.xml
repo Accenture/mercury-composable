@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.63</version>
+    <version>4.3.64</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -19,6 +19,7 @@
         <!-- Extensions -->
         <module>extensions/data-dictionary-query</module>
         <module>extensions/reactive-postgres</module>
+        <module>extensions/json-path-playground</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>

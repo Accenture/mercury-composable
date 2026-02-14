@@ -73,24 +73,26 @@ public class QuestionSpecsLoader {
                 return prepareEachQuestion(n, entry, questionId, identifier, inputList, outputList);
             }
         }
-        throw new IllegalArgumentException("Invalid question entry -"+n+" for "+questionId);
-    }
-
-    private String getForEach(Object entry) {
-        if (entry instanceof String text) {
-            return text;
-        } else if (entry == null) {
-            return null;
-        } else {
-            throw new IllegalArgumentException("The 'for_each' entry must be text - "+entry);
-        }
+        throw new IllegalArgumentException("Invalid question entry #"+n+" for "+questionId);
     }
 
     private Question prepareEachQuestion(int n, Map<?, ?> entry, String questionId, String identifier,
                                          List<?> inputList, List<?> outputList) {
-        var forEachEntry = getForEach(entry.get("for_each"));
-        validateForEachEntry(questionId, forEachEntry);
-        Question q = new Question(identifier, forEachEntry);
+        Question q = new Question(identifier);
+        var hasForEach = entry.containsKey("for_each");
+        if (hasForEach) {
+            var forEach = entry.get("for_each");
+            if (forEach instanceof List<?> list && !list.isEmpty()) {
+                for (Object item : list) {
+                    var text = String.valueOf(item);
+                    validateForEach(questionId, text);
+                    q.addForEach(text);
+                }
+            } else {
+                throw new IllegalArgumentException("Invalid question entry #" + n + " for " + questionId +
+                        ". The 'for_each' section for should contain one or more data mapping entries");
+            }
+        }
         for (Object e : inputList) {
             var text = String.valueOf(e);
             validateInput(questionId, text);
@@ -104,11 +106,11 @@ public class QuestionSpecsLoader {
         if (countInputParameters(q) == 0) {
             throw new IllegalArgumentException("Cannot resolve input parameter in entry-"+n+" for "+questionId);
         }
-        if (forEachEntry != null && q.output.size() != 1) {
-            throw new IllegalArgumentException("With 'for_each' enabled, output should only have one value in "+identifier);
-        }
         if (q.output.isEmpty()) {
             throw new IllegalArgumentException("Missing output in entry-"+n+" for "+questionId);
+        }
+        if (hasForEach && q.output.size() != 1) {
+            throw new IllegalArgumentException("With 'for_each' enabled, output should only have one value in "+identifier);
         }
         return q;
     }
@@ -168,7 +170,7 @@ public class QuestionSpecsLoader {
         }
     }
 
-    private void validateForEachEntry(String questionId, String text) {
+    private void validateForEach(String questionId, String text) {
         if (text != null) {
             int sep = text.indexOf(ARROW);
             if (sep == -1) {

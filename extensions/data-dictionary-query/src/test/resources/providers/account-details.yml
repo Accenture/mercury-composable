@@ -14,3 +14,4 @@ provider:
   input:
     - 'person_id -> person_id'
     - 'account_id -> account_id'
+    - 'hello_id -> hello_id'

@@ -147,20 +147,19 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
                 var lhs = entry.substring(0, sep).trim();
                 var rhs = entry.substring(sep + ARROW.length()).trim();
                 var value = mm.getElement(lhs);
-                if (value == null) {
-                    throw new IllegalArgumentException("'"+lhs+"' not found in input");
-                }
-                if (rhs.startsWith(PATH_PARAMETER)) {
-                    var key = rhs.substring(PATH_PARAMETER.length()).trim();
-                    request.setPathParameter(key, String.valueOf(value));
-                } else if (rhs.startsWith(QUERY_PARAMETER)) {
-                    var key = rhs.substring(QUERY_PARAMETER.length()).trim();
-                    request.setQueryParameter(key, String.valueOf(value));
-                } else if (rhs.startsWith(HEADER_PARAMETER)) {
-                    var key = rhs.substring(HEADER_PARAMETER.length()).trim();
-                    request.setHeader(key, String.valueOf(value));
-                } else {
-                    result.put(rhs, value);
+                if (value != null) {
+                    if (rhs.startsWith(PATH_PARAMETER)) {
+                        var key = rhs.substring(PATH_PARAMETER.length()).trim();
+                        request.setPathParameter(key, String.valueOf(value));
+                    } else if (rhs.startsWith(QUERY_PARAMETER)) {
+                        var key = rhs.substring(QUERY_PARAMETER.length()).trim();
+                        request.setQueryParameter(key, String.valueOf(value));
+                    } else if (rhs.startsWith(HEADER_PARAMETER)) {
+                        var key = rhs.substring(HEADER_PARAMETER.length()).trim();
+                        request.setHeader(key, String.valueOf(value));
+                    } else {
+                        result.put(rhs, value);
+                    }
                 }
             }
         }

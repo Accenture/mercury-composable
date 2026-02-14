@@ -2,7 +2,7 @@
 # Bank account numbers
 #
 dictionary:
-  id: 'person_accounts'
+  id: 'person-accounts'
   target: 'mdm://profile'
   input:
     - 'person_id'

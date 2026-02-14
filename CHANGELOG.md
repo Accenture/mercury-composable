@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.64, 2/11/2026
+
+### Added
+
+1. UpdateListOfMap plugin in event-script-engine to merge additional data
+   of prior ListOfMap result to address side effect of JSON-Path search
+2. RemoveKey plugin in event-script-engine to remove a key from a map or from a list of maps
+3. Pre-built UI app for json-path-playground
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Bugfix to avoid racing condition in HTTP response housekeeping
+2. Naming convention for data dictionary query method to use hyphen instead of underscore
+3. Updated ListOfMap to support one or more list of maps to be merged together
+
+---
 ## Version 4.3.63, 2/10/2026
 
 ### Added

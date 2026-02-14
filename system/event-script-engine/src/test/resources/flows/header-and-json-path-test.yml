@@ -30,7 +30,20 @@ tasks:
       - '$.input.body.list[*].world -> model.list.world'
       - '$.input.body.list[*].test -> model.list.test'
       - 'model.list -> output.body.list'
-      # the listOfMap plugin restores the original data structure for easy processing by another user function
-      - 'f:listOfMap(model.list) -> output.body.normalized'
+      # listOfMap plugin restores the original data structure for easy processing by another user function
+      - 'f:listOfMap(model.list) -> output.body.normalized1'
+      # listOfMap plugin can also process more than one map of lists and merge them together
+      - '$.input.body.list[*].world -> model.list2.world'
+      - '$.input.body.list[*].test -> model.list3.test'
+      - 'f:listOfMap(model.list2, model.list3) -> output.body.normalized2'
+      # updateListOfMap merges additional map of lists into a prior result of a list of maps
+      - 'f:updateListOfMap(output.body.normalized1, input.body.more) -> output.body.more'
+      - 'text(world) -> model.map.hello'
+      - 'int(1) -> model.map.test'
+      # removeKey removes one or more keys from a map or a list of maps
+      - 'f:removeKey(model.map, text(test)) -> output.body.map'
+      - 'model.map -> model.list_of_map[]'
+      - 'model.map -> model.list_of_map[]'
+      - 'f:removeKey(model.list_of_map, text(hello)) -> output.body.updated_list_map'
     description: 'Return result'
     execution: end

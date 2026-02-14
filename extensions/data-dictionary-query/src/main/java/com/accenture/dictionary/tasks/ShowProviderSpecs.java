@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-@PreLoad(route="v1.show.provider", instances=50)
+@PreLoad(route="show.data.provider", instances=50)
 public class ShowProviderSpecs extends DictionaryLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(ShowProviderSpecs.class);
 
