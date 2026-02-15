@@ -1434,12 +1434,13 @@ public interface PluginFunction {
 
 ### Using Plugins in Event-Script
 
-A plugin function can be configured in the left-hand-side of an input data mapping statement using the `f:` prefix
-with your plugin name. i.e. `f:pluginName(variables...)`
+A plugin function can be configured in the left-hand-side of an input/output data mapping statement using the
+`f:` prefix with your plugin name. i.e. `f:pluginName(variables...)`
 
 A plugin can access variables in the `model.`, `input.`, `output.` namespaces. You may also use constants such as
 `text(value)`, `int(value)`. For constant text value, it should not contain the comma (`,`) character because comma
-is used as a separator for the plugin's argument variables.
+is used as a separator for the plugin's argument variables. If comma must be used in a text constant, set the
+constant as a model variable and apply the model variable as an argument to a plugin.
 
 For model, input and output variables, you may also use JSON-Path syntax to extract value as argument to a plugin.
 
