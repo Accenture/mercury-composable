@@ -6,6 +6,7 @@
 #
 dictionary:
   id: 'person-account-details'
+  purpose: 'consolidated person name, account IDs and details'
   target: 'dd://demo'
   input:
     - 'person_id'

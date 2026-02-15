@@ -23,13 +23,15 @@ import java.util.List;
 
 public class DataDictionary {
     public final String id;
+    public final String purpose;
     public final String target;
     public final List<String> input = new ArrayList<>();
     public final List<String> output = new ArrayList<>();
 
-    public DataDictionary(String id, String target) {
+    public DataDictionary(String id, String target, String purpose) {
         this.id = id;
         this.target = target;
+        this.purpose = purpose;
     }
 
     public void addInput(String entry) {

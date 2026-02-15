@@ -120,6 +120,7 @@ class IntegrationTest {
         assertInstanceOf(List.class, body.get("input"));
         assertInstanceOf(List.class, body.get("output"));
         assertEquals("person-name", body.get("id"));
+        assertEquals("name of a person", body.get("purpose"));
         assertEquals("mdm://profile", body.get("target"));
     }
 

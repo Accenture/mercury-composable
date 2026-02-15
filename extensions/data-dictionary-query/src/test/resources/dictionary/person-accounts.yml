@@ -3,6 +3,7 @@
 #
 dictionary:
   id: 'person-accounts'
+  purpose: 'list of account ID'
   target: 'mdm://profile'
   input:
     - 'person_id'

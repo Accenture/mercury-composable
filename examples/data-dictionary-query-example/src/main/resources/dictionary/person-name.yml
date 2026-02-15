@@ -6,6 +6,7 @@
 #
 dictionary:
   id: 'person-name'
+  purpose: 'name of a person'
   target: 'mdm://profile'
   input:
     - 'person_id'

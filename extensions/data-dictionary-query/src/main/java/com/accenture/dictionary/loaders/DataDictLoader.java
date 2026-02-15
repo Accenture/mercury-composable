@@ -37,20 +37,21 @@ public class DataDictLoader {
 
     public DataDictionary loadDataDict(String dataId,  ConfigReader config) {
         var id = config.getProperty("dictionary.id", "");
+        var purpose = config.getProperty("dictionary.purpose", "");
         var target = config.getProperty("dictionary.target", "");
         var input = config.get("dictionary.input");
         var output = config.get("dictionary.output");
-        if (!id.isEmpty() && target.contains(PROTOCOL_INDICATOR) &&
+        if (!id.isEmpty() && !purpose.isEmpty() && target.contains(PROTOCOL_INDICATOR) &&
                 input instanceof List<?> inputList && output instanceof List<?> outputList &&
                 !inputList.isEmpty() && !outputList.isEmpty()) {
             validateProtocol(id, target);
-            var dataDict = new DataDictionary(id, target);
+            var dataDict = new DataDictionary(id, target, purpose);
             inputList.forEach(d -> dataDict.addInput(String.valueOf(d)));
             outputList.forEach(d -> dataDict.addOutput(String.valueOf(d)));
             return dataDict;
         } else {
             throw new IllegalArgumentException("Invalid syntax in "+dataId+
-                        " - check dictionary.id, target, input, and output");
+                        " - check dictionary.id, purpose, target, input, and output");
         }
     }
 

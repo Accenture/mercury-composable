@@ -3,6 +3,7 @@
 #
 dictionary:
   id: 'account-details'
+  purpose: 'account details'
   target: 'account://details'
   input:
     - 'person_id'
