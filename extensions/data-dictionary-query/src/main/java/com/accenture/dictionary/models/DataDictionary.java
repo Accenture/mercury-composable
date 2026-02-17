@@ -35,10 +35,14 @@ public class DataDictionary {
     }
 
     public void addInput(String entry) {
-        this.input.add(entry);
+        if (entry != null) {
+            this.input.add(entry.trim());
+        }
     }
 
     public void addOutput(String entry) {
-        this.output.add(entry);
+        if (entry != null) {
+            this.output.add(entry.trim());
+        }
     }
 }

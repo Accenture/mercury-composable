@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 public class QuestionProcessor extends DictionaryLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(QuestionProcessor.class);
     private static final Utility util = Utility.getInstance();
+    private static final DataMappingHelper helper = DataMappingHelper.getInstance();
 
     @SuppressWarnings("unchecked")
     @Override
@@ -88,7 +89,6 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (result == null) {
             throw new IllegalArgumentException("No result resolved for " + questionId);
         }
-        var helper = DataMappingHelper.getInstance();
         for (var entry: questionSpecs.answers) {
             int sep = entry.lastIndexOf(ARROW);
             var lhs = entry.substring(0, sep).trim();
@@ -154,7 +154,6 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
 
     private Map<String, List<?>> getForEachMapping(Question question, MultiLevelMap dataset) {
         int size = -1;
-        var helper = DataMappingHelper.getInstance();
         Map<String, List<?>> mappings = new HashMap<>();
         for (var entry : question.forEach) {
             var sep = entry.lastIndexOf(ARROW);
@@ -221,13 +220,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (provider == null) {
             throw new IllegalArgumentException("Data provider '" + item.target + "' not found");
         }
-        var parameters = (Map<String, Object>) dataset.getElement(PARAMETER);
-        var required = new HashMap<String, Object>();
-        for (var k: item.input) {
-            if (parameters.containsKey(k)) {
-                required.put(k, parameters.get(k));
-            }
-        }
+        var required = mapRequiredParameters(item, (Map<String, Object>) dataset.getElement(PARAMETER));
         var targetService = getTargetService(provider.protocol);
         if (targetService == null) {
             throw new IllegalArgumentException("Target service '" + provider.protocol + "' not configured");
@@ -239,6 +232,25 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             paramMap.item = item;
         }
         paramMap.addParameterMap(required);
+    }
+
+    private Map<String, Object> mapRequiredParameters(DataDictionary item, Map<String, Object> parameters) {
+        var required = new HashMap<String, Object>();
+        for (var k: item.input) {
+            // any default value? syntax below:
+            // parameter:default_value
+            int sep = k.indexOf(':');
+            var key = sep == -1 ? k : k.substring(0, sep).trim();
+            if (parameters.containsKey(key)) {
+                required.put(key, parameters.get(key));
+            } else if (sep != -1) {
+                // use default value if not set
+                var rhs = k.substring(sep + 1).trim();
+                var constant = helper.getConstantValue(rhs);
+                required.put(key, Objects.requireNonNullElse(constant, rhs));
+            }
+        }
+        return required;
     }
 
     private void doRegularQuestion(PostOffice po, Question question, MultiLevelMap dataset, long timeout)
@@ -264,13 +276,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (provider == null) {
             throw new IllegalArgumentException("Data provider '" + item.target + "' not found");
         }
-        var parameters = (Map<String, Object>) dataset.getElement(PARAMETER);
-        var required = new HashMap<String, Object>();
-        for (var k: item.input) {
-            if (parameters.containsKey(k)) {
-                required.put(k, parameters.get(k));
-            }
-        }
+        var required = mapRequiredParameters(item, (Map<String, Object>) dataset.getElement(PARAMETER));
         var targetService = getTargetService(provider.protocol);
         if (targetService == null) {
             throw new IllegalArgumentException("Target service '" + provider.protocol + "' not deployed");
@@ -292,7 +298,6 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
     }
 
     private void mapResponse(String itemId, List<String> output, MultiLevelMap dataset, MultiLevelMap mm) {
-        var helper = DataMappingHelper.getInstance();
         for (var entry: output) {
             var sep = entry.lastIndexOf(ARROW);
             if (sep == -1) {
@@ -326,7 +331,6 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
     }
 
     private void loadInputParameters(Question question, MultiLevelMap dataset) {
-        var helper = DataMappingHelper.getInstance();
         for (var text : question.input) {
             var sep = text.lastIndexOf(ARROW);
             var lhs = text.substring(0, sep).trim();

@@ -32,14 +32,20 @@ public class Question {
     }
 
     public void addForEach(String entry) {
-        forEach.add(entry);
+        if (entry != null) {
+            forEach.add(entry.trim());
+        }
     }
 
     public void addInput(String entry) {
-        this.input.add(entry);
+        if (entry != null) {
+            this.input.add(entry.trim());
+        }
     }
 
     public void addOutput(String entry) {
-        this.output.add(entry);
+        if (entry != null) {
+            this.output.add(entry);
+        }
     }
 }

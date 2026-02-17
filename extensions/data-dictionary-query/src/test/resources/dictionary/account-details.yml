@@ -8,7 +8,8 @@ dictionary:
   input:
     - 'person_id'
     - 'account_id'
-    - 'hello_id'
+    - 'hello_id:100'
+    - 'constant_id:float(20.3)'
   output:
 #    - 'response.account.details -> result.account_details'
 

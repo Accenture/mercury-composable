@@ -40,14 +40,20 @@ public class DataProvider {
     }
 
     public void addInput(String entry) {
-        this.input.add(entry);
+        if (entry != null) {
+            this.input.add(entry.trim());
+        }
     }
 
     public void addHeader(String header) {
-        this.headers.add(header);
+        if (header != null) {
+            this.headers.add(header.trim());
+        }
     }
 
     public void addSkill(String skill) {
-        this.skills.add(skill);
+        if (skill != null) {
+            this.skills.add(skill.trim());
+        }
     }
 }
