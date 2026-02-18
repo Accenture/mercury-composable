@@ -18,8 +18,10 @@ is a multiline command.
 
 Properties
 ----------
+```
 skill=graph.decision
 decision[]=if-then-else and execute-statement if any
+```
 
 Execution
 ---------
@@ -29,11 +31,13 @@ Syntax for decision statement
 -----------------------------
 Each decision statement is a multiline command:
 
+```
 IF JavaScript statement
 THEN node name | next
 ELSE node name | next
 
 EXECUTE data-mapper, JS node or API fetcher
+```
 
 The "next" keyword tells the system to execute the next statement.
 

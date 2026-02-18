@@ -16,7 +16,9 @@ There are no other properties required.
 
 Properties
 ----------
+```
 skill=graph.end
+```
 
 Execution
 ---------

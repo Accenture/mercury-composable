@@ -16,8 +16,10 @@ One or more data mapping entries can be added to the property "mapping".
 
 Properties
 ----------
+```
 skill=graph.data.mapper
 mapping[]=source -> target
+```
 
 The system uses the same syntax of Event Script for data mapping.
 

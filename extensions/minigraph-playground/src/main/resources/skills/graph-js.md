@@ -16,8 +16,10 @@ One or more JavaScript statements can be added to the property "js".
 
 Properties
 ----------
+```
 skill=graph.data.mapper
 js[]=composite.key -> JavaScript statement
+```
 
 Execution
 ---------

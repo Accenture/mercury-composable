@@ -24,9 +24,11 @@ The system uses the same syntax of Event Script for data mapping.
 
 Properties
 ----------
+```
 skill=graph.api.fetcher
 question=question-id
 mapping[]=source -> target
+```
 
 Result set
 ----------
