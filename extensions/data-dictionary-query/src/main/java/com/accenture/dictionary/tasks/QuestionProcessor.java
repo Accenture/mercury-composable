@@ -282,7 +282,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             throw new IllegalArgumentException("Target service '" + provider.protocol + "' not deployed");
         }
         var responseKey = RESPONSE_NAMESPACE + item.target;
-        var cached = getCachedData(responseKey, required, dataset); // dataset.getElement(responseKey);
+        var cached = getCachedData(responseKey, required, dataset);
         if (cached == null) {
             var request = new EventEnvelope().setTo(targetService);
             request.setHeader(PROVIDER, item.target).setHeader(TIMEOUT, timeout).setBody(required);
@@ -318,9 +318,9 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (parameters.size() != required.size()) {
             return false;
         }
-        var keys = new ArrayList<>(required.keySet());
-        for (var k: keys) {
-            Object v1 = required.get(k);
+        for (var kv: required.entrySet()) {
+            var k = kv.getKey();
+            Object v1 = kv.getValue();
             Object v2 = parameters.get(k);
             if (!v1.equals(v2)) return false;
         }

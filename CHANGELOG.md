@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.67, 2/18/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated OSS
+1. tomcat 10.1.52
+2. netty 4.2.10.Final
+3. vertx 5.0.8
+
+---
 ## Version 4.3.66, 2/18/2026
 
 ### Added

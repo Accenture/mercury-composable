@@ -5,7 +5,7 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>rest-spring-3</artifactId>
-    <version>4.3.66</version>
+    <version>4.3.67</version>
     <packaging>jar</packaging>
 
     <name>Pre-configured Spring Boot 3 module</name>
@@ -20,7 +20,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <netty.version>4.2.9.Final</netty.version>
+        <tomcat.version>10.1.52</tomcat.version>
+        <netty.version>4.2.10.Final</netty.version>
         <log4j2.version>2.25.3</log4j2.version>
         <kafka.version>4.1.1</kafka.version>
         <gson.version>2.13.2</gson.version>
@@ -50,7 +51,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.3.66</version>
+            <version>4.3.67</version>
         </dependency>
 
         <dependency>
