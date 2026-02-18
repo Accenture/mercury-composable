@@ -31,6 +31,16 @@ Syntax for JavaScript statement
 It will be a regular JavaScript statement with parameter substitution using the bracket syntax where
 the enclosed parameter is a reference to a data attributes in the namespace of "input.", "model." or node name.
 
+When you have more than one JavaScript statement, a subsequent statement can use the result of a prior statement
+as its parameters.
+
+Each parameters is wrapped by a set of curly brackets.
+
+Limitation
+----------
+This skill is designed to execute a simple inline JavaScript statement that uses only standard JavaScript library.
+For simplicity and speed of execution, it does not support function declaration.
+
 Example
 -------
 ```
