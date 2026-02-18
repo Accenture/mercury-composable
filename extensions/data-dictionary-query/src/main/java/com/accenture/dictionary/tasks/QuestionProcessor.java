@@ -281,7 +281,8 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (targetService == null) {
             throw new IllegalArgumentException("Target service '" + provider.protocol + "' not deployed");
         }
-        var cached = dataset.getElement(RESPONSE_NAMESPACE + item.target);
+        var responseKey = RESPONSE_NAMESPACE + item.target;
+        var cached = getCachedData(responseKey, required, dataset); // dataset.getElement(responseKey);
         if (cached == null) {
             var request = new EventEnvelope().setTo(targetService);
             request.setHeader(PROVIDER, item.target).setHeader(TIMEOUT, timeout).setBody(required);
@@ -292,9 +293,38 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
                 return;
             }
             cached = response.getBody();
-            dataset.setElement(RESPONSE_NAMESPACE + item.target, cached);
+            dataset.setElement(responseKey + APPEND, Map.of(INPUT, required, OUTPUT, cached));
         }
         mapResponse(item.id, item.output, dataset, new MultiLevelMap(Map.of(RESPONSE, cached)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getCachedData(String responseKey, Map<String, Object> required, MultiLevelMap dataset) {
+        var cached = dataset.getElement(responseKey);
+        if (cached instanceof List<?> responses) {
+            for (var response : responses) {
+                var map = (Map<String, Object>) response;
+                var input = (Map<String, Object>) map.get(INPUT);
+                var output = map.get(OUTPUT);
+                if (sameInputParameters(input, required)) {
+                    return output;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean sameInputParameters(Map<String, Object> parameters, Map<String, Object> required) {
+        if (parameters.size() != required.size()) {
+            return false;
+        }
+        var keys = new ArrayList<>(required.keySet());
+        for (var k: keys) {
+            Object v1 = required.get(k);
+            Object v2 = parameters.get(k);
+            if (!v1.equals(v2)) return false;
+        }
+        return true;
     }
 
     private void mapResponse(String itemId, List<String> output, MultiLevelMap dataset, MultiLevelMap mm) {
@@ -321,7 +351,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             var clone = copyOf(value);
             if (mm.exists(FOR_EACH)) {
                 // for resultset, automatically add array "append" command if not given
-                dataset.setElement(rhs.startsWith(MODEL_NAMESPACE) || rhs.contains("[]")? rhs : rhs + "[]", clone);
+                dataset.setElement(rhs.startsWith(MODEL_NAMESPACE) || rhs.contains(APPEND)? rhs : rhs + APPEND, clone);
             } else {
                 dataset.setElement(rhs, clone);
             }

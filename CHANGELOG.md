@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.66, 2/18/2026
+
+### Added
+
+Adjust internal cache within a question of a sequence of API calls to detect the
+cached response is correlated to the input parameters.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.65, 2/17/2026
 
 ### Added
