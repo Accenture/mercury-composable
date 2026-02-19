@@ -18,7 +18,7 @@ N/A
 
 ### Removed
 
-Suppress response data mapping exception in data dictionary processing so that it can result
+Suppress response data mapping exception in data dictionary processing so that it can return
 null to the calling application
 
 ### Changed
