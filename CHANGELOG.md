@@ -23,8 +23,10 @@ null to the calling application
 
 ### Changed
 
-Enforce that TTL for FluxPublisher and FluxConsumer must be larger than 500 ms.
-Otherwise, a default value of 10 seconds will be applied.
+1. Enforce that TTL for FluxPublisher and FluxConsumer must be larger than 500 ms.
+   Otherwise, a default value of 10 seconds will be applied.
+2. OSS update - reactor-netty-http version 1.3.3 fetched by reactor-bom 2025.0.3
+   to ensure pairing with netty 4.2.10.Final.
 
 ---
 ## Version 4.3.67, 2/18/2026
