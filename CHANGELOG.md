@@ -23,7 +23,8 @@ null to the calling application
 
 ### Changed
 
-N/A
+Enforce that TTL for FluxPublisher and FluxConsumer must be larger than 500 ms.
+Otherwise, a default value of 10 seconds will be applied.
 
 ---
 ## Version 4.3.67, 2/18/2026
