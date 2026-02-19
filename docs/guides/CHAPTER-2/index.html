@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/CHAPTER-2/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Chapter-2 - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Chapter-2";
+        var mkdocs_page_input_path = "guides/CHAPTER-2.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/CHAPTER-2/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Chapter-1</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Chapter-2</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#define-a-function">Define a function</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-blocking-design">Non-blocking design</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#user-function-that-returns-a-mono-object">User function that returns a Mono object</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#user-function-that-returns-a-flux-object">User function that returns a Flux object</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#handling-a-flux-stream">Handling a Flux stream</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serialization-consideration">Serialization consideration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#extensible-authentication-function">Extensible authentication function</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#number-of-workers-for-a-function">Number of workers for a function</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#strategies-for-function-execution">Strategies for function execution</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#virtual-thread">Virtual thread</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#kernel-thread-pool">Kernel thread pool</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#solving-the-puzzle-of-multithreading-performance">Solving the puzzle of multithreading performance</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Chapter-5</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Chapter-10</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Appendix-III</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Chapter-2</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="function-execution-strategies">Function Execution Strategies</h1>
+<h2 id="define-a-function">Define a function</h2>
+<p>In a composable application, each function is self-contained with zero dependencies with other user functions.</p>
+<p>Only flow adapter, data adapter, notification function or gateway has a single external dependency such as
+a network event system, a database or an external REST resource.</p>
+<p>A "task" or "function" is a class that implements the LambdaFunction or TypedLambdaFunction interface. 
+Within each function boundary, it may have private methods that are fully contained within the class.</p>
+<p>As discussed in Chapter-1, a function may look like this:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;my.first.function&quot;, instances = 10)
+public class MyFirstFunction implements TypedLambdaFunction&lt;MyPoJo, AnotherPoJo&gt; {
+
+    @Override
+    public AnotherPojo handleEvent(Map&lt;String, String&gt; headers, MyPoJo input, int instance) {
+        // your business logic here
+        return result;
+    }
+}
+</code></pre>
+<p>A function is an event listener with the "handleEvent" method. The data structures of input and output are defined
+by API interface contract in an event flow configuration.</p>
+<p>In the above example, the input is MyPoJo and the output is AnotherPoJo.</p>
+<p>For event choreography, input body is represented as a PoJo or a Map of key-values so that you can use the
+dot-bracket convention to map subset of a PoJo from one function to another if needed.</p>
+<p>In addition to the input PoJo, you may pass additional parameters to the user function as event headers.
+We will discuss this in <a href="../CHAPTER-4/">Chapter 4 - Event Script Syntax</a>.</p>
+<h2 id="non-blocking-design">Non-blocking design</h2>
+<p>While you can apply sequential, object-oriented or reactive programming styles in your functions, you should pay
+attention to making your function non-blocking and fast.</p>
+<p>In a virtual thread, if you use Java Future, the ".get()" method is synchronous but it is non-blocking behind the
+curtain. This is like using the "await" keyword in other programming language.</p>
+<p>Virtual thread execution promotes performance and high concurrency. However, it would be suboptimal
+if you mix blocking code in a user function. It will block the whole event loop, resulting in substantial
+degradation of application performance. We therefore recommend your user function to be implemented in non-blocking
+or reactive styles.</p>
+<p>When you are using a reactive library in your function, your function can return a "Mono" or "Flux" reactive
+response object using the Project-Reactor Core library.</p>
+<p>For simplicity, we support only the Mono and Flux reactive response objects. If you use other types of reactive APIs,
+please convert them into a Mono or Flux accordingly.</p>
+<h2 id="user-function-that-returns-a-mono-object">User function that returns a Mono object</h2>
+<p>For Mono return value, a reactive user function may look like this:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.reactive.mono.function&quot;)
+public class MonoUserFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Mono&lt;Map&lt;String, Object&gt;&gt;&gt; {
+    private static final Logger log = LoggerFactory.getLogger(MonoUserFunction.class);
+
+    private static final String EXCEPTION = &quot;exception&quot;;
+
+    @Override
+    public Mono&lt;Map&lt;String, Object&gt;&gt; handleEvent(Map&lt;String, String&gt; headers, Map&lt;String, Object&gt; input, int instance) {
+        log.info(&quot;GOT {} {}&quot;, headers, input);
+        return Mono.create(callback -&gt; {
+            if (headers.containsKey(EXCEPTION)) {
+                callback.error(new AppException(400, headers.get(EXCEPTION)));
+            } else {
+                callback.success(input);
+            }
+        });
+    }
+}
+</code></pre>
+<h2 id="user-function-that-returns-a-flux-object">User function that returns a Flux object</h2>
+<p>For Flux return value, it may look like this:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.reactive.flux.function&quot;)
+public class FluxUserFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Flux&lt;Map&lt;String, Object&gt;&gt;&gt; {
+    private static final Logger log = LoggerFactory.getLogger(FluxUserFunction.class);
+
+    private static final String EXCEPTION = &quot;exception&quot;;
+    @Override
+    public Flux&lt;Map&lt;String, Object&gt;&gt; handleEvent(Map&lt;String, String&gt; headers, Map&lt;String, Object&gt; input, int instance) {
+        log.info(&quot;GOT {} {}&quot;, headers, input);
+        return Flux.create(emitter -&gt; {
+            if (headers.containsKey(EXCEPTION)) {
+                emitter.error(new AppException(400, headers.get(EXCEPTION)));
+            } else {
+                // just generate two messages
+                emitter.next(Map.of(&quot;first&quot;, &quot;message&quot;));
+                emitter.next(input);
+                emitter.complete();
+            }
+        });
+    }
+}
+
+</code></pre>
+<h2 id="handling-a-flux-stream">Handling a Flux stream</h2>
+<p>When your function returns a Flux stream object, the system will pass the stream ID of the underlying event stream
+to the calling function.</p>
+<p>The input arguments for the event stream ID and time-to-live parameters are provided in the event headers
+to your function that implements the TypedLambdaFunction or LambdaFunction.</p>
+<p>The following event headers will be provided to the calling function:</p>
+<pre><code class="language-yaml">x-stream-id: streamId
+x-ttl: ttl
+</code></pre>
+<p>In the calling function, you can create a <code>FluxConsumer</code> to handle the incoming event stream like this:</p>
+<pre><code class="language-java">String streamId = headers.get(&quot;x-stream-id&quot;);
+long ttl = Utility.getInstance().str2long(headers.get(&quot;x-ttl&quot;));
+FluxConsumer&lt;Map&lt;String, Object&gt;&gt; fc = new FluxConsumer&lt;&gt;(streamId, ttl);
+fc.consume(
+    data -&gt; {
+        // handle incoming message
+    },
+    e -&gt; {
+        // handle exception where e is a Throwable
+    },
+    () -&gt; {
+        // handle stream completion
+    }
+);
+</code></pre>
+<p>The API signatures for FluxConsumer are as follows:</p>
+<pre><code class="language-java">// Consume the event stream when the payload is not a PoJo
+public void consume(Consumer&lt;T&gt; consumer,
+                    Consumer&lt;Throwable&gt; errorConsumer,
+                    Runnable completeConsumer);
+
+// Consume the event stream when the payload can be mapped as PoJo
+public void consume(Consumer&lt;T&gt; consumer,
+                    Consumer&lt;Throwable&gt; errorConsumer,
+                    Runnable completeConsumer, Class&lt;T&gt; pojoClass);
+
+// Consume the event stream when the payload can be mapped as PoJo using a custom serializer
+public void consume(Consumer&lt;T&gt; consumer,
+                    Consumer&lt;Throwable&gt; errorConsumer,
+                    Runnable completeConsumer,
+                    Class&lt;T&gt; pojoClass, CustomSerializer serializer);                                       
+</code></pre>
+<h2 id="serialization-consideration">Serialization consideration</h2>
+<p>If you use the FluxConsumer's consume method without pojoClass hint, the system will deliver
+Java primitive and HashMap through an event stream. If you pass PoJo, HashMap or Java primitive such as
+String or byte[], you do not need to do any serialization.</p>
+<p>If the objects that your function streams over a Mono or Flux channel are not supported, you must perform
+custom serialization. This can be achieved using the "map" method of the Mono or Flux class.</p>
+<p>For example, your function obtains a stream of Flux result objects from a database call. You can serialize
+the objects using a custom serializer like this:</p>
+<pre><code class="language-java">// &quot;source&quot; is the original Flux object
+Flux&lt;Map&lt;String, Object&gt; serializedStream = source.map(specialPoJo -&gt; {
+    return myCustomSerializer.toMap(specialPoJo);
+});
+return serializedStream;
+</code></pre>
+<p>Your customSerializer should implement the org.platformlambda.core.models.CustomSerializer interface.</p>
+<pre><code class="language-java">public interface CustomSerializer {
+    public Map&lt;String, Object&gt; toMap(Object obj);
+    public &lt;T&gt; T toPoJo(Object obj, Class&lt;T&gt; toValueType);
+}
+</code></pre>
+<h2 id="extensible-authentication-function">Extensible authentication function</h2>
+<p>You can add authentication function using the optional <code>authentication</code> tag in a service. In "rest.yaml", a service
+for a REST endpoint refers to a function in your application.</p>
+<p>An authentication function can be written using a TypedLambdaFunction that takes the input as a "AsyncHttpRequest".
+Your authentication function can return a boolean value to indicate if the request should be accepted or rejected.</p>
+<p>A typical authentication function may validate an HTTP header or cookie. e.g. forward the "Bearer token" from the
+"Authorization" header to your organization's OAuth 2.0 Identity Provider for validation.</p>
+<p>To approve an incoming request, your custom authentication function can return <code>true</code>.</p>
+<p>Optionally, you can add "session" key-values by returning an EventEnvelope like this:</p>
+<pre><code class="language-shell">return new EventEnvelope().setHeader(&quot;user_id&quot;, &quot;A12345&quot;).setBody(true);
+</code></pre>
+<p>The above example approves the incoming request and returns a "session" variable ("user_id": "A12345") to the
+next task.</p>
+<p>If your authentication function returns <code>false</code>, the user will receive a "HTTP-401 Unauthorized" error response.</p>
+<p>You can also control the status code and error message by throwing an <code>AppException</code> like this:</p>
+<pre><code class="language-shell">throw new AppException(401, &quot;Invalid credentials&quot;);
+</code></pre>
+<p>Alternatively, you may implement authentication as a user function in the first step of an event flow. In this case,
+the input to the function is defined by the "input data mapping" rules in the event flow configuration. </p>
+<p>The advantage of this approach is that authentication is shown as part of an event flow so that the application design
+intention is clear.</p>
+<p>A composable application is assembled from a collection of self-contained functions that are highly reusable.</p>
+<h2 id="number-of-workers-for-a-function">Number of workers for a function</h2>
+<p>In the following annotation, the parameter "instances" tells the system to reserve a number of workers for the function.
+Workers are running on-demand to handle concurrent user requests.</p>
+<pre><code class="language-java">@PreLoad(route = &quot;my.first.function&quot;, instances = 10)
+</code></pre>
+<p>Note that you can use smaller number of workers to handle many concurrent users if your function finishes
+processing very quickly. If not, you should reserve more workers to handle the work load.</p>
+<p>Concurrency requires careful planning for optimal performance and throughput. </p>
+<h2 id="strategies-for-function-execution">Strategies for function execution</h2>
+<p>Let's review the strategies for function execution. A function is executed when an event arrives.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Strategy</th>
+<th style="text-align: left;">Advantage</th>
+<th style="text-align: left;">Disadvantage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Virtual thread</td>
+<td style="text-align: left;">Higher throughput in terms of<br/>concurrent users</td>
+<td style="text-align: left;">N/A</td>
+</tr>
+<tr>
+<td style="text-align: left;">Kernel threads</td>
+<td style="text-align: left;">Higher performance in terms of<br/>operations per seconds</td>
+<td style="text-align: left;">Lower number of concurrent threads<br/>due to high context switching overheads</td>
+</tr>
+</tbody>
+</table>
+<h3 id="virtual-thread">Virtual thread</h3>
+<p>By default, the system will run your function as a virtual thread because this is the most efficient execution
+strategy.</p>
+<p>In a virtual thread, the "Thread" object in the standard library will operate in non-blocking mode. This means
+it is safe to use the Thread.sleep() method. It will release control to the event loop when your function enters
+into sleep, thus freeing CPU resources for other functions.</p>
+<p>We have added the "request" methods in the PostOffice API to support non-blocking RPC that leverages this
+suspend/resume feature of virtual thread management.</p>
+<pre><code class="language-java">Future&lt;EventEnvelope&gt; future = po.request(requestEvent, timeout);
+EventEnvelope result = future.get();
+
+// alternatively, you can do:
+EventEnvelope result = po.request(requestEvent, timeout).get();
+</code></pre>
+<blockquote>
+<p><em>Note</em>: The PostOffice API is used when you want to do orchestration by code. If you are using Event Script, you can
+  manage event flows using one or more configuration files.</p>
+</blockquote>
+<h3 id="kernel-thread-pool">Kernel thread pool</h3>
+<p>When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
+the function will be executed using a "kernel thread pool" and Java will run your function in native 
+"preemptive multitasking" mode.</p>
+<p>While preemptive multitasking fully utilizes the CPU, its context switching overheads increase as the number of
+kernel threads grow. As a rule of thumb, you should control the maximum number of kernel threads to be less than 200.</p>
+<p>The parameter <code>kernel.thread.pool</code> is defined with a default value of 100. You can change this value to adjust to
+the actual CPU power in your environment. Keep the default value for best performance unless you have tested the
+limit in your environment.</p>
+<blockquote>
+<p><em>Note</em>: When you have more concurrent requests, your application may slow down because some functions
+  are blocked when the number of concurrent kernel threads is reached.</p>
+</blockquote>
+<p>You should reduce the number of "instances" (i.e. worker pool) for a function to a small number so that your
+application does not exceed the maximum limit of the <code>kernel.thread.pool</code> parameter.</p>
+<p>Kernel threads are precious and finite resources. When your function is computational intensive or making
+external HTTP or database calls in a synchronous blocking manner, you may use it with a small number
+of worker instances.</p>
+<p>To rapidly release kernel thread resources, you should write "asynchronous" code. i.e. for event-driven programming,
+you can use send event to another function asynchronously, and you can create a callback function to listen
+to responses.</p>
+<p>For RPC call, you can use the <code>asyncRequest</code> method to make asynchronous RPC calls. However, coding for asynchronous
+pattern is more challenging. For example, you may want to return a "pending" result immediately using HTTP-202.
+Your code will move on to execute using a "future" that will execute callback methods (<code>onSuccess</code> and <code>onFailure</code>).
+Another approach is to annotate the function as an <code>EventInterceptor</code> so that your function can respond to the user
+in a "future" callback.</p>
+<p>For ease of programming, we recommend using virtual thread to handle synchronous RPC calls in a non-blocking manner.</p>
+<h2 id="solving-the-puzzle-of-multithreading-performance">Solving the puzzle of multithreading performance</h2>
+<p>Before the availability of virtual thread technology in Java 21, Java VM has been using kernel threads for code
+execution. If you have a lot of users hitting your service concurrently, multiple threads are created to serve
+concurrent requests.</p>
+<p>When your code serving the requests makes blocking call to other services, the kernel threads are busy while your
+user functions wait for responses. Kernel threads that are in the wait state is still consuming CPU time.</p>
+<p>If the blocking calls finish very quickly, this is not be an issue.</p>
+<p>However, when the blocking calls take longer to complete, a lot of outstanding kernel threads that are waiting
+for responses would compete for CPU resources, resulting in higher internal friction in the JVM that makes your
+application running slower. This is not a productive use of computer resources.</p>
+<p>This type of performance issue caused by internal friction is very difficult to avoid. While event driven and
+reactive programming that uses asynchronous processing and callbacks would address this artificial bottleneck,
+asynchronous code is harder to implement and maintain when the application complexity increases.</p>
+<p>It would be ideal if we can write sequential code that does not block. Sequential code is much easier to write
+and read because it communicates the intent of the code clearly.</p>
+<p>Leveraging Java 21 virtual thread technology, Mercury Composable allows the developer to write code in a sequential
+manner. When code in your function makes an RPC call to another service using the PostOffice's "request" API, it
+returns a Java Future object but the "Future" object itself is running in a virtual thread. This means when your code
+retrieves the RPC result using the "get" method, your code appears "blocked" while waiting for the response
+from the target service.</p>
+<p>Although your code appears to be "blocked", the virtual thread is “suspended”. It will wake up when the response
+arrives. When a virtual thread is suspended, it does not consume CPU time and the memory structure for keeping
+the thread in suspend mode is very small. Virtual thread technology is designed to support tens of thousands
+of concurrent RPC requests in a single compute machine, container or serverless instance.</p>
+<p>Mercury Composable supports mixed thread management - virtual threads and kernel threads.</p>
+<p>Functions running in different types of threads are connected loosely in events. This functional isolation
+and encapsulation mean that you can precisely control how your application performs for each functional logic block.
+<br/></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Chapter-1</th>
+<th style="text-align: center;">Home</th>
+<th style="text-align: center;">Chapter-3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../CHAPTER-1/">Introduction</a></td>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+<td style="text-align: center;"><a href="../CHAPTER-3/">REST Automation</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../CHAPTER-1/" class="btn btn-neutral float-left" title="Chapter-1"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../CHAPTER-3/" class="btn btn-neutral float-right" title="Chapter-3">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../CHAPTER-1/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../CHAPTER-3/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/CHAPTER-1/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Chapter-1 - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Chapter-1";
+        var mkdocs_page_input_path = "guides/CHAPTER-1.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/CHAPTER-1/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Chapter-1</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#composable-application-architecture">Composable application architecture</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#http-flow-adapter">HTTP flow adapter</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#flow-configuration-example">Flow configuration example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#assigning-a-route-name-to-a-user-function">Assigning a route name to a user function</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#building-the-mercury-libraries-from-source">Building the Mercury libraries from source</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#things-to-avoid-with-java-21">Things to avoid with Java 21</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#composable-application-example">Composable application example</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#starting-the-application">Starting the application</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#testing-the-application">Testing the application</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#main-application-entry-point">Main application entry point</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#writing-composable-libraries">Writing composable libraries</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#graceful-shutdown">Graceful shutdown</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#dependency-management">Dependency management</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#component-scan">Component scan</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deploy-your-application">Deploy your application</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#event-choreography-by-configuration">Event choreography by configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#orchestration-by-code">Orchestration by code</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Chapter-2</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Chapter-5</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Chapter-10</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Appendix-III</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Chapter-1</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="introduction">Introduction</h1>
+<p>Mercury Composable is a software development toolkit for writing composable applications.</p>
+<p>Composable application means that an application is assembled from modular software components or functions that
+are self-contained and pluggable. You can mix-n-match functions to form new applications. You can retire outdated
+functions without adverse side effect to a production system. Multiple versions of a function can exist, and you
+can decide how to route user requests to different versions of a function. Applications would be easier to design,
+develop, maintain, deploy, and scale.</p>
+<h2 id="composable-application-architecture">Composable application architecture</h2>
+<blockquote>
+<p>Figure 1 - Composable application architecture</p>
+</blockquote>
+<p><img alt="Composable Application Architecture" src="../diagrams/composable-framework.png" /></p>
+<p>As shown in Figure 1, a composable application contains the following:</p>
+<ol>
+<li><em>Flow adapters</em>: Each flow adapter listens to requests for onwards delivery to an event manager.</li>
+<li><em>Event Manager</em>: it sends events to a set of user functions for them to work together as an application. </li>
+<li><em>User functions</em>: these are self-contained functions with clear input and output that are immutable.</li>
+</ol>
+<h3 id="http-flow-adapter">HTTP flow adapter</h3>
+<p>A non-blocking HTTP flow adapter is built-in. For other external interface types, you can implement your own
+flow adapters. e.g. Adapters for MQ, Kafka, Serverless, File based staging area, etc.</p>
+<p>The standard HTTP flow adapter leverages the underlying REST automation system to serve user facing REST
+API endpoints. For example, a hypothetical "get profile" endpoint is created like this in the "rest.yaml"
+configuration file:</p>
+<pre><code class="language-yaml">  - service: &quot;http.flow.adapter&quot;
+    methods: ['GET']
+    url: &quot;/api/profile/{profile_id}&quot;
+    flow: 'get-profile'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+</code></pre>
+<p>In this REST configuration entry, the system creates a REST API endpoint for "GET /api/profile/{profile_id}".
+When a request arrives at this endpoint, the HTTP request will be converted to an incoming event by the flow adapter
+that routes the event to the "event manager" to execute a new instance of the "get-profile" flow.</p>
+<h3 id="flow-configuration-example">Flow configuration example</h3>
+<p>The event manager is driven by configuration instead of code. A hypothetical "get profile" flow is defined in
+a YAML file like this:</p>
+<pre><code class="language-yaml">flow:
+  id: 'get-profile'
+  description: 'Get a user profile using profile ID'
+  ttl: 10s
+  exception: 'v1.hello.exception'
+
+first.task: 'v1.get.profile'
+
+tasks:
+  - input:
+      - 'input.path_parameter.profile_id -&gt; header.profile_id'
+    process: 'v1.get.profile'
+    output:
+      - 'result -&gt; model.profile'
+    description: 'Retrieve user profile from database using profile_id'
+    execution: sequential
+    next:
+      - 'v1.decrypt.fields'
+
+  - input:
+      - 'model.profile -&gt; dataset'
+      - 'text(telephone, address) -&gt; protected_fields'
+    process: 'v1.decrypt.fields'
+    output:
+      - 'text(application/json) -&gt; output.header.content-type'
+      - 'result -&gt; output.body'
+    description: 'Decrypt fields'
+    execution: end
+
+  - input:
+      - 'error.code -&gt; status'
+      - 'error.message -&gt; message'
+      - 'error.stack -&gt; stack'
+    process: 'v1.hello.exception'
+    output:
+      - 'result.status -&gt; output.status'
+      - 'result -&gt; output.body'
+    description: 'Just a demo exception handler'
+    execution: end
+</code></pre>
+<p>Note that the flow configuration is referring user functions by their "route" names. It is because all user functions
+are self-contained with clearly defined input and output and the event manager would set their inputs and collect their
+outputs accordingly. Note that you can map selected key-values or the whole event as a business object and this
+decoupling promotes highly reusable user functional software.</p>
+<p>The event manager will create a "state machine" to manage each transaction flow because all user functions are
+stateless. The "state machine" is referenced using the namespace "model".</p>
+<h3 id="assigning-a-route-name-to-a-user-function">Assigning a route name to a user function</h3>
+<p>You can assign a route name to a Java class using the <code>PreLoad</code> annotation like this:</p>
+<pre><code class="language-java">@PreLoad(route=&quot;v1.get.profile&quot;, instances=100)
+public class GetProfile implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Profile&gt; {
+
+    @Override
+    public Profile handleEvent(Map&lt;String, String&gt; headers, Map&lt;String, Object&gt; input, int instance) {
+        // your business logic here
+        return result;
+    }
+}
+</code></pre>
+<p>Inside the "handleEvent" method, you can write regular Java code using your preferred coding style and
+framework. You can define input/output as Map or PoJo.</p>
+<h2 id="building-the-mercury-libraries-from-source">Building the Mercury libraries from source</h2>
+<p>Mercury Composable leverages the best of Java 21 virtual threading technology. Therefore, you would need to
+install Java JDK version 21 or higher. You also need maven version 3.9.7 or higher to build the libraries.</p>
+<p>Assuming you clone the repository into the "sandbox" directory, you may build the libraries like this.</p>
+<pre><code class="language-shell">cd sandbox/mercury-composable
+mvn clean install
+</code></pre>
+<p>The compiled libraries will be saved to your local ".m2" maven repository. For production, you may publish
+the Mercury Composable libraries into your enterprise artifactory.</p>
+<p>We use "maven" build scripts. If your organization uses other build tools such as gradle, please convert them
+accordingly.</p>
+<h2 id="things-to-avoid-with-java-21">Things to avoid with Java 21</h2>
+<p>By default, user functions are executed using Java 21 virtual threading technology. However, for performance reason, 
+there are two things that you MUST avoid:</p>
+<ol>
+<li><em>Synchronized keyword</em>: This will block the event loop in the Java VM, meaning that your whole application is
+   blocked when the synchronized block executes.</li>
+<li><em>ThreadLocal</em>: Java 21 virtual thread is designed to be very light weight. When you use ThreadLocal variables,
+   the "virtual thread" becomes heavy weighted and the Garbage Collector may have difficulties catching up.</li>
+</ol>
+<p>Since Mercury provides thread management abstraction, there is no need to use the Synchronized keyword and
+ThreadLocal variables. The built-in "state machine" is a better place to keep your runtime variables for each
+transaction. </p>
+<p>Interestingly, the "Thread" and "Future" APIs are safe to use in a virtual thread.</p>
+<p>If you are putting legacy code inside a new user function and the legacy code runs in blocking mode, you can
+annotate the user function with the "KernelThreadRunner" class. This tells the system to turn on compatibility
+mode to support the blocking code. The kernel thread would isolate the blocking code from the rest of the
+application. However, kernel threads are limited resources. While virtual threads can support tens of thousands of
+cooperative concurrent execution, kernel threads are limited to 250, depending on the number of CPU cores that the
+target machine has.</p>
+<h2 id="composable-application-example">Composable application example</h2>
+<p>Let's take a test drive of a composable application example in the "examples/composable-example" subproject.</p>
+<p>You can use your favorite IDE to run the example or execute it from a terminal using command line.</p>
+<p>To run it from the command line, you may do this:</p>
+<pre><code class="language-shell">cd sandbox/mercury-composable/examples/composable-example
+java -jar target/composable-example-4.2.0.jar
+</code></pre>
+<p>If you run the application from the IDE, you may execute the "main" method in the <code>MainApp</code> class under the
+"com.accenture.demo.start" package folder.</p>
+<p>The first step in designing a composable application is to draw an event flow diagram. This is similar to
+a data flow diagram where the arrows are labeled with the event objects. Note that event flow diagram is
+not a flow chart and thus decision box is not required. If a user function (also known as a "task") contains
+decision logic, you can draw two or more output from the task to connect to the next set of functions. 
+For example, label the arrows as true, false or a number starting from 1.</p>
+<p>The composable-example application is a hypothetical "profile management system" where you can create a profile,
+browse or delete it.</p>
+<blockquote>
+<p>Figure 2 - Create a profile</p>
+</blockquote>
+<p><img alt="Event Flow Diagram" src="../diagrams/create-profile.png" /></p>
+<p>Figure 2 illustrates an event flow to create a profile. Note that the "create profile" can send acknowledgement
+to the user first. It then encrypts and saves the profile into a data store.</p>
+<blockquote>
+<p>Figure 3 - Retrieve a profile</p>
+</blockquote>
+<p><img alt="Event Flow Diagram" src="../diagrams/get-profile.png" /></p>
+<p>Figure 3 demonstrates the case to retrieve a profile. It retrieves an encrypted profile and then passes it to
+the decryption function to return "clear text" of the profile to the user.</p>
+<blockquote>
+<p>Figure 4 - Delete a profile</p>
+</blockquote>
+<p><img alt="Event Flow Diagram" src="../diagrams/delete-profile.png" /></p>
+<p>Figure 4 shows the case to delete a profile. It deletes a profile using the given profile ID and sends an
+acknowledgement to the user.</p>
+<p>The REST endpoints for the three use cases are shown in the "rest.yaml" configuration file under the "main/resources"
+in the example subproject.</p>
+<p>You also find the following configuration parameters in "application.properties":</p>
+<pre><code class="language-properties">rest.server.port=8100
+rest.automation=true
+yaml.rest.automation=classpath:/rest.yaml
+yaml.flow.automation=classpath:/flows.yaml
+</code></pre>
+<p>The flow configuration files are shown in the "main/resources/flows" folder where you will find the flow configuration
+files for the three event flows, namely get-profile.yml, delete-profile.yml and create-profile.yml.</p>
+<h3 id="starting-the-application">Starting the application</h3>
+<p>When the application starts, you will see extract of the application log like this:</p>
+<pre><code class="language-log">CompileFlows:142 - Loaded create-profile
+CompileFlows:142 - Loaded delete-profile
+CompileFlows:142 - Loaded get-profile
+CompileFlows:144 - Event scripts deployed: 3
+...
+ServiceQueue:91 - PRIVATE v1.get.profile with 100 instances started as virtual threads
+...
+RoutingEntry:582 - GET /api/profile/{profile_id} -&gt; [http.flow.adapter], timeout=10s, tracing=true, flow=get-profile
+...
+AppStarter:378 - Modules loaded in 663 ms
+AppStarter:365 - Reactive HTTP server running on port-8100
+</code></pre>
+<p>It shows that the 3 flow configuration files are compiled as objects to optimize performance. The user functions are
+loaded into the event system and the REST endpoints are rendered from the "rest.yaml" file.</p>
+<h3 id="testing-the-application">Testing the application</h3>
+<p>You can create a test user profile with this python code. Alternatively, you can also use PostMan or other means
+to do this.</p>
+<pre><code class="language-python">&gt;&gt;&gt; import requests, json
+&gt;&gt;&gt; d = { 'id': 100, 'name': 'Hello World', 'address': '100 World Blvd', 'telephone': '123-456-7890' }
+&gt;&gt;&gt; h = { 'content-type': 'application/json', 'accept': 'application/json' }
+&gt;&gt;&gt; r = requests.post('http://127.0.0.1:8100/api/profile', data=json.dumps(d), headers=h)
+&gt;&gt;&gt; print(r.status_code)
+201
+&gt;&gt;&gt; print(r.text)
+{
+  &quot;profile&quot;: {
+    &quot;address&quot;: &quot;***&quot;,
+    &quot;name&quot;: &quot;Hello World&quot;,
+    &quot;telephone&quot;: &quot;***&quot;,
+    &quot;id&quot;: 100
+  },
+  &quot;type&quot;: &quot;CREATE&quot;,
+  &quot;secure&quot;: [
+    &quot;address&quot;,
+    &quot;telephone&quot;
+  ]
+}
+</code></pre>
+<p>To verify that the user profile has been created, you can point your browser to</p>
+<pre><code class="language-text">http://127.0.0.1:8100/api/profile/100
+</code></pre>
+<p>Your browser will return the following:</p>
+<pre><code class="language-json">{
+  &quot;address&quot;: &quot;100 World Blvd&quot;,
+  &quot;name&quot;: &quot;Hello World&quot;,
+  &quot;telephone&quot;: &quot;123-456-7890&quot;,
+  &quot;id&quot;: 100
+}
+</code></pre>
+<p>You have successfully tested the two REST endpoints. Tracing information in the application log may look like this:</p>
+<pre><code class="language-json">{
+  &quot;level&quot;: &quot;INFO&quot;,
+  &quot;time&quot;: &quot;2025-08-27 18:39:25.683&quot;,
+  &quot;source&quot;: &quot;org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)&quot;,
+  &quot;thread&quot;: 336,
+  &quot;message&quot;: {
+    &quot;trace&quot;: {
+      &quot;path&quot;: &quot;GET /api/profile/100&quot;,
+      &quot;service&quot;: &quot;task.executor&quot;,
+      &quot;success&quot;: true,
+      &quot;origin&quot;: &quot;20250828c022812c67294a63871942c568a9e277&quot;,
+      &quot;exec_time&quot;: 7.0,
+      &quot;start&quot;: &quot;2025-08-28T01:39:25.674Z&quot;,
+      &quot;from&quot;: &quot;event.script.manager&quot;,
+      &quot;id&quot;: &quot;9c0934a98dcf4ab1ae4b5b7b389f6d31&quot;,
+      &quot;status&quot;: 200
+    },
+    &quot;annotations&quot;: {
+      &quot;execution&quot;: &quot;Run 2 tasks in 7 ms&quot;,
+      &quot;tasks&quot;: [
+        {
+          &quot;name&quot;: &quot;v1.get.profile&quot;,
+          &quot;spent&quot;: 2.982
+        },
+        {
+          &quot;name&quot;: &quot;v1.decrypt.fields&quot;,
+          &quot;spent&quot;: 1.313
+        }
+      ],
+      &quot;flow&quot;: &quot;get-profile&quot;
+    }
+  }
+}
+{
+  &quot;level&quot;: &quot;INFO&quot;,
+  &quot;time&quot;: &quot;2025-08-27 18:39:25.685&quot;,
+  &quot;source&quot;: &quot;org.platformlambda.core.services.Telemetry.handleEvent(Telemetry.java:81)&quot;,
+  &quot;thread&quot;: 337,
+  &quot;message&quot;: {
+    &quot;trace&quot;: {
+      &quot;path&quot;: &quot;GET /api/profile/100&quot;,
+      &quot;service&quot;: &quot;async.http.response&quot;,
+      &quot;success&quot;: true,
+      &quot;origin&quot;: &quot;20250828c022812c67294a63871942c568a9e277&quot;,
+      &quot;start&quot;: &quot;2025-08-28T01:39:25.681Z&quot;,
+      &quot;exec_time&quot;: 0.374,
+      &quot;from&quot;: &quot;task.executor&quot;,
+      &quot;id&quot;: &quot;9c0934a98dcf4ab1ae4b5b7b389f6d31&quot;,
+      &quot;status&quot;: 200
+    }
+  }
+}
+</code></pre>
+<h3 id="main-application-entry-point">Main application entry point</h3>
+<p>Every application has an entry point. The MainApp in the example app contains the entry point like this:</p>
+<pre><code class="language-java">@MainApplication
+public class MainApp implements EntryPoint {
+   public static void main(String[] args) {
+      AutoStart.main(args);
+   }
+   @Override
+   public void start(String[] args) {
+        // your startup logic here
+      log.info(&quot;Started&quot;);
+   }
+}
+</code></pre>
+<p>Since your application is event driven, the main application does not need any additional code in the above
+example. However, this is a good place to put application initialization code if any.</p>
+<p>There is also a "BeforeApplication" annotation if you want to run some start up code before the event system
+is started.</p>
+<h2 id="writing-composable-libraries">Writing composable libraries</h2>
+<p>If your software module is intended to be a composable library for other applications to use, you may use
+the MainApplication method to automatically initialize your library. For example, obtaining authentication
+and security credentials for a platform component or database that your library uses.</p>
+<p>Alternatively, you may use the "autostart module" method that would automatically send start command to
+some composable functions in your library.</p>
+<pre><code class="language-java">@PreLoad(route=&quot;demo.library.setup&quot;)
+public class DemoLibSetup implements TypedLambdaFunction&lt;EventEnvelope, Void&gt; {
+    private static final Logger log = LoggerFactory.getLogger(DemoLibSetup.class);
+
+    @Override
+    public Void handleEvent(Map&lt;String, String&gt; headers, EventEnvelope input, int instance) throws Exception {
+        log.info(&quot;Demo library is starting&quot;);
+        // put your startup business logic here
+        return null;
+    }
+}
+</code></pre>
+<p>The above composable function is labeled as <code>demo.library.setup</code>, you would need to add this to the
+application.properties of the application that uses this library:</p>
+<pre><code class="language-shell"># comma separated list of composable module route names
+modules.autostart=demo.library.setup, flow://my-startup-flow
+</code></pre>
+<p>If you use application.yml, it will be a list like this:</p>
+<pre><code class="language-yaml">modules.autostart:
+  - 'demo.library.setup'
+  - 'flow://my-startup-flow'
+</code></pre>
+<p>For more sophisticated startup procedure, you can use a flow to execute multiple tasks. The second item in the
+<code>modules.autostart</code> illustrates this use case.</p>
+<blockquote>
+<p><em>Note</em>: autostart modules or flows should assume there is no input dataset except a header ('type = start')
+          to indicate that the request is triggered by "autostart" process.
+          Startup modules usually take input parameters from the environment variables or a secret manager.</p>
+</blockquote>
+<h2 id="graceful-shutdown">Graceful shutdown</h2>
+<p>If your application has some dependencies that must be shutdown gracefully, you can use Java's native API
+similar to this sample code:</p>
+<pre><code class="language-java">Runtime.getRuntime().addShutdownHook(new Thread(this::stopAdmin));
+</code></pre>
+<blockquote>
+<p><em>Note</em>: In the composable node.js version, there is an "autostop" feature to support graceful shutdown
+          of dependencies since JavaScript does not offer similar life-cycle feature in the standard library.</p>
+</blockquote>
+<h2 id="dependency-management">Dependency management</h2>
+<p>As a best practice, your user functions should not have any dependencies with other user functions.</p>
+<p>The second principle of composable design is "zero to one dependency". If your composable function must use
+an external system, platform or database, you can encapsulate the dependency in a composable function.</p>
+<h2 id="component-scan">Component scan</h2>
+<p>Please update the following in the application.properties (or application.yml) to include packages of your own functions:</p>
+<pre><code class="language-properties">web.component.scan=your.package.name
+</code></pre>
+<p>Note that <code>web.component.scan</code> is a comma separated list of package names.
+Classes under the web.component.scan will be scanned for composable functions.</p>
+<p>Please replace "your.package.name" with the real package name(s) that you use in your application.
+Usually this is your organization "namespaces".</p>
+<p>The composable system can coexist with the Spring ecosystem including Spring Boot. When you use
+Spring Boot, the web.component.scan with more than one package will be ignored by Spring.
+However, you can use the <code>spring.component.scan</code> parameter to tell Spring to scan another package
+for servlets.</p>
+<h2 id="deploy-your-application">Deploy your application</h2>
+<p>Composable design can be used to create microservices. You can put related functions in a bounded context with
+database persistence.</p>
+<p>Each composable application can be compiled and built into a single "executable" for deployment using
+<code>mvn clean package</code>.</p>
+<p>The executable JAR is in the target folder. </p>
+<p>Composable application is by definition cloud native. It is designed to be deployable using Kubernetes or serverless.</p>
+<p>A sample Dockerfile for your executable JAR may look like this:</p>
+<pre><code class="language-shell">FROM eclipse-temurin:21.0.1_12-jdk
+EXPOSE 8083
+WORKDIR /app
+COPY target/your-app-name.jar .
+ENTRYPOINT [&quot;java&quot;,&quot;-jar&quot;,&quot;your-app-name.jar&quot;]
+</code></pre>
+<p>The above Dockerfile will fetch Openjdk 21 packaged in "Ubuntu 22.04 LTS".</p>
+<h2 id="event-choreography-by-configuration">Event choreography by configuration</h2>
+<p>The best practice for composable design is event choreography by configuration (<code>Event Script</code>) discussed above.
+We will examine the Event Script syntax in <a href="../CHAPTER-4/">Chapter 4</a>.</p>
+<p>Generally, you only need to use a very minimal set of mercury core APIs in your user functions.
+e.g. use PostOffice to obtain a trackable event emitter and AsyncHttpRequest to connect to external system.</p>
+<p>For composable applications that use Event Script, Mercury core APIs (Platform and PostOffice) are only
+required for writing unit tests, "custom flow adapters", "legacy functional wrappers" or "external gateways".</p>
+<h2 id="orchestration-by-code">Orchestration by code</h2>
+<p><em>Orchestration by code is strongly discouraged because it would result in tightly coupled code</em>. </p>
+<p>For example, just an "Import" statement of another function would create tight coupling of two pieces of code, 
+even when using reactive or event-driven programming styles.</p>
+<p>However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core
+APIs to do event-driven programming. API overview will be covered in <a href="../CHAPTER-9/">Chapter 9</a>.
+<br/></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Methodology</th>
+<th style="text-align: center;">Home</th>
+<th style="text-align: center;">Chapter-2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../METHODOLOGY/">Methodology</a></td>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+<td style="text-align: center;"><a href="../CHAPTER-2/">Function Execution Strategy</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../METHODOLOGY/" class="btn btn-neutral float-left" title="Methodology"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../CHAPTER-2/" class="btn btn-neutral float-right" title="Chapter-2">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../METHODOLOGY/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../CHAPTER-2/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
