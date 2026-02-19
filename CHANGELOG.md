@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.68, 2/18/2026
+
+### Added
+
+N/A
+
+### Removed
+
+Response data mapping exception in data dictionary processing so that it can result
+null to the calling application
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.67, 2/18/2026
 
 ### Added
@@ -23,6 +39,7 @@ N/A
 ### Changed
 
 Updated OSS
+
 1. tomcat 10.1.52
 2. netty 4.2.10.Final
 3. vertx 5.0.8

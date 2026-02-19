@@ -34,12 +34,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class EventPublisher {
     private static final Logger log = LoggerFactory.getLogger(EventPublisher.class);
-
     private static final String TYPE = "type";
     private static final String DATA = "data";
     private static final String EXCEPTION = "exception";
     private static final String END_OF_STREAM = "eof";
-
+    private static final long DEFAULT_TIMEOUT = 10000;
     private final ObjectStreamIO stream;
     private final String outStream;
     private final long timer;
@@ -48,7 +47,7 @@ public class EventPublisher {
     private final AtomicBoolean expired = new AtomicBoolean(false);
 
     public EventPublisher(long ttl) {
-        this.ttl = ttl;
+        this.ttl = ttl < 500 ? DEFAULT_TIMEOUT : ttl;
         this.stream = new ObjectStreamIO((int) ttl / 1000);
         this.outStream = this.stream.getOutputStreamId();
         long expiry = this.stream.getExpirySeconds() * 1000L;
