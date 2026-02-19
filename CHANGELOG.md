@@ -27,6 +27,7 @@ null to the calling application
    Otherwise, a default value of 10 seconds will be applied.
 2. OSS update - reactor-netty-http version 1.3.3 fetched by reactor-bom 2025.0.3
    to ensure pairing with netty 4.2.10.Final.
+3. OSS update - spring boot 3.5.11
 
 ---
 ## Version 4.3.67, 2/18/2026

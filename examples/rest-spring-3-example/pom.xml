@@ -12,13 +12,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.10</version>
+        <version>3.5.11</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tomcat.version>10.1.52</tomcat.version>
         <netty.version>4.2.10.Final</netty.version>
         <log4j2.version>2.25.3</log4j2.version>
         <kafka.version>4.1.1</kafka.version>
