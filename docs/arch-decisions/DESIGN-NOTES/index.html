@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/arch-decisions/DESIGN-NOTES/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Design notes - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Design notes";
+        var mkdocs_page_input_path = "arch-decisions/DESIGN-NOTES.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/arch-decisions/DESIGN-NOTES/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/METHODOLOGY/">Methodology</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-1/">Chapter-1</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-2/">Chapter-2</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-5/">Chapter-5</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/CHAPTER-10/">Chapter-10</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/APPENDIX-III/">Appendix-III</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Design notes</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#event-choreography-by-configuration">Event choreography by configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#support-sequential-synchronous-rpc-in-a-non-blocking-fashion">Support sequential synchronous RPC in a non-blocking fashion</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#low-level-control-of-function-execution-strategies">Low level control of function execution strategies</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serialization">Serialization</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#gson">Gson</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#msgpack">MsgPack</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#handling-numbers-in-a-map">Handling numbers in a Map</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#input-using-map-or-pojo">Input using Map or PoJo</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#keys-of-map">Keys of Map</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#user-provided-serializers">User provided serializers</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#custom-json-and-xml-serializers">Custom JSON and XML serializers</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reactive-design">Reactive design</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#in-memory-event-system">In-memory event system</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#spring-boot-3">Spring Boot 3</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#support-of-mono-and-flux-results">Support of Mono and Flux results</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Design notes</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="design-notes">Design notes</h1>
+<h2 id="event-choreography-by-configuration">Event choreography by configuration</h2>
+<p>The recommended way to write a composable application is event choreography by configuration using "Event Script".</p>
+<p>This would potentially reduce code size by half.</p>
+<h2 id="support-sequential-synchronous-rpc-in-a-non-blocking-fashion">Support sequential synchronous RPC in a non-blocking fashion</h2>
+<p>The foundation library (platform-core) has been integrated with Java 21 virtual thread and 
+Kotlin suspend function features.</p>
+<p>When a user function makes a RPC call using virtual thread or suspend function, 
+the user function appears to be "blocked" so that the code can execute sequentially.
+Behind the curtain, the function is actually "suspended".</p>
+<p>This makes sequential code with RPC performs as good as reactive code. 
+More importantly, the sequential code represents the intent of the application clearly,
+thus making code easier to read and maintain.</p>
+<h2 id="low-level-control-of-function-execution-strategies">Low level control of function execution strategies</h2>
+<p>You can precisely control how your functions execute, using virtual threads
+or kernel thread pools to yield the highest performance and throughput.</p>
+<h2 id="serialization">Serialization</h2>
+<h3 id="gson">Gson</h3>
+<p>We are using Gson for its minimalist design.</p>
+<p>We have customized the serialization behavior to be similar to Jackson and other serializers. 
+i.e. Integer and long values are kept without decimal points.</p>
+<p>For API functional compatibility with Jackson, we have added the writeValueAsString,
+writeValueAsBytes and readValue methods.</p>
+<p>The convertValue method has been consolidated into the readValue method.</p>
+<h3 id="msgpack">MsgPack</h3>
+<p>For efficient and serialization performance, we use MsgPack as schemaless binary transport for
+EventEnvelope that contains event metadata, headers and payload.</p>
+<h3 id="handling-numbers-in-a-map">Handling numbers in a Map</h3>
+<p>The system assumes each key of a Map object to be a text string. If you use integer as a key,
+it will be converted to a text string. The assumed Map class is <code>Map&lt;String, Object&gt;</code>.</p>
+<p>Numbers in a value are handled differently in two cases.</p>
+<p><em>Serialization of an event envelope</em>: this is done using the MsgPack protocol for binary
+JSON. The serialization process is optimized for performance and payload size. As a result,
+a small number that is declared as Long will be serialized as an Integer (Long uses 8 bytes
+and Integer uses 2 or 4 bytes).</p>
+<p><em>Serialization of nested Map in a PoJo</em>: this is done using the GSON library. It is optimized
+for type matching. Integers are treated as Long numbers.</p>
+<p>If you want to enforce Integer or Long, please design a PoJo to fit your use case.</p>
+<p>However, floating point numbers (Float and Double) are rendered without type matching.</p>
+<p>For untyped numbers, you may use the convenient type conversion methods in the platform-core's
+Utility class. For examples, util.str2int and util.str2long.</p>
+<h2 id="input-using-map-or-pojo">Input using Map or PoJo</h2>
+<p>The input to a TypedLambdaFunction should be a Map or PoJo. A map allows you to use flexible data
+structure and a PoJo would enforce the interface contract. List of PoJo is not supported.</p>
+<p>First, this design improves the readability of "input data mapping" configuration in Event Script.
+Second, this avoids edge cases in serialization.</p>
+<h2 id="keys-of-map">Keys of Map</h2>
+<p>The system enforces the use of strings as keys in a map for reliable serialization.</p>
+<p>For example, the configuration management module will convert integers and other types as strings
+for keys in a configuration.</p>
+<h3 id="user-provided-serializers">User provided serializers</h3>
+<p>This provides more flexibility for user function to take full control of their PoJo serialization needs.</p>
+<h3 id="custom-json-and-xml-serializers">Custom JSON and XML serializers</h3>
+<p>For consistency, we have customized Spring Boot and Servlet serialization and exception handlers.</p>
+<h2 id="reactive-design">Reactive design</h2>
+<p>Mercury uses the temporary local file system (<code>/tmp</code>) as an overflow area for events when the
+consumer is slower than the producer. This event buffering design means that user application
+does not have to handle back-pressure logic directly.</p>
+<p>However, it does not restrict you from implementing your flow-control logic.</p>
+<h2 id="in-memory-event-system">In-memory event system</h2>
+<p>In Mercury version 1, the Akka actor system is used as the in-memory event bus.
+Since Mercury version 2, we have migrated from Akka to Eclipse Vertx.</p>
+<p>In Mercury version 3, we extend the engine to be fully non-blocking with low-level control
+of application performance and throughput.</p>
+<p>In Mercury version 3.1, the platform core engine is fully integrated with Java 21 virtual thread.</p>
+<p>Since Mercury version 4, the event script engine is integrated with the platform-core. This adds
+event choreography capability directly in the event system. Event script describes a transaction as
+an event flow configuration that drives composable functions to work together as a single application.
+A composable function, by design, is self-contained with I/O immutability.</p>
+<h2 id="spring-boot-3">Spring Boot 3</h2>
+<p>The <code>platform-core</code> includes a non-blocking HTTP and websocket server for standalone operation without
+Spring Boot. The <code>rest-spring-3</code> library is designed to turn your code to be a Spring Boot application.</p>
+<p>You may also use the <code>platform-core</code> library with a regular Spring Boot application without the
+<code>rest-spring-3</code> library if you prefer.</p>
+<h2 id="support-of-mono-and-flux-results">Support of Mono and Flux results</h2>
+<p>A user function may return a regular result that can be a PoJo, HashMap or Java primitive.</p>
+<p>It can also return a Mono or Flux reactive response object for a future result or a future series of
+results. Other reactive response objects must be converted to a Mono or Flux object.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../CHANGELOG/" class="btn btn-neutral float-left" title="Release notes"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../INCLUSIVITY/" class="btn btn-neutral float-right" title="Inclusivity">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../CHANGELOG/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../INCLUSIVITY/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

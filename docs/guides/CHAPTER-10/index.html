@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/CHAPTER-10/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Chapter-10 - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Chapter-10";
+        var mkdocs_page_input_path = "guides/CHAPTER-10.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/CHAPTER-10/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Chapter-1</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Chapter-2</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">Chapter-3</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Chapter-4</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Chapter-5</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Chapter-6</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Chapter-7</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Chapter-8</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">Chapter-9</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Chapter-10</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#purpose">Purpose</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#concepts">Concepts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#terminology">Terminology</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#underlying-technology">Underlying technology</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#api-summary">API summary</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#best-practiced-to-release-graph-memory-after-use">Best practiced to release graph memory after use</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Appendix-I</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Appendix-II</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Appendix-III</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design notes</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contribution</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Contents</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Chapter-10</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="minimalist-property-graph">Minimalist Property Graph</h1>
+<p>An in-memory Property Graph system is available as a built-in feature in the platform-core.</p>
+<h2 id="purpose">Purpose</h2>
+<p>Property graph is a powerful way to represent entities and relationships. The rationale for
+a minimalist in-memory property graph system is to address business use case that involves
+only a few hundred nodes. Interestingly, a few hundred nodes and relationships can indeed
+represent a reasonably complex knowledge base for computation and decision making.</p>
+<p>By limiting the feature set and reducing the number of nodes, we can fit everything into
+memory for high speed graph tranversal, comparision, computation and decision making. This
+eliminates network latency typically associated with a full feature network based graph
+database.</p>
+<p>From a usability perspective, it is viable to display the whole knowledge base in a
+graphical user interface (not included in this project). A smaller graph not only increases
+computational efficiency but also reduces the cognitive complexity for the reader.</p>
+<p>We call this in-memory property graph as a "mini-graph".</p>
+<h2 id="concepts">Concepts</h2>
+<p>A property graph is a set of nodes interconnected. Each connection is unidirectional.</p>
+<p>An example of a mini-graph is shown in Figure 1. It describes a graph with 5 nodes
+connected in a particular fashion.</p>
+<p>Each node is addressable by a unique "alias" name. Each node or edge can contain a set of
+key-values (aka 'properties'). Values are untyped so that you can store any primitive
+values or objects as you like.</p>
+<blockquote>
+<p>Figure 1 - Mini-Graph example</p>
+</blockquote>
+<p><img alt="Mini-Graph example" src="../diagrams/minigraph.png" /></p>
+<h2 id="terminology">Terminology</h2>
+<ol>
+<li>Alias - unique node name</li>
+<li>Node - a data entity</li>
+<li>Connection - a logical unidirectional link between two nodes. Bi-directional link is
+                represented by two unidirectional connections.</li>
+<li>Relation - a connection may have zero or more relations</li>
+<li>Node Type - a node must have at least one type indicating the purpose of the entity</li>
+<li>Relationship Type - a relation must have one and only one type</li>
+<li>Properties - a set of optional key-values in a node or a relation</li>
+</ol>
+<p>Unlike traditional property graph, we have the concept of a connection which may or may
+not contain relations. When you remove a connection, its associated relations, if any, will
+be cleared.</p>
+<h2 id="underlying-technology">Underlying technology</h2>
+<p>The system extends the Google Guava's MutableGraph module with alias for nodes, types and
+properties for nodes and edges.</p>
+<h2 id="api-summary">API summary</h2>
+<p>Create a mini-graph instance</p>
+<pre><code class="language-java">var graph = new MiniGraph();
+</code></pre>
+<p>Create a node in a graph</p>
+<p>In the following example, a node with alias "A" and type "transaction" is created.</p>
+<pre><code class="language-java">var nodeA = graph.createNode(&quot;A&quot;, &quot;transaction&quot;);
+</code></pre>
+<p>Connect two nodes in a graph</p>
+<pre><code class="language-java">var nodeA = graph.createNode(&quot;A&quot;, &quot;transaction&quot;);
+var nodeB = graph.createNode(&quot;B&quot;, &quot;data&quot;);
+var r1 = graph.connect(&quot;A&quot;, &quot;B&quot;);
+</code></pre>
+<p>Add a type to a node</p>
+<pre><code class="language-java">nodeA.addType(&quot;service&quot;);
+</code></pre>
+<p>Add a key-value to a node</p>
+<pre><code class="language-java">nodeA.addProperty(&quot;hello&quot;, &quot;world&quot;);
+</code></pre>
+<p>Find a node by alias</p>
+<pre><code class="language-java">var node = graph.findNodeByAlias(&quot;B&quot;);
+</code></pre>
+<p>Find a node by ID</p>
+<p>Each node is created with a UUID. You may retrieve a node using it.</p>
+<pre><code class="language-java">var node = graph.findNodeById(&quot;ea75d293fd40419b9c24d41376416da7&quot;);
+</code></pre>
+<p>Find a list of nodes by type</p>
+<p>You may retrieve all the nodes that has a certain type</p>
+<pre><code class="language-java">var dataNodes = graph.findNodesByType(&quot;data&quot;);
+</code></pre>
+<p>Add a relation to a connection</p>
+<pre><code class="language-java">var nodeA = graph.createNode(&quot;A&quot;, &quot;transaction&quot;);
+var nodeB = graph.createNode(&quot;B&quot;, &quot;data&quot;);
+var c1 = graph.connect(&quot;A&quot;, &quot;B&quot;);
+var r1 = c1.addRelation(&quot;demo1&quot;);
+</code></pre>
+<p>Add a key-value to a relation</p>
+<pre><code class="language-java">var nodeA = graph.createNode(&quot;A&quot;, &quot;transaction&quot;);
+var nodeB = graph.createNode(&quot;B&quot;, &quot;data&quot;);
+var c1 = graph.connect(&quot;A&quot;, &quot;B&quot;);
+var r1 = c1.addRelation(&quot;demo1&quot;);
+r1.addProperty(&quot;hello&quot;, &quot;world&quot;);
+</code></pre>
+<p>Find a connection by source and target aliases</p>
+<pre><code class="language-java">var r1 = graph.findConnection(&quot;A&quot;, &quot;B&quot;);
+</code></pre>
+<p>Find bi-directional connections by source and target aliases</p>
+<p>The following will return 0 to 2 connections
+(no relation, one forward relation and one backward relation)</p>
+<pre><code class="language-java">var connections = graph.findBiDirectionalConnection(&quot;A&quot;, &quot;B&quot;);
+</code></pre>
+<p>Discover forward links by alias of a node</p>
+<p>The following will return a list of forward connections in the first degree.</p>
+<pre><code class="language-java">var connections = graph.getForwardLinks(&quot;A&quot;)
+</code></pre>
+<p>Discover backward links by alias of a node</p>
+<p>The following will return a list of backward connections in the first degree.</p>
+<pre><code class="language-java">var connections = graph.getBackwardLinks(&quot;A&quot;)
+</code></pre>
+<p>Discover neigbors by alias of a node</p>
+<p>The following will return a list of connections in the first degree regardless
+of direction.</p>
+<pre><code class="language-java">var connections = graph.getNeighbors(&quot;A&quot;)
+</code></pre>
+<p>Discover complete path</p>
+<p>The following will return an array of node paths.</p>
+<pre><code class="language-java">var graph = new MiniGraph();
+var nodeA = graph.createNode(&quot;A&quot;, &quot;transaction&quot;);
+var nodeB = graph.createNode(&quot;B&quot;, &quot;data&quot;);
+var nodeC = graph.createNode(&quot;C&quot;, &quot;data&quot;);
+var nodeD = graph.createNode(&quot;D&quot;, &quot;data&quot;);
+var nodeE = graph.createNode(&quot;E&quot;, &quot;data&quot;);
+graph.connect(&quot;A&quot;, &quot;B&quot;);
+graph.connect(&quot;A&quot;, &quot;C&quot;);
+graph.connect(&quot;C&quot;, &quot;D&quot;);
+graph.connect(&quot;D&quot;, &quot;E&quot;);
+var pathsFromA = graph.findPaths(&quot;A&quot;);
+System.out.println(pathsFromA);
+&quot;[[A], [B, C], [D], [E]]&quot;
+</code></pre>
+<p>Clear a graph</p>
+<pre><code class="language-java">graph.reset();
+</code></pre>
+<p>Export a graph</p>
+<p>The exported graph is a map of key-values that you can persist it into an external store.
+If you persist the map as a text file, we recommend using either JSON or YAML format.</p>
+<pre><code class="language-java">var map = graph.exportGraph();
+</code></pre>
+<p>Import a graph</p>
+<p>Once you exported a graph into an external store, you can restore it as a map and import
+it into a new mini-graph.</p>
+<pre><code class="language-java">var graph = new MiniGraph();
+graph.importGraph(map);
+</code></pre>
+<h2 id="best-practiced-to-release-graph-memory-after-use">Best practiced to release graph memory after use</h2>
+<p>Mini-graph is memory efficient with its minimalist design.</p>
+<p>However, please limit the number of nodes to 500 or less. The default value is 500.</p>
+<p>Its typical use case is real-time computation of policies for decision making.</p>
+<p>It is important that your application must unload graph memory after use.
+There are multiple ways to unload graph instance memory.</p>
+<p><em>Functional scope</em></p>
+<p>You can keep the mini-graph instance inside the scope of a function. When your
+function exits, memory of the mini-graph instance will be released by the Java's
+garbage collector.</p>
+<p><em>Event flow instance</em></p>
+<p>In Chapter 4, we have discussed the use of Event Flow. In the beginning of a flow,
+you can add a new instance of a mini-graph to a shared concurrent map. At the end
+of the flow, you should add a task or exception handler to remove the mini-graph
+instance from the shared concurrent map.</p>
+<p><em>Managed cache</em></p>
+<p>The platform-core includes a built-in memory cache module. You can put a mini-graph
+instance in the memory cache that has a configured expiry time. e.g. 10 seconds.</p>
+<p>A stronger safeguard is to combine the use of event flow instance and
+managed cache. Therefore, if normal clean up is not done at the end of a flow,
+the memory of a mini-graph instance will be released by the cache system
+automatically.</p>
+<p><br/></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Chapter-9</th>
+<th style="text-align: center;">Home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../CHAPTER-9/">API Overview</a></td>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../CHAPTER-9/" class="btn btn-neutral float-left" title="Chapter-9"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../APPENDIX-I/" class="btn btn-neutral float-right" title="Appendix-I">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../CHAPTER-9/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../APPENDIX-I/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
