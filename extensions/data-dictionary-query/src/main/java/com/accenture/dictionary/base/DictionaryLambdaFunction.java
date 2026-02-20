@@ -47,9 +47,11 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
     protected static final ConcurrentMap<String, DataDictionary> dataDictStore = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, DataProvider> providerStore = new ConcurrentHashMap<>();
     protected static final String ARROW = "->";
+    protected static final String APPEND = "[]";
     protected static final String MODEL = "model";
     protected static final String MODEL_NAMESPACE = "model.";
     protected static final String INPUT = "input";
+    protected static final String OUTPUT = "output";
     protected static final String OUTPUT_BODY = "output.body";
     protected static final String OUTPUT_HEADER = "output.header";
     protected static final String PARAMETER = "parameter";

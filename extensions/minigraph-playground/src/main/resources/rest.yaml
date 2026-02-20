@@ -6,7 +6,7 @@
 rest:
   - service: "v1.get.ws.html"
     methods: ['GET']
-    url: "/api/ws"
+    url: "/api/ws/{id}"
     timeout: 10s
     cors: cors_1
     headers: header_1

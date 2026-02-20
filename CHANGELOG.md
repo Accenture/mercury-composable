@@ -10,6 +10,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.68, 2/18/2026
+
+### Added
+
+N/A
+
+### Removed
+
+Suppress response data mapping exception in data dictionary processing so that it can return
+null to the calling application
+
+### Changed
+
+1. Enforce that TTL for FluxPublisher and FluxConsumer must be larger than 500 ms.
+   Otherwise, a default value of 10 seconds will be applied.
+2. OSS update - reactor-netty-http version 1.3.3 fetched by reactor-bom 2025.0.3
+   to ensure pairing with netty 4.2.10.Final.
+3. OSS update - spring boot 3.5.11
+
+---
+## Version 4.3.67, 2/18/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated OSS
+
+1. tomcat 10.1.52
+2. netty 4.2.10.Final
+3. vertx 5.0.8
+
+---
+## Version 4.3.66, 2/18/2026
+
+### Added
+
+Adjust internal cache within a question of a sequence of API calls to detect the
+cached response is correlated to the input parameters.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.65, 2/17/2026
 
 ### Added

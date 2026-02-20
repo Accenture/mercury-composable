@@ -29,10 +29,16 @@ import java.util.Map;
 
 @PreLoad(route = "v1.get.ws.html", instances = 10)
 public class GetWsHtml implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
+    private static final String GRAPH = "graph";
+    private static final String JSON = "json";
 
     @Override
     public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        var in = this.getClass().getResourceAsStream("/template/ws.html");
+        var id = input.getPathParameter("id");
+        if (!GRAPH.equals(id) && !JSON.equals(id)) {
+            throw new IllegalArgumentException("Path parameter must be graph or json");
+        }
+        var in = this.getClass().getResourceAsStream("/template/ws-"+id+".html");
         if (in == null) {
             throw new IllegalArgumentException("Template not found");
         }
@@ -41,7 +47,7 @@ public class GetWsHtml implements TypedLambdaFunction<AsyncHttpRequest, EventEnv
         if (port == null) {
             throw new IllegalArgumentException("Missing rest.server.port in application.properties");
         }
-        var url = "http://127.0.0.1:" + port + "/ws/minigraph/playground";
+        var url = "http://127.0.0.1:" + port + "/ws/"+id+"/playground";
         var html = Utility.getInstance().stream2str(in).replace("$WS_URL", url);
         return new EventEnvelope().setHeader("Content-Type", "text/html; charset=utf-8").setBody(html);
     }

@@ -36,9 +36,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@WebSocketService("minigraph")
-public class GraphUiHandler implements LambdaFunction {
-    private static final Logger log = LoggerFactory.getLogger(GraphUiHandler.class);
+@WebSocketService("graph")
+public class GraphUserInterface implements LambdaFunction {
+    private static final Logger log = LoggerFactory.getLogger(GraphUserInterface.class);
     private static final String GRAPH_COMMAND_SERVICE = GraphCommandService.ROUTE;
     private static final SimpleXmlParser xml = new SimpleXmlParser();
     private static final ConcurrentMap<String, Object> textMap = new ConcurrentHashMap<>();

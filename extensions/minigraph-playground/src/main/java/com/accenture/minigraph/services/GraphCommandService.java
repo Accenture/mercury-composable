@@ -32,11 +32,13 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
     private static final Utility util = Utility.getInstance();
     private static final ConcurrentMap<String, GraphModelAndInstance> sessions = new ConcurrentHashMap<>();
     private static final String HELP_PREFIX = "/help/";
+    private static final String SKILL_PREFIX = "/skills/";
     private static final String MARKDOWN = ".md";
     private static final String TRIPLE_QUOTE = "'''";
     private static final String WITH_TYPE = "with type";
     private static final String WITH_PROPERTIES = "with properties";
-    private static final String NODE_PREFIX = "node ";
+    private static final String NODE_NAME = "node ";
+    private static final String SKILL_NAME = "skill ";
     private static final String NOT_FOUND = " not found";
     private static final String TRY_HELP = "Please try 'help' for details";
     private static final String SAME_SOURCE_TARGET = "source and target node names cannot be the same";
@@ -57,8 +59,19 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
     }
 
     @Override
-    public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws Exception {
+    public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         var po = new PostOffice(headers, instance);
+        try {
+            handleCommand(po, input);
+        } catch (Exception e) {
+            if (input.get("out") instanceof String outRoute) {
+                po.send(new EventEnvelope().setTo(outRoute).setBody("ERROR: "+e.getMessage()));
+            }
+        }
+        return null;
+    }
+
+    private void handleCommand(PostOffice po, Map<String, Object> input) throws IOException {
         var type = input.get("type");
         var in = input.get("in");
         var out = input.get("out");
@@ -69,7 +82,7 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
         if ("close".equals(type) && in instanceof String inRoute) {
             sessions.remove(inRoute);
             var filename = getTempGraphName(inRoute);
-            var file = new File(tempDir, filename+JSON_EXT);
+            var file = new File(tempDir, filename + JSON_EXT);
             if (file.exists()) {
                 // delete draft graph model
                 Files.delete(file.toPath());
@@ -86,7 +99,6 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
                 handleSingleLineCommand(po, inRoute, outRoute, command);
             }
         }
-        return null;
     }
 
     private void handleSingleLineCommand(PostOffice po, String inRoute, String outRoute, String command)
@@ -96,6 +108,9 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
             var helpText = getHelp(words);
             po.send(new EventEnvelope().setTo(outRoute).setBody(
                     Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
+        } else if (words.size() > 2 && words.getFirst().equalsIgnoreCase("create")) {
+            // handle create command without type and properties
+            handleMultiLineCommand(po, inRoute, outRoute, command);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
             handleDescribeCommand(po, inRoute, outRoute, words);
         } else if (words.size() > 2 && words.getFirst().equalsIgnoreCase("connect")) {
@@ -117,7 +132,7 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
 
     @SuppressWarnings("unchecked")
     private void handleImportCommand(PostOffice po, String inRoute, String outRoute, String filename) {
-        if (validNodeOrTypeName(filename)) {
+        if (validGraphFileName(filename)) {
             var holder = sessions.get(inRoute);
             if (holder != null) {
                 var graph = holder.graphModel;
@@ -137,7 +152,7 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
     }
 
     private void handleExportCommand(PostOffice po, String inRoute, String outRoute, String filename) {
-        if (validNodeOrTypeName(filename)) {
+        if (validGraphFileName(filename)) {
             var holder = sessions.get(inRoute);
             if (holder != null) {
                 var graph = holder.graphModel;
@@ -162,10 +177,10 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
                 var graph = holder.graphModel;
                 var node = graph.findNodeByAlias(nodeName);
                 if (node == null) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + NOT_FOUND));
+                    po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
                 } else {
                     graph.removeNode(nodeName);
-                    po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + " deleted"));
+                    po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " deleted"));
                 }
             }
         } else if (words.size() == 5 && words.get(1).equalsIgnoreCase("connection") &&
@@ -218,7 +233,7 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
                 if (validSourceAndTargetNodes(po, outRoute, graph, nodeA, nodeB)) {
                     graph.connect(nodeA, nodeB).addRelation(relation);
                     po.send(new EventEnvelope().setTo(outRoute)
-                            .setBody(NODE_PREFIX + nodeA + " connected to " + nodeB));
+                            .setBody(NODE_NAME + nodeA + " connected to " + nodeB));
                 }
             }
         } else {
@@ -250,9 +265,12 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
         }
     }
 
-    private void handleDescribeCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
-        if (words.size() == 2 && words.get(1).equalsIgnoreCase(GRAPH)) {
+    private void handleDescribeCommand(PostOffice po, String inRoute, String outRoute, List<String> words)
+            throws IOException {
+        if (words.size() > 1 && words.get(1).equalsIgnoreCase(GRAPH)) {
             describeGraph(po, inRoute, outRoute);
+        } else if (words.size() == 3 && words.get(1).equalsIgnoreCase("skill")) {
+            describeSkill(po, outRoute, words.get(2));
         } else if (words.size() == 3 && words.get(1).equalsIgnoreCase("node")) {
             describeNode(po, inRoute, outRoute, words.get(2));
         } else if (words.size() == 5 && words.get(1).equalsIgnoreCase("connection") &&
@@ -262,6 +280,11 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
         }
     }
+
+    private void describeSkill(PostOffice po, String outRoute, String skillRoute) throws IOException {
+        po.send(new EventEnvelope().setTo(outRoute).setBody(getSkillDoc(skillRoute)));
+    }
+
 
     private void describeGraph(PostOffice po, String inRoute, String outRoute) {
         var holder = sessions.get(inRoute);
@@ -311,9 +334,9 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
             var node1 = graph.findNodeByAlias(nodeA);
             var node2 = graph.findNodeByAlias(nodeB);
             if (node1 == null) {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeA + NOT_FOUND));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeA + NOT_FOUND));
             } else if (node2 == null) {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeB + NOT_FOUND));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeB + NOT_FOUND));
             } else {
                 return true;
             }
@@ -340,7 +363,7 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
                 map.put("node", node);
                 po.send(new EventEnvelope().setTo(outRoute).setBody(map));
             } else {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + NOT_FOUND));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
             }
         }
     }
@@ -367,16 +390,11 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
     }
 
     private void handleUpdateNode(PostOffice po, String inRoute, String outRoute, String nodeName, List<String> lines) {
-        if (validNodeOrTypeName(nodeName)) {
-            var keyValues = getProperties(lines);
-            var type = getType(lines);
-            var holder = sessions.get(inRoute);
-            if (holder != null) {
-                updateNode(po, holder, outRoute, nodeName, type, keyValues);
-            }
-        } else {
-            po.send(new EventEnvelope().setTo(outRoute)
-                    .setBody("ERROR: Invalid node name - must be lower case with optional hyphen"));
+        var keyValues = getNodeProperties(lines);
+        var type = getNodeType(lines);
+        var holder = sessions.get(inRoute);
+        if (holder != null) {
+            updateNode(po, holder, outRoute, nodeName, type, keyValues);
         }
     }
 
@@ -385,7 +403,7 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
         var graph = holder.graphModel;
         var node = graph.findNodeByAlias(nodeName);
         if (node == null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + NOT_FOUND));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
         } else {
             node.getTypes().clear();
             node.getProperties().clear();
@@ -394,21 +412,16 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 node.addProperty(entry.getKey(), entry.getValue());
             }
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + " updated"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " updated"));
         }
     }
 
     private void handleCreateNode(PostOffice po, String inRoute, String outRoute, String nodeName, List<String> lines) {
-        if (validNodeOrTypeName(nodeName)) {
-            var keyValues = getProperties(lines);
-            var type = getType(lines);
-            var holder = sessions.get(inRoute);
-            if (holder != null) {
-                createNode(po, holder, outRoute, nodeName, type, keyValues);
-            }
-        } else {
-            po.send(new EventEnvelope().setTo(outRoute)
-                    .setBody("ERROR: Invalid node name - must be lower case with optional hyphen"));
+        var keyValues = getNodeProperties(lines);
+        var type = getNodeType(lines);
+        var holder = sessions.get(inRoute);
+        if (holder != null) {
+            createNode(po, holder, outRoute, nodeName, type, keyValues);
         }
     }
 
@@ -417,34 +430,31 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
         var graph = holder.graphModel;
         var node = graph.findNodeByAlias(nodeName);
         if (node != null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + " already exists"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " already exists"));
         } else {
             node = graph.createNode(nodeName, type == null? "untyped" : type);
             var map = keyValues.getMap();
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 node.addProperty(entry.getKey(), entry.getValue());
             }
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_PREFIX + nodeName + " created"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " created"));
         }
     }
 
-    private String getType(List<String> lines) {
+    private String getNodeType(List<String> lines) {
         for (String line : lines) {
             var lower = line.toLowerCase();
             if (lower.startsWith(WITH_TYPE)) {
                 var words = util.split(line, " ");
                 if (words.size() > 2) {
-                    var v = words.get(2);
-                    if (validNodeOrTypeName(v)) {
-                        return v;
-                    }
+                    return words.get(2);
                 }
             }
         }
         return null;
     }
 
-    private MultiLevelMap getProperties(List<String> lines) {
+    private MultiLevelMap getNodeProperties(List<String> lines) {
         var result = new MultiLevelMap();
         var pLines = new ArrayList<String>();
         var found = false;
@@ -524,11 +534,20 @@ public class GraphCommandService implements TypedLambdaFunction<Map<String, Obje
         }
     }
 
-    public boolean validNodeOrTypeName(String str) {
+    private String getSkillDoc(String skill) throws IOException {
+        var title = skill.toLowerCase().replace(".", "-");
+        try (var in = this.getClass().getResourceAsStream(SKILL_PREFIX + title + MARKDOWN)) {
+            return in == null? SKILL_NAME + skill + NOT_FOUND : util.stream2str(in);
+        }
+    }
+
+    public boolean validGraphFileName(String str) {
         if (str == null || str.isEmpty()) return false;
         for (int i=0; i < str.length(); i++) {
-            if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
-                    (str.charAt(i) == '-'))) {
+            if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') ||
+                    (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
+                    (str.charAt(i) >= 'A' && str.charAt(i) <= 'Z') ||
+                    str.charAt(i) == '_' || str.charAt(i) == '-' )) {
                 return false;
             }
         }

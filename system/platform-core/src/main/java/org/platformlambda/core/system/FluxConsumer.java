@@ -42,6 +42,7 @@ public class FluxConsumer<T> {
     private static final String EXCEPTION = "exception";
     private static final String END_OF_STREAM = "eof";
     private static final String CLOSE = "close";
+    private static final long DEFAULT_TIMEOUT = 10000;
     private final String callback = "callback."+ Utility.getInstance().getUuid();
     private final AtomicBoolean eof = new AtomicBoolean(false);
     private final AtomicBoolean expired = new AtomicBoolean(false);
@@ -51,7 +52,7 @@ public class FluxConsumer<T> {
 
     public FluxConsumer(String inStream, long ttl) {
         this.inStream = inStream;
-        this.ttl = ttl;
+        this.ttl = ttl < 500 ? DEFAULT_TIMEOUT : ttl;
     }
 
     public String getStreamId() {

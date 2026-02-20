@@ -195,7 +195,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
                     }
                     dataset.setElement(RESPONSE_NAMESPACE + item.target, response.getBody());
                     var mm = new MultiLevelMap(Map.of(RESPONSE, response.getBody(), FOR_EACH, true));
-                    mapResponse(item.id, item.output, dataset, mm);
+                    mapResponse(item.output, dataset, mm);
                 }
                 batch.clear();
             }
@@ -281,7 +281,8 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         if (targetService == null) {
             throw new IllegalArgumentException("Target service '" + provider.protocol + "' not deployed");
         }
-        var cached = dataset.getElement(RESPONSE_NAMESPACE + item.target);
+        var responseKey = RESPONSE_NAMESPACE + item.target;
+        var cached = getCachedData(responseKey, required, dataset);
         if (cached == null) {
             var request = new EventEnvelope().setTo(targetService);
             request.setHeader(PROVIDER, item.target).setHeader(TIMEOUT, timeout).setBody(required);
@@ -292,12 +293,41 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
                 return;
             }
             cached = response.getBody();
-            dataset.setElement(RESPONSE_NAMESPACE + item.target, cached);
+            dataset.setElement(responseKey + APPEND, Map.of(INPUT, required, OUTPUT, cached));
         }
-        mapResponse(item.id, item.output, dataset, new MultiLevelMap(Map.of(RESPONSE, cached)));
+        mapResponse(item.output, dataset, new MultiLevelMap(Map.of(RESPONSE, cached)));
     }
 
-    private void mapResponse(String itemId, List<String> output, MultiLevelMap dataset, MultiLevelMap mm) {
+    @SuppressWarnings("unchecked")
+    private Object getCachedData(String responseKey, Map<String, Object> required, MultiLevelMap dataset) {
+        var cached = dataset.getElement(responseKey);
+        if (cached instanceof List<?> responses) {
+            for (var response : responses) {
+                var map = (Map<String, Object>) response;
+                var input = (Map<String, Object>) map.get(INPUT);
+                var output = map.get(OUTPUT);
+                if (sameInputParameters(input, required)) {
+                    return output;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean sameInputParameters(Map<String, Object> parameters, Map<String, Object> required) {
+        if (parameters.size() != required.size()) {
+            return false;
+        }
+        for (var kv: required.entrySet()) {
+            var k = kv.getKey();
+            Object v1 = kv.getValue();
+            Object v2 = parameters.get(k);
+            if (!v1.equals(v2)) return false;
+        }
+        return true;
+    }
+
+    private void mapResponse(List<String> output, MultiLevelMap dataset, MultiLevelMap mm) {
         for (var entry: output) {
             var sep = entry.lastIndexOf(ARROW);
             if (sep == -1) {
@@ -305,13 +335,13 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             }
             var lhs = entry.substring(0, sep).trim();
             var rhs = entry.substring(sep+ARROW.length()).trim();
-            var value = helper.getLhsOrConstant(lhs, entry.startsWith("$") ||
+            var value = helper.getLhsOrConstant(lhs, entry.startsWith("$") || entry.equals(RESPONSE) ||
                         entry.startsWith(RESPONSE_NAMESPACE) || entry.startsWith(RESPONSE_INDEX)? mm : dataset);
-            mapResponseToResult(itemId, rhs, entry, dataset, mm, value);
+            mapResponseToResult(rhs, entry, dataset, mm, value);
         }
     }
 
-    private void mapResponseToResult(String itemId, String rhs, String entry,
+    private void mapResponseToResult(String rhs, String entry,
                                      MultiLevelMap dataset, MultiLevelMap mm, Object value) {
         if (value != null) {
             if (MODEL.equals(rhs)) {
@@ -321,12 +351,10 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             var clone = copyOf(value);
             if (mm.exists(FOR_EACH)) {
                 // for resultset, automatically add array "append" command if not given
-                dataset.setElement(rhs.startsWith(MODEL_NAMESPACE) || rhs.contains("[]")? rhs : rhs + "[]", clone);
+                dataset.setElement(rhs.startsWith(MODEL_NAMESPACE) || rhs.contains(APPEND)? rhs : rhs + APPEND, clone);
             } else {
                 dataset.setElement(rhs, clone);
             }
-        } else {
-            throw new IllegalArgumentException("Data dictionary '"+itemId+"' output '" + entry + "' resolved to null");
         }
     }
 
