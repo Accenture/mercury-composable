@@ -18,4 +18,5 @@ Examples
 inspect {input.body.user_id}
 inspect {book.price}
 inpsect {model.some_variable}
+inspect {output.body.some_key}
 ```
