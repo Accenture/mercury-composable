@@ -16,3 +16,13 @@ with data mapping
 {constant} -> input.header.some_parameter
 {constant} -> model.some_var
 ```
+
+Example
+-------
+```
+instantiate graph
+with data mapping
+int(100) -> input.body.profile_id
+text(application/json) -> input.header.content-type
+text(world) -> model.hello
+```
