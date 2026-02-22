@@ -5,13 +5,13 @@ to return result. For example, doing mathematical calculation or boolean operati
 
 Execution will start when the GraphExecutor reaches the node containing this skill.
 
-Function route name
--------------------
+Route name
+----------
 "graph.js"
 
 Setup
 -----
-To enable this skill for a node, set "skill=graph.js" as a property in the node.
+To enable this skill for a node, set "skill=graph.js" as a property in a node.
 One or more JavaScript statements can be added to the property "js".
 
 Properties
@@ -44,7 +44,7 @@ For simplicity and speed of execution, it does not support function declaration.
 Example
 -------
 ```
-Update node my-js-runner
+update node my-js-runner
 with properties
 skill=graph.js
 js[]=amount -> (1 - {input.body.discount}) * {book.price}

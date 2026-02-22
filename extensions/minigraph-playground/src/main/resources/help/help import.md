@@ -1,8 +1,10 @@
 Import a graph model
 --------------------
-1. This command imports a graph as a model from JSON format for development and functional tests
-2. Filename does not require the ".json" extension
+1. This command imports a graph as a model of JSON format for review and update
+2. The name does not require the ".json" extension
 
 Syntax
 ------
-import graph from {filename}
+```
+import graph from {name}
+```

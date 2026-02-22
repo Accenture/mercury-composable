@@ -12,9 +12,11 @@ Create a new node
 
 Syntax
 ------
+```
 create node {name}
 with type {type}
 with properties
 {key1}={value1}
 {key2}={value2}
 ...
+```

@@ -5,13 +5,13 @@ and collect result set into the "result" property of the node.
 
 Execution will start when the GraphExecutor reaches the node containing this skill.
 
-Function route name
--------------------
+Route name
+----------
 "graph.api.fetcher"
 
 Setup
 -----
-To enable this skill for a node, set "skill=graph.api.fetcher" as a property in the node.
+To enable this skill for a node, set "skill=graph.api.fetcher" as a property in a node.
 It uses the data dictionary query plugin to make outgoing API calls so that complexity of API protocol
 is encapsulated in the configuration of the data dictionary query plugin.
 
@@ -51,7 +51,7 @@ The target composite key can use the following namespaces:
 Example
 -------
 ```
-Update node my-api-fetcher
+update node my-api-fetcher
 with properties
 skill=graph.api.fetcher
 question=get-hr-record

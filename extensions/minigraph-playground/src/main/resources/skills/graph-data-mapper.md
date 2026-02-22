@@ -5,13 +5,13 @@ to populate data attributes into one or more nodes where each node represents a 
 
 Execution will start when the GraphExecutor reaches the node containing this skill.
 
-Function route name
--------------------
+Route name
+----------
 "graph.data.mapper"
 
 Setup
 -----
-To enable this skill for a node, set "skill=graph.data.mapper" as a property in the node.
+To enable this skill for a node, set "skill=graph.data.mapper" as a property in a node.
 One or more data mapping entries can be added to the property "mapping".
 
 Properties
@@ -44,7 +44,7 @@ The target composite key can use the following namespaces:
 Example
 -------
 ```
-Update node my-simple-mapper
+update node my-simple-mapper
 with properties
 skill=graph.data.mapper
 mapping[]=input.body.hr_id -> employee.id

@@ -32,8 +32,8 @@ help describe (graph, node, connection or skill)
 For instance model
 ------------------
 help instantiate (create an instance from a graph model)
-help start (execute an instance from a root node and perform graph traversal to execute nodes that have skills)
-help end (stop an instance if the instance model does not resolve to an end)
-
-help execute (skill of a specific node. Future graph traversal is paused.)
+help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
 help show (properties of a node)
+help inspect (state-machine for properties of nodes, input, output and model namespaces)
+help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)
+help close (close a graph instance)

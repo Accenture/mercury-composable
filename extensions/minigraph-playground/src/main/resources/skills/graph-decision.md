@@ -6,13 +6,13 @@ of graph traversal.
 
 Execution will start when the GraphExecutor reaches the node containing this skill.
 
-Function route name
--------------------
+Route name
+----------
 "graph.decision"
 
 Setup
 -----
-To enable this skill for a node, set "skill=graph.decision" as a property in the node.
+To enable this skill for a node, set "skill=graph.decision" as a property in a node.
 One or more decision statements can be added to the property "decision". Each decision statement
 is a multiline command.
 

@@ -5,4 +5,6 @@ Connect two nodes together
 
 Syntax
 ------
+```
 connect {node-A} to {node-B} with {relation}
+```
