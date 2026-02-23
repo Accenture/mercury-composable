@@ -1,5 +1,5 @@
 # Spec: Markdown Preview Panel
-**Version:** 1.1  
+**Version:** 1.2  
 **Date:** 2026-02-23  
 **Status:** Decisions locked — ready for implementation  
 
@@ -9,6 +9,7 @@
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.2 | 2026-02-23 | Pre-implementation scrutiny: `aria-pressed` scoped to pinnable rows only; bare JSON primitive edge case documented in `isMarkdownCandidate`; arrow-key tab nav added to Out of Scope |
 | 1.1 | 2026-02-23 | Gap analysis review: clarify lifecycle-event pin exclusion; remove `raw` prop from `ConsoleMessage`; `tabIndex` on tabpanels; hover-style conflict resolution; `useId()` for tab IDs; remove redundant `MarkdownPreview` header; invariant notes; minor clarifications (issues 1–13) |
 | 1.0 | 2026-02-23 | Initial spec — tabbed right panel; `react-markdown` + `remark-gfm`; pinnable message selection; `isMarkdownCandidate` helper |
 
@@ -106,8 +107,11 @@ export function isMarkdownCandidate(raw: string): boolean {
   if (!result.isJSON) return true;                     // not JSON at all → candidate
   const obj = result.data as Record<string, unknown>;
   if (typeof obj['type'] === 'string') return false;   // lifecycle event → not candidate
-  return false;                                        // any other JSON object → not candidate
+  return false;                                        // any other JSON object/array → not candidate
 }
+```
+
+> **Edge case — bare JSON primitives (e.g. `"hello"`, `42`, `true`):** `tryParseJSON` only returns `isJSON: true` for objects and arrays (`typeof parsed === 'object' && parsed !== null`). A bare JSON-encoded primitive falls through to `isJSON: false`, so `isMarkdownCandidate` returns `true` for it — it would be treated as a Markdown candidate and rendered by `MarkdownPreview`. This is accepted as correct behaviour: the backend is not expected to send bare JSON primitives, and if it did, rendering the raw string as Markdown is a safe fallback. `tryParseJSON` must **not** be changed to accept primitives — doing so would break the existing `JsonView` rendering path in `ConsoleMessage`.
 ```
 
 ### 3.5 Derived state in `Playground`
@@ -588,7 +592,7 @@ interface ConsoleMessageProps {
     ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin(message); } }
     : undefined}
   aria-label={onPin && isMarkdownCandidate(message) ? 'Pin to Markdown Preview' : undefined}
-  aria-pressed={pinned}
+  aria-pressed={onPin && isMarkdownCandidate(message) ? pinned : undefined}
 >
   {/* existing icon / content / time structure unchanged */}
 ```
@@ -841,7 +845,7 @@ src/
 | Tab strip keyboard navigation | `role="tablist"` / `role="tab"` / `aria-selected` / `aria-controls` on tab strip in `RightPanel` |
 | Tab body identity | `role="tabpanel"` with `id` from `useId()` matching tab's `aria-controls`; `tabIndex={0}` on active panel, `tabIndex={-1}` on inactive panel |
 | Pinnable message rows | `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Space) on pinnable `ConsoleMessage` rows |
-| Pinned row state | `aria-pressed={pinned}` on pinnable row (toggle button semantics) |
+| Pinned row state | `aria-pressed={pinned}` on pinnable rows only (same guard as `role="button"`) — never placed on a non-pinnable `<div>` |
 | Markdown Preview tab badge | `aria-label="Message pinned"` on `📌` badge span |
 | Markdown content | Rendered as semantic HTML via `react-markdown` — headings, lists, tables all produce correct elements automatically |
 
@@ -855,6 +859,7 @@ src/
 - Persisting the pinned message across page reload.
 - "Unpin" button (explicit deselect) — the pin is cleared automatically when `clearMessages` is called. Manual unpin can be added in a follow-up.
 - Multiple pinned messages / a pinned-message list.
+- **Arrow-key navigation between tabs** — ARIA authoring practices for `role="tablist"` recommend `ArrowLeft`/`ArrowRight` handlers on tab buttons in addition to click. This iteration uses click-only tab switching, which is functional and accessible (tabs are focusable and activatable via keyboard). Arrow-key roving-tabindex navigation is a future a11y enhancement.
 
 ---
 
