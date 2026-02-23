@@ -1,0 +1,127 @@
+/* ── Page wrapper ───────────────────────────────────────────────── */
+.wrapper {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+/* ── Page header ────────────────────────────────────────────────── */
+.header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.title {
+  color: var(--primary-color);
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+/* ── Two-column layout ──────────────────────────────────────────── */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+}
+
+.leftPanel,
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Generic card (command input row) ───────────────────────────── */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Command input ──────────────────────────────────────────────── */
+.inputGroup {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ── Action buttons row ─────────────────────────────────────────── */
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.button:active:not(:disabled) { transform: translateY(0); }
+.button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.buttonPrimary { background-color: var(--primary-color); color: white; }
+.buttonPrimary:hover:not(:disabled) { background-color: var(--primary-hover); }
+
+.buttonWarning { background-color: var(--warning-color); color: var(--text-primary); }
+.buttonWarning:hover:not(:disabled) { background-color: #e08e0b; }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+    padding: 0 1rem 1rem;
+  }
+
+  .header { padding: 1rem; }
+  .title  { font-size: 1.5rem; }
+  .button { width: 100%; }
+}

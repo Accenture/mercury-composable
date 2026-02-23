@@ -1,0 +1,47 @@
+.statusCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statusDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.statusDot.connected {
+  background: var(--success-color);
+  animation: pulse 2s infinite;
+}
+
+.statusDot.disconnected {
+  background: var(--danger-color);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.statusText {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.statusUrl {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}

@@ -1,0 +1,75 @@
+/* ── Card wrapper ───────────────────────────────────────────────── */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Label row ──────────────────────────────────────────────────── */
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.label {
+  font-weight: 500;
+  color: #495057;
+}
+
+/* ── Multiline toggle button ────────────────────────────────────── */
+.toggleButton {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggleButton:hover { background: var(--primary-hover); }
+
+.toggleButton.active {
+  background: var(--success-color);
+}
+
+.toggleButton.active:hover { filter: brightness(0.9); }
+
+/* ── Textarea ───────────────────────────────────────────────────── */
+.textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 2.5rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.textarea:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ── Hint text ──────────────────────────────────────────────────── */
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: right;
+  margin-top: 0.25rem;
+}
