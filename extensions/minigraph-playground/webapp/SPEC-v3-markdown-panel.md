@@ -26,7 +26,7 @@ The right panel becomes a **two-tab container** (`RightPanel`). The active tab i
 | # | Question | Decision | Rationale |
 |---|---|---|---|
 | A | Panel topology | **Tabbed right panel** | Two-tab container in the existing right panel slot; no second `<Separator>`, no extra saved split, no collapse/expand imperative API. Option B (three panels) is the correct v4 of this feature if an IDE-like layout is needed. |
-| B | Markdown library | **`react-markdown ^9` + `remark-gfm ^4`** | No `dangerouslySetInnerHTML`; XSS protection is structural (JSX output). `remark-gfm` adds GFM tables, task lists, and strikethrough — covers likely server output formats. |
+| B | Markdown library | **`react-markdown ^10` + `remark-gfm ^4`** | No `dangerouslySetInnerHTML`; XSS protection is structural (JSX output). `remark-gfm` adds GFM tables, task lists, and strikethrough — covers likely server output formats. |
 | C | Message selection | **Pinnable: user clicks a Console message row to pin it to the preview** | Mirrors a "response body" viewer; explicit selection avoids flickering on rapid message arrival. The last received non-JSON message is shown by default until the user pins a different one. |
 | D | Detection logic | **`isMarkdownCandidate` in `messageParser.ts`; derived state in `Playground`** | Pure helper + `useMemo` derivation — zero reducer changes. Fully reversible. |
 
@@ -774,12 +774,12 @@ Playground
 ## 6. Dependency
 
 ```
-react-markdown   ^9.0.0   ~12 KB gzipped
-remark-gfm       ^4.0.0   ~3 KB gzipped
-npm install react-markdown@^9 remark-gfm@^4
+react-markdown   ^10.1.0  ~12 KB gzipped
+remark-gfm       ^4.0.1   ~3 KB gzipped
+npm install react-markdown@^10 remark-gfm@^4
 ```
 
-> **Why v9 of `react-markdown`?** v9 is the current stable release, ESM-only — compatible with Vite 6 and the project's `"type": "module"` package.
+> **Why v10 of `react-markdown`?** v10 is the current stable release, ESM-only — compatible with Vite 6 and the project's `"type": "module"` package. The only breaking change from v9 is removal of the `className` prop on `<Markdown>` itself; the spec wraps output in a `<div className={styles.previewRoot}>` instead, which is already the correct pattern.
 
 ---
 
