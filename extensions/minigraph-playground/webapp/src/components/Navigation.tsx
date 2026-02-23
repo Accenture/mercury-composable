@@ -2,7 +2,11 @@ import { NavLink } from 'react-router-dom';
 import { PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import styles from './Navigation.module.css';
 
-export default function Navigation() {
+interface NavigationProps {
+  connectionBar?: React.ReactNode;
+}
+
+export default function Navigation({ connectionBar }: NavigationProps) {
   // Tool links are derived from config — add a new playground in config/playgrounds.js,
   // not here.
   const toolLinks = PLAYGROUND_CONFIGS.map((cfg) => ({ to: cfg.path, label: cfg.label }));
@@ -17,6 +21,11 @@ export default function Navigation() {
 
   return (
     <nav className={styles.nav}>
+      {connectionBar && (
+        <div className={styles.connectionSection}>
+          {connectionBar}
+        </div>
+      )}
       <div className={styles.navSection}>
         <div className={styles.navLabel}>Tools:</div>
         <div className={styles.navLinks}>

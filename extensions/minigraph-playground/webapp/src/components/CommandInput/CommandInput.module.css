@@ -1,10 +1,7 @@
-/* ── Card wrapper ───────────────────────────────────────────────── */
-.card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+/* ── CommandInput root (no card wrapper — lives inside LeftPanel) ── */
+.commandInput {
+  padding: 0.75rem;
+  flex: 0 0 auto;
 }
 
 /* ── Label row ──────────────────────────────────────────────────── */
@@ -17,35 +14,37 @@
 
 .label {
   font-weight: 500;
-  color: #495057;
+  color: var(--text-secondary);
 }
 
-/* ── Multiline toggle button ────────────────────────────────────── */
-.toggleButton {
-  padding: 0.25rem 0.75rem;
+/* ── Checkbox label (replaces toggle button) ────────────────────── */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   font-size: 0.875rem;
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.2s;
+  user-select: none;
 }
 
-.toggleButton:hover { background: var(--primary-hover); }
-
-.toggleButton.active {
-  background: var(--success-color);
+/* ── Single-line layout: textarea and Send button share one row ─── */
+.inputRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
 }
 
-.toggleButton.active:hover { filter: brightness(0.9); }
+.inputRow .textarea {
+  flex: 1 1 auto;
+}
 
 /* ── Textarea ───────────────────────────────────────────────────── */
 .textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   font-family: inherit;
   resize: vertical;
@@ -56,14 +55,37 @@
 
 .textarea:focus {
   outline: none;
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--focus-ring);
 }
 
 .textarea:disabled {
-  background-color: #e9ecef;
+  background-color: var(--disabled-bg);
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* ── Send button ────────────────────────────────────────────────── */
+.sendButton {
+  padding: 0.5rem 1.25rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.sendButton:hover:not(:disabled) { background: var(--primary-hover); }
+.sendButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Multiline layout: Send button is full-width below the textarea */
+.sendButtonFullWidth {
+  width: 100%;
+  margin-top: 0.5rem;
 }
 
 /* ── Hint text ──────────────────────────────────────────────────── */

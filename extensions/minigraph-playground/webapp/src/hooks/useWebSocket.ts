@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useRef, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { type ToastType } from './useToast';
-import { MAX_ITEMS, MAX_BUFFER, PING_INTERVAL } from '../config/playgrounds';
+import { MAX_ITEMS, MAX_BUFFER, PING_INTERVAL, MAX_HISTORY } from '../config/playgrounds';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -13,7 +13,7 @@ type WsPhase = 'idle' | 'connecting' | 'connected';
 /** All reactive state owned by the reducer. */
 interface WsState {
   phase:        WsPhase;
-  messages:     string[];
+  messages:     { id: number; raw: string }[];
   command:      string;
   autoScroll:   boolean;
   historyIndex: number;
@@ -22,9 +22,9 @@ interface WsState {
 /** Every action the reducer can handle — exhaustively typed as a discriminated union. */
 type WsAction =
   | { type: 'CONNECTING' }
-  | { type: 'CONNECTED';         msg: string }
-  | { type: 'MESSAGE_RECEIVED';  msg: string }
-  | { type: 'DISCONNECTED';      msg: string }
+  | { type: 'CONNECTED';         id: number; msg: string }
+  | { type: 'MESSAGE_RECEIVED';  id: number; msg: string }
+  | { type: 'DISCONNECTED';      id: number; msg: string }
   | { type: 'CONNECT_ERROR' }
   | { type: 'SET_COMMAND';       value: string }
   | { type: 'CLEAR_COMMAND' }
@@ -38,8 +38,6 @@ export interface UseWebSocketOptions {
   storageKeyHistory: string;
   payload:           string;
   addToast:          (message: string, type?: ToastType) => void;
-  /** Controls which key combination triggers a send. Defaults to 'enter'. */
-  submitKey?:        'enter' | 'ctrl+enter';
 }
 
 /** Public API surface returned by useWebSocket. */
@@ -47,11 +45,12 @@ export interface UseWebSocketReturn {
   wsUrl:            string;
   connected:        boolean;
   connecting:       boolean;
-  messages:         string[];
+  messages:         { id: number; raw: string }[];
   command:          string;
   setCommand:       (value: string) => void;
   connect:          () => void;
   disconnect:       () => void;
+  sendCommand:      () => void;
   handleKeyDown:    (e: React.KeyboardEvent<HTMLElement>) => void;
   consoleRef:       React.RefObject<HTMLDivElement | null>;
   autoScroll:       boolean;
@@ -88,20 +87,20 @@ function wsReducer(state: WsState, action: WsAction): WsState {
     // Atomically flip phase→connected and append the
     // "connected" info message in one render instead of three.
     case 'CONNECTED': {
-      const msgs = [...state.messages, action.msg];
+      const msgs = [...state.messages, { id: action.id, raw: action.msg }];
       if (msgs.length > MAX_ITEMS) msgs.shift();
       return { ...state, phase: 'connected', messages: msgs };
     }
 
     case 'MESSAGE_RECEIVED': {
-      const msgs = [...state.messages, action.msg];
+      const msgs = [...state.messages, { id: action.id, raw: action.msg }];
       if (msgs.length > MAX_ITEMS) msgs.shift();
       return { ...state, messages: msgs };
     }
 
     // Mirror of CONNECTED — flip phase→idle and append disconnect message.
     case 'DISCONNECTED': {
-      const msgs = [...state.messages, action.msg];
+      const msgs = [...state.messages, { id: action.id, raw: action.msg }];
       if (msgs.length > MAX_ITEMS) msgs.shift();
       return { ...state, phase: 'idle', messages: msgs };
     }
@@ -137,7 +136,7 @@ function wsReducer(state: WsState, action: WsAction): WsState {
  * Encapsulates all WebSocket lifecycle logic for a playground page.
  * Options and return type are defined by UseWebSocketOptions / UseWebSocketReturn.
  */
-export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, submitKey = 'enter' }: UseWebSocketOptions): UseWebSocketReturn {
+export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: UseWebSocketOptions): UseWebSocketReturn {
 
   // Derive the WebSocket URL from wsPath on every render so that navigating
   // between playgrounds always reflects the correct endpoint.
@@ -162,6 +161,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
   const wsRef           = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const consoleRef      = useRef<HTMLDivElement>(null);
+  const msgIdRef        = useRef(0);
 
   // --- Auto-scroll effect ---
   useEffect(() => {
@@ -210,7 +210,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
     wsRef.current = ws;
 
     ws.onopen = () => {
-      dispatch({ type: 'CONNECTED', msg: eventWithTimestamp('info', 'connected') });
+      dispatch({ type: 'CONNECTED', id: ++msgIdRef.current, msg: eventWithTimestamp('info', 'connected') });
       addToast('Connected to WebSocket', 'success');
       ws.send(JSON.stringify({ type: 'welcome' }));
       pingIntervalRef.current = setInterval(keepAlive, PING_INTERVAL);
@@ -218,7 +218,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
 
     ws.onmessage = (evt) => {
       if (!evt.data.startsWith('{"type":"ping"')) {
-        dispatch({ type: 'MESSAGE_RECEIVED', msg: evt.data });
+        dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: evt.data });
       }
     };
 
@@ -228,7 +228,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
 
     ws.onclose = (evt) => {
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-      dispatch({ type: 'DISCONNECTED', msg: eventWithTimestamp('info', `disconnected - (${evt.code}) ${evt.reason}`) });
+      dispatch({ type: 'DISCONNECTED', id: ++msgIdRef.current, msg: eventWithTimestamp('info', `disconnected - (${evt.code}) ${evt.reason}`) });
       addToast('Disconnected from WebSocket', 'info');
       wsRef.current = null;
     };
@@ -239,14 +239,38 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
     if (wsRef.current) {
       wsRef.current.close();
     } else {
-      dispatch({ type: 'MESSAGE_RECEIVED', msg: eventWithTimestamp('error', 'already disconnected') });
+      dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: eventWithTimestamp('error', 'already disconnected') });
     }
   }, []);
 
   // --- Public: keyboard handler for the command input ---
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
-    if (!connected) return;
+  // --- Public: send the current command ---
+  const sendCommand = useCallback(() => {
+    if (!wsRef.current || phase !== 'connected') return;
+    const text = command.trim();
+    if (text.length === 0) return;
 
+    wsRef.current.send(text);
+    if (history[0] !== text) {
+      setHistory((prev) => [text, ...prev].slice(0, MAX_HISTORY));
+    }
+
+    // Special "load" command — also send the payload as a second message
+    if (text === 'load') {
+      if (payload.length === 0) {
+        dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: 'ERROR: please paste JSON/XML payload in input text area' });
+      } else if (payload.length > MAX_BUFFER) {
+        dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: `ERROR: please reduce JSON/XML payload size. It must be less than ${MAX_BUFFER} characters` });
+      } else {
+        wsRef.current.send(payload);
+      }
+    }
+
+    dispatch({ type: 'CLEAR_COMMAND' });
+  }, [phase, command, payload, history, setHistory]);
+
+  // --- Public: keyboard handler for the command input (history navigation only) ---
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (history.length > 0 && historyIndex < history.length - 1) {
@@ -261,39 +285,14 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
       } else if (historyIndex === 0) {
         dispatch({ type: 'CLEAR_COMMAND' });
       }
-    } else if (e.key === 'Enter') {
-      // In ctrl+enter mode, only submit when Ctrl (or ⌘ on Mac) is held.
-      // Plain Enter falls through so the browser inserts a newline in the textarea.
-      if (submitKey === 'ctrl+enter' && !e.ctrlKey && !e.metaKey) return;
-
-      e.preventDefault();
-      const text = command.trim();
-      if (text.length === 0) return;
-
-      // wsRef.current is guaranteed non-null when connected === true
-      wsRef.current!.send(text);
-      setHistory((prev) => [text, ...prev].slice(0, MAX_ITEMS));
-
-      // Special "load" command — also send the payload as a second message
-      if (text === 'load') {
-        if (payload.length === 0) {
-          dispatch({ type: 'MESSAGE_RECEIVED', msg: 'ERROR: please paste JSON/XML payload in input text area' });
-        } else if (payload.length > MAX_BUFFER) {
-          dispatch({ type: 'MESSAGE_RECEIVED', msg: `ERROR: please reduce JSON/XML payload size. It must be less than ${MAX_BUFFER} characters` });
-        } else {
-          wsRef.current!.send(payload);
-        }
-      }
-
-      dispatch({ type: 'CLEAR_COMMAND' });
     }
-  }, [connected, command, history, historyIndex, payload, submitKey, setHistory]);
+  }, [history, historyIndex]);
 
   // --- Console helpers ---
   const toggleAutoScroll = useCallback(() => dispatch({ type: 'TOGGLE_AUTO_SCROLL' }), []);
 
   const copyMessages = useCallback(() => {
-    navigator.clipboard.writeText(messages.join('\n'));
+    navigator.clipboard.writeText(messages.map(m => m.raw).join('\n'));
     addToast('Console copied to clipboard!', 'success');
   }, [messages, addToast]);
 
@@ -317,6 +316,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, sub
     setCommand,
     connect,
     disconnect,
+    sendCommand,
     handleKeyDown,
     consoleRef,
     autoScroll,

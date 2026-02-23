@@ -1,8 +1,9 @@
+import { ConsoleErrorBoundary } from './ConsoleErrorBoundary';
 import ConsoleMessage from './ConsoleMessage';
 import styles from './Console.module.css';
 
 interface ConsoleProps {
-  messages:           string[];
+  messages:           { id: number; raw: string }[];
   autoScroll:         boolean;
   onToggleAutoScroll: () => void;
   onCopy:             () => void;
@@ -12,7 +13,7 @@ interface ConsoleProps {
 
 export default function Console({ messages, autoScroll, onToggleAutoScroll, onCopy, onClear, consoleRef }: ConsoleProps) {
   return (
-    <div className={styles.card}>
+    <div className={styles.consoleRoot}>
       <div className={styles.consoleHeader}>
         <span className={styles.consoleTitle}>Console Output</span>
         <div className={styles.consoleControls}>
@@ -44,12 +45,14 @@ export default function Console({ messages, autoScroll, onToggleAutoScroll, onCo
       </div>
 
       <div className={styles.console} ref={consoleRef} role="log" aria-live="polite">
-        {messages.map((msg: string, idx: number) => (
-          <ConsoleMessage key={idx} message={msg} />
+        {messages.map((msg) => (
+          <ConsoleErrorBoundary key={msg.id} fallback={msg.raw}>
+            <ConsoleMessage message={msg.raw} />
+          </ConsoleErrorBoundary>
         ))}
         {messages.length === 0 && (
           <div className={styles.emptyConsole}>
-            No messages yet. Click &quot;Start&quot; to connect.
+            No messages yet. Use the <strong>Start</strong> button in the header to connect.
           </div>
         )}
       </div>

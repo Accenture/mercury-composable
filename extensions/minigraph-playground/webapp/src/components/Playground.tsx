@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react';
+import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validateJSON, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
-import ConnectionStatus from './ConnectionStatus/ConnectionStatus';
+import ConnectionBar from './ConnectionBar/ConnectionBar';
 import PayloadEditor from './PayloadEditor/PayloadEditor';
-import Console from './Console/Console';
-import CommandInput from './CommandInput/CommandInput';
+import LeftPanel from './LeftPanel/LeftPanel';
 import { type PlaygroundConfig } from '../config/playgrounds';
 
 interface PlaygroundProps {
@@ -35,15 +36,18 @@ export default function Playground({ config }: PlaygroundProps) {
   const [multiline, setMultiline] = useState(false);
 
   // All WebSocket + console logic lives in the hook
-  const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast, submitKey: multiline ? 'ctrl+enter' : 'enter' });
+  const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast });
 
-  // Show the console panel once a connection has been attempted
-  const [showConsole, setShowConsole] = useState(false);
+  // Responsive layout: stack panels vertically on narrow viewports
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
-  const handleConnect = () => {
-    setShowConsole(true);
-    ws.connect();
-  };
+  // Persist panel split ratio per playground route
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    id: config.path + '-panel-split',
+    storage: localStorage,
+  });
+
+  const handleConnect = () => ws.connect();
 
   const handleFormatPayload = () => setPayload(formatJSON(payload));
 
@@ -53,68 +57,54 @@ export default function Playground({ config }: PlaygroundProps) {
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
-        <Navigation />
+        <Navigation connectionBar={
+          <ConnectionBar
+            connected={ws.connected}
+            connecting={ws.connecting}
+            url={ws.wsUrl}
+            onConnect={handleConnect}
+            onDisconnect={ws.disconnect}
+          />
+        } />
       </header>
 
-      <div className={styles.container}>
-        {/* ── Left panel: inputs & controls ── */}
-        <div className={styles.leftPanel}>
-          <ConnectionStatus connected={ws.connected} url={ws.wsUrl} />
-
-          <PayloadEditor
-            payload={payload}
-            onChange={setPayload}
-            validation={payloadValidation}
-            onFormat={handleFormatPayload}
-          />
-
-          <CommandInput
+      <Group
+        className={styles.panelGroup}
+        orientation={isMobile ? 'vertical' : 'horizontal'}
+        defaultLayout={defaultLayout}
+        onLayoutChanged={onLayoutChanged}
+      >
+        <Panel defaultSize="60%" minSize="25%">
+          <LeftPanel
+            messages={ws.messages}
+            autoScroll={ws.autoScroll}
+            onToggleAutoScroll={ws.toggleAutoScroll}
+            onCopy={ws.copyMessages}
+            onClear={ws.clearMessages}
+            consoleRef={ws.consoleRef}
             command={ws.command}
-            onChange={ws.setCommand}
-            onKeyDown={ws.handleKeyDown}
-            disabled={!ws.connected}
+            onCommandChange={ws.setCommand}
+            onCommandKeyDown={ws.handleKeyDown}
+            onSend={ws.sendCommand}
+            sendDisabled={!ws.connected || !ws.command.trim()}
+            inputDisabled={!ws.connected}
             multiline={multiline}
             onToggleMultiline={() => setMultiline(m => !m)}
           />
-
-          <div className={styles.buttonGroup}>
-            {!ws.connected && !ws.connecting && (
-              <button className={`${styles.button} ${styles.buttonPrimary}`} onClick={handleConnect}>
-                Start
-              </button>
-            )}
-            {ws.connecting && (
-              <button className={`${styles.button} ${styles.buttonPrimary}`} disabled>
-                Connecting...
-              </button>
-            )}
-            {ws.connected && (
-              <button className={`${styles.button} ${styles.buttonWarning}`} onClick={ws.disconnect}>
-                Stop Service
-              </button>
-            )}
-            {showConsole && !ws.connected && !ws.connecting && (
-              <button className={`${styles.button} ${styles.buttonWarning}`} onClick={() => setShowConsole(false)}>
-                Clear &amp; Hide Console
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Right panel: console output ── */}
-        <div className={styles.rightPanel}>
-          {showConsole && (
-            <Console
-              messages={ws.messages}
-              autoScroll={ws.autoScroll}
-              onToggleAutoScroll={ws.toggleAutoScroll}
-              onCopy={ws.copyMessages}
-              onClear={ws.clearMessages}
-              consoleRef={ws.consoleRef}
+        </Panel>
+        <Separator className={styles.resizeHandle} aria-label="Resize panels" />
+        <Panel defaultSize="40%" minSize="20%">
+          <div className={styles.rightPanelContent}>
+            <PayloadEditor
+              payload={payload}
+              onChange={setPayload}
+              validation={payloadValidation}
+              onFormat={handleFormatPayload}
             />
-          )}
-        </div>
-      </div>
+          </div>
+        </Panel>
+      </Group>
     </div>
   );
 }
+

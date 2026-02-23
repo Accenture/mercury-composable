@@ -1,10 +1,9 @@
-/* ── Console panel card ─────────────────────────────────────────── */
-.card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+/* ── Console root (flex column, fills panel height) ─────────────── */
+.consoleRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .consoleHeader {
@@ -14,6 +13,7 @@
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);
+  flex: 0 0 auto;
 }
 
 .consoleTitle {
@@ -48,12 +48,12 @@
 
 /* ── Scrollable message list ────────────────────────────────────── */
 .console {
-  background-color: var(--bg-dark);
-  color: #e2e8f0;
+  background-color: var(--console-bg);
+  color: var(--console-text);
   padding: 1rem;
   border-radius: var(--radius);
-  min-height: 300px;
-  max-height: 600px;
+  flex: 1 1 auto;
+  min-height: 150px;
   overflow-y: auto;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.875rem;
@@ -62,7 +62,7 @@
 }
 
 .emptyConsole {
-  color: #64748b;
+  color: var(--text-secondary);
   text-align: center;
   padding: 2rem;
 }
@@ -88,7 +88,7 @@
 
 .messageContent {
   word-wrap: break-word;
-  color: #e2e8f0;
+  color: var(--console-text);
   flex: 1;
 }
 
@@ -99,7 +99,7 @@
 
 .messageTime {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 

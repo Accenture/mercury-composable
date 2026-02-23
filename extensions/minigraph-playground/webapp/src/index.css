@@ -13,6 +13,19 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --radius: 0.5rem;
+  /* ── New tokens ── */
+  --focus-ring:         0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+  --radius-sm:          0.25rem;
+  --text-muted:         #94a3b8;
+  --console-bg:         var(--bg-dark);
+  --console-text:       #e2e8f0;
+  --disabled-bg:        #e9ecef;
+  --input-focus-border: var(--primary-color);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
 * {

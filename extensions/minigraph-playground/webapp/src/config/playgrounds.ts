@@ -13,7 +13,10 @@
 // ---------------------------------------------------------------------------
 
 /** Maximum number of console messages kept in memory at once. */
-export const MAX_ITEMS  = 30;
+export const MAX_ITEMS    = 200;
+
+/** Maximum number of command history entries kept in localStorage. */
+export const MAX_HISTORY  = 50;
 
 /** Maximum payload size in characters accepted by the WebSocket send path. */
 export const MAX_BUFFER = 64_000;

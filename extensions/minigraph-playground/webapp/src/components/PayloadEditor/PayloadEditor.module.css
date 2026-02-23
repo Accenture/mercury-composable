@@ -1,15 +1,10 @@
-/* ── Card wrapper ───────────────────────────────────────────────── */
-.card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-}
-
-/* ── Input group ────────────────────────────────────────────────── */
-.inputGroup {
-  margin-bottom: 1rem;
+/* ── PayloadEditor root (flex column, fills panel height) ───────── */
+.payloadRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 1rem;
 }
 
 .labelRow {
@@ -17,13 +12,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 
 .label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #495057;
+  color: var(--text-secondary);
 }
 
 /* ── Controls row (counter, badge, format button) ───────────────── */
@@ -45,7 +41,7 @@
   font-weight: 600;
   background: var(--success-color);
   color: white;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -60,7 +56,7 @@
   background: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -68,23 +64,30 @@
 .formatButton:hover:not(:disabled) { background: var(--primary-hover); }
 .formatButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Textarea ───────────────────────────────────────────────────── */
+/* ── Textarea (grows to fill remaining space) ───────────────────── */
 .textarea {
+  flex: 1 1 auto;
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   font-family: inherit;
-  resize: vertical;
-  min-height: 80px;
+  resize: none;
+  min-height: 0;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  box-sizing: border-box;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  border-color: var(--input-focus-border);
+  box-shadow: var(--focus-ring);
+}
+
+.textarea:disabled {
+  background-color: var(--disabled-bg);
+  cursor: not-allowed;
 }
 
 .textareaError { border-color: var(--danger-color); }
@@ -93,9 +96,15 @@
   color: var(--danger-color);
   font-size: 0.875rem;
   margin-top: 0.5rem;
+  flex: 0 0 auto;
 }
 
-/* ── Sample buttons ─────────────────────────────────────────────── */
+/* ── Sample buttons row ─────────────────────────────────────────── */
+.sampleButtonsRow {
+  flex: 0 0 auto;
+  padding-top: 0.5rem;
+}
+
 .sampleButtons {
   display: flex;
   align-items: flex-start;
@@ -131,7 +140,7 @@
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s;
   text-transform: capitalize;
