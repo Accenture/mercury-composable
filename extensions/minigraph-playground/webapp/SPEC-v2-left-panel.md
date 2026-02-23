@@ -57,18 +57,21 @@ Version 2.3 reorganises the two-panel layout so that the **Console and its Comma
 
 ### 2.1 Panel Split
 
+> **⚠️ v4 API note:** This spec targets **`react-resizable-panels ^4.6.5`**. v4 renamed components and replaced several props vs. v3. All examples below use the v4 API. Do **not** use v3 names (`PanelGroup`, `PanelResizeHandle`, `direction`, `autoSaveId`, `keyboardResizeBy`).
+
 | Property | Value |
 |---|---|
-| Mechanism | `<PanelGroup direction="horizontal">` with two `<Panel>` elements separated by `<PanelResizeHandle>` — `react-resizable-panels` |
-| Default split | `defaultSize={60}` left / `defaultSize={40}` right |
-| Min left-panel size | `minSize={25}` |
-| Min right-panel size | `minSize={20}` |
-| Resize persistence | `autoSaveId={config.path + '-panel-split'}` on `<PanelGroup>` — library writes to `localStorage` automatically. **Do not** wire to `useLocalStorage`. Each playground route gets a unique key (e.g. `"/minigraph-panel-split"`) so their saved splits never collide. |
-| Responsive stacking | `direction` switches from `"horizontal"` to `"vertical"` via `useMediaQuery('(max-width: 768px)')` — **custom hook** `src/hooks/useMediaQuery.ts` (see Decision #12) |
-| Reset on double-click | `onDoubleClick` on `<PanelResizeHandle>` calls `panelGroupRef.current.setLayout([60, 40])` |
+| Mechanism | `<Group orientation="horizontal">` with two `<Panel>` elements separated by `<Separator>` — `react-resizable-panels ^4.6.5` |
+| Default split | `defaultSize="60%"` left / `defaultSize="40%"` right |
+| Min left-panel size | `minSize="25%"` |
+| Min right-panel size | `minSize="20%"` |
+| Resize persistence | Use the `useDefaultLayout` hook (exported from `react-resizable-panels`). Pass `id={config.path + '-panel-split'}` and `storage={localStorage}` to scope each playground route to its own key (e.g. `"react-resizable-panels:/minigraph-panel-split:"`). The hook returns `{ defaultLayout, onLayoutChange }` — pass both to `<Group>`. **Do not** wire to `useLocalStorage`. |
+| Responsive stacking | `orientation` switches from `"horizontal"` to `"vertical"` via `useMediaQuery('(max-width: 768px)')` — **custom hook** `src/hooks/useMediaQuery.ts` (see Decision #12) |
+| Reset on double-click | **Built-in since v4.5.0.** Double-clicking any `<Separator>` automatically resets its adjacent panel to that panel's `defaultSize`. No `onDoubleClick` handler or imperative `setLayout` call is needed — just ensure `defaultSize` is set on the panels. |
+| Keyboard resize | **Built-in.** `←`/`→` arrow keys are handled natively by the library at 5 % per keystroke. No `keyboardResizeBy` prop exists in v4. |
 
 > **Decision #1 — resize library: `react-resizable-panels` ✅**  
-> The app will grow into a multi-pane layout (graph visualisation, reorganisable panels). `react-resizable-panels` (~5 KB gzipped) provides TypeScript-first support, accessible keyboard resize (`←`/`→` arrow keys, `keyboardResizeBy={5}`), nested panel groups, and built-in `localStorage` persistence via `autoSaveId`. No custom `usePanelResize` hook is needed.
+> The app will grow into a multi-pane layout (graph visualisation, reorganisable panels). `react-resizable-panels ^4.6.5` (~5 KB gzipped) provides TypeScript-first support, accessible keyboard resize (built-in, 5 % per arrow-key step), nested panel groups, double-click-to-reset (built-in), and `localStorage` persistence via `useDefaultLayout`. No custom `usePanelResize` hook is needed.
 
 ### 2.2 Left Panel Internal Layout
 
@@ -138,6 +141,8 @@ interface LeftPanelProps {
 
 > **Note — no `submitKey` prop:** keyboard submit semantics live entirely inside `CommandInput` (§3.3). The `submitKey` option on `useWebSocket` is **removed**.
 
+> **Note — prop name threading for keyboard handler:** `LeftPanel` receives the prop as `onCommandKeyDown` (matches the data-flow diagram in §5). Internally, `LeftPanel` passes it to `CommandInput` as `onKeyDown` — the name `CommandInput` already uses. The two names refer to the same function; only the boundary label differs. Summary: `Playground` → `LeftPanel` as `onCommandKeyDown`; `LeftPanel` → `CommandInput` as `onKeyDown`.
+
 ---
 
 ### 3.2 `Console` — changes
@@ -199,6 +204,39 @@ interface CommandInputProps {
 | Multiline (checkbox on) | `Enter` | Insert newline |
 | Multiline | `Shift+Enter` | Insert newline |
 | Multiline | `Ctrl+Enter` | Send |
+
+**`CommandInput` internal `onKeyDown` merge pattern:**
+
+The textarea has a single `onKeyDown` handler. It must serve both purposes — Enter/Ctrl+Enter send logic *and* arrow-key history navigation from the passed-in `onKeyDown` prop. `CommandInput` owns the merge:
+
+```ts
+const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  if (e.key === 'Enter') {
+    if (multiline) {
+      // Multiline mode: Ctrl+Enter sends, plain Enter is a newline (let browser handle it)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        onSend();
+        textareaRef.current?.focus();
+      }
+      // else: fall through — browser inserts newline natively
+    } else {
+      // Single-line mode: Enter sends (unless Shift is held — newline)
+      if (!e.shiftKey) {
+        e.preventDefault();
+        onSend();
+        textareaRef.current?.focus();
+      }
+      // Shift+Enter: fall through — browser expands textarea natively
+    }
+  } else {
+    // All other keys (ArrowUp, ArrowDown, etc.) delegate to the passed-in handler
+    onKeyDown(e);
+  }
+};
+```
+
+> **The passed-in `onKeyDown` is only called for non-Enter keys.** This is safe because `handleKeyDown` in `useWebSocket` only acts on `ArrowUp`/`ArrowDown` — it ignores all other keys. There is no double-handling risk.
 
 > **Decision #3 — adaptive Send button placement ✅**  
 > **Single-line:** Send button to the **right of the textarea** on the same flex row (chat-input pattern).  
@@ -339,22 +377,27 @@ export default function Navigation({ connectionBar }: NavigationProps) {
 - Remove `showConsole` state and the "Clear & Hide Console" button.
 - Remove `submitKey` prop from the `useWebSocket` call.
 - Remove `<ConnectionStatus>` and the `buttonGroup` div.
-- Replace the CSS-grid two-column layout with `<PanelGroup>` + `<Panel>` + `<PanelResizeHandle>`.
-- Left `<Panel defaultSize={60} minSize={25}>` renders `<LeftPanel>`.
-- Right `<Panel defaultSize={40} minSize={20}>` renders `<PayloadEditor>` (bare, fills panel).
+- Replace the CSS-grid two-column layout with `<Group>` + `<Panel>` + `<Separator>` (v4 names — see §2.1).
+- Left `<Panel defaultSize="60%" minSize="25%">` renders `<LeftPanel>`.
+- Right `<Panel defaultSize="40%" minSize="20%">` renders `<PayloadEditor>` (bare, fills panel).
 - Pass `<ConnectionBar>` as `connectionBar` prop to `<Navigation>` in the header (see §3.5 for exact JSX).
 - Wire `onSend={ws.sendCommand}` into `<LeftPanel>`.
-- Add `useMediaQuery('(max-width: 768px)')` to flip `PanelGroup direction` — from `src/hooks/useMediaQuery.ts` (see Decision #12).
+- Add `useMediaQuery('(max-width: 768px)')` to flip `Group orientation` — from `src/hooks/useMediaQuery.ts` (see Decision #12).
 - **`multiline` state stays in `Playground`** (`const [multiline, setMultiline] = useState(false)`) — unchanged from the current code. It is passed down as `multiline={multiline}` and `onToggleMultiline={() => setMultiline(m => !m)}` through `LeftPanel` to `CommandInput`.
+- **`handleConnect` post-redesign is a one-liner** — `setShowConsole` is removed (Decision #2), so the function body becomes simply:
+  ```ts
+  const handleConnect = () => ws.connect();
+  ```
+  It still exists as a named function so the `ConnectionBar` `onConnect` prop has a stable reference.
 
 **`Playground.module.css` — rule-by-rule migration:**
 
 | Rule | Action | Reason |
 |---|---|---|
-| `.wrapper` | **Keep** — unchanged | Page min-height container |
-| `.header` | **Keep** — unchanged | Header background/border/padding |
+| `.wrapper` | **Modify** — add `display: flex; flex-direction: column` | Makes `.wrapper` a flex column so `.panelGroup` can use `flex: 1 1 0` to fill remaining height without a hardcoded `calc()` |
+| `.header` | **Modify** — remove `margin-bottom: 2rem` | The flex gap between `.header` and `.panelGroup` is now controlled by the flex column, not a margin; keeping the margin adds dead space |
 | `.title` | **Keep** — unchanged | `<h1>` colour/size |
-| `.container` | **Delete** | Was the CSS-grid two-column wrapper; replaced by `<PanelGroup>` |
+| `.container` | **Delete** | Was the CSS-grid two-column wrapper; replaced by `<Group>` |
 | `.leftPanel` | **Delete** | Replaced by `<Panel>` + `<LeftPanel>` component |
 | `.rightPanel` | **Delete** | Replaced by `<Panel>` |
 | `.card` | **Delete** | No longer used in `Playground.tsx` after connection controls move out |
@@ -363,12 +406,14 @@ export default function Navigation({ connectionBar }: NavigationProps) {
 | `.input` / `.input:focus` / `.input:disabled` | **Delete** | No generic inputs remain in `Playground.tsx` |
 | `.buttonGroup` | **Delete** | Start/Stop buttons move to `ConnectionBar` |
 | `.button` / `.buttonPrimary` / `.buttonWarning` | **Delete** | Same |
-| `@media (max-width: 768px)` block | **Delete** | Responsive stacking handled by `PanelGroup direction` swap via `useMediaQuery` |
-| `.panelGroup` | **Add** | `height: calc(100vh - <header-height>); display: flex` — fills viewport below header |
+| `@media (max-width: 768px)` block | **Delete** | Responsive stacking handled by `Group orientation` swap via `useMediaQuery` |
+| `.panelGroup` | **Add** | `flex: 1 1 0; min-height: 0; display: flex` — flex-grow fills the remaining viewport height below the header. **Do not use `height: calc(100vh - X)`** — the header height is dynamic (nav can wrap) and a flex child with `min-height: 0` is the correct constraint-free approach. |
 | `.resizeHandle` | **Add** | `width: 6px; cursor: col-resize; background: transparent; transition: background 0.15s` |
 | `.resizeHandle:hover` | **Add** | `background: rgba(37,99,235,0.2)` (= `var(--primary-color)` at 20% opacity) |
-| `.resizeHandle[data-resize-handle-active]` | **Add** | `background: rgba(37,99,235,0.4)` |
+| `.resizeHandle[data-separator="active"]` | **Add** | `background: rgba(37,99,235,0.4)` |
 | `.rightPanelContent` | **Add** | `display: flex; flex-direction: column; height: 100%; overflow: hidden` — bare wrapper for `PayloadEditor` inside the right `<Panel>` |
+
+> **Note — `Navigation.module.css` `.nav` margin:** The existing `.nav` has `margin-top: 1rem`. With `ConnectionBar` inserted as `.connectionSection` above the tool rows, this top margin stays on the `<nav>` element (providing breathing room below the `<h1>`). The `.connectionSection` `padding: 0.5rem 0; margin-bottom: 0.5rem` keeps the visual gap compact. No change to `.nav`'s `margin-top` is needed — total added nav height from `ConnectionBar` is approximately `~40px` (one inline row), which is acceptable.
 
 ---
 
@@ -378,14 +423,14 @@ export default function Navigation({ connectionBar }: NavigationProps) {
 
 | Behaviour | Detail |
 |---|---|
-| Visual affordance | 6 px wide, `cursor: col-resize`; `background: var(--primary-color)` at 20% opacity on `:hover`; 40% when `[data-resize-handle-active]` |
-| Double-click | Resets layout to `[60, 40]` via `panelGroupRef.current.setLayout([60, 40])` |
-| Keyboard | `←`/`→` arrow keys; `keyboardResizeBy={5}` |
+| Visual affordance | 6 px wide, `cursor: col-resize`; `background: var(--primary-color)` at 20% opacity on `:hover`; 40% when `[data-separator="active"]` |
+| Double-click | **Built-in since v4.5.0** — double-clicking `<Separator>` resets the adjacent panel to its `defaultSize` automatically. No handler needed; ensure both `<Panel>` elements have `defaultSize` set. |
+| Keyboard | `←`/`→` arrow keys — **built into `<Separator>`** at 5 % per step (no `keyboardResizeBy` prop in v4). |
 | Touch | Handled natively by the library |
-| `aria` | Library renders `role="separator"` etc. automatically; add `aria-label="Resize panels"` |
+| `aria` | Library renders `role="separator"` and `aria-orientation` automatically; add `aria-label="Resize panels"` on `<Separator>` |
 
 > **Decision #5 — mobile layout: stacked panels ✅**  
-> Below `768px`, `useMediaQuery` flips `direction` to `"vertical"`. The handle becomes horizontal. No CSS-only `@media` query needed for the panel direction.
+> Below `768px`, `useMediaQuery` flips `orientation` to `"vertical"`. The handle becomes horizontal. No CSS-only `@media` query needed for the panel orientation.
 
 ### 4.2 Console Auto-scroll
 
@@ -425,11 +470,15 @@ Playground (state owner)
 │                                   url={ws.wsUrl} onConnect={handleConnect}
 │                                   onDisconnect={ws.disconnect} />} />
 │
-├── <PanelGroup direction={isMobile ? "vertical" : "horizontal"}
-│              autoSaveId={config.path + '-panel-split'}
-│              ref={panelGroupRef}>
+├── <Group orientation={isMobile ? "vertical" : "horizontal"}
+│          defaultLayout={defaultLayout}
+│          onLayoutChange={onLayoutChange}
+│          groupRef={groupRef}>
 │   │
-│   ├── <Panel defaultSize={60} minSize={25}>
+│   │   // useDefaultLayout({ id: config.path + '-panel-split', storage: localStorage })
+│   │   // → { defaultLayout, onLayoutChange } wired above; groupRef from useGroupRef()
+│   │
+│   ├── <Panel defaultSize="60%" minSize="25%">
 │   │   └── <LeftPanel
 │   │         messages={ws.messages}     autoScroll={ws.autoScroll}
 │   │         onToggleAutoScroll={…}     onCopy={…}        onClear={…}
@@ -441,12 +490,12 @@ Playground (state owner)
 │   │         inputDisabled={!ws.connected}
 │   │         multiline={multiline}      onToggleMultiline={…} />
 │   │
-│   ├── <PanelResizeHandle className={styles.resizeHandle}
-│   │                      aria-label="Resize panels"
-│   │                      keyboardResizeBy={5}
-│   │                      onDoubleClick={() => panelGroupRef.current?.setLayout([60,40])} />
+│   ├── <Separator className={styles.resizeHandle}
+│   │             aria-label="Resize panels" />
+│   │   // double-click reset: built-in (resets to Panel defaultSize) — no handler needed
+│   │   // keyboard resize: built-in (←/→ at 5% per step) — no keyboardResizeBy prop in v4
 │   │
-│   └── <Panel defaultSize={40} minSize={20}>
+│   └── <Panel defaultSize="40%" minSize="20%">
 │       └── <PayloadEditor payload={payload} onChange={setPayload}
 │                          validation={payloadValidation} onFormat={handleFormatPayload} />
 │
@@ -514,6 +563,9 @@ const sendCommand = useCallback(() => {
   }
 
   // Consecutive-dedup history push
+  // ⚠️ Use MAX_HISTORY here — NOT MAX_ITEMS. The old handleKeyDown used
+  //    slice(0, MAX_ITEMS) which was a bug: history was capped at the message
+  //    buffer size (30). MAX_HISTORY = 50 is the correct limit after Decision #10.
   if (history[0] !== text) {
     setHistory(prev => [text, ...prev].slice(0, MAX_HISTORY));
   }
@@ -645,7 +697,7 @@ const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
 
 | Requirement | Implementation |
 |---|---|
-| Drag handle keyboard-operable | Arrow keys — built into `<PanelResizeHandle>` (§4.1) |
+| Drag handle keyboard-operable | Arrow keys — built into `<Separator>` (§4.1) |
 | Console is a live region | `role="log"` + `aria-live="polite"` — no change |
 | `ConnectionBar` buttons | `aria-label` on Start/Stop; `disabled` + `aria-disabled="true"` when inactive |
 | Status dot | `aria-label="Connected"` / `"Connecting"` / `"Disconnected"` on the dot `<span>` |
@@ -684,7 +736,7 @@ src/
       PayloadEditor.module.css         ← MODIFIED (flex layout; token replacements)
       SampleButtons.tsx                ← NO CHANGE
     Playground/
-      Playground.tsx                   ← MODIFIED (PanelGroup wiring; ConnectionBar;
+      Playground.tsx                   ← MODIFIED (Group/Separator wiring; ConnectionBar;
       │                                             remove showConsole, submitKey,
       │                                             buttonGroup, ConnectionStatus)
       Playground.module.css            ← MODIFIED (remove grid; add resizeHandle,
@@ -710,9 +762,12 @@ src/
 **New dependency:**
 
 ```
-react-resizable-panels   ~5 KB gzipped, TypeScript-first
-npm install react-resizable-panels
+react-resizable-panels ^4.6.5   ~5 KB gzipped, TypeScript-first
+npm install react-resizable-panels@^4.6.5
 ```
+
+> **v4 imports:** Use `import { Group, Panel, Separator, useGroupRef, useDefaultLayout } from 'react-resizable-panels';`  
+> Do **not** use v3 names: `PanelGroup`, `PanelResizeHandle`, `direction`, `autoSaveId`, `keyboardResizeBy`.
 
 **New hook — `src/hooks/useMediaQuery.ts`** (Decision #12 — write inline, no package):
 
@@ -753,14 +808,14 @@ server: {
 
 | # | Question | Decision | Rationale |
 |---|---|---|---|
-| 1 | Resize library vs. custom hook? | **`react-resizable-panels`** | Multi-pane growth path; built-in persistence, keyboard, and accessibility |
+| 1 | Resize library vs. custom hook? | **`react-resizable-panels ^4.6.5`** | Multi-pane growth path; built-in keyboard resize, built-in double-click reset, and accessibility; `useDefaultLayout` hook for `localStorage` persistence |
 | 2 | Console always visible? | **Yes — remove `showConsole` toggle** | Live region; lifecycle events appear immediately; hiding suppresses useful output |
 | 3 | Send button placement? | **Adaptive** — right (single-line) / full-width below (multiline) | Chat UX in single-line; form-submit UX in multiline |
 | 3a | `Shift+Enter` behaviour? | **Always inserts a newline** — never a no-op | Checkbox controls default state only; `Shift+Enter` is always a newline escape hatch |
 | 3b | Multiline toggle UI? | **Checkbox** | Semantically correct for a persistent on/off setting |
 | 3c | Textarea resize? | **Native `resize: vertical`** | No custom mechanism needed; works in both modes |
 | 4 | Connection controls location? | **`ConnectionBar` in `Navigation`** | Header = control panel vision; decoupled via `React.ReactNode` prop |
-| 5 | Mobile layout? | **Stacked panels at `< 768px`** | `react-resizable-panels` handles via `direction` prop swap |
+| 5 | Mobile layout? | **Stacked panels at `< 768px`** | `react-resizable-panels` handles via `orientation` prop swap |
 | 6 | Scroll anchor? | **`.console` div owns `overflow-y: auto`** | Panel-root overflow would break `scrollTop`/`scrollHeight` auto-scroll |
 | 7 | Empty-string send? | **Silent block via `disabled`** | Disabled visual is sufficient; no toast noise |
 | 8 | `load` logic location? | **Stays in `sendCommand`** | Hook owns all send semantics; avoids re-implementing checks in `Playground` |
@@ -768,7 +823,7 @@ server: {
 | 10 | History size constant? | **`MAX_HISTORY = 50` — one value for all playgrounds** | Decouples history size from console buffer (`MAX_ITEMS`); single source of truth |
 | 11 | CSS strategy? | **Patch with new tokens** | Targeted replacements; shared utility class deferred |
 | 12 | `useMediaQuery` source? | **Custom hook `src/hooks/useMediaQuery.ts`** | ~15 lines; zero new dependencies; fits existing `hooks/` pattern; avoids adding a package for a single boolean |
-| 13 | `autoSaveId` key scope? | **Per-playground: `config.path + '-panel-split'`** | A single hardcoded key shared across all routes causes one playground's saved split to overwrite another's |
+| 13 | Panel layout persistence scope? | **Per-playground `id` for `useDefaultLayout`:** `config.path + '-panel-split'` | A single hardcoded `id` shared across all routes causes one playground's saved split to overwrite another's. Pass as `id` to `useDefaultLayout({ id: config.path + '-panel-split', storage: localStorage })` |
 
 ---
 
@@ -778,7 +833,7 @@ server: {
 - Changes to `Toast`, `ConsoleMessage`, or `SampleButtons`.
 - Dark mode or theming overhaul.
 - Mobile-first layout (responsive fallback only).
-- `useLocalStorage` stale-key fix (risk contained; panel persistence uses `autoSaveId`).
+- `useLocalStorage` stale-key fix (risk contained; panel persistence uses `useDefaultLayout`).
 
 ---
 
@@ -818,6 +873,37 @@ With FIFO eviction (`msgs.shift()`), every retained message's index changes on e
 **Fix:** Add `ConsoleErrorBoundary.tsx` (class component). Wrap each `<ConsoleMessage>` in it. On error, render the raw message string as plain text.
 
 > **⚠️ Co-dependency with §11.2:** See note above — implement together.
+
+**`ConsoleErrorBoundary` TypeScript props interface:**
+
+```ts
+interface ConsoleErrorBoundaryProps {
+  fallback: string;           // raw message text to render if child throws
+  children: React.ReactNode;
+}
+
+interface ConsoleErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ConsoleErrorBoundary extends React.Component<
+  ConsoleErrorBoundaryProps,
+  ConsoleErrorBoundaryState
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(): ConsoleErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <span>{this.props.fallback}</span>;
+    }
+    return this.props.children;
+  }
+}
+```
 
 **Updated `Console.tsx` message list** (after both §11.2 and §11.3 are applied):
 

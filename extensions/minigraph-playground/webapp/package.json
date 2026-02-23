@@ -15,6 +15,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-json-view-lite": "^2.5.0",
+    "react-resizable-panels": "^4.6.5",
     "react-router-dom": "^7.0.0"
   },
   "devDependencies": {
