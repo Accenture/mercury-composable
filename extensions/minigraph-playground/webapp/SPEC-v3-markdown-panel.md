@@ -1,5 +1,5 @@
 # Spec: Markdown Preview Panel
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** 2026-02-23  
 **Status:** Decisions locked — ready for implementation  
 
@@ -9,6 +9,7 @@
 
 | Version | Date | Summary |
 |---|---|---|
+| 1.1 | 2026-02-23 | Gap analysis review: clarify lifecycle-event pin exclusion; remove `raw` prop from `ConsoleMessage`; `tabIndex` on tabpanels; hover-style conflict resolution; `useId()` for tab IDs; remove redundant `MarkdownPreview` header; invariant notes; minor clarifications (issues 1–13) |
 | 1.0 | 2026-02-23 | Initial spec — tabbed right panel; `react-markdown` + `remark-gfm`; pinnable message selection; `isMarkdownCandidate` helper |
 
 ---
@@ -86,6 +87,19 @@ Playground (useMemo)
  *
  * Everything else — including multi-line text, Markdown syntax, XML snippets
  * that are not valid JSON — is considered a Markdown candidate.
+ *
+ * DESIGN NOTE — lifecycle events are intentionally NOT pinnable:
+ *   A lifecycle message like {"type":"info","message":"Hello","time":"..."}
+ *   renders in the Console as the extracted plain-text field ("Hello"), but
+ *   its msg.raw is the JSON envelope. isMarkdownCandidate operates on msg.raw,
+ *   so the row is not pinnable. This is correct by design: lifecycle events
+ *   are infrastructure noise (connection status, heartbeats, etc.), not
+ *   content the user wants to preview. The visual mismatch — the row looks
+ *   like plain text but is not clickable — is acceptable because lifecycle
+ *   messages are visually distinguished by their type icon (ℹ️ / ❌ / 🔄 / 👋)
+ *   and color. If a future requirement needs lifecycle messages to be pinnable,
+ *   the candidate check should pass parsed.message instead of raw and the
+ *   pin pipeline updated accordingly.
  */
 export function isMarkdownCandidate(raw: string): boolean {
   const result = tryParseJSON(raw);
@@ -120,7 +134,7 @@ const lastNonJsonMessage = useMemo<string | null>(() => {
 const resolvedPreviewMessage = pinnedMessage ?? lastNonJsonMessage;
 ```
 
-`setPinnedMessage` is threaded down as `onPinMessage: (raw: string) => void` through `LeftPanel` → `Console` → `ConsoleMessage`.
+`setPinnedMessage` is threaded down as `onPinMessage: (message: string) => void` through `LeftPanel` → `Console` → `ConsoleMessage`.
 
 **Clearing the pin:** When `ws.clearMessages` is called, `pinnedMessage` must also be cleared. `Playground` wraps the clear action:
 
@@ -132,6 +146,10 @@ const handleClearMessages = () => {
 ```
 
 `handleClearMessages` replaces direct `ws.clearMessages` in all props passed to `LeftPanel`.
+
+> **Invariant — no normalization of `msg.raw`:** `pinnedMessage` stores `msg.raw` verbatim. No trimming, decoding, re-encoding, or transformation is applied to `msg.raw` anywhere in the pipeline (not in `useWebSocket`, `Console`, or `ConsoleMessage`). The `pinned={pinnedMessage === msg.raw}` comparison in `Console` relies on value-equality of the exact stored string — if normalization were ever introduced, this comparison would silently break.
+
+> **Route navigation resets the pin automatically:** `pinnedMessage` is `useState` local to `Playground`. React Router unmounts `Playground` on navigation, which destroys the state. No `useEffect` cleanup or `useRef` persistence is needed — the reset is free.
 
 ---
 
@@ -178,18 +196,24 @@ The active tab is **not persisted** to `localStorage`. The user's last tab choic
   - Losing `PayloadEditor` scroll / textarea cursor position on tab switch.
   - Unnecessary `MarkdownPreview` re-renders when messages arrive while on the Payload tab.
 - Tab strip is `role="tablist"`; each tab button is `role="tab"` with `aria-selected` and `aria-controls`.
-- Tab bodies are `role="tabpanel"` with `id` matching the tab's `aria-controls`.
+- Tab bodies are `role="tabpanel"` with `id` matching the tab's `aria-controls`; the active tabpanel has `tabIndex={0}` so it is reachable by keyboard focus.
+- Tab panel `id` values are generated with `useId()` (React 18+) to guarantee uniqueness if multiple `RightPanel` instances ever exist simultaneously (e.g. future multi-route layout). **Do not use hardcoded string IDs.**
 
 #### JSX structure
 
 ```tsx
+// At the top of RightPanel — derive stable, unique IDs
+const uid = useId();                        // React 18 — import { useId } from 'react'
+const payloadPanelId = `${uid}-tab-payload`;
+const previewPanelId = `${uid}-tab-preview`;
+
 <div className={styles.rightPanel}>
   {/* Tab strip */}
   <div className={styles.tabStrip} role="tablist" aria-label="Right panel tabs">
     <button
       role="tab"
       aria-selected={activeTab === 'payload'}
-      aria-controls="tab-payload"
+      aria-controls={payloadPanelId}
       className={`${styles.tab} ${activeTab === 'payload' ? styles.tabActive : ''}`}
       onClick={() => setActiveTab('payload')}
     >
@@ -198,7 +222,7 @@ The active tab is **not persisted** to `localStorage`. The user's last tab choic
     <button
       role="tab"
       aria-selected={activeTab === 'preview'}
-      aria-controls="tab-preview"
+      aria-controls={previewPanelId}
       className={`${styles.tab} ${activeTab === 'preview' ? styles.tabActive : ''}`}
       onClick={() => setActiveTab('preview')}
     >
@@ -209,15 +233,17 @@ The active tab is **not persisted** to `localStorage`. The user's last tab choic
 
   {/* Tab bodies — always mounted, hidden via CSS */}
   <div
-    id="tab-payload"
+    id={payloadPanelId}
     role="tabpanel"
+    tabIndex={activeTab === 'payload' ? 0 : -1}
     className={`${styles.tabBody} ${activeTab !== 'payload' ? styles.tabBodyHidden : ''}`}
   >
     <PayloadEditor payload={payload} onChange={onChange} validation={validation} onFormat={onFormat} />
   </div>
   <div
-    id="tab-preview"
+    id={previewPanelId}
     role="tabpanel"
+    tabIndex={activeTab === 'preview' ? 0 : -1}
     className={`${styles.tabBody} ${activeTab !== 'preview' ? styles.tabBodyHidden : ''}`}
   >
     <MarkdownPreview message={previewMessage} />
@@ -335,9 +361,6 @@ interface MarkdownPreviewProps {
 export default function MarkdownPreview({ message }: MarkdownPreviewProps) {
   return (
     <div className={styles.previewRoot}>
-      <div className={styles.previewHeader}>
-        <span className={styles.previewTitle}>Markdown Preview</span>
-      </div>
       <div className={styles.previewBody}>
         {message === null ? (
           <div className={styles.emptyPreview}>
@@ -358,6 +381,8 @@ export default function MarkdownPreview({ message }: MarkdownPreviewProps) {
 }
 ```
 
+> **No header row in `MarkdownPreview`:** The component is already inside a tab labelled "Markdown Preview" — a duplicate title header would take vertical space without providing information or controls. If a future iteration adds actions (e.g. copy-to-clipboard), a header row can be introduced at that point.
+
 #### 4.3.1 Empty-state copy
 
 > "No preview yet. Send a command and click a plain-text message in the Console to pin it here, or wait for the first text response to appear automatically."
@@ -373,23 +398,6 @@ export default function MarkdownPreview({ message }: MarkdownPreviewProps) {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  padding: 0.75rem;
-}
-
-/* Header row — mirrors Console's .consoleHeader style */
-.previewHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-color);
-  flex: 0 0 auto;
-}
-
-.previewTitle {
-  font-weight: 600;
-  color: var(--text-primary);
 }
 
 /* Scrollable body */
@@ -546,19 +554,21 @@ export default function MarkdownPreview({ message }: MarkdownPreviewProps) {
 
 **File:** `src/components/Console/ConsoleMessage.tsx` — **modified**
 
-Add an optional `onPin?: (raw: string) => void` prop. When present, the message row becomes clickable and shows a pin affordance on hover.
+Add optional `onPin` and `pinned` props. When `onPin` is present, rows that pass `isMarkdownCandidate(message)` become clickable.
 
 ```ts
 interface ConsoleMessageProps {
   message: string;
-  raw:     string;          // NEW — the original raw string passed alongside parsed message
-  onPin?:  (raw: string) => void;  // NEW — called when the row is clicked
-  pinned?: boolean;         // NEW — true when this message is the currently pinned one
+  onPin?:  (message: string) => void;  // NEW — called when the row is clicked
+  pinned?: boolean;                     // NEW — true when this message is the currently pinned one
 }
 ```
 
-> **Why add `raw` as a separate prop?**  
-> `ConsoleMessage` currently only receives `message` (the post-parse `.message` field). `onPin` must pass back the **original raw WebSocket string** (not the parsed `.message`) because `resolvedPreviewMessage` in `Playground` is derived from `msg.raw` — passing the parsed field would break the round-trip. Rather than re-parsing inside `ConsoleMessage`, `Console` passes `raw={msg.raw}` alongside `message={msg.raw}`. This is a deliberate redundancy that keeps the interfaces honest and avoids re-parsing.
+> **Why no separate `raw` prop?**  
+> `Console` passes `message={msg.raw}` — the original unprocessed WebSocket string — directly to `ConsoleMessage`. Since `message` is already the raw string, a separate `raw` prop would always be identical to `message`. `onPin` calls `onPin(message)` — no re-parsing, no round-trip risk.
+
+> **Lifecycle events are not pinnable — design note:**  
+> A lifecycle message (e.g. `{"type":"info","message":"Hello","time":"..."}`) renders as plain text in the Console (the extracted `parsed.message` field) but `isMarkdownCandidate(message)` returns `false` for it because `message` is the JSON envelope and its `type` field marks it as a lifecycle event. The row will not be pinnable. This is correct by design — lifecycle events are infrastructure noise, not renderable content. They are visually distinguished by icon (ℹ️ / ❌ / 🔄 / 👋) and color so users can identify them even without a click affordance.
 
 **Updated row JSX** (inside `ConsoleMessage`):
 
@@ -570,14 +580,14 @@ interface ConsoleMessageProps {
     ${onPin ? styles.consoleMessagePinnable : ''}
     ${pinned ? styles.consoleMessagePinned : ''}
   `}
-  onClick={onPin && isMarkdownCandidate(raw) ? () => onPin(raw) : undefined}
-  title={onPin && isMarkdownCandidate(raw) ? 'Click to pin to Markdown Preview' : undefined}
-  role={onPin && isMarkdownCandidate(raw) ? 'button' : undefined}
-  tabIndex={onPin && isMarkdownCandidate(raw) ? 0 : undefined}
-  onKeyDown={onPin && isMarkdownCandidate(raw)
-    ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin(raw); } }
+  onClick={onPin && isMarkdownCandidate(message) ? () => onPin(message) : undefined}
+  title={onPin && isMarkdownCandidate(message) ? 'Click to pin to Markdown Preview' : undefined}
+  role={onPin && isMarkdownCandidate(message) ? 'button' : undefined}
+  tabIndex={onPin && isMarkdownCandidate(message) ? 0 : undefined}
+  onKeyDown={onPin && isMarkdownCandidate(message)
+    ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin(message); } }
     : undefined}
-  aria-label={onPin && isMarkdownCandidate(raw) ? 'Pin to Markdown Preview' : undefined}
+  aria-label={onPin && isMarkdownCandidate(message) ? 'Pin to Markdown Preview' : undefined}
   aria-pressed={pinned}
 >
   {/* existing icon / content / time structure unchanged */}
@@ -588,9 +598,21 @@ interface ConsoleMessageProps {
 import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate } from '../../utils/messageParser';
 ```
 
-**New CSS rules to add to `Console.module.css`:**
+**CSS changes to `Console.module.css`:**
 
+Replace the existing base hover rule and append the new pinnable/pinned rules. The existing rule:
 ```css
+.consoleMessage:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+```
+must be **replaced** with a scoped version that only applies to non-pinnable rows, to prevent a specificity race:
+```css
+/* Base hover — only for non-pinnable rows */
+.consoleMessage:not(.consoleMessagePinnable):hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
 /* Pinnable message row — pointer cursor + hover highlight */
 .consoleMessagePinnable {
   cursor: pointer;
@@ -624,20 +646,21 @@ Add two props:
 ```ts
 interface ConsoleProps {
   // ...existing props unchanged...
-  onPinMessage?:  (raw: string) => void;  // NEW — forwarded to each ConsoleMessage
-  pinnedMessage?: string | null;          // NEW — used to mark the pinned row
+  onPinMessage?:  (message: string) => void;  // NEW — forwarded to each ConsoleMessage
+  pinnedMessage?: string | null;               // NEW — used to mark the pinned row
 }
 ```
 
-Pass through to each `ConsoleMessage`:
+Pass through to each `ConsoleMessage`. The `ConsoleErrorBoundary` wrapping is **unchanged** — it still receives `fallback={msg.raw}` and requires no modification.
 
 ```tsx
-<ConsoleMessage
-  message={msg.raw}
-  raw={msg.raw}
-  onPin={onPinMessage}
-  pinned={pinnedMessage === msg.raw}
-/>
+<ConsoleErrorBoundary key={msg.id} fallback={msg.raw}>
+  <ConsoleMessage
+    message={msg.raw}
+    onPin={onPinMessage}
+    pinned={pinnedMessage === msg.raw}
+  />
+</ConsoleErrorBoundary>
 ```
 
 ---
@@ -651,8 +674,8 @@ Add two props and pass them to `Console`:
 ```ts
 interface LeftPanelProps {
   // ...existing props unchanged...
-  onPinMessage?:  (raw: string) => void;  // NEW
-  pinnedMessage?: string | null;          // NEW
+  onPinMessage?:  (message: string) => void;  // NEW
+  pinnedMessage?: string | null;               // NEW
 }
 ```
 
@@ -728,7 +751,7 @@ to:
 />
 ```
 
-**Remove from `Playground.module.css`:** the `.rightPanelContent` rule is no longer needed — `RightPanel` owns that flex-column wrapper.
+**Remove from `Playground.module.css`:** the `.rightPanelContent` rule is no longer needed — `RightPanel` owns that flex-column wrapper. Before deleting, run `grep -r "rightPanelContent" src/` to confirm the class is referenced only in `Playground.module.css` and `Playground.tsx`.
 
 ---
 
@@ -753,8 +776,8 @@ Playground
 │           pinnedMessage={pinnedMessage}
 │         />
 │           └── <ConsoleMessage
-│                 raw={msg.raw}
-│                 onPin={onPinMessage}     ← click calls setPinnedMessage(raw)
+│                 message={msg.raw}
+│                 onPin={onPinMessage}     ← click calls setPinnedMessage(message)
 │                 pinned={pinnedMessage === msg.raw}
 │               />
 │
@@ -781,6 +804,8 @@ npm install react-markdown@^10 remark-gfm@^4
 
 > **Why v10 of `react-markdown`?** v10 is the current stable release, ESM-only — compatible with Vite 6 and the project's `"type": "module"` package. The only breaking change from v9 is removal of the `className` prop on `<Markdown>` itself; the spec wraps output in a `<div className={styles.previewRoot}>` instead, which is already the correct pattern.
 
+> **Types are bundled — no `@types/` packages needed.** `react-markdown` has shipped its own TypeScript declarations since v6; `remark-gfm` does the same. Do not search for `@types/react-markdown` or `@types/remark-gfm` — they do not exist.
+
 ---
 
 ## 7. File Structure
@@ -798,7 +823,7 @@ src/
       MarkdownPreview.module.css ← NEW
     Console/
       Console.tsx              ← MODIFIED (onPinMessage, pinnedMessage props)
-      ConsoleMessage.tsx       ← MODIFIED (raw, onPin, pinned props; pin interaction)
+      ConsoleMessage.tsx       ← MODIFIED (onPin, pinned props; pin interaction)
       Console.module.css       ← MODIFIED (pinnable/pinned row styles)
     LeftPanel/
       LeftPanel.tsx            ← MODIFIED (onPinMessage, pinnedMessage props)
@@ -814,7 +839,7 @@ src/
 | Requirement | Implementation |
 |---|---|
 | Tab strip keyboard navigation | `role="tablist"` / `role="tab"` / `aria-selected` / `aria-controls` on tab strip in `RightPanel` |
-| Tab body identity | `role="tabpanel"` with `id` matching tab's `aria-controls`; `tabIndex={0}` on active panel |
+| Tab body identity | `role="tabpanel"` with `id` from `useId()` matching tab's `aria-controls`; `tabIndex={0}` on active panel, `tabIndex={-1}` on inactive panel |
 | Pinnable message rows | `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Space) on pinnable `ConsoleMessage` rows |
 | Pinned row state | `aria-pressed={pinned}` on pinnable row (toggle button semantics) |
 | Markdown Preview tab badge | `aria-label="Message pinned"` on `📌` badge span |
@@ -835,7 +860,9 @@ src/
 
 ## 10. Pre-existing Code Notes
 
-- `ConsoleMessage.tsx` currently receives only `message: string` (the post-parse `.message` field). After this change it receives both `message` and `raw`. The caller (`Console.tsx`) passes both as `message={msg.raw}` and `raw={msg.raw}`. This is correct — `msg.raw` is both the original string and the display string for non-lifecycle messages.
+- `ConsoleMessage.tsx` currently receives only `message: string`. After this change it also receives `onPin` and `pinned`. `Console.tsx` passes `message={msg.raw}` — the original unprocessed WebSocket string — directly; no separate `raw` prop is needed because `message` is already the raw value.
 - `PayloadEditor` is unchanged and moves to rendering inside `RightPanel` with identical props. The `PayloadEditor` import moves from `Playground.tsx` to `RightPanel.tsx`.
-- `Playground.module.css` loses `.rightPanelContent` — that rule's job (flex column, height 100%, overflow hidden) is taken over by `RightPanel.module.css`'s `.rightPanel` rule.
+- **`.rightPanelContent` deletion — verify before removing:** Before deleting the `.rightPanelContent` rule from `Playground.module.css`, confirm no other file references it: `grep -r "rightPanelContent" src/`. The rule is expected to appear only in `Playground.module.css` and `Playground.tsx`; both references are removed by this spec. Delete only after the grep confirms this.
+- **`.tabBody` is a sufficient height context for `PayloadEditor`:** `PayloadEditor.module.css`'s `.payloadRoot` uses `height: 100%`. The new parent is `.tabBody` (`flex: 1 1 0; display: flex; flex-direction: column`), which is itself a child of `.rightPanel` (`height: 100%`). This flex chain provides the resolved height that `height: 100%` on `.payloadRoot` resolves against — no layout change is needed in `PayloadEditor`.
 - The `react-markdown` package is ESM-only since v7. Vite handles ESM natively — no special Vite config required.
+- `ConsoleErrorBoundary` in `Console.tsx` is **unchanged** — it continues to wrap each `ConsoleMessage` with `fallback={msg.raw}`. The new `onPin` / `pinned` props on `ConsoleMessage` do not affect the boundary.
