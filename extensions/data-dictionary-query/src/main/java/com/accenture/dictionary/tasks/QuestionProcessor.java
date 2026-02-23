@@ -40,7 +40,6 @@ import java.util.concurrent.ExecutionException;
 public class QuestionProcessor extends DictionaryLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(QuestionProcessor.class);
     private static final Utility util = Utility.getInstance();
-    private static final DataMappingHelper helper = DataMappingHelper.getInstance();
 
     @SuppressWarnings("unchecked")
     @Override

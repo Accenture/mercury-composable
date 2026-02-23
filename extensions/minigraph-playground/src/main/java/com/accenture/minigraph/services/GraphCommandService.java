@@ -1,7 +1,9 @@
 package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
+import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.skills.GraphJs;
+import com.jayway.jsonpath.InvalidPathException;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.EventEnvelope;
@@ -17,8 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @PreLoad(route = GraphCommandService.ROUTE, instances=10)
@@ -44,7 +46,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var po = new PostOffice(headers, instance);
         try {
             handleCommand(po, input);
-        } catch (IllegalArgumentException | IOException | ExecutionException e) {
+        } catch (IllegalArgumentException | IOException | InvalidPathException e) {
             if (input.get(OUT) instanceof String outRoute) {
                 po.send(new EventEnvelope().setTo(outRoute).setBody("ERROR: "+e.getMessage()));
             }
@@ -53,7 +55,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleCommand(PostOffice po, Map<String, Object> input)
-            throws IOException, ExecutionException {
+            throws IOException {
         var type = input.get(TYPE);
         var in = input.get(IN);
         var out = input.get(OUT);
@@ -99,6 +101,8 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() > 2 && words.getFirst().equalsIgnoreCase("execute")
                 && words.get(1).equalsIgnoreCase(NODE)) {
             handleExecuteCommand(po, inRoute, outRoute, words.get(2));
+        } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("inspect")) {
+            handleInspectCommand(po, inRoute, outRoute, words.get(1));
         } else {
             handleMoreCommand(po, inRoute, outRoute, words);
         }
@@ -122,24 +126,44 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
+    private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
+        var instance = graphInstances.get(inRoute);
+        if (instance == null) {
+            throw new IllegalArgumentException("Graph not instantiated");
+        }
+        var value = instance.stateMachine.getElement(key, "null");
+        po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "result", value)));
+    }
+
     private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, String nodeName) {
-        var graph = graphModels.get(inRoute);
-        if (graph != null) {
-            var node = graph.findNodeByAlias(nodeName);
-            if (node == null) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName + NOT_FOUND);
-            }
-            var skill = node.getProperties().get(SKILL);
-            if (skill == null) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName+" does not have a skill property");
-            }
-            var skillRoute = String.valueOf(skill);
-            if (po.exists(skillRoute)) {
-                po.send(new EventEnvelope().setTo(skillRoute).setHeader(IN, inRoute).setHeader(OUT, outRoute)
-                        .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName));
-            } else {
-                throw new IllegalArgumentException(NODE_NAME+" is invalid - Skill '"+skill+"' does not exist");
-            }
+        var graphInstance = graphInstances.get(inRoute);
+        if (graphInstance == null) {
+            throw new IllegalArgumentException("Graph not instantiated");
+        }
+        var graph = graphInstance.graph;
+        var ttl = util.str2int(String.valueOf(graphInstance.stateMachine.getElement("model.ttl", "10")));
+        var timeout = Math.max(5, ttl) * 1000L;
+        var node = graph.findNodeByAlias(nodeName);
+        if (node == null) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + NOT_FOUND);
+        }
+        var skill = node.getProperties().get(SKILL);
+        if (skill == null) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have a skill property");
+        }
+        var skillRoute = String.valueOf(skill);
+        if (po.exists(skillRoute)) {
+            po.eRequest(new EventEnvelope().setTo(skillRoute)
+                        .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)
+                    .thenAccept(response -> {
+                        if (response.hasError()) {
+                            po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
+                        } else {
+                            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " executed"));
+                        }
+                    });
+        } else {
+            throw new IllegalArgumentException(NODE_NAME+" is invalid - Skill '"+skill+"' does not exist");
         }
     }
 
@@ -266,8 +290,75 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() > 2 && "update".equalsIgnoreCase(words.getFirst()) &&
                 NODE.equalsIgnoreCase(words.get(1))) {
             handleUpdateNode(po, inRoute, outRoute, words.get(2), lines);
+        } else if (words.size() == 2 && "instantiate".equalsIgnoreCase(words.getFirst())
+                && GRAPH.equalsIgnoreCase(words.get(1))) {
+            handleInstantiateGraph(po, inRoute, outRoute, lines);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+        }
+    }
+
+    private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
+        if (lines.size() < 3) {
+            throw new IllegalArgumentException("To instantiate graph, there must be at least one data mapping entry");
+        }
+        var parts = util.split(lines.get(1).toLowerCase(), " ");
+        if (parts.size() == 3
+                && "with".equals(parts.getFirst()) && "data".equals(parts.get(1)) && "mapping".equals(parts.get(2))) {
+            var graph = graphModels.get(inRoute);
+            if (graph != null) {
+                var instance = new GraphInstance();
+                instance.graph.importGraph(graph.exportGraph());
+                // map node properties to state machine
+                var nodes = instance.graph.getNodes();
+                for (var node: nodes) {
+                    var name = node.getAlias();
+                    var properties = node.getProperties();
+                    instance.stateMachine.setElement(name, properties);
+                }
+                log.info("Instantiate graph with {} nodes", nodes.size());
+                // perform data mapping
+                var count =  new AtomicInteger(0);
+                for (int i=2; i < lines.size(); i++) {
+                    doInitialDataMapping(lines, i, instance, count);
+                }
+                graphInstances.put(inRoute, instance);
+                po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Mapped "+
+                        count.get()+" "+ (count.get() == 1? "entry" : "entries")));
+            }
+        } else {
+            throw new IllegalArgumentException("The second line must be 'with data mapping'");
+        }
+    }
+
+    private void doInitialDataMapping(List<String> lines, int i, GraphInstance instance, AtomicInteger count) {
+        var root = instance.graph.getRootNode();
+        if (root == null) {
+            throw new IllegalArgumentException("Did you forget to create a root node?");
+        }
+        var end = instance.graph.getEndNode();
+        if (end == null) {
+            throw new IllegalArgumentException("Did you forget to create an end node?");
+        }
+        var line = lines.get(i);
+        var sep = line.indexOf(MAP_TO);
+        if (sep == -1) {
+            throw new IllegalArgumentException("Invalid data mapping entry. e.g. 'source -> target'");
+        }
+        var lhs = line.substring(0, sep).trim();
+        var rhs = line.substring(sep + MAP_TO.length()).trim();
+        var constant = helper.getConstantValue(lhs);
+        if (constant != null) {
+            if (rhs.startsWith(INPUT_HEADER_NAMESPACE) || rhs.startsWith(INPUT_BODY_NAMESPACE) ||
+                    rhs.startsWith(MODEL_NAMESPACE)) {
+                instance.stateMachine.setElement(rhs, constant);
+                count.incrementAndGet();
+            } else {
+                throw new IllegalArgumentException("RHS must use input.body, input.header" +
+                        " or model namespace. Actual: "+rhs);
+            }
+        } else {
+            throw new IllegalArgumentException("LHS '"+lhs+"' does not resolve to a value");
         }
     }
 
