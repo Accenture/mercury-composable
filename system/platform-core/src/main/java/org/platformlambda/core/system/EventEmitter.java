@@ -915,7 +915,7 @@ public class EventEmitter {
     /**
      * This method allows your app to send an RPC request to another application instance
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      * <p>
      *     Note that timeout is returned as a regular event with status=408
      *
@@ -1113,7 +1113,7 @@ public class EventEmitter {
     /**
      * Future request API for RPC
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param event to the target
      * @param timeout in milliseconds
@@ -1143,7 +1143,7 @@ public class EventEmitter {
     /**
      * Future request API for RPC
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param input event to the target
      * @param timeout in milliseconds
@@ -1274,7 +1274,7 @@ public class EventEmitter {
     /**
      * Future request API for sending parallel requests (Fork-n-join)
      * <p>
-     * You can retrieve results using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve results using future.get() or future.thenAccept(evt -> f)
      *
      * @param events list of envelopes
      * @param timeout in milliseconds. If timeout, throws TimeoutException
@@ -1306,7 +1306,7 @@ public class EventEmitter {
     /**
      * Future request API for sending parallel requests (Fork-n-join)
      * <p>
-     * You can retrieve results using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve results using future.get() or future.thenAccept(evt -> f)
      *
      * @param events list of envelopes
      * @param timeout in milliseconds

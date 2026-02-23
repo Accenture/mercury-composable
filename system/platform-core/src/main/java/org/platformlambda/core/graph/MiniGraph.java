@@ -39,7 +39,9 @@ public class MiniGraph {
     private static final String NODE_PREFIX = "nodes[";
     private static final String CONNECTION_PREFIX = "connections[";
     private static final String ROOT = "root";
-    private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result", "parameter");
+    private static final String END = "end";
+    private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result",
+                                                            "parameter", "none");
     private static final Utility util = Utility.getInstance();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();
@@ -49,6 +51,7 @@ public class MiniGraph {
     private final AtomicInteger nodeCount = new AtomicInteger();
     private final int maxNodes;
     private SimpleNode rootNode;
+    private SimpleNode endNode;
 
     /**
      * Create a mini-graph instance with default maximum of 500 nodes
@@ -329,8 +332,20 @@ public class MiniGraph {
         }
     }
 
+    public SimpleNode createEndNode() {
+        if (endNode == null) {
+            return createNode(END, END);
+        } else {
+            return endNode;
+        }
+    }
+
     public SimpleNode getRootNode() {
         return findNodeByAlias(ROOT);
+    }
+
+    public SimpleNode getEndNode() {
+        return findNodeByAlias(END);
     }
 
     /**

@@ -427,7 +427,7 @@ public class PostOffice {
     /**
      * Send an RPC request with a future result
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param event to be sent to a peer application instance
      * @param timeout to abort the request
@@ -498,7 +498,7 @@ public class PostOffice {
     /**
      * Future request API for RPC
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param event to the target
      * @param timeout in milliseconds
@@ -529,7 +529,7 @@ public class PostOffice {
     /**
      * Future request API for RPC
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param event to the target
      * @param timeout in milliseconds
@@ -601,7 +601,7 @@ public class PostOffice {
     /**
      * Future request API for sending parallel requests with a future result
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param events list of envelopes
      * @param timeout in milliseconds
@@ -634,7 +634,7 @@ public class PostOffice {
     /**
      * Future request API for sending parallel requests with a future result
      * <p>
-     * You can retrieve result using future.get() or future.nextAccept(evt -> f)
+     * You can retrieve result using future.get() or future.thenAccept(evt -> f)
      *
      * @param events list of envelopes
      * @param timeout in milliseconds

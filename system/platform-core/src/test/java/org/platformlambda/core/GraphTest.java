@@ -87,9 +87,17 @@ class GraphTest {
         // removing node-D will remove its forward and backward connections. node-E becomes an orphan.
         graph.removeNode("D");
         validatePath3(graph);
+        validateEndNode(graph);
+        graph.reset();
+    }
+
+    private void validateEndNode(MiniGraph graph) {
         var rootNode = graph.getRootNode();
         assertEquals(Set.of("root", "hello"), rootNode.getTypes());
-        graph.reset();
+        var end = graph.createEndNode();
+        assertEquals("end", end.getAlias());
+        var last = graph.getEndNode();
+        assertEquals(end, last);
     }
 
     private MiniGraph getGraphWithRootNode() {
@@ -360,9 +368,9 @@ class GraphTest {
         var node = graph.createNode("hello", "world");
         var ex1 = assertThrows(IllegalArgumentException.class, () -> node.addType("hello.world"));
         assertEquals("Invalid syntax (hello.world). " +
-                "Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case", ex1.getMessage());
+                "Please use 0-9, A-Z, a-z, underscore and hyphen characters.", ex1.getMessage());
         var ex2 = assertThrows(IllegalArgumentException.class, () -> node.addProperty("my.key", "someValue"));
         assertEquals("Invalid syntax (my.key). " +
-                "Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case", ex2.getMessage());
+                "Please use 0-9, A-Z, a-z, underscore and hyphen characters.", ex2.getMessage());
     }
 }

@@ -319,10 +319,10 @@ public class ConfigReader implements ConfigBase {
         }
         final InputStream in = path.startsWith(FILEPATH)?
                                 fromFilePath(path, alternativePath) : fromClasspath(path, alternativePath);
+        if (in == null) {
+            throw new IllegalArgumentException(path + " not found");
+        }
         try (in) {
-            if (in == null) {
-                throw new IllegalArgumentException(path + " not found");
-            }
             if (isYaml) {
                 Utility util = Utility.getInstance();
                 Yaml yaml = new Yaml();

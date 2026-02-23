@@ -24,6 +24,7 @@ import com.accenture.dictionary.loaders.QuestionSpecsLoader;
 import com.accenture.dictionary.models.DataDictionary;
 import com.accenture.dictionary.models.DataProvider;
 import com.accenture.dictionary.models.QuestionSpecs;
+import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.AppConfigReader;
@@ -43,6 +44,7 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
     private static final Logger log = LoggerFactory.getLogger(DictionaryLambdaFunction.class);
     private static final Utility util = Utility.getInstance();
     private static final ConcurrentMap<String, String> targetServiceStore = new ConcurrentHashMap<>();
+    protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
     protected static final ConcurrentMap<String, QuestionSpecs> questionStore = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, DataDictionary> dataDictStore = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, DataProvider> providerStore = new ConcurrentHashMap<>();
@@ -73,13 +75,21 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
     protected static final String PATH_PARAMETER = "path_parameter.";
     protected static final String ASYNC_HTTP_CLIENT = "async.http.request";
 
+    private ConfigReader getSpecs(String specPath) {
+        try {
+            return new ConfigReader(specPath+".json");
+        } catch (IllegalArgumentException e) {
+            return new ConfigReader(specPath + ".yml");
+        }
+    }
+
     protected QuestionSpecs getQuestionSpecs(String questionId) {
         var result = questionStore.get(questionId);
         if (result == null) {
             var specs = getSpecPath("location.questions", questionId);
             final ConfigReader config;
             try {
-                config = new ConfigReader(specs);
+                config = getSpecs(specs);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Question '"+questionId+"' not found");
             }
@@ -99,7 +109,7 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
             var specs = getSpecPath("location.data.dictionary", dataId);
             final ConfigReader config;
             try {
-                config = new ConfigReader(specs);
+                config = getSpecs(specs);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Data dictionary item '"+dataId+"' not found");
             }
@@ -117,12 +127,12 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
         var result = providerStore.get(providerId);
         if (result == null) {
             var filename = providerId.replace("://", "-");
-            var specs =getSpecPath("location.data.provider", filename);
+            var specs = getSpecPath("location.data.provider", filename);
             final ConfigReader config;
             try {
-                config = new ConfigReader(specs);
+                config = getSpecs(specs);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Data provider '"+providerId+"' not found");
+                throw new IllegalArgumentException("Data provider '"+providerId+"' not found. Did you configure "+filename);
             }
             var loader = ProviderLoader.getInstance();
             var p = loader.loadProvider(providerId, config);
@@ -134,10 +144,10 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
         }
     }
 
-    protected String getSpecPath(String location, String questionId) {
+    protected String getSpecPath(String location, String name) {
         var config = AppConfigReader.getInstance();
-        var folder = config.getProperty(location, "file:/tmp/questions");
-        return folder + "/" + questionId + ".yml";
+        var folder = config.getProperty(location, "file:/tmp/specs");
+        return folder + "/" + name;
     }
 
     protected void mapHttpInput(AsyncHttpRequest request, Map<String, Object> input, DataProvider provider) {
@@ -148,7 +158,7 @@ public abstract class DictionaryLambdaFunction implements TypedLambdaFunction<Ma
             if (sep != -1) {
                 var lhs = entry.substring(0, sep).trim();
                 var rhs = entry.substring(sep + ARROW.length()).trim();
-                var value = mm.getElement(lhs);
+                var value = helper.getLhsOrConstant(lhs, mm);
                 if (value != null) {
                     if (rhs.startsWith(PATH_PARAMETER)) {
                         var key = rhs.substring(PATH_PARAMETER.length()).trim();

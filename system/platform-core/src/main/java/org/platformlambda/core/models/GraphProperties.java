@@ -49,7 +49,7 @@ public abstract class GraphProperties {
     protected void validateName(String name) {
         if (!validFormat(name)) {
             throw new IllegalArgumentException("Invalid syntax (" + name +
-                    "). Please use 0-9, A-Z, a-z and underscore characters. i.e. camelCase or snake_case");
+                        "). Please use 0-9, A-Z, a-z, underscore and hyphen characters.");
         }
     }
 
@@ -59,7 +59,7 @@ public abstract class GraphProperties {
             if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') ||
                     (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
                     (str.charAt(i) >= 'A' && str.charAt(i) <= 'Z') ||
-                    str.charAt(i) == '_' )) {
+                    str.charAt(i) == '_' || str.charAt(i) == '-' )) {
                 return false;
             }
         }

@@ -40,7 +40,6 @@ import java.util.concurrent.ExecutionException;
 public class QuestionProcessor extends DictionaryLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(QuestionProcessor.class);
     private static final Utility util = Utility.getInstance();
-    private static final DataMappingHelper helper = DataMappingHelper.getInstance();
 
     @SuppressWarnings("unchecked")
     @Override
@@ -335,7 +334,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             }
             var lhs = entry.substring(0, sep).trim();
             var rhs = entry.substring(sep+ARROW.length()).trim();
-            var value = helper.getLhsOrConstant(lhs, entry.startsWith("$") ||
+            var value = helper.getLhsOrConstant(lhs, entry.startsWith("$") || entry.equals(RESPONSE) ||
                         entry.startsWith(RESPONSE_NAMESPACE) || entry.startsWith(RESPONSE_INDEX)? mm : dataset);
             mapResponseToResult(rhs, entry, dataset, mm, value);
         }
