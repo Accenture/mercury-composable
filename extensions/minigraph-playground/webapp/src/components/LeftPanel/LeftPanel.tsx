@@ -11,6 +11,8 @@ interface LeftPanelProps {
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
+  onPinMessage?:      (message: string) => void;
+  pinnedMessage?:     string | null;
   // CommandInput props
   command:            string;
   onCommandChange:    (value: string) => void;
@@ -24,6 +26,7 @@ interface LeftPanelProps {
 
 export default function LeftPanel({
   messages, autoScroll, onToggleAutoScroll, onCopy, onClear, consoleRef,
+  onPinMessage, pinnedMessage,
   command, onCommandChange, onCommandKeyDown, onSend,
   sendDisabled, inputDisabled, multiline, onToggleMultiline,
 }: LeftPanelProps) {
@@ -36,6 +39,8 @@ export default function LeftPanel({
         onCopy={onCopy}
         onClear={onClear}
         consoleRef={consoleRef}
+        onPinMessage={onPinMessage}
+        pinnedMessage={pinnedMessage}
       />
       <CommandInput
         command={command}

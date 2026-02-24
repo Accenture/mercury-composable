@@ -9,7 +9,8 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import ConnectionBar from './ConnectionBar/ConnectionBar';
-import PayloadEditor from './PayloadEditor/PayloadEditor';
+import { isMarkdownCandidate } from '../utils/messageParser';
+import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { type PlaygroundConfig } from '../config/playgrounds';
 
@@ -38,6 +39,20 @@ export default function Playground({ config }: PlaygroundProps) {
   // All WebSocket + console logic lives in the hook
   const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast });
 
+  // Pinned message state (null = no explicit pin; falls back to auto-last)
+  const [pinnedMessage, setPinnedMessage] = useState<string | null>(null);
+
+  // Auto-last: most recently received non-JSON message
+  const lastNonJsonMessage = useMemo<string | null>(() => {
+    for (let i = ws.messages.length - 1; i >= 0; i--) {
+      if (isMarkdownCandidate(ws.messages[i].raw)) return ws.messages[i].raw;
+    }
+    return null;
+  }, [ws.messages]);
+
+  // Shown in MarkdownPreview — pinnedMessage wins; falls back to auto-last
+  const resolvedPreviewMessage = pinnedMessage ?? lastNonJsonMessage;
+
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -50,6 +65,11 @@ export default function Playground({ config }: PlaygroundProps) {
   const handleConnect = () => ws.connect();
 
   const handleFormatPayload = () => setPayload(formatJSON(payload));
+
+  const handleClearMessages = () => {
+    ws.clearMessages();
+    setPinnedMessage(null);
+  };
 
   return (
     <div className={styles.wrapper}>
@@ -80,7 +100,7 @@ export default function Playground({ config }: PlaygroundProps) {
             autoScroll={ws.autoScroll}
             onToggleAutoScroll={ws.toggleAutoScroll}
             onCopy={ws.copyMessages}
-            onClear={ws.clearMessages}
+            onClear={handleClearMessages}
             consoleRef={ws.consoleRef}
             command={ws.command}
             onCommandChange={ws.setCommand}
@@ -90,18 +110,20 @@ export default function Playground({ config }: PlaygroundProps) {
             inputDisabled={!ws.connected}
             multiline={multiline}
             onToggleMultiline={() => setMultiline(m => !m)}
+            onPinMessage={setPinnedMessage}
+            pinnedMessage={pinnedMessage}
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />
         <Panel defaultSize="40%" minSize="20%">
-          <div className={styles.rightPanelContent}>
-            <PayloadEditor
-              payload={payload}
-              onChange={setPayload}
-              validation={payloadValidation}
-              onFormat={handleFormatPayload}
-            />
-          </div>
+          <RightPanel
+            payload={payload}
+            onChange={setPayload}
+            validation={payloadValidation}
+            onFormat={handleFormatPayload}
+            previewMessage={resolvedPreviewMessage}
+            pinnedMessage={pinnedMessage}
+          />
         </Panel>
       </Group>
     </div>

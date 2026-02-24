@@ -9,9 +9,11 @@ interface ConsoleProps {
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
+  onPinMessage?:      (message: string) => void;
+  pinnedMessage?:     string | null;
 }
 
-export default function Console({ messages, autoScroll, onToggleAutoScroll, onCopy, onClear, consoleRef }: ConsoleProps) {
+export default function Console({ messages, autoScroll, onToggleAutoScroll, onCopy, onClear, consoleRef, onPinMessage, pinnedMessage }: ConsoleProps) {
   return (
     <div className={styles.consoleRoot}>
       <div className={styles.consoleHeader}>
@@ -47,7 +49,11 @@ export default function Console({ messages, autoScroll, onToggleAutoScroll, onCo
       <div className={styles.console} ref={consoleRef} role="log" aria-live="polite">
         {messages.map((msg) => (
           <ConsoleErrorBoundary key={msg.id} fallback={msg.raw}>
-            <ConsoleMessage message={msg.raw} />
+            <ConsoleMessage
+              message={msg.raw}
+              onPin={onPinMessage}
+              pinned={pinnedMessage === msg.raw}
+            />
           </ConsoleErrorBoundary>
         ))}
         {messages.length === 0 && (

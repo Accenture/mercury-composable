@@ -44,10 +44,3 @@
   background: rgba(37, 99, 235, 0.4);
 }
 
-/* ── Right panel bare wrapper ────────────────────────────────────── */
-.rightPanelContent {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}

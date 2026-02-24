@@ -57,3 +57,30 @@ export const tryParseJSON = (str: string): JSONParseResult => {
   }
   return { isJSON: false, data: null };
 };
+
+/**
+ * Returns true when a raw WebSocket message string is a plain-text
+ * (non-JSON) candidate for Markdown rendering.
+ *
+ * A message is NOT a Markdown candidate if:
+ *  - it is a valid JSON object or array (handled by JsonView)
+ *  - it is a JSON-encoded lifecycle event ({ type, message, time })
+ *    i.e. tryParseJSON succeeds AND the parsed object has a "type" field
+ *
+ * Everything else — including multi-line text, Markdown syntax, XML snippets
+ * that are not valid JSON — is considered a Markdown candidate.
+ *
+ * Edge case — bare JSON primitives (e.g. "hello", 42, true):
+ *   tryParseJSON returns isJSON: false for primitives, so they fall through
+ *   to `return true` and are treated as Markdown candidates. This is accepted
+ *   as correct behaviour: the backend never sends bare primitives, and
+ *   rendering the raw string as Markdown is a safe fallback if it ever does.
+ *   Do NOT change tryParseJSON to accept primitives — that would break JsonView.
+ */
+export function isMarkdownCandidate(raw: string): boolean {
+  const result = tryParseJSON(raw);
+  if (!result.isJSON) return true;                             // not JSON at all → candidate
+  const obj = result.data as Record<string, unknown>;
+  if (typeof obj['type'] === 'string') return false;           // lifecycle event → not candidate
+  return false;                                                // any other JSON object/array → not candidate
+}
