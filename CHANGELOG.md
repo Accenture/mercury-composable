@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.69, 2/23/2026
+
+### Added
+
+Support "end" node in mini-graph
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Support both List and Map in websocket outgoing messages
+2. Improved data provider configuration management with support of constants and plugins in LHS
+
+---
 ## Version 4.3.68, 2/18/2026
 
 ### Added

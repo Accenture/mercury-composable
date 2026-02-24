@@ -5,6 +5,7 @@ import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,23 +19,12 @@ import org.graalvm.polyglot.Context;
 public class GraphJs extends GraphLambdaFunction {
     public static final String ROUTE = "graph.js";
     private static final Logger log = LoggerFactory.getLogger(GraphJs.class);
-    private static String skillDoc;
-
-    public GraphJs() throws IOException {
-        var filename = SKILL_PREFIX + GraphJs.ROUTE.replace('.', '-') + MARKDOWN_EXT;
-        try (var in = GraphJs.class.getResourceAsStream(filename)) {
-            GraphJs.skillDoc = in == null? "Did you forget to add "+filename+"?" : util.stream2str(in);
-        }
-    }
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws Exception {
         var type = headers.get(TYPE);
         if (JS.equals(type) && input.get(JS) instanceof String script) {
             return execute(script);
-        }
-        if (MARKDOWN.equals(type)) {
-            return GraphJs.skillDoc;
         }
         if (EXECUTE.equals(type)) {
             log.info("1--------{}", headers);

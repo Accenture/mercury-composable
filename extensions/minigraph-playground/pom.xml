@@ -5,7 +5,7 @@
 
     <groupId>com.accenture</groupId>
     <artifactId>minigraph-playground</artifactId>
-    <version>4.3.68</version>
+    <version>4.3.69</version>
     <packaging>jar</packaging>
     <name>JSON-Path Playground</name>
 
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.3.68</version>
+            <version>4.3.69</version>
         </dependency>
 
         <dependency>

@@ -25,6 +25,7 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,7 +34,6 @@ import java.util.Map;
  */
 @ZeroTracing
 public class WsServerTransmitter implements LambdaFunction {
-
     private final ServerWebSocket ws;
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
@@ -67,7 +67,7 @@ public class WsServerTransmitter implements LambdaFunction {
         if (input instanceof String str) {
             ws.writeTextMessage(str);
         }
-        if (input instanceof Map) {
+        if (input instanceof Map || input instanceof List) {
             ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
         }
     }

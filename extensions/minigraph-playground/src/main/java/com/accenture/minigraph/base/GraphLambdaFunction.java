@@ -20,9 +20,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String COMMAND = "command";
     protected static final String IN = "in";
     protected static final String OUT = "out";
+    protected static final String MAP_TO = "->";
+    protected static final String INPUT_BODY_NAMESPACE = "input.body";
+    protected static final String INPUT_HEADER_NAMESPACE = "input.header";
+    protected static final String MODEL_NAMESPACE = "model.";
+    protected static final String OUTPUT_NAMESPACE = "output.";
+    protected static final String OUTPUT_ARRAY = "output[";
     protected static final String MESSAGE = "message";
     protected static final String TYPE = "type";
-    protected static final String MARKDOWN = "markdown";
     protected static final String HELP_PREFIX = "/help/";
     protected static final String MARKDOWN_EXT = ".md";
     protected static final String TRIPLE_QUOTE = "'''";

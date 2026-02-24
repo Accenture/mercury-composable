@@ -87,9 +87,17 @@ class GraphTest {
         // removing node-D will remove its forward and backward connections. node-E becomes an orphan.
         graph.removeNode("D");
         validatePath3(graph);
+        validateEndNode(graph);
+        graph.reset();
+    }
+
+    private void validateEndNode(MiniGraph graph) {
         var rootNode = graph.getRootNode();
         assertEquals(Set.of("root", "hello"), rootNode.getTypes());
-        graph.reset();
+        var end = graph.createEndNode();
+        assertEquals("end", end.getAlias());
+        var last = graph.getEndNode();
+        assertEquals(end, last);
     }
 
     private MiniGraph getGraphWithRootNode() {
