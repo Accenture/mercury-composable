@@ -1,25 +1,52 @@
 import { NavLink } from 'react-router-dom';
 import { PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
+import { type WsPhase } from '../contexts/WebSocketContext';
 import { useToast } from '../hooks/useToast';
-import ConnectionBar from './ConnectionBar/ConnectionBar';
+import NavMenu, { type DotStatus } from './NavMenu/NavMenu';
 import styles from './Navigation.module.css';
 
+// ---------
+// Helpers
+// ---------
+
+/**
+ * Derives a single aggregate dot status from an array of per-playground phases.
+ * - all connected  → 'connected'
+ * - all idle       → 'idle'
+ * - any connecting → 'connecting'
+ * - mixed          → 'partial'
+ */
+function aggregateDotStatus(phases: WsPhase[]): DotStatus {
+  if (phases.every(p => p === 'connected'))  return 'connected';
+  if (phases.every(p => p === 'idle'))       return 'idle';
+  if (phases.some(p => p === 'connecting'))  return 'connecting';
+  return 'partial';
+}
+
+function phaseToDotStatus(phase: WsPhase): DotStatus {
+  if (phase === 'connected')  return 'connected';
+  if (phase === 'connecting') return 'connecting';
+  return 'idle';
+}
+
+// -----------------------------
+// External / server info links
+// -----------------------------
+
+const EXTERNAL_LINKS = [
+  { href: '/info',        label: 'Info' },
+  { href: '/info/lib',    label: 'Libraries' },
+  { href: '/info/routes', label: 'Services' },
+  { href: '/health',      label: 'Health' },
+  { href: '/env',         label: 'Environment' },
+] as const;
+
+// ----------
+// Component
+// ----------
+
 export default function Navigation() {
-  // Tool links are derived from config — add a new playground in config/playgrounds.js,
-  // not here.
-  const toolLinks = PLAYGROUND_CONFIGS.map((cfg) => ({ to: cfg.path, label: cfg.label }));
-
-  const externalLinks = [
-    { href: '/info', label: 'INFO' },
-    { href: '/info/lib', label: 'LIBRARIES' },
-    { href: '/info/routes', label: 'SERVICES' },
-    { href: '/health', label: 'HEALTH' },
-    { href: '/env', label: 'ENVIRONMENT' },
-  ];
-
-  // Shared WebSocket context — lets us show the live status of *every* playground,
-  // not just the currently-active route.
   const ctx = useWebSocketContext();
   const { addToast } = useToast();
 
@@ -28,57 +55,86 @@ export default function Navigation() {
       ? `ws://localhost:3000${wsPath}`
       : `ws://${window.location.host}${wsPath}`;
 
+  // Collect live phases for the aggregate dot on the Tools menu
+  const phases = PLAYGROUND_CONFIGS.map(cfg => ctx.getSlot(cfg.wsPath).phase);
+  const toolsDotStatus = aggregateDotStatus(phases);
+
   return (
-    <nav className={styles.nav}>
-      {/* One connection bar per playground — all visible simultaneously */}
-      <div className={styles.connectionSection}>
-        {PLAYGROUND_CONFIGS.map((cfg) => {
-          const { phase } = ctx.getSlot(cfg.wsPath);
-          return (
-            <ConnectionBar
-              key={cfg.wsPath}
-              label={cfg.label}
-              connected={phase === 'connected'}
-              connecting={phase === 'connecting'}
-              url={wsUrl(cfg.wsPath)}
-              onConnect={() => ctx.connect(cfg.wsPath, addToast)}
-              onDisconnect={() => ctx.disconnect(cfg.wsPath)}
-            />
-          );
-        })}
-      </div>
-      <div className={styles.navSection}>
-        <div className={styles.navLabel}>Tools:</div>
-        <div className={styles.navLinks}>
-          {toolLinks.map(link => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) =>
-                `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-              }
-            >
-              <span className={styles.navText}>{link.label}</span>
-            </NavLink>
+    <nav className={styles.nav} aria-label="Main navigation">
+
+      {/* ── Tools (nav + connection status combined) ── */}
+      <NavMenu label="Tools" dotStatus={toolsDotStatus}>
+        <ul className={styles.menuList} role="none">
+          {PLAYGROUND_CONFIGS.map((cfg) => {
+            const { phase } = ctx.getSlot(cfg.wsPath);
+            const dotStatus = phaseToDotStatus(phase);
+            const isConnected  = phase === 'connected';
+            const isConnecting = phase === 'connecting';
+
+            const dotClass =
+              dotStatus === 'connected'  ? styles.toolDotConnected  :
+              dotStatus === 'connecting' ? styles.toolDotConnecting :
+                                          styles.toolDotIdle;
+
+            return (
+              <li key={cfg.path} role="none" className={styles.toolRow}>
+                {/* Navigate to the playground */}
+                <NavLink
+                  to={cfg.path}
+                  role="menuitem"
+                  className={({ isActive }) =>
+                    `${styles.toolLink} ${isActive ? styles.toolLinkActive : ''}`
+                  }
+                >
+                  <span className={`${styles.toolDot} ${dotClass}`} aria-hidden="true" />
+                  <span className={styles.toolLabel}>{cfg.label}</span>
+                </NavLink>
+
+                {/* Connect / disconnect — kept separate from the NavLink so
+                    clicking it doesn't also navigate */}
+                <button
+                  className={`${styles.toolConnectBtn} ${isConnected ? styles.toolConnectBtnStop : ''}`}
+                  onClick={() =>
+                    isConnected || isConnecting
+                      ? ctx.disconnect(cfg.wsPath)
+                      : ctx.connect(cfg.wsPath, addToast)
+                  }
+                  disabled={isConnecting}
+                  aria-label={
+                    isConnecting ? 'Connecting…' :
+                    isConnected  ? `Disconnect ${cfg.label}` :
+                                   `Connect ${cfg.label}`
+                  }
+                  title={isConnecting ? 'Connecting…' : isConnected ? wsUrl(cfg.wsPath) : wsUrl(cfg.wsPath)}
+                >
+                  {isConnecting ? '…' : isConnected ? 'Stop' : 'Start'}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </NavMenu>
+
+      {/* ── Quick Links ─── */}
+      <NavMenu label="Quick Links">
+        <ul className={styles.menuList} role="none">
+          {EXTERNAL_LINKS.map(link => (
+            <li key={link.href} role="none">
+              <a
+                href={link.href}
+                role="menuitem"
+                className={styles.menuItem}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.label}
+                <span className={styles.externalIcon} aria-hidden="true">↗</span>
+              </a>
+            </li>
           ))}
-        </div>
-      </div>
-      <div className={styles.navSection}>
-        <div className={styles.navLabel}>Quick Links:</div>
-        <div className={styles.navLinks}>
-          {externalLinks.map(link => (
-            <a
-              key={link.href}
-              href={link.href}
-              className={styles.navLink}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className={styles.navText}>{link.label}</span>
-            </a>
-          ))}
-        </div>
-      </div>
+        </ul>
+      </NavMenu>
+
     </nav>
   );
 }

@@ -1,107 +1,147 @@
+/* ── Toolbar row ── */
+
 .nav {
   display: flex;
-  align-items: flex-start;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-}
-
-/* Hosts one ConnectionBar row per playground — all visible simultaneously */
-.connectionSection {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 0.5rem;
-}
-
-.navSection {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.navLabel {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.navLinks {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.navLink {
-  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* ── Shared menu list ── */
+
+.menuList {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0;
+}
+
+/* ── Plain menu item (Quick Links) ── */
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0.5rem 1rem;
-  background: var(--bg-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-primary);
   text-decoration: none;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-color);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.navLink:hover {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
-
-.navLink:active {
-  transform: translateY(0);
-}
-
-.navLinkActive {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-.navLinkActive:hover {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
-
-.navIcon {
-  font-size: 1rem;
-}
-
-.navText {
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .navSection {
-    width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .navLinks {
-    width: 100%;
-  }
-  
-  .navLink {
-    flex: 1;
-    justify-content: center;
-    min-width: 120px;
-  }
+.menuItem:hover,
+.menuItem:focus-visible {
+  background: var(--primary-color);
+  color: white;
+  outline: none;
 }
+
+/* ── Tool row (combined nav + connect) ── */
+
+/*
+ * Each row is a flex container:
+ *   [dot + label NavLink ──────────────── flex-grow] [Start/Stop button]
+ *
+ * The NavLink fills the available width so the whole left area is clickable
+ * for navigation, while the button on the right is independently clickable
+ * for the WebSocket connection.
+ */
+
+.toolRow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toolRow:last-child {
+  border-bottom: none;
+}
+
+.toolLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  padding: 0.55rem 0.75rem 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.toolLink:hover,
+.toolLink:focus-visible {
+  background: var(--bg-secondary);
+  outline: none;
+}
+
+.toolLinkActive {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* ── Status dot inside tool link ── */
+
+.toolDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toolDotIdle       { background: var(--danger-color); }
+.toolDotConnecting { background: var(--warning-color); animation: pulse 1.5s infinite; }
+.toolDotConnected  { background: var(--success-color); animation: pulse 2s infinite; }
+
+/* ── Connect / stop button ── */
+
+.toolConnectBtn {
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0.35rem 0.5rem 0.35rem 0;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toolConnectBtn:hover:not(:disabled) {
+  background: var(--primary-color);
+  color: white;
+}
+
+.toolConnectBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toolConnectBtnStop {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.toolConnectBtnStop:hover:not(:disabled) {
+  background: var(--danger-color);
+  color: white;
+}
+
+/* ── External link arrow ── */
+
+.externalIcon {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  margin-left: 0.4rem;
+}
+
+
