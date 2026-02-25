@@ -104,6 +104,17 @@
   outline: 1px solid rgba(37, 99, 235, 0.5);
 }
 
+/* Graph-link message — teal accent instead of blue */
+.consoleMessageGraphLink.consoleMessagePinnable:hover {
+  background-color: rgba(20, 184, 166, 0.12);
+  outline: 1px solid rgba(20, 184, 166, 0.35);
+}
+
+.consoleMessageGraphLink.consoleMessagePinned {
+  background-color: rgba(20, 184, 166, 0.18);
+  outline: 1px solid rgba(20, 184, 166, 0.55);
+}
+
 .messageIcon {
   font-size: 1rem;
 }

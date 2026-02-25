@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validateJSON, formatJSON } from '../utils/validators';
@@ -9,10 +9,12 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import ConnectionBar from './ConnectionBar/ConnectionBar';
-import { isMarkdownCandidate } from '../utils/messageParser';
+import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { type PlaygroundConfig } from '../config/playgrounds';
+import { isMinigraphGraphData, type MinigraphGraphData } from '../utils/graphTypes';
+import type { RightTab } from './RightPanel/RightPanel';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
@@ -42,16 +44,65 @@ export default function Playground({ config }: PlaygroundProps) {
   // Pinned message state (null = no explicit pin; falls back to auto-last)
   const [pinnedMessage, setPinnedMessage] = useState<string | null>(null);
 
-  // Auto-last: most recently received non-JSON message
+  // Auto-last: most recently received non-JSON, non-graph-link message
   const lastNonJsonMessage = useMemo<string | null>(() => {
     for (let i = ws.messages.length - 1; i >= 0; i--) {
-      if (isMarkdownCandidate(ws.messages[i].raw)) return ws.messages[i].raw;
+      const raw = ws.messages[i].raw;
+      if (!isGraphLinkMessage(raw) && isMarkdownCandidate(raw)) return raw;
     }
     return null;
   }, [ws.messages]);
 
   // Shown in MarkdownPreview — pinnedMessage wins; falls back to auto-last
   const resolvedPreviewMessage = pinnedMessage ?? lastNonJsonMessage;
+
+  // ── Graph state ──────────────────────────────────────────────────────────
+  // The API path extracted from the currently-pinned graph-link message.
+  const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
+  // Fetched and parsed graph data, or null while loading / not yet pinned.
+  const [graphData, setGraphData] = useState<MinigraphGraphData | null>(null);
+  // Which right-panel tab is currently active — lifted here so we can auto-switch.
+  const [rightTab, setRightTab] = useState<RightTab>('payload');
+
+  // When a message is pinned, decide whether it is a graph link or a Markdown message.
+  const handlePinMessage = useCallback((message: string) => {
+    if (isGraphLinkMessage(message)) {
+      const path = extractGraphApiPath(message);
+      setPinnedGraphPath(path);
+      setPinnedMessage(null);      // clear any Markdown pin
+    } else {
+      setPinnedMessage(message);
+      setPinnedGraphPath(null);    // clear any graph pin
+    }
+  }, []);
+
+  // Fetch graph data whenever pinnedGraphPath changes.
+  useEffect(() => {
+    if (!pinnedGraphPath) return;
+
+    const baseUrl = import.meta.env.DEV ? 'http://localhost:8085' : '';
+    const url = `${baseUrl}${pinnedGraphPath}`;
+
+    let cancelled = false;
+    setGraphData(null);   // clear stale data while loading
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((json: unknown) => {
+        if (!cancelled && isMinigraphGraphData(json)) {
+          setGraphData(json);
+          setRightTab('graph');   // auto-switch to Graph tab
+        }
+      })
+      .catch(err => {
+        if (!cancelled) addToast(`Graph fetch failed: ${err.message}`, 'error');
+      });
+
+    return () => { cancelled = true; };
+  }, [pinnedGraphPath, addToast]);
 
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -69,6 +120,8 @@ export default function Playground({ config }: PlaygroundProps) {
   const handleClearMessages = () => {
     ws.clearMessages();
     setPinnedMessage(null);
+    setPinnedGraphPath(null);
+    setGraphData(null);
   };
 
   return (
@@ -110,8 +163,8 @@ export default function Playground({ config }: PlaygroundProps) {
             inputDisabled={!ws.connected}
             multiline={multiline}
             onToggleMultiline={() => setMultiline(m => !m)}
-            onPinMessage={setPinnedMessage}
-            pinnedMessage={pinnedMessage}
+            onPinMessage={handlePinMessage}
+            pinnedMessage={pinnedMessage ?? pinnedGraphPath}
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />
@@ -123,6 +176,9 @@ export default function Playground({ config }: PlaygroundProps) {
             onFormat={handleFormatPayload}
             previewMessage={resolvedPreviewMessage}
             pinnedMessage={pinnedMessage}
+            graphData={graphData}
+            activeTab={rightTab}
+            onTabChange={setRightTab}
           />
         </Panel>
       </Group>

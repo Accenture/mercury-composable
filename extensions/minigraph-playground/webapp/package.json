@@ -12,6 +12,7 @@
     "deploy": "cp -r dist/* ../src/main/resources/public/"
   },
   "dependencies": {
+    "@xyflow/react": "^12.10.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-json-view-lite": "^2.5.0",

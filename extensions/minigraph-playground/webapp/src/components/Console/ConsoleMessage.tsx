@@ -1,4 +1,4 @@
-import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate } from '../../utils/messageParser';
+import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage } from '../../utils/messageParser';
 import { JsonView, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import styles from './Console.module.css';
@@ -14,25 +14,36 @@ export default function ConsoleMessage({ message, onPin, pinned }: ConsoleMessag
   const icon      = getMessageIcon(parsed.type);
   const jsonCheck = tryParseJSON(parsed.message);
 
+  const isGraphLink  = isGraphLinkMessage(message);
+  const isMarkdown   = !isGraphLink && isMarkdownCandidate(message);
+  const isPinnable   = !!onPin && (isMarkdown || isGraphLink);
+  const pinTitle     = isGraphLink
+    ? 'Click to load graph in Graph View'
+    : 'Click to pin to Markdown Preview';
+  const pinLabel     = isGraphLink
+    ? 'Load graph in Graph View'
+    : 'Pin to Markdown Preview';
+
   return (
     <div
       className={[
         styles.consoleMessage,
         styles[`messageType-${parsed.type}`],
-        onPin ? styles.consoleMessagePinnable : '',
-        pinned ? styles.consoleMessagePinned : '',
+        isPinnable          ? styles.consoleMessagePinnable  : '',
+        pinned              ? styles.consoleMessagePinned    : '',
+        isGraphLink         ? styles.consoleMessageGraphLink : '',
       ].filter(Boolean).join(' ')}
-      onClick={onPin && isMarkdownCandidate(message) ? () => onPin(message) : undefined}
-      title={onPin && isMarkdownCandidate(message) ? 'Click to pin to Markdown Preview' : undefined}
-      role={onPin && isMarkdownCandidate(message) ? 'button' : undefined}
-      tabIndex={onPin && isMarkdownCandidate(message) ? 0 : undefined}
-      onKeyDown={onPin && isMarkdownCandidate(message)
-        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin(message); } }
+      onClick={isPinnable ? () => onPin!(message) : undefined}
+      title={isPinnable ? pinTitle : undefined}
+      role={isPinnable ? 'button' : undefined}
+      tabIndex={isPinnable ? 0 : undefined}
+      onKeyDown={isPinnable
+        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin!(message); } }
         : undefined}
-      aria-label={onPin && isMarkdownCandidate(message) ? 'Pin to Markdown Preview' : undefined}
-      aria-pressed={onPin && isMarkdownCandidate(message) ? pinned : undefined}
+      aria-label={isPinnable ? pinLabel : undefined}
+      aria-pressed={isPinnable ? pinned : undefined}
     >
-      <span className={styles.messageIcon}>{icon}</span>
+      <span className={styles.messageIcon}>{isGraphLink ? '🕸️' : icon}</span>
       <div className={styles.messageContent}>
         {jsonCheck.isJSON ? (
           <div className={styles.jsonViewWrapper}>

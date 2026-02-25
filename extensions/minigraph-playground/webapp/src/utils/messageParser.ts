@@ -84,3 +84,27 @@ export function isMarkdownCandidate(raw: string): boolean {
   if (typeof obj['type'] === 'string') return false;           // lifecycle event → not candidate
   return false;                                                // any other JSON object/array → not candidate
 }
+
+/**
+ * Extracts the first `/api/graph/model/<id>` path found in a raw message
+ * string. Returns `null` if no such path is present.
+ *
+ * Matches both forms the server emits:
+ *   "Graph exported to '/tmp/…'\nDescribed in /api/graph/model/my-graph"
+ *   "Graph described in /api/graph/model/ws-122189-1"
+ */
+export function extractGraphApiPath(raw: string): string | null {
+  const match = raw.match(/\/api\/graph\/model\/([^\s'"]+)/);
+  return match ? match[0] : null;
+}
+
+/**
+ * Returns true when a raw message contains a graph model API path that the
+ * user can pin to load the graph visualiser.
+ */
+export function isGraphLinkMessage(raw: string): boolean {
+  // Must be a plain-text message (not a JSON lifecycle event)
+  if (!isMarkdownCandidate(raw)) return false;
+  return extractGraphApiPath(raw) !== null;
+}
+

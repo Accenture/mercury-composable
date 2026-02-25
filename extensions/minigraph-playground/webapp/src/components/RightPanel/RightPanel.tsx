@@ -1,10 +1,12 @@
-import { useState, useId } from 'react';
+import { useId } from 'react';
 import PayloadEditor from '../PayloadEditor/PayloadEditor';
 import MarkdownPreview from '../MarkdownPreview/MarkdownPreview';
+import GraphView from '../GraphView/GraphView';
 import styles from './RightPanel.module.css';
 import { type ValidationResult } from '../../utils/validators';
+import type { MinigraphGraphData } from '../../utils/graphTypes';
 
-export type RightTab = 'payload' | 'preview';
+export type RightTab = 'payload' | 'preview' | 'graph';
 
 interface RightPanelProps {
   payload:        string;
@@ -13,6 +15,9 @@ interface RightPanelProps {
   onFormat:       () => void;
   previewMessage: string | null;
   pinnedMessage:  string | null;
+  graphData:      MinigraphGraphData | null;
+  activeTab:      RightTab;
+  onTabChange:    (tab: RightTab) => void;
 }
 
 export default function RightPanel({
@@ -22,11 +27,14 @@ export default function RightPanel({
   onFormat,
   previewMessage,
   pinnedMessage,
+  graphData,
+  activeTab,
+  onTabChange,
 }: RightPanelProps) {
-  const [activeTab, setActiveTab] = useState<RightTab>('payload');
   const uid            = useId();
   const payloadPanelId = `${uid}-tab-payload`;
   const previewPanelId = `${uid}-tab-preview`;
+  const graphPanelId   = `${uid}-tab-graph`;
 
   return (
     <div className={styles.rightPanel}>
@@ -37,7 +45,7 @@ export default function RightPanel({
           aria-selected={activeTab === 'payload'}
           aria-controls={payloadPanelId}
           className={`${styles.tab}${activeTab === 'payload' ? ` ${styles.tabActive}` : ''}`}
-          onClick={() => setActiveTab('payload')}
+          onClick={() => onTabChange('payload')}
         >
           Payload Editor
         </button>
@@ -46,11 +54,23 @@ export default function RightPanel({
           aria-selected={activeTab === 'preview'}
           aria-controls={previewPanelId}
           className={`${styles.tab}${activeTab === 'preview' ? ` ${styles.tabActive}` : ''}`}
-          onClick={() => setActiveTab('preview')}
+          onClick={() => onTabChange('preview')}
         >
           Markdown Preview
           {pinnedMessage !== null && (
             <span className={styles.pinnedBadge} aria-label="Message pinned">📌</span>
+          )}
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'graph'}
+          aria-controls={graphPanelId}
+          className={`${styles.tab}${activeTab === 'graph' ? ` ${styles.tabActive}` : ''}`}
+          onClick={() => onTabChange('graph')}
+        >
+          Graph
+          {graphData !== null && (
+            <span className={styles.pinnedBadge} aria-label="Graph data available">🕸️</span>
           )}
         </button>
       </div>
@@ -78,6 +98,16 @@ export default function RightPanel({
         className={`${styles.tabBody}${activeTab !== 'preview' ? ` ${styles.tabBodyHidden}` : ''}`}
       >
         <MarkdownPreview message={previewMessage} />
+      </div>
+
+      {/* Graph View tab body — always mounted to preserve zoom/pan state */}
+      <div
+        role="tabpanel"
+        id={graphPanelId}
+        tabIndex={activeTab === 'graph' ? 0 : -1}
+        className={`${styles.tabBody}${activeTab !== 'graph' ? ` ${styles.tabBodyHidden}` : ''}`}
+      >
+        <GraphView graphData={graphData} />
       </div>
     </div>
   );
