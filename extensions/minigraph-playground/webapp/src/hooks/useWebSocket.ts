@@ -1,35 +1,25 @@
 import { useReducer, useEffect, useRef, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { type ToastType } from './useToast';
-import { MAX_ITEMS, MAX_BUFFER, PING_INTERVAL, MAX_HISTORY } from '../config/playgrounds';
+import { MAX_BUFFER, MAX_HISTORY } from '../config/playgrounds';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/** The three mutually-exclusive lifecycle phases of the WebSocket connection. */
-type WsPhase = 'idle' | 'connecting' | 'connected';
-
-/** All reactive state owned by the reducer. */
-interface WsState {
-  phase:        WsPhase;
-  messages:     { id: number; raw: string }[];
+/** Local UI state that does NOT need to persist across navigation. */
+interface LocalState {
   command:      string;
   autoScroll:   boolean;
   historyIndex: number;
 }
 
-/** Every action the reducer can handle — exhaustively typed as a discriminated union. */
-type WsAction =
-  | { type: 'CONNECTING' }
-  | { type: 'CONNECTED';         id: number; msg: string }
-  | { type: 'MESSAGE_RECEIVED';  id: number; msg: string }
-  | { type: 'DISCONNECTED';      id: number; msg: string }
-  | { type: 'CONNECT_ERROR' }
+/** Every action the local reducer can handle. */
+type LocalAction =
   | { type: 'SET_COMMAND';       value: string }
   | { type: 'CLEAR_COMMAND' }
   | { type: 'SET_HISTORY_INDEX'; index: number; command: string }
-  | { type: 'CLEAR_MESSAGES' }
   | { type: 'TOGGLE_AUTO_SCROLL' };
 
 /** Options accepted by useWebSocket. */
@@ -60,69 +50,25 @@ export interface UseWebSocketReturn {
 }
 
 // ---------------------------------------------------------------------------
-// Reducer
+// Local reducer (UI-only state — not shared across routes)
 // ---------------------------------------------------------------------------
 
-/**
- * All reactive WebSocket state lives here.
- *
- * Grouping into a reducer makes every lifecycle transition explicit and atomic,
- * preventing illegal in-between states (e.g. connected && connecting both true)
- * that are possible when multiple useState setters are called separately.
- */
-const initialState: WsState = {
-  phase:        'idle',
-  messages:     [],
+const localInitial: LocalState = {
   command:      '',
   autoScroll:   true,
   historyIndex: -1,
 };
 
-function wsReducer(state: WsState, action: WsAction): WsState {
+function localReducer(state: LocalState, action: LocalAction): LocalState {
   switch (action.type) {
-
-    case 'CONNECTING':
-      return { ...state, phase: 'connecting' };
-
-    // Atomically flip phase→connected and append the
-    // "connected" info message in one render instead of three.
-    case 'CONNECTED': {
-      const msgs = [...state.messages, { id: action.id, raw: action.msg }];
-      if (msgs.length > MAX_ITEMS) msgs.shift();
-      return { ...state, phase: 'connected', messages: msgs };
-    }
-
-    case 'MESSAGE_RECEIVED': {
-      const msgs = [...state.messages, { id: action.id, raw: action.msg }];
-      if (msgs.length > MAX_ITEMS) msgs.shift();
-      return { ...state, messages: msgs };
-    }
-
-    // Mirror of CONNECTED — flip phase→idle and append disconnect message.
-    case 'DISCONNECTED': {
-      const msgs = [...state.messages, { id: action.id, raw: action.msg }];
-      if (msgs.length > MAX_ITEMS) msgs.shift();
-      return { ...state, phase: 'idle', messages: msgs };
-    }
-
-    case 'CONNECT_ERROR':
-      return { ...state, phase: 'idle' };
-
     case 'SET_COMMAND':
       return { ...state, command: action.value };
-
     case 'CLEAR_COMMAND':
       return { ...state, command: '', historyIndex: -1 };
-
     case 'SET_HISTORY_INDEX':
       return { ...state, historyIndex: action.index, command: action.command };
-
-    case 'CLEAR_MESSAGES':
-      return { ...state, messages: [] };
-
     case 'TOGGLE_AUTO_SCROLL':
       return { ...state, autoScroll: !state.autoScroll };
-
     default:
       return state;
   }
@@ -133,35 +79,36 @@ function wsReducer(state: WsState, action: WsAction): WsState {
 // ---------------------------------------------------------------------------
 
 /**
- * Encapsulates all WebSocket lifecycle logic for a playground page.
- * Options and return type are defined by UseWebSocketOptions / UseWebSocketReturn.
+ * Thin wrapper that delegates connection / message state to WebSocketContext
+ * (so it persists across route changes) while keeping purely local UI state
+ * (command input, history cursor, auto-scroll) in a component-scoped reducer.
+ *
+ * Public API is unchanged — Playground.tsx needs no edits.
  */
 export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: UseWebSocketOptions): UseWebSocketReturn {
 
-  // Derive the WebSocket URL from wsPath on every render so that navigating
-  // between playgrounds always reflects the correct endpoint.
-  // NOTE: do NOT store this in a useRef — refs only capture the initial value
-  // and would silently keep the stale URL when the config prop changes.
+  // Shared context — connection phase + messages live here, surviving navigation.
+  const ctx = useWebSocketContext();
+
+  // Derive the WebSocket URL (shown in the ConnectionBar).
   const wsUrl = import.meta.env.DEV
     ? `ws://localhost:3000${wsPath}`
     : `ws://${window.location.host}${wsPath}`;
 
-  // --- State (single reducer replaces 5 × useState) ---
-  const [state, dispatch] = useReducer(wsReducer, initialState);
-  const { phase, messages, command, autoScroll, historyIndex } = state;
-
-  // Derive boolean flags from phase for a backwards-compatible public API.
+  // Pull this playground's slot from the shared store.
+  const { phase, messages } = ctx.getSlot(wsPath);
   const connected  = phase === 'connected';
   const connecting = phase === 'connecting';
 
-  // Persisted command history
+  // Local UI state (not shared, resets on remount — that's intentional).
+  const [localState, dispatch] = useReducer(localReducer, localInitial);
+  const { command, autoScroll, historyIndex } = localState;
+
+  // Persisted command history (keyed per playground so they stay separate).
   const [history, setHistory] = useLocalStorage<string[]>(storageKeyHistory, []);
 
-  // --- Refs ---
-  const wsRef           = useRef<WebSocket | null>(null);
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const consoleRef      = useRef<HTMLDivElement>(null);
-  const msgIdRef        = useRef(0);
+  // consoleRef is only needed for auto-scroll; it is purely presentational.
+  const consoleRef = useRef<HTMLDivElement>(null);
 
   // --- Auto-scroll effect ---
   useEffect(() => {
@@ -170,106 +117,42 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     }
   }, [messages, autoScroll]);
 
-  // --- Cleanup on unmount ---
-  useEffect(() => {
-    return () => {
-      if (wsRef.current)           wsRef.current.close();
-      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-    };
-  }, []);
-
-  // --- Internal helpers ---
-  const getTimestamp = () => {
-    const s   = new Date().toString();
-    const gmt = s.indexOf('GMT');
-    return gmt > 0 ? s.substring(0, gmt).trim() : s;
-  };
-
-  const eventWithTimestamp = (type: string, message: string): string =>
-    JSON.stringify({ type, message, time: getTimestamp() });
-
-  const keepAlive = () => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(eventWithTimestamp('ping', 'keep alive'));
-    }
-  };
-
   // --- Public: connect ---
   const connect = useCallback(() => {
-    if (!window.WebSocket) {
-      addToast('WebSocket not supported by your browser', 'error');
-      return;
-    }
-    if (connected) {
-      addToast('Already connected', 'error');
-      return;
-    }
-
-    dispatch({ type: 'CONNECTING' });
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      dispatch({ type: 'CONNECTED', id: ++msgIdRef.current, msg: eventWithTimestamp('info', 'connected') });
-      addToast('Connected to WebSocket', 'success');
-      ws.send(JSON.stringify({ type: 'welcome' }));
-      pingIntervalRef.current = setInterval(keepAlive, PING_INTERVAL);
-    };
-
-    ws.onmessage = (evt) => {
-      if (!evt.data.startsWith('{"type":"ping"')) {
-        dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: evt.data });
-      }
-    };
-
-    ws.onerror = () => {
-      dispatch({ type: 'CONNECT_ERROR' });
-    };
-
-    ws.onclose = (evt) => {
-      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
-      dispatch({ type: 'DISCONNECTED', id: ++msgIdRef.current, msg: eventWithTimestamp('info', `disconnected - (${evt.code}) ${evt.reason}`) });
-      addToast('Disconnected from WebSocket', 'info');
-      wsRef.current = null;
-    };
-  }, [connected, addToast]);
+    ctx.connect(wsPath, addToast);
+  }, [ctx, wsPath, addToast]);
 
   // --- Public: disconnect ---
   const disconnect = useCallback(() => {
-    if (wsRef.current) {
-      wsRef.current.close();
-    } else {
-      dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: eventWithTimestamp('error', 'already disconnected') });
-    }
-  }, []);
+    ctx.disconnect(wsPath);
+  }, [ctx, wsPath]);
 
-  // --- Public: keyboard handler for the command input ---
   // --- Public: send the current command ---
   const sendCommand = useCallback(() => {
-    if (!wsRef.current || phase !== 'connected') return;
+    if (phase !== 'connected') return;
     const text = command.trim();
     if (text.length === 0) return;
 
-    wsRef.current.send(text);
+    ctx.send(wsPath, text);
     if (history[0] !== text) {
       setHistory((prev) => [text, ...prev].slice(0, MAX_HISTORY));
     }
 
-    // Special "load" command — also send the payload as a second message
+    // Special "load" command — also send the payload as a second message.
     if (text === 'load') {
       if (payload.length === 0) {
-        dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: 'ERROR: please paste JSON/XML payload in input text area' });
+        ctx.appendMessage(wsPath, 'ERROR: please paste JSON/XML payload in input text area');
       } else if (payload.length > MAX_BUFFER) {
-        dispatch({ type: 'MESSAGE_RECEIVED', id: ++msgIdRef.current, msg: `ERROR: please reduce JSON/XML payload size. It must be less than ${MAX_BUFFER} characters` });
+        ctx.appendMessage(wsPath, `ERROR: please reduce JSON/XML payload size. It must be less than ${MAX_BUFFER} characters`);
       } else {
-        wsRef.current.send(payload);
+        ctx.send(wsPath, payload);
       }
     }
 
     dispatch({ type: 'CLEAR_COMMAND' });
-  }, [phase, command, payload, history, setHistory]);
+  }, [ctx, wsPath, phase, command, payload, history, setHistory]);
 
-  // --- Public: keyboard handler for the command input (history navigation only) ---
+  // --- Public: keyboard handler (history navigation only) ---
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -292,16 +175,15 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
   const toggleAutoScroll = useCallback(() => dispatch({ type: 'TOGGLE_AUTO_SCROLL' }), []);
 
   const copyMessages = useCallback(() => {
-    navigator.clipboard.writeText(messages.map(m => m.raw).join('\n'));
+    navigator.clipboard.writeText(messages.map((m: { id: number; raw: string }) => m.raw).join('\n'));
     addToast('Console copied to clipboard!', 'success');
   }, [messages, addToast]);
 
   const clearMessages = useCallback(() => {
-    dispatch({ type: 'CLEAR_MESSAGES' });
+    ctx.clearMessages(wsPath);
     addToast('Console cleared', 'info');
-  }, [addToast]);
+  }, [ctx, wsPath, addToast]);
 
-  // Stable wrapper so callers that do ws.setCommand(value) keep working unchanged.
   const setCommand = useCallback(
     (value: string) => dispatch({ type: 'SET_COMMAND', value }),
     []

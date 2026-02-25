@@ -8,7 +8,6 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
-import ConnectionBar from './ConnectionBar/ConnectionBar';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
@@ -113,8 +112,6 @@ export default function Playground({ config }: PlaygroundProps) {
     storage: localStorage,
   });
 
-  const handleConnect = () => ws.connect();
-
   const handleFormatPayload = () => setPayload(formatJSON(payload));
 
   const handleClearMessages = () => {
@@ -130,15 +127,9 @@ export default function Playground({ config }: PlaygroundProps) {
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
-        <Navigation connectionBar={
-          <ConnectionBar
-            connected={ws.connected}
-            connecting={ws.connecting}
-            url={ws.wsUrl}
-            onConnect={handleConnect}
-            onDisconnect={ws.disconnect}
-          />
-        } />
+        {/* Navigation reads connection state from WebSocketContext directly —
+            no connectionBar prop needed any more. */}
+        <Navigation />
       </header>
 
       <Group

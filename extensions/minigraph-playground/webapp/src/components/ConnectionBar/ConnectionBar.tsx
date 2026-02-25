@@ -1,6 +1,7 @@
 import styles from './ConnectionBar.module.css';
 
 interface ConnectionBarProps {
+  label?:       string;
   connected:    boolean;
   connecting:   boolean;
   url:          string;
@@ -9,7 +10,7 @@ interface ConnectionBarProps {
 }
 
 export default function ConnectionBar({
-  connected, connecting, url, onConnect, onDisconnect
+  label, connected, connecting, url, onConnect, onDisconnect
 }: ConnectionBarProps) {
   const dotClass = connected
     ? styles.dotConnected
@@ -21,6 +22,7 @@ export default function ConnectionBar({
 
   return (
     <div className={styles.bar}>
+      {label && <span className={styles.label}>{label}:</span>}
       <span
         className={`${styles.dot} ${dotClass}`}
         aria-label={dotLabel}
