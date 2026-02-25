@@ -19,6 +19,7 @@ import {
 } from 'react';
 import { MAX_ITEMS, PING_INTERVAL } from '../config/playgrounds';
 import { type ToastType } from '../hooks/useToast';
+import { makeWsUrl } from '../utils/urls';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,9 +30,9 @@ export type WsPhase = 'idle' | 'connecting' | 'connected';
 export interface WsSlot {
   phase:    WsPhase;
   messages: { id: number; raw: string }[];
-  wsRef:    React.MutableRefObject<WebSocket | null>;
-  msgIdRef: React.MutableRefObject<number>;
-  pingRef:  React.MutableRefObject<ReturnType<typeof setInterval> | null>;
+  wsRef:    React.RefObject<WebSocket | null>;
+  msgIdRef: React.RefObject<number>;
+  pingRef:  React.RefObject<ReturnType<typeof setInterval> | null>;
 }
 
 /** The shape of the context value exposed to consumers. */
@@ -136,10 +137,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const msgIdRefs = useRef<Record<string, number>>({});
 
   // Helper: derive a stable WebSocket URL from wsPath
-  const makeUrl = (wsPath: string) =>
-    import.meta.env.DEV
-      ? `ws://localhost:3000${wsPath}`
-      : `ws://${window.location.host}${wsPath}`;
+  const makeUrl = (wsPath: string) => makeWsUrl(wsPath);
 
   // Helper: next message id for a path
   const nextId = (path: string) => {

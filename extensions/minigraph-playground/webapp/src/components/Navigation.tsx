@@ -4,6 +4,7 @@ import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { type WsPhase } from '../contexts/WebSocketContext';
 import { useToast } from '../hooks/useToast';
 import NavMenu, { type DotStatus } from './NavMenu/NavMenu';
+import { makeWsUrl } from '../utils/urls';
 import styles from './Navigation.module.css';
 
 // ---------
@@ -51,11 +52,6 @@ const EXTERNAL_LINKS = [
 export default function Navigation() {
   const ctx = useWebSocketContext();
   const { addToast } = useToast();
-
-  const wsUrl = (wsPath: string) =>
-    import.meta.env.DEV
-      ? `ws://localhost:3000${wsPath}`
-      : `ws://${window.location.host}${wsPath}`;
 
   // Collect live phases for the aggregate dot on the Tools menu
   const phases = PLAYGROUND_CONFIGS.map(cfg => ctx.getSlot(cfg.wsPath).phase);
@@ -107,7 +103,7 @@ export default function Navigation() {
                     isConnected  ? `Disconnect ${cfg.label}` :
                                    `Connect ${cfg.label}`
                   }
-                  title={isConnecting ? 'Connecting…' : isConnected ? wsUrl(cfg.wsPath) : wsUrl(cfg.wsPath)}
+                  title={isConnecting ? 'Connecting…' : makeWsUrl(cfg.wsPath)}
                 >
                   {isConnecting ? '…' : isConnected ? 'Stop' : 'Start'}
                 </button>

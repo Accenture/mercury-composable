@@ -19,8 +19,8 @@ export interface GraphEdgeData extends Record<string, unknown> {
 // ─── Layout constants ────────────────────────────────────────────────────────
 const NODE_WIDTH  = 200;
 const NODE_HEIGHT = 90;
-const H_GAP       = 80;   // horizontal gap between nodes on the same level
-const V_GAP       = 100;  // vertical gap between levels
+const ROW_GAP     = 80;   // vertical gap between nodes stacked in the same column
+const COL_GAP     = 100;  // horizontal gap between columns (levels)
 
 /**
  * Very lightweight left-to-right topological layout.
@@ -89,11 +89,11 @@ function computeLayout(
   // Assign pixel positions
   const positions = new Map<string, { x: number; y: number }>();
   for (const [level, aliases] of byLevel) {
-    const totalHeight = aliases.length * NODE_HEIGHT + (aliases.length - 1) * H_GAP;
+    const totalHeight = aliases.length * NODE_HEIGHT + (aliases.length - 1) * ROW_GAP;
     aliases.forEach((alias, idx) => {
       positions.set(alias, {
-        x: level * (NODE_WIDTH + V_GAP),
-        y: idx * (NODE_HEIGHT + H_GAP) - totalHeight / 2,
+        x: level * (NODE_WIDTH + COL_GAP),
+        y: idx * (NODE_HEIGHT + ROW_GAP) - totalHeight / 2,
       });
     });
   }

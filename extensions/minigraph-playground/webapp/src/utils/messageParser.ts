@@ -81,7 +81,7 @@ export function isMarkdownCandidate(raw: string): boolean {
   const result = tryParseJSON(raw);
   if (!result.isJSON) return true;                             // not JSON at all → candidate
   const obj = result.data as Record<string, unknown>;
-  if (typeof obj['type'] === 'string') return false;           // lifecycle event → not candidate
+  if (typeof obj['type'] === 'string') return false;           // lifecycle event ({ type, message, time }) → not candidate
   return false;                                                // any other JSON object/array → not candidate
 }
 

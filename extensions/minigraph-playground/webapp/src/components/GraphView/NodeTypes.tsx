@@ -33,7 +33,7 @@ function MappingRows({ mapping }: { mapping?: string[] }) {
   return (
     <>
       {mapping.map((m, i) => (
-        <div key={i} className={styles.row}>
+        <div key={m} className={styles.row}>
           <span className={styles.label}>{i === 0 ? 'map' : ''}</span>
           <span className={styles.value} title={m}>{m}</span>
         </div>

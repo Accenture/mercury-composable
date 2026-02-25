@@ -32,7 +32,6 @@ export interface UseWebSocketOptions {
 
 /** Public API surface returned by useWebSocket. */
 export interface UseWebSocketReturn {
-  wsUrl:            string;
   connected:        boolean;
   connecting:       boolean;
   messages:         { id: number; raw: string }[];
@@ -89,11 +88,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
 
   // Shared context — connection phase + messages live here, surviving navigation.
   const ctx = useWebSocketContext();
-
-  // Derive the WebSocket URL (shown in the ConnectionBar).
-  const wsUrl = import.meta.env.DEV
-    ? `ws://localhost:3000${wsPath}`
-    : `ws://${window.location.host}${wsPath}`;
 
   // Pull this playground's slot from the shared store.
   const { phase, messages } = ctx.getSlot(wsPath);
@@ -190,7 +184,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
   );
 
   return {
-    wsUrl,
     connected,
     connecting,
     messages,

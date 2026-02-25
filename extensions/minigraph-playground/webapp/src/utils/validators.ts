@@ -1,7 +1,7 @@
 /** Payload content type detected during validation. */
 export type PayloadType = 'json' | 'xml';
 
-/** Result returned by validateJSON() for any input string. */
+/** Result returned by validatePayload() for any input string. */
 export interface ValidationResult {
   valid: boolean;
   error: string | null;
@@ -31,7 +31,7 @@ const isValidJSON = (text: string): boolean => {
   }
 };
 
-export const validateJSON = (text: string): ValidationResult => {
+export const validatePayload = (text: string): ValidationResult => {
   if (!text.trim()) {
     return { valid: true, error: null, type: null };
   }

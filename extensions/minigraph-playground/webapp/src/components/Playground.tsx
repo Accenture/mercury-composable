@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
-import { validateJSON, formatJSON } from '../utils/validators';
+import { validatePayload, formatJSON } from '../utils/validators';
 import { useToast } from '../hooks/useToast';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -27,7 +27,7 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // Live payload validation — derived synchronously from payload, no extra render cycle needed
   const payloadValidation = useMemo(
-    () => payload ? validateJSON(payload) : { valid: true, error: null, type: null },
+    () => payload ? validatePayload(payload) : { valid: true, error: null, type: null },
     [payload]
   );
 
@@ -129,8 +129,6 @@ export default function Playground({ config }: PlaygroundProps) {
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
-        {/* Navigation reads connection state from WebSocketContext directly —
-            no connectionBar prop needed any more. */}
         <Navigation />
       </header>
 

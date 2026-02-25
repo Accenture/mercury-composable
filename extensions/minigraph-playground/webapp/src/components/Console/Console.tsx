@@ -13,7 +13,16 @@ interface ConsoleProps {
   pinnedMessage?:     string | null;
 }
 
-export default function Console({ messages, autoScroll, onToggleAutoScroll, onCopy, onClear, consoleRef, onPinMessage, pinnedMessage }: ConsoleProps) {
+export default function Console({
+  messages,
+  autoScroll,
+  onToggleAutoScroll,
+  onCopy,
+  onClear,
+  consoleRef,
+  onPinMessage,
+  pinnedMessage,
+}: ConsoleProps) {
   return (
     <div className={styles.consoleRoot}>
       <div className={styles.consoleHeader}>
