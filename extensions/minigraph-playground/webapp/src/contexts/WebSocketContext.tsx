@@ -156,6 +156,24 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const eventWithTimestamp = (type: string, message: string) =>
     JSON.stringify({ type, message, time: getTimestamp() });
 
+  /**
+   * Returns true for keep-alive ping/pong frames that should never appear in
+   * the console.  Parses the JSON safely so it works regardless of key order
+   * or whitespace differences in the serialised message.
+   */
+  const isKeepAliveMessage = (data: string): boolean => {
+    try {
+      const parsed = JSON.parse(data) as unknown;
+      if (parsed !== null && typeof parsed === 'object') {
+        const type = (parsed as Record<string, unknown>).type;
+        return type === 'ping' || type === 'pong';
+      }
+    } catch {
+      // Not JSON — definitely not a keep-alive frame.
+    }
+    return false;
+  };
+
   // ── connect ──────────────────────────────────────────────────────────────
   const connect = useCallback((wsPath: string, onToast: (msg: string, type?: ToastType) => void) => {
     if (!window.WebSocket) {
@@ -191,7 +209,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onmessage = (evt) => {
-      if (!evt.data.startsWith('{"type":"ping"')) {
+      if (!isKeepAliveMessage(evt.data)) {
         dispatch({
           type: 'MESSAGE_RECEIVED',
           path: wsPath,
