@@ -40,8 +40,7 @@ public class MiniGraph {
     private static final String CONNECTION_PREFIX = "connections[";
     private static final String ROOT = "root";
     private static final String END = "end";
-    private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result",
-                                                            "parameter", "none");
+    private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result", "parameter", "none", "next");
     private static final Utility util = Utility.getInstance();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();

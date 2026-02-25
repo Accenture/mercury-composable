@@ -63,7 +63,7 @@
 
         <dependency>
             <groupId>org.platformlambda</groupId>
-            <artifactId>event-script-engine</artifactId>
+            <artifactId>data-dictionary-query</artifactId>
             <version>4.3.69</version>
         </dependency>
 

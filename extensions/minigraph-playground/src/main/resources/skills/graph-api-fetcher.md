@@ -27,7 +27,7 @@ Properties
 ```
 skill=graph.api.fetcher
 question=question-id
-mapping[]=source -> target
+mapping[]=source -> {parameter}
 ```
 
 Result set
@@ -45,8 +45,8 @@ The source composite key can use the following namespaces:
 3. "model." namespace for holding intermediate key-values for simple data transformation
 
 The target composite key can use the following namespaces:
-1. "parameter." namespace to map key-values to the input parameters of the outgoing API call
-2. "model." namespace for holding intermediate key-values for simple data transformation
+1. "model." namespace for holding intermediate key-values for simple data transformation
+2. any key not using the "model." namespace will be mapped as an input parameter
 
 Example
 -------
@@ -55,7 +55,7 @@ update node my-api-fetcher
 with properties
 skill=graph.api.fetcher
 question=get-hr-record
-mapping[]=input.body.hr_id -> parameter.id
+mapping[]=input.body.hr_id -> id
 ```
 
 The "[]" syntax is used to create and append a list of one or more data mapping entries

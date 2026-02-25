@@ -2,7 +2,6 @@ package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
-import com.accenture.minigraph.skills.GraphJs;
 import com.jayway.jsonpath.InvalidPathException;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
@@ -93,7 +92,8 @@ public class GraphCommandService extends GraphLambdaFunction {
             var helpText = getHelp(words);
             po.send(new EventEnvelope().setTo(outRoute).setBody(
                     Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
-        } else if (words.size() > 2 && words.getFirst().equalsIgnoreCase("create")) {
+        } else if (words.size() > 1 && (words.getFirst().equalsIgnoreCase("create") ||
+                    words.getFirst().equalsIgnoreCase("instantiate"))) {
             // handle create command without type and properties
             handleMultiLineCommand(po, inRoute, outRoute, command);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
@@ -132,7 +132,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             throw new IllegalArgumentException("Graph not instantiated");
         }
         var value = instance.stateMachine.getElement(key, "null");
-        po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "result", value)));
+        po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
     }
 
     private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, String nodeName) {
@@ -159,7 +159,9 @@ public class GraphCommandService extends GraphLambdaFunction {
                         if (response.hasError()) {
                             po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
                         } else {
-                            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " executed"));
+                            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName +
+                                    " run for "+response.getExecutionTime()+
+                                    " ms with exit path '"+response.getBody()+"'"));
                         }
                     });
         } else {
@@ -299,35 +301,28 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
-        if (lines.size() < 3) {
-            throw new IllegalArgumentException("To instantiate graph, there must be at least one data mapping entry");
-        }
-        var parts = util.split(lines.get(1).toLowerCase(), " ");
-        if (parts.size() == 3
-                && "with".equals(parts.getFirst()) && "data".equals(parts.get(1)) && "mapping".equals(parts.get(2))) {
-            var graph = graphModels.get(inRoute);
-            if (graph != null) {
-                var instance = new GraphInstance();
-                instance.graph.importGraph(graph.exportGraph());
-                // map node properties to state machine
-                var nodes = instance.graph.getNodes();
-                for (var node: nodes) {
-                    var name = node.getAlias();
-                    var properties = node.getProperties();
-                    instance.stateMachine.setElement(name, properties);
-                }
-                log.info("Instantiate graph with {} nodes", nodes.size());
-                // perform data mapping
-                var count =  new AtomicInteger(0);
-                for (int i=2; i < lines.size(); i++) {
+        var graph = graphModels.get(inRoute);
+        if (graph != null) {
+            var instance = new GraphInstance();
+            instance.graph.importGraph(graph.exportGraph());
+            // map node properties to state machine
+            var nodes = instance.graph.getNodes();
+            for (var node: nodes) {
+                var name = node.getAlias();
+                var properties = node.getProperties();
+                instance.stateMachine.setElement(name, properties);
+            }
+            log.info("Instantiate graph with {} nodes", nodes.size());
+            // perform data mapping
+            var count =  new AtomicInteger(0);
+            if (lines.size() > 1) {
+                for (int i = 1; i < lines.size(); i++) {
                     doInitialDataMapping(lines, i, instance, count);
                 }
-                graphInstances.put(inRoute, instance);
-                po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Mapped "+
-                        count.get()+" "+ (count.get() == 1? "entry" : "entries")));
             }
-        } else {
-            throw new IllegalArgumentException("The second line must be 'with data mapping'");
+            graphInstances.put(inRoute, instance);
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Loaded "+
+                    count.get()+" mock "+ (count.get() == 1? "entry" : "entries")));
         }
     }
 
@@ -620,7 +615,7 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private String getSkillDoc(PostOffice po, String skill) {
         if (po.exists(skill)) {
-            var filename = SKILL_PREFIX + GraphJs.ROUTE.replace('.', '-') + MARKDOWN_EXT;
+            var filename = SKILL_PREFIX + skill.replace('.', '-') + MARKDOWN_EXT;
             try (var in = this.getClass().getResourceAsStream(filename)) {
                 return in == null? "Did you forget to add "+filename+"?" : util.stream2str(in);
             } catch (IOException e) {

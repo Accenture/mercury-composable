@@ -19,6 +19,68 @@ rest:
     cors: cors_1
     headers: header_1
     tracing: true
+
+  - service: 'http.flow.adapter'
+    methods: ['GET']
+    url: '/api/specs/question/{id}'
+    flow: 'show-question-specs'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'http.flow.adapter'
+    methods: ['GET']
+    url: '/api/specs/data/{id}'
+    flow: 'show-data-specs'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'http.flow.adapter'
+    methods: ['GET']
+    url: '/api/specs/provider/{protocol}/{service}'
+    flow: 'show-provider-specs'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'http.flow.adapter'
+    methods: ['POST']
+    url: '/api/data/{question_id}'
+    flow: 'data-by-dictionary'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # MOCK endpoints
+
+  - service: 'mock.mdm.profile'
+    methods: ['POST']
+    url: '/api/mdm/profile'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'mock.mdm.profile'
+    methods: ['GET']
+    url: '/api/mdm/profile/{id}'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'mock.account.details'
+    methods: ['POST']
+    url: '/api/account/details'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

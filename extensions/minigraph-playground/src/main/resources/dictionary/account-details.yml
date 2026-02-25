@@ -1,0 +1,22 @@
+#
+# Account details
+#
+dictionary:
+  id: 'account-details'
+  purpose: 'account details'
+  target: 'account://details'
+  input:
+    - 'person_id'
+    - 'account_id'
+    - 'hello_id:100'
+    - 'constant_id:float(20.3)'
+  output:
+#    - 'response.account.details -> result.account_details'
+
+#
+# you can select a subset of the response using the model namespace for data mapping
+#
+    - 'response.account.details.balance -> model.account.balance'
+    - 'response.account.details.type -> model.account.type'
+    - 'model.account -> result.account_details'
+

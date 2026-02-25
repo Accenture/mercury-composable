@@ -1,0 +1,16 @@
+#
+# Accounts
+#
+provider:
+  protocol: 'account'
+  service: 'details'
+  url: 'http://127.0.0.1:${rest.server.port}/api/account/details'
+  method: 'POST'
+  skills:
+    - 'oauth2-bearer'
+  headers:
+    - 'accept: application/json'
+    - 'content-type: application/json'
+  input:
+    - 'person_id -> person_id'
+    - 'account_id -> account_id'

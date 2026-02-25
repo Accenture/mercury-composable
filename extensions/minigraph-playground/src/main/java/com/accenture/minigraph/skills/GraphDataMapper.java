@@ -9,10 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @PreLoad(route = GraphDataMapper.ROUTE, instances=200)
 public class GraphDataMapper extends GraphLambdaFunction {
     public static final String ROUTE = "graph.data.mapper";
+    private static final Set<String> RESERVED_PARAMETERS = Set.of("skill", "mapping", "js", "decision", "question");
     private static final Logger log = LoggerFactory.getLogger(GraphDataMapper.class);
 
     @Override
@@ -22,39 +24,32 @@ public class GraphDataMapper extends GraphLambdaFunction {
         }
         var in = headers.get(IN);
         var nodeName = headers.getOrDefault(NODE, "none");
-        var graphInstance = graphInstances.get(in);
-        if (graphInstance == null) {
-            throw new IllegalArgumentException("Graph instance " + in + NOT_FOUND);
-        }
-        var node = graphInstance.graph.findNodeByAlias(nodeName);
-        if (node == null) {
-            throw new IllegalArgumentException(NODE_NAME + nodeName + NOT_FOUND);
-        }
+        var graphInstance = getGraphInstance(in);
+        var node = getNode(nodeName, graphInstance.graph);
         var properties = node.getProperties();
         if (!ROUTE.equals(properties.get(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
-        var mapping = properties.get("mapping");
+        var mapping = properties.get(MAPPING);
         if (mapping instanceof List<?> entries) {
             for (Object entry : entries) {
                 handleDataMappingEntry(nodeName, String.valueOf(entry), graphInstance);
             }
         } else {
-            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have data mapping entries");
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'mapping' entries");
         }
-        return null;
+        return NEXT;
     }
 
     private void handleDataMappingEntry(String nodeName, String command, GraphInstance graphInstance) {
         int sep = command.indexOf(MAP_TO);
         if (sep > 0) {
-            var graph = graphInstance.graph;
             var stateMachine = graphInstance.stateMachine;
             var lhs = command.substring(0, sep).trim();
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
-            if (!validRhs(rhs, graph)) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName + " Invalid mapping '"+command+"'");
+            if (!validRhs(rhs, graphInstance.graph)) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid mapping '"+command+"'");
             }
             if (value != null) {
                 stateMachine.setElement(rhs, value);
@@ -65,6 +60,8 @@ public class GraphDataMapper extends GraphLambdaFunction {
                     stateMachine.removeElement(rhs);
                 }
             }
+        } else {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
     }
 
@@ -75,8 +72,11 @@ public class GraphDataMapper extends GraphLambdaFunction {
         if (rhs.startsWith(".") || !rhs.contains(".")) {
             return false;
         }
-        var alias = rhs.substring(0, rhs.indexOf("."));
-        var node = graph.findNodeByAlias(alias);
-        return node != null;
+        var parts = util.split(rhs, ".[]");
+        if (parts.size() < 2) {
+            return false;
+        }
+        var node = graph.findNodeByAlias(parts.getFirst());
+        return node != null && !RESERVED_PARAMETERS.contains(parts.get(1));
     }
 }

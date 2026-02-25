@@ -1,0 +1,15 @@
+#
+# Master data management (MDM)
+#
+provider:
+  protocol: 'mdm'
+  service: 'profile'
+  url: 'http://127.0.0.1:${rest.server.port}/api/mdm/profile'
+  method: 'POST'
+  skills:
+    - 'oauth2-bearer'
+  headers:
+    - 'accept: application/json'
+    - 'content-type: application/json'
+  input:
+    - 'person_id -> person_id'

@@ -1104,7 +1104,6 @@ public class Utility {
      * @return true if it is an intranet address
      */
     public boolean isIntranetAddress(String host) {
-        Utility util = Utility.getInstance();
         if (host == null) {
             return false;
         }
@@ -1114,12 +1113,12 @@ public class Utility {
         if ("127.0.0.1".equals(host)) {
             return true;
         }
-        List<String> segments = util.split(host, ".");
+        List<String> segments = split(host, ".");
         if (segments.size() != 4) {
             return false;
         }
         for (String number: segments) {
-            if (number.length() > 3 || !util.isDigits(number)) {
+            if (number.length() > 3 || !isDigits(number)) {
                 return false;
             }
         }
@@ -1161,11 +1160,10 @@ public class Utility {
     }
 
     public int getDurationInSeconds(String duration) {
-        Utility util = Utility.getInstance();
         int multiplier = 1;
         final int n;
         if (duration.endsWith("s") || duration.endsWith("m") || duration.endsWith("h") || duration.endsWith("d")) {
-            n = util.str2int(duration.substring(0, duration.length()-1).trim());
+            n = str2int(duration.substring(0, duration.length()-1).trim());
             if (duration.endsWith("m")) {
                 multiplier = ONE_MINUTE;
             }
@@ -1176,7 +1174,7 @@ public class Utility {
                 multiplier = ONE_DAY;
             }
         } else {
-            n = util.str2int(duration);
+            n = str2int(duration);
         }
         return n * multiplier;
     }
