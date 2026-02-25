@@ -79,8 +79,10 @@ export default function Playground({ config }: PlaygroundProps) {
   useEffect(() => {
     if (!pinnedGraphPath) return;
 
-    const baseUrl = import.meta.env.DEV ? 'http://localhost:8085' : '';
-    const url = `${baseUrl}${pinnedGraphPath}`;
+    // Use a relative URL so the request is handled by the Vite dev-server proxy
+    // in development (/api → http://localhost:8085) and by the production server
+    // directly — no hard-coded origin needed in either environment.
+    const url = pinnedGraphPath;
 
     let cancelled = false;
     setGraphData(null);   // clear stale data while loading

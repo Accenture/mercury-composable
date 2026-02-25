@@ -40,6 +40,7 @@ const EXTERNAL_LINKS = [
   { href: '/info/routes', label: 'Services' },
   { href: '/health',      label: 'Health' },
   { href: '/env',         label: 'Environment' },
+  { href: 'http://localhost:8085/api/ws/json', label: 'Legacy' },
 ] as const;
 
 // ----------
