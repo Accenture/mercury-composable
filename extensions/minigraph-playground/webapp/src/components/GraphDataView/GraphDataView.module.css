@@ -42,6 +42,12 @@
   font-family: 'Courier New', Courier, monospace;
 }
 
+.toolbarActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .copyButton {
   background: transparent;
   border: 1px solid var(--border-color);
@@ -62,6 +68,13 @@
 .copyButton:focus-visible {
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
+}
+
+.copyButtonActive,
+.copyButtonActive:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--bg-primary);
 }
 
 /* ── Scrollable JSON body ── */
