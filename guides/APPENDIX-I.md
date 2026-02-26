@@ -1,5 +1,7 @@
 # Application Configuration
 
+*Reference: Complete listing of application.properties and application.yml configuration keys.*
+
 The following parameters are used by the system. You can define them in either the application.properties or
 application.yml file.
 

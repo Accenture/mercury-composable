@@ -1,5 +1,7 @@
 # Spring Boot Integration
 
+*Guide: How to run Mercury Composable as a Spring Boot application.*
+
 While the platform-core foundation code includes a lightweight non-blocking HTTP server, you can also turn your
 application into an executable Spring Boot application.
 

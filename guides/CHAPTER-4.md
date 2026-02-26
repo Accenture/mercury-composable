@@ -1,5 +1,7 @@
 ﻿# Event Script Syntax
 
+*Reference: Complete DSL reference for YAML event flow configurations, task types, and data mapping.*
+
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
 

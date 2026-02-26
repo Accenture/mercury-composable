@@ -1,5 +1,7 @@
 # Event over HTTP
 
+*Guide: How to enable cross-instance event communication via the Event API endpoint.*
+
 The in-memory event system allows functions to communicate with each other in the same application memory space.
 
 In composable architecture, applications are modular components in a network. Some transactions may require

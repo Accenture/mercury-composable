@@ -2,7 +2,7 @@
 
 A Java framework for building composable, event-driven applications from self-contained functions wired together by YAML-configured event flows.
 
-[![License](https://img.shields.io/github/license/Accenture/mercury-composable)](LICENSE) [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/projects/jdk/21/) [![Last Commit](https://img.shields.io/github/last-commit/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/commits/main) [![GitHub Stars](https://img.shields.io/github/stars/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/stargazers)
+[![License](https://img.shields.io/github/license/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/blob/main/LICENSE) [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/projects/jdk/21/) [![Last Commit](https://img.shields.io/github/last-commit/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/commits/main) [![GitHub Stars](https://img.shields.io/github/stars/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/stargazers)
 
 > **New to Mercury Composable?** Jump to the [Quickstart](https://accenture.github.io/mercury-composable/guides/QUICKSTART/) to get a working app running in under 5 minutes.
 
@@ -147,4 +147,4 @@ This project is licensed under the Apache 2.0 license.
 
 ## License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+This project is licensed under the [Apache License 2.0](https://github.com/Accenture/mercury-composable/blob/main/LICENSE).

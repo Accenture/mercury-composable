@@ -1,5 +1,7 @@
 # Conquer Complexity: Embrace Composable Design
 
+*Concepts: Essay on composable design patterns and their benefits for maintainability and scalability.*
+
 ## Introduction
 
 Software development is an ongoing battle against complexity. Over time, codebases can become tangled and unwieldy,

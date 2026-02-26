@@ -1,5 +1,7 @@
 # Function Execution Strategies
 
+*Concepts: Understanding virtual threads, kernel threads, and Mercury's execution model.*
+
 ## Define a function
 
 In a composable application, each function is self-contained with zero dependencies with other user functions.

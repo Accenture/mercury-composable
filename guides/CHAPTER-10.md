@@ -1,5 +1,7 @@
 # Minimalist Property Graph
 
+*Guide: How to use the built-in in-memory property graph for computation and decision-making.*
+
 An in-memory Property Graph system is available as a built-in feature in the platform-core.
 
 ## Purpose

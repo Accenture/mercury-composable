@@ -1,5 +1,7 @@
 # REST Automation
 
+*Guide: How to define REST API endpoints declaratively using rest.yaml configuration.*
+
 The platform-core foundation library contains a built-in non-blocking HTTP server that you can use to create REST
 endpoints. Behind the curtain, it is using the vertx web client and server libraries.
 
