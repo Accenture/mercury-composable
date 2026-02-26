@@ -322,7 +322,7 @@ Calling code uses the same `PostOffice` API whether the target is local or remot
 
 | File | Purpose |
 |---|---|
-| `application.properties` / `application.yml` | Port (`rest.server.port`), component scan (`web.component.scan`), flow list reference (`yaml.flow.automation`), cloud connector (`cloud.connector`), serialization strategy (`snake.case.serialization`) |
+| [`application.properties` / `application.yml`](CONFIGURATION-REFERENCE.md) | Port (`rest.server.port`), component scan (`web.component.scan`), flow list reference (`yaml.flow.automation`), cloud connector (`cloud.connector`), serialization strategy (`snake.case.serialization`) |
 | `rest.yaml` | Declarative HTTP endpoint definitions: URL, methods, flow or service route, CORS config, auth function, tracing |
 | `flows.yaml` | Index of individual flow YAML files to load (`flows:` list; optional `location:` for non-classpath paths) |
 | `*.yml` in `flows/` | Individual event flow configurations, each defining one transaction's complete task sequence |

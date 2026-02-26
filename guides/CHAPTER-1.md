@@ -219,6 +219,8 @@ yaml.rest.automation=classpath:/rest.yaml
 yaml.flow.automation=classpath:/flows.yaml
 ```
 
+See the [Configuration Reference](CONFIGURATION-REFERENCE.md) for a complete list of all available properties.
+
 The flow configuration files are shown in the "main/resources/flows" folder where you will find the flow configuration
 files for the three event flows, namely get-profile.yml, delete-profile.yml and create-profile.yml.
 

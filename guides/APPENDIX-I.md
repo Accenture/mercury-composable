@@ -2,6 +2,10 @@
 
 *Reference: Complete listing of application.properties and application.yml configuration keys.*
 
+> **Note**: This appendix has been superseded by the comprehensive
+> [Configuration Reference](CONFIGURATION-REFERENCE.md). Please refer to that page for
+> the most up-to-date and complete listing of all configuration properties.
+
 The following parameters are used by the system. You can define them in either the application.properties or
 application.yml file.
 
