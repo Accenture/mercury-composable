@@ -237,6 +237,8 @@ and Node.js have different syntax for annotation, they use a similar declarative
 
 > *Note*: the "instance" count for each composable function controls execution concurrency in a single application.
           It can be used with horizontal scaling to optimize use of computing resources.
+For a technical deep dive into how the framework implements these principles,
+see the [Architecture Overview](ARCHITECTURE.md).
 <br>
 
 |                   Home                    |          Chapter-1           |

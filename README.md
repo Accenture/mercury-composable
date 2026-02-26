@@ -1,110 +1,150 @@
-# Mercury Composable for Java
+# Mercury Composable
 
-Good news! We have merged our enterprise extension ("Event Script") into the Mercury event-driven
-programming foundation codebase from version 4.2 onwards. It is a comprehensive toolkit to write
-composable applications including microservices and serverless.
+A Java framework for building composable, event-driven applications from self-contained functions wired together by YAML-configured event flows.
 
-The specification for this technology is documented under US Patent application 18/459,307. 
-The source code is provided as is under the Apache 2.0 license.
+[![License](https://img.shields.io/github/license/Accenture/mercury-composable)](LICENSE) [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/projects/jdk/21/) [![Last Commit](https://img.shields.io/github/last-commit/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/commits/main) [![GitHub Stars](https://img.shields.io/github/stars/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/stargazers)
 
-The project is available in both Java and Node.js languages.
+> **New to Mercury Composable?** Jump to the [Quickstart](https://accenture.github.io/mercury-composable/guides/QUICKSTART/) to get a working app running in under 5 minutes.
 
-For Java, please visit [Mercury Composable for Java](https://github.com/Accenture/mercury-composable)
+## What is Mercury Composable?
 
-For Node.js, please browse [Mercury Composable for Node](https://github.com/Accenture/mercury-nodejs)
-and [Composable-example](https://github.com/Accenture/mercury-composable-examples)
+Mercury Composable is a software development toolkit for building composable, event-driven Java applications.
+Each application is assembled from independent functions — plain Java classes with no direct knowledge of each
+other — that communicate exclusively through events. Event flows are defined in YAML configuration files, so
+orchestration logic is configuration rather than code. The framework uses Java 21 virtual threads throughout,
+making it suited for high-concurrency microservices and serverless deployments. Because each function is
+self-contained with immutable I/O, the design is optimized for both human developers and AI code assistants.
 
-January 2026
+## Quick Start
 
-# Optimized for Human
+**[5-Minute Quickstart](https://accenture.github.io/mercury-composable/guides/QUICKSTART/)**
+— Clone, build, and run your first composable app.
 
-Composability methodology provides a clear path from Domain Driven Design (DDD), Event Driven Architecture (EDA)
-to application software design and implementation, connecting product managers, domain knowledge owners,
-architects and engineers together to deliver high quality products.
+### Prerequisites
 
-# Optimized for AI
+- Java 21 or higher
+- Maven 3.9.7 or higher
 
-The methodology reduces the problem space for AI code assistant because each function is self-contained,
-independent and I/O is immutable.
+### Build from source
 
-In addition, Event Script is a Domain Specific Language (DSL) that can be understood by AI agent with some
-fine-tuning, thus making the whole ecosystem AI friendly.
+```shell
+git clone https://github.com/Accenture/mercury-composable.git
+cd mercury-composable
+mvn clean install
+```
 
-# Getting Started
+### Run the example application
+
+```shell
+cd examples/composable-example
+java -jar target/composable-example-4.3.69.jar
+```
+
+### Try it out
+
+```bash
+# Create a profile
+curl -X POST http://127.0.0.1:8100/api/profile \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"id": 100, "name": "Hello World", "address": "100 World Blvd", "telephone": "123-456-7890"}'
+
+# Retrieve the profile
+curl http://127.0.0.1:8100/api/profile/100
+```
+
+## How It Works
 
 A composable application is designed in 3 steps:
 
-1. Describe your use case as an event flow diagram
-2. Create a configuration file to represent the event flow
-3. Write a user story for each user function
+1. **Describe** your use case as an event flow diagram
+2. **Configure** the event flow in a YAML file
+3. **Implement** each function as a self-contained unit
 
-To get started, please visit [Chapter 1, Developer Guide](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/)
-and [Methodology](https://accenture.github.io/mercury-composable/guides/METHODOLOGY/).
+The YAML flow below defines a single-task "greetings" endpoint. The route name `greeting.demo` is the only
+connection between the flow configuration and the Java function:
 
-We will illustrate the methodology with a composable application example.
+```yaml
+flow:
+  id: 'greetings'
+  description: 'Simplest flow'
+  ttl: 10s
 
-# Conquer Complexity: Embrace Composable Design
+first.task: 'greeting.demo'
 
-## Introduction
+tasks:
+  - input:
+      - 'input.path_parameter.user -> user'
+    process: 'greeting.demo'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Hello World'
+    execution: end
+```
 
-Software development is an ongoing battle against complexity. Over time, codebases can become tangled and unwieldy,
-hindering innovation and maintenance. This article introduces composable design patterns, a powerful approach to
-build applications that are modular, maintainable, and scalable.
+The corresponding function reads its input, builds a response, and returns it:
 
-## The Perils of Spaghetti Code
+```java
+@PreLoad(route="greeting.demo", instances=10)
+public class Greetings implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    @Override
+    public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("user", input.get("user"));
+        result.put("message", "Welcome");
+        result.put("time", new Date());
+        return result;
+    }
+}
+```
 
-We have all encountered it: code that resembles a plate of spaghetti – tangled dependencies, hidden logic,
-and a general sense of dread when approaching modifications. These codebases are difficult to test, debug, 
-and update. Composable design patterns offer a solution.
+## Documentation
 
-## Evolution of Design Patterns
+Full documentation is available at [https://accenture.github.io/mercury-composable/](https://accenture.github.io/mercury-composable/).
 
-Software development methodologies have evolved alongside hardware advancements. In the early days, developers 
-prized efficiency, writing code from scratch due to limited libraries. The rise of frameworks brought structure
-and boilerplate code, but also introduced potential rigidity.
+| Resource | Link |
+|---|---|
+| Full Documentation | https://accenture.github.io/mercury-composable/ |
+| Architecture Overview | https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/ |
+| Methodology & Principles | https://accenture.github.io/mercury-composable/guides/METHODOLOGY/ |
+| Getting Started Guide | https://accenture.github.io/mercury-composable/guides/CHAPTER-1/ |
+| Event Script Syntax | https://accenture.github.io/mercury-composable/guides/CHAPTER-4/ |
+| API Overview | https://accenture.github.io/mercury-composable/guides/CHAPTER-9/ |
+| Application Properties Reference | https://accenture.github.io/mercury-composable/guides/APPENDIX-I/ |
 
-## Functional Programming and Event-Driven Architecture
+## Also Available in Node.js
 
-Functional programming, with its emphasis on pure functions and immutable data, paved the way for composable design.
-This approach encourages building applications as chains of well-defined functions, each with a clear input and output.
+Mercury Composable is also available for Node.js. See
+[mercury-nodejs](https://github.com/Accenture/mercury-nodejs) for the core library and
+[mercury-composable-examples](https://github.com/Accenture/mercury-composable-examples) for usage examples.
 
-Event-driven architecture complements this approach by using events to trigger functions. This loose coupling
-promotes modularity and scalability.
+## Key Concepts
 
-## The Power of Composable Design
+**Composable Function** - A self-contained Java class implementing `LambdaFunction` or `TypedLambdaFunction`,
+registered under a named route, with no direct references to other functions.
 
-At its core, composable design emphasizes two principles:
+**Event Envelope** - The immutable message container used for all inter-function communication; the body is
+MsgPack-serialized and headers are a `Map<String, String>`.
 
-1.	*Self-Contained Functions*: Each function is a well-defined unit, handling its own logic and transformations
-    with minimal dependencies.
-2.	*Event Choreography*: Functions communicate through events, allowing for loose coupling and independent
-    execution.
+**Event Flow / Event Script** - A YAML configuration file that sequences named functions for a given
+transaction, replacing orchestration code with configuration.
 
-## Benefits of Composable Design
+**Flow Adapter** - An entry point that converts external requests (HTTP, Kafka, serverless events) into
+events and delivers them to the event manager.
 
-- *Enhanced Maintainability*: Isolated functions are easier to understand, test, and modify.
-- *Improved Reusability*: Self-contained functions can be easily reused across different parts of your application.
-- *Superior Performance*: Loose coupling reduces bottlenecks and encourages asynchronous execution.
-- *Streamlined Testing*: Well-defined functions facilitate unit testing and isolate potential issues.
-- *Simplified Debugging*: Independent functions make it easier to pinpoint the source of errors.
-- *Technology Agnostic*: You may use your preferred frameworks and tools to write composable code, 
-  allowing for easier future adaptations.
+**Route Name** - A string identifier used to register and address a function through the `Platform` registry
+and `PostOffice`.
 
-## Implementing Composable Design
+**State Machine** - A per-transaction key-value store (referenced in flows as `model`) that holds
+intermediate results across the stateless functions in a flow.
 
-While seemingly simple, implementing composable design can involve some initial complexity.
+## Contributing
 
-Here's a breakdown of the approach:
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request,
+and note that all contributors are expected to follow the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+This project is licensed under the Apache 2.0 license.
 
-- *Function Design*: Each function serves a specific purpose, with clearly defined inputs and outputs.
-- *Event Communication*: Functions communicate through well-defined events, avoiding direct dependencies.
-- *Choreography*: For each event flow instance, an event manager, with a state machine and event flow configuration,
-                  sequences and triggers functions based on events.
+## License
 
-## Conclusion
-
-Composable design patterns offer a powerful paradigm for building maintainable, scalable, and future-proof applications.
-By embracing the principles of self-contained functions and event-driven communication, you can conquer complexity and
-write code that is a joy to work with.
-
-> *Source*: This article was summarized from composable technology papers using AI in January 2025
+This project is licensed under the [Apache License 2.0](LICENSE).
