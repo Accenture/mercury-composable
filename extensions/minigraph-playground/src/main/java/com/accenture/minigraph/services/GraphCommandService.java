@@ -94,7 +94,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                     Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
         } else if (words.size() > 1 && (words.getFirst().equalsIgnoreCase("create") ||
                     words.getFirst().equalsIgnoreCase("instantiate"))) {
-            // handle create command without type and properties
+            // handle create command without type and properties OR instantiate without mock data
             handleMultiLineCommand(po, inRoute, outRoute, command);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
             handleDescribeCommand(po, inRoute, outRoute, words);
@@ -104,16 +104,17 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("inspect")) {
             handleInspectCommand(po, inRoute, outRoute, words.get(1));
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
-            handleRunCommand(po, inRoute, outRoute);
+            handleRunCommand(inRoute, outRoute);
         } else {
             handleMoreCommand(po, inRoute, outRoute, words);
         }
     }
 
-    private void handleRunCommand(PostOffice po, String inRoute, String outRoute) {
+    private void handleRunCommand(String inRoute, String outRoute) {
         var stateMachine = getGraphInstance(inRoute).stateMachine;
         var ttl = util.str2int(String.valueOf(stateMachine.getElement("model.ttl", "10")));
         var timeout = Math.max(5, ttl) * 1000L;
+        var po = PostOffice.trackable("minigraph.playground", util.getUuid(), "/playground");
         po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
                         .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
                 .thenAccept(response -> {
