@@ -22,4 +22,8 @@ nav:
     - Code of Conduct: CODE_OF_CONDUCT.md
     - Contributing: CONTRIBUTING.md
     - Table of Contents: guides/TABLE-OF-CONTENTS.md
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]+'
 theme: readthedocs
