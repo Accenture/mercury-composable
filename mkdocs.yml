@@ -2,7 +2,10 @@ site_name: Composable for Java
 site_url: https://github.com/accenture/mercury-composable
 nav:
     - Home: README.md
+    - Quickstart: guides/QUICKSTART.md
     - Methodology: guides/METHODOLOGY.md
+    - Architecture Overview: guides/ARCHITECTURE.md
+    - Composable Design: guides/COMPOSABLE-DESIGN.md
     - Getting Started: guides/CHAPTER-1.md
     - Function Execution Strategies: guides/CHAPTER-2.md
     - REST Automation: guides/CHAPTER-3.md
