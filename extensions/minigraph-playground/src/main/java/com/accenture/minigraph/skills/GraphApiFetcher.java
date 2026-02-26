@@ -57,9 +57,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
 
     private Object retrieveFromDataDictionary(PostOffice po, String nodeName, GraphInstance graphInstance,
                                               Map<String, Object> dataset, long ttl) {
-
-        System.out.println("tracing----->"+po.getTraceId());
-
         var stateMachine = graphInstance.stateMachine;
         var forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, DATA_DICTIONARY);
