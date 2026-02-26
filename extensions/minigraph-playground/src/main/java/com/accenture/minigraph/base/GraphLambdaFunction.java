@@ -57,6 +57,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String EXECUTE = "execute";
     protected static final String SKILL = "skill";
     protected static final String SKILL_PREFIX = "/skills/";
+    protected static final String SINK = ".sink";
+    protected static final String RUN = "run";
 
     protected GraphInstance getGraphInstance(String id) {
         var instance = graphInstances.get(id);

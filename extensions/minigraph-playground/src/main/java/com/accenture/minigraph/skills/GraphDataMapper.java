@@ -4,8 +4,6 @@ import com.accenture.minigraph.base.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +13,6 @@ import java.util.Set;
 public class GraphDataMapper extends GraphLambdaFunction {
     public static final String ROUTE = "graph.data.mapper";
     private static final Set<String> RESERVED_PARAMETERS = Set.of("skill", "mapping", "js", "decision", "question");
-    private static final Logger log = LoggerFactory.getLogger(GraphDataMapper.class);
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
@@ -51,14 +48,19 @@ public class GraphDataMapper extends GraphLambdaFunction {
             if (!validRhs(rhs, graphInstance.graph)) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid mapping '"+command+"'");
             }
-            if (value != null) {
-                stateMachine.setElement(rhs, value);
-            } else {
-                if (rhs.endsWith("]") && rhs.contains("[")) {
-                    stateMachine.setElement(rhs, null);
+            graphInstance.safety.lock();
+            try {
+                if (value != null) {
+                    stateMachine.setElement(rhs, value);
                 } else {
-                    stateMachine.removeElement(rhs);
+                    if (rhs.endsWith("]") && rhs.contains("[")) {
+                        stateMachine.setElement(rhs, null);
+                    } else {
+                        stateMachine.removeElement(rhs);
+                    }
                 }
+            } finally {
+                graphInstance.safety.unlock();
             }
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");

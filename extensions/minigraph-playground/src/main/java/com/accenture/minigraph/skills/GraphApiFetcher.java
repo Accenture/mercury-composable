@@ -7,9 +7,6 @@ import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
-import org.platformlambda.core.util.MultiLevelMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -18,7 +15,6 @@ import java.util.Map;
 @PreLoad(route = GraphApiFetcher.ROUTE, instances=200)
 public class GraphApiFetcher extends GraphLambdaFunction {
     public static final String ROUTE = "graph.api.fetcher";
-    private static final Logger log = LoggerFactory.getLogger(GraphApiFetcher.class);
     private static final String DATA_DICTIONARY = "data-by-dictionary";
 
     @Override
@@ -53,25 +49,31 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             var dataset = Map.of("body", parameters instanceof Map? parameters : Map.of(),
                                 "header", Map.of(),
                                 "path_parameter", Map.of("question_id", questionId));
-            return retrieveFromDataDictionary(po, nodeName, stateMachine, dataset, flow.ttl);
+            return retrieveFromDataDictionary(po, nodeName, graphInstance, dataset, flow.ttl);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'mapping' entries");
         }
     }
 
-    private Object retrieveFromDataDictionary(PostOffice po, String nodeName, MultiLevelMap stateMachine,
+    private Object retrieveFromDataDictionary(PostOffice po, String nodeName, GraphInstance graphInstance,
                                               Map<String, Object> dataset, long ttl) {
+        var stateMachine = graphInstance.stateMachine;
         var forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, DATA_DICTIONARY);
         forward.setCorrelationId(util.getUuid()).setBody(dataset);
         return Mono.create(sink ->
-                po.eRequest(forward, ttl, false).thenAccept(response -> {
-            stateMachine.setElement(nodeName + ".status", response.getStatus());
-            if (response.hasError()) {
-                stateMachine.setElement(nodeName + RESULT_DOT + "error", response.getError());
-            } else {
-                stateMachine.setElement(nodeName + RESULT_DOT, response.getBody());
-            }
+            po.eRequest(forward, ttl, false).thenAccept(response -> {
+                graphInstance.safety.lock();
+                try {
+                    stateMachine.setElement(nodeName + ".status", response.getStatus());
+                    if (response.hasError()) {
+                        stateMachine.setElement(nodeName + RESULT_DOT + "error", response.getError());
+                    } else {
+                        stateMachine.setElement(nodeName + RESULT_DOT, response.getBody());
+                    }
+                } finally {
+                    graphInstance.safety.unlock();
+                }
             sink.success(NEXT);
         }));
     }
@@ -84,14 +86,19 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : nodeName + API_DOT + rhs;
-            if (value != null) {
-                stateMachine.setElement(target, value);
-            } else {
-                if (rhs.endsWith("]") && rhs.contains("[")) {
-                    stateMachine.setElement(rhs, null);
+            graphInstance.safety.lock();
+            try {
+                if (value != null) {
+                    stateMachine.setElement(target, value);
                 } else {
-                    stateMachine.removeElement(rhs);
+                    if (rhs.endsWith("]") && rhs.contains("[")) {
+                        stateMachine.setElement(rhs, null);
+                    } else {
+                        stateMachine.removeElement(rhs);
+                    }
                 }
+            } finally {
+                graphInstance.safety.unlock();
             }
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");

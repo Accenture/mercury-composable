@@ -24,8 +24,6 @@ import org.platformlambda.core.system.AutoStart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutionException;
-
 @MainApplication
 public class MainApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
@@ -35,9 +33,7 @@ public class MainApp implements EntryPoint {
     }
 
     @Override
-    public void start(String[] args) throws ExecutionException, InterruptedException {
-        // suppress warning
-        System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+    public void start(String[] args) {
         log.info("Started");
     }
 }

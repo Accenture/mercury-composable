@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.platformlambda.core.graph.MiniGraph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.graalvm.polyglot.Context;
 
@@ -19,10 +17,14 @@ import org.graalvm.polyglot.Context;
 @PreLoad(route = GraphJs.ROUTE, instances=50)
 public class GraphJs extends GraphLambdaFunction {
     public static final String ROUTE = "graph.js";
-    private static final Logger log = LoggerFactory.getLogger(GraphJs.class);
     private static final String IF_TAG = "if:";
     private static final String THEN_TAG = "then:";
     private static final String ELSE_TAG = "else:";
+
+    public GraphJs() {
+        // suppress JavaScript engine warning
+        System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
+    }
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
@@ -62,7 +64,12 @@ public class GraphJs extends GraphLambdaFunction {
                     }
                     var text = getJsWithParameters(rhs, graphInstance.stateMachine);
                     var result = context.eval(JS, text).as(Object.class);
-                    graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
+                    graphInstance.safety.lock();
+                    try {
+                        graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
+                    } finally {
+                        graphInstance.safety.unlock();
+                    }
                 } else {
                     throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
                 }

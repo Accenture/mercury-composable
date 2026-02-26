@@ -103,9 +103,27 @@ public class GraphCommandService extends GraphLambdaFunction {
             handleExecuteCommand(po, inRoute, outRoute, words.get(2));
         } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("inspect")) {
             handleInspectCommand(po, inRoute, outRoute, words.get(1));
+        } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
+            handleRunCommand(po, inRoute, outRoute);
         } else {
             handleMoreCommand(po, inRoute, outRoute, words);
         }
+    }
+
+    private void handleRunCommand(PostOffice po, String inRoute, String outRoute) {
+        var stateMachine = getGraphInstance(inRoute).stateMachine;
+        var ttl = util.str2int(String.valueOf(stateMachine.getElement("model.ttl", "10")));
+        var timeout = Math.max(5, ttl) * 1000L;
+        po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
+                        .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
+                .thenAccept(response -> {
+                    if (response.hasError()) {
+                        po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
+                    } else {
+                        po.send(new EventEnvelope().setTo(outRoute).setBody(
+                                "Knowledge graph executed in " + response.getExecutionTime() + " ms"));
+                    }
+                });
     }
 
     private void handleMoreCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
@@ -127,21 +145,16 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
-        var instance = graphInstances.get(inRoute);
-        if (instance == null) {
-            throw new IllegalArgumentException("Graph not instantiated");
-        }
-        var value = instance.stateMachine.getElement(key, "null");
+        var stateMachine = getGraphInstance(inRoute).stateMachine;
+        var value = stateMachine.getElement(key, "null");
         po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
     }
 
     private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, String nodeName) {
-        var graphInstance = graphInstances.get(inRoute);
-        if (graphInstance == null) {
-            throw new IllegalArgumentException("Graph not instantiated");
-        }
+        var graphInstance = getGraphInstance(inRoute);
         var graph = graphInstance.graph;
-        var ttl = util.str2int(String.valueOf(graphInstance.stateMachine.getElement("model.ttl", "10")));
+        var stateMachine = graphInstance.stateMachine;
+        var ttl = util.str2int(String.valueOf(stateMachine.getElement("model.ttl", "10")));
         var timeout = Math.max(5, ttl) * 1000L;
         var node = graph.findNodeByAlias(nodeName);
         if (node == null) {
@@ -303,24 +316,24 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
         if (graph != null) {
-            var instance = new GraphInstance();
-            instance.graph.importGraph(graph.exportGraph());
+            var graphInstance = new GraphInstance();
+            graphInstance.graph.importGraph(graph.exportGraph());
             // map node properties to state machine
-            var nodes = instance.graph.getNodes();
+            var nodes = graphInstance.graph.getNodes();
             for (var node: nodes) {
                 var name = node.getAlias();
                 var properties = node.getProperties();
-                instance.stateMachine.setElement(name, properties);
+                graphInstance.stateMachine.setElement(name, properties);
             }
             log.info("Instantiate graph with {} nodes", nodes.size());
             // perform data mapping
             var count =  new AtomicInteger(0);
             if (lines.size() > 1) {
                 for (int i = 1; i < lines.size(); i++) {
-                    doInitialDataMapping(lines, i, instance, count);
+                    doInitialDataMapping(lines, i, graphInstance, count);
                 }
             }
-            graphInstances.put(inRoute, instance);
+            graphInstances.put(inRoute, graphInstance);
             po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Loaded "+
                     count.get()+" mock "+ (count.get() == 1? "entry" : "entries")));
         }
