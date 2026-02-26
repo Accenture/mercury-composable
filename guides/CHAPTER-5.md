@@ -53,15 +53,15 @@ from a unit test.
 
 ## Writing your functions
 
-Please follow the step-by-step learning guide in [Chapter-1](CHAPTER-1.md) to write your own functions. You can then
+Please follow the step-by-step learning guide in [Getting Started](CHAPTER-1.md) to write your own functions. You can then
 configure new REST endpoints to use your new functions.
 
-In [Chapter-2](CHAPTER-2.md), we have discussed the two function execution strategies to optimize your application
+In [Function Execution Strategies](CHAPTER-2.md), we have discussed the two function execution strategies to optimize your application
 to the full potential of stability, performance and throughput.
 
 ## HTTP forwarding
 
-In [Chapter-3](CHAPTER-3.md), we have presented the configuration syntax for the "rest.yaml" REST automation 
+In [REST Automation](CHAPTER-3.md), we have presented the configuration syntax for the "rest.yaml" REST automation 
 definition file. Please review the sample rest.yaml file in the lambda-example project. You may notice that
 it has an entry for HTTP forwarding. The following entry in the sample rest.yaml file illustrates an HTTP 
 forwarding endpoint. In HTTP forwarding, you can replace the "service" route name with a direct HTTP target host.
