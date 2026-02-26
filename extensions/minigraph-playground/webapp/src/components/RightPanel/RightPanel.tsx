@@ -2,11 +2,12 @@ import { useId } from 'react';
 import PayloadEditor from '../PayloadEditor/PayloadEditor';
 import MarkdownPreview from '../MarkdownPreview/MarkdownPreview';
 import GraphView from '../GraphView/GraphView';
+import GraphDataView from '../GraphDataView/GraphDataView';
 import styles from './RightPanel.module.css';
 import { type ValidationResult } from '../../utils/validators';
 import type { MinigraphGraphData } from '../../utils/graphTypes';
 
-export type RightTab = 'payload' | 'preview' | 'graph';
+export type RightTab = 'payload' | 'preview' | 'graph' | 'graph-data';
 
 interface RightPanelProps {
   payload:        string;
@@ -31,10 +32,11 @@ export default function RightPanel({
   activeTab,
   onTabChange,
 }: RightPanelProps) {
-  const uid            = useId();
-  const payloadPanelId = `${uid}-tab-payload`;
-  const previewPanelId = `${uid}-tab-preview`;
-  const graphPanelId   = `${uid}-tab-graph`;
+  const uid             = useId();
+  const payloadPanelId  = `${uid}-tab-payload`;
+  const previewPanelId  = `${uid}-tab-preview`;
+  const graphPanelId    = `${uid}-tab-graph`;
+  const graphDataPanelId = `${uid}-tab-graph-data`;
 
   return (
     <div className={styles.rightPanel}>
@@ -73,6 +75,15 @@ export default function RightPanel({
             <span className={styles.pinnedBadge} aria-label="Graph data available">🕸️</span>
           )}
         </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'graph-data'}
+          aria-controls={graphDataPanelId}
+          className={`${styles.tab}${activeTab === 'graph-data' ? ` ${styles.tabActive}` : ''}`}
+          onClick={() => onTabChange('graph-data')}
+        >
+          Graph Data (Raw)
+        </button>
       </div>
 
       {/* Payload Editor tab body — always mounted */}
@@ -108,6 +119,16 @@ export default function RightPanel({
         className={`${styles.tabBody}${activeTab !== 'graph' ? ` ${styles.tabBodyHidden}` : ''}`}
       >
         <GraphView graphData={graphData} />
+      </div>
+
+      {/* Graph Data tab body — always mounted; shows pretty-printed raw JSON */}
+      <div
+        role="tabpanel"
+        id={graphDataPanelId}
+        tabIndex={activeTab === 'graph-data' ? 0 : -1}
+        className={`${styles.tabBody}${activeTab !== 'graph-data' ? ` ${styles.tabBodyHidden}` : ''}`}
+      >
+        <GraphDataView graphData={graphData} />
       </div>
     </div>
   );
