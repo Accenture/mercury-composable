@@ -33,7 +33,7 @@ For event choreography, input body is represented as a PoJo or a Map of key-valu
 dot-bracket convention to map subset of a PoJo from one function to another if needed.
 
 In addition to the input PoJo, you may pass additional parameters to the user function as event headers.
-We will discuss this in [Chapter 4 - Event Script Syntax](CHAPTER-4.md).
+We will discuss this in [Event Script Syntax](CHAPTER-4.md).
 
 ## Non-blocking design
 

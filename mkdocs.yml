@@ -3,23 +3,23 @@ site_url: https://github.com/accenture/mercury-composable
 nav:
     - Home: README.md
     - Methodology: guides/METHODOLOGY.md
-    - Chapter-1: guides/CHAPTER-1.md
-    - Chapter-2: guides/CHAPTER-2.md
-    - Chapter-3: guides/CHAPTER-3.md
-    - Chapter-4: guides/CHAPTER-4.md
-    - Chapter-5: guides/CHAPTER-5.md
-    - Chapter-6: guides/CHAPTER-6.md
-    - Chapter-7: guides/CHAPTER-7.md
-    - Chapter-8: guides/CHAPTER-8.md
-    - Chapter-9: guides/CHAPTER-9.md
-    - Chapter-10: guides/CHAPTER-10.md
-    - Appendix-I: guides/APPENDIX-I.md
-    - Appendix-II: guides/APPENDIX-II.md
-    - Appendix-III: guides/APPENDIX-III.md
-    - Release notes: CHANGELOG.md
-    - Design notes: arch-decisions/DESIGN-NOTES.md
+    - Getting Started: guides/CHAPTER-1.md
+    - Function Execution Strategies: guides/CHAPTER-2.md
+    - REST Automation: guides/CHAPTER-3.md
+    - Event Script Syntax: guides/CHAPTER-4.md
+    - Build, Test and Deploy: guides/CHAPTER-5.md
+    - Spring Boot Integration: guides/CHAPTER-6.md
+    - Event over HTTP: guides/CHAPTER-7.md
+    - Minimalist Service Mesh: guides/CHAPTER-8.md
+    - API Overview: guides/CHAPTER-9.md
+    - Minimalist Property Graph: guides/CHAPTER-10.md
+    - "Appendix I: Application Properties": guides/APPENDIX-I.md
+    - "Appendix II: Reserved Names & Headers": guides/APPENDIX-II.md
+    - "Appendix III: Actuators, HTTP Client & More": guides/APPENDIX-III.md
+    - Release Notes: CHANGELOG.md
+    - Design Notes: arch-decisions/DESIGN-NOTES.md
     - Inclusivity: INCLUSIVITY.md
     - Code of Conduct: CODE_OF_CONDUCT.md
-    - Contribution: CONTRIBUTING.md
-    - Contents: guides/TABLE-OF-CONTENTS.md
+    - Contributing: CONTRIBUTING.md
+    - Table of Contents: guides/TABLE-OF-CONTENTS.md
 theme: readthedocs
