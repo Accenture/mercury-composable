@@ -24,6 +24,7 @@ nav:
 
   - Reference:
     - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
+    - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
     - Event Script Syntax: guides/CHAPTER-4.md
     - API Overview: guides/CHAPTER-9.md
     - Application Properties: guides/APPENDIX-I.md

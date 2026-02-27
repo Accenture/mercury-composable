@@ -2,6 +2,9 @@
 
 *Reference: Complete DSL reference for YAML event flow configurations, task types, and data mapping.*
 
+> For a quick-reference lookup of all flow fields, namespaces, and task types, see the
+> [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md).
+
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
 
