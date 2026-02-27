@@ -8,7 +8,8 @@
 
 This page documents every field, namespace, and syntax element available in flow
 configuration files. For a tutorial-style introduction with worked examples, see
-[Event Script Syntax](CHAPTER-4.md).
+[Event Script Syntax](CHAPTER-4.md). For the `@PreLoad` annotation used to register
+task functions, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
 
 ---
 

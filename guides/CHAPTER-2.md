@@ -278,6 +278,8 @@ EventEnvelope result = po.request(requestEvent, timeout).get();
 
 ### Kernel thread pool
 
+For complete parameter details on `@KernelThreadRunner`, `@EventInterceptor`, and all other annotations, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
+
 When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
 the function will be executed using a "kernel thread pool" and Java will run your function in native 
 "preemptive multitasking" mode.

@@ -316,6 +316,8 @@ Calling code uses the same `PostOffice` API whether the target is local or remot
 | `@CloudService` | Mark a class as a cloud service plug-in selected by `cloud.services` in application.properties |
 | `@OptionalService` | Conditionally load a function based on a configuration expression (e.g., `!feature.flag`) |
 
+For complete parameter details, combination rules, and required interfaces, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
+
 ---
 
 ## Key Configuration Files

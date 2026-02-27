@@ -23,6 +23,7 @@ nav:
     - Design Notes: arch-decisions/DESIGN-NOTES.md
 
   - Reference:
+    - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
     - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
     - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
     - Event Script Syntax: guides/CHAPTER-4.md

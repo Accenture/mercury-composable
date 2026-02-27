@@ -270,6 +270,8 @@ You can override the default serialization strategy in 2 ways in the PreLoad ann
 1. Configure input / output serialization strategies
 2. Implement your own custom serializer using the CustomSerializer interface
 
+See the [Annotations Reference](ANNOTATIONS-REFERENCE.md) for complete `@PreLoad` parameter details and documentation of all other Mercury annotations.
+
 ```java
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

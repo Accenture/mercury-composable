@@ -104,6 +104,7 @@ stateless. The "state machine" is referenced using the namespace "model".
 ### Assigning a route name to a user function
 
 You can assign a route name to a Java class using the `PreLoad` annotation like this:
+See the [Annotations Reference](ANNOTATIONS-REFERENCE.md) for the complete list of parameters and all available annotations.
 
 ```java
 @PreLoad(route="v1.get.profile", instances=100)
