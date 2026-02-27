@@ -12,6 +12,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -29,6 +30,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String MAPPING = "mapping";
     protected static final String JS = "js";
     protected static final String DECISION = "decision";
+    protected static final String STATEMENT = "statement";
     protected static final String FLOW_ID = "flow_id";
     protected static final String API_DOT = ".api.";
     protected static final String RESULT_DOT = ".result.";
@@ -59,6 +61,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String SKILL_PREFIX = "/skills/";
     protected static final String SINK = ".sink";
     protected static final String RUN = "run";
+    private static final Set<String> RESERVED_PARAMETERS = Set.of("skill", "mapping", "js", "decision", "question");
 
     protected GraphInstance getGraphInstance(String id) {
         var instance = graphInstances.get(id);
@@ -134,5 +137,44 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
             }
         }
         return segment.end();
+    }
+
+    protected void handleDataMappingEntry(String nodeName, String command, GraphInstance graphInstance) {
+        int sep = command.indexOf(MAP_TO);
+        if (sep > 0) {
+            var stateMachine = graphInstance.stateMachine;
+            var lhs = command.substring(0, sep).trim();
+            var rhs = command.substring(sep + MAP_TO.length()).trim();
+            var value = helper.getLhsOrConstant(lhs, stateMachine);
+            if (!validRhs(rhs, graphInstance.graph)) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid mapping '"+command+"'");
+            }
+            if (value != null) {
+                stateMachine.setElement(rhs, value);
+            } else {
+                if (rhs.endsWith("]") && rhs.contains("[")) {
+                    stateMachine.setElement(rhs, null);
+                } else {
+                    stateMachine.removeElement(rhs);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    private boolean validRhs(String rhs, MiniGraph graph) {
+        if (rhs.startsWith(OUTPUT_ARRAY) || rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE)) {
+            return true;
+        }
+        if (rhs.startsWith(".") || !rhs.contains(".")) {
+            return false;
+        }
+        var parts = util.split(rhs, ".[]");
+        if (parts.size() < 2) {
+            return false;
+        }
+        var node = graph.findNodeByAlias(parts.getFirst());
+        return node != null && !RESERVED_PARAMETERS.contains(parts.get(1));
     }
 }

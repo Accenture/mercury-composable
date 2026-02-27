@@ -240,7 +240,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             // parameter:default_value
             int sep = k.indexOf(':');
             var key = sep == -1 ? k : k.substring(0, sep).trim();
-            if (parameters.containsKey(key)) {
+            if (parameters != null && parameters.containsKey(key)) {
                 required.put(key, parameters.get(key));
             } else if (sep != -1) {
                 // use default value if not set

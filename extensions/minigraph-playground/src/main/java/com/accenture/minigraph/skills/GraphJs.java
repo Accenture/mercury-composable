@@ -17,6 +17,8 @@ import org.graalvm.polyglot.Context;
 @PreLoad(route = GraphJs.ROUTE, instances=50)
 public class GraphJs extends GraphLambdaFunction {
     public static final String ROUTE = "graph.js";
+    private static final String MAPPING_TAG = "mapping:";
+    private static final String COMPUTE_TAG = "compute:";
     private static final String IF_TAG = "if:";
     private static final String THEN_TAG = "then:";
     private static final String ELSE_TAG = "else:";
@@ -35,56 +37,75 @@ public class GraphJs extends GraphLambdaFunction {
         var nodeName = headers.getOrDefault(NODE, "none");
         var graphInstance = getGraphInstance(in);
         var node = getNode(nodeName, graphInstance.graph);
-        var properties = node.getProperties();
-        if (!ROUTE.equals(properties.get(SKILL))) {
+        if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
-        var mapping = properties.get(JS);
-        var decision = properties.get(DECISION);
-        var jsEntries = mapping instanceof List<?> entries? entries : Collections.emptyList();
-        var decisionEntries = decision instanceof List<?> entries? entries : Collections.emptyList();
-        if (jsEntries.isEmpty() && decisionEntries.isEmpty()) {
-            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'js' or 'decision' entries");
+        var statements = node.getProperty(STATEMENT);
+        var entries = statements instanceof List<?> list? list : Collections.emptyList();
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
-        return executeJs(nodeName, jsEntries, decisionEntries, graphInstance);
+        var js = 0;
+        var error = 0;
+        for (Object entry : entries) {
+            var line = String.valueOf(entry).trim().toLowerCase();
+            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG)) {
+                js++;
+            } else if (!line.startsWith(MAPPING_TAG)) {
+                error++;
+            }
+        }
+        if (js == 0) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'IF:' or 'COMPUTE:' statements");
+        }
+        if (error > 0) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName +
+                                                " must use 'IF:', 'COMPUTE:' or 'MAPPING:' statements");
+        }
+        return executeStatements(nodeName, entries, graphInstance);
     }
 
-    private String executeJs(String nodeName, List<?> jsEntries, List<?> decisionEntries, GraphInstance graphInstance) {
+    private String executeStatements(String nodeName, List<?> entries, GraphInstance graphInstance) {
         try (Context context = Context.create(JS)) {
-            // execute JavaScript statements
-            for (Object entry : jsEntries) {
-                var command = String.valueOf(entry);
-                int sep = command.indexOf(MAP_TO);
-                if (sep > 0) {
-                    // lhs is result key and rhs is JavaScript statement
-                    var lhs = command.substring(0, sep).trim();
-                    var rhs = command.substring(sep + MAP_TO.length()).trim();
-                    if (lhs.isEmpty() || rhs.isEmpty()) {
-                        throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid js '"+command+"'");
+            for (Object entry : entries) {
+                var line = String.valueOf(entry).trim();
+                var colon = line.indexOf(':');
+                var tag = line.substring(0, colon+1).toLowerCase();
+                var command = line.substring(colon + 1);
+                if (IF_TAG.equals(tag)) {
+                    // evaluate decisions from an if-then-else multiline statement
+                    var lines = util.split(line, "\n");
+                    var decision = evaluate(context, graphInstance, nodeName, lines);
+                    if (decision != null) {
+                        return decision;
                     }
-                    var text = getJsWithParameters(rhs, graphInstance.stateMachine);
-                    var result = context.eval(JS, text).as(Object.class);
-                    graphInstance.safety.lock();
-                    try {
-                        graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
-                    } finally {
-                        graphInstance.safety.unlock();
-                    }
-                } else {
-                    throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
                 }
-            }
-            // evaluate decisions
-            for (Object entry : decisionEntries) {
-                var command = String.valueOf(entry).trim();
-                var lines = util.split(command, "\n");
-                var decision = evaluate(context, graphInstance, nodeName, lines);
-                if (decision != null) {
-                    return decision;
+                if (COMPUTE_TAG.equals(tag)) {
+                    compute(context, command, nodeName, graphInstance);
+                }
+                if (MAPPING_TAG.equals(tag)) {
+                    handleDataMappingEntry(nodeName, command, graphInstance);
                 }
             }
         }
         return NEXT;
+    }
+
+    private void compute(Context context, String command, String nodeName, GraphInstance graphInstance) {
+        int sep = command.indexOf(MAP_TO);
+        if (sep > 0) {
+            // lhs is result key and rhs is JavaScript statement
+            var lhs = command.substring(0, sep).trim();
+            var rhs = command.substring(sep + MAP_TO.length()).trim();
+            if (lhs.isEmpty() || rhs.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
+            }
+            var text = getJsWithParameters(rhs, graphInstance.stateMachine);
+            var result = context.eval(JS, text).as(Object.class);
+            graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
+        } else {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
     }
 
     private String evaluate(Context context, GraphInstance graphInstance, String nodeName, List<String> lines) {

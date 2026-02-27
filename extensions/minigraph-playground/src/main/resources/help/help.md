@@ -21,20 +21,20 @@ For more information about each feature, try the following help topics.
 
 For graph model
 ---------------
-help create (node)
-help delete (node or connection)
-help update (node)
-help connect (node-A to node-B)
-help export
-help import
-help describe (graph, node, connection or skill)
+- help create (node)
+- help delete (node or connection)
+- help update (node)
+- help connect (node-A to node-B)
+- help export
+- help import
+- help describe (graph, node, connection or skill)
 
 For instance model
 ------------------
-help instantiate (create an instance from a graph model)
-help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
-help inspect (state-machine for properties of nodes, input, output and model namespaces)
-help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)
+- help instantiate (create an instance from a graph model)
+- help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
+- help inspect (state-machine for properties of nodes, input, output and model namespaces)
+- help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)
 
 Built-in skills
 ---------------

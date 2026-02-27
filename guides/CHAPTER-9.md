@@ -428,7 +428,7 @@ response.onFailure(e -> {
 2. Example-2 sets the "timeoutException" to false, telling system to return timeout exception as a regular event.
 3. Example-3 makes an "event over HTTP" RPC call to "another.function" in another application instance called "peer".
 
-"Event over HTTP" is an important topic. Please refer to [Chapter 7](CHAPTER-7.md) for more details.
+"Event over HTTP" is an important topic. Please refer to [Event over HTTP](CHAPTER-7.md) for more details.
 
 ### Perform a fork-n-join RPC call to multiple functions
 
@@ -638,7 +638,7 @@ MyPoJo result = po.getEventBodyAsPoJo(responseEvent, MyPoJo.class);
 As a best practice, we advocate a minimalist approach in API integration.
 To build powerful composable applications, the above set of APIs is sufficient to perform
 "event orchestration" where you write code to coordinate how the various functions work together as a
-single "executable". Please refer to [Chapter-4](CHAPTER-4.md) for more details about event orchestration. 
+single "executable". Please refer to [Event Script Syntax](CHAPTER-4.md) for more details about event orchestration. 
 
 Since Mercury is used in production installations, we will exercise the best effort to keep the core API stable.
 
@@ -649,7 +649,7 @@ are not likely to impact your applications.
 ## Event Scripting
 
 To further reduce coding effort, you can perform "event choreography" by configuration using "Event Script".
-Please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md)
+Please refer to Event Script syntax in [Event Script Syntax](CHAPTER-4.md)
 
 ## Co-existence with other development frameworks
 
@@ -670,7 +670,7 @@ We recommend using the `composable-example` project as a template to start writi
 You can follow the Composable methodology where you draw event flow diagrams to represent various use cases,
 convert them into event scripts that carry out event choreography for your self-contained functions.
 
-For more information, please refer to Event Script syntax in [Chapter 4](CHAPTER-4.md).
+For more information, please refer to Event Script syntax in [Event Script Syntax](CHAPTER-4.md).
 
 If you prefer to do low-level event-driven programming, you can use the `lambda-example` project as a template.
 It is preconfigured to support kernel threads and virtual threads.

@@ -57,7 +57,7 @@ The following optional route names will be detected by the system for additional
 The `additional.info` function, if implemented, will be invoked from the "/info" endpoint and its response
 will be merged into the "/info" response.
 
-For `distributed.trace.forwarder` and `transaction.journal.recorder`, please refer to [Chapter-5](CHAPTER-5.md)
+For `distributed.trace.forwarder` and `transaction.journal.recorder`, please refer to [Build, Test and Deploy](CHAPTER-5.md)
 for details.
 
 ## No-op function
@@ -69,7 +69,7 @@ an event flow use case.
 
 The "simple.exception.handler" is a placeholder for a user defined exception handler for rapid prototyping.
 For more sophisticated error handling, please use the "resilience.handler" or write your own composable function
-as an exception handler. For more details, refer to [Chapter 4](CHAPTER-4.md)
+as an exception handler. For more details, refer to [Event Script Syntax](CHAPTER-4.md)
 
 ## Reserved event header names
 

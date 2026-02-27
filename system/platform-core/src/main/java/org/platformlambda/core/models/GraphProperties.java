@@ -28,6 +28,10 @@ public abstract class GraphProperties {
         return properties;
     }
 
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
     public void addProperty(String key, Object value) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("key cannot be empty");

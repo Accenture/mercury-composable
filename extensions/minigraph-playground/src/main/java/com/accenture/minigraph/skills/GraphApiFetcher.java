@@ -37,7 +37,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var mapping = properties.get(MAPPING);
         if (mapping instanceof List<?> entries) {
             for (Object entry : entries) {
-                handleDataMappingEntry(nodeName, String.valueOf(entry), graphInstance);
+                fillApiParameters(nodeName, String.valueOf(entry), graphInstance);
             }
             var stateMachine = graphInstance.stateMachine;
             var parameters = stateMachine.getElement(nodeName + API_DOT);
@@ -63,22 +63,17 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         forward.setCorrelationId(util.getUuid()).setBody(dataset);
         return Mono.create(sink ->
             po.eRequest(forward, ttl, false).thenAccept(response -> {
-                graphInstance.safety.lock();
-                try {
-                    stateMachine.setElement(nodeName + ".status", response.getStatus());
-                    if (response.hasError()) {
-                        stateMachine.setElement(nodeName + RESULT_DOT + "error", response.getError());
-                    } else {
-                        stateMachine.setElement(nodeName + RESULT_DOT, response.getBody());
-                    }
-                } finally {
-                    graphInstance.safety.unlock();
+                stateMachine.setElement(nodeName + ".status", response.getStatus());
+                if (response.hasError()) {
+                    stateMachine.setElement(nodeName + RESULT_DOT + "error", response.getError());
+                } else {
+                    stateMachine.setElement(nodeName + RESULT_DOT, response.getBody());
                 }
             sink.success(NEXT);
         }));
     }
 
-    private void handleDataMappingEntry(String nodeName, String command, GraphInstance graphInstance) {
+    private void fillApiParameters(String nodeName, String command, GraphInstance graphInstance) {
         int sep = command.indexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;
@@ -86,19 +81,14 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : nodeName + API_DOT + rhs;
-            graphInstance.safety.lock();
-            try {
-                if (value != null) {
-                    stateMachine.setElement(target, value);
+            if (value != null) {
+                stateMachine.setElement(target, value);
+            } else {
+                if (rhs.endsWith("]") && rhs.contains("[")) {
+                    stateMachine.setElement(rhs, null);
                 } else {
-                    if (rhs.endsWith("]") && rhs.contains("[")) {
-                        stateMachine.setElement(rhs, null);
-                    } else {
-                        stateMachine.removeElement(rhs);
-                    }
+                    stateMachine.removeElement(rhs);
                 }
-            } finally {
-                graphInstance.safety.unlock();
             }
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");

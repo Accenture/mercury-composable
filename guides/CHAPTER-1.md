@@ -477,7 +477,7 @@ The above Dockerfile will fetch Openjdk 21 packaged in "Ubuntu 22.04 LTS".
 ## Event choreography by configuration
 
 The best practice for composable design is event choreography by configuration (`Event Script`) discussed above.
-We will examine the Event Script syntax in [Chapter 4](CHAPTER-4.md).
+We will examine the Event Script syntax in [Event Script Syntax](CHAPTER-4.md).
 
 Generally, you only need to use a very minimal set of mercury core APIs in your user functions.
 e.g. use PostOffice to obtain a trackable event emitter and AsyncHttpRequest to connect to external system.
@@ -493,7 +493,7 @@ For example, just an "Import" statement of another function would create tight c
 even when using reactive or event-driven programming styles.
 
 However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core
-APIs to do event-driven programming. API overview will be covered in [Chapter 9](CHAPTER-9.md).
+APIs to do event-driven programming. API overview will be covered in [API Overview](CHAPTER-9.md).
 <br/>
 
 |          Methodology          |                   Home                    |                  Chapter-2                  |

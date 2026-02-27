@@ -5,11 +5,9 @@ import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class GraphInstance {
     public final MiniGraph graph = new MiniGraph();
     public final MultiLevelMap stateMachine = new MultiLevelMap();
     public final ConcurrentMap<String, Boolean> hasSeen = new ConcurrentHashMap<>();
-    public final ReentrantLock safety = new ReentrantLock();
 }

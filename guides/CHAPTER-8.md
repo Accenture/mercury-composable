@@ -51,7 +51,7 @@ Let's set up a minimalist service mesh with Kafka to see how it works.
 
 You need a Kafka cluster as the network event stream system. For development and testing, you can build
 and run a standalone Kafka server like this. Note that the `mvn clean package` command is optional because
-the executable JAR should be available after the `mvn clean install` command in [Chapter-1](CHAPTER-1.md).
+the executable JAR should be available after the `mvn clean install` command in [Getting Started](CHAPTER-1.md).
 
 ```shell
 cd connectors/adapters/kafka/kafka-standalone
@@ -174,7 +174,7 @@ Now you have created a minimalist event-driven service mesh.
 
 ## Send an event request from rest-spring-3-example to lambda-example
 
-In [Chapter-7](CHAPTER-7.md), you have sent a request from the rest-spring-3-example to the lambda-example using 
+In [Event over HTTP](CHAPTER-7.md), you have sent a request from the rest-spring-3-example to the lambda-example using 
 "Event over HTTP" without a service mesh.
 
 In this section, you can make the same request using service mesh.

@@ -18,7 +18,6 @@ question:
       - 'model.account_id -> account_id'
     output:
       - 'account-details'
-
 #
 # The concurrency value tells the system to control the number of parallel operation
 # when spinning up requests based on the "for_each" directive.

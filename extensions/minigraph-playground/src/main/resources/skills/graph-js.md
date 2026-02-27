@@ -12,59 +12,67 @@ Route name
 Setup
 -----
 To enable this skill for a node, set "skill=graph.js" as a property in a node.
-One or more JavaScript statements can be added to the property "js" and
-one or more if-then-else statements to the property "decision".
+One or more statements can be added.
 
-JavaScript statements in the "js" section will execute before the
-boolean JavaScript statements in the "decision" section.
+There are 3 types of statements:
+1. "IF" statement for decision-making
+2. "COMPUTE" statement to evaluate a mathematical formula
+3. "MAPPING" statement to do data mapping from a source to a target variable
 
-You can configure js or decision or both of them in a single node.
+You can configure one or more statements of these 3 types.
+
+The system will reject execution if the node contains only "MAP" statements
+because it is more efficient to use the "graph.data.mapper" skills for mapping
+only operations.
+
+Statements are executed orderly.
 
 Properties
 ----------
 ```
 skill=graph.js
-js[]=composite.key -> JavaScript statement
-decision[]=if-then-else
+statement[]=COMPUTE: variable -> mathematical statement
+statement[]=IF: if-then-else statement
+statement[]=MAPPING: source -> target
 ```
 
 Execution
 ---------
-Upon successful execution of the "js" section, the result set will be stored in the "result" parameter in the
-properties of the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
+Upon successful execution of a "COMPUTE" statement, the result set will be stored in the "result" namespace
+of the node. A subsequent "MAPPING" statement can map the key-values in the result set to one or more nodes.
 
-For the "decision" section, the system will execute the boolean JavaScript statement one by one.
+For an "IF" statement, the system will execute a boolean operation.
 This process will override the natural graph traversal order and jump to a specific node.
 If the function returns "next" after evaluation of all statements, the natural graph traversal order
 will be preserved.
 
-Syntax for JavaScript statement
--------------------------------
+Syntax for COMPUTE statement
+----------------------------
 It will be a regular JavaScript statement with parameter substitution using the bracket syntax where
 the enclosed parameter is a reference to a data attributes in the namespace of "input.", "model." or node name.
 
 When you have more than one JavaScript statement, a subsequent statement can use the result of a prior statement
 as its parameters.
 
-Each parameters is wrapped by a set of curly brackets.
+Each parameter is wrapped by a set of curly brackets.
 
 Limitation
 ----------
 This skill is designed to execute a simple inline JavaScript statement that uses only standard JavaScript library.
-For simplicity and speed of execution, it does not support function declaration.
+For simplicity and speed of execution, it does not support complex declaration.
 
 Example
 -------
 ```
-update node demo-js-runner
+create node demo-js-runner
 with properties
 skill=graph.js
-js[]=amount -> (1 - {input.body.discount}) * {book.price}
+statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 ```
 
-Syntax for decision statement
------------------------------
-Each decision statement is a multiline command:
+Syntax for IF statement
+-----------------------
+Each IF statement is a multiline command:
 ```
 IF: JavaScript-statement
 THEN: node-name | next
@@ -82,13 +90,31 @@ If the JavaScript statement does not return a boolean value, the following resol
 Example
 -------
 ```
-Update node demo-decision-maker
-with properties
-skill=graph.js
-decision[]='''
+statement[]='''
 IF: (1 - {input.body.discount}) * {book.price} > 5000
 THEN: high-price
 ELSE: low-price
 ```
 
-The "[]" syntax is used to create and append a list of one or more data mapping entries
+Syntax for MAPPING statement
+----------------------------
+MAP: source.composite.key -> target.composite.key
+
+The source composite key can use the following namespaces:
+1. "input." namespace to map key-values from the input header or body of an incoming request
+2. Node name (aka 'alias') to map key-values of a node's properties
+3. "model." namespace for holding intermediate key-values for simple data transformation
+
+The target composite key can use the following namespaces:
+1. "output." namespace to map key-values to the result set to be returned as response to the calling party
+2. Node name (aka 'alias') to map key-values of a node's properties
+3. "model." namespace for holding intermediate key-values for simple data transformation
+
+Example
+-------
+```
+statment[]=MAPPING: input.body.hr_id -> employee.id
+statement[]=MAPPING: input.body.join_date -> employee.join_date
+```
+
+The "[]" syntax is used to create and append a list of one or more statements

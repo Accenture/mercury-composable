@@ -203,7 +203,7 @@ rest:
 The "cors" and "headers" sections are optional. When specified, the REST endpoint will insert CORS headers and HTTP
 request headers accordingly.
 
-For REST automation syntax, please refer to [Chapter 3](../guides/CHAPTER-3.md)
+For REST automation syntax, please refer to [REST Automation](../guides/CHAPTER-3.md)
 
 The HTTP flow adapter maps the HTTP request dataset and the flow ID into a standard event envelope for delivery
 to the flow engine.
@@ -229,7 +229,7 @@ For easy matching, please use lower case for headers, cookies, query and path pa
 Regular API uses JSON and XML and they will be converted to a hash map in the event's body.
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
-the binary payload. Please refer to [Appendix-III](../guides/APPENDIX-III.md)
+the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../guides/APPENDIX-III.md)
 
 ## Task is a composable function
 

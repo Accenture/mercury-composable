@@ -64,13 +64,13 @@ class GraphTest {
         nodeA.addProperty("hello", "world");
         nodeA.addProperty("test", "message");
         var nodeAA = graph.findNodeById(nodeA.getId());
-        assertEquals("world", nodeAA.getProperties().get("hello"));
-        assertEquals("message", nodeAA.getProperties().get("test"));
+        assertEquals("world", nodeAA.getProperty("hello"));
+        assertEquals("message", nodeAA.getProperty("test"));
         assertTrue(nodeAA.getTypes().contains("hello"));
         assertTrue(nodeAA.getTypes().contains("service"));
         nodeA.removeType("hello");
         nodeA.removeProperty("hello");
-        assertNull(nodeAA.getProperties().get("hello"));
+        assertNull(nodeAA.getProperty("hello"));
         assertFalse(nodeAA.getTypes().contains("hello"));
         var neighborsToA = graph.getNeighbors("A");
         var neighborsAliases = new ArrayList<String>();
@@ -225,7 +225,7 @@ class GraphTest {
         assertEquals(nodeB, conn2.getSource());
         assertEquals(nodeA, conn2.getTarget());
         assertEquals(r1, conn1.getRelation("demo1"));
-        assertEquals("world", conn1.getRelation("demo1").getProperties().get("hello"));
+        assertEquals("world", conn1.getRelation("demo1").getProperty("hello"));
     }
 
     @Test
