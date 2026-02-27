@@ -121,6 +121,9 @@ methods (`setTo`, `setHeader`, `setBody`, `setStatus`, `setTrace`, `setCorrelati
 `EventEnvelope` for chaining. To inspect all envelope metadata from inside a function, declare
 the input type as `EventEnvelope` in the `TypedLambdaFunction` signature.
 
+For a complete listing of all `EventEnvelope` and `PostOffice` methods, see the
+[Event Envelope Reference](EVENT-ENVELOPE-REFERENCE.md).
+
 ---
 
 ## Event Script and Flow Configuration

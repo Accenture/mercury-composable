@@ -25,6 +25,7 @@ nav:
   - Reference:
     - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
     - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
+    - Event Envelope Reference: guides/EVENT-ENVELOPE-REFERENCE.md
     - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
     - Event Script Syntax: guides/CHAPTER-4.md
     - API Overview: guides/CHAPTER-9.md

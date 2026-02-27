@@ -375,6 +375,7 @@ public class RequestRouter implements TypedLambdaFunction<EventEnvelope, Void> {
   `po.asyncRequest()` to reply.
 - Frequently combined with `@ZeroTracing` (high-volume routing should not be traced).
 - Can be combined with `@KernelThreadRunner` when the interception logic needs blocking I/O.
+- For the complete `EventEnvelope` API, see the [Event Envelope Reference](EVENT-ENVELOPE-REFERENCE.md).
 
 ---
 
