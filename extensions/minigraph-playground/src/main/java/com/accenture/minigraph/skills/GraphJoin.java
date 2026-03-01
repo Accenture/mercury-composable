@@ -2,6 +2,7 @@ package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
 
 import java.util.Map;
 
@@ -10,7 +11,7 @@ public class GraphJoin extends GraphLambdaFunction {
     public static final String ROUTE = "graph.join";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+    public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         var in = headers.get(IN);
         var nodeName = headers.getOrDefault(NODE, "none");
         var graphInstance = getGraphInstance(in);

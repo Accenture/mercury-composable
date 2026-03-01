@@ -5,9 +5,16 @@ import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GraphInstance {
+    public final String graphId;
     public final MiniGraph graph = new MiniGraph();
     public final MultiLevelMap stateMachine = new MultiLevelMap();
     public final ConcurrentMap<String, Boolean> hasSeen = new ConcurrentHashMap<>();
+    public final AtomicBoolean complete = new AtomicBoolean(false);
+
+    public GraphInstance(String graphId) {
+        this.graphId = graphId;
+    }
 }

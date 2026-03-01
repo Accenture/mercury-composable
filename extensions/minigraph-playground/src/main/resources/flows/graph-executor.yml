@@ -1,0 +1,30 @@
+flow:
+  id: 'graph-executor'
+  description: 'MiniGraph Traveler'
+  ttl: 3s
+  exception: 'simple.exception.handler'
+
+first.task: 'graph.executor'
+
+tasks:
+  - input:
+      # pass flow instance ID so the task can access the input and model namespaces in the flow instance
+      - 'model.instance -> header.instance'
+      - 'input.path_parameter.graph_id -> header.graph'
+    process: 'graph.executor'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Perform active graph traversal and execute nodes'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+      - 'error.stack -> stack'
+    process: 'simple.exception.handler'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Just a demo exception handler'
+    execution: end

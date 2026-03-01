@@ -3,5 +3,6 @@ flows:
   - 'show-question-specs.yml'
   - 'show-data-specs.yml'
   - 'show-provider-specs.yml'
+  - 'graph-executor.yml'
 
 location: 'classpath:/flows/'

@@ -44,7 +44,7 @@ The target composite key can use the following namespaces:
 Example
 -------
 ```
-update node my-simple-mapper
+create node my-simple-mapper
 with properties
 skill=graph.data.mapper
 mapping[]=input.body.hr_id -> employee.id

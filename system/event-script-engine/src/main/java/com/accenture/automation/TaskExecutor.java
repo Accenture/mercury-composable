@@ -55,6 +55,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String DISTRIBUTED_TRACING = "distributed.tracing";
     private static final String FIRST_TASK = "first_task";
     private static final String FLOW_ID = "flow_id";
+    private static final String INSTANCE_ID = "instance_id";
     private static final String PARENT = "parent";
     private static final String ROOT = "root";
     private static final String STATE_MACHINE = "state_machine";
@@ -116,6 +117,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String UUID_SUFFIX = "uuid";
     private static final String ITEM_SUFFIX = ".ITEM";
     private static final String INDEX_SUFFIX = ".INDEX";
+    private static final int STATUS_CONTINUE = 100;
+    private static final String DONE = "done";
     private final int maxModelArraySize;
 
     public TaskExecutor() {
@@ -154,11 +157,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String refId = ref == null? cid : ref.flowInstanceId;
         FlowInstance flowInstance = Flows.getFlowInstance(refId);
         if (flowInstance == null) {
-            log.warn("Flow instance {} is invalid or expired", refId);
+            log.debug("Flow instance {} is invalid or expired", refId);
             return null;
         }
         String flowName = flowInstance.getFlow().id;
-        if (headers.containsKey(TIMEOUT)) {
+        if (headers.containsKey(TIMEOUT) && event.getBody() instanceof List) {
             log.warn("Flow {}:{} expired", flowName, flowInstance.id);
             abortFlow(flowInstance, 408, "Flow timeout for "+ flowInstance.getFlow().ttl+" ms");
             return null;
@@ -255,6 +258,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             result.put(STATUS, status);
             result.put(MESSAGE, message);
             result.put(TYPE, ERROR);
+            flowInstance.setReference(ERROR, result);
             EventEnvelope error = new EventEnvelope();
             // restore the original correlation-ID to the calling party
             error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid);
@@ -276,8 +280,6 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         List<Map<String, Object>> taskInfo = new ArrayList<>();
         taskList.forEach(info ->
                 taskInfo.add(Map.of("name", info.getRoute(), "spent", info.getElapsed())));
-        // clean up flowInstance states
-        flowInstance.close();
         // Print event flow summary if tracing is enabled
         if (flowInstance.getTraceId() != null) {
             int totalExecutions = taskList.size();
@@ -303,6 +305,30 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             annotations.put("tasks", taskInfo);
             annotations.put("flow", flowInstance.getFlow().id);
             EventEmitter.getInstance().send(new EventEnvelope().setTo(DISTRIBUTED_TRACING).setBody(payload));
+        }
+        sendEndOfFlowAdvice(flowInstance);
+        // release memory
+        flowInstance.close();
+    }
+
+    private void sendEndOfFlowAdvice(FlowInstance flowInstance) {
+        var listeners = flowInstance.getEndFlowListeners();
+        if (!listeners.isEmpty()) {
+            PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
+                    flowInstance.getTraceId(), flowInstance.getTracePath());
+            for (var route : listeners) {
+                if (po.exists(route)) {
+                    var advice = new EventEnvelope().setTo(route).setHeader(TYPE, END)
+                            .setHeader(FLOW_ID, flowInstance.getFlow().id)
+                            .setHeader(INSTANCE_ID, flowInstance.id)
+                            .setCorrelationId(flowInstance.cid);
+                    var error = flowInstance.getReference(ERROR);
+                    advice.setBody(error instanceof Map ? error : Map.of(TYPE, END));
+                    po.send(advice);
+                } else {
+                    log.error("Unable to deliver end-of-flow advice because route '{}' does not exist", route);
+                }
+            }
         }
     }
 

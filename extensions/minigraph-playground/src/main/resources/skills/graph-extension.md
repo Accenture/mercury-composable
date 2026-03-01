@@ -1,6 +1,6 @@
-Skill: Graph API Fetcher
-------------------------
-When a node is configured with this skill of "graph API fetcher", it will make an API call to a backend service
+Skill: Graph Extension
+----------------------
+When a node is configured with this skill of "graph extension", it will make an API call to another graph model
 and collect result set into the "result" property of the node. In case of exception, the "status" and "result.error"
 fields will be set to the node's properties and the graph execution will stop.
 
@@ -8,17 +8,15 @@ Execution will start when the GraphExecutor reaches the node containing this ski
 
 Route name
 ----------
-"graph.api.fetcher"
+"graph.extension"
 
 Setup
 -----
-To enable this skill for a node, set "skill=graph.api.fetcher" as a property in a node.
-It uses the data dictionary query plugin to make outgoing API calls so that complexity of API protocol
-is encapsulated in the configuration of the data dictionary query plugin.
+To enable this skill for a node, set "skill=graph.extension" as a property in a node.
 
 The following parameters are required in the properties of the node:
 
-1. question - this should be a valid question ID configured in the data dictionary query plugin
+1. extension - this should be a valid graph model name in the same memory space
 2. mapping - this should include one or more data mapping as input parameters to invoke the API call
 
 The system uses the same syntax of Event Script for data mapping.
@@ -26,8 +24,8 @@ The system uses the same syntax of Event Script for data mapping.
 Properties
 ----------
 ```
-skill=graph.api.fetcher
-question=question-id
+skill=graph.extension
+extension=graph-id
 mapping[]=source -> {parameter}
 ```
 
@@ -52,11 +50,11 @@ The target composite key can use the following namespaces:
 Example
 -------
 ```
-create node my-api-fetcher
+create node performance-evaluator
 with properties
-skill=graph.api.fetcher
-question=get-hr-record
-mapping[]=input.body.hr_id -> id
+skill=graph.extension
+extension=evaluate-sales-performance
+mapping[]=input.body.department_id -> id
 ```
 
 The "[]" syntax is used to create and append a list of one or more data mapping entries

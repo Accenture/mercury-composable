@@ -41,5 +41,6 @@ Built-in skills
 1. graph.data.mapper - for mapping data from one node to another
 2. graph.js - for simple math function and boolean operation
 3. graph.api.fetcher - for making API call to other systems
-4. graph.island - this indicates that the node leads to isolated nodes and graph traversal would pause
-5. graph.join - a node with this skill will wait for completion of all nodes that connect to it
+4. graph.extension - for making API call to another graph model
+5. graph.island - this indicates that the node leads to isolated nodes and graph traversal would pause
+6. graph.join - a node with this skill will wait for completion of all nodes that connect to it

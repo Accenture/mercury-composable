@@ -14,8 +14,9 @@ import java.util.concurrent.ExecutionException;
 @PreLoad(route = GraphTraveler.ROUTE, instances=10)
 public class GraphTraveler extends GraphLambdaFunction {
     public static final String ROUTE = "graph.playground.traveler";
+
     @Override
-    public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws Exception {
+    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
         var po = new PostOffice(headers, instance);
         var in = headers.get(IN);
         var out = headers.get(OUT);
@@ -30,10 +31,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             throw new IllegalArgumentException("End node does not exist");
         }
         graphInstance.hasSeen.clear();
-        var stateMachine = graphInstance.stateMachine;
-        var ttl = util.str2int(String.valueOf(stateMachine.getElement("model.ttl", "10")));
-        var timeout = Math.max(5, ttl) * 1000L;
-        walk(po, in, out, graphInstance, root, timeout);
+        walk(po, in, out, graphInstance, root, getModelTtl(graphInstance));
         return null;
     }
 
@@ -41,7 +39,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             throws ExecutionException, InterruptedException {
         var nodeName = node.getAlias();
         var properties = node.getProperties();
-        var skill = properties.get(SKILL);
+        String skill = properties.containsKey(SKILL)? String.valueOf(properties.get(SKILL)) : null;
         var seen = graphInstance.hasSeen.get(nodeName);
         if (seen == null) {
             if (!GraphJoin.ROUTE.equals(skill)) {
@@ -54,39 +52,44 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
     }
 
-    private void walkTo(PostOffice po, String in, String out, Object skill, GraphInstance graphInstance,
+    private void walkTo(PostOffice po, String in, String out, String skill, GraphInstance graphInstance,
                         SimpleNode node, long timeout) throws ExecutionException, InterruptedException {
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
+            if (skill != null) {
+                execute(po, skill, in, out, graphInstance, node, timeout);
+            }
             po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed"));
         } else {
             if (skill == null) {
                 walkNext(po, in, out, graphInstance, node, timeout);
             } else {
-                // execute the node
-                var skillRoute = String.valueOf(skill);
-                if (po.exists(skillRoute)) {
-                    execute(po, skillRoute, in, out, graphInstance, node, timeout);
-                } else {
-                    throw new IllegalArgumentException("Skill " + skill + " does not exist");
-                }
+                execute(po, skill, in, out, graphInstance, node, timeout);
             }
         }
     }
 
-    private void execute(PostOffice po, String skillRoute, String in, String out, GraphInstance graphInstance,
+    private void execute(PostOffice po, String skill, String in, String out, GraphInstance graphInstance,
                          SimpleNode node, long timeout) throws ExecutionException, InterruptedException {
-        var nodeName = node.getAlias();
-        po.send(new EventEnvelope().setTo(out).setBody("Execute " + nodeName + " with skill " + skillRoute));
-        var response = po.request(new EventEnvelope().setTo(skillRoute).setHeader(IN, in)
-                .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout).get();
-        if (response.hasError()) {
-            po.send(new EventEnvelope().setTo(out)
-                    .setStatus(response.getStatus()).setBody(response.getBody()));
+        if (po.exists(skill)) {
+            var nodeName = node.getAlias();
+            po.send(new EventEnvelope().setTo(out).setBody("Execute " + nodeName + " with skill " + skill));
+            var response = po.request(new EventEnvelope().setTo(skill).setHeader(IN, in)
+                    .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout).get();
+            if (response.hasError()) {
+                po.send(new EventEnvelope().setTo(out)
+                        .setStatus(response.getStatus()).setBody(response.getBody()));
+            } else {
+                var graph = graphInstance.graph;
+                var endNode = graph.getEndNode();
+                if (!endNode.getId().equals(node.getId())) {
+                    var next = String.valueOf(response.getBody());
+                    nextOrJump(po, in, out, graphInstance, node, next, timeout);
+                }
+            }
         } else {
-            var next = String.valueOf(response.getBody());
-            nextOrJump(po, in, out, graphInstance, node, next, timeout);
+            throw new IllegalArgumentException("Skill " + skill + " does not exist");
         }
     }
 
@@ -101,7 +104,7 @@ public class GraphTraveler extends GraphLambdaFunction {
                 if (nextNode != null) {
                     walk(po, in, out, graphInstance, nextNode, timeout);
                 } else {
-                    throw new IllegalArgumentException("Next node '" + next + "' does not exist");
+                    po.send(new EventEnvelope().setTo(out).setBody("Next node '" + next + "' does not exist"));
                 }
             }
         }

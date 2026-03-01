@@ -1,0 +1,195 @@
+{
+  "nodes": [
+    {
+      "types": [
+        "Join"
+      ],
+      "alias": "converge",
+      "properties": {
+        "skill": "graph.join"
+      }
+    },
+    {
+      "types": [
+        "mapper"
+      ],
+      "alias": "data-mapper",
+      "properties": {
+        "mapping": [
+          "helloworld.x.y.z -> model.number",
+          "model.number:int -> hello.xyz"
+        ],
+        "skill": "graph.data.mapper"
+      }
+    },
+    {
+      "types": [
+        "Decision"
+      ],
+      "alias": "decision-1",
+      "properties": {
+        "skill": "graph.js",
+        "statement": [
+          "IF: {helloworld.x.y.z} == 100\nTHEN: hello\nELSE: next\",\n\"IF: {hello.hello} == 200\nTHEN: hello\nELSE: helloworld",
+          "COMPUTE: value -> 3 * {helloworld.x.y.z}",
+          "COMPUTE: sum -> 5 * 123"
+        ]
+      }
+    },
+    {
+      "types": [
+        "End"
+      ],
+      "alias": "end",
+      "properties": {
+        "mapping": [
+          "helloworld.x.y.z -> output.body.xyz"
+        ],
+        "skill": "graph.data.mapper"
+      }
+    },
+    {
+      "types": [
+        "test"
+      ],
+      "alias": "hello",
+      "properties": {
+        "hello": "world"
+      }
+    },
+    {
+      "types": [
+        "demo"
+      ],
+      "alias": "helloworld",
+      "properties": {
+        "x": {
+          "y": {
+            "z": "100"
+          }
+        }
+      }
+    },
+    {
+      "types": [
+        "mapper"
+      ],
+      "alias": "invalid-data-mapper",
+      "properties": {
+        "mapping": [
+          "hello.hello -> hello.skill"
+        ],
+        "skill": "graph.data.mapper"
+      }
+    },
+    {
+      "types": [
+        "Island"
+      ],
+      "alias": "island",
+      "properties": {
+        "skill": "graph.island"
+      }
+    },
+    {
+      "types": [
+        "JavaScript"
+      ],
+      "alias": "js-1",
+      "properties": {
+        "skill": "graph.js",
+        "statement": [
+          "EXECUTE: js-2",
+          "COMPUTE: sum -> 3 + 555",
+          "compute: multiply -> {helloworld.x.y.z} * 500",
+          "IF: {helloworld.x.y.z} == 100\nTHEN: hello\nELSE: next"
+        ]
+      }
+    },
+    {
+      "types": [
+        "JavaScript"
+      ],
+      "alias": "js-2",
+      "properties": {
+        "skill": "graph.js",
+        "statement": [
+          "COMPUTE: value -> {helloworld.x.y.z} / 3.0",
+          "MAPPING: js-2.result.value -> helloworld.value"
+        ]
+      }
+    },
+    {
+      "types": [
+        "Question"
+      ],
+      "alias": "question",
+      "properties": {
+        "mapping": [
+          "input.body.person_id -> person_id"
+        ],
+        "question": "get-accounts",
+        "skill": "graph.api.fetcher"
+      }
+    },
+    {
+      "types": [
+        "untyped"
+      ],
+      "alias": "root",
+      "properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "source": "converge",
+      "relations": [
+        {
+          "type": "finish",
+          "properties": {}
+        }
+      ],
+      "target": "end"
+    },
+    {
+      "source": "data-mapper",
+      "relations": [
+        {
+          "type": "fork",
+          "properties": {}
+        }
+      ],
+      "target": "converge"
+    },
+    {
+      "source": "question",
+      "relations": [
+        {
+          "type": "fork",
+          "properties": {}
+        }
+      ],
+      "target": "converge"
+    },
+    {
+      "source": "root",
+      "relations": [
+        {
+          "type": "mapping",
+          "properties": {}
+        }
+      ],
+      "target": "data-mapper"
+    },
+    {
+      "source": "root",
+      "relations": [
+        {
+          "type": "fetch",
+          "properties": {}
+        }
+      ],
+      "target": "question"
+    }
+  ]
+}

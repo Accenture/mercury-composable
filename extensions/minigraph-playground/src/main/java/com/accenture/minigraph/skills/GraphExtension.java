@@ -12,10 +12,10 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
-@PreLoad(route = GraphApiFetcher.ROUTE, instances=200)
-public class GraphApiFetcher extends GraphLambdaFunction {
-    public static final String ROUTE = "graph.api.fetcher";
-    private static final String DATA_DICTIONARY = "data-by-dictionary";
+@PreLoad(route = GraphExtension.ROUTE, instances=200)
+public class GraphExtension extends GraphLambdaFunction {
+    public static final String ROUTE = "graph.extension";
+    private static final String GRAPH_EXECUTOR = "graph-executor";
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
@@ -30,8 +30,8 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         if (!ROUTE.equals(properties.get(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
-        var questionId = properties.get(QUESTION);
-        if (questionId == null) {
+        var graphId = properties.get(EXTENSION);
+        if (graphId == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have question ID");
         }
         var mapping = properties.get(MAPPING);
@@ -41,25 +41,25 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             }
             var stateMachine = graphInstance.stateMachine;
             var parameters = stateMachine.getElement(nodeName + API_DOT);
-            var flow = Flows.getFlow(DATA_DICTIONARY);
+            var flow = Flows.getFlow(GRAPH_EXECUTOR);
             if (flow == null) {
-                throw new IllegalArgumentException("flow://"+DATA_DICTIONARY+" not found");
+                throw new IllegalArgumentException("flow://"+ GRAPH_EXECUTOR +" not found");
             }
             var po = new PostOffice(headers, instance);
             var dataset = Map.of("body", parameters instanceof Map? parameters : Map.of(),
                                 "header", Map.of(),
-                                "path_parameter", Map.of("question_id", questionId));
-            return retrieveFromDataDictionary(po, nodeName, graphInstance, dataset, flow.ttl);
+                                "path_parameter", Map.of("graph_id", graphId));
+            return retrieveFromExtension(po, nodeName, graphInstance, dataset, flow.ttl);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'mapping' entries");
         }
     }
 
-    private Object retrieveFromDataDictionary(PostOffice po, String nodeName, GraphInstance graphInstance,
-                                              Map<String, Object> dataset, long ttl) {
+    private Object retrieveFromExtension(PostOffice po, String nodeName, GraphInstance graphInstance,
+                                         Map<String, Object> dataset, long ttl) {
         var stateMachine = graphInstance.stateMachine;
         var forward = new EventEnvelope();
-        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, DATA_DICTIONARY);
+        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, GRAPH_EXECUTOR);
         forward.setCorrelationId(util.getUuid()).setBody(dataset);
         return Mono.create(sink ->
             po.eRequest(forward, ttl, false).thenAccept(response -> {

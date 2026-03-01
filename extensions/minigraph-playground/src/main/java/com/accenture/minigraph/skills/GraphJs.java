@@ -5,6 +5,7 @@ import com.accenture.minigraph.models.GraphInstance;
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
 import org.platformlambda.core.graph.MiniGraph;
 
 import org.graalvm.polyglot.Context;
+import org.platformlambda.core.models.EventEnvelope;
 
 @KernelThreadRunner
 @PreLoad(route = GraphJs.ROUTE, instances=50)
@@ -19,6 +21,7 @@ public class GraphJs extends GraphLambdaFunction {
     public static final String ROUTE = "graph.js";
     private static final String MAPPING_TAG = "mapping:";
     private static final String COMPUTE_TAG = "compute:";
+    private static final String EXECUTE_TAG = "execute:";
     private static final String IF_TAG = "if:";
     private static final String THEN_TAG = "then:";
     private static final String ELSE_TAG = "else:";
@@ -29,7 +32,7 @@ public class GraphJs extends GraphLambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+    public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         if (!EXECUTE.equals(headers.get(TYPE))) {
             throw new IllegalArgumentException("Type must be EXECUTE");
         }
@@ -45,12 +48,57 @@ public class GraphJs extends GraphLambdaFunction {
         if (entries.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
+        var execute = countExecuteStatements(nodeName, entries);
+        if (execute > 0) {
+            return executeStatements(nodeName, combine(nodeName, graphInstance.graph, entries), graphInstance);
+        } else {
+            return executeStatements(nodeName, entries, graphInstance);
+        }
+    }
+
+    private List<String> combine(String nodeName, MiniGraph graph, List<?> entries) {
+        List<String> merged = new ArrayList<>();
+        for (Object entry : entries) {
+            var line = String.valueOf(entry).trim().toLowerCase();
+            if (line.startsWith(EXECUTE_TAG)) {
+                mergeStatements(nodeName, line.substring(EXECUTE_TAG.length()).trim(), graph, merged);
+            } else {
+                merged.add(line);
+            }
+        }
+        return merged;
+    }
+
+    private void mergeStatements(String nodeName, String anotherNode, MiniGraph graph, List<String> merged) {
+        var that = graph.findNodeByAlias(anotherNode);
+        if (that == null) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName +
+                    " is referring to non-existing node '" + anotherNode + "'");
+        }
+        if (!ROUTE.equals(that.getProperty(SKILL))) {
+            throw new IllegalArgumentException(NODE_NAME + anotherNode + " does not have skill - "+ROUTE);
+        }
+        var otherStatements = that.getProperty(STATEMENT);
+        var otherEntries = otherStatements instanceof List<?> list? list : Collections.emptyList();
+        if (countExecuteStatements(anotherNode, otherEntries) > 0) {
+            throw new IllegalArgumentException(NODE_NAME + anotherNode + " contains nested EXECUTE statements");
+        } else {
+            for (Object more : otherEntries) {
+                merged.add(String.valueOf(more));
+            }
+        }
+    }
+
+    private int countExecuteStatements(String nodeName, List<?> statements) {
+        var execute = 0;
         var js = 0;
         var error = 0;
-        for (Object entry : entries) {
+        for (Object entry : statements) {
             var line = String.valueOf(entry).trim().toLowerCase();
             if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG)) {
                 js++;
+            } else if (line.startsWith(EXECUTE_TAG)) {
+                execute++;
             } else if (!line.startsWith(MAPPING_TAG)) {
                 error++;
             }
@@ -60,9 +108,9 @@ public class GraphJs extends GraphLambdaFunction {
         }
         if (error > 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                                                " must use 'IF:', 'COMPUTE:' or 'MAPPING:' statements");
+                    " must use 'IF:', 'COMPUTE:' or 'MAPPING:' statements");
         }
-        return executeStatements(nodeName, entries, graphInstance);
+        return execute;
     }
 
     private String executeStatements(String nodeName, List<?> entries, GraphInstance graphInstance) {
@@ -71,7 +119,7 @@ public class GraphJs extends GraphLambdaFunction {
                 var line = String.valueOf(entry).trim();
                 var colon = line.indexOf(':');
                 var tag = line.substring(0, colon+1).toLowerCase();
-                var command = line.substring(colon + 1);
+                var command = line.substring(colon + 1).trim();
                 if (IF_TAG.equals(tag)) {
                     // evaluate decisions from an if-then-else multiline statement
                     var lines = util.split(line, "\n");

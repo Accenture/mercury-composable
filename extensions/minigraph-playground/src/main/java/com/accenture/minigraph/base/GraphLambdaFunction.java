@@ -3,6 +3,7 @@ package com.accenture.minigraph.base;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.graph.MiniGraph;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.models.VarSegment;
@@ -10,13 +11,14 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<String, Object>, Object> {
+public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEnvelope, Object> {
     protected static final ConcurrentMap<String, MiniGraph> graphModels = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
@@ -29,17 +31,22 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String NEXT = "next";
     protected static final String MAPPING = "mapping";
     protected static final String JS = "js";
-    protected static final String DECISION = "decision";
     protected static final String STATEMENT = "statement";
     protected static final String FLOW_ID = "flow_id";
     protected static final String API_DOT = ".api.";
     protected static final String RESULT_DOT = ".result.";
     protected static final String QUESTION = "question";
+    protected static final String EXTENSION = "extension";
     protected static final String MAP_TO = "->";
+    protected static final String INPUT = "input";
     protected static final String INPUT_BODY_NAMESPACE = "input.body";
     protected static final String INPUT_HEADER_NAMESPACE = "input.header";
+    protected static final String OUTPUT_BODY_NAMESPACE = "output.body";
+    protected static final String OUTPUT_HEADER_NAMESPACE = "output.header";
+    protected static final String MODEL = "model";
     protected static final String MODEL_NAMESPACE = "model.";
     protected static final String OUTPUT_NAMESPACE = "output.";
+    protected static final String OUTPUT_BODY = "output.body";
     protected static final String OUTPUT_ARRAY = "output[";
     protected static final String MESSAGE = "message";
     protected static final String TYPE = "type";
@@ -50,7 +57,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String WITH_PROPERTIES = "with properties";
     protected static final String NODE = "node";
     protected static final String NODE_NAME = "node ";
-    protected static final String SKILL_NAME = "skill ";
+    protected static final String SKILL_TAG = "skill ";
     protected static final String NOT_FOUND = " not found";
     protected static final String TRY_HELP = "Please try 'help' for details";
     protected static final String SAME_SOURCE_TARGET = "source and target node names cannot be the same";
@@ -61,12 +68,15 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
     protected static final String SKILL_PREFIX = "/skills/";
     protected static final String SINK = ".sink";
     protected static final String RUN = "run";
-    private static final Set<String> RESERVED_PARAMETERS = Set.of("skill", "mapping", "js", "decision", "question");
+    protected static final String MODEL_TTL = "model.ttl";
+    protected static final String PROCESS_STATUS = ".status";
+    protected static final String RESULT_ERROR = ".result.error";
+    private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, QUESTION);
 
     protected GraphInstance getGraphInstance(String id) {
         var instance = graphInstances.get(id);
         if (instance == null) {
-            throw new IllegalArgumentException("Graph instance " + id + NOT_FOUND);
+            throw new IllegalArgumentException("Graph instance " + id + "not started");
         } else {
             return instance;
         }
@@ -151,6 +161,55 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<Map<Str
             }
             if (value != null) {
                 stateMachine.setElement(rhs, value);
+            } else {
+                if (rhs.endsWith("]") && rhs.contains("[")) {
+                    stateMachine.setElement(rhs, null);
+                } else {
+                    stateMachine.removeElement(rhs);
+                }
+            }
+        } else {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
+        }
+    }
+
+    protected int initializeWithNodeProperties(GraphInstance graphInstance) {
+        var stateMachine = graphInstance.stateMachine;
+        var nodes = graphInstance.graph.getNodes();
+        for (var node: nodes) {
+            var name = node.getAlias();
+            var properties = node.getProperties();
+            if (properties.containsKey(SKILL)) {
+                for (Map.Entry<String, Object> kv: properties.entrySet()) {
+                    if (!kv.getKey().equals(MAPPING) && !kv.getKey().equals(STATEMENT)) {
+                        stateMachine.setElement(name+"."+kv.getKey(), kv.getValue());
+                    }
+                }
+            } else {
+                stateMachine.setElement(name, properties);
+            }
+        }
+        return nodes.size();
+    }
+
+    protected long getModelTtl(GraphInstance instance) {
+        if (!instance.stateMachine.exists(MODEL)) {
+            instance.stateMachine.setElement(MODEL, new HashMap<>());
+        }
+        var ttl = String.valueOf(instance.stateMachine.getElement(MODEL_TTL, "30000"));
+        return Math.max(1000, util.str2long(ttl));
+    }
+
+    protected void fillApiParameters(String nodeName, String command, GraphInstance graphInstance) {
+        int sep = command.indexOf(MAP_TO);
+        if (sep > 0) {
+            var stateMachine = graphInstance.stateMachine;
+            var lhs = command.substring(0, sep).trim();
+            var rhs = command.substring(sep + MAP_TO.length()).trim();
+            var value = helper.getLhsOrConstant(lhs, stateMachine);
+            var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : nodeName + API_DOT + rhs;
+            if (value != null) {
+                stateMachine.setElement(target, value);
             } else {
                 if (rhs.endsWith("]") && rhs.contains("[")) {
                     stateMachine.setElement(rhs, null);

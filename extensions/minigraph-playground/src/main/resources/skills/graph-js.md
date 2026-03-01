@@ -14,10 +14,11 @@ Setup
 To enable this skill for a node, set "skill=graph.js" as a property in a node.
 One or more statements can be added.
 
-There are 3 types of statements:
+There are 4 types of statements:
 1. "IF" statement for decision-making
 2. "COMPUTE" statement to evaluate a mathematical formula
 3. "MAPPING" statement to do data mapping from a source to a target variable
+4. "EXECUTE" statement to execute another node with "graph.js" skill
 
 You can configure one or more statements of these 3 types.
 
@@ -34,6 +35,7 @@ skill=graph.js
 statement[]=COMPUTE: variable -> mathematical statement
 statement[]=IF: if-then-else statement
 statement[]=MAPPING: source -> target
+statement[]=EXECUTE: another-node
 ```
 
 Execution
@@ -98,7 +100,7 @@ ELSE: low-price
 
 Syntax for MAPPING statement
 ----------------------------
-MAP: source.composite.key -> target.composite.key
+MAPPING: source.composite.key -> target.composite.key
 
 The source composite key can use the following namespaces:
 1. "input." namespace to map key-values from the input header or body of an incoming request
@@ -115,6 +117,16 @@ Example
 ```
 statment[]=MAPPING: input.body.hr_id -> employee.id
 statement[]=MAPPING: input.body.join_date -> employee.join_date
+```
+
+Syntax for EXECUTE statement
+----------------------------
+EXECUTE: another-node
+
+Example
+-------
+```
+statment[]=EXECUTE: js-3
 ```
 
 The "[]" syntax is used to create and append a list of one or more statements

@@ -25,11 +25,11 @@ import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -39,12 +39,12 @@ public class FlowInstance {
     private static final String FLOW = "flow";
     private static final String TIMEOUT = "timeout";
     private static final String INSTANCE = "instance";
+    private static final String END_FLOW_HOOK = "end";
     private static final String CID_TAG = "cid";
     private static final String TTL_TAG = "ttl";
     private static final String TRACE = "trace";
     private static final String PARENT = "parent";
     private static final String ROOT = "root";
-
     // dataset is the state machine that holds the original input and the latest model
     public final ConcurrentMap<String, Object> dataset = new ConcurrentHashMap<>();
     public final AtomicInteger pipeCounter = new AtomicInteger(0);
@@ -53,7 +53,11 @@ public class FlowInstance {
     public final ConcurrentMap<String, TaskMetrics> metrics = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> shared = new ConcurrentHashMap<>();
     private final long start = System.currentTimeMillis();
+    private final ConcurrentMap<String, Object> references = new ConcurrentHashMap<>();
     public final ReentrantLock modelSafety = new ReentrantLock();
+    private final AtomicBoolean topLevelException = new AtomicBoolean(false);
+    private final AtomicBoolean responded = new AtomicBoolean(false);
+    private final AtomicBoolean running = new AtomicBoolean(true);
     public final String id = Utility.getInstance().getUuid();
     public final String cid;
     public final String replyTo;
@@ -62,9 +66,6 @@ public class FlowInstance {
     private String traceId;
     private String tracePath;
     private String parentId;
-    private boolean topLevelException = false;
-    private boolean responded = false;
-    private boolean running = true;
 
     /**
      * This is reserved for system use.
@@ -104,7 +105,7 @@ public class FlowInstance {
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope timeoutTask = new EventEnvelope().setTo(TaskExecutor.SERVICE_NAME)
-                                            .setCorrelationId(id).setHeader(TIMEOUT, true);
+                                            .setCorrelationId(id).setHeader(TIMEOUT, true).setBody(getEndFlowListeners());
         this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + template.ttl));
     }
 
@@ -128,6 +129,43 @@ public class FlowInstance {
         } else {
             return resolveParent(pid);
         }
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @param key of a task executor using this flow
+     * @param value provided by the task executor
+     */
+    public void setReference(String key, Object value) {
+        this.references.put(key, value);
+    }
+
+    /**
+     * This is reserved for system use.
+     * DO NOT use this directly in your application code.
+     *
+     * @return stored reference object if any
+     */
+    public Object getReference(String key) {
+        return this.references.get(key);
+    }
+
+    /**
+     * Tell the task executor to send end of flow event to the routes
+     *
+     * @param route - one or more composable functions to be triggered
+     */
+    public void setEndFlowListeners(String... route) {
+        // guarantee unique routes
+        setReference(END_FLOW_HOOK, new ArrayList<>(new HashSet<>(Arrays.asList(route))));
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getEndFlowListeners() {
+        var routes = getReference(END_FLOW_HOOK);
+        return routes instanceof List? (List<String>) routes: new ArrayList<>();
     }
 
     /**
@@ -162,8 +200,8 @@ public class FlowInstance {
      * DO NOT use this directly in your application code.
      */
     public void close() {
-        if (running) {
-            running = false;
+        if (running.get()) {
+            running.set(false);
             EventEmitter.getInstance().cancelFutureEvent(timeoutWatcher);
             setResponded(true);
             // explicitly release memory
@@ -172,6 +210,7 @@ public class FlowInstance {
             tasks.clear();
             metrics.clear();
             shared.clear();
+            references.clear();
         }
     }
 
@@ -182,7 +221,7 @@ public class FlowInstance {
      * @return true if event flow is outstanding
      */
     public boolean isNotResponded() {
-        return !responded;
+        return !responded.get();
     }
 
     /**
@@ -192,7 +231,7 @@ public class FlowInstance {
      * @param responded if a response has been sent to the caller
      */
     public void setResponded(boolean responded) {
-        this.responded = responded;
+        this.responded.set(responded);
     }
 
     /**
@@ -236,11 +275,11 @@ public class FlowInstance {
     }
 
     public boolean topLevelExceptionHappened() {
-        return topLevelException;
+        return topLevelException.get();
     }
 
     public void setExceptionAtTopLevel(boolean state) {
-        this.topLevelException = state;
+        this.topLevelException.set(state);
     }
 
     /**

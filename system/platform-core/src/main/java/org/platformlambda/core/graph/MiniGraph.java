@@ -41,7 +41,7 @@ public class MiniGraph {
     private static final String ROOT = "root";
     private static final String END = "end";
     private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result",
-                                                            "parameter", "none", "next");
+                                                            "parameter", "none", "next", "api");
     private static final Utility util = Utility.getInstance();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();

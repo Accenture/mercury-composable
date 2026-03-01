@@ -2,6 +2,7 @@ package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
 
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,7 @@ public class GraphDataMapper extends GraphLambdaFunction {
     public static final String ROUTE = "graph.data.mapper";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+    public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         if (!EXECUTE.equals(headers.get(TYPE))) {
             throw new IllegalArgumentException("Type must be EXECUTE");
         }

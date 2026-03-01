@@ -2,6 +2,7 @@ package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.EventEnvelope;
 
 import java.util.Map;
 
@@ -9,7 +10,7 @@ import java.util.Map;
 public class GraphIsland extends GraphLambdaFunction {
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+    public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         return SINK;
     }
 }

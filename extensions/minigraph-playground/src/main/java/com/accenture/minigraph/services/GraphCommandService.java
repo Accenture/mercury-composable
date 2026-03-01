@@ -11,6 +11,7 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,28 +27,55 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GraphCommandService extends GraphLambdaFunction {
     public static final String ROUTE = "graph.command.service";
     private static final Logger log = LoggerFactory.getLogger(GraphCommandService.class);
+    private static final String FILE_PREFIX = "file:";
+    private static final String CLASSPATH_PREFIX = "classpath:";
+    private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
+    private static final String PLAYGROUND = "playground";
+    private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
 
     public GraphCommandService() {
         var config = AppConfigReader.getInstance();
-        var location = config.getProperty("location.graph.temp", "/tmp/graph");
+        var location = config.getProperty("location.graph.temp", DEFAULT_TEMP_DIR);
+        if (location.startsWith(CLASSPATH_PREFIX)) {
+            log.error("location.graph.temp must use local file system because of read/write requirements");
+            log.error("location.graph.temp fallback to {}", DEFAULT_TEMP_DIR);
+            location = DEFAULT_TEMP_DIR;
+        }
+        if (location.startsWith(FILE_PREFIX)) {
+            location = location.substring(FILE_PREFIX.length());
+        }
+        if (location.contains(":")) {
+            log.error("File path in location.graph.temp is invalid. Fallback to {}", DEFAULT_TEMP_DIR);
+            location = DEFAULT_TEMP_DIR;
+        }
+        var parts = Utility.getInstance().split(location, "/");
+        if (parts.size() < 2) {
+            log.error("location.graph.temp must not use root. Fallback to {}", DEFAULT_TEMP_DIR);
+            location = DEFAULT_TEMP_DIR;
+        }
         this.tempDir = new File(location);
         if (!this.tempDir.exists()) {
             boolean created = this.tempDir.mkdirs();
             if (created) {
-                log.info("Created graph temp directory {}", location);
+                log.info("Created temp folder {}", location);
             }
         }
+        log.info("Playground temp folder (location.graph.temp) - {}", location);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        var po = new PostOffice(headers, instance);
-        try {
-            handleCommand(po, input);
-        } catch (IllegalArgumentException | IOException | InvalidPathException e) {
-            if (input.get(OUT) instanceof String outRoute) {
-                po.send(new EventEnvelope().setTo(outRoute).setBody("ERROR: "+e.getMessage()));
+    public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
+        if (input.getBody() instanceof Map) {
+            var po = new PostOffice(headers, instance);
+            var data = (Map<String, Object>) input.getBody();
+            try {
+                handleCommand(po, data);
+            } catch (IllegalArgumentException | IOException | InvalidPathException e) {
+                if (data.get(OUT) instanceof String outRoute) {
+                    po.send(new EventEnvelope().setTo(outRoute).setBody("ERROR: " + e.getMessage()));
+                }
             }
         }
         return null;
@@ -111,9 +139,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleRunCommand(String inRoute, String outRoute) {
-        var stateMachine = getGraphInstance(inRoute).stateMachine;
-        var ttl = util.str2int(String.valueOf(stateMachine.getElement("model.ttl", "10")));
-        var timeout = Math.max(5, ttl) * 1000L;
+        var timeout = getModelTtl(getGraphInstance(inRoute));
         var po = PostOffice.trackable("minigraph.playground", util.getUuid(), "/playground");
         po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
                         .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
@@ -154,9 +180,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, String nodeName) {
         var graphInstance = getGraphInstance(inRoute);
         var graph = graphInstance.graph;
-        var stateMachine = graphInstance.stateMachine;
-        var ttl = util.str2int(String.valueOf(stateMachine.getElement("model.ttl", "10")));
-        var timeout = Math.max(5, ttl) * 1000L;
+        var timeout = getModelTtl(graphInstance);
         var node = graph.findNodeByAlias(nodeName);
         if (node == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + NOT_FOUND);
@@ -168,14 +192,14 @@ public class GraphCommandService extends GraphLambdaFunction {
         var skillRoute = String.valueOf(skill);
         if (po.exists(skillRoute)) {
             po.eRequest(new EventEnvelope().setTo(skillRoute)
-                        .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)
+                            .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)
                     .thenAccept(response -> {
                         if (response.hasError()) {
                             po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
                         } else {
                             po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName +
-                                    " run for "+response.getExecutionTime()+
-                                    " ms with exit path '"+response.getBody()+"'"));
+                                    " run for " + response.getExecutionTime() +
+                                    " ms with exit path '" + response.getBody() + "'"));
                         }
                     });
         } else {
@@ -192,6 +216,10 @@ public class GraphCommandService extends GraphLambdaFunction {
                 if (file.exists()) {
                     var map = SimpleMapper.getInstance().getMapper().readValue(util.file2str(file), Map.class);
                     graph.importGraph(map);
+                    if (graphInstances.containsKey(inRoute)) {
+                        po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance cleared"));
+                        graphInstances.remove(inRoute);
+                    }
                     po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model imported"));
                 } else {
                     po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not found"));
@@ -210,9 +238,9 @@ public class GraphCommandService extends GraphLambdaFunction {
                 var file = new File(tempDir, filename+JSON_EXT);
                 var text = SimpleMapper.getInstance().getMapper().writeValueAsString(graph.exportGraph());
                 util.str2file(file, text);
+                var n = getRandomCounter();
                 po.send(new EventEnvelope().setTo(outRoute).setBody(
-                        "Graph exported to '"+file.getPath()+"\n"+
-                        "Described in /api/graph/model/"+filename));
+                        "Graph exported to "+file.getPath()+"\n"+"Described in /api/graph/model/"+filename+"/"+n));
             }
         } else {
             po.send(new EventEnvelope().setTo(outRoute)
@@ -317,16 +345,10 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
         if (graph != null) {
-            var graphInstance = new GraphInstance();
+            var graphInstance = new GraphInstance(PLAYGROUND);
             graphInstance.graph.importGraph(graph.exportGraph());
             // map node properties to state machine
-            var nodes = graphInstance.graph.getNodes();
-            for (var node: nodes) {
-                var name = node.getAlias();
-                var properties = node.getProperties();
-                graphInstance.stateMachine.setElement(name, properties);
-            }
-            log.info("Instantiate graph with {} nodes", nodes.size());
+            var nodeCount = initializeWithNodeProperties(graphInstance);
             // perform data mapping
             var count =  new AtomicInteger(0);
             if (lines.size() > 1) {
@@ -334,9 +356,16 @@ public class GraphCommandService extends GraphLambdaFunction {
                     doInitialDataMapping(lines, i, graphInstance, count);
                 }
             }
+            var stateMachine = graphInstance.stateMachine;
+            if (!stateMachine.exists(INPUT_BODY_NAMESPACE)) {
+                stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
+            }
+            stateMachine.setElement(OUTPUT_NAMESPACE, new HashMap<>());
+            var timeout = getModelTtl(graphInstance);
+            log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);
             graphInstances.put(inRoute, graphInstance);
             po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance created. Loaded "+
-                    count.get()+" mock "+ (count.get() == 1? "entry" : "entries")));
+                    count.get()+" mock "+ (count.get() == 1? "entry" : "entries") + ", model.ttl = "+timeout+" ms"));
         }
     }
 
@@ -397,7 +426,10 @@ public class GraphCommandService extends GraphLambdaFunction {
             var file = new File(tempDir, filename+JSON_EXT);
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(graph.exportGraph());
             util.str2file(file, text);
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph described in /api/graph/model/"+filename));
+            var size = graph.getNodes().size();
+            var n = getRandomCounter();
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph with "+size+ (size == 1? " node" : " nodes")+
+                    " described in /api/graph/model/"+filename+"/"+n));
         }
     }
 
@@ -636,7 +668,12 @@ public class GraphCommandService extends GraphLambdaFunction {
                 throw new IllegalArgumentException(e);
             }
         } else {
-            throw new IllegalArgumentException(SKILL_NAME + skill + NOT_FOUND);
+            throw new IllegalArgumentException(SKILL_TAG + skill + NOT_FOUND);
         }
+    }
+
+    private String getRandomCounter() {
+        var now = String.valueOf(System.currentTimeMillis());
+        return now.substring(now.length()-3) + "-" + counter.incrementAndGet();
     }
 }
