@@ -1,24 +1,22 @@
 package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
+import com.accenture.minigraph.math.ExpressionEngine;
 import com.accenture.minigraph.models.GraphInstance;
-import org.platformlambda.core.annotations.KernelThreadRunner;
+
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.graph.MiniGraph;
+import org.platformlambda.core.models.EventEnvelope;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.platformlambda.core.graph.MiniGraph;
-
-import org.graalvm.polyglot.Context;
-import org.platformlambda.core.models.EventEnvelope;
-
-@KernelThreadRunner
-@PreLoad(route = GraphJs.ROUTE, instances=50)
-public class GraphJs extends GraphLambdaFunction {
-    public static final String ROUTE = "graph.js";
+@PreLoad(route = GraphMath.ROUTE, instances=200)
+public class GraphMath extends GraphLambdaFunction {
+    public static final String ROUTE = "graph.math";
+    private static final ExpressionEngine engine = new ExpressionEngine();
     private static final String MAPPING_TAG = "mapping:";
     private static final String COMPUTE_TAG = "compute:";
     private static final String EXECUTE_TAG = "execute:";
@@ -26,7 +24,7 @@ public class GraphJs extends GraphLambdaFunction {
     private static final String THEN_TAG = "then:";
     private static final String ELSE_TAG = "else:";
 
-    public GraphJs() {
+    public GraphMath() {
         // suppress JavaScript engine warning
         System.setProperty("polyglot.engine.WarnInterpreterOnly", "false");
     }
@@ -114,32 +112,30 @@ public class GraphJs extends GraphLambdaFunction {
     }
 
     private String executeStatements(String nodeName, List<?> entries, GraphInstance graphInstance) {
-        try (Context context = Context.create(JS)) {
-            for (Object entry : entries) {
-                var line = String.valueOf(entry).trim();
-                var colon = line.indexOf(':');
-                var tag = line.substring(0, colon+1).toLowerCase();
-                var command = line.substring(colon + 1).trim();
-                if (IF_TAG.equals(tag)) {
-                    // evaluate decisions from an if-then-else multiline statement
-                    var lines = util.split(line, "\n");
-                    var decision = evaluate(context, graphInstance, nodeName, lines);
-                    if (decision != null) {
-                        return decision;
-                    }
+        for (Object entry : entries) {
+            var line = String.valueOf(entry).trim();
+            var colon = line.indexOf(':');
+            var tag = line.substring(0, colon+1).toLowerCase();
+            var command = line.substring(colon + 1).trim();
+            if (IF_TAG.equals(tag)) {
+                // evaluate decisions from an if-then-else multiline statement
+                var lines = util.split(line, "\n");
+                var decision = evaluate(graphInstance, nodeName, lines);
+                if (decision != null) {
+                    return decision;
                 }
-                if (COMPUTE_TAG.equals(tag)) {
-                    compute(context, command, nodeName, graphInstance);
-                }
-                if (MAPPING_TAG.equals(tag)) {
-                    handleDataMappingEntry(nodeName, command, graphInstance);
-                }
+            }
+            if (COMPUTE_TAG.equals(tag)) {
+                compute(command, nodeName, graphInstance);
+            }
+            if (MAPPING_TAG.equals(tag)) {
+                handleDataMappingEntry(nodeName, command, graphInstance);
             }
         }
         return NEXT;
     }
 
-    private void compute(Context context, String command, String nodeName, GraphInstance graphInstance) {
+    private void compute(String command, String nodeName, GraphInstance graphInstance) {
         int sep = command.indexOf(MAP_TO);
         if (sep > 0) {
             // lhs is result key and rhs is JavaScript statement
@@ -149,14 +145,14 @@ public class GraphJs extends GraphLambdaFunction {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
             var text = getJsWithParameters(rhs, graphInstance.stateMachine, false);
-            var result = context.eval(JS, text).as(Object.class);
+            var result = engine.evalNumber(text);
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
     }
 
-    private String evaluate(Context context, GraphInstance graphInstance, String nodeName, List<String> lines) {
+    private String evaluate(GraphInstance graphInstance, String nodeName, List<String> lines) {
         var ifStatement = getIfStatement(lines).trim();
         var thenStatement = getFirstWord(getThenStatement(lines).trim());
         var elseStatement = getFirstWord(getElseStatement(lines).trim());
@@ -164,8 +160,7 @@ public class GraphJs extends GraphLambdaFunction {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
         var text = getJsWithParameters(ifStatement, graphInstance.stateMachine, true);
-        var result = String.valueOf(context.eval(JS, text).as(Object.class));
-        return getNext(graphInstance.graph, isTrue(result)? thenStatement : elseStatement);
+        return getNext(graphInstance.graph, engine.evalBoolean(text)? thenStatement : elseStatement);
     }
 
     private String getNext(MiniGraph graph, String statement) {
@@ -183,12 +178,6 @@ public class GraphJs extends GraphLambdaFunction {
     private String getFirstWord(String statement) {
         var space = statement.indexOf(' ');
         return space == -1? statement : statement.substring(0, space);
-    }
-
-    private boolean isTrue(String text) {
-        if ("true".equals(text) || "y".equals(text) || "t".equals(text)) return true;
-        var number = text.contains(".")? util.str2float(text): util.str2long(text);
-        return number >= 0;
     }
 
     private String getIfStatement(List<String> lines) {

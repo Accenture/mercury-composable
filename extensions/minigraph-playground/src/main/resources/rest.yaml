@@ -65,6 +65,14 @@ rest:
     headers: header_1
     tracing: true
 
+  - service: 'upload.json.content'
+    methods: ['POST']
+    url: '/api/json/content/{id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
   # MOCK endpoints
 
   - service: 'mock.mdm.profile'

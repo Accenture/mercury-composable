@@ -109,15 +109,21 @@ public class JsonPathHandler implements LambdaFunction {
         EventEmitter po = EventEmitter.getInstance();
         switch (message) {
             case "help" -> {
-                var helpMessage = """
-                                    load: load XML/JSON string as JSON object,
-                                    unload: clear stored JSON object,
-                                    {command}: any simple data retrieval or JSON-Path command,
-                                    help: this command
+                var helpMessage = """                                  
+                                    - load: load XML/JSON string as JSON object,
+                                    - upload: upload XML/JSON string,
+                                    - unload: clear stored JSON object,
+                                    - any simple data retrieval or JSON-Path command,
+                                    - help: this command
                                     """;
                 po.send(txPath, helpMessage);
             }
             case "load" -> textMap.put(route, "?");
+            case "upload" -> {
+                textMap.put(route, "?");
+                var id = route.replace('.', '-');
+                po.send(txPath, "Please upload XML/JSON text to /api/json/content/"+id+"\n");
+            }
             case "unload" -> {
                 textMap.remove(route);
                 po.send(txPath, "JSON unloaded\n");
@@ -145,6 +151,22 @@ public class JsonPathHandler implements LambdaFunction {
         }
     }
 
+    public static boolean uploadContent(String id, String content) {
+        var route = id.replace('-', '.');
+        var text = textMap.get(route);
+        if (text != null) {
+            var dot = route.lastIndexOf('.');
+            var txPath = route.substring(0, dot) + ".out";
+            String error = renderXmlOrJson(route, txPath, content);
+            if (error != null) {
+                EventEmitter.getInstance().send(txPath, error);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private void executeCommand(MultiLevelMap mm, String txPath, String message) {
         var mapper = SimpleMapper.getInstance().getMapper();
         var po = EventEmitter.getInstance();
@@ -157,7 +179,7 @@ public class JsonPathHandler implements LambdaFunction {
         po.send(txPath, (message.startsWith("$") ? "JSON-Path " : "Simple retrieval ") + "command: " + message);
     }
 
-    private String renderXmlOrJson(String route, String txPath, String message) {
+    private static String renderXmlOrJson(String route, String txPath, String message) {
         var mapper = SimpleMapper.getInstance().getMapper();
         var po = EventEmitter.getInstance();
         Map<String, Object> map = new HashMap<>();
@@ -182,6 +204,7 @@ public class JsonPathHandler implements LambdaFunction {
                 return e.getMessage();
             }
         }
+        log.info("{}", map);
         if (map.containsKey(RESPONSE)) {
             try {
                 var mm = new MultiLevelMap(map);

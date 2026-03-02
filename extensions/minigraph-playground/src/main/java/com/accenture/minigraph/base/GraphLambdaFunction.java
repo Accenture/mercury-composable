@@ -109,12 +109,12 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return name.replace('.', '-');
     }
 
-    protected String getJsWithParameters(String text, MultiLevelMap stateMachine) {
+    protected String getJsWithParameters(String text, MultiLevelMap stateMachine, boolean logical) {
         var start = 0;
         var sb = new StringBuilder();
         var segments = util.extractSegments(text, "{", "}");
         for (var segment : segments) {
-            start = replaceWithParameter(segment, sb, start, text, stateMachine);
+            start = replaceWithParameter(segment, sb, start, text, stateMachine, logical);
         }
         var lastSegment = text.substring(start);
         if (!lastSegment.isEmpty()) {
@@ -124,7 +124,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
 
     private int replaceWithParameter(VarSegment segment, StringBuilder sb, int start, String text,
-                                     MultiLevelMap stateMachine) {
+                                     MultiLevelMap stateMachine, boolean logical) {
         String heading = text.substring(start, segment.start());
         if (!heading.isEmpty()) {
             sb.append(heading);
@@ -143,7 +143,11 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 var value = SimpleMapper.getInstance().getCompactGson().toJson(parameter);
                 sb.append(value);
             } else {
-                sb.append("'").append(parameter).append("'");
+                if (logical) {
+                    sb.append("'").append(parameter).append("'");
+                } else {
+                    sb.append(parameter);
+                }
             }
         }
         return segment.end();
