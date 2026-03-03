@@ -64,6 +64,20 @@
 .formatButton:hover:not(:disabled) { background: var(--primary-hover); }
 .formatButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.uploadButton {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  background: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.uploadButton:hover:not(:disabled) { filter: brightness(1.1); }
+.uploadButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ── Textarea (grows to fill remaining space) ───────────────────── */
 .textarea {
   flex: 1 1 auto;

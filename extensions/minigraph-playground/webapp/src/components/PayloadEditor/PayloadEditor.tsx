@@ -8,15 +8,16 @@ interface PayloadEditorProps {
   onChange:   (value: string) => void;
   validation: ValidationResult;
   onFormat:   () => void;
+  onUpload?:  () => void;
 }
 
-export default function PayloadEditor({ payload, onChange, validation, onFormat }: PayloadEditorProps) {
+export default function PayloadEditor({ payload, onChange, validation, onFormat, onUpload }: PayloadEditorProps) {
   return (
     <div className={styles.payloadRoot}>
       <div className={styles.labelRow}>
         <label htmlFor="payload" className={styles.label}>JSON/XML Payload</label>
         <div className={styles.payloadControls}>
-          <span className={styles.charCounter}>{payload.length} / {MAX_BUFFER}</span>
+          <span className={styles.charCounter}>Charachters: {payload.length}</span>
           {payload && validation.type && (
             <span className={styles.typeIndicator}>{validation.type.toUpperCase()}</span>
           )}
@@ -31,6 +32,16 @@ export default function PayloadEditor({ payload, onChange, validation, onFormat 
           >
             Format
           </button>
+          {onUpload !== undefined && (
+            <button
+              className={styles.uploadButton}
+              onClick={onUpload}
+              disabled={!payload || !validation.valid || validation.type !== 'json'}
+              title="Upload JSON payload to current session via REST"
+            >
+              Upload
+            </button>
+          )}
         </div>
       </div>
 

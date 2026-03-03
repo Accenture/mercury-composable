@@ -20,7 +20,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, supportsUpload } = config;
 
   // Persisted payload
   const [payload, setPayload] = useLocalStorage<string>(storageKeyPayload, '');
@@ -171,6 +171,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onChange={setPayload}
             validation={payloadValidation}
             onFormat={handleFormatPayload}
+            onUpload={supportsUpload ? ws.uploadPayload : undefined}
             previewMessage={resolvedPreviewMessage}
             pinnedMessage={pinnedMessage}
             graphData={graphData}

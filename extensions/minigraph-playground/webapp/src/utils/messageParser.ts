@@ -108,3 +108,15 @@ export function isGraphLinkMessage(raw: string): boolean {
   return extractGraphApiPath(raw) !== null;
 }
 
+/**
+ * Extracts the `/api/json/content/{id}` path from the server's upload-ready
+ * message: "Please upload XML/JSON text to /api/json/content/{id}"
+ *
+ * Returns the path string (e.g. "/api/json/content/{id}") or null
+ * if the message does not contain such a path.
+ */
+export function extractUploadPath(raw: string): string | null {
+  const match = raw.match(/\/api\/json\/content\/([\w-]+)/);
+  return match ? match[0] : null;
+}
+

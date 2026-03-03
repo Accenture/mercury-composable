@@ -32,6 +32,7 @@ export interface PlaygroundConfig {
   wsPath:            string;  // WebSocket endpoint path served by the backend
   storageKeyPayload: string;  // localStorage key for the last payload
   storageKeyHistory: string;  // localStorage key for command history
+  supportsUpload?:   boolean; // true when the backend supports POST /api/json/content/{id} upload
 }
 
 export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
@@ -42,6 +43,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     wsPath: '/ws/json/path',
     storageKeyPayload: 'jsonpath-last-payload',
     storageKeyHistory: 'jsonpath-command-history',
+    supportsUpload: true,
   },
   {
     path: '/minigraph',

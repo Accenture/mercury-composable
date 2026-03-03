@@ -14,6 +14,7 @@ interface RightPanelProps {
   onChange:       (value: string) => void;
   validation:     ValidationResult;
   onFormat:       () => void;
+  onUpload?:      () => void;
   previewMessage: string | null;
   pinnedMessage:  string | null;
   graphData:      MinigraphGraphData | null;
@@ -26,6 +27,7 @@ export default function RightPanel({
   onChange,
   validation,
   onFormat,
+  onUpload,
   previewMessage,
   pinnedMessage,
   graphData,
@@ -98,6 +100,7 @@ export default function RightPanel({
           onChange={onChange}
           validation={validation}
           onFormat={onFormat}
+          onUpload={onUpload}
         />
       </div>
 

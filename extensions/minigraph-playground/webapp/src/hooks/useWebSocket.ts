@@ -3,6 +3,7 @@ import { useLocalStorage } from './useLocalStorage';
 import { type ToastType } from './useToast';
 import { MAX_BUFFER, MAX_HISTORY } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
+import { extractUploadPath } from '../utils/messageParser';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,6 +47,7 @@ export interface UseWebSocketReturn {
   toggleAutoScroll: () => void;
   copyMessages:     () => void;
   clearMessages:    () => void;
+  uploadPayload:    () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +106,10 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
   // consoleRef is only needed for auto-scroll; it is purely presentational.
   const consoleRef = useRef<HTMLDivElement>(null);
 
+  // When true, the next incoming message that contains an upload URL is
+  // consumed to fire the HTTP POST.  A ref (not state) avoids a re-render.
+  const pendingUploadRef = useRef(false);
+
   // --- Auto-scroll effect ---
   useEffect(() => {
     if (autoScroll && consoleRef.current) {
@@ -136,8 +142,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     if (text === 'load') {
       if (payload.length === 0) {
         ctx.appendMessage(wsPath, 'ERROR: please paste JSON/XML payload in input text area');
-      } else if (payload.length > MAX_BUFFER) {
-        ctx.appendMessage(wsPath, `ERROR: please reduce JSON/XML payload size. It must be less than ${MAX_BUFFER} characters`);
       } else {
         ctx.send(wsPath, payload);
       }
@@ -164,6 +168,58 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
       }
     }
   }, [history, historyIndex]);
+
+  // --- Watch incoming messages for the upload URL when a POST is pending ---
+  useEffect(() => {
+    if (!pendingUploadRef.current || messages.length === 0) return;
+    const latest = messages[messages.length - 1].raw;
+    const uploadPath = extractUploadPath(latest);
+    if (!uploadPath) return;
+
+    // Consume the pending flag immediately so a duplicate message doesn't
+    // re-trigger the POST.
+    pendingUploadRef.current = false;
+
+    if (payload.length === 0) {
+      ctx.appendMessage(wsPath, 'ERROR: please paste JSON/XML payload in the input text area');
+      return;
+    }
+
+    let body: string;
+    try {
+      // Re-serialise through JSON.parse to ensure the server receives clean JSON.
+      body = JSON.stringify(JSON.parse(payload));
+    } catch {
+      ctx.appendMessage(wsPath, 'ERROR: payload is not valid JSON — cannot upload');
+      return;
+    }
+
+    fetch(uploadPath, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        addToast('Payload uploaded successfully', 'success');
+      })
+      .catch((err: Error) => {
+        ctx.appendMessage(wsPath, `ERROR: upload failed — ${err.message}`);
+        addToast(`Upload failed: ${err.message}`, 'error');
+      });
+  }, [messages, payload, wsPath, ctx, addToast]);
+
+  // --- Public: trigger the two-step upload handshake ---
+  const uploadPayload = useCallback(() => {
+    if (phase !== 'connected') return;
+    if (payload.length === 0) {
+      addToast('Nothing to upload — paste a JSON payload first', 'error');
+      return;
+    }
+    // Tell the server we want to upload; it will reply with the upload URL.
+    pendingUploadRef.current = true;
+    ctx.send(wsPath, 'upload');
+  }, [ctx, wsPath, phase, payload, addToast]);
 
   // --- Console helpers ---
   const toggleAutoScroll = useCallback(() => dispatch({ type: 'TOGGLE_AUTO_SCROLL' }), []);
@@ -198,5 +254,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     toggleAutoScroll,
     copyMessages,
     clearMessages,
+    uploadPayload,
   };
 }
