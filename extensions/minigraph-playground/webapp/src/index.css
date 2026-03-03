@@ -19,6 +19,7 @@
   --text-muted:         #94a3b8;
   --console-bg:         var(--bg-dark);
   --console-text:       #e2e8f0;
+  --code-text:          #86efac;   /* green-300 — inline code highlight colour */
   --disabled-bg:        #e9ecef;
   --input-focus-border: var(--primary-color);
 }

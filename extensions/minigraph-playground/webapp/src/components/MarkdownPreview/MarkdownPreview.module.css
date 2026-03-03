@@ -66,12 +66,12 @@
 
 /* ── Inline code ────────────────────────────────────────────────── */
 .markdownContent code {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--console-bg);
   padding: 0.15em 0.35em;
   border-radius: 0.25rem;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.85em;
-  color: #86efac;
+  color: var(--code-text);
 }
 
 /* ── Fenced code blocks ─────────────────────────────────────────── */

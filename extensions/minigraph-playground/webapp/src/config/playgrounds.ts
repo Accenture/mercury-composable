@@ -19,7 +19,7 @@ export const MAX_ITEMS    = 200;
 export const MAX_HISTORY  = 50;
 
 /** Maximum payload size in characters accepted by the WebSocket send path. */
-export const MAX_BUFFER = 64_000;
+export const MAX_BUFFER = 63_488; // 62 * 1024 - some overhead for WebSocket framing, to stay safely under the 64KB limit of most browsers
 
 /** Interval in milliseconds between keep-alive ping frames sent to the server. */
 export const PING_INTERVAL = 30_000;

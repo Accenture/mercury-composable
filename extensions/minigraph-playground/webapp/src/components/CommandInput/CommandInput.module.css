@@ -12,9 +12,109 @@
   margin-bottom: 0.5rem;
 }
 
+/* Groups the "Command" text with the info icon so they sit inline. */
+.labelGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .label {
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+/* ── Info icon + popover wrapper ────────────────────────────────── */
+.infoWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.infoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-secondary);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.5rem;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.infoWrapper:hover .infoIcon {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  cursor: pointer;
+
+}
+
+/* The popover panel — hidden by default, shown on hover via sibling selector */
+.popover {
+  position: absolute;
+  /* Sit just above the icon */
+  bottom: calc(100% + 0.4rem);
+  top: auto;
+  left: 0;
+  z-index: 200;
+  width: 22rem;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  padding: 0.6rem 0.75rem 0.5rem;
+  /* Hidden until the wrapper is hovered */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.infoWrapper:hover .popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.popoverTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Each row inside the popover: keyword badge + description */
+.popoverRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.popoverKeyword {
+  flex-shrink: 0;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  min-width: 5.5rem;
+}
+
+.popoverDesc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
 /* ── Checkbox label (replaces toggle button) ────────────────────── */
@@ -37,6 +137,11 @@
 
 .inputRow .textarea {
   flex: 1 1 auto;
+}
+
+/* ── inputWrapper: positions the dropdown relative to the input ─── */
+.inputWrapper {
+  position: relative;
 }
 
 /* ── Textarea ───────────────────────────────────────────────────── */
@@ -94,4 +199,78 @@
   color: var(--text-secondary);
   text-align: right;
   margin-top: 0.25rem;
+}
+
+/* ── Autocomplete dropdown ──────────────────────────────────────── */
+.suggestions {
+  position: absolute;
+  /* Sit just above the inputRow, anchored to the left edge of inputWrapper */
+  bottom: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: var(--surface-color, #fff);
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: var(--radius-sm, 4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.suggestionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition: background 0.1s;
+}
+
+.suggestionItem:hover,
+.suggestionItemActive {
+  background: var(--primary-color, #2563eb);
+  color: #fff;
+}
+
+.suggestionItem:hover .suggestionHint,
+.suggestionItemActive .suggestionHint {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.suggestionItem:hover .suggestionBadge,
+.suggestionItemActive .suggestionBadge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.suggestionTokens {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.suggestionHint {
+  flex: 1 1 auto;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8rem;
+}
+
+.suggestionBadge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--primary-color, #2563eb);
+  color: #fff;
+  letter-spacing: 0.02em;
 }

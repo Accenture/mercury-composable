@@ -35,9 +35,9 @@
 
 /* ── Drag handle between panels ── */
 .resizeHandle {
-  width: 6px;
+  width: 1px;
   cursor: col-resize;
-  background: transparent;
+  background: var(--border-color);
   transition: background 0.15s;
   flex-shrink: 0;
 }

@@ -116,6 +116,12 @@ export default function Playground({ config }: PlaygroundProps) {
 
   const handleFormatPayload = () => setPayload(formatJSON(payload));
 
+  // Toggle multiline mode; pass force=true/false to set it explicitly
+  // (used by the autocomplete hook when it accepts a multiline template).
+  const handleToggleMultiline = useCallback((force?: boolean) => {
+    setMultiline(m => force !== undefined ? force : !m);
+  }, []);
+
   const handleClearMessages = () => {
     ws.clearMessages();
     setPinnedMessage(null);
@@ -153,7 +159,7 @@ export default function Playground({ config }: PlaygroundProps) {
             sendDisabled={!ws.connected || !ws.command.trim()}
             inputDisabled={!ws.connected}
             multiline={multiline}
-            onToggleMultiline={() => setMultiline(m => !m)}
+            onToggleMultiline={handleToggleMultiline}
             onPinMessage={handlePinMessage}
             pinnedMessage={pinnedMessage ?? pinnedGraphPath}
           />

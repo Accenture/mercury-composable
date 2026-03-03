@@ -21,7 +21,7 @@ interface LeftPanelProps {
   sendDisabled:       boolean;
   inputDisabled:      boolean;
   multiline:          boolean;
-  onToggleMultiline:  () => void;
+  onToggleMultiline:  (force?: boolean) => void;
 }
 
 export default function LeftPanel({
