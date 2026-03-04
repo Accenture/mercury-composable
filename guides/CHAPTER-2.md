@@ -1,5 +1,7 @@
 # Function Execution Strategies
 
+*Concepts: Understanding virtual threads, kernel threads, and Mercury's execution model.*
+
 ## Define a function
 
 In a composable application, each function is self-contained with zero dependencies with other user functions.
@@ -275,6 +277,8 @@ EventEnvelope result = po.request(requestEvent, timeout).get();
   manage event flows using one or more configuration files.
 
 ### Kernel thread pool
+
+For complete parameter details on `@KernelThreadRunner`, `@EventInterceptor`, and all other annotations, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
 
 When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
 the function will be executed using a "kernel thread pool" and Java will run your function in native 

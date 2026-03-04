@@ -1,5 +1,7 @@
 # Introduction
 
+*Tutorial: Build and run a composable application from zero to working REST API.*
+
 Mercury Composable is a software development toolkit for writing composable applications.
 
 Composable application means that an application is assembled from modular software components or functions that
@@ -102,6 +104,7 @@ stateless. The "state machine" is referenced using the namespace "model".
 ### Assigning a route name to a user function
 
 You can assign a route name to a Java class using the `PreLoad` annotation like this:
+See the [Annotations Reference](ANNOTATIONS-REFERENCE.md) for the complete list of parameters and all available annotations.
 
 ```java
 @PreLoad(route="v1.get.profile", instances=100)
@@ -216,6 +219,8 @@ rest.automation=true
 yaml.rest.automation=classpath:/rest.yaml
 yaml.flow.automation=classpath:/flows.yaml
 ```
+
+See the [Configuration Reference](CONFIGURATION-REFERENCE.md) for a complete list of all available properties.
 
 The flow configuration files are shown in the "main/resources/flows" folder where you will find the flow configuration
 files for the three event flows, namely get-profile.yml, delete-profile.yml and create-profile.yml.

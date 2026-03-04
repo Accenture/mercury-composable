@@ -1,5 +1,7 @@
 # Minimalist Service Mesh
 
+*Guide: How to set up service discovery and inter-instance routing using Kafka as a connector.*
+
 Service mesh is a dedicated infrastructure layer to facilitate inter-container communication using "sidecar" and
 "control plane".
 

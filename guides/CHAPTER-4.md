@@ -1,5 +1,10 @@
 ﻿# Event Script Syntax
 
+*Reference: Complete DSL reference for YAML event flow configurations, task types, and data mapping.*
+
+> For a quick-reference lookup of all flow fields, namespaces, and task types, see the
+> [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md).
+
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
 
@@ -264,6 +269,8 @@ You can override the default serialization strategy in 2 ways in the PreLoad ann
 
 1. Configure input / output serialization strategies
 2. Implement your own custom serializer using the CustomSerializer interface
+
+See the [Annotations Reference](ANNOTATIONS-REFERENCE.md) for complete `@PreLoad` parameter details and documentation of all other Mercury annotations.
 
 ```java
 @Target({ElementType.TYPE})

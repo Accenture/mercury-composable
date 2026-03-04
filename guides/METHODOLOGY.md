@@ -1,5 +1,7 @@
 # Background
 
+*Concepts: Design philosophy and principles behind Mercury Composable's event-driven architecture.*
+
 The high level concept of composable architecture was advocated by Gartner in 2022.
 
 At the platform level, composable architecture refers to loosely coupled platform services, utilities, and

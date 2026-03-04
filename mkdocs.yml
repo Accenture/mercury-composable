@@ -1,30 +1,43 @@
 site_name: Composable for Java
 site_url: https://github.com/accenture/mercury-composable
 nav:
-    - Home: README.md
-    - Quickstart: guides/QUICKSTART.md
-    - Methodology: guides/METHODOLOGY.md
-    - Architecture Overview: guides/ARCHITECTURE.md
-    - Composable Design: guides/COMPOSABLE-DESIGN.md
+  - Home: README.md
+  - Quickstart: guides/QUICKSTART.md
+
+  - Tutorials:
     - Getting Started: guides/CHAPTER-1.md
-    - Function Execution Strategies: guides/CHAPTER-2.md
+
+  - Guides:
     - REST Automation: guides/CHAPTER-3.md
-    - Event Script Syntax: guides/CHAPTER-4.md
     - Build, Test and Deploy: guides/CHAPTER-5.md
     - Spring Boot Integration: guides/CHAPTER-6.md
     - Event over HTTP: guides/CHAPTER-7.md
     - Minimalist Service Mesh: guides/CHAPTER-8.md
-    - API Overview: guides/CHAPTER-9.md
     - Minimalist Property Graph: guides/CHAPTER-10.md
-    - "Appendix I: Application Properties": guides/APPENDIX-I.md
-    - "Appendix II: Reserved Names & Headers": guides/APPENDIX-II.md
-    - "Appendix III: Actuators, HTTP Client & More": guides/APPENDIX-III.md
-    - Release Notes: CHANGELOG.md
+
+  - Concepts:
+    - Methodology: guides/METHODOLOGY.md
+    - Architecture Overview: guides/ARCHITECTURE.md
+    - Composable Design: guides/COMPOSABLE-DESIGN.md
+    - Function Execution Strategies: guides/CHAPTER-2.md
     - Design Notes: arch-decisions/DESIGN-NOTES.md
-    - Inclusivity: INCLUSIVITY.md
-    - Code of Conduct: CODE_OF_CONDUCT.md
-    - Contributing: CONTRIBUTING.md
+
+  - Reference:
+    - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
+    - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
+    - Event Envelope Reference: guides/EVENT-ENVELOPE-REFERENCE.md
+    - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
+    - Event Script Syntax: guides/CHAPTER-4.md
+    - API Overview: guides/CHAPTER-9.md
+    - Application Properties: guides/APPENDIX-I.md
+    - Reserved Names & Headers: guides/APPENDIX-II.md
+    - Actuators & HTTP Client: guides/APPENDIX-III.md
+    - Release Notes: CHANGELOG.md
     - Table of Contents: guides/TABLE-OF-CONTENTS.md
+
+  - Contributing: CONTRIBUTING.md
+  - Code of Conduct: CODE_OF_CONDUCT.md
+  - Inclusivity: INCLUSIVITY.md
 plugins:
   - search:
       lang: en

@@ -1,5 +1,7 @@
 # Reserved names
 
+*Reference: System-reserved route names and HTTP headers that must not be overridden.*
+
 The system reserves some route names and headers for routing purpose.
 
 ## System route names

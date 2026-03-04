@@ -1,5 +1,7 @@
 # Build, Test and Deploy
 
+*Guide: How to structure, test, and package a composable application for deployment.*
+
 The first step in writing an application is to create an entry point for your application.
 
 ## Main application

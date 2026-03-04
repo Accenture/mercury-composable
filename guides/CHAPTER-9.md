@@ -1,5 +1,7 @@
 # API Overview
 
+*Reference: PostOffice, Platform, EventEnvelope, and configuration API documentation.*
+
 ## Main Application
 
 Each application has an entry point. You may implement an entry point in a main application like this:
