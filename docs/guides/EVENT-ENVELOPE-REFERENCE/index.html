@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/EVENT-ENVELOPE-REFERENCE/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Event Envelope Reference - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Event Envelope Reference";
+        var mkdocs_page_input_path = "guides/EVENT-ENVELOPE-REFERENCE.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/EVENT-ENVELOPE-REFERENCE/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ARCHITECTURE/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION-REFERENCE/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Event Envelope Reference</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#structure-overview">Structure overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#creating-an-eventenvelope">Creating an EventEnvelope</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#constructors">Constructors</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#static-factories">Static factories</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#builder-pattern">Builder pattern</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#body-methods">Body methods</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#declaring-eventenvelope-as-the-input-type">Declaring EventEnvelope as the input type</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#header-methods">Header methods</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#reserved-internal-header-names">Reserved internal header names</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#routing-and-metadata-methods">Routing and metadata methods</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#fields-set-automatically-by-postoffice">Fields set automatically by PostOffice</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#status-and-error-methods">Status and error methods</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#appexception-status-mapping">AppException status mapping</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#error-detection-pattern">Error detection pattern</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#tags">Tags</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#annotations">Annotations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#type-and-serialization-methods">Type and serialization methods</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#performance-metadata-read-only">Performance metadata (read-only)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#utility">Utility</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#relationship-to-event-script-data-mapping">Relationship to Event Script data mapping</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#postoffice-quick-reference">PostOffice quick reference</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#constructors-and-static-factories">Constructors and static factories</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fire-and-forget">Fire-and-forget</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#broadcast">Broadcast</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#request-reply-three-future-types">Request-Reply: three Future types</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parallel-requests-fork-n-join">Parallel requests (fork-n-join)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#event-over-http-cross-instance">Event-over-HTTP (cross-instance)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#service-discovery-and-trace-utilities">Service discovery and trace utilities</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#kv-helper-class">Kv helper class</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#common-usage-patterns">Common usage patterns</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#pattern-1-simple-rpc-call-from-inside-a-function">Pattern 1: Simple RPC call from inside a function</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pattern-2-parallel-requests">Pattern 2: Parallel requests</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pattern-3-authentication-function-returning-session-variables">Pattern 3: Authentication function returning session variables</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pattern-4-inspecting-envelope-metadata-in-an-eventinterceptor">Pattern 4: Inspecting envelope metadata in an EventInterceptor</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reserved-http-headers">Reserved HTTP headers</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Event Envelope Reference</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="event-envelope-reference">Event Envelope Reference</h1>
+<p><em>Reference: Complete API reference for <code>EventEnvelope</code> and <code>PostOffice</code>.</em></p>
+<p><code>EventEnvelope</code> is the universal message container in Mercury Composable. Every event that
+travels through the event bus — whether triggered by an HTTP request, a flow step, or a direct
+<code>PostOffice</code> call — is carried inside an <code>EventEnvelope</code>. Understanding its structure is
+prerequisite for advanced function patterns, error handling, and distributed tracing.</p>
+<p><strong>Package:</strong> <code>org.platformlambda.core.models</code></p>
+<hr />
+<h2 id="structure-overview">Structure overview</h2>
+<p>An envelope has three distinct, independent parts:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Java type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Body</strong></td>
+<td><code>Object</code> (PoJo, <code>Map&lt;String,Object&gt;</code>, Java primitive, <code>byte[]</code>)</td>
+<td>The event payload. Serialized as MsgPack on the event bus; JSON at HTTP boundaries.</td>
+</tr>
+<tr>
+<td><strong>Headers</strong></td>
+<td><code>Map&lt;String, String&gt;</code></td>
+<td>User-defined key-value parameters passed directly to <code>handleEvent</code>. Keys and values are always strings.</td>
+</tr>
+<tr>
+<td><strong>Metadata</strong></td>
+<td>Various fields</td>
+<td>Routing address, trace ID, correlation ID, status code, execution timing, exception state. Managed by the framework; user code reads but rarely writes.</td>
+</tr>
+</tbody>
+</table>
+<p>The framework serializes and deserializes the body automatically. User code never calls
+MsgPack directly.</p>
+<hr />
+<h2 id="creating-an-eventenvelope">Creating an EventEnvelope</h2>
+<h3 id="constructors">Constructors</h3>
+<pre><code class="language-java">// Default constructor — assigns a random UUID as the envelope ID
+EventEnvelope event = new EventEnvelope();
+
+// Deserialize from a previously serialized byte array
+EventEnvelope event = new EventEnvelope(byte[] bytes);
+
+// Reconstruct from a map representation (e.g. from toMap())
+EventEnvelope event = new EventEnvelope(Map&lt;String, Object&gt; map);
+</code></pre>
+<h3 id="static-factories">Static factories</h3>
+<pre><code class="language-java">// Equivalent to new EventEnvelope()
+EventEnvelope event = EventEnvelope.of();
+
+// Equivalent to new EventEnvelope(byte[])
+EventEnvelope event = EventEnvelope.of(byte[] bytes);
+
+// Equivalent to new EventEnvelope(Map)
+EventEnvelope event = EventEnvelope.of(Map&lt;String, Object&gt; map);
+</code></pre>
+<h3 id="builder-pattern">Builder pattern</h3>
+<p>All <code>set*</code> methods return <code>this</code>, enabling fluent construction:</p>
+<pre><code class="language-java">EventEnvelope event = new EventEnvelope()
+    .setTo(&quot;v1.get.profile&quot;)
+    .setHeader(&quot;profile_id&quot;, &quot;100&quot;)
+    .setHeader(&quot;tenant&quot;, &quot;acme&quot;)
+    .setBody(requestMap)
+    .setCorrelationId(&quot;req-abc-123&quot;);
+</code></pre>
+<hr />
+<h2 id="body-methods">Body methods</h2>
+<p>The body is the event payload. The framework maps it to the typed <code>input</code> argument of
+<code>handleEvent</code> and wraps the return value into the response envelope automatically.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getBody()</code></td>
+<td><code>Object</code></td>
+<td>Returns the deserialized body. Type depends on what the sender set. Typically <code>Map&lt;String,Object&gt;</code> or a PoJo.</td>
+</tr>
+<tr>
+<td><code>getBody(Class&lt;T&gt; toValueType)</code></td>
+<td><code>T</code></td>
+<td>Deserializes the body to the given PoJo class using the framework's registered serializer.</td>
+</tr>
+<tr>
+<td><code>getBody(Class&lt;T&gt; toValueType, Class&lt;?&gt;... parameterClass)</code></td>
+<td><code>T</code></td>
+<td>Deserializes a generic type (e.g. <code>List&lt;Profile&gt;</code>). Pass the container class and the element class(es).</td>
+</tr>
+<tr>
+<td><code>getBodyAsListOfPoJo(Class&lt;T&gt; toValueType)</code></td>
+<td><code>List&lt;T&gt;</code></td>
+<td>Convenience method to deserialize a body that is a JSON array into a typed list.</td>
+</tr>
+<tr>
+<td><code>getRawBody()</code></td>
+<td><code>Object</code></td>
+<td>Returns the body before any deserialization. May be a <code>byte[]</code>, <code>Map</code>, or primitive depending on transport.</td>
+</tr>
+<tr>
+<td><code>getOriginalBody()</code></td>
+<td><code>Object</code></td>
+<td>Returns the body exactly as set by the sender, without any intermediate serialization. Useful for debugging.</td>
+</tr>
+<tr>
+<td><code>setBody(Object body)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the body. Accepts any PoJo, <code>Map&lt;String,Object&gt;</code>, Java primitive, or <code>byte[]</code>. Returns <code>this</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="declaring-eventenvelope-as-the-input-type">Declaring EventEnvelope as the input type</h3>
+<p>To access the full envelope (including metadata) inside a function, declare <code>EventEnvelope</code>
+as the input type in the <code>TypedLambdaFunction</code> signature:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.inspect.event&quot;)
+public class InspectEvent implements TypedLambdaFunction&lt;EventEnvelope, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           EventEnvelope input, int instance) throws Exception {
+        String traceId = input.getTraceId();
+        String correlationId = input.getCorrelationId();
+        Object body = input.getBody();
+        return Map.of(&quot;trace&quot;, traceId, &quot;body&quot;, body);
+    }
+}
+</code></pre>
+<p>This pattern is also required when a function is annotated with
+<a href="../ANNOTATIONS-REFERENCE/#eventinterceptor"><code>@EventInterceptor</code></a>.</p>
+<hr />
+<h2 id="header-methods">Header methods</h2>
+<p>Headers are <code>String → String</code> parameters attached to an event. They are delivered directly
+to the <code>headers</code> argument of <code>handleEvent</code> — they are not HTTP headers unless the function
+is a REST endpoint handler.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getHeaders()</code></td>
+<td><code>Map&lt;String, String&gt;</code></td>
+<td>Returns all user-defined headers as an immutable map.</td>
+</tr>
+<tr>
+<td><code>getHeader(String key)</code></td>
+<td><code>String</code></td>
+<td>Returns the value for a single header key, or <code>null</code> if absent.</td>
+</tr>
+<tr>
+<td><code>setHeader(String key, Object value)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets a header. The value is converted to <code>String</code> via <code>toString()</code>. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>setHeaders(Map&lt;String, String&gt; headers)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Replaces all headers with the provided map. Returns <code>this</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reserved-internal-header-names">Reserved internal header names</h3>
+<p>The framework injects the following keys into the <code>headers</code> Map parameter of <code>handleEvent</code>.
+These keys are read-only context — do not set them on outgoing envelopes:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>my_route</code></td>
+<td>Route name of the currently executing function</td>
+</tr>
+<tr>
+<td><code>my_trace_id</code></td>
+<td>Distributed trace ID for this transaction</td>
+</tr>
+<tr>
+<td><code>my_trace_path</code></td>
+<td>Accumulated trace path through the call chain</td>
+</tr>
+</tbody>
+</table>
+<p>Access these inside a function to preserve the trace when constructing a <code>PostOffice</code>:</p>
+<pre><code class="language-java">PostOffice po = PostOffice.trackable(headers, instance);
+</code></pre>
+<hr />
+<h2 id="routing-and-metadata-methods">Routing and metadata methods</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getId()</code></td>
+<td><code>String</code></td>
+<td>The envelope's unique ID. Assigned automatically on construction (UUID).</td>
+</tr>
+<tr>
+<td><code>setId(String id)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Override the auto-assigned ID. Rarely needed. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getTo()</code></td>
+<td><code>String</code></td>
+<td>The destination route. Set by the sender or by the flow engine.</td>
+</tr>
+<tr>
+<td><code>setTo(String to)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Set the destination route for this event. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getFrom()</code></td>
+<td><code>String</code></td>
+<td>The originating route. Populated automatically by <code>PostOffice</code>.</td>
+</tr>
+<tr>
+<td><code>setFrom(String from)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Overrides the sender identity. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getReplyTo()</code></td>
+<td><code>String</code></td>
+<td>The route to which the response should be sent (used in async patterns).</td>
+</tr>
+<tr>
+<td><code>setReplyTo(String replyTo)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the reply-to route. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getTraceId()</code></td>
+<td><code>String</code></td>
+<td>The distributed trace ID. Propagated across all calls in a transaction.</td>
+</tr>
+<tr>
+<td><code>setTraceId(String traceId)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the trace ID. Usually set by the framework. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getTracePath()</code></td>
+<td><code>String</code></td>
+<td>The accumulated path of all routes this event has passed through.</td>
+</tr>
+<tr>
+<td><code>setTracePath(String tracePath)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the trace path. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>setTrace(String traceId, String tracePath)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets both trace ID and trace path in one call. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getCorrelationId()</code></td>
+<td><code>String</code></td>
+<td>A caller-assigned correlation ID for matching responses to requests.</td>
+</tr>
+<tr>
+<td><code>setCorrelationId(String cid)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the correlation ID. Returns <code>this</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fields-set-automatically-by-postoffice">Fields set automatically by PostOffice</h3>
+<p>When an event is sent via <code>PostOffice</code>, the following fields are populated automatically
+from the sending function's context. User code should not override them:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from</code></td>
+<td>Current function's route (from <code>my_route</code> header)</td>
+</tr>
+<tr>
+<td><code>traceId</code></td>
+<td>Current transaction's trace ID (from <code>my_trace_id</code> header)</td>
+</tr>
+<tr>
+<td><code>tracePath</code></td>
+<td>Current trace path (from <code>my_trace_path</code> header)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="status-and-error-methods">Status and error methods</h2>
+<p>Envelope status codes follow the HTTP convention: 200 means success; 400–599 means error.
+The <code>AppException</code> class maps Java exceptions to HTTP-compatible status codes.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getStatus()</code></td>
+<td><code>int</code></td>
+<td>HTTP-compatible status code. Default is <code>200</code>.</td>
+</tr>
+<tr>
+<td><code>setStatus(int status)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Override the status code. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>hasError()</code></td>
+<td><code>boolean</code></td>
+<td>Returns <code>true</code> if <code>getStatus() &gt;= 400</code>.</td>
+</tr>
+<tr>
+<td><code>getError()</code></td>
+<td><code>Object</code></td>
+<td>Returns the error payload. When set by <code>setException()</code>, this is the exception message string.</td>
+</tr>
+<tr>
+<td><code>getException()</code></td>
+<td><code>Throwable</code></td>
+<td>Returns the attached exception, or <code>null</code> if none.</td>
+</tr>
+<tr>
+<td><code>setException(Throwable ex)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Attaches an exception and sets the status code from it. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>isException()</code></td>
+<td><code>boolean</code></td>
+<td>Returns <code>true</code> if a stack trace is present in the envelope.</td>
+</tr>
+<tr>
+<td><code>getStackTrace()</code></td>
+<td><code>String</code></td>
+<td>Returns the stack trace string, or <code>null</code> if none.</td>
+</tr>
+<tr>
+<td><code>setStackTrace(String trace)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the stack trace string. <strong>Reserved for test use only.</strong> Returns <code>this</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="appexception-status-mapping">AppException status mapping</h3>
+<p>When <code>setException(Throwable ex)</code> is called, the framework determines the status code:</p>
+<table>
+<thead>
+<tr>
+<th>Exception type</th>
+<th>Resulting status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AppException</code></td>
+<td><code>appException.getStatus()</code> (the value you passed to the constructor)</td>
+</tr>
+<tr>
+<td><code>IllegalArgumentException</code></td>
+<td><code>400</code></td>
+</tr>
+<tr>
+<td>Any other <code>Throwable</code></td>
+<td><code>500</code></td>
+</tr>
+</tbody>
+</table>
+<p>Throw <code>AppException</code> from user functions to return structured error responses:</p>
+<pre><code class="language-java">throw new AppException(404, &quot;Profile not found&quot;);
+throw new AppException(422, &quot;Invalid input: email is required&quot;);
+throw new AppException(403, &quot;Access denied&quot;, originalException);
+</code></pre>
+<h3 id="error-detection-pattern">Error detection pattern</h3>
+<pre><code class="language-java">EventEnvelope response = po.request(event, 5000).get();
+if (response.hasError()) {
+    throw new AppException(response.getStatus(),
+        response.getError() != null ? response.getError().toString() : &quot;Unknown error&quot;);
+}
+Profile profile = response.getBody(Profile.class);
+</code></pre>
+<hr />
+<h2 id="tags">Tags</h2>
+<p>Tags are <code>String → String</code> metadata attached to an event for internal tracking and routing
+decisions. They are distinct from user headers: tags are not delivered to <code>handleEvent</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getTags()</code></td>
+<td><code>Map&lt;String, String&gt;</code></td>
+<td>Returns all tags.</td>
+</tr>
+<tr>
+<td><code>setTags(Map&lt;String, String&gt; tags)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Replaces all tags. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>addTag(String key)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Adds a tag with an empty string value. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>addTag(String key, Object value)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Adds a tag. Value is converted to <code>String</code>. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>removeTag(String key)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Removes a tag by key. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>getTag(String key)</code></td>
+<td><code>String</code></td>
+<td>Returns the value of a single tag, or <code>null</code> if absent.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="annotations">Annotations</h2>
+<p>Annotations carry arbitrary <code>Object</code> values for advanced routing and framework use cases.
+They are not serialized over the event bus and are not delivered to user functions.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getAnnotations()</code></td>
+<td><code>Map&lt;String, Object&gt;</code></td>
+<td>Returns all annotations.</td>
+</tr>
+<tr>
+<td><code>setAnnotations(Map&lt;String, Object&gt; annotations)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Replaces all annotations. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>clearAnnotations()</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Removes all annotations. Returns <code>this</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="type-and-serialization-methods">Type and serialization methods</h2>
+<p>These methods expose the body's type information and support low-level serialization. User
+code rarely needs them directly; they are primarily used by the framework and adapters.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getType()</code></td>
+<td><code>String</code></td>
+<td>Fully qualified class name of the body object.</td>
+</tr>
+<tr>
+<td><code>getSimpleType()</code></td>
+<td><code>String</code></td>
+<td>Simple class name of the body object (no package).</td>
+</tr>
+<tr>
+<td><code>setType(String type)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Override the recorded type. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>isBinary()</code></td>
+<td><code>boolean</code></td>
+<td>Returns <code>true</code> if the body is a raw <code>byte[]</code>.</td>
+</tr>
+<tr>
+<td><code>setBinary(boolean binary)</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Sets the binary flag. Returns <code>this</code>.</td>
+</tr>
+<tr>
+<td><code>isOptional()</code></td>
+<td><code>boolean</code></td>
+<td>Returns <code>true</code> if the body is <code>null</code> and the envelope is an intentional empty response.</td>
+</tr>
+<tr>
+<td><code>toBytes()</code></td>
+<td><code>byte[]</code></td>
+<td>Serializes the entire envelope to MsgPack bytes for transport.</td>
+</tr>
+<tr>
+<td><code>load(byte[] bytes)</code></td>
+<td><code>void</code></td>
+<td>Populates this envelope from a previously serialized byte array in place.</td>
+</tr>
+<tr>
+<td><code>toMap()</code></td>
+<td><code>Map&lt;String, Object&gt;</code></td>
+<td>Converts the envelope to a plain Java map. Useful for logging or testing.</td>
+</tr>
+<tr>
+<td><code>fromMap(Map&lt;String, Object&gt; map)</code></td>
+<td><code>void</code></td>
+<td>Populates this envelope from a map representation in place.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="performance-metadata-read-only">Performance metadata (read-only)</h2>
+<p>These fields are populated by the framework after an event is processed. User code should
+read them for observability but must not set them.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getExecutionTime()</code></td>
+<td><code>float</code></td>
+<td>Milliseconds spent executing the target function. Set by the framework after processing.</td>
+</tr>
+<tr>
+<td><code>getRoundTrip()</code></td>
+<td><code>float</code></td>
+<td>Total round-trip time in milliseconds from send to response. Set by the framework.</td>
+</tr>
+<tr>
+<td><code>getBroadcastLevel()</code></td>
+<td><code>int</code></td>
+<td>Broadcast depth level. Used internally for broadcast routing.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="utility">Utility</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>copy()</code></td>
+<td><code>EventEnvelope</code></td>
+<td>Creates a deep copy of this envelope, including all headers, body, and metadata. Useful when you need to modify an envelope without affecting the original.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="relationship-to-event-script-data-mapping">Relationship to Event Script data mapping</h2>
+<p>Event Script flows operate on envelopes internally, but the data mapping DSL exposes only
+specific namespaces. Understanding the mapping between envelope fields and DSL namespaces
+helps when debugging flows.</p>
+<table>
+<thead>
+<tr>
+<th>DSL namespace</th>
+<th>Envelope source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input.body</code></td>
+<td>Incoming request envelope body</td>
+</tr>
+<tr>
+<td><code>input.header.&lt;name&gt;</code></td>
+<td>Incoming request HTTP header (HTTP flows)</td>
+</tr>
+<tr>
+<td><code>input.path_parameter.&lt;name&gt;</code></td>
+<td>URL path parameter extracted by REST automation</td>
+</tr>
+<tr>
+<td><code>input.query.&lt;name&gt;</code></td>
+<td>URL query parameter</td>
+</tr>
+<tr>
+<td><code>input.method</code></td>
+<td>HTTP method</td>
+</tr>
+<tr>
+<td><code>input.uri</code></td>
+<td>Request URI</td>
+</tr>
+<tr>
+<td><code>input.session</code></td>
+<td>Session key-values from the authentication function</td>
+</tr>
+<tr>
+<td><code>result</code></td>
+<td>The entire return value of the most recently completed task</td>
+</tr>
+<tr>
+<td><code>result.&lt;key&gt;</code></td>
+<td>A specific field from the task's return value</td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;</code></td>
+<td>Per-transaction state machine (readable and writable across all tasks)</td>
+</tr>
+<tr>
+<td><code>output.body</code></td>
+<td>Sets the response envelope body</td>
+</tr>
+<tr>
+<td><code>output.header.&lt;name&gt;</code></td>
+<td>Sets a response header</td>
+</tr>
+<tr>
+<td><code>output.status</code></td>
+<td>Sets the HTTP response status code</td>
+</tr>
+<tr>
+<td><code>header.&lt;name&gt;</code></td>
+<td>Sets a key-value in the next function's <code>headers</code> argument</td>
+</tr>
+<tr>
+<td><code>error.status</code></td>
+<td>Status code when an exception handler task is invoked</td>
+</tr>
+<tr>
+<td><code>error.message</code></td>
+<td>Error message when an exception handler task is invoked</td>
+</tr>
+<tr>
+<td><code>error.task</code></td>
+<td>Route of the task that threw the exception</td>
+</tr>
+<tr>
+<td><code>error.stack</code></td>
+<td>Stack trace when an exception handler task is invoked</td>
+</tr>
+</tbody>
+</table>
+<p>For the complete data mapping syntax and all literal value constructors (<code>text()</code>, <code>int()</code>,
+<code>map()</code>, etc.), see the <a href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>.</p>
+<hr />
+<h2 id="postoffice-quick-reference">PostOffice quick reference</h2>
+<p><code>PostOffice</code> is the messaging client. Always obtain it inside <code>handleEvent</code> to preserve
+the distributed trace:</p>
+<pre><code class="language-java">PostOffice po = PostOffice.trackable(headers, instance);
+</code></pre>
+<h3 id="constructors-and-static-factories">Constructors and static factories</h3>
+<pre><code class="language-java">// Production constructors
+PostOffice(Map&lt;String, String&gt; headers, int instance)
+PostOffice(Map&lt;String, String&gt; headers, int instance, CustomSerializer serializer)
+
+// Static factories (preferred)
+PostOffice.trackable(Map&lt;String, String&gt; headers, int instance)
+PostOffice.withSerializer(Map&lt;String, String&gt; headers, int instance, CustomSerializer serializer)
+
+// Test constructors (no real function context available in unit tests)
+PostOffice.trackable(String myRoute, String myTraceId, String myTracePath)
+PostOffice.withSerializer(String myRoute, String myTraceId, String myTracePath, CustomSerializer serializer)
+</code></pre>
+<h3 id="fire-and-forget">Fire-and-forget</h3>
+<pre><code class="language-java">// Send with headers only (no body)
+po.send(String to, Kv... parameters)
+
+// Send with body only
+po.send(String to, Object body)
+
+// Send with body and headers
+po.send(String to, Object body, Kv... parameters)
+
+// Send a pre-built envelope
+po.send(EventEnvelope event)
+
+// Schedule delivery at a future time; returns a cancellation token
+String token = po.sendLater(EventEnvelope event, Date future)
+</code></pre>
+<h3 id="broadcast">Broadcast</h3>
+<p>Delivers to all registered instances of the target function:</p>
+<pre><code class="language-java">po.broadcast(String to, Kv... parameters)
+po.broadcast(String to, Object body)
+po.broadcast(String to, Object body, Kv... parameters)
+po.broadcast(EventEnvelope event)
+</code></pre>
+<h3 id="request-reply-three-future-types">Request-Reply: three Future types</h3>
+<p>Choose the Future type based on your execution context:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return type</th>
+<th>Use when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>request()</code></td>
+<td><code>java.util.concurrent.Future&lt;EventEnvelope&gt;</code></td>
+<td>Inside virtual threads — <code>.get()</code> suspends non-destructively</td>
+</tr>
+<tr>
+<td><code>asyncRequest()</code></td>
+<td><code>io.vertx.core.Future&lt;EventEnvelope&gt;</code></td>
+<td>Inside reactive or Vert.x code</td>
+</tr>
+<tr>
+<td><code>eRequest()</code></td>
+<td><code>java.util.concurrent.CompletableFuture&lt;EventEnvelope&gt;</code></td>
+<td>When composing with <code>CompletableFuture</code> chains</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-java">// Virtual thread — sequential, readable, non-blocking
+EventEnvelope response = po.request(event, 5000).get();
+
+// Async Vert.x future
+po.asyncRequest(event, 5000).onSuccess(response -&gt; { ... });
+
+// CompletableFuture
+po.eRequest(event, 5000).thenAccept(response -&gt; { ... });
+</code></pre>
+<h3 id="parallel-requests-fork-n-join">Parallel requests (fork-n-join)</h3>
+<pre><code class="language-java">List&lt;EventEnvelope&gt; requests = List.of(eventA, eventB, eventC);
+List&lt;EventEnvelope&gt; responses = po.request(requests, 5000).get();
+// responses[i] corresponds to requests[i]
+</code></pre>
+<h3 id="event-over-http-cross-instance">Event-over-HTTP (cross-instance)</h3>
+<pre><code class="language-java">// Route to a function in a peer application instance
+EventEnvelope response = po.request(event, 5000,
+    Map.of(&quot;X-App-Instance&quot;, &quot;peer-instance-id&quot;),
+    &quot;http://peer-service/api/event&quot;,
+    true  // true = RPC, false = fire-and-forget
+).get();
+</code></pre>
+<h3 id="service-discovery-and-trace-utilities">Service discovery and trace utilities</h3>
+<pre><code class="language-java">// Check if a function is available (local or mesh)
+boolean available = po.exists(&quot;v1.some.service&quot;);
+
+// Add custom data to the distributed trace
+po.annotateTrace(&quot;user_id&quot;, &quot;A12345&quot;);
+po.annotateTrace(&quot;request_context&quot;, Map.of(&quot;tenant&quot;, &quot;acme&quot;));
+
+// Access current trace info
+String traceId = po.getTraceId();
+String tracePath = po.getTracePath();
+</code></pre>
+<h3 id="kv-helper-class"><code>Kv</code> helper class</h3>
+<p><code>Kv</code> is a typed key-value pair for passing headers in PostOffice convenience methods:</p>
+<pre><code class="language-java">// Package: org.platformlambda.core.models
+Kv kv = new Kv(String key, Object value);  // value is converted to String
+
+// Usage
+po.send(&quot;v1.notify.user&quot;, new Kv(&quot;user_id&quot;, &quot;100&quot;), new Kv(&quot;action&quot;, &quot;welcome&quot;));
+</code></pre>
+<hr />
+<h2 id="common-usage-patterns">Common usage patterns</h2>
+<h3 id="pattern-1-simple-rpc-call-from-inside-a-function">Pattern 1: Simple RPC call from inside a function</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.create.profile&quot;)
+public class CreateProfile implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input, int instance) throws Exception {
+        PostOffice po = PostOffice.trackable(headers, instance);
+
+        EventEnvelope request = new EventEnvelope()
+            .setTo(&quot;v1.validate.input&quot;)
+            .setBody(input);
+
+        EventEnvelope response = po.request(request, 5000).get();
+
+        if (response.hasError()) {
+            throw new AppException(response.getStatus(), response.getError().toString());
+        }
+
+        return response.getBody(Map.class);
+    }
+}
+</code></pre>
+<h3 id="pattern-2-parallel-requests">Pattern 2: Parallel requests</h3>
+<pre><code class="language-java">PostOffice po = PostOffice.trackable(headers, instance);
+
+EventEnvelope reqA = new EventEnvelope().setTo(&quot;v1.lookup.user&quot;).setHeader(&quot;id&quot;, userId);
+EventEnvelope reqB = new EventEnvelope().setTo(&quot;v1.lookup.account&quot;).setHeader(&quot;id&quot;, accountId);
+
+List&lt;EventEnvelope&gt; responses = po.request(List.of(reqA, reqB), 5000).get();
+Map&lt;String, Object&gt; user = responses.get(0).getBody(Map.class);
+Map&lt;String, Object&gt; account = responses.get(1).getBody(Map.class);
+</code></pre>
+<h3 id="pattern-3-authentication-function-returning-session-variables">Pattern 3: Authentication function returning session variables</h3>
+<p>An authentication function can attach session variables to the approved request by returning
+an <code>EventEnvelope</code> with <code>body = true</code> and additional headers:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.auth.validator&quot;)
+public class AuthValidator implements TypedLambdaFunction&lt;AsyncHttpRequest, EventEnvelope&gt; {
+
+    @Override
+    public EventEnvelope handleEvent(Map&lt;String, String&gt; headers,
+                                     AsyncHttpRequest input, int instance) throws Exception {
+        String token = input.getHeader(&quot;Authorization&quot;);
+        if (!validateToken(token)) {
+            throw new AppException(401, &quot;Invalid token&quot;);
+        }
+        String userId = extractUserId(token);
+        // Approve and inject session variable accessible as input.session.user_id in flows
+        return new EventEnvelope()
+            .setHeader(&quot;user_id&quot;, userId)
+            .setBody(true);
+    }
+}
+</code></pre>
+<h3 id="pattern-4-inspecting-envelope-metadata-in-an-eventinterceptor">Pattern 4: Inspecting envelope metadata in an EventInterceptor</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.audit.interceptor&quot;)
+@EventInterceptor
+public class AuditInterceptor implements TypedLambdaFunction&lt;EventEnvelope, Void&gt; {
+
+    @Override
+    public Void handleEvent(Map&lt;String, String&gt; headers,
+                            EventEnvelope input, int instance) throws Exception {
+        log.info(&quot;Event from={} to={} traceId={} bodyType={}&quot;,
+            input.getFrom(), input.getTo(),
+            input.getTraceId(), input.getSimpleType());
+        return null;  // return value is ignored for @EventInterceptor
+    }
+}
+</code></pre>
+<hr />
+<h2 id="reserved-http-headers">Reserved HTTP headers</h2>
+<p>These header names are reserved by the framework and must not be used as custom headers
+in user code when operating at the HTTP boundary:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X-Stream-Id</code></td>
+<td>Stream ID for Flux streaming responses</td>
+</tr>
+<tr>
+<td><code>X-TTL</code></td>
+<td>Time-to-live for Flux stream consumers</td>
+</tr>
+<tr>
+<td><code>X-Trace-Id</code></td>
+<td>Distributed trace identifier</td>
+</tr>
+<tr>
+<td><code>X-Correlation-Id</code></td>
+<td>Caller-assigned correlation ID</td>
+</tr>
+<tr>
+<td><code>X-Flow-Id</code></td>
+<td>Active flow ID</td>
+</tr>
+<tr>
+<td><code>X-App-Instance</code></td>
+<td>Target application instance for Event-over-HTTP</td>
+</tr>
+<tr>
+<td><code>X-Async</code></td>
+<td>Marks an event as fire-and-forget over HTTP</td>
+</tr>
+<tr>
+<td><code>X-Event-Api</code></td>
+<td>Marks a request as an Event API call</td>
+</tr>
+<tr>
+<td><code>X-Content-Length</code></td>
+<td>Content length for streaming responses</td>
+</tr>
+<tr>
+<td><code>X-Small-Payload-As-Bytes</code></td>
+<td>Hint to treat small payloads as binary</td>
+</tr>
+<tr>
+<td><code>X-Raw-Xml</code></td>
+<td>Hint to pass XML body as-is without parsing</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../ARCHITECTURE/">Architecture Overview</a> — Event Envelope structure and role in the system</li>
+<li><a href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a> — <code>@EventInterceptor</code>, <code>@PreLoad</code>, and other annotations</li>
+<li><a href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a> — Complete data mapping DSL reference</li>
+<li><a href="../CHAPTER-4/">Event Script Syntax</a> — Flow DSL including input/output mapping and execution types</li>
+<li><a href="../CHAPTER-2/">Function Execution Strategies</a> — Virtual threads, auth functions, Flux/Mono return types</li>
+<li><a href="../CHAPTER-9/">API Overview</a> — Full <code>PostOffice</code>, <code>Platform</code>, and configuration API</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../CONFIGURATION-REFERENCE/" class="btn btn-neutral float-left" title="Configuration Reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../FLOW-SCHEMA-REFERENCE/" class="btn btn-neutral float-right" title="Flow Configuration Schema">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../CONFIGURATION-REFERENCE/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../FLOW-SCHEMA-REFERENCE/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/ARCHITECTURE/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Architecture Overview - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Architecture Overview";
+        var mkdocs_page_input_path = "guides/ARCHITECTURE.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/ARCHITECTURE/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Architecture Overview</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#system-architecture">System Architecture</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#composable-functions">Composable Functions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#event-envelope">Event Envelope</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#event-script-and-flow-configuration">Event Script and Flow Configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#rest-automation">REST Automation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#function-execution-model">Function Execution Model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#core-apis">Core APIs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#distributed-architecture">Distributed Architecture</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#key-annotations-reference">Key Annotations Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#key-configuration-files">Key Configuration Files</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#further-reading">Further Reading</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION-REFERENCE/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Concepts</li>
+      <li class="breadcrumb-item active">Architecture Overview</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="architecture-overview">Architecture Overview</h1>
+<p>Mercury Composable is a Java 21 framework for building event-driven applications from self-contained,
+stateless functions wired together by YAML-configured event choreography. It targets microservices,
+serverless deployments, and any system where maintainability and horizontal scalability are priorities.
+Because each function is a pure input-process-output unit with an explicit interface contract, the
+framework is also well suited for AI-assisted code generation — an AI agent can generate correct
+functions, flow configurations, and REST definitions from this page alone.</p>
+<hr />
+<h2 id="system-architecture">System Architecture</h2>
+<p>A Mercury Composable application is structured in five distinct layers that process a request from
+outside in.</p>
+<p>The outermost layer is the <strong>flow adapter</strong>. Adapters convert external requests into internal events.
+The built-in HTTP flow adapter intercepts HTTP requests routed through the REST automation engine and
+packages them as <code>EventEnvelope</code> objects destined for the flow engine, then delivers the final response
+back to the caller. The Kafka adapter provides the same contract for stream-based event sources. The
+adapter API is open, so custom adapters can consume any event source (serverless triggers, file watchers,
+MQ listeners). Each adapter exposes a named route — the HTTP adapter uses the route <code>http.flow.adapter</code>.</p>
+<p><strong>REST Automation</strong> sits at the HTTP boundary and eliminates controller boilerplate. HTTP endpoints are
+declared in a <code>rest.yaml</code> configuration file. Each entry maps a URL pattern and HTTP method set to
+either a flow (via the <code>flow</code> key, routing through the HTTP flow adapter) or directly to a named function
+(via <code>service</code>). REST automation handles CORS headers, per-endpoint authentication functions, request and
+response header rules, distributed tracing activation, and timeout enforcement — all in configuration.</p>
+<p>The <strong>Event Manager</strong> (also called the flow engine) is the core orchestrator. When an event arrives from
+an adapter, the event manager resolves the matching flow configuration by its ID, creates a transient
+in-memory <strong>state machine</strong> for that transaction, and begins executing the task sequence. For each task,
+the event manager performs the input data mapping (populating the function's argument scope from the
+state machine and request dataset), dispatches the event to the target function, collects the result,
+and applies the output data mapping (writing result values back to the state machine or flow output).
+Exception handling — per-task or per-flow — is also managed by the event manager.</p>
+<p>The <strong>in-memory event system</strong> is the transport backbone, built on Eclipse Vertx's event bus with
+Java 21 virtual thread management. All inter-function communication within a single JVM travels through
+this bus. Point-to-point delivery routes an event to exactly one worker instance of the target function.
+Broadcast delivery sends an event to all registered instances. The event system uses <code>/tmp</code> as an
+overflow buffer when a consumer is slower than the producer, removing the need for explicit back-pressure
+handling in user code.</p>
+<p><strong>Composable functions</strong> are the innermost layer and the only place where application business logic
+lives. A function knows nothing about HTTP, the flow configuration, or other user functions. It receives
+typed input, executes its logic, and returns typed output. Its only permitted external dependency is a
+platform or infrastructure component consumed through the event system — never a direct method call to
+another user function.</p>
+<hr />
+<h2 id="composable-functions">Composable Functions</h2>
+<p>A composable function is a Java class implementing <code>TypedLambdaFunction&lt;I, O&gt;</code> or the untyped
+<code>LambdaFunction</code>. The typed interface defines the exact contract:</p>
+<pre><code class="language-java">public interface TypedLambdaFunction&lt;I, O&gt; {
+    O handleEvent(Map&lt;String, String&gt; headers, I input, int instance) throws Exception;
+}
+</code></pre>
+<p><code>LambdaFunction</code> is equivalent to <code>TypedLambdaFunction&lt;Object, Object&gt;</code> and is used when input type
+cannot be determined statically. Prefer <code>TypedLambdaFunction</code> with a concrete PoJo or
+<code>Map&lt;String, Object&gt;</code> as the input type for all new functions.</p>
+<p>The <code>@PreLoad</code> annotation registers the function with the event system at startup:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.get.profile&quot;, instances = 50, isPrivate = false)
+public class GetProfile implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Profile&gt; {
+    @Override
+    public Profile handleEvent(Map&lt;String, String&gt; headers, Map&lt;String, Object&gt; input, int instance) {
+        String profileId = headers.get(&quot;profile_id&quot;);
+        // business logic — return result or throw AppException(statusCode, message)
+        return profile;
+    }
+}
+</code></pre>
+<p>The <code>route</code> is a lowercase, dot-separated identifier (e.g., <code>v1.get.profile</code>). At least one dot is
+required. The <code>instances</code> value sets the maximum number of concurrent workers for this function.
+<code>isPrivate = false</code> makes the function addressable by other application instances through the service
+mesh; the default is <code>true</code> (local only). Optional <code>@PreLoad</code> parameters include <code>envInstances</code>
+(read instance count from application.properties at startup), <code>customSerializer</code>, <code>inputPojoClass</code>,
+and <code>inputStrategy</code> / <code>outputStrategy</code> for snake-case or camel-case serialization control.</p>
+<p>Functions must be stateless. They must not share mutable state via static fields or <code>ThreadLocal</code>
+variables, and must never call other user functions directly. All inter-function communication goes
+through <code>PostOffice</code>. This isolation is what enables independent unit testing, safe parallel execution,
+and hot-deployment of individual functions.</p>
+<p>Throw <code>AppException(statusCode, message)</code> to return structured error responses with HTTP-compatible
+status codes.</p>
+<hr />
+<h2 id="event-envelope">Event Envelope</h2>
+<p>Every message in the framework is transported as an <code>EventEnvelope</code> — an immutable container with three
+distinct parts: <strong>metadata</strong> (routing address, trace ID, correlation ID, status code, execution timing),
+<strong>headers</strong> (<code>Map&lt;String, String&gt;</code> of user-defined parameters passed to <code>handleEvent</code>), and <strong>body</strong>
+(the event payload — a PoJo, <code>Map&lt;String, Object&gt;</code>, Java primitive, or <code>byte[]</code>).</p>
+<p>Envelopes are serialized with MsgPack (binary JSON) inside the event bus and converted to standard JSON
+at HTTP boundaries. User code never serializes directly. The framework maps the envelope body to the
+typed <code>input</code> argument of <code>handleEvent</code>, and wraps the return value into a new envelope automatically.</p>
+<pre><code class="language-java">EventEnvelope event = new EventEnvelope()
+    .setTo(&quot;v1.get.profile&quot;)
+    .setHeader(&quot;profile_id&quot;, &quot;100&quot;)
+    .setBody(requestMap);
+EventEnvelope response = po.request(event, 5000).get();
+Profile profile = response.getBody(Profile.class);
+</code></pre>
+<p>The <code>status</code> field uses HTTP-compatible codes; <code>getStatus() &gt;= 400</code> indicates an error. Fluent setter
+methods (<code>setTo</code>, <code>setHeader</code>, <code>setBody</code>, <code>setStatus</code>, <code>setTrace</code>, <code>setCorrelationId</code>) all return
+<code>EventEnvelope</code> for chaining. To inspect all envelope metadata from inside a function, declare
+the input type as <code>EventEnvelope</code> in the <code>TypedLambdaFunction</code> signature.</p>
+<p>For a complete listing of all <code>EventEnvelope</code> and <code>PostOffice</code> methods, see the
+<a href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>.</p>
+<hr />
+<h2 id="event-script-and-flow-configuration">Event Script and Flow Configuration</h2>
+<p>Event Script is a YAML DSL that represents an event flow as a data structure rather than as code.
+A flow file specifies which function executes first, how data is mapped between functions, and what
+to do on success or error. An entire transaction's orchestration logic lives in a YAML file that can
+be changed and redeployed without modifying Java code.</p>
+<pre><code class="language-yaml">flow:
+  id: 'create-profile'
+  description: 'Create a user profile with field encryption'
+  ttl: 30s
+  exception: 'v1.hello.exception'
+
+first.task: 'v1.encrypt.fields'
+
+tasks:
+  - input:
+      - 'input.body -&gt; *'
+      - 'text(address, telephone) -&gt; protected_fields'
+    process: 'v1.encrypt.fields'
+    output:
+      - 'result -&gt; model.profile'
+    description: 'Encrypt PII fields before storage'
+    execution: sequential
+    next:
+      - 'v1.save.profile'
+
+  - input:
+      - 'model.profile -&gt; *'
+    process: 'v1.save.profile'
+    output:
+      - 'text(application/json) -&gt; output.header.content-type'
+      - 'result -&gt; output.body'
+    description: 'Persist profile and return to caller'
+    execution: end
+</code></pre>
+<p><strong>Input/output data mapping</strong> uses an <code>origin -&gt; destination</code> syntax with namespaces. Every expression
+in the <code>input:</code> and <code>output:</code> lists is a mapping statement. The namespaces are:</p>
+<ul>
+<li><code>input.</code> — the incoming request dataset. For HTTP: <code>input.body</code>, <code>input.header.&lt;name&gt;</code>,
+  <code>input.path_parameter.&lt;name&gt;</code>, <code>input.query.&lt;name&gt;</code>, <code>input.method</code>, <code>input.uri</code>, <code>input.session</code></li>
+<li><code>model.</code> — the per-transaction state machine, readable and writable by all tasks in the flow.
+  Use <code>model.parent.</code> (alias: <code>model.root.</code>) to share state with sub-flows.</li>
+<li><code>result</code> — the entire return value of the just-executed task</li>
+<li><code>result.&lt;key&gt;</code> — a specific field from the return value (uses dot-bracket notation)</li>
+<li><code>output.body</code> — the final response body returned to the caller</li>
+<li><code>output.header.&lt;name&gt;</code> — a response header</li>
+<li><code>output.status</code> — the HTTP response status code</li>
+<li><code>header.&lt;name&gt;</code> — a key-value passed into the next function's <code>headers</code> argument</li>
+<li><code>error.status</code>, <code>error.message</code>, <code>error.task</code>, <code>error.stack</code> — available in exception handlers</li>
+<li><code>text(value)</code> — a string constant (also used for content-type, e.g., <code>text(application/json)</code>)</li>
+<li><code>int(n)</code>, <code>long(n)</code>, <code>float(n)</code>, <code>double(n)</code>, <code>boolean(true|false)</code> — typed constants</li>
+<li><code>map(k=v, ...)</code> or <code>map(config.key)</code> — a map of key-values or values from application config</li>
+</ul>
+<p>The wildcard <code>-&gt; *</code> maps the entire source object as the function's input body. Dot-bracket notation
+(<code>model.user.address</code>, <code>numbers[1]</code>) is used throughout for nested access.</p>
+<p><strong>Execution types</strong> control flow advancement after each task: <code>sequential</code> continues to the <code>next</code>
+task list; <code>end</code> terminates the flow and delivers the result; <code>response</code> sends the HTTP response
+immediately and continues executing remaining tasks asynchronously; <code>fork-n-join</code> dispatches to
+multiple tasks in parallel and waits for all; <code>parallel</code> dispatches without waiting; <code>decision</code>
+evaluates the task's boolean return to branch; <code>pipeline</code> chains tasks as a streaming pipeline;
+<code>sink</code> discards the result and continues without waiting.</p>
+<p>Sub-flows are referenced using the <code>flow://</code> protocol: <code>process: 'flow://my-sub-flow'</code>. The parent
+TTL must cover the combined execution time of all sub-flows.</p>
+<hr />
+<h2 id="rest-automation">REST Automation</h2>
+<p>HTTP endpoints are declared in <code>rest.yaml</code> without writing Java controllers:</p>
+<pre><code class="language-yaml">rest:
+  - service: &quot;http.flow.adapter&quot;
+    methods: ['GET', 'POST']
+    url: &quot;/api/profile/{profile_id}&quot;
+    flow: 'get-profile'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+    authentication: 'v1.auth.validator'
+</code></pre>
+<p>When <code>flow</code> is specified, the HTTP flow adapter packages the request and passes it to the flow engine.
+When <code>service</code> points directly to a function route (without <code>flow</code>), requests go to that function
+without a flow configuration. Path template parameters (<code>{profile_id}</code>) are accessible in flows as
+<code>input.path_parameter.profile_id</code>. The optional <code>authentication</code> field names a function that receives
+an <code>AsyncHttpRequest</code> and returns <code>true</code> to approve, <code>false</code> for HTTP 401, or throws
+<code>AppException(statusCode, message)</code> for custom rejections.</p>
+<hr />
+<h2 id="function-execution-model">Function Execution Model</h2>
+<p>Virtual threads are the default execution environment for all functions. Java 21 virtual threads
+are cooperatively scheduled, cheap to create in large numbers, and suspend non-destructively on
+blocking calls. A <code>po.request(event, timeout).get()</code> call appears sequential in code but the
+virtual thread is suspended while waiting, freeing the JVM to schedule other work. This means
+sequential, readable code behaves with the performance characteristics of reactive code, without
+the callback complexity.</p>
+<p>For functions that make blocking calls incompatible with virtual threads — tight CPU-bound loops
+or legacy code using kernel-thread-specific constructs — add <code>@KernelThreadRunner</code>:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.heavy.computation&quot;, instances = 5)
+@KernelThreadRunner
+public class HeavyTask implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+    // executes in kernel thread pool (configurable via kernel.thread.pool, default 100)
+}
+</code></pre>
+<p>Keep <code>instances</code> small for kernel-thread functions (5–10 is typical). The default kernel thread
+pool is capped at 100 (<code>kernel.thread.pool</code> in application.properties). Avoid the <code>synchronized</code>
+keyword and <code>ThreadLocal</code> in virtual-thread functions; both create contention that undermines the
+cooperative scheduling model.</p>
+<p>Functions can also return <code>Mono&lt;T&gt;</code> or <code>Flux&lt;T&gt;</code> from Project Reactor. The framework integrates
+these reactive return types automatically. For <code>Flux</code>, the consumer function receives stream
+coordinates in headers (<code>x-stream-id</code>, <code>x-ttl</code>) and processes the stream via <code>FluxConsumer&lt;T&gt;</code>.</p>
+<hr />
+<h2 id="core-apis">Core APIs</h2>
+<p><strong>PostOffice</strong> is the messaging client. Always obtain it from <code>handleEvent</code>'s <code>headers</code> and <code>instance</code>
+arguments to preserve the distributed trace chain:</p>
+<pre><code class="language-java">PostOffice po = PostOffice.trackable(headers, instance);
+</code></pre>
+<p>Key methods: <code>po.send(route, body)</code> — fire-and-forget; <code>po.request(event, timeoutMs).get()</code> — blocking
+RPC on virtual thread; <code>po.asyncRequest(event, timeoutMs)</code> — async RPC returning a Vert.x <code>Future</code>;
+<code>po.eRequest(event, timeoutMs)</code> — async RPC returning <code>CompletableFuture</code>; <code>po.asyncRequest(events, timeout)</code>
+— fork-n-join parallel requests; <code>po.sendLater(event, futureDate)</code> — scheduled delivery;
+<code>po.broadcast(route, body)</code> — send to all instances of a function. The <code>po.exists(route)</code> method can
+discover public functions in other application instances when running in service mesh mode.</p>
+<p><strong>Platform</strong> is the singleton service registry:</p>
+<pre><code class="language-java">Platform platform = Platform.getInstance();
+platform.register(&quot;my.dynamic.function&quot;, new MyFunction(), 5); // dynamic registration
+platform.hasRoute(&quot;v1.get.profile&quot;);   // check if function is registered locally
+platform.release(&quot;my.dynamic.function&quot;);
+platform.waitForProvider(&quot;cloud.connector&quot;, 10); // wait up to 10s for a provider to be ready
+</code></pre>
+<p><strong>AsyncHttpRequest</strong> is the typed input class for functions declared directly as REST endpoints without
+a flow. It provides accessors for all HTTP request fields. <strong>FluxConsumer\&lt;T&gt;</strong> wraps Flux streams
+returned by other functions. <strong>AppConfigReader</strong> provides runtime access to <code>application.properties</code>
+and <code>application.yml</code> values via <code>config.get("my.key")</code> and <code>config.getProperty("my.key")</code>.</p>
+<hr />
+<h2 id="distributed-architecture">Distributed Architecture</h2>
+<p>Mercury scales beyond a single JVM through two complementary mechanisms. <strong>Event over HTTP</strong> allows
+functions in separate application instances to communicate by exposing a built-in <code>POST /api/event</code>
+endpoint (<code>event.api.service</code>). A caller routes an event to a function in a peer instance using
+<code>po.asyncRequest(event, timeout, headers, "http://peer/api/event", true)</code> — the same <code>EventEnvelope</code>
+serialization crosses the network boundary transparently. In Kubernetes, the event API endpoint is
+reached via internal cluster DNS without requiring an ingress.</p>
+<p><strong>Minimalist Service Mesh</strong> uses Kafka as a distributed routing table and event bridge. Setting
+<code>cloud.connector=kafka</code> in <code>application.properties</code> enables the <code>cloud.connector</code> module, which
+publishes public-function routes to the distributed registry and bridges inter-instance events
+through Kafka. Functions with <code>isPrivate = false</code> become reachable by any instance in the mesh.
+Calling code uses the same <code>PostOffice</code> API whether the target is local or remote.</p>
+<hr />
+<h2 id="key-annotations-reference">Key Annotations Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Annotation</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@PreLoad</code></td>
+<td>Register a function at startup: <code>route</code>, <code>instances</code>, <code>isPrivate</code>, <code>envInstances</code>, <code>customSerializer</code>, <code>inputStrategy</code>, <code>outputStrategy</code></td>
+</tr>
+<tr>
+<td><code>@MainApplication</code></td>
+<td>Mark the application entry point class (implements <code>EntryPoint</code>); <code>sequence</code> controls order (1–999)</td>
+</tr>
+<tr>
+<td><code>@BeforeApplication</code></td>
+<td>Initialization hook that runs before <code>@MainApplication</code>; use sequences 3–999 for user code</td>
+</tr>
+<tr>
+<td><code>@KernelThreadRunner</code></td>
+<td>Execute the function in the kernel thread pool instead of virtual threads</td>
+</tr>
+<tr>
+<td><code>@EventInterceptor</code></td>
+<td>Receive the raw <code>EventEnvelope</code> as input body; return value is ignored (advanced routing patterns)</td>
+</tr>
+<tr>
+<td><code>@ZeroTracing</code></td>
+<td>Suppress distributed tracing for this function</td>
+</tr>
+<tr>
+<td><code>@WebSocketService</code></td>
+<td>Register a WebSocket endpoint handler; annotated class implements <code>LambdaFunction</code></td>
+</tr>
+<tr>
+<td><code>@CloudConnector</code></td>
+<td>Mark a class as a cloud connector plug-in selected by <code>cloud.connector</code> in application.properties</td>
+</tr>
+<tr>
+<td><code>@CloudService</code></td>
+<td>Mark a class as a cloud service plug-in selected by <code>cloud.services</code> in application.properties</td>
+</tr>
+<tr>
+<td><code>@OptionalService</code></td>
+<td>Conditionally load a function based on a configuration expression (e.g., <code>!feature.flag</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>For complete parameter details, combination rules, and required interfaces, see the <a href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>.</p>
+<hr />
+<h2 id="key-configuration-files">Key Configuration Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../CONFIGURATION-REFERENCE/"><code>application.properties</code> / <code>application.yml</code></a></td>
+<td>Port (<code>rest.server.port</code>), component scan (<code>web.component.scan</code>), flow list reference (<code>yaml.flow.automation</code>), cloud connector (<code>cloud.connector</code>), serialization strategy (<code>snake.case.serialization</code>)</td>
+</tr>
+<tr>
+<td><code>rest.yaml</code></td>
+<td>Declarative HTTP endpoint definitions: URL, methods, flow or service route, CORS config, auth function, tracing</td>
+</tr>
+<tr>
+<td><code>flows.yaml</code></td>
+<td>Index of individual flow YAML files to load (<code>flows:</code> list; optional <code>location:</code> for non-classpath paths)</td>
+</tr>
+<tr>
+<td><code>*.yml</code> in <code>flows/</code></td>
+<td>Individual event flow configurations, each defining one transaction's complete task sequence</td>
+</tr>
+</tbody>
+</table>
+<p>All configuration files are loaded from the classpath (<code>classpath:/</code>) in <code>src/main/resources</code> by
+default. File-system paths can be specified using the <code>file:/</code> prefix, and multiple files can be
+comma-separated (e.g., <code>yaml.rest.automation=file:/tmp/config/rest.yaml, classpath:/rest.yaml</code>).</p>
+<hr />
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="../METHODOLOGY/">Methodology</a> — design principles: input-process-output, zero dependency, event choreography, platform abstraction</li>
+<li><a href="../CHAPTER-1/">Getting Started</a> — hands-on walkthrough with the composable example application</li>
+<li><a href="../CHAPTER-2/">Function Execution Strategies</a> — virtual vs. kernel threads, Mono/Flux, authentication functions</li>
+<li><a href="../CHAPTER-3/">REST Automation</a> — complete <code>rest.yaml</code> syntax reference</li>
+<li><a href="../CHAPTER-4/">Event Script Syntax</a> — complete flow DSL reference including all task types, data mapping, sub-flows, and preload overrides</li>
+<li><a href="../CHAPTER-9/">API Overview</a> — full <code>PostOffice</code>, <code>Platform</code>, <code>EventEnvelope</code>, and configuration API reference</li>
+<li><a href="../CHAPTER-5/">Build, Test and Deploy</a> — CI/CD, packaging, and deployment patterns</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../METHODOLOGY/" class="btn btn-neutral float-left" title="Methodology"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../COMPOSABLE-DESIGN/" class="btn btn-neutral float-right" title="Composable Design">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../METHODOLOGY/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../COMPOSABLE-DESIGN/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
