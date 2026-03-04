@@ -28,6 +28,7 @@ import org.platformlambda.core.models.SimpleConnection;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -363,8 +364,15 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
         if (graph != null) {
+            var mapper = SimpleMapper.getInstance().getMapper();
+            var filename = getTempGraphName(inRoute);
+            var file = new File(tempDir, filename+JSON_EXT);
+            var text = mapper.writeValueAsString(graph.exportGraph());
+            util.str2file(file, text);
+            // use config reader to resolve environment variables
+            var reader = new ConfigReader(FILE_PREFIX+file.getPath());
             var graphInstance = new GraphInstance(PLAYGROUND);
-            graphInstance.graph.importGraph(graph.exportGraph());
+            graphInstance.graph.importGraph(reader.getMap());
             // map node properties to state machine
             var nodeCount = initializeWithNodeProperties(graphInstance);
             // perform data mapping

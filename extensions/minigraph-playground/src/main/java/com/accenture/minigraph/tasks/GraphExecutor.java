@@ -26,15 +26,12 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.ConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -247,37 +244,9 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private Map<String, Object> getGraphModel(String graphId) {
-        if (graphLocation.startsWith(FILE_PREFIX)) {
-            return getGraphModelAsFile(graphId);
-        }
-        if (graphLocation.startsWith(CLASSPATH_PREFIX)) {
-            return getGraphModelAsResource(graphId);
-        }
-        return Collections.emptyMap();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getGraphModelAsFile(String graphId) {
-        var folder = graphLocation.substring(FILE_PREFIX.length());
-        var filePath = getNormalizedPath(folder, graphId);
-        File f = new File(filePath);
-        if (f.exists()) {
-            return SimpleMapper.getInstance().getMapper().readValue(util.file2str(f), Map.class);
-        } else {
-            return Collections.emptyMap();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getGraphModelAsResource(String graphId) {
-        var folder = graphLocation.substring(CLASSPATH_PREFIX.length());
-        var filePath = getNormalizedPath(folder, graphId);
-        InputStream in = this.getClass().getResourceAsStream(filePath);
-        if (in != null) {
-            return SimpleMapper.getInstance().getMapper().readValue(util.stream2str(in), Map.class);
-        } else {
-            return Collections.emptyMap();
-        }
+        // use config reader to resolve environment variables
+        var reader = new ConfigReader(getNormalizedPath(graphLocation, graphId));
+        return reader.getMap();
     }
 
     private String getNormalizedPath(String folder, String graphId) {
@@ -288,6 +257,6 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
         sb.append('/').append(graphId);
         sb.append(JSON_EXT);
-        return sb.toString();
+        return sb.substring(1);
     }
 }
