@@ -12,6 +12,22 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true,
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Routing
+          'vendor-router': ['react-router-dom'],
+          // Flow/graph renderer (largest single dependency)
+          'vendor-xyflow': ['@xyflow/react'],
+          // Markdown rendering + GFM plugin
+          'vendor-markdown': ['react-markdown', 'remark-gfm'],
+          // JSON viewer
+          'vendor-json-view': ['react-json-view-lite'],
+          // Resizable panels
+          'vendor-panels': ['react-resizable-panels'],
+        },
+      },
+    },
   },
   server: {
     port: 3000,
