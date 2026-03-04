@@ -1,48 +1,71 @@
 package com.accenture.minigraph.math;
 
-/**
- * A simple tagged union for numbers and booleans.
- * - Numbers are doubles.
- * - Booleans are true/false.
- * <p>
- * Conversions:
- * - asDouble(): booleans map to 1.0 (true) / 0.0 (false).
- * - asBoolean(): numbers use JS-like truthiness: 0 and NaN are false; others true.
- */
-public final class Value {
-    private final Double number;
-    private final Boolean bool;
+import org.jspecify.annotations.NonNull;
 
-    private Value(Double number, Boolean bool) {
-        this.number = number;
-        this.bool = bool;
-    }
+/** Sealed union for runtime values: number, boolean, string. */
+public sealed interface Value permits NumberValue, BooleanValue, StringValue {
+    double asDouble();
+    boolean asBoolean();
 
-    public static Value number(double d) {
-        return new Value(d, null);
-    }
+    static Value number(double d)   { return new NumberValue(d); }
+    static Value bool(boolean b)    { return new BooleanValue(b); }
+    static Value str(String s)      { return new StringValue(s); }
+}
 
-    public static Value bool(boolean b) {
-        return new Value(null, b);
-    }
+record NumberValue(double value) implements Value {
 
-    public boolean isNumber() { return number != null; }
-    public boolean isBoolean() { return bool != null; }
-
+    @Override
     public double asDouble() {
-        if (number != null) return number;
-        // boolean → number
-        return bool ? 1.0 : 0.0;
-    }
-
-    public boolean asBoolean() {
-        if (bool != null) return bool;
-        // JS-like truthiness: 0 and NaN are falsy.
-        return number != 0.0 && !Double.isNaN(number);
+        return value;
     }
 
     @Override
+    public boolean asBoolean() {
+        return value != 0.0 && !Double.isNaN(value);
+    }
+
+    @NonNull
+    @Override
     public String toString() {
-        return isNumber() ? ("Number(" + number + ")") : ("Boolean(" + bool + ")");
+        return "Number(" + value + ")";
+    }
+}
+
+record BooleanValue(boolean value) implements Value {
+
+    @Override
+    public double asDouble() {
+        return value ? 1.0 : 0.0;
+    }
+
+    @Override
+    public boolean asBoolean() {
+        return value;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "Boolean(" + value + ")";
+    }
+}
+
+record StringValue(String value) implements Value {
+
+    @Override
+    public double asDouble() {
+        // No implicit numeric coercion for strings in arithmetic contexts.
+        throw new IllegalArgumentException("Cannot coerce string to number: \"" + value + "\"");
+    }
+
+    @Override
+    public boolean asBoolean() {
+        return value != null && !value.isEmpty();
+    } // empty string is falsy
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "String(" + value + ")";
     }
 }

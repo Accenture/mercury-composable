@@ -1,3 +1,21 @@
+/*
+
+    Copyright 2018-2026 Accenture Technology
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+ */
+
 package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.base.GraphLambdaFunction;
@@ -23,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-@PreLoad(route = GraphCommandService.ROUTE, instances=10)
+@PreLoad(route = GraphCommandService.ROUTE, instances=50)
 public class GraphCommandService extends GraphLambdaFunction {
     public static final String ROUTE = "graph.command.service";
     private static final Logger log = LoggerFactory.getLogger(GraphCommandService.class);
@@ -568,7 +586,7 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private String getNodeType(List<String> lines) {
         for (String line : lines) {
-            var lower = line.toLowerCase();
+            var lower = line.toLowerCase().trim();
             if (lower.startsWith(WITH_TYPE)) {
                 var words = util.split(line, " ");
                 if (words.size() > 2) {
@@ -584,7 +602,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var pLines = new ArrayList<String>();
         var found = false;
         for (var line : lines) {
-            var lower = line.toLowerCase();
+            var lower = line.toLowerCase().trim();
             if (lower.startsWith(WITH_PROPERTIES)) {
                 found = true;
             } else if (found) {
@@ -642,9 +660,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 sb.append(v).append("\n");
             }
         } else {
-            var constant = helper.getConstantValue(value);
-            var v = constant != null? constant : value;
-            result.setElement(key, v);
+            result.setElement(key, value);
         }
     }
 

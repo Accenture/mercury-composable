@@ -25,6 +25,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 
+import java.util.List;
 import java.util.Map;
 
 @PreLoad(route = "upload.json.content", instances = 10)
@@ -33,13 +34,15 @@ public class UploadJsonContent implements TypedLambdaFunction<AsyncHttpRequest, 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         var id = input.getPathParameter("id");
-        if (input.getBody() instanceof Map) {
+        if (input.getBody() instanceof Map || input.getBody() instanceof List) {
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(input.getBody());
-            if (!JsonPathHandler.uploadContent(id, text)) {
+            if (JsonPathHandler.uploadContent(id, text)) {
+                return new EventEnvelope().setHeader("Content-Type", "application/json")
+                        .setBody(Map.of("message", "Content uploaded", "type", "upload"));
+            } else {
                 throw new IllegalStateException("Session "+id+" is expired or invalid");
             }
         }
-        return new EventEnvelope().setHeader("Content-Type", "application/json")
-                    .setBody(Map.of("message", "Content uploaded", "type", "upload"));
+        throw new IllegalStateException("Input is not a valid JSON/XML text that represents a Map or List");
     }
 }

@@ -9,57 +9,57 @@ public final class EvalContext {
 
     public static EvalContext withDefaults() {
         EvalContext ctx = new EvalContext();
-        // Math namespace
+
+        // Math namespace (populated as we define)
         ctx.root.put("Math", new HashMap<>());
+
         // Constants
         ctx.define("PI", Math.PI);
         ctx.define("E",  Math.E);
-        // Functions (top-level and under Math.*)
-        ctx.define("sin", a -> Math.sin(req1(a)));
-        ctx.define("cos", a -> Math.cos(req1(a)));
-        ctx.define("tan", a -> Math.tan(req1(a)));
+
+        // Functions (top-level mirrored into Math.*)
+        ctx.define("sin",  a -> Math.sin(req1(a)));
+        ctx.define("cos",  a -> Math.cos(req1(a)));
+        ctx.define("tan",  a -> Math.tan(req1(a)));
         ctx.define("asin", a -> Math.asin(req1(a)));
         ctx.define("acos", a -> Math.acos(req1(a)));
         ctx.define("atan", a -> Math.atan(req1(a)));
         ctx.define("sqrt", a -> Math.sqrt(req1(a)));
         ctx.define("abs",  a -> Math.abs(req1(a)));
-        ctx.define("floor", a -> Math.floor(req1(a)));
+        ctx.define("floor",a -> Math.floor(req1(a)));
         ctx.define("ceil", a -> Math.ceil(req1(a)));
-        ctx.define("round", a -> (double) Math.round(req1(a)));
-        ctx.define("log", a -> Math.log(req1(a)));
-        ctx.define("log10", a -> Math.log10(req1(a)));
-        ctx.define("exp",a -> Math.exp(req1(a)));
-        ctx.define("min", EvalContext::min);
-        ctx.define("max", EvalContext::max);
-        ctx.define("pow", a -> Math.pow(req2(a, "pow"), a[1]));
-        ctx.define("random",a -> { reqN(a, 0, "random"); return Math.random(); });
+        ctx.define("round",a -> (double)Math.round(req1(a)));
+        ctx.define("log",  a -> Math.log(req1(a)));
+        ctx.define("log10",a -> Math.log10(req1(a)));
+        ctx.define("exp",  a -> Math.exp(req1(a)));
+        ctx.define("min",  EvalContext::min);
+        ctx.define("max",  EvalContext::max);
+        ctx.define("pow",  a -> Math.pow(req2(a, "pow"), a[1]));
+        ctx.define("random", a -> { reqN(a, 0, "random"); return Math.random(); });
+
         return ctx;
     }
 
     public EvalContext define(String name, double value) {
         root.put(name, value);
-        // also inject into Math.* if already present
-        Object math = root.get("Math");
-        if (math instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> m = (Map<String, Object>) math;
-            m.put(name, value);
-        }
+        mirrorIntoMath(name, value);
         return this;
     }
 
     public EvalContext define(String name, MathFunction fn) {
         root.put(name, fn);
-        Object math = root.get("Math");
-        if (math instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> m = (Map<String, Object>) math;
-            m.put(name, fn);
-        }
+        mirrorIntoMath(name, fn);
         return this;
     }
 
+    /** Numbers only; for strings use defineString. */
     public EvalContext defineVariable(String name, double value) {
+        root.put(name, value);
+        return this;
+    }
+
+    /** Define string variable. */
+    public EvalContext defineString(String name, String value) {
         root.put(name, value);
         return this;
     }
@@ -76,6 +76,15 @@ public final class EvalContext {
 
     public Map<String, Object> snapshot() {
         return Collections.unmodifiableMap(root);
+    }
+
+    private void mirrorIntoMath(String name, Object v) {
+        Object math = root.get("Math");
+        if (math instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> m = (Map<String, Object>) math;
+            m.put(name, v);
+        }
     }
 
     // Helpers

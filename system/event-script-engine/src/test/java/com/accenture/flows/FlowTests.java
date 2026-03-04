@@ -355,6 +355,8 @@ class FlowTests extends TestBase {
         assertEquals(combined, body.get("more"));
         assertEquals(Map.of("hello", "world"), body.get("map"));
         assertEquals(List.of(Map.of("test", 1), Map.of("test", 1)), body.get("updated_list_map"));
+        // f:listToSet() de-duplicates [AAA, AAA] to a list of unique items
+        assertEquals(List.of("AAA"), body.get("unique"));
     }
 
     @SuppressWarnings("unchecked")

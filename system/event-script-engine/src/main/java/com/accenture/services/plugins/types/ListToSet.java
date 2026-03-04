@@ -16,24 +16,23 @@
 
  */
 
-package com.accenture.jsonpath;
+package com.accenture.services.plugins.types;
 
-import org.platformlambda.core.annotations.MainApplication;
-import org.platformlambda.core.models.EntryPoint;
-import org.platformlambda.core.system.AutoStart;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.accenture.models.PluginFunction;
+import com.accenture.models.SimplePlugin;
 
-@MainApplication
-public class MainApp implements EntryPoint {
-    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
-    public static void main(String[] args) {
-        AutoStart.main(args);
-    }
+@SimplePlugin
+public class ListToSet implements PluginFunction {
 
     @Override
-    public void start(String[] args) {
-        log.info("Started");
+    public Object calculate(Object... input) {
+        if (input.length == 1 && input[0] instanceof List<?> items) {
+            return new ArrayList<>(new HashSet<>(items));
+        }
+        return null;
     }
 }

@@ -24,7 +24,7 @@ import org.platformlambda.core.models.LambdaFunction;
 import java.util.HashMap;
 import java.util.Map;
 
-@PreLoad(route="graph.health", instances=5)
+@PreLoad(route="graph.health", instances=10)
 public class GraphHealth implements LambdaFunction {
 
     private static final String TYPE = "type";

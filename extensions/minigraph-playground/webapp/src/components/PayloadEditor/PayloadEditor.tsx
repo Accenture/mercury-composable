@@ -1,7 +1,6 @@
 import SampleButtons from './SampleButtons';
 import styles from './PayloadEditor.module.css';
 import { type ValidationResult } from '../../utils/validators';
-import { MAX_BUFFER } from '../../config/playgrounds';
 
 interface PayloadEditorProps {
   payload:    string;
@@ -17,7 +16,7 @@ export default function PayloadEditor({ payload, onChange, validation, onFormat,
       <div className={styles.labelRow}>
         <label htmlFor="payload" className={styles.label}>JSON/XML Payload</label>
         <div className={styles.payloadControls}>
-          <span className={styles.charCounter}>Charachters: {payload.length}</span>
+          <span className={styles.charCounter}>size: {payload.length}</span>
           {payload && validation.type && (
             <span className={styles.typeIndicator}>{validation.type.toUpperCase()}</span>
           )}
@@ -47,7 +46,7 @@ export default function PayloadEditor({ payload, onChange, validation, onFormat,
 
       <textarea
         id="payload"
-        className={`${styles.textarea} ${!validation.valid ? styles.textareaError : ''}`}
+        className={`${styles.textarea} ${validation.valid ? '' : styles.textareaError}`}
         placeholder="Paste your JSON/XML payload here"
         value={payload}
         onChange={(e) => onChange(e.target.value)}

@@ -9,21 +9,58 @@ final class Lexer {
     Token next() {
         skipWhitespace();
         if (eof()) return new Token(TokenType.EOF, "", idx);
+
         char c = src.charAt(idx);
         int start = idx;
-        // Numbers
+
+        // Strings: single or double-quoted
+        if (c == '\'' || c == '"') {
+            return stringToken();
+        }
+
+        // Numbers: digit or leading '.' followed by digit
         if (Character.isDigit(c) || (c == '.' && peekIsDigit())) {
             return numberToken();
         }
-        // Identifiers / keywords
+
+        // Identifiers / keywords: [A-Za-z_][A-Za-z0-9_]*
         if (Character.isLetter(c) || c == '_') {
-            return identiferToken(start);
+            return identifierToken(start);
         }
-        // operator
+
+        // Operators / punctuation (handle multi-char first)
         return operatorToken(c, start);
     }
 
-    private Token identiferToken(int start) {
+    private Token stringToken() {
+        int start = idx;
+        char quote = src.charAt(idx++);
+        StringBuilder sb = new StringBuilder();
+        while (!eof()) {
+            char ch = src.charAt(idx++);
+            if (ch == quote) {
+                return new Token(TokenType.STRING, sb.toString(), start);
+            }
+            if (ch == '\\') {
+                if (eof()) throw error("Unterminated string literal", start);
+                char esc = src.charAt(idx++);
+                switch (esc) {
+                    case 'n' -> sb.append('\n');
+                    case 'r' -> sb.append('\r');
+                    case 't' -> sb.append('\t');
+                    case '\\'-> sb.append('\\');
+                    case '\''-> sb.append('\'');
+                    case '"' -> sb.append('"');
+                    default  -> sb.append(esc);
+                }
+            } else {
+                sb.append(ch);
+            }
+        }
+        throw error("Unterminated string literal", start);
+    }
+
+    private Token identifierToken(int start) {
         idx++;
         while (!eof()) {
             char d = src.charAt(idx);
@@ -37,7 +74,6 @@ final class Lexer {
     }
 
     private Token operatorToken(char c, int start) {
-        // Operators / punctuation (multi-char first)
         switch (c) {
             case '(': idx++; return new Token(TokenType.LPAREN, "(", start);
             case ')': idx++; return new Token(TokenType.RPAREN, ")", start);
@@ -77,21 +113,32 @@ final class Lexer {
 
     private Token numberToken() {
         int start = idx;
+
+        // integer part
         while (!eof() && Character.isDigit(src.charAt(idx))) idx++;
+
+        // fractional part
         if (!eof() && src.charAt(idx) == '.') {
-            idx++;
-            if (eof() || !Character.isDigit(src.charAt(idx)))
-                throw error("Malformed number literal", start);
-            while (!eof() && Character.isDigit(src.charAt(idx))) idx++;
+            handleFractional(start);
         }
+
+        // exponent part
         if (!eof() && (src.charAt(idx) == 'e' || src.charAt(idx) == 'E')) {
-            skipExponent();
+            handleExponent();
         }
+
         String lex = src.substring(start, idx);
         return new Token(TokenType.NUMBER, lex, start);
     }
 
-    private void skipExponent() {
+    private void handleFractional(int start) {
+        idx++;
+        if (eof() || !Character.isDigit(src.charAt(idx)))
+            throw error("Malformed number literal", start);
+        while (!eof() && Character.isDigit(src.charAt(idx))) idx++;
+    }
+
+    private void handleExponent() {
         int expPos = idx++;
         if (!eof() && (src.charAt(idx) == '+' || src.charAt(idx) == '-')) idx++;
         if (eof() || !Character.isDigit(src.charAt(idx)))

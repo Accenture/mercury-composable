@@ -19,6 +19,7 @@
 package com.accenture.minigraph.websocket.server;
 
 import org.platformlambda.core.annotations.WebSocketService;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
@@ -118,9 +119,9 @@ public class JsonPathHandler implements LambdaFunction {
                                     """;
                 po.send(txPath, helpMessage);
             }
-            case "load" -> textMap.put(route, "?");
+            case "load" -> textMap.put(route, true);
             case "upload" -> {
-                textMap.put(route, "?");
+                textMap.put(route, true);
                 var id = route.replace('.', '-');
                 po.send(txPath, "Please upload XML/JSON text to /api/json/content/"+id+"\n");
             }
@@ -129,23 +130,20 @@ public class JsonPathHandler implements LambdaFunction {
                 po.send(txPath, "JSON unloaded\n");
             }
             default -> {
-                if (message.equals("{\"type\":\"welcome\"}")) {
-                    po.send(txPath, "Ready. Enter 'help' for more instruction.\n");
-                } else if (message.startsWith("{\"type\":\"ping\"")) {
-                    po.send(txPath, message);
-                } else {
-                    var text = textMap.get(route);
-                    if (text instanceof String) {
-                        String error = renderXmlOrJson(route, txPath, message);
-                        if (error != null) {
-                            textMap.remove(route);
-                            po.send(txPath, "Invalid JSON/XML - " + error);
-                        }
-                    } else if (text instanceof MultiLevelMap mm) {
-                        executeCommand(mm, txPath, message);
-                    } else {
-                        po.send(txPath, "JSON/XML not loaded - you entered: "+message+"\n");
+                if (message.startsWith("{") && message.endsWith("}") && handleHandshake(txPath, message)) {
+                    return;
+                }
+                var text = textMap.get(route);
+                if (text instanceof Boolean) {
+                    String error = renderXmlOrJson(route, txPath, message);
+                    if (error != null) {
+                        textMap.remove(route);
+                        po.send(txPath, "Invalid JSON/XML - " + error);
                     }
+                } else if (text instanceof MultiLevelMap mm) {
+                    executeCommand(mm, txPath, message);
+                } else {
+                    po.send(txPath, "JSON/XML not loaded - you entered: "+message+"\n");
                 }
             }
         }
@@ -170,13 +168,13 @@ public class JsonPathHandler implements LambdaFunction {
     private void executeCommand(MultiLevelMap mm, String txPath, String message) {
         var mapper = SimpleMapper.getInstance().getMapper();
         var po = EventEmitter.getInstance();
+        po.send(txPath, (message.startsWith("$") ? "JSON-Path " : "Simple retrieval ") + "command: " + message);
         try {
             var result = mm.getElement(message);
             po.send(txPath, mapper.writeValueAsString(result) + "\n");
         } catch (Exception ex) {
             po.send(txPath, ex.getMessage());
         }
-        po.send(txPath, (message.startsWith("$") ? "JSON-Path " : "Simple retrieval ") + "command: " + message);
     }
 
     private static String renderXmlOrJson(String route, String txPath, String message) {
@@ -204,18 +202,39 @@ public class JsonPathHandler implements LambdaFunction {
                 return e.getMessage();
             }
         }
-        log.info("{}", map);
         if (map.containsKey(RESPONSE)) {
             try {
                 var mm = new MultiLevelMap(map);
                 textMap.put(route, mm);
                 po.send(txPath, mapper.writeValueAsString(mm.getMap()) + "\n");
-                po.send(txPath, "JSON rendered in a 'data' node. Enter simple retrieval or JSON-Path commands.");
+                po.send(txPath, "JSON rendered. Please enter simple retrieval or JSON-Path commands.");
                 return null;
             } catch (Exception e) {
                 return e.getMessage();
             }
         }
         return "Payload cannot be parsed as XML or JSON";
+    }
+
+    private static boolean handleHandshake(String txPath, String message) {
+        var mapper = SimpleMapper.getInstance().getMapper();
+        try {
+            var data = mapper.readValue(message, Map.class);
+            if (data.containsKey("type")) {
+                var po = EventEmitter.getInstance();
+                var type = data.get("type");
+                if ("ping".equals(type)) {
+                    po.send(new EventEnvelope().setTo(txPath).setBody(Map.of("type", "pong")));
+                    return true;
+                }
+                if ("welcome".equals(type)) {
+                    po.send(new EventEnvelope().setTo(txPath).setBody("Welcome to JSON-Path Playground"));
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+            // ignore to ignore
+        }
+        return false;
     }
 }

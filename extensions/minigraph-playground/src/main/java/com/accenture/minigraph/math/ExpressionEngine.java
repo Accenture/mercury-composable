@@ -1,8 +1,6 @@
 package com.accenture.minigraph.math;
 
-/**
- * Convenience facade for parsing/evaluating expressions.
- */
+/** Convenience facade for parsing/evaluating expressions. */
 public final class ExpressionEngine {
 
     private final EvalContext ctx;

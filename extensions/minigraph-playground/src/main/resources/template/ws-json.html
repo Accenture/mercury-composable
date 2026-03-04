@@ -162,10 +162,14 @@
                 };
 
                 ws.onmessage = function(evt) {
-                    // hide ping protocol
-                    if (!evt.data.startsWith('{"type":"ping"')) {
-                        show(evt.data);
+                   if (evt.data.startsWith('{') && evt.data.endsWith('}') && evt.data.includes('"')) {
+                        var j = JSON.parse(evt.data);
+                        if (j.type == 'ping' || j.type == 'pong') {
+                            // hide ping/pong protocol
+                            return;
+                        }
                     }
+                    show(evt.data);
                 };
 
                 ws.onclose = function(evt) {
