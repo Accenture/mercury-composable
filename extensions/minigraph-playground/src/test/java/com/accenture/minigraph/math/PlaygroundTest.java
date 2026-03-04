@@ -62,7 +62,7 @@ class PlaygroundTest {
             "JSON rendered.", "$.response.hello",
             "\"world\"", "response.list"
     );
-    // intentionally create root and end nodes twice to test concurrency
+    // simulate duplicated node creation
     private static final Map<String, Object> dialog2 = Map.of(
             "Welcome to MiniGraph Playground", List.of("help connect", "describe skill graph.math"),
             "Skill: Graph Math", List.of("create node root", "create node root"),
@@ -197,6 +197,7 @@ class PlaygroundTest {
                     }
                     if ("end".equals(map.get("inspect"))) {
                         received.add(map);
+                        po.send(txPath, "delete node root");
                         bench.add(true);
                     }
                 }
@@ -223,10 +224,12 @@ class PlaygroundTest {
         assertEquals(Map.of("message", "100"), received.get(1).get("outcome"));
     }
 
-    private Object getNextCommand(Map<String, Object> dialog, String command) {
+    private Object getNextCommand(Map<String, Object> dialog, String command) throws InterruptedException {
         for (Map.Entry<String, Object> kv : dialog.entrySet()) {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
+                // simulate human operator delay
+                Thread.sleep(50);
                 return kv.getValue();
             }
         }
