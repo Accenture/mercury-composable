@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,64 +48,87 @@ class PlaygroundTest {
     private static final Logger log = LoggerFactory.getLogger(PlaygroundTest.class);
     private static final Utility util = Utility.getInstance();
     private static final String UPLOAD_ADVICE = "Please upload XML/JSON text to";
+    private static final String WELCOME = """
+                                        { "type": "welcome" }
+                                        """;
+    private static final String SAMPLE = """
+                                        { "hello": "world", "list": [1,2,3] }
+                                        """;
+    private static final String PING = """
+                                        { "type": "ping" }
+                                        """;
+    private static final Map<String, Object> dialog1 = Map.of(
+            "Welcome to JSON-Path Playground", List.of("load", SAMPLE),
+            "JSON rendered.", "$.response.hello",
+            "\"world\"", "response.list"
+    );
+    // intentionally create root and end nodes twice to test concurrency
+    private static final Map<String, Object> dialog2 = Map.of(
+            "Welcome to MiniGraph Playground", List.of("help connect", "describe skill graph.math"),
+            "Skill: Graph Math", List.of("create node root", "create node root"),
+            "node root created", List.of("create node end", "create node end"),
+            "node end created", """
+                    create node mapper
+                    with type mapper
+                    with properties
+                    skill=graph.data.mapper
+                    mapping[]=text(123) -> root.test
+                    mapping[]=input.body.id -> end.message""",
+            "node mapper created", "connect root to mapper with first",
+            "node root connected to mapper","connect mapper to end with second",
+            "node mapper connected to end", "instantiate graph\ntext(100) -> input.body.id",
+            "Graph instance created.", "run",
+            "Knowledge graph executed", "inspect root"
+    );
 
     @BeforeAll
     static void setup() {
         AutoStart.main(new String[0]);
     }
 
-    // TODO: fix unit test
-//    @Test
+    @Test
     void jsonPathWebSocketTest() throws InterruptedException {
-        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(10);
-        final String welcome = """
-                { "type": "welcome" }
-                """;
-        final String sample = """
-                { 
-                    "hello": "world",
-                    "list": [1,2,3]
-                 }
-                """;
-        final String ping = """
-                { "type": "ping" }
-                """;
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final AppConfigReader config = AppConfigReader.getInstance();
         final int port = util.str2int(config.getProperty("rest.server.port",
                 config.getProperty("server.port", "8085")));
+        final var first = new AtomicBoolean(true);
         var received = new ArrayList<String>();
         var po = EventEmitter.getInstance();
         LambdaFunction connector = (headers, input, instance) -> {
             String txPath = headers.get("tx_path");
             if ("open".equals(headers.get("type"))) {
-                po.send(txPath, welcome);
-                po.send(txPath, ping);
-                po.send(txPath, util.getUTF("OK"));
-                po.send(txPath, "<hello>test</hello>");
-                po.send(txPath, "help");
-                po.send(txPath, "unload");
-                po.send(new EventEnvelope().setTo(txPath).setBody("{invalid-json}").setReplyTo("json.parsing.error"));
-                po.send(txPath, "load");
-                po.send(txPath, sample);
+                po.send(txPath, PING);
             }
-            if ("string".equals(headers.get("type")) && input instanceof String message) {
-                if (message.startsWith("JSON rendered.")) {
-                    po.send(txPath, "$.response.hello");
+            if (bench.isEmpty() && "string".equals(headers.get("type")) && input instanceof String text) {
+                if (first.get()) {
+                    first.set(false);
+                    po.send(txPath, util.getUTF("OK"));
+                    po.send(txPath, "<hello>test</hello>");
+                    po.send(txPath, "help");
+                    po.send(txPath, "unload");
+                    po.send(new EventEnvelope().setTo(txPath).setBody("{invalid-json}").setReplyTo("json.parsing.error"));
+                    po.send(txPath, WELCOME);
                 }
-                var text = message.trim();
-                if (text.equals("\"world\"")) {
-                    received.add("world");
-                    po.send(txPath, "response.list");
+                var message = text.trim();
+                var next = getNextCommand(dialog1, message);
+                if (next instanceof List<?> items) {
+                    for (Object item : items) {
+                        po.send(txPath, item);
+                    }
                 }
-                if (text.startsWith("[") && text.endsWith("]")) {
-                    received.add(text);
+                if (next instanceof String nextCommand) {
+                    po.send(txPath, nextCommand);
+                }
+                if (message.startsWith("[") && message.endsWith("]")) {
+                    received.add(message);
                     po.send(txPath, "upload");
                 }
-                if (text.startsWith(UPLOAD_ADVICE)) {
-                    var uri = text.substring(UPLOAD_ADVICE.length()).trim();
+                if (message.startsWith(UPLOAD_ADVICE)) {
+                    var uri = message.substring(UPLOAD_ADVICE.length()).trim();
                     var request = new AsyncHttpRequest();
                     request.setUrl(uri).setTargetHost("http://127.0.0.1:" + port).setMethod("POST")
-                            .setHeader("Content-Type", "application/json").setBody(sample);
+                            .setHeader("Content-Type", "application/json").setBody(SAMPLE);
                     po.request(new EventEnvelope().setTo("async.http.request")
                                     .setBody(request.toMap()), 8000).get();
                     bench.add(true);
@@ -127,80 +151,43 @@ class PlaygroundTest {
         var done = bench.poll(10, TimeUnit.SECONDS);
         assertNotNull(done);
         assertTrue(done);
-        assertEquals(2,  received.size());
-        assertEquals("world", received.getFirst());
+        client.close();
+        assertEquals(1,  received.size());
         // the underlying GSON serializer is configured to treat number as Long
-        assertEquals(List.of(1L, 2L, 3L), SimpleMapper.getInstance().getMapper().readValue(received.get(1), List.class));
+        assertEquals(List.of(1L, 2L, 3L), SimpleMapper.getInstance().getMapper().readValue(received.getFirst(), List.class));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void miniGraphWebSocketTest() throws InterruptedException {
-        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(10);
-        final String welcome = """
-                { "type": "welcome" }
-                """;
-        final String ping = """
-                { "type": "ping" }
-                """;
-        final String createMapperNode = """
-                create node mapper
-                   with type mapper
-                   with properties
-                   skill=graph.data.mapper
-                   mapping[]=text(123) -> root.test
-                   mapping[]=input.body.id -> end.message
-                """;
+        final BlockingQueue<Boolean> bench = new ArrayBlockingQueue<>(1);
         final AppConfigReader config = AppConfigReader.getInstance();
         final int port = util.str2int(config.getProperty("rest.server.port",
                 config.getProperty("server.port", "8085")));
+        final var first = new AtomicBoolean(true);
         var received = new ArrayList<Map<String, Object>>();
         var po = EventEmitter.getInstance();
         LambdaFunction connector = (headers, input, instance) -> {
             String txPath = headers.get("tx_path");
             if ("open".equals(headers.get("type"))) {
-                po.send(txPath, welcome);
-                po.send(txPath, ping);
-                po.send(txPath, util.getUTF("OK"));
-                po.send(txPath, "help");
+                po.send(txPath, PING);
             }
-            if ("string".equals(headers.get("type")) && input instanceof String text) {
+            if (bench.isEmpty() && "string".equals(headers.get("type")) && input instanceof String text) {
+                if (first.get()) {
+                    first.set(false);
+                    po.send(txPath, util.getUTF("OK"));
+                    po.send(txPath, "help");
+                    po.send(txPath, WELCOME);
+                }
                 var message = text.trim();
-                if (message.startsWith("Welcome to MiniGraph Playground")) {
-                    po.send(txPath, "help connect");
-                    po.send(txPath, "help create");
-                    po.send(txPath, "help delete");
-                    po.send(txPath, "help describe");
-                    po.send(txPath, "help execute");
-                    po.send(txPath, "help export");
-                    po.send(txPath, "help import");
-                    po.send(txPath, "help inspect");
-                    po.send(txPath, "help instantiate");
-                    po.send(txPath, "help run");
-                    po.send(txPath, "help update");
-                    po.send(txPath, "describe skill graph.math");
-                    po.send(txPath, "create node root");
+                var next = getNextCommand(dialog2, message);
+                if (next instanceof List<?> items) {
+                    for (Object item : items) {
+                        po.send(txPath, item);
+                    }
                 }
-                if (message.startsWith("node root created")) {
-                    po.send(txPath, "create node end");
-                }
-                if (message.startsWith("node end created")) {
-                    po.send(txPath, createMapperNode);
-                }
-                if (message.startsWith("node mapper created")) {
-                    po.send(txPath, "connect root to mapper with first");
-                }
-                if (message.startsWith("node root connected to mapper")) {
-                    po.send(txPath, "connect mapper to end with second");
-                }
-                if (message.startsWith("node mapper connected to end")) {
-                    po.send(txPath, "instantiate graph\ntext(100) -> input.body.id");
-                }
-                if (message.startsWith("Graph instance created.")) {
-                    po.send(txPath, "run");
-                }
-                if (message.startsWith("Knowledge graph executed")) {
-                    po.send(txPath, "inspect root");
+                if (next instanceof String nextCommand) {
+                    po.send(txPath, nextCommand);
                 }
                 if (message.startsWith("{") && message.endsWith("}")) {
                     var map = SimpleMapper.getInstance().getMapper().readValue(message, Map.class);
@@ -230,8 +217,19 @@ class PlaygroundTest {
         var done = bench.poll(10, TimeUnit.SECONDS);
         assertNotNull(done);
         assertTrue(done);
+        client.close();
         assertEquals(2,  received.size());
         assertEquals(Map.of("test", "123"), received.getFirst().get("outcome"));
         assertEquals(Map.of("message", "100"), received.get(1).get("outcome"));
+    }
+
+    private Object getNextCommand(Map<String, Object> dialog, String command) {
+        for (Map.Entry<String, Object> kv : dialog.entrySet()) {
+            if (command.startsWith(kv.getKey())) {
+                log.info("{}", kv.getKey());
+                return kv.getValue();
+            }
+        }
+        return null;
     }
 }
