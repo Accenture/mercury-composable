@@ -116,7 +116,7 @@ trace.http.header=X-Correlation-Id, X-Trace-Id
 
 ## Transient data store
 
-The system uses a temp folder in "/tmp/composable/java/temp-streams" to hold temporary data blocks for streaming I/O.
+The system uses a temp folder in "/tmp/reactive" for event streaming.
 <br/>
 
 |                 Appendix-I                 |                   Home                    |                    Appendix-III                    |
