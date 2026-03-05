@@ -47,7 +47,7 @@ Statements are executed orderly.
 Properties
 ----------
 ```
-skill=graph.js
+skill=graph.math
 statement[]=COMPUTE: variable -> mathematical statement
 statement[]=IF: if-then-else statement
 statement[]=MAPPING: source -> target

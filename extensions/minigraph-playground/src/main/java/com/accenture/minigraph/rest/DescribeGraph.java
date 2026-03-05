@@ -54,10 +54,7 @@ public class DescribeGraph implements TypedLambdaFunction<AsyncHttpRequest, Obje
         if (filename == null) {
             throw new IllegalArgumentException("Missing path parameter 'graph_id'");
         }
-        System.out.println(tempDir.getAbsolutePath());
-
         var file = new File(tempDir, filename + ".json");
-        System.out.println("Loading graph from " + file.getAbsolutePath());
         if (file.exists()) {
             var text = Utility.getInstance().file2str(file);
             return SimpleMapper.getInstance().getMapper().readValue(text, Map.class);

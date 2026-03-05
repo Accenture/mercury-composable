@@ -81,9 +81,9 @@ public class GraphExtension extends GraphLambdaFunction {
         forward.setCorrelationId(util.getUuid()).setBody(dataset);
         return Mono.create(sink ->
             po.eRequest(forward, ttl, false).thenAccept(response -> {
-                stateMachine.setElement(nodeName + PROCESS_STATUS, response.getStatus());
+                stateMachine.setElement(nodeName + RESULT_DOT + STATUS, response.getStatus());
                 if (response.hasError()) {
-                    stateMachine.setElement(nodeName + RESULT_ERROR, response.getError());
+                    stateMachine.setElement(nodeName + RESULT_DOT + ERROR, response.getError());
                 } else {
                     stateMachine.setElement(nodeName + RESULT_DOT, response.getBody());
                 }

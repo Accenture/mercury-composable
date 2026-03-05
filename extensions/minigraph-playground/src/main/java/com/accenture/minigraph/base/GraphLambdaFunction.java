@@ -21,13 +21,12 @@ package com.accenture.minigraph.base;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.graph.MiniGraph;
-import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.SimpleNode;
-import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.models.VarSegment;
+import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,13 +36,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEnvelope, Object> {
+    private static final Logger log = LoggerFactory.getLogger(GraphLambdaFunction.class);
     protected static final ConcurrentMap<String, MiniGraph> graphModels = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
     protected static final Utility util = Utility.getInstance();
+    protected static final String ASYNC_HTTP_CLIENT = "async.http.request";
     protected static final String OPEN = "open";
     protected static final String CLOSE = "close";
     protected static final String COMMAND = "command";
+    protected static final String UNTYPED = "untyped";
     protected static final String IN = "in";
     protected static final String OUT = "out";
     protected static final String NEXT = "next";
@@ -52,17 +54,33 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String STATEMENT = "statement";
     protected static final String FLOW_ID = "flow_id";
     protected static final String API_DOT = ".api.";
+    protected static final String CACHED_DOT = ".cached.";
+    protected static final String RESPONSE_DOT = ".response.";
     protected static final String RESULT_DOT = ".result.";
+    protected static final String URL =  "url";
+    protected static final String METHOD = "method";
+    protected static final String HEADER = "header";
+    protected static final String FEATURE = "feature";
     protected static final String QUESTION = "question";
     protected static final String EXTENSION = "extension";
     protected static final String MAP_TO = "->";
     protected static final String INPUT = "input";
+    protected static final String OUTPUT = "output";
+    protected static final String BODY = "body";
+    protected static final String BODY_NAMESPACE = "body.";
+    protected static final String PROVIDER = "provider";
+    protected static final String DICTIONARY = "dictionary";
+    protected static final String HEADER_PARAMETER = "header.";
+    protected static final String QUERY_PARAMETER = "query.";
+    protected static final String PATH_PARAMETER = "path_parameter.";
     protected static final String INPUT_BODY_NAMESPACE = "input.body";
     protected static final String INPUT_HEADER_NAMESPACE = "input.header";
     protected static final String OUTPUT_BODY_NAMESPACE = "output.body";
     protected static final String OUTPUT_HEADER_NAMESPACE = "output.header";
     protected static final String MODEL = "model";
     protected static final String MODEL_NAMESPACE = "model.";
+    protected static final String RESULT_NAMESPACE = "result.";
+    protected static final String RESPONSE_NAMESPACE = "response.";
     protected static final String OUTPUT_NAMESPACE = "output.";
     protected static final String OUTPUT_BODY = "output.body";
     protected static final String OUTPUT_ARRAY = "output[";
@@ -87,8 +105,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String SINK = ".sink";
     protected static final String RUN = "run";
     protected static final String MODEL_TTL = "model.ttl";
-    protected static final String PROCESS_STATUS = ".status";
-    protected static final String RESULT_ERROR = ".result.error";
+    protected static final String STATUS = "status";
+    protected static final String ERROR = "error";
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, QUESTION);
 
     protected GraphInstance getGraphInstance(String id) {
@@ -242,6 +260,45 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
+    }
+
+    protected void mapHttpInput(AsyncHttpRequest request, String nodeName,
+                                MultiLevelMap stateMachine, List<String> mapping) {
+        var body = new HashMap<String, Object>();
+        Object wholeBody = null;
+        for (var entry : mapping) {
+            int sep = entry.lastIndexOf(MAP_TO);
+            if (sep != -1) {
+                var lhs = entry.substring(0, sep).trim();
+                var rhs = entry.substring(sep + MAP_TO.length()).trim();
+                var source = nodeName + API_DOT + lhs;
+                var value = helper.getLhsOrConstant(source, stateMachine);
+                if (value != null) {
+                    if (rhs.startsWith(PATH_PARAMETER)) {
+                        var key = rhs.substring(PATH_PARAMETER.length()).trim();
+                        request.setPathParameter(key, String.valueOf(value));
+                    } else if (rhs.startsWith(QUERY_PARAMETER)) {
+                        var key = rhs.substring(QUERY_PARAMETER.length()).trim();
+                        request.setQueryParameter(key, String.valueOf(value));
+                    } else if (rhs.startsWith(HEADER_PARAMETER)) {
+                        var key = rhs.substring(HEADER_PARAMETER.length()).trim();
+                        request.setHeader(key, String.valueOf(value));
+                    } else if (rhs.startsWith(BODY_NAMESPACE)) {
+                        var key = rhs.substring(BODY_NAMESPACE.length()).trim();
+                        if (!key.isEmpty()) {
+                            body.put(key, value);
+                        } else {
+                            wholeBody = value;
+                        }
+                    } else if (rhs.equals(BODY)) {
+                        wholeBody = value;
+                    } else {
+                        body.put(rhs, value);
+                    }
+                }
+            }
+        }
+        request.setBody(wholeBody != null? wholeBody : body);
     }
 
     private boolean validRhs(String rhs, MiniGraph graph) {

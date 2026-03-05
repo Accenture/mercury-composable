@@ -50,6 +50,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String CLASSPATH_PREFIX = "classpath:";
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
     private static final String PLAYGROUND = "playground";
+    private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
 
@@ -185,9 +186,55 @@ public class GraphCommandService extends GraphLambdaFunction {
                 words.get(1).equalsIgnoreCase(GRAPH) &&
                 words.get(2).equalsIgnoreCase("from")) {
             handleImportCommand(po, inRoute, outRoute, words.get(3));
+        } else if (words.size() == 3 && words.getFirst().equalsIgnoreCase("edit") &&
+                words.get(1).equalsIgnoreCase(NODE)) {
+            handleEditCommand(po, inRoute, outRoute, words.get(2));
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
         }
+    }
+
+    private void handleEditCommand(PostOffice po, String inRoute, String outRoute, String nodeName) {
+        var graph = graphModels.get(inRoute);
+        var node = graph.findNodeByAlias(nodeName);
+        if (node == null) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + NOT_FOUND);
+        }
+        var sb = new StringBuilder();
+        sb.append("update node ").append(nodeName).append('\n');
+        var types = node.getTypes();
+        var type = types.isEmpty() ? UNTYPED : types.iterator().next();
+        sb.append("with type ").append(type).append('\n');
+        sb.append("with properties\n");
+        var properties = node.getProperties();
+        if (!properties.isEmpty()) {
+            sb.append(getRawProperties(properties));
+        }
+        po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
+    }
+
+    private String getRawProperties(Map<String, Object> properties) {
+        var sb = new StringBuilder();
+        var map = util.getFlatMap(properties);
+        var items = new ArrayList<>(map.keySet());
+        Collections.sort(items);
+        for (var key : items) {
+            var value = map.get(key);
+            var lines = util.split(String.valueOf(value), "\n");
+            if (!lines.isEmpty()) {
+                sb.append(key).append('=');
+                if (lines.size() == 1) {
+                    sb.append(lines.getFirst()).append('\n');
+                } else {
+                    sb.append("'''\n");
+                    for (var line : lines) {
+                        sb.append(line).append('\n');
+                    }
+                    sb.append("'''\n");
+                }
+            }
+        }
+        return sb.toString();
     }
 
     private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
@@ -241,12 +288,11 @@ public class GraphCommandService extends GraphLambdaFunction {
                     }
                     po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model imported"));
                 } else {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not found"));
+                    po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not found in "+file.getPath()));
                 }
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute)
-                    .setBody("ERROR: Invalid filename - must be lower case with optional hyphen"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(INVALID_GRAPH_NAME));
         }
     }
 
@@ -262,8 +308,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                         "Graph exported to "+file.getPath()+"\n"+"Described in /api/graph/model/"+filename+"/"+n));
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute)
-                    .setBody("ERROR: Invalid filename - must be lower case with optional hyphen"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(INVALID_GRAPH_NAME));
         }
     }
 
@@ -559,7 +604,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else {
             node.getTypes().clear();
             node.getProperties().clear();
-            node.addType(type == null? "untyped" : type);
+            node.addType(type == null? UNTYPED : type);
             var map = keyValues.getMap();
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 node.addProperty(entry.getKey(), entry.getValue());
@@ -583,7 +628,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         if (node != null) {
             po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " already exists"));
         } else {
-            node = graph.createNode(nodeName, type == null? "untyped" : type);
+            node = graph.createNode(nodeName, type == null? UNTYPED : type);
             var map = keyValues.getMap();
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 node.addProperty(entry.getKey(), entry.getValue());

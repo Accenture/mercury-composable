@@ -24,10 +24,12 @@ For graph model
 - help create (node)
 - help delete (node or connection)
 - help update (node)
+- help edit (node)
 - help connect (node-A to node-B)
 - help export
 - help import
 - help describe (graph, node, connection or skill)
+- help data-dictionary
 
 For instance model
 ------------------

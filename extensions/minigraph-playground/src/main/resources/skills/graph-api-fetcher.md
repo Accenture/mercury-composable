@@ -13,13 +13,15 @@ Route name
 Setup
 -----
 To enable this skill for a node, set "skill=graph.api.fetcher" as a property in a node.
-It uses the data dictionary query plugin to make outgoing API calls so that complexity of API protocol
-is encapsulated in the configuration of the data dictionary query plugin.
+It will find out the data provider from a given data dictionary item to make an outgoing API call.
 
 The following parameters are required in the properties of the node:
 
-1. question - this should be a valid question ID configured in the data dictionary query plugin
+1. dictionary - this is a list of valid data dictionary node names configured in the same graph model
 2. mapping - this should include one or more data mapping as input parameters to invoke the API call
+
+The parameter name in each mapping statement must match that in the data dictionary item.
+Otherwise, execution will fail.
 
 The system uses the same syntax of Event Script for data mapping.
 
@@ -27,8 +29,9 @@ Properties
 ----------
 ```
 skill=graph.api.fetcher
-question=question-id
-mapping[]=source -> {parameter}
+dictionary[]={data dictionary item}
+input[]={mapping of key-value from input or another node to input parameter(s) of the data dictionary item(s)}
+output[]={mapping of result set to key-values of another node}
 ```
 
 Result set
@@ -36,18 +39,19 @@ Result set
 Upon successful execution, the result set will be stored in the "result" parameter in the properties of
 the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
 
-Syntax for mapping
-------------------
+Data mapping
+------------
 source.composite.key -> target.composite.key
 
-The source composite key can use the following namespaces:
-1. "input." namespace to map key-values from the input header or body of an incoming request
-2. Node name (aka 'alias') to map key-values of a node's properties
-3. "model." namespace for holding intermediate key-values for simple data transformation
+For input data mapping, the source can use a key-value from the `input.` namespace or another node.
+The target can be a key-value in the state machine (`model.` namespace) or an input parameter name of the
+data dictionary.
 
-The target composite key can use the following namespaces:
-1. "model." namespace for holding intermediate key-values for simple data transformation
-2. any key not using the "model." namespace will be mapped as an input parameter
+For output data mapping, the source can be a key-value from the result set and the target can use
+the `output.` or `model.` namespace.
+
+Output data mapping is optional because you can use another data mapper to map result set of the fetcher
+to another node.
 
 Example
 -------
@@ -55,9 +59,13 @@ Example
 create node my-api-fetcher
 with properties
 skill=graph.api.fetcher
-question=get-hr-record
-mapping[]=input.body.hr_id -> id
+dictionary[]=person_name
+dictionary[]=person_address
+input[]=input.body.person_id -> person_id
+output[]=result.person_name -> output.body.name
+output[]=result.person_address -> output.body.address
 ```
 
-The "[]" syntax is used to create and append a list of one or more data mapping entries
-The "->" signature indicates the direction of mapping where the left-hand-side is source and right-hand-side is target
+- The "[]" syntax is used to create and append a list of one or more data mapping entries
+- The "->" signature indicates the direction of mapping where the left-hand-side is a source
+  and right-hand-side is a target

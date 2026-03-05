@@ -56,8 +56,8 @@ public class SimpleHttpService extends DictionaryLambdaFunction {
         var target = new HostAndUri(provider.url);
         var request = new AsyncHttpRequest();
         request.setMethod(provider.method).setTargetHost(target.host).setUrl(target.uri);
-        mapHttpHeaders(request, provider.headers);
         mapHttpInput(request, input, provider);
+        mapHttpHeaders(request, provider.headers);
         // As a simple HTTP client, this does not have implementation for any authentication skills.
         if (!provider.skills.isEmpty()) {
             lackOfSkillAdvice(po.getRoute(), provider);

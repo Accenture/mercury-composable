@@ -184,8 +184,8 @@ public class GraphExecutor extends GraphLambdaFunction {
             var response = po.request(new EventEnvelope().setTo(skill).setHeader(IN, in)
                                         .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout).get();
             // check processing status
-            var processStatus = graphInstance.stateMachine.getElement(nodeName+ PROCESS_STATUS);
-            var resultError = graphInstance.stateMachine.getElement(nodeName+ RESULT_ERROR);
+            var processStatus = graphInstance.stateMachine.getElement(nodeName + RESULT_DOT + STATUS);
+            var resultError = graphInstance.stateMachine.getElement(nodeName + RESULT_DOT + ERROR);
             if (processStatus instanceof Integer rc && resultError != null) {
                 var error = new EventEnvelope().setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
                         .setBody(resultError).setStatus(rc);
