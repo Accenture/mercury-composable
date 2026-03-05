@@ -46,7 +46,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     supportsUpload: true,
   },
   {
-    path: '/minigraph',
+    path: '/',
     label: 'Minigraph',
     title: 'Minigraph Playground',
     wsPath: '/ws/graph/playground',

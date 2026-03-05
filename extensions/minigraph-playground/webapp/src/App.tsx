@@ -17,9 +17,6 @@ export default function App() {
     <WebSocketProvider>
       <BrowserRouter>
         <Routes>
-          {/* Redirect root to the first configured playground */}
-          <Route path="/" element={<Navigate to={defaultPath} replace />} />
-
           {/* One route per configured playground */}
           {PLAYGROUND_CONFIGS.map((cfg) => (
             <Route key={cfg.path} path={cfg.path} element={<Playground config={cfg} />} />
