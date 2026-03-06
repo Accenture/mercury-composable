@@ -54,14 +54,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String STATEMENT = "statement";
     protected static final String FLOW_ID = "flow_id";
     protected static final String API_DOT = ".api.";
-    protected static final String CACHED_DOT = ".cached.";
+    protected static final String CACHE_NAMESPACE = "cache.";
+    protected static final String CACHE = "cache";
     protected static final String RESPONSE_DOT = ".response.";
     protected static final String RESULT_DOT = ".result.";
     protected static final String URL =  "url";
     protected static final String METHOD = "method";
     protected static final String HEADER = "header";
     protected static final String FEATURE = "feature";
-    protected static final String QUESTION = "question";
     protected static final String EXTENSION = "extension";
     protected static final String MAP_TO = "->";
     protected static final String INPUT = "input";
@@ -93,6 +93,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String WITH_PROPERTIES = "with properties";
     protected static final String NODE = "node";
     protected static final String NODE_NAME = "node ";
+    protected static final String CONNECTION = "connection";
     protected static final String SKILL_TAG = "skill ";
     protected static final String NOT_FOUND = " not found";
     protected static final String TRY_HELP = "Please try 'help' for details";
@@ -107,7 +108,12 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String MODEL_TTL = "model.ttl";
     protected static final String STATUS = "status";
     protected static final String ERROR = "error";
-    private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, QUESTION);
+    protected static final String INSTANTIATE = "instantiate";
+    protected static final String DELETE = "delete";
+    protected static final String START = "start";
+    protected static final String CLEAR = "clear";
+    protected static final String HELP = "help";
+    private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE);
 
     protected GraphInstance getGraphInstance(String id) {
         var instance = graphInstances.get(id);
@@ -221,7 +227,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var properties = node.getProperties();
             if (properties.containsKey(SKILL)) {
                 for (Map.Entry<String, Object> kv: properties.entrySet()) {
-                    if (!kv.getKey().equals(MAPPING) && !kv.getKey().equals(STATEMENT)) {
+                    if (!RESERVED_PARAMETERS.contains(kv.getKey())) {
                         stateMachine.setElement(name+"."+kv.getKey(), kv.getValue());
                     }
                 }
@@ -240,7 +246,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return Math.max(1000, util.str2long(ttl));
     }
 
-    protected void fillApiParameters(String nodeName, String command, GraphInstance graphInstance) {
+    protected void fillFetcherApiParameters(String nodeName, String command, GraphInstance graphInstance) {
         int sep = command.indexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;

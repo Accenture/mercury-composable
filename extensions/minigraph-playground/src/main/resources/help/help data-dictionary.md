@@ -57,12 +57,19 @@ feature[]={authentication mechanism, encryption, etc.}
 input[]={source -> target}
 ```
 
+Feature
+-------
+The list contains one of more optional features that an API fetcher using this provider must support.
+
+One built-in feature is `log-headers`. When this feature is included, the fetcher will log response headers
+into the "header" section of its properties.
+
+Input data mapping
+------------------
 The input data mapping is designed to do simple mapping with the following restriction:
 - The left hand side (source) is limited to parameter of the data dictionary item or constants
-- The right hand side (target) is allowed to use the following namespaces
+- The right hand side (target) is allowed to use the following namespaces:
 
-Namespaces for input data mapping
----------------------------------
 1. `body.` - request body
 2. `header.` - request header
 3. `query.` - request query parameter
@@ -70,11 +77,11 @@ Namespaces for input data mapping
 
 The following two examples illustrate a data provider configuration for a hypothetical profile management system
 
+Example-1
+---------
 In the first example, it maps the parameter 'person_id' of the data dictionary to the path parameter 'id'.
 It also maps the parameter 'detail' of the data dictionary to the query parameter 'id'
 
-Example-1
----------
 ```
 create node mdm-profile
 with type Provider
@@ -88,10 +95,12 @@ input[]=person_id -> path_parameter.id
 input[]=detail -> query.detail
 ```
 
+Example-2
+---------
 In the second example, it uses POST method and expects a request body containing the 'person_id' parameter.
 Since it is a POST request, it requires the configuration of 'content-type' in the header section.
 The 'body.' namespace is used to tell the system to map the input parameter in the API request body.
-For some use cases, you may set the input parameter as the whole 'body'. 
+For some use cases, you may set the input parameter as the whole 'body'.
 e.g. setting a string or an array as request body instead of key-values.
 
 The 'feature' statement section contains 'oauth-bearer'. Therefore, you must configure an API fetcher that
@@ -101,8 +110,6 @@ the 'graph.api.fetcher' that will just print a warning message if the feature is
 Since the MiniGraph Playground system is extensible, you can always write a custom API fetcher to handle
 new communication protocols and features.
 
-Example-2
----------
 ```
 create node mdm-profile
 with type Provider

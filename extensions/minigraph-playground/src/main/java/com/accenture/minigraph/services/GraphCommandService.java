@@ -25,6 +25,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleConnection;
+import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
@@ -135,13 +136,14 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleSingleLineCommand(PostOffice po, String inRoute, String outRoute, String command)
             throws IOException {
-        var words = util.split(command, " ");
-        if (!words.isEmpty() && words.getFirst().equalsIgnoreCase("help")) {
+        po.send(new EventEnvelope().setTo(outRoute).setBody("> " + command));
+        var words = getWords(command);
+        if (!words.isEmpty() && words.getFirst().equalsIgnoreCase(HELP)) {
             var helpText = getHelp(words);
             po.send(new EventEnvelope().setTo(outRoute).setBody(
                     Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
         } else if (words.size() > 1 && (words.getFirst().equalsIgnoreCase("create") ||
-                    words.getFirst().equalsIgnoreCase("instantiate"))) {
+                    words.getFirst().equalsIgnoreCase(INSTANTIATE))) {
             // handle create command without type and properties OR instantiate without mock data
             handleMultiLineCommand(po, inRoute, outRoute, command);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
@@ -156,6 +158,29 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else {
             handleMoreCommand(po, inRoute, outRoute, words);
         }
+    }
+
+    private List<String> getWords(String command) {
+        var words = util.split(command, " ");
+        // handle aliases if any
+        if (!words.isEmpty()) {
+            if (words.getFirst().equalsIgnoreCase(START)) {
+                words.set(0, INSTANTIATE);
+            }
+            if (words.getFirst().equalsIgnoreCase(CLEAR)) {
+                words.set(0, DELETE);
+            }
+            if (words.size() > 1 && words.getFirst().equalsIgnoreCase(HELP)) {
+                if (words.get(1).equalsIgnoreCase(START)) {
+                    words.set(1, INSTANTIATE);
+                }
+                if (words.get(1).equalsIgnoreCase(CLEAR)) {
+                    words.set(1, DELETE);
+                }
+            }
+        }
+
+        return words;
     }
 
     private void handleRunCommand(String inRoute, String outRoute) {
@@ -176,7 +201,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleMoreCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
         if (words.size() > 2 && words.getFirst().equalsIgnoreCase("connect")) {
             handleConnectCommand(po, inRoute, outRoute, words);
-        } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("delete")) {
+        } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(DELETE)) {
             handleDeleteCommand(po, inRoute, outRoute, words);
         } else if (words.size() == 4 && words.getFirst().equalsIgnoreCase("export") &&
                 words.get(1).equalsIgnoreCase(GRAPH) &&
@@ -189,8 +214,108 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() == 3 && words.getFirst().equalsIgnoreCase("edit") &&
                 words.get(1).equalsIgnoreCase(NODE)) {
             handleEditCommand(po, inRoute, outRoute, words.get(2));
+        } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("list")) {
+            handleListCommand(po, inRoute, outRoute, words.get(1));
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+        }
+    }
+
+    private void handleListCommand(PostOffice po, String inRoute, String outRoute, String type) {
+        var graph = graphModels.get(inRoute);
+        var sb = new StringBuilder();
+        if ("nodes".equalsIgnoreCase(type)) {
+            listNodes(graph, sb);
+        } else if ("connections".equalsIgnoreCase(type)) {
+            listConnections(graph, sb);
+        } else {
+            sb.append("Please use 'list nodes' or 'list connections'");
+        }
+        po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
+    }
+
+    private void listNodes(MiniGraph graph, StringBuilder sb) {
+        var nodes = graph.getNodes();
+        if (nodes.isEmpty()) {
+            sb.append("There are no nodes in this graph");
+        } else {
+            var root = graph.getRootNode();
+            var end = graph.getEndNode();
+            sb.append(root == null ? "root (does not exist)" : "root "+root.getTypes()).append("\n");
+            var listing = getNodeListing(nodes, root, end);
+            if (!listing.isEmpty()) {
+                Collections.sort(listing);
+                for (var name : listing) {
+                    sb.append(name).append("\n");
+                }
+            }
+            sb.append(end == null ? "end (does not exist)" : "end "+end.getTypes()).append("\n");
+        }
+    }
+
+    private List<String> getNodeListing(List<SimpleNode> nodes, SimpleNode root, SimpleNode end) {
+        var listing = new ArrayList<String>();
+        for (var node : nodes) {
+            if ((root != null && node.getId().equals(root.getId()) ||
+                    (end != null && node.getId().equals(end.getId())))) {
+                continue;
+            }
+            listing.add(node.getAlias() + " " + node.getTypes());
+        }
+        return listing;
+    }
+
+    private void listConnections(MiniGraph graph, StringBuilder sb) {
+        var connections = graph.getConnections();
+        if (connections.isEmpty()) {
+            sb.append("There are no connections in this graph");
+        } else {
+            var rootList = new ArrayList<String>();
+            var endList = new ArrayList<String>();
+            var regularList = new ArrayList<String>();
+            for (var connection : connections) {
+                sortConnections(connection, rootList, regularList, endList);
+            }
+            Collections.sort(rootList);
+            Collections.sort(regularList);
+            Collections.sort(endList);
+            for (var connection : rootList) {
+                sb.append(connection).append("\n");
+            }
+            for (var connection : regularList) {
+                sb.append(connection).append("\n");
+            }
+            for (var connection : endList) {
+                sb.append(connection).append("\n");
+            }
+        }
+    }
+
+    private void sortConnections(SimpleConnection connection, List<String> rootList, List<String> regularList,
+                                 List<String> endList) {
+        var relations = connection.getRelations();
+        var source = connection.getSource().getAlias();
+        var target = connection.getTarget().getAlias();
+        if (relations.isEmpty()) {
+            var line = source + " --> " + target;
+            if ("root".equalsIgnoreCase(source)) {
+                rootList.add(line);
+            } else if ("end".equalsIgnoreCase(target)) {
+                endList.add(line);
+            } else {
+                regularList.add(line);
+            }
+        } else {
+            var relationships = new ArrayList<String>();
+            relations.forEach(r -> relationships.add(r.getType()));
+            var line = source + " -" + relationships + "-> " + target;
+            if ("root".equalsIgnoreCase(source)) {
+                rootList.add(line);
+            } else if ("end".equalsIgnoreCase(target)) {
+                endList.add(line);
+            } else {
+                regularList.add(line);
+            }
         }
     }
 
@@ -325,15 +450,25 @@ public class GraphCommandService extends GraphLambdaFunction {
                     po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " deleted"));
                 }
             }
-        } else if (words.size() == 5 && words.get(1).equalsIgnoreCase("connection") &&
+        } else if (words.size() == 5 && words.get(1).equalsIgnoreCase(CONNECTION) &&
                 words.get(3).equalsIgnoreCase("and")) {
             if (graph != null) {
                 var nodeA = words.get(2);
                 var nodeB = words.get(4);
                 findAndDeleteConnection(po, outRoute, graph, nodeA, nodeB);
             }
+        } else if (words.size() == 2 && words.get(1).equalsIgnoreCase(CACHE)) {
+            clearCache(po, inRoute, outRoute);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+        }
+    }
+
+    private void clearCache(PostOffice po, String inRoute, String outRoute) {
+        var graphInstance = getGraphInstance(inRoute);
+        if (graphInstance != null) {
+            graphInstance.stateMachine.removeElement(CACHE);
+            po.send(new EventEnvelope().setTo(outRoute).setBody(CACHE + " cleared"));
         }
     }
 
@@ -392,13 +527,14 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleMultiLineCommand(PostOffice po, String inRoute, String outRoute, String command) {
         var lines = util.split(command, "\n");
-        var words = util.split(lines.getFirst(), " ");
+        po.send(new EventEnvelope().setTo(outRoute).setBody("> " + lines.getFirst() + "..."));
+        var words = getWords(lines.getFirst());
         if (words.size() > 2 && "create".equalsIgnoreCase(words.getFirst()) && NODE.equalsIgnoreCase(words.get(1))) {
             handleCreateNode(po, inRoute, outRoute, words.get(2), lines);
         } else if (words.size() > 2 && "update".equalsIgnoreCase(words.getFirst()) &&
                 NODE.equalsIgnoreCase(words.get(1))) {
             handleUpdateNode(po, inRoute, outRoute, words.get(2), lines);
-        } else if (words.size() == 2 && "instantiate".equalsIgnoreCase(words.getFirst())
+        } else if (words.size() == 2 && INSTANTIATE.equalsIgnoreCase(words.getFirst())
                 && GRAPH.equalsIgnoreCase(words.get(1))) {
             handleInstantiateGraph(po, inRoute, outRoute, lines);
         } else {

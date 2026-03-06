@@ -55,7 +55,7 @@ public class GraphExtension extends GraphLambdaFunction {
         var mapping = properties.get(MAPPING);
         if (mapping instanceof List<?> entries) {
             for (Object entry : entries) {
-                fillApiParameters(nodeName, String.valueOf(entry), graphInstance);
+                fillFetcherApiParameters(nodeName, String.valueOf(entry), graphInstance);
             }
             var stateMachine = graphInstance.stateMachine;
             var parameters = stateMachine.getElement(nodeName + API_DOT);

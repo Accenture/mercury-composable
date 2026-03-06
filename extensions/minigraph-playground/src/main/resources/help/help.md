@@ -22,10 +22,11 @@ For more information about each feature, try the following help topics.
 For graph model
 ---------------
 - help create (node)
-- help delete (node or connection)
+- help delete (node, connection or cache)
 - help update (node)
 - help edit (node)
 - help connect (node-A to node-B)
+- help list (node or connection)
 - help export
 - help import
 - help describe (graph, node, connection or skill)

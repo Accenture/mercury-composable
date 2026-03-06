@@ -24,3 +24,7 @@ int(100) -> input.body.profile_id
 text(application/json) -> input.header.content-type
 text(world) -> model.hello
 ```
+
+Alias
+-----
+`start` is an alias of `instantiate`

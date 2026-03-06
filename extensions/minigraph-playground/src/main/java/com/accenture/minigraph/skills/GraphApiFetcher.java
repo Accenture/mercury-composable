@@ -31,17 +31,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 
 @PreLoad(route = GraphApiFetcher.ROUTE, instances=300)
 public class GraphApiFetcher extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphApiFetcher.class);
     public static final String ROUTE = "graph.api.fetcher";
-    private static final AtomicLong skillWarning = new AtomicLong(0);
+    private static final String LOG_HEADERS = "log-headers";
+    private static final List<String> supportedFeatures = List.of(LOG_HEADERS);
+    private static final Map<String, Long> unsupportedFeatures = new HashMap<>();
     private static final long WARNING_INTERVAL = 5000;
 
     @SuppressWarnings("unchecked")
@@ -79,7 +78,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var mapping = node.getProperty(INPUT);
         if (mapping instanceof List<?> entries) {
             for (Object entry : entries) {
-                fillApiParameters(nodeName, String.valueOf(entry), graphInstance);
+                fillFetcherApiParameters(nodeName, String.valueOf(entry), graphInstance);
             }
         } else if (mapping != null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid 'input' entries");
@@ -101,26 +100,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         for (SimpleNode dd : dictionaryNodes) {
             var inputParams = dd.getProperty(INPUT);
             if (inputParams instanceof List<?> entries) {
-                for (Object input : entries) {
-                    var text = String.valueOf(input).trim();
-                    var colon = text.indexOf(':');
-                    if (colon == -1) {
-                        if (!parameters.containsKey(text)) {
-                            throw new IllegalArgumentException("Missing input parameter '"+text+
-                                        "' for data dictionary "+dd.getAlias());
-                        }
-                    } else {
-                        // fill default value
-                        var key = text.substring(0, colon).trim();
-                        if (!parameters.containsKey(key)) {
-                            var value = text.substring(colon+1).trim();
-                            var updated = helper.getLhsOrConstant(value, stateMachine);
-                            var resolved = updated != null? updated : value;
-                            stateMachine.setElement(nodeName + API_DOT + key, resolved);
-                            parameters.put(key, resolved);
-                        }
-                    }
-                }
+                fillDictionaryApiParameters(nodeName, dd, stateMachine, entries, parameters);
             }
             var provider = dd.getProperty(PROVIDER);
             if (provider instanceof String providerName) {
@@ -147,6 +127,30 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         return NEXT;
     }
 
+    private void fillDictionaryApiParameters(String nodeName, SimpleNode dd, MultiLevelMap stateMachine,
+                                             List<?> entries, Map<String, Object> parameters) {
+        for (Object input : entries) {
+            var text = String.valueOf(input).trim();
+            var colon = text.indexOf(':');
+            if (colon == -1) {
+                if (!parameters.containsKey(text)) {
+                    throw new IllegalArgumentException("Missing input parameter '"+text+
+                            "' for data dictionary "+dd.getAlias());
+                }
+            } else {
+                // fill default value
+                var key = text.substring(0, colon).trim();
+                if (!parameters.containsKey(key)) {
+                    var value = text.substring(colon+1).trim();
+                    var updated = helper.getLhsOrConstant(value, stateMachine);
+                    var resolved = updated != null? updated : value;
+                    stateMachine.setElement(nodeName + API_DOT + key, resolved);
+                    parameters.put(key, resolved);
+                }
+            }
+        }
+    }
+
     private void performFetcherOutputMapping(String nodeName, MultiLevelMap stateMachine, List<?> mapping) {
         for (Object output : mapping) {
             var text = String.valueOf(output).trim();
@@ -162,17 +166,21 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                     throw new IllegalArgumentException("Invalid output data mapping in API fetcher "+nodeName +
                             " - LHS must start with 'model.' or 'result.' namespace");
                 }
-                var value = helper.getLhsElement(lhs, stateMachine);
-                if (value != null) {
-                    if (!rhs.startsWith(MODEL_NAMESPACE) && !rhs.startsWith(OUTPUT_NAMESPACE)) {
-                        throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
-                                " - RHS must start with 'model.' or 'output.' namespace");
-                    }
-                    stateMachine.setElement(rhs, value);
-                }
+                setFetcherOutputEntry(nodeName, lhs, rhs, stateMachine);
             } else {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
             }
+        }
+    }
+
+    private void setFetcherOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
+        var value = helper.getLhsElement(lhs, stateMachine);
+        if (value != null) {
+            if (!rhs.startsWith(MODEL_NAMESPACE) && !rhs.startsWith(OUTPUT_NAMESPACE)) {
+                throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
+                        " - RHS must start with 'model.' or 'output.' namespace");
+            }
+            stateMachine.setElement(rhs, value);
         }
     }
 
@@ -191,19 +199,23 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                     throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
                             " - LHS must start with 'model.' or 'response.' namespace");
                 }
-                var value = helper.getLhsElement(lhs, stateMachine);
-                if (value != null) {
-                    if (rhs.startsWith(RESULT_NAMESPACE)) {
-                        rhs = nodeName + "." + rhs;
-                    }  else if (!rhs.startsWith(MODEL_NAMESPACE)) {
-                        throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
-                                " - RHS must start with 'model.' or 'result.' namespace");
-                    }
-                    stateMachine.setElement(rhs, value);
-                }
+                setDictionaryOutputEntry(nodeName, lhs, rhs, stateMachine);
             } else {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
             }
+        }
+    }
+
+    private void setDictionaryOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
+        var value = helper.getLhsElement(lhs, stateMachine);
+        if (value != null) {
+            if (rhs.startsWith(RESULT_NAMESPACE)) {
+                rhs = nodeName + "." + rhs;
+            }  else if (!rhs.startsWith(MODEL_NAMESPACE)) {
+                throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
+                        " - RHS must start with 'model.' or 'result.' namespace");
+            }
+            stateMachine.setElement(rhs, value);
         }
     }
 
@@ -224,30 +236,87 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                 mapHttpInput(request, nodeName, stateMachine, list);
             }
             // As a simple HTTP client, this does not have implementation for any authentication features.
-            if (features instanceof List<?> featureList) {
-                lackOfSkillAdvice(po.getRoute(), featureList);
+            var logHeaders = needLogHeaders(po, nodeName, features);
+            var params = stateMachine.getElement(nodeName + API_DOT);
+            // is this cached?
+            var provider = dp.getAlias();
+            var cachedResult = getCachedResult(provider, stateMachine, params);
+            if (cachedResult != null) {
+                stateMachine.setElement(nodeName + RESPONSE_DOT, cachedResult);
+                return;
             }
-            log.info("{} {}, ttl={}", request.getMethod(), request.getUrl(), timeout);
+            log.info("{} {}, {}, ttl={}", request.getMethod(), request.getUrl(), params, timeout);
             var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request.toMap());
             var response = po.request(event, timeout, false).get();
+            if (logHeaders) {
+                for (var kv : response.getHeaders().entrySet()) {
+                    stateMachine.setElement(nodeName + "." + HEADER + "." + dictionaryName + "[]",
+                            kv.getKey() + ": " + kv.getValue());
+                }
+            }
             stateMachine.setElement(nodeName + "." + STATUS + "." + dictionaryName, response.getStatus());
             if (response.hasError()) {
                 stateMachine.setElement(nodeName + RESPONSE_DOT + ERROR, response.getError());
             } else {
                 stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
             }
+            // cache result
+            stateMachine.setElement(CACHE_NAMESPACE + provider + "[]",
+                                    Map.of(INPUT, params, OUTPUT, response.getBody()));
         } else {
             throw new IllegalArgumentException("Missing url or method in data provider "+dp.getAlias());
         }
     }
 
-    private void lackOfSkillAdvice(String myRoute, List<?> features) {
+    @SuppressWarnings("unchecked")
+    private Object getCachedResult(String provider, MultiLevelMap stateMachine, Object params) {
+        var cached = stateMachine.getElement(CACHE_NAMESPACE + provider);
+        if (cached instanceof List<?> list) {
+            for (Object o : list) {
+                if (o instanceof Map) {
+                    var map = (Map<String, Object>) o;
+                    var input = map.get(INPUT);
+                    if (input != null && input.equals(params)) {
+                        return map.get(OUTPUT);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean needLogHeaders(PostOffice po, String nodeName, Object features) {
+        var logHeaders = false;
+        if (features instanceof List<?> featureList) {
+            var supported = new ArrayList<String>();
+            for (Object feature : featureList) {
+                var f = String.valueOf(feature);
+                if (supportedFeatures.contains(f)) {
+                    supported.add(f);
+                } else {
+                    lackOfSkillAdvice(po.getRoute(), f);
+                }
+            }
+            for (String feature : supported) {
+                if (LOG_HEADERS.equals(feature)) {
+                    logHeaders = true;
+                    break;
+                }
+            }
+        } else if (features != null) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName +
+                    " - invalid features. Expect List, actual: " + features.getClass().getSimpleName());
+        }
+        return logHeaders;
+    }
+
+    private void lackOfSkillAdvice(String myRoute, String feature) {
         // just print out an advice once a while
         var now = System.currentTimeMillis();
-        if (now - skillWarning.get() > WARNING_INTERVAL) {
-            skillWarning.set(now);
-            log.warn("{} does not implement {} - perhaps you need another one with the right features",
-                    myRoute, features);
+        var t1 = unsupportedFeatures.getOrDefault(feature, 0L);
+        if (now - t1 > WARNING_INTERVAL) {
+            unsupportedFeatures.put(feature, now);
+            log.warn("{} does not implement {}. Perhaps you need another API fetcher?", myRoute, feature);
         }
     }
 }

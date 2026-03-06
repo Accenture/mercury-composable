@@ -34,13 +34,17 @@ input[]={mapping of key-value from input or another node to input parameter(s) o
 output[]={mapping of result set to key-values of another node}
 ```
 
-Result set
+Dictionary
 ----------
-Upon successful execution, the result set will be stored in the "result" parameter in the properties of
-the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
+This list contains one or more data dictionary item (aka 'data attribute')
 
-Data mapping
-------------
+Feature
+-------
+This API fetcher supports the `log-headers` feature.
+When this feature is included, the fetcher will log response headers into the "header" section of its properties.
+
+Input/Output Data mapping
+-------------------------
 source.composite.key -> target.composite.key
 
 For input data mapping, the source can use a key-value from the `input.` namespace or another node.
@@ -52,6 +56,11 @@ the `output.` or `model.` namespace.
 
 Output data mapping is optional because you can use another data mapper to map result set of the fetcher
 to another node.
+
+Result set
+----------
+Upon successful execution, the result set will be stored in the "result" parameter in the properties of
+the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
 
 Example
 -------

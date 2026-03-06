@@ -47,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PlaygroundTest {
     private static final Logger log = LoggerFactory.getLogger(PlaygroundTest.class);
     private static final Utility util = Utility.getInstance();
+    private static final String HELP = "help";
     private static final String UPLOAD_ADVICE = "Please upload XML/JSON text to";
     private static final String WELCOME = """
                                         { "type": "welcome" }
@@ -105,7 +106,7 @@ class PlaygroundTest {
                     first.set(false);
                     po.send(txPath, util.getUTF("OK"));
                     po.send(txPath, "<hello>test</hello>");
-                    po.send(txPath, "help");
+                    po.send(txPath, HELP);
                     po.send(txPath, "unload");
                     po.send(new EventEnvelope().setTo(txPath).setBody("{invalid-json}").setReplyTo("json.parsing.error"));
                     po.send(txPath, WELCOME);
@@ -176,7 +177,7 @@ class PlaygroundTest {
                 if (first.get()) {
                     first.set(false);
                     po.send(txPath, util.getUTF("OK"));
-                    po.send(txPath, "help");
+                    po.send(txPath, HELP);
                     po.send(txPath, WELCOME);
                 }
                 var message = text.trim();
