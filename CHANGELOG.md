@@ -28,8 +28,7 @@ using knowledge graph technology. This module will be removed in the next releas
 
 ### Changed
 
-1. Support both List and Map in websocket outgoing messages
-2. Improved data provider configuration management with support of constants and plugins in LHS
+Automatic payload segmentation for websocket outgoing messages that are over 64 KB.
 
 ---
 ## Version 4.3.69, 2/23/2026
