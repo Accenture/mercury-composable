@@ -18,17 +18,22 @@
 
 package com.accenture.tasks;
 
+import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @PreLoad(route="greeting.test", instances=10, isPrivate = false)
-public class Greetings implements TypedLambdaFunction<Map<String, Object>, Object> {
+public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
+    private static final Logger log = LoggerFactory.getLogger(Greetings.class);
     private static final String USER = "user";
     private static final String GREETING = "greeting";
     private static final String MESSAGE = "message";
@@ -40,14 +45,31 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Objec
     private static final String DEMO = "demo";
     private static final String CONFLICT = "409";
     private static final String X_FLOW_ID = "x-flow-id";
+    private static final String TYPE = "type";
+    private static final String END = "end";
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
+    public Object handleEvent(Map<String, String> headers, EventEnvelope event, int instance)
             throws InterruptedException, AppException {
+        var input = event.getBody() instanceof Map? (Map<String, Object>) event.getBody() : new HashMap<>();
+        if (END.equals(headers.get(TYPE))) {
+            log.info("Received End of Flow advice {}, cid={}, flow={}, instance={}, traceId={}",
+                    input, event.getCorrelationId(), headers.get("flow_id"), headers.get("instance_id"),
+                    event.getTraceId());
+            return null;
+        }
         String exceptionTag = (String) input.get(EXCEPTION);
         if (exceptionTag != null) {
             if (TIMEOUT.equals(exceptionTag)) {
-                Thread.sleep(2000);
+                var instanceId = headers.get("instance");
+                var flowInstance = Flows.getFlowInstance(instanceId);
+                if (flowInstance != null) {
+                    // test end of flow listener
+                    flowInstance.setEndFlowListeners("greeting.test");
+                    log.info("Set end of flow hook to {}", flowInstance.getEndFlowListeners());
+                }
+                Thread.sleep(2500);
             } else if (CUSTOM.equals(exceptionTag)) {
                 return new EventEnvelope().setStatus(400).setBody(Map.of("error", "non-standard-format"));
             } else {
@@ -65,17 +87,17 @@ public class Greetings implements TypedLambdaFunction<Map<String, Object>, Objec
             Map<String, Object> result = new HashMap<>();
             result.put(USER, user);
             result.put(GREETING, greeting);
-            result.put(MESSAGE, "I got your greeting message - "+greeting);
+            result.put(MESSAGE, "I got your greeting message - " + greeting);
             result.put(TIME, new Date());
             result.put(ORIGINAL, input);
             if (headers.containsKey(DEMO)) {
-                result.put(DEMO+1, headers.get(DEMO));
+                result.put(DEMO + 1, headers.get(DEMO));
             }
             if (headers.containsKey(USER)) {
-                result.put(DEMO+2, headers.get(USER));
+                result.put(DEMO + 2, headers.get(USER));
             }
             if (headers.containsKey(X_FLOW_ID)) {
-                result.put(DEMO+3, headers.get(X_FLOW_ID));
+                result.put(DEMO + 3, headers.get(X_FLOW_ID));
             }
             return new EventEnvelope().setBody(result).setHeader(DEMO, "test-header").setStatus(201);
         } else {

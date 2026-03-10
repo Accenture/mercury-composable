@@ -24,7 +24,6 @@ import com.accenture.dictionary.models.Question;
 import com.accenture.dictionary.models.QuestionSpecs;
 import com.accenture.dictionary.models.ServiceParameters;
 import com.accenture.models.Flows;
-import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
@@ -78,6 +77,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
         var dataset = new MultiLevelMap();
         dataset.setElement(INPUT, inputCopy);
         dataset.setElement(MODEL, modelCopy);
+        dataset.setElement(OUTPUT_BODY, "");
         var timeout = dataset.getElement(MODEL_TTL) instanceof Long ttl? ttl : 30000;
         executeQuestions(po, dataset, questionSpecs, timeout);
         if (dataset.getElement(ERROR_CODE) instanceof Integer rc) {
@@ -98,9 +98,6 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             }
         }
         var mappedResult = dataset.getElement(OUTPUT_BODY);
-        if (mappedResult == null) {
-            throw new IllegalArgumentException("No result resolved for " + questionId);
-        }
         var response = new EventEnvelope().setBody(mappedResult);
         var mappedHeaders = dataset.getElement(OUTPUT_HEADER);
         if (mappedHeaders instanceof Map<?, ?> map) {
@@ -240,7 +237,7 @@ public class QuestionProcessor extends DictionaryLambdaFunction {
             // parameter:default_value
             int sep = k.indexOf(':');
             var key = sep == -1 ? k : k.substring(0, sep).trim();
-            if (parameters.containsKey(key)) {
+            if (parameters != null && parameters.containsKey(key)) {
                 required.put(key, parameters.get(key));
             } else if (sep != -1) {
                 // use default value if not set

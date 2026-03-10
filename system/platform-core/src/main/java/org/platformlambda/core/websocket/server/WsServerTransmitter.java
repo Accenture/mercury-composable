@@ -34,9 +34,10 @@ import java.util.Map;
  */
 @ZeroTracing
 public class WsServerTransmitter implements LambdaFunction {
-    private final ServerWebSocket ws;
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
+    private static final int BUFFER_SIZE = 60 * 1024;
+    private final ServerWebSocket ws;
     private boolean connected = true;
 
     public WsServerTransmitter(ServerWebSocket ws) {
@@ -68,7 +69,27 @@ public class WsServerTransmitter implements LambdaFunction {
             ws.writeTextMessage(str);
         }
         if (input instanceof Map || input instanceof List) {
-            ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
+            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(input);
+            if (text.length() > BUFFER_SIZE) {
+                sendSegments(text);
+            } else {
+                ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
+            }
+        }
+    }
+
+    private void sendSegments(String text) {
+        var blocks = text.length() / BUFFER_SIZE;
+        var lastBlock = text.length() % BUFFER_SIZE;
+        var start = 0;
+        for (int i = 0; i < blocks; i++) {
+            var segment = text.substring(start, start + BUFFER_SIZE);
+            ws.writeTextMessage(segment);
+            start = start + BUFFER_SIZE;
+        }
+        if (lastBlock > 0) {
+            var segment = text.substring(start);
+            ws.writeTextMessage(segment);
         }
     }
 }

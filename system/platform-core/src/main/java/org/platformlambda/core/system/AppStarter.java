@@ -191,10 +191,10 @@ public class AppStarter {
         }
     }
 
-    private void prepareApp(AtomicInteger counter, Map<String, Class<?>> steps, String folder, boolean isMain) {
+    private void prepareApp(AtomicInteger counter, Map<String, Class<?>> steps, String eachPackage, boolean isMain) {
         Utility util = Utility.getInstance();
         SimpleClassScanner scanner = SimpleClassScanner.getInstance();
-        List<ClassInfo> services = scanner.getAnnotatedClasses(folder,
+        List<ClassInfo> services = scanner.getAnnotatedClasses(eachPackage,
                                             isMain? MainApplication.class : BeforeApplication.class);
         for (ClassInfo info : services) {
             try {

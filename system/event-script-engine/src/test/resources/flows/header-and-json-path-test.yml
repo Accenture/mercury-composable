@@ -45,5 +45,8 @@ tasks:
       - 'model.map -> model.list_of_map[]'
       - 'model.map -> model.list_of_map[]'
       - 'f:removeKey(model.list_of_map, text(hello)) -> output.body.updated_list_map'
+      - 'text(AAA) -> model.duplicated[]'
+      - 'text(AAA) -> model.duplicated[]'
+      - 'f:uniqueSet(model.duplicated) -> output.body.unique'
     description: 'Return result'
     execution: end

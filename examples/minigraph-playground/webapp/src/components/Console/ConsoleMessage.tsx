@@ -1,0 +1,111 @@
+import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage } from '../../utils/messageParser';
+import { JsonView, darkStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
+import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
+import styles from './Console.module.css';
+
+interface ConsoleMessageProps {
+  message:         string;
+  onPin?:          (message: string) => void;
+  pinned?:         boolean;
+  /** Called after a successful clipboard write — use this to show a toast. */
+  onCopyMessage?:  () => void;
+}
+
+export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }: ConsoleMessageProps) {
+  const parsed    = parseMessage(message);
+  const icon      = getMessageIcon(parsed.type);
+  const jsonCheck = tryParseJSON(parsed.message);
+
+  const isGraphLink  = isGraphLinkMessage(message);
+  const isMarkdown   = !isGraphLink && isMarkdownCandidate(message);
+  const isPinnable   = !!onPin && (isMarkdown || isGraphLink);
+  const pinTitle     = isGraphLink
+    ? 'Click to load graph in Graph View'
+    : 'Click to pin to Markdown Preview';
+  const pinLabel     = isGraphLink
+    ? 'Load graph in Graph View'
+    : 'Pin to Markdown Preview';
+
+  // Each message row owns its own copy state so the "✓" button confirmation
+  // is scoped to exactly the row the user clicked — not the whole console.
+  // The toast notification is fired via the onCopyMessage callback so this
+  // component stays decoupled from the toast system.
+  const { copy, copied } = useCopyToClipboard({ onSuccess: onCopyMessage });
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    copy(message);
+  };
+
+  const handleCopyKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      copy(message);
+    }
+  };
+
+  return (
+    <div
+      className={[
+        styles.consoleMessage,
+        styles[`messageType-${parsed.type}`],
+        isPinnable ? styles.consoleMessagePinnable  : '',
+        pinned     ? styles.consoleMessagePinned    : '',
+        isGraphLink ? styles.consoleMessageGraphLink : '',
+      ].filter(Boolean).join(' ')}
+      onClick={isPinnable ? () => onPin!(message) : undefined}
+      title={isPinnable ? pinTitle : undefined}
+      role={isPinnable ? 'button' : undefined}
+      tabIndex={isPinnable ? 0 : undefined}
+      onKeyDown={isPinnable
+        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin!(message); } }
+        : undefined}
+      aria-label={isPinnable ? pinLabel : undefined}
+      aria-pressed={isPinnable ? pinned : undefined}
+    >
+      <span className={styles.messageIcon}>{isGraphLink ? '🕸️' : icon}</span>
+
+      <div className={styles.messageContent}>
+        {jsonCheck.isJSON ? (
+          <div className={styles.jsonViewWrapper}>
+            <JsonView
+              data={jsonCheck.data!}
+              shouldExpandNode={(level) => level < 2}
+              style={{
+                ...darkStyles,
+                container: `${darkStyles.container} ${styles.jsonContainer}`,
+                label: styles.jsonLabel,
+                stringValue: styles.jsonString,
+                numberValue: styles.jsonNumber,
+                booleanValue: styles.jsonBoolean,
+                nullValue: styles.jsonNull,
+              }}
+            />
+          </div>
+        ) : (
+          <span className={styles.messageText}>{parsed.message}</span>
+        )}
+      </div>
+
+      {/* ── Copy button — visible on row hover ─── */}
+      <button
+        className={`${styles.copyButton} ${copied ? styles.copyButtonCopied : ''}`}
+        onClick={handleCopy}
+        onKeyDown={handleCopyKeyDown}
+        title={copied ? 'Copied!' : 'Copy message'}
+        aria-label={copied ? 'Copied to clipboard' : 'Copy message to clipboard'}
+        // Prevent the button from participating in the pin row's tab stop —
+        // it has its own independent tab stop below.
+        tabIndex={0}
+      >
+        {copied ? '✅' : '📄'}
+      </button>
+
+      {parsed.time && (
+        <span className={styles.messageTime}>{parsed.time}</span>
+      )}
+    </div>
+  );
+}

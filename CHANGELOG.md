@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.70, 3/9/2026
+
+### Added
+
+1. MiniGraph Playground engine and example.
+2. An event script plugin "f:uniqueSet()" is available to remove duplicated entries in a list.
+
+For consistency, the new Playground unifies the MiniGraph active knowledge graph and
+Data Dictionary/Provider/API Fetcher into a single framework. The JSON-Path playground feature
+is also included.
+
+### Deprecated
+
+Data dictionary framework is replaced by the MiniGraph Playground that applies data dictionary
+using knowledge graph technology. This module will be removed in the next release.
+
+### Changed
+
+1. Support both List and Map in websocket outgoing messages
+2. Improved data provider configuration management with support of constants and plugins in LHS
+
+---
 ## Version 4.3.69, 2/23/2026
 
 ### Added

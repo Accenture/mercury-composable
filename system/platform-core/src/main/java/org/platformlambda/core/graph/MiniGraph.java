@@ -41,7 +41,7 @@ public class MiniGraph {
     private static final String ROOT = "root";
     private static final String END = "end";
     private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result",
-                                                            "parameter", "none");
+                                                            "parameter", "none", "next", "api", "error");
     private static final Utility util = Utility.getInstance();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();
@@ -174,6 +174,9 @@ public class MiniGraph {
     }
 
     private void importNodesAndConnections(Map<String, Object> map) {
+        if (map.isEmpty()) {
+            throw new IllegalArgumentException("Graph is empty");
+        }
         var nodeList = map.get("nodes");
         var connectionList = map.get("connections");
         if (nodeList instanceof List<?> nl && connectionList instanceof List<?> cl) {
@@ -181,7 +184,7 @@ public class MiniGraph {
             importNodes(mm, nl.size());
             importConnections(mm, cl.size());
         } else {
-            throw new IllegalArgumentException("type of nodes and connections must be List of key-value maps");
+            throw new IllegalArgumentException("Input does not seem to be a MiniGraph");
         }
     }
 

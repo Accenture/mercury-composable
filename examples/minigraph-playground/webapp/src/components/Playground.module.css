@@ -1,0 +1,52 @@
+/* ── Page wrapper ── */
+.wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-secondary);
+}
+
+/* ── Page header ── */
+.header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.25rem;
+}
+
+.title {
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Resizable panel group (fills remaining viewport height) ── */
+.panelGroup {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+}
+
+/* ── Drag handle between panels ── */
+.resizeHandle {
+  width: 1px;
+  cursor: col-resize;
+  background: var(--border-color);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.resizeHandle:hover {
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.resizeHandle[data-separator="active"] {
+  background: rgba(37, 99, 235, 0.4);
+}
+

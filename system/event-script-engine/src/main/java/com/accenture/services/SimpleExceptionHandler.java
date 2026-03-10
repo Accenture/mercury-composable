@@ -48,10 +48,15 @@ public class SimpleExceptionHandler implements TypedLambdaFunction<Map<String, O
         if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
             Object stack = input.get(STACK);
             Object task = input.get(TASK);
-            log.error("User defined exception handler received from {}, rc={}, error={}, stack={}",
-                    task instanceof String name? name : "previous task",
-                    input.get(STATUS), input.get(MESSAGE),
-                    stack instanceof String text? text : "N/A");
+            if (stack instanceof String text) {
+                log.error("User defined exception handler received from {}, rc={}, error={}, stack={}",
+                        task instanceof String name? name : "previous task",
+                        input.get(STATUS), input.get(MESSAGE), text);
+            } else {
+                log.error("User defined exception handler received from {}, rc={}, error={}",
+                        task instanceof String name? name : "previous task",
+                        input.get(STATUS), input.get(MESSAGE));
+            }
             Map<String, Object> error = new HashMap<>();
             error.put(STATUS, input.get(STATUS));
             error.put(MESSAGE, input.get(MESSAGE));

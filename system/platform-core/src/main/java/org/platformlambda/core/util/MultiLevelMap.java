@@ -25,10 +25,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MultiLevelMap {
     private static final NotFound NOT_FOUND = NotFound.of();
     private final Map<String, Object> multiLevels = new HashMap<>();
+    private static final ReentrantLock SAFETY = new ReentrantLock();
 
     /**
      * Create an empty multi-level map
@@ -50,8 +52,13 @@ public class MultiLevelMap {
      * @param map of key-values
      */
     public void reload(Map<String, Object> map) {
-        this.multiLevels.clear();
-        this.multiLevels.putAll(map);
+        SAFETY.lock();
+        try {
+            this.multiLevels.clear();
+            this.multiLevels.putAll(map);
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**
@@ -60,7 +67,12 @@ public class MultiLevelMap {
      * @return map
      */
     public Map<String, Object> getMap() {
-        return multiLevels;
+        SAFETY.lock();
+        try {
+            return multiLevels;
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**
@@ -69,7 +81,12 @@ public class MultiLevelMap {
      * @return true if empty
      */
     public boolean isEmpty() {
-        return multiLevels.isEmpty();
+        SAFETY.lock();
+        try {
+            return multiLevels.isEmpty();
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**
@@ -80,8 +97,13 @@ public class MultiLevelMap {
      * @return true if exists
      */
     public boolean exists(String compositePath) {
-        Object element = getElement(compositePath, multiLevels);
-        return element != null && !(element instanceof NotFound);
+        SAFETY.lock();
+        try {
+            Object element = getElementFromMap(compositePath, multiLevels);
+            return element != null && !(element instanceof NotFound);
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**
@@ -92,8 +114,13 @@ public class MultiLevelMap {
      * @return true if exists
      */
     public boolean keyExists(String compositePath) {
-        Object element = getElement(compositePath, multiLevels);
-        return !(element instanceof NotFound);
+        SAFETY.lock();
+        try {
+            Object element = getElementFromMap(compositePath, multiLevels);
+            return !(element instanceof NotFound);
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**
@@ -105,8 +132,13 @@ public class MultiLevelMap {
      * @return element
      */
     public Object getElement(String compositePath) {
-        Object element = getElement(compositePath, multiLevels);
-        return element instanceof NotFound? null : element;
+        SAFETY.lock();
+        try {
+            Object element = getElementFromMap(compositePath, multiLevels);
+            return element instanceof NotFound ? null : element;
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     /**
@@ -147,7 +179,7 @@ public class MultiLevelMap {
         return NOT_FOUND;
     }
 
-    private Object getElement(String path, Map<String, Object> map) {
+    private Object getElementFromMap(String path, Map<String, Object> map) {
         if (path == null || map == null || path.isEmpty() || map.isEmpty()) return NOT_FOUND;
         if (map.containsKey(path)) {
             return map.get(path);
@@ -232,10 +264,15 @@ public class MultiLevelMap {
      * @return this
      */
     public MultiLevelMap setElement(String compositePath, Object value) {
-        validateCompositePathSyntax(compositePath);
-        var normalizedPath = compositePath.contains("[]")? appendIndex(compositePath) : compositePath;
-        setElement(normalizedPath, value, multiLevels, false);
-        return this;
+        SAFETY.lock();
+        try {
+            validateCompositePathSyntax(compositePath);
+            var normalizedPath = compositePath.contains("[]") ? appendIndex(compositePath) : compositePath;
+            setElement(normalizedPath, value, multiLevels, false);
+            return this;
+        } finally {
+            SAFETY.unlock();
+        }
     }
 
     private String appendIndex(String compositePath) {
@@ -251,8 +288,9 @@ public class MultiLevelMap {
 
     @SuppressWarnings("unchecked")
     private int findLastIndex(String key) {
-        if (keyExists(key + "[0]")) {
-            return ((List<Object>) getElement(key)).size();
+        Object element = getElementFromMap(key + "[0]", multiLevels);
+        if (!(element instanceof NotFound)) {
+            return ((List<Object>) getElementFromMap(key, multiLevels)).size();
         } else {
             return 0;
         }
@@ -265,8 +303,14 @@ public class MultiLevelMap {
      * @return this
      */
     public MultiLevelMap removeElement(String compositePath) {
-        if (keyExists(compositePath)) {
-            setElement(compositePath, null, multiLevels, true);
+        SAFETY.lock();
+        try {
+            Object element = getElementFromMap(compositePath, multiLevels);
+            if (!(element instanceof NotFound)) {
+                setElement(compositePath, null, multiLevels, true);
+            }
+        } finally {
+            SAFETY.unlock();
         }
         return this;
     }
@@ -288,7 +332,7 @@ public class MultiLevelMap {
                 int sep = p.indexOf('[');
                 List<Integer> indexes = getIndexes(p.substring(sep));
                 String element = p.substring(0, sep);
-                Object parent = getElement(composite+element, map);
+                Object parent = getElementFromMap(composite+element, map);
                 if (n == len) {
                     setCurrentElement(element, value, current, parent, indexes);
                     return;
@@ -319,7 +363,7 @@ public class MultiLevelMap {
     private void walkOneElement(String compositePath, String element, CurrentMap current, Object parent,
                                 List<Integer> indexes, Map<String, Object> map) {
         if (parent instanceof List) {
-            Object next = getElement(compositePath, map);
+            Object next = getElementFromMap(compositePath, map);
             if (next instanceof Map) {
                 current.map = (Map<String, Object>) next;
             } else {

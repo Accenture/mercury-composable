@@ -24,11 +24,12 @@ import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 
+import java.util.List;
 import java.util.Map;
 
 @ZeroTracing
 public class WsClientTransmitter implements LambdaFunction {
-
+    private static final int BUFFER_SIZE = 60 * 1024;
     private final WebSocket ws;
     private boolean connected = true;
 
@@ -49,12 +50,32 @@ public class WsClientTransmitter implements LambdaFunction {
             if (input instanceof String str) {
                 ws.writeTextMessage(str);
             }
-            if (input instanceof Map) {
-                ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
+            if (input instanceof Map || input instanceof List) {
+                var text = SimpleMapper.getInstance().getMapper().writeValueAsString(input);
+                if (text.length() > BUFFER_SIZE) {
+                    sendSegments(text);
+                } else {
+                    ws.writeTextMessage(SimpleMapper.getInstance().getMapper().writeValueAsString(input));
+                }
             }
             return true;
         } else {
             return false;
+        }
+    }
+
+    private void sendSegments(String text) {
+        var blocks = text.length() / BUFFER_SIZE;
+        var lastBlock = text.length() % BUFFER_SIZE;
+        var start = 0;
+        for (int i = 0; i < blocks; i++) {
+            var segment = text.substring(start, start + BUFFER_SIZE);
+            ws.writeTextMessage(segment);
+            start = start + BUFFER_SIZE;
+        }
+        if (lastBlock > 0) {
+            var segment = text.substring(start);
+            ws.writeTextMessage(segment);
         }
     }
 }

@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.69</version>
+    <version>4.3.70</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -19,7 +19,7 @@
         <!-- Extensions -->
         <module>extensions/data-dictionary-query</module>
         <module>extensions/reactive-postgres</module>
-        <module>extensions/json-path-playground</module>
+	<module>extensions/minigraph-playground-engine</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>
@@ -39,6 +39,7 @@
         <module>examples/kotlin-example</module>
         <module>examples/scheduler-example</module>
         <module>examples/data-dictionary-query-example</module>
+        <module>examples/minigraph-playground</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>

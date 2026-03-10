@@ -1,7 +1,5 @@
 # Design notes
 
-*Concepts: Architecture decisions and technical rationale for Mercury Composable's design.*
-
 ## Event choreography by configuration
 
 The recommended way to write a composable application is event choreography by configuration using "Event Script".
