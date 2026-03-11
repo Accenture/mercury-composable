@@ -8,6 +8,11 @@
  *                 Placeholders use {curly-brace} notation for user-supplied values.
  *  - `hint`     — a short description shown next to the suggestion.
  *  - `multiline`— true when accepting the suggestion should also enable multiline mode.
+ *
+ * Aliases handled by the backend (getWords() in GraphCommandService):
+ *   start  → instantiate
+ *   clear  → delete
+ * Both the canonical form and the alias are listed so either triggers autocomplete.
  */
 
 export interface CommandSuggestion {
@@ -40,29 +45,33 @@ export const BUILTIN_SKILLS: string[] = [
 // ---------------------------------------------------------------------------
 export interface QuickstartEntry {
   keyword:     string;
+  alias?:      string;   // backend alias, shown as "(alias: <x>)"
   description: string;
 }
 
 export const COMMAND_QUICKSTART: QuickstartEntry[] = [
-  { keyword: 'help',        description: 'List all help topics or get help for a specific command' },
-  { keyword: 'create',      description: 'Create a new graph node' },
-  { keyword: 'update',      description: 'Update an existing node' },
-  { keyword: 'delete',      description: 'Delete a node or a connection' },
-  { keyword: 'connect',     description: 'Connect two nodes with a named relation' },
-  { keyword: 'describe',    description: 'Describe the graph, a node, connection or skill' },
-  { keyword: 'export',      description: 'Export the graph model to a JSON file' },
-  { keyword: 'import',      description: 'Import a graph model from a JSON file' },
-  { keyword: 'instantiate', description: 'Create a runnable graph instance' },
-  { keyword: 'execute',     description: 'Execute a single node skill in isolation' },
-  { keyword: 'inspect',     description: 'Inspect a state-machine variable' },
-  { keyword: 'run',         description: 'Run the graph instance from root to end' },
-  { keyword: 'close',       description: 'Close the current graph instance' },
+  { keyword: 'help',            description: 'List all help topics, or get help for a specific command' },
+  { keyword: 'create',          description: 'Create a new graph node' },
+  { keyword: 'update',          description: 'Update an existing node' },
+  { keyword: 'edit',            description: 'Print raw node data ready for editing and re-submitting' },
+  { keyword: 'delete',          description: 'Delete a node or a connection',         alias: 'clear' },
+  { keyword: 'clear cache',     description: 'Clear cached API fetcher results' },
+  { keyword: 'connect',         description: 'Connect two nodes with a named relation' },
+  { keyword: 'list',            description: 'List all nodes or connections in the graph' },
+  { keyword: 'describe',        description: 'Describe the graph, a node, connection or skill' },
+  { keyword: 'export',          description: 'Export the graph model to a JSON file' },
+  { keyword: 'import',          description: 'Import a graph model or a single node from a file' },
+  { keyword: 'instantiate',     description: 'Create a runnable graph instance with mock input', alias: 'start' },
+  { keyword: 'execute',         description: 'Execute a single node skill in isolation' },
+  { keyword: 'inspect',         description: 'Inspect a state-machine variable' },
+  { keyword: 'run',             description: 'Run the graph instance from root to end' },
 ];
 
 // ---------------------------------------------------------------------------
 // Full command grammar
 // ---------------------------------------------------------------------------
 export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
+
   // ── help ────────────────────────────────────────────────────────────────
   {
     tokens:   ['help'],
@@ -80,14 +89,24 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     hint:     'Help: update node',
   },
   {
+    tokens:   ['help', 'edit'],
+    template: 'help edit',
+    hint:     'Help: edit (print raw node for re-submitting)',
+  },
+  {
     tokens:   ['help', 'delete'],
     template: 'help delete',
-    hint:     'Help: delete node or connection',
+    hint:     'Help: delete node, connection or clear cache',
   },
   {
     tokens:   ['help', 'connect'],
     template: 'help connect',
     hint:     'Help: connect two nodes',
+  },
+  {
+    tokens:   ['help', 'list'],
+    template: 'help list',
+    hint:     'Help: list nodes or connections',
   },
   {
     tokens:   ['help', 'describe'],
@@ -102,12 +121,17 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
   {
     tokens:   ['help', 'import'],
     template: 'help import',
-    hint:     'Help: import graph from a JSON file',
+    hint:     'Help: import graph or node from a file',
+  },
+  {
+    tokens:   ['help', 'data-dictionary'],
+    template: 'help data-dictionary',
+    hint:     'Help: data dictionary and provider node syntax',
   },
   {
     tokens:   ['help', 'instantiate'],
     template: 'help instantiate',
-    hint:     'Help: instantiate a graph instance',
+    hint:     'Help: instantiate a graph instance (alias: start)',
   },
   {
     tokens:   ['help', 'execute'],
@@ -123,11 +147,6 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     tokens:   ['help', 'run'],
     template: 'help run',
     hint:     'Help: run a graph instance end-to-end',
-  },
-  {
-    tokens:   ['help', 'close'],
-    template: 'help close',
-    hint:     'Help: close a graph instance',
   },
 
   // ── create ──────────────────────────────────────────────────────────────
@@ -146,7 +165,14 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     multiline: true,
   },
 
-  // ── delete ──────────────────────────────────────────────────────────────
+  // ── edit ────────────────────────────────────────────────────────────────
+  {
+    tokens:   ['edit', 'node'],
+    template: 'edit node {name}',
+    hint:     'Print raw node data ready to copy-edit and re-submit',
+  },
+
+  // ── delete / clear (alias) ───────────────────────────────────────────────
   {
     tokens:   ['delete', 'node'],
     template: 'delete node {name}',
@@ -157,12 +183,40 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     template: 'delete connection {nodeA} and {nodeB}',
     hint:     'Delete connection(s) between two nodes',
   },
+  // "clear" is a backend alias for "delete"
+  {
+    tokens:   ['clear', 'node'],
+    template: 'clear node {name}',
+    hint:     'Delete a node by name (alias for: delete node)',
+  },
+  {
+    tokens:   ['clear', 'connection'],
+    template: 'clear connection {nodeA} and {nodeB}',
+    hint:     'Delete connection(s) between two nodes (alias for: delete connection)',
+  },
+  {
+    tokens:   ['clear', 'cache'],
+    template: 'clear cache',
+    hint:     'Clear cached API fetcher results',
+  },
 
   // ── connect ─────────────────────────────────────────────────────────────
   {
     tokens:   ['connect'],
     template: 'connect {node-A} to {node-B} with {relation}',
     hint:     'Connect two nodes with a relation',
+  },
+
+  // ── list ────────────────────────────────────────────────────────────────
+  {
+    tokens:   ['list', 'nodes'],
+    template: 'list nodes',
+    hint:     'List all nodes in the current graph',
+  },
+  {
+    tokens:   ['list', 'connections'],
+    template: 'list connections',
+    hint:     'List all connections in the current graph',
   },
 
   // ── describe ────────────────────────────────────────────────────────────
@@ -193,23 +247,37 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     hint:     `Describe built-in skill: ${skill}`,
   })),
 
-  // ── export / import ─────────────────────────────────────────────────────
+  // ── export ──────────────────────────────────────────────────────────────
   {
     tokens:   ['export', 'graph', 'as'],
     template: 'export graph as {name}',
     hint:     'Export the graph model to a named JSON file',
   },
+
+  // ── import ──────────────────────────────────────────────────────────────
   {
     tokens:   ['import', 'graph', 'from'],
     template: 'import graph from {name}',
     hint:     'Import a graph model from a named JSON file',
   },
+  {
+    tokens:   ['import', 'node'],
+    template: 'import node {node-name} from {graph-name}',
+    hint:     'Import a single node from another graph model',
+  },
 
-  // ── instantiate ─────────────────────────────────────────────────────────
+  // ── instantiate / start (alias) ──────────────────────────────────────────
   {
     tokens:   ['instantiate', 'graph'],
     template: 'instantiate graph\n{constant} -> input.body.{key}',
-    hint:     'Create a graph instance (multi-line)',
+    hint:     'Create a graph instance with mock input (multi-line)',
+    multiline: true,
+  },
+  // "start" is a backend alias for "instantiate"
+  {
+    tokens:   ['start', 'graph'],
+    template: 'start graph\n{constant} -> input.body.{key}',
+    hint:     'Create a graph instance with mock input (alias for: instantiate graph)',
     multiline: true,
   },
 
@@ -218,6 +286,11 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     tokens:   ['execute', 'node'],
     template: 'execute node {name}',
     hint:     'Execute the skill of a single node in isolation',
+  },
+  {
+    tokens:   ['execute'],
+    template: 'execute {node-name}',
+    hint:     'Execute a node skill — short form (no "node" keyword)',
   },
 
   // ── inspect ─────────────────────────────────────────────────────────────
@@ -232,13 +305,6 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
     tokens:   ['run'],
     template: 'run',
     hint:     'Run the graph instance from root to end',
-  },
-
-  // ── close ───────────────────────────────────────────────────────────────
-  {
-    tokens:   ['close'],
-    template: 'close',
-    hint:     'Close the current graph instance',
   },
 ];
 
@@ -255,15 +321,15 @@ export const COMMAND_SUGGESTIONS: CommandSuggestion[] = [
  *  2. A suggestion matches if every input token is a prefix of the
  *     corresponding suggestion token at the same position — AND the input
  *     has fewer tokens than (or equal tokens to) the suggestion.
- *  3. Exact full matches (input === template) are excluded so the dropdown
- *     disappears once the user has already completed the command.
+ *  3. Exact full matches (input === template first line) are excluded so the
+ *     dropdown disappears once the user has already completed the command.
  */
 export function getSuggestions(rawInput: string): CommandSuggestion[] {
   // Only operate on the first line — multi-line mode has its own flow.
   const firstLine = rawInput.split('\n')[0];
   // trimStart (not trim) so a trailing space like "describe " still matches
   // sub-commands (the user has finished typing the first token).
-  const trimmed   = firstLine.trimStart();
+  const trimmed = firstLine.trimStart();
   if (trimmed === '') return [];
 
   const inputTokens = trimmed.toLowerCase().split(/\s+/);
@@ -271,7 +337,7 @@ export function getSuggestions(rawInput: string): CommandSuggestion[] {
   return COMMAND_SUGGESTIONS.filter(suggestion => {
     const { tokens, template } = suggestion;
 
-    // Don't suggest if the input is already the completed template.
+    // Don't suggest if the input is already the completed template first line.
     if (trimmed.toLowerCase() === template.split('\n')[0].toLowerCase()) return false;
 
     // The suggestion must have at least as many tokens as the input.

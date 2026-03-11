@@ -87,12 +87,37 @@ export default function CommandInput({
         // Shift+Enter in single-line: fall through → browser expands textarea
       }
     } else {
-      // ArrowUp / ArrowDown (and all other keys) → delegate to history handler.
-      // Also close the dropdown — the user is navigating history, not suggestions.
+      // ArrowUp / ArrowDown → delegate to history handler only when appropriate.
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        if (multiline) {
+          // In multiline mode the textarea handles cursor movement natively.
+          // Only fall through to history navigation when the caret is already
+          // at the boundary where there is no further line to move to:
+          //   ArrowUp  → only if caret is on the first line
+          //   ArrowDown → only if caret is on the last line
+          const el = textareaRef.current;
+          if (el) {
+            const { selectionStart, value } = el;
+            const beforeCaret = value.slice(0, selectionStart);
+            const isFirstLine  = !beforeCaret.includes('\n');
+            const isLastLine   = !value.slice(selectionStart).includes('\n');
+
+            const atBoundary =
+              (e.key === 'ArrowUp'   && isFirstLine) ||
+              (e.key === 'ArrowDown' && isLastLine);
+
+            if (!atBoundary) {
+              // Let the browser move the caret between lines — don't intercept.
+              return;
+            }
+          }
+        }
+        // Single-line mode, or multiline at a boundary → navigate history.
         ac.dismiss();
+        onKeyDown(e);
+      } else {
+        onKeyDown(e);
       }
-      onKeyDown(e);
     }
   };
 
@@ -135,10 +160,15 @@ export default function CommandInput({
             <i className={styles.infoIcon} aria-hidden="true">i</i>
             <div className={styles.popover} role="tooltip">
               <p className={styles.popoverTitle}>Getting started — type a keyword to begin</p>
-              {COMMAND_QUICKSTART.map(({ keyword, description }) => (
+              {COMMAND_QUICKSTART.map(({ keyword, alias, description }) => (
                 <div key={keyword} className={styles.popoverRow}>
                   <span className={styles.popoverKeyword}>{keyword}</span>
-                  <span className={styles.popoverDesc}>{description}</span>
+                  <span className={styles.popoverDesc}>
+                    {description}
+                    {alias && (
+                      <span className={styles.popoverAlias}> · alias: {alias}</span>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
