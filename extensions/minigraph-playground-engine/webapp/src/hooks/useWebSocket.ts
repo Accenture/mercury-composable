@@ -14,6 +14,13 @@ interface LocalState {
   command:      string;
   autoScroll:   boolean;
   historyIndex: number;
+  /**
+   * Snapshot of the command field taken the moment the user first presses
+   * ArrowUp to enter history browsing.  Restored when they press ArrowDown
+   * past the newest history entry (index 0) — so in-progress input is never
+   * lost by accidentally over-pressing the arrow key.
+   */
+  draftCommand:  string;
 }
 
 /** Every action the local reducer can handle. */
@@ -21,6 +28,8 @@ type LocalAction =
   | { type: 'SET_COMMAND';       value: string }
   | { type: 'CLEAR_COMMAND' }
   | { type: 'SET_HISTORY_INDEX'; index: number; command: string }
+  | { type: 'ENTER_HISTORY';     command: string }
+  | { type: 'EXIT_HISTORY' }
   | { type: 'TOGGLE_AUTO_SCROLL' };
 
 /** Options accepted by useWebSocket. */
@@ -58,6 +67,7 @@ const localInitial: LocalState = {
   command:      '',
   autoScroll:   true,
   historyIndex: -1,
+  draftCommand: '',
 };
 
 function localReducer(state: LocalState, action: LocalAction): LocalState {
@@ -65,9 +75,15 @@ function localReducer(state: LocalState, action: LocalAction): LocalState {
     case 'SET_COMMAND':
       return { ...state, command: action.value };
     case 'CLEAR_COMMAND':
-      return { ...state, command: '', historyIndex: -1 };
+      return { ...state, command: '', historyIndex: -1, draftCommand: '' };
     case 'SET_HISTORY_INDEX':
       return { ...state, historyIndex: action.index, command: action.command };
+    // Save current input as draft, then load the first history entry.
+    case 'ENTER_HISTORY':
+      return { ...state, historyIndex: 0, command: action.command, draftCommand: state.command };
+    // Restore the draft and leave history browsing mode.
+    case 'EXIT_HISTORY':
+      return { ...state, historyIndex: -1, command: state.draftCommand, draftCommand: '' };
     case 'TOGGLE_AUTO_SCROLL':
       return { ...state, autoScroll: !state.autoScroll };
     default:
@@ -154,17 +170,24 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (history.length > 0 && historyIndex < history.length - 1) {
+      if (history.length === 0) return;
+      if (historyIndex === -1) {
+        // First ArrowUp — snapshot the draft and load the newest history entry.
+        dispatch({ type: 'ENTER_HISTORY', command: history[0] });
+      } else if (historyIndex < history.length - 1) {
+        // Already in history — go further back.
         const newIndex = historyIndex + 1;
         dispatch({ type: 'SET_HISTORY_INDEX', index: newIndex, command: history[newIndex] });
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (historyIndex > 0) {
+      if (historyIndex <= 0) {
+        // At the newest entry (or not in history) — restore the draft instead
+        // of clearing, so in-progress input is never lost.
+        if (historyIndex === 0) dispatch({ type: 'EXIT_HISTORY' });
+      } else {
         const newIndex = historyIndex - 1;
         dispatch({ type: 'SET_HISTORY_INDEX', index: newIndex, command: history[newIndex] });
-      } else if (historyIndex === 0) {
-        dispatch({ type: 'CLEAR_COMMAND' });
       }
     }
   }, [history, historyIndex]);

@@ -68,9 +68,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var mapping = getEntries(fetcher.getProperty(INPUT));
         Map<String, List<?>> mappings = getForEachMapping(nodeName, forEach, stateMachine);
         if (forEach.isEmpty()) {
-            for (var entry : mapping) {
-                fillFetcherApiParameters(nodeName, entry, graphInstance, false);
-            }
             return executeProviders(po, graphInstance, fetcher, dictionaryNodes);
         }
         // iterative API requests with an array of parameters
@@ -130,10 +127,14 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var nodeName = fetcher.getAlias();
         var timeout = getModelTtl(graphInstance);
         var stateMachine = graphInstance.stateMachine;
-        var apiParams = stateMachine.getElement(nodeName + API_DOT, new HashMap<>());
-        var parameters = apiParams instanceof Map? (Map<String, Object>) apiParams : new HashMap<String, Object>();
         var graph = graphInstance.graph;
         for (SimpleNode dd : dictionaryNodes) {
+            var parameterMapping = getEntries(fetcher.getProperty(INPUT));
+            for (var entry : parameterMapping) {
+                fillFetcherApiParameters(nodeName, entry, graphInstance, false);
+            }
+            var apiParams = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
+            var parameters = apiParams instanceof Map? (Map<String, Object>) apiParams : new HashMap<String, Object>();
             var required = getEntries(dd.getProperty(INPUT));
             if (!required.isEmpty()) {
                 fillDictionaryApiParameters(nodeName, stateMachine, dd, required, parameters);
@@ -155,6 +156,8 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
         performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
+        stateMachine.removeElement(nodeName + FETCH);
+        stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
         return NEXT;
     }
@@ -169,7 +172,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var concurrency = Math.clamp(givenConcurrency < 0 ? 3 : givenConcurrency, 1, 30);
         var timeout = getModelTtl(graphInstance);
         var stateMachine = graphInstance.stateMachine;
-        var apiParams = (Map<String, List<Object>>) stateMachine.getElement(nodeName + API2_DOT, new HashMap<>());
+        var apiParams = (Map<String, List<Object>>) stateMachine.getElement(nodeName + EACH, new HashMap<>());
         for (SimpleNode dd : dictionaryNodes) {
             Deque<HttpEventEnvelope> stack = new ArrayDeque<>();
             if (dd.getProperty(PROVIDER) == null) {
@@ -202,6 +205,9 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
         performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
+        stateMachine.removeElement(nodeName + FETCH);
+        stateMachine.removeElement(nodeName + EACH);
+        stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
         return NEXT;
     }
@@ -214,7 +220,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             var key = kv.getKey();
             var value = kv.getValue().get(i);
             parameters.put(key, value);
-            md.stateMachine.setElement(nodeName + API_DOT + key, value);
+            md.stateMachine.setElement(nodeName + FETCH + key, value);
         }
         var required = getEntries(md.dd.getProperty(INPUT));
         if (!required.isEmpty()) {
@@ -279,25 +285,35 @@ public class GraphApiFetcher extends GraphLambdaFunction {
 
     private void fillDictionaryApiParameters(String nodeName, MultiLevelMap stateMachine,
                                              SimpleNode dd, List<String> required, Map<String, Object> parameters) {
+        var ddName = dd.getAlias();
         for (var input : required) {
-            var text = input.trim();
-            var colon = text.indexOf(':');
+            var key = input.trim();
+            var colon = key.indexOf(':');
             if (colon == -1) {
-                if (!parameters.containsKey(text)) {
-                    throw new IllegalArgumentException("Missing input parameter '"+text+
+                if (parameters.containsKey(key)) {
+                    stateMachine.setElement(nodeName + DD + ddName + "." + key, parameters.get(key));
+                } else {
+                    throw new IllegalArgumentException("Missing input parameter '"+key+
                             "' for data dictionary "+dd.getAlias());
                 }
             } else {
-                // fill default value
-                var key = text.substring(0, colon).trim();
-                if (!parameters.containsKey(key)) {
-                    var value = text.substring(colon+1).trim();
-                    var updated = helper.getLhsOrConstant(value, stateMachine);
-                    var resolved = updated != null? updated : value;
-                    stateMachine.setElement(nodeName + API_DOT + key, resolved);
-                    parameters.put(key, resolved);
-                }
+                var dk = key.substring(0, colon).trim();
+                var dv = key.substring(colon+1).trim();
+                fillDefaultApiParameter(nodeName, stateMachine, ddName, dk, dv, parameters);
             }
+        }
+    }
+
+    private void fillDefaultApiParameter(String nodeName, MultiLevelMap stateMachine, String ddName,
+                                         String dk, String dv, Map<String, Object> parameters) {
+        if (parameters.containsKey(dk)) {
+            stateMachine.setElement(nodeName + DD + ddName + "." + dk, parameters.get(dk));
+        } else {
+            // check if the default value can be used to map a value from the state machine
+            var mappedValue = helper.getLhsOrConstant(dv, stateMachine);
+            var resolved = mappedValue != null? mappedValue : dv;
+            stateMachine.setElement(nodeName + DD + ddName + "." + dk, resolved);
+            parameters.put(dk, resolved);
         }
     }
 
@@ -399,7 +415,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var request = new AsyncHttpRequest();
         request.setMethod(md.method).setTargetHost(md.target.host).setUrl(md.target.uri);
         if (!md.inputs.isEmpty()) {
-            mapHttpInput(request, nodeName, md.stateMachine, md.inputs);
+            mapHttpInput(request, nodeName, md.dd.getAlias(), md.stateMachine, md.inputs);
         }
         loadFeatures(md);
         for (FeatureDef f : md.before) {
@@ -438,7 +454,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
     private void makeRegularHttpCall(ProviderMetadata md) throws ExecutionException, InterruptedException {
         var nodeName = md.fetcher.getAlias();
         var request = buildHttpRequest(md);
-        var params = md.stateMachine.getElement(nodeName + API_DOT, new HashMap<>());
+        var params = md.stateMachine.getElement(nodeName + DD + md.dd.getAlias() +".", new HashMap<>());
         // multiple data dictionary items may use the same data provider with the same parameter key-values
         // so we want to cache it to avoid repeated API calls.
         var provider = md.provider.getAlias();

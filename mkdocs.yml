@@ -14,6 +14,7 @@ nav:
     - Event over HTTP: guides/CHAPTER-7.md
     - Minimalist Service Mesh: guides/CHAPTER-8.md
     - Minimalist Property Graph: guides/CHAPTER-10.md
+    - Active Knowledge Graph: guides/CHAPTER-11.md
 
   - Concepts:
     - Methodology: guides/METHODOLOGY.md

@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.71, 3/10/2026
+
+### Added
+
+MiniGraph Playground documentation (executive summary and developer guide)
+
+### Removed
+
+N/A
+
+### Changed
+
+Improved minigraph-playground graph instance cache
+
+---
 ## Version 4.3.70, 3/9/2026
 
 ### Added
@@ -24,7 +39,7 @@ is also included.
 ### Deprecated
 
 Data dictionary framework is replaced by the MiniGraph Playground that applies data dictionary
-using knowledge graph technology. This module will be removed in the next release.
+using knowledge graph technology. This module will be removed in future version 4.4.0 release.
 
 ### Changed
 

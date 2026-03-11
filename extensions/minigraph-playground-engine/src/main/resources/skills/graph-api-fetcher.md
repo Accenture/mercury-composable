@@ -1,7 +1,7 @@
 Skill: Graph API Fetcher
 ------------------------
 When a node is configured with this skill of "graph API fetcher", it will make an API call to a backend service
-and collect result set into the "result" property of the node. In case of exception, the "status" and "result.error"
+and collect result set into the "result" property of the node. In case of exception, the "status" and "error"
 fields will be set to the node's properties and the graph execution will stop.
 
 Execution will start when the GraphExecutor reaches the node containing this skill.
