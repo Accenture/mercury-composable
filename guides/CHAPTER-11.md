@@ -9,6 +9,7 @@ MiniGraph Playground is a graph-based application modeling and execution platfor
 It introduces the concept of an **Active Knowledge Graph** — a graph model that not only represents knowledge and relationships, but also **executes behavior** through embedded skills during graph traversal.
 
 This approach allows organizations to:
+
 - Build decision-centric and data-driven backend services
 - Rapidly prototype and evolve business logic
 - Decouple application behavior from traditional code deployments
@@ -20,11 +21,13 @@ This approach allows organizations to:
 Traditional **property graphs** model entities (nodes), relationships (edges), and attributes. MiniGraph extends this model by allowing nodes to carry **executable skills**.
 
 An **Active Knowledge Graph**:
+
 - Encodes business knowledge as graph structures
 - Assigns executable skills to selected nodes
 - Executes logic dynamically as the graph is traversed
 
 When traversal reaches a node with a skill:
+
 1. The graph executor invokes a composable function
 2. Inputs are derived from node attributes and execution context
 3. The function returns a result
@@ -37,13 +40,16 @@ This transforms a static knowledge graph into a **living execution model**.
 ## Why This Matters
 
 ### Business Impact
+
 - **Faster time-to-market**: Change logic by updating graph models, not code
 - **Lower risk**: Dry-run and inspect execution paths before deployment
 - **Better alignment**: Business rules, data, and execution live in one model
 - **Scalability**: Execution is backed by composable, event-driven architecture
 
 ### Industry Context
+
 MiniGraph aligns with and advances industry trends such as:
+
 - Graph-based decision engines
 - Workflow and orchestration platforms
 - Event-driven and composable architectures
@@ -54,8 +60,8 @@ Unlike traditional workflow tools, MiniGraph models both **knowledge and executi
 ---
 
 ## Built-In Capabilities
-
 MiniGraph Playground includes built-in skills for common enterprise needs:
+
 - Data mapping and transformation
 - Mathematical and logical evaluation
 - External API integration
@@ -67,7 +73,6 @@ These capabilities allow complex backend behaviors to be composed visually and e
 ---
 
 ## Governance and Lifecycle
-
 MiniGraph supports a structured, enterprise-grade lifecycle:
 
 1. Create graph models interactively
@@ -84,8 +89,8 @@ Once deployed, a graph model can be invoked as a standard API endpoint or event 
 ---
 
 ## Strategic Value
-
 MiniGraph Playground enables organizations to:
+
 - Externalize business logic from code
 - Standardize execution patterns across teams
 - Improve observability and explainability
@@ -108,6 +113,7 @@ Technology Review
 MiniGraph Playground is a developer-focused environment for creating, testing, and executing **Active Knowledge Graphs**.
 
 It provides both:
+
 - A **graph execution engine**
 - A **self-service interactive UI**
 
@@ -120,6 +126,7 @@ Developers use MiniGraph to model backend logic, decision flows, data access, an
 ### Active Knowledge Graph
 
 An Active Knowledge Graph is a directed graph with:
+
 - A **root node** (execution entry point)
 - An **end node** (execution completion)
 - One or more nodes configured with executable skills
@@ -133,8 +140,10 @@ Traversal begins at the root and continues until the end node is reached or trav
 MiniGraph supports three primary node categories:
 
 #### 1. Data Entity Nodes
-Represent business entities and their attributes  
+Represent business entities and their attributes
+
 Examples:
+
 - Person
 - Account
 - Order
@@ -145,6 +154,7 @@ These nodes describe *what the system knows*.
 
 #### 2. Data Dictionary & Provider Nodes
 Define external data sources and API contracts:
+
 - Attribute definitions
 - Endpoint configurations
 - Request and response mappings
@@ -155,6 +165,7 @@ These nodes enable integration with external systems.
 
 #### 3. Skill Nodes (Active Nodes)
 Skill nodes execute actions during traversal:
+
 - Computation
 - Decision making
 - Data fetching
@@ -167,12 +178,14 @@ Skill nodes are the **behavioral backbone** of the graph.
 ## Skills and Execution Model
 
 A skill is implemented as a **Composable Function**:
+
 - Self-contained
 - Event-driven
 - Stateless
 - Independently deployable
 
 During execution:
+
 1. The graph executor sends input to the skill
 2. The skill executes and returns a result
 3. The executor updates the graph state machine
@@ -212,6 +225,7 @@ Each skill has its own help page with syntax, parameters, and examples.
 ## Interactive Development Experience
 
 MiniGraph Playground provides:
+
 - Command prompt for graph operations
 - Console output with execution details
 - Visual graph rendering via `describe graph`
@@ -223,11 +237,13 @@ The environment is intentionally **playful and exploratory**, encouraging increm
 ## Testing and Dry-Run Execution
 
 Developers are encouraged to:
+
 - Execute individual skill nodes
 - Inspect intermediate state machine data
 - Validate traversal paths visually
 
-Conduct **dry-run**:
+A **dry-run**:
+
 - Starts at the root node
 - Traverses the graph using mock input
 - Displays execution paths and outputs
@@ -238,10 +254,12 @@ Conduct **dry-run**:
 ## Deployment Model
 
 After validation:
+
 - Graph models are deployed to cloud environments
 - Each graph is exposed via a generalized API: `/api/graph/{graph-id}`
 
 Execution is decoupled from protocol using **Event Script**, allowing:
+
 - REST invocation
 - Event-driven execution (e.g., Kafka)
 - Future protocol extensions
@@ -251,6 +269,7 @@ Execution is decoupled from protocol using **Event Script**, allowing:
 ## Help System
 
 MiniGraph includes comprehensive built-in help pages covering:
+
 - Node creation, editing, deletion
 - Graph traversal and execution
 - Import/export
@@ -264,6 +283,7 @@ These help pages are accessible directly from the Playground UI and serve as the
 ## Extensibility
 
 Developers can extend MiniGraph by:
+
 - Writing new composable functions
 - Registering them as custom skills
 - Reusing them across multiple graph models
@@ -275,6 +295,7 @@ This enables organization-specific logic without modifying the core platform.
 ## Summary
 
 MiniGraph Playground enables developers to:
+
 - Model backend logic visually
 - Execute complex flows without orchestration code
 - Test and validate behavior early
