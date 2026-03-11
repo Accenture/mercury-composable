@@ -66,7 +66,7 @@ MiniGraph Playground includes built-in skills for common enterprise needs:
 - Mathematical and logical evaluation
 - External API integration
 - Cross-graph execution
-- Synchronization and branching control
+- Orchestration and branching control
 
 These capabilities allow complex backend behaviors to be composed visually and executed reliably.
 
