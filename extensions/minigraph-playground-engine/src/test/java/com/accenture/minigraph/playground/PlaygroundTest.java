@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.playground;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -33,6 +34,7 @@ import org.platformlambda.core.websocket.client.PersistentWsClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -98,15 +100,32 @@ class PlaygroundTest {
             "node hello connected to helloworld", "delete connection hello and helloworld",
             "hello -> helloworld removed", "connect hello to xyz with test");
 
-    private static final Map<String, Object> dialog4 = Map.of("node xyz not found", "export graph as helloworld",
+    private static final Map<String, Object> dialog4 = Map.of("node xyz not found", "export graph as hello",
             "Graph exported", "describe graph",
-            "Graph with", "import node extension from helloworld",
+            "Graph with", "import node extension from hello",
             "node extension overwritten", "clear cache",
             "cache cleared", "inspect js-1");
 
     @BeforeAll
     static void setup() {
+        deleteTempGraph();
         AutoStart.main(new String[0]);
+
+    }
+
+    @AfterAll
+    static void tearDown() {
+        deleteTempGraph();
+    }
+
+    private static void deleteTempGraph() {
+        File f = new File("/tmp/graph/hello.json");
+        if (f.exists()) {
+            var ok = f.delete();
+            if (ok) {
+                log.info("Deleted temp test graph {}", f.getPath());
+            }
+        }
     }
 
     @Test
@@ -224,7 +243,7 @@ class PlaygroundTest {
                         if ("end".equals(map.get("inspect"))) {
                             received.add(map);
                             po.send(txPath, "delete node root");
-                            po.send(txPath, "import graph from helloworld");
+                            po.send(txPath, "import graph from hello");
                         }
                         if ("js-1".equals(map.get("inspect"))) {
                             received.add(map);
@@ -269,7 +288,7 @@ class PlaygroundTest {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
                 // simulate human operator delay
-                Thread.sleep(50);
+                Thread.sleep(75);
                 return kv.getValue();
             }
         }
