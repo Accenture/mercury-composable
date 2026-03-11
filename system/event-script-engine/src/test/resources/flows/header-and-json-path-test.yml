@@ -48,5 +48,7 @@ tasks:
       - 'text(AAA) -> model.duplicated[]'
       - 'text(AAA) -> model.duplicated[]'
       - 'f:uniqueSet(model.duplicated) -> output.body.unique'
+      # since model.nothing is null, the return value is 'hello'
+      - 'f:defaultValue(model.nothing, text(hello)) -> output.body.default'
     description: 'Return result'
     execution: end

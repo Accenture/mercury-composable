@@ -261,7 +261,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var stateMachine = graphInstance.stateMachine;
             var lhs = command.substring(0, sep).trim();
             var rhs = command.substring(sep + MAP_TO.length()).trim();
-            var target = getApiRhs(nodeName, rhs, isArray);
+            var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : getFetcherTarget(nodeName, rhs, isArray);
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (value != null) {
                 stateMachine.setElement(target, value);
@@ -277,14 +277,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
-    private String getApiRhs(String nodeName, String rhs, boolean isArray) {
-        final String target;
-        if (rhs.startsWith(MODEL_NAMESPACE)) {
-            target = rhs;
-        } else {
-            target = isArray ? nodeName + EACH + rhs + "[]" : nodeName + FETCH + rhs;
-        }
-        return target;
+    private String getFetcherTarget(String nodeName, String rhs, boolean isArray) {
+        return isArray ? nodeName + EACH + rhs + "[]" : nodeName + FETCH + rhs;
     }
 
     protected List<String> getEntries(Object entries) {

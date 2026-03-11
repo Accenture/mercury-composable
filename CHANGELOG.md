@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.72, 3/11/2026
+
+### Added
+
+new Event Script's plugin "f:defaultValue(original, default)"
+
+### Removed
+
+N/A
+
+### Changed
+
+For minigraph-playground, clear fetcher's temp parameter buffer after each request to ensure correct
+response caching behavior.
+
+---
 ## Version 4.3.71, 3/10/2026
 
 ### Added

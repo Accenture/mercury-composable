@@ -1501,6 +1501,7 @@ For example:
 | **Type Conversion** | listOfMap       | Convert "a map of lists" to "a list of maps"                                                                          |
 | **Type Conversion** | updateListOfMap | Update "a list of maps" with "maps of lists"                                                                          |
 | **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps"                                                                  |
+| **Type Conversion** | defaultValue    | If the first argument is null, return the 2nd argument                                                                |
 
 *Notes*: The listOfMap and updateListOfMap plugins are designed to handle the search result of JSON-Path.
 

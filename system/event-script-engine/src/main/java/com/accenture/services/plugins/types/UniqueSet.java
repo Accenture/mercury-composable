@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 
 @SimplePlugin
-public class ListToSet implements PluginFunction {
+public class UniqueSet implements PluginFunction {
 
     @Override
     public String getName() {

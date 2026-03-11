@@ -130,6 +130,8 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var graph = graphInstance.graph;
         for (SimpleNode dd : dictionaryNodes) {
             var parameterMapping = getEntries(fetcher.getProperty(INPUT));
+            // the 'fetch' and 'dd' key-values are used for fetcher to set input parameters
+            // and for dictionary to fill in default value if any
             for (var entry : parameterMapping) {
                 fillFetcherApiParameters(nodeName, entry, graphInstance, false);
             }
@@ -139,6 +141,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             if (!required.isEmpty()) {
                 fillDictionaryApiParameters(nodeName, stateMachine, dd, required, parameters);
             }
+            stateMachine.removeElement(nodeName + FETCH);
             var provider = dd.getProperty(PROVIDER);
             if (provider instanceof String providerName) {
                 var p = graph.findNodeByAlias(providerName);
@@ -156,7 +159,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
         performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
-        stateMachine.removeElement(nodeName + FETCH);
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
         return NEXT;
