@@ -16,7 +16,7 @@
 
  */
 
-package com.accenture.minigraph.math;
+package com.accenture.minigraph.playground;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

@@ -16,7 +16,7 @@
 
  */
 
-package com.accenture.minigraph.math;
+package com.accenture.minigraph.playground;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -73,6 +73,10 @@ class GraphExecutionTest {
         var response = po.request(event, TIMEOUT).get();
         assertInstanceOf(Map.class, response.getBody());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
+
+
+        System.out.println(response.getBody());
+
         assertEquals("Peter", mm.getElement("name"));
         assertEquals("100 World Blvd", mm.getElement("address"));
         // number representation in JavaScript and Graph Math package is different
@@ -93,7 +97,7 @@ class GraphExecutionTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void testGraphExeception() throws ExecutionException, InterruptedException {
+    void testGraphException() throws ExecutionException, InterruptedException {
         var host = "http://127.0.0.1:" + PORT.get();
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(host);
         request.setHeader("Accept", "application/json");

@@ -59,16 +59,18 @@ public class GraphExtension extends GraphLambdaFunction {
         for (var entry : mapping) {
             fillFetcherApiParameters(nodeName, entry, graphInstance, false);
         }
-        var stateMachine = graphInstance.stateMachine;
-        var parameters = stateMachine.getElement(nodeName + API_DOT, new HashMap<>());
         var flow = Flows.getFlow(GRAPH_EXECUTOR);
         if (flow == null) {
             throw new IllegalArgumentException("flow://"+ GRAPH_EXECUTOR +" not found");
         }
         var po = new PostOffice(headers, instance);
+        var stateMachine = graphInstance.stateMachine;
+        var parameters = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
         var dataset = Map.of("body", parameters instanceof Map? parameters : Map.of(),
                             "header", Map.of(),
                             "path_parameter", Map.of("graph_id", graphId));
+        // clean up working area
+        stateMachine.removeElement(nodeName + FETCH);
         return retrieveFromExtension(po, nodeName, graphInstance, dataset, flow.ttl);
     }
 

@@ -132,18 +132,20 @@ public class GraphJs extends GraphLambdaFunction {
     private String executeStatements(String nodeName, List<String> entries, GraphInstance graphInstance) {
         try (Context context = Context.create(JS)) {
             for (var entry : entries) {
-                var line = entry.trim();
-                var colon = line.indexOf(':');
-                var tag = line.substring(0, colon+1).toLowerCase();
-                var command = line.substring(colon + 1).trim();
+                var block = entry.trim();
+                var colon = block.indexOf(':');
+                var tag = block.substring(0, colon+1).toLowerCase();
+                var command = block.substring(colon + 1).trim();
                 if (IF_TAG.equals(tag)) {
                     // evaluate decisions from an if-then-else multiline statement
-                    var lines = util.split(line, "\n");
+                    var lines = util.split(block, "\n");
                     var decision = evaluate(context, graphInstance, nodeName, lines);
                     if (decision != null) {
                         return decision;
                     }
                 }
+                // guarantee that it is a single line
+                command = command.replace('\n', ' ');
                 if (COMPUTE_TAG.equals(tag)) {
                     compute(context, command, nodeName, graphInstance);
                 }
@@ -214,17 +216,17 @@ public class GraphJs extends GraphLambdaFunction {
             var lc = line.toLowerCase().trim();
             if (found) {
                 if (lc.startsWith(THEN_TAG) || lc.startsWith(ELSE_TAG)) {
-                    return sb.toString();
+                    break;
                 } else {
-                    sb.append(line);
+                    sb.append(line).append('\n');
                 }
             }
             if (lc.startsWith(IF_TAG)) {
-                sb.append(line.substring(3));
+                sb.append(line.substring(3)).append('\n');
                 found = true;
             }
         }
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     private String getThenStatement(List<String> lines) {
@@ -234,17 +236,17 @@ public class GraphJs extends GraphLambdaFunction {
             var lc = line.toLowerCase().trim();
             if (found) {
                 if (lc.startsWith(IF_TAG) || lc.startsWith(ELSE_TAG)) {
-                    return sb.toString();
+                    break;
                 } else {
-                    sb.append(line);
+                    sb.append(line).append('\n');
                 }
             }
             if (lc.startsWith(THEN_TAG)) {
-                sb.append(line.substring(5));
+                sb.append(line.substring(5)).append('\n');
                 found = true;
             }
         }
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     private String getElseStatement(List<String> lines) {
@@ -254,16 +256,16 @@ public class GraphJs extends GraphLambdaFunction {
             var lc = line.toLowerCase().trim();
             if (found) {
                 if (lc.startsWith(IF_TAG) || lc.startsWith(THEN_TAG)) {
-                    return sb.toString();
+                    break;
                 } else {
-                    sb.append(line);
+                    sb.append(line).append('\n');
                 }
             }
             if (lc.startsWith(ELSE_TAG)) {
-                sb.append(line.substring(5));
+                sb.append(line.substring(5)).append('\n');
                 found = true;
             }
         }
-        return sb.toString();
+        return sb.toString().trim();
     }
 }

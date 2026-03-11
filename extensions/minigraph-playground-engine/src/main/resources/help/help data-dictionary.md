@@ -1,7 +1,10 @@
 Data Dictionary
 ---------------
+Based on the MiniGraph technology, the data dictionary system consists of (1) Data Dictionary items,
+(2) Data Providers and (3) API Fetchers.
+
 1. You can create a node holding a data dictionary item
-2. A data dictionary item presents a data attribute that can be retrieved from a data provider
+2. A data dictionary item presents a data attribute that can be retrieved from a data provider using an API fetcher
 3. It has 'input' and 'output' statements to define input parameter(s) and output data mapping respectively
 4. Default value is supported using the colon (':') character (see example below)
 
@@ -85,8 +88,8 @@ The input data mapping is designed to do simple mapping with the following restr
 
 The following two examples illustrate a data provider configuration for a hypothetical profile management system
 
-Example-1
----------
+Example one
+-----------
 In the first example, it maps the parameter 'person_id' of the data dictionary to the path parameter 'id'.
 It also maps the parameter 'detail' of the data dictionary to the query parameter 'id'
 
@@ -103,8 +106,8 @@ input[]=person_id -> path_parameter.id
 input[]=detail -> query.detail
 ```
 
-Example-2
----------
+Example two
+-----------
 In the second example, it uses POST method and expects a request body containing the 'person_id' parameter.
 Since it is a POST request, it requires the configuration of 'content-type' in the header section.
 The 'body.' namespace is used to tell the system to map the input parameter in the API request body.
@@ -135,9 +138,138 @@ input[]=detail -> query.detail
 API Fetcher
 -----------
 Data dictionary items are consumed by API fetcher. A built-in API fetcher is called "graph.api.fetcher".
-Please try "describe skill graph.api.fetcher" to review the syntax for creating one or more fetcher nodes
-to use data dictionary and providers that you have configured in the graph model.
+
+Skill: Graph API Fetcher
+------------------------
+When a node is configured with this skill of "graph API fetcher", it will make an API call to a backend service
+and collect result set into the "result" property of the node. In case of exception, the "status" and "error"
+fields will be set to the node's properties and the graph execution will stop.
+
+Execution will start when the GraphExecutor reaches the node containing this skill.
+
+Route name
+----------
+"graph.api.fetcher"
+
+Setup
+-----
+To enable this skill for a node, set "skill=graph.api.fetcher" as a property in a node.
+It will find out the data provider from a given data dictionary item to make an outgoing API call.
+
+The following are required in the properties of the node:
+
+1. dictionary - this is a list of valid data dictionary node names configured in the same graph model
+2. input - one or more data mapping as input parameters to invoke the API call
+3. output - one of more data mapping to map result set to another node or the 'output.' namespace
+
+The parameter name in each mapping statement must match that in the data dictionary item.
+Otherwise, execution will fail.
+
+The system uses the same syntax of Event Script for data mapping.
+
+Properties
+----------
+```
+skill=graph.api.fetcher
+dictionary[]={data dictionary item}
+input[]={mapping of key-value from input or another node to input parameter(s) of the data dictionary item(s)}
+output[]={optional mapping of result set to one or more variables in the 'model.' or 'output.' namespace}
+```
+
+Optional properties
+-------------------
+```
+for_each[]={map a result parameter that is an array into a model variable for iterative API execution}
+concurrency={controls parallel API calls for an "iterative API request". Default 3, max 30}
+```
+
+Dictionary
+----------
+This list contains one or more data dictionary item (aka 'data attribute')
+
+Feature
+-------
+This API fetcher supports features configured in a data provider's node.
+
+There are 2 built-in features that are convenience for development and tests:
+- log-request-headers
+- log-response-headers
+
+When either or both of these features are added to a data provider's node,
+the fetcher will log request/response headers into the "header" section
+of its properties.
+
+Input/Output Data mapping
+-------------------------
+source.composite.key -> target.composite.key
+
+For input data mapping, the source can use a key-value from the `input.` namespace or another node.
+The target can be a key-value in the state machine (`model.` namespace) or an input parameter name of the
+data dictionary.
+
+For output data mapping, the source can be a key-value from the result set and the target can use
+the `output.` or `model.` namespace.
+
+Output data mapping is optional because you can use another data mapper to map result set of the fetcher
+to another node.
+
+Result set
+----------
+Upon successful execution, the result set will be stored in the "result" parameter in the properties of
+the node. A subsequent data mapper can then map the key-values in the result set to one or more nodes.
+
+Example
+-------
+```
+create node fetcher-1
+with properties
+skill=graph.api.fetcher
+dictionary[]=person_name
+dictionary[]=person_address
+dictionary[]=person_accounts
+input[]=input.body.person_id -> person_id
+output[]=result.person_name -> output.body.name
+output[]=result.person_address -> output.body.address
+```
+
+Iterative API call
+------------------
+Using the optional `for_each` statement, you can tell the API fetcher to do "fork-n-join" of API requests.
+
+A "for_each" statement extracts the next array element from result set of a prior API call into a model variable.
+You can then put the model variable in the "left-hand-side" of an input statement. The API fetcher will then
+issue multiple API calls using an iterative stream of the model variable.
+
+If your API call needs more than one parameter, you can configure more than one "for_each" statement.
+
+Example
+-------
+In this example, the "for_each" statement extracts the "person_accounts" from the result of a prior API call
+by "fetcher-1" and map the array into an iterative stream of elements using the model variable "account_id".
+
+The concurrency property tells the API fetcher to limit parallelism to avoid overwhelming the target service.
+```
+create node fetcher-2
+with properties
+skill=graph.api.fetcher
+dictionary[]=person_id
+dictionary[]=account_id
+for_each[]=fetcher-1.result.person_accounts -> model.account_id
+concurrency=3
+input[]=input.body.person_id -> person_id
+input[]=model.account_id -> account_id
+output[]=result.person_name -> output.body.name
+output[]=result.person_address -> output.body.address
+```
 
 - The "[]" syntax is used to create and append a list of one or more data mapping entries
 - The "->" signature indicates the direction of mapping where the left-hand-side is a source
   and right-hand-side is a target
+
+Caution
+-------
+API fetchers can be chained together to make multiple API calls.
+However, you should design the API chain to be minimalist.
+
+An overly complex chain of API requests would mean slow performance. Just take the minimal set of data that are
+required by your application. Don't abuse the flexibility of the API fetcher.

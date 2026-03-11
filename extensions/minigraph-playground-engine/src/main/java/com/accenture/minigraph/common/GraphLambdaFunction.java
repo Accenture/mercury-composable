@@ -52,8 +52,9 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String JS = "js";
     protected static final String STATEMENT = "statement";
     protected static final String FLOW_ID = "flow_id";
-    protected static final String API_DOT = ".api.";
-    protected static final String API2_DOT = ".api2.";
+    protected static final String DD = ".dd.";
+    protected static final String EACH = ".each.";
+    protected static final String FETCH = ".fetch.";
     protected static final String CACHE_NAMESPACE = "cache.";
     protected static final String CACHE = "cache";
     protected static final String DOT_RESPONSE = ".response";
@@ -253,14 +254,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return Math.max(1000, util.str2long(ttl));
     }
 
-    protected void fillFetcherApiParameters(String nodeName, String command, GraphInstance graphInstance,
-                                            boolean isArray) {
+    protected void fillFetcherApiParameters(String nodeName,
+                                            String command, GraphInstance graphInstance, boolean isArray) {
         int sep = command.indexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;
             var lhs = command.substring(0, sep).trim();
             var rhs = command.substring(sep + MAP_TO.length()).trim();
-            final String target = getApiRhs(nodeName, rhs, isArray);
+            var target = getApiRhs(nodeName, rhs, isArray);
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (value != null) {
                 stateMachine.setElement(target, value);
@@ -281,7 +282,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         if (rhs.startsWith(MODEL_NAMESPACE)) {
             target = rhs;
         } else {
-            target = isArray ? nodeName + API2_DOT + rhs + "[]" : nodeName + API_DOT + rhs;
+            target = isArray ? nodeName + EACH + rhs + "[]" : nodeName + FETCH + rhs;
         }
         return target;
     }
@@ -294,7 +295,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return result;
     }
 
-    protected void mapHttpInput(AsyncHttpRequest request, String nodeName,
+    protected void mapHttpInput(AsyncHttpRequest request, String nodeName, String ddName,
                                 MultiLevelMap stateMachine, List<String> mapping) {
         var body = new HashMap<String, Object>();
         List<Object> wholeBody = new ArrayList<>();
@@ -303,7 +304,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             if (sep != -1) {
                 var lhs = entry.substring(0, sep).trim();
                 var rhs = entry.substring(sep + MAP_TO.length()).trim();
-                var value = getValueBestEffort(nodeName, lhs, stateMachine);
+                var value = getValueBestEffort(nodeName, ddName, lhs, stateMachine);
                 if (value != null) {
                     mapHttpParams(request, rhs, value, body, wholeBody);
                 }
@@ -323,7 +324,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return sb.substring(1);
     }
 
-    private Object getValueBestEffort(String nodeName, String lhs, MultiLevelMap stateMachine) {
+    private Object getValueBestEffort(String nodeName, String ddName, String lhs, MultiLevelMap stateMachine) {
         var constant = helper.getConstantValue(lhs);
         if (constant != null) {
             return constant;
@@ -331,7 +332,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         // Found in state machine?
         var value = helper.getLhsElement(lhs, stateMachine);
         // Get value from API input
-        return value != null? value : helper.getLhsElement(nodeName + API_DOT + lhs, stateMachine);
+        return value != null? value : helper.getLhsElement(nodeName + DD + ddName + "." + lhs, stateMachine);
     }
 
     private void mapHttpParams(AsyncHttpRequest request, String rhs, Object value,
