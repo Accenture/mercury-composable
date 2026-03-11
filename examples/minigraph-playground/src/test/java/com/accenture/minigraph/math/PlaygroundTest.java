@@ -230,7 +230,7 @@ class PlaygroundTest {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
                 // simulate human operator delay
-                Thread.sleep(50);
+                Thread.sleep(75);
                 return kv.getValue();
             }
         }

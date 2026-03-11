@@ -73,10 +73,6 @@ class GraphExecutionTest {
         var response = po.request(event, TIMEOUT).get();
         assertInstanceOf(Map.class, response.getBody());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
-
-
-        System.out.println(response.getBody());
-
         assertEquals("Peter", mm.getElement("name"));
         assertEquals("100 World Blvd", mm.getElement("address"));
         // number representation in JavaScript and Graph Math package is different
