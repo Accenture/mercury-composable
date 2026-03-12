@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { JsonView, darkStyles, allExpanded, collapseAllNested } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
-import { useToast } from '../../hooks/useToast';
 import type { MinigraphGraphData } from '../../utils/graphTypes';
 import styles from './GraphDataView.module.css';
 
@@ -29,20 +28,23 @@ const EXPAND_FN: Record<ExpandMode, (level: number) => boolean> = {
 };
 
 interface GraphDataViewProps {
-  graphData: MinigraphGraphData | null;
+  graphData:       MinigraphGraphData | null;
+  /** Called after the raw graph JSON is successfully copied to the clipboard. */
+  onCopySuccess?:  () => void;
+  /** Called when the clipboard write fails. */
+  onCopyError?:    () => void;
 }
 
-export default function GraphDataView({ graphData }: GraphDataViewProps) {
-  const { addToast } = useToast();
+export default function GraphDataView({ graphData, onCopySuccess, onCopyError }: GraphDataViewProps) {
   const [expandMode, setExpandMode] = useState<ExpandMode>('all'); // set to default for 2 levels;
 
   const handleCopy = useCallback(() => {
     if (!graphData) return;
     navigator.clipboard
       .writeText(JSON.stringify(graphData, null, 2))
-      .then(() => addToast('Graph JSON copied to clipboard!', 'success'))
-      .catch(() => addToast('Copy failed', 'error'));
-  }, [graphData, addToast]);
+      .then(() => onCopySuccess?.())
+      .catch(() => onCopyError?.());
+  }, [graphData, onCopySuccess, onCopyError]);
 
   if (!graphData) {
     return (

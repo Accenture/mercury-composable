@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
@@ -6,14 +6,13 @@ import { useToast } from '../hooks/useToast';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useGraphData } from '../hooks/useGraphData';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { type PlaygroundConfig } from '../config/playgrounds';
-import { isMinigraphGraphData, type MinigraphGraphData } from '../utils/graphTypes';
-import type { RightTab } from './RightPanel/RightPanel';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
@@ -40,8 +39,9 @@ export default function Playground({ config }: PlaygroundProps) {
   // All WebSocket + console logic lives in the hook
   const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast });
 
-  // Pinned message state (null = no explicit pin; falls back to auto-last)
-  const [pinnedMessage, setPinnedMessage] = useState<string | null>(null);
+  // Pinned message state — stored as a message id (number) so two messages
+  // with identical text don't both appear pinned. null = no explicit pin.
+  const [pinnedMessageId, setPinnedMessageId] = useState<number | null>(null);
 
   // Auto-last: most recently received non-JSON, non-graph-link message
   const lastNonJsonMessage = useMemo<string | null>(() => {
@@ -52,58 +52,35 @@ export default function Playground({ config }: PlaygroundProps) {
     return null;
   }, [ws.messages]);
 
-  // Shown in MarkdownPreview — pinnedMessage wins; falls back to auto-last
-  const resolvedPreviewMessage = pinnedMessage ?? lastNonJsonMessage;
+  // Resolve the pinned id back to its raw string for MarkdownPreview.
+  // pinnedMessageId wins; falls back to auto-last.
+  const resolvedPreviewMessage = useMemo<string | null>(() => {
+    if (pinnedMessageId !== null) {
+      return ws.messages.find(m => m.id === pinnedMessageId)?.raw ?? null;
+    }
+    return lastNonJsonMessage;
+  }, [pinnedMessageId, ws.messages, lastNonJsonMessage]);
 
   // ── Graph state ──────────────────────────────────────────────────────────
   // The API path extracted from the currently-pinned graph-link message.
   const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
-  // Fetched and parsed graph data, or null while loading / not yet pinned.
-  const [graphData, setGraphData] = useState<MinigraphGraphData | null>(null);
-  // Which right-panel tab is currently active — lifted here so we can auto-switch.
-  const [rightTab, setRightTab] = useState<RightTab>('payload');
+
+  // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
+  const { graphData, setGraphData, rightTab, setRightTab } = useGraphData(pinnedGraphPath, addToast);
 
   // When a message is pinned, decide whether it is a graph link or a Markdown message.
-  const handlePinMessage = useCallback((message: string) => {
-    if (isGraphLinkMessage(message)) {
-      const path = extractGraphApiPath(message);
+  // Receives the full message object so we can store the stable id, not the raw string.
+  // In both cases we store the id — it drives the highlight in the Console.
+  const handlePinMessage = useCallback((msg: { id: number; raw: string }) => {
+    if (isGraphLinkMessage(msg.raw)) {
+      const path = extractGraphApiPath(msg.raw);
       setPinnedGraphPath(path);
-      setPinnedMessage(null);      // clear any Markdown pin
+      setPinnedMessageId(msg.id);  // highlight graph-link row too
     } else {
-      setPinnedMessage(message);
+      setPinnedMessageId(msg.id);
       setPinnedGraphPath(null);    // clear any graph pin
     }
   }, []);
-
-  // Fetch graph data whenever pinnedGraphPath changes.
-  useEffect(() => {
-    if (!pinnedGraphPath) return;
-
-    // Use a relative URL so the request is handled by the Vite dev-server proxy
-    // in development (/api → http://localhost:8085) and by the production server
-    // directly — no hard-coded origin needed in either environment.
-    const url = pinnedGraphPath;
-
-    let cancelled = false;
-    setGraphData(null);   // clear stale data while loading
-
-    fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((json: unknown) => {
-        if (!cancelled && isMinigraphGraphData(json)) {
-          setGraphData(json);
-          setRightTab('graph');   // auto-switch to Graph tab
-        }
-      })
-      .catch(err => {
-        if (!cancelled) addToast(`Graph fetch failed: ${err.message}`, 'error');
-      });
-
-    return () => { cancelled = true; };
-  }, [pinnedGraphPath, addToast]);
 
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -124,7 +101,7 @@ export default function Playground({ config }: PlaygroundProps) {
 
   const handleClearMessages = () => {
     ws.clearMessages();
-    setPinnedMessage(null);
+    setPinnedMessageId(null);
     setPinnedGraphPath(null);
     setGraphData(null);
   };
@@ -161,7 +138,7 @@ export default function Playground({ config }: PlaygroundProps) {
             multiline={multiline}
             onToggleMultiline={handleToggleMultiline}
             onPinMessage={handlePinMessage}
-            pinnedMessage={pinnedMessage ?? pinnedGraphPath}
+            pinnedMessageId={pinnedMessageId}
             onCopyMessage={() => addToast('Copied to clipboard', 'success')}
           />
         </Panel>
@@ -174,11 +151,13 @@ export default function Playground({ config }: PlaygroundProps) {
             onFormat={handleFormatPayload}
             onUpload={supportsUpload ? ws.uploadPayload : undefined}
             previewMessage={resolvedPreviewMessage}
-            pinnedMessage={pinnedMessage}
+            pinnedMessage={pinnedMessageId !== null ? 'pinned' : null}
             graphData={graphData}
             activeTab={rightTab}
             onTabChange={setRightTab}
             onGraphRenderError={(msg) => addToast(msg, 'error')}
+            onGraphDataCopySuccess={() => addToast('Graph JSON copied to clipboard!', 'success')}
+            onGraphDataCopyError={() => addToast('Copy failed', 'error')}
           />
         </Panel>
       </Group>

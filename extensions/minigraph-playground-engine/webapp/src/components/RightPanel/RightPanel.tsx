@@ -21,6 +21,10 @@ interface RightPanelProps {
   activeTab:      RightTab;
   onTabChange:    (tab: RightTab) => void;
   onGraphRenderError?: (message: string) => void;
+  /** Called after the raw graph JSON is successfully copied from the Graph Data tab. */
+  onGraphDataCopySuccess?: () => void;
+  /** Called when the clipboard write fails from the Graph Data tab. */
+  onGraphDataCopyError?:   () => void;
 }
 
 export default function RightPanel({
@@ -35,6 +39,8 @@ export default function RightPanel({
   activeTab,
   onTabChange,
   onGraphRenderError,
+  onGraphDataCopySuccess,
+  onGraphDataCopyError,
 }: RightPanelProps) {
   const uid             = useId();
   const payloadPanelId  = `${uid}-tab-payload`;
@@ -133,7 +139,11 @@ export default function RightPanel({
         tabIndex={activeTab === 'graph-data' ? 0 : -1}
         className={`${styles.tabBody}${activeTab !== 'graph-data' ? ` ${styles.tabBodyHidden}` : ''}`}
       >
-        <GraphDataView graphData={graphData} />
+        <GraphDataView
+          graphData={graphData}
+          onCopySuccess={onGraphDataCopySuccess}
+          onCopyError={onGraphDataCopyError}
+        />
       </div>
     </div>
   );
