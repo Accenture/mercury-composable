@@ -7,6 +7,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
+import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
@@ -66,7 +67,19 @@ export default function Playground({ config }: PlaygroundProps) {
   const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
 
   // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
-  const { graphData, setGraphData, rightTab, setRightTab } = useGraphData(pinnedGraphPath, addToast);
+  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast);
+
+  // ── Auto-refresh on mutation commands ────────────────────────────────────
+  useAutoGraphRefresh({
+    messages:           ws.messages,
+    pinnedGraphPath,
+    setPinnedGraphPath,
+    connected:          ws.connected,
+    refetchGraph,
+    sendRawText:        ws.sendRawText,
+    rightTab,
+    addToast,
+  });
 
   // When a message is pinned, decide whether it is a graph link or a Markdown message.
   // Receives the full message object so we can store the stable id, not the raw string.
@@ -158,6 +171,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphRenderError={(msg) => addToast(msg, 'error')}
             onGraphDataCopySuccess={() => addToast('Graph JSON copied to clipboard!', 'success')}
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
+            isGraphRefreshing={isRefreshing}
           />
         </Panel>
       </Group>

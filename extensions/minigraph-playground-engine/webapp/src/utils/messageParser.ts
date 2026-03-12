@@ -120,3 +120,59 @@ export function extractUploadPath(raw: string): string | null {
   return match ? match[0] : null;
 }
 
+/**
+ * Discriminated union of the two mutation kinds the auto-refresh hook handles.
+ *  - 'node-mutation'  — any structural node or connection change
+ *  - 'import-graph'   — a full graph model replace via `import graph from {name}`
+ */
+export type MutationKind = 'node-mutation' | 'import-graph';
+
+/**
+ * Inspects a single raw WebSocket message string and returns whether it
+ * represents a graph mutation that should trigger an auto-refresh.
+ *
+ * Returns:
+ *  - `'node-mutation'`  when the message is a plain-text success response for
+ *    a structural node or connection change (create / update / delete / connect /
+ *    import-node / delete-connection).
+ *  - `'import-graph'`   when the message is `"Graph model imported as draft"`.
+ *  - `null`             for all other messages (read-only responses, JSON
+ *    lifecycle events, echoed commands, graph-link messages, etc.).
+ *
+ * Matching rules:
+ *  - Only non-JSON messages pass (`isMarkdownCandidate` guard).
+ *  - Echoed commands (`raw.startsWith('> ')`) are excluded.
+ *  - Graph-link messages (`isGraphLinkMessage`) are excluded.
+ *  - Node-operation matches require `lower.startsWith('node ')` (mirrors the
+ *    server's `NODE_NAME = "Node "` prefix) to avoid false positives from
+ *    `"Graph instance created…"` and `"Root node created because…"`.
+ *  - Connection-delete match requires both `" -> "` and `"removed"`.
+ */
+export function detectMutation(raw: string): MutationKind | null {
+  if (!isMarkdownCandidate(raw)) return null;   // JSON messages → not a mutation
+  if (raw.startsWith('> ')) return null;         // echoed user command → ignore
+  if (isGraphLinkMessage(raw)) return null;      // graph-link messages handled by pin flow
+
+  const lower = raw.toLowerCase();
+
+  // ── import-graph ─────────────────────────────────────────────────────────
+  if (lower.includes('graph model imported as draft')) return 'import-graph';
+
+  // ── node-mutation ─────────────────────────────────────────────────────────
+  // Connection delete: "{A} -> {B} removed" (one or two lines)
+  if (lower.includes(' -> ') && lower.includes('removed')) return 'node-mutation';
+
+  // Node structural ops — require "Node " prefix to avoid false positives
+  const startsWithNode = lower.startsWith('node ');
+  if (startsWithNode) {
+    if (lower.includes(' created'))            return 'node-mutation';
+    if (lower.includes(' updated'))            return 'node-mutation';
+    if (lower.includes(' deleted'))            return 'node-mutation';
+    if (lower.includes(' connected to '))      return 'node-mutation';
+    if (lower.includes(' imported from '))     return 'node-mutation';
+    if (lower.includes(' overwritten by node from ')) return 'node-mutation';
+  }
+
+  return null;
+}
+

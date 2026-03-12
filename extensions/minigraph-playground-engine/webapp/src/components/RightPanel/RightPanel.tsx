@@ -25,6 +25,8 @@ interface RightPanelProps {
   onGraphDataCopySuccess?: () => void;
   /** Called when the clipboard write fails from the Graph Data tab. */
   onGraphDataCopyError?:   () => void;
+  /** When true, forwards the loading-overlay state to GraphView. */
+  isGraphRefreshing?:      boolean;
 }
 
 export default function RightPanel({
@@ -41,6 +43,7 @@ export default function RightPanel({
   onGraphRenderError,
   onGraphDataCopySuccess,
   onGraphDataCopyError,
+  isGraphRefreshing,
 }: RightPanelProps) {
   const uid             = useId();
   const payloadPanelId  = `${uid}-tab-payload`;
@@ -129,7 +132,11 @@ export default function RightPanel({
         tabIndex={activeTab === 'graph' ? 0 : -1}
         className={`${styles.tabBody}${activeTab !== 'graph' ? ` ${styles.tabBodyHidden}` : ''}`}
       >
-        <GraphView graphData={graphData} onRenderError={onGraphRenderError} />
+        <GraphView
+          graphData={graphData}
+          onRenderError={onGraphRenderError}
+          isRefreshing={isGraphRefreshing}
+        />
       </div>
 
       {/* Graph Data tab body — always mounted; shows pretty-printed raw JSON */}

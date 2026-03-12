@@ -57,6 +57,7 @@ export interface UseWebSocketReturn {
   copyMessages:     () => void;
   clearMessages:    () => void;
   uploadPayload:    () => void;
+  sendRawText:      (text: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +245,14 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     ctx.send(wsPath, 'upload');
   }, [ctx, wsPath, phase, payload, addToast]);
 
+  // --- Public: send raw text directly over the WebSocket without echoing to the console ---
+  // Unlike sendCommand(), this bypasses the command-echo and history logic.
+  // Used by useAutoGraphRefresh to silently send "describe graph" after a mutation.
+  const sendRawText = useCallback((text: string) => {
+    if (phase !== 'connected') return;
+    ctx.send(wsPath, text);
+  }, [ctx, wsPath, phase]);
+
   // --- Console helpers ---
   const toggleAutoScroll = useCallback(() => dispatch({ type: 'TOGGLE_AUTO_SCROLL' }), []);
 
@@ -278,5 +287,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     copyMessages,
     clearMessages,
     uploadPayload,
+    sendRawText,
   };
 }

@@ -21,12 +21,14 @@ import styles from './GraphView.module.css';
 interface GraphViewProps {
   graphData:       MinigraphGraphData | null;
   onRenderError?:  (message: string) => void;
+  /** When true, renders a semi-transparent overlay with a spinner to indicate a background re-fetch. */
+  isRefreshing?:   boolean;
 }
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
 const EMPTY_EDGES: Edge<GraphEdgeData>[]  = [];
 
-export default function GraphView({ graphData, onRenderError }: GraphViewProps) {
+export default function GraphView({ graphData, onRenderError, isRefreshing = false }: GraphViewProps) {
   // Keep a stable ref so the useMemo callback can read the latest prop
   // without needing it in the dependency array (avoids spurious re-transforms).
   const onRenderErrorRef = useRef(onRenderError);
@@ -81,7 +83,7 @@ export default function GraphView({ graphData, onRenderError }: GraphViewProps) 
       key={graphData ? JSON.stringify(graphData.nodes.map(n => n.alias)) : 'empty'}
       onRenderError={onRenderError}
     >
-      <div className={styles.graphWrapper}>
+      <div className={styles.graphWrapper} aria-busy={isRefreshing}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -111,6 +113,15 @@ export default function GraphView({ graphData, onRenderError }: GraphViewProps) 
             style={{ background: '#181825' }}
           />
         </ReactFlow>
+        {isRefreshing && (
+          <div className={styles.refreshingOverlay}>
+            <div
+              className={styles.refreshingSpinner}
+              role="status"
+              aria-label="Graph refreshing"
+            />
+          </div>
+        )}
       </div>
     </GraphViewErrorBoundary>
   );
