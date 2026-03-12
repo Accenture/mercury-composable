@@ -1,4 +1,5 @@
 import type { Node, Edge } from '@xyflow/react';
+import type { CSSProperties } from 'react';
 import type { MinigraphGraphData } from './graphTypes';
 
 /** Data bag attached to every ReactFlow node we create. */
@@ -17,10 +18,64 @@ export interface GraphEdgeData extends Record<string, unknown> {
 }
 
 // ─── Layout constants ────────────────────────────────────────────────────────
-const NODE_WIDTH  = 200;
-const NODE_HEIGHT = 90;
-const ROW_GAP     = 80;   // vertical gap between nodes stacked in the same column
-const COL_GAP     = 100;  // horizontal gap between columns (levels)
+// NODE_WIDTH / NODE_HEIGHT drive column/row spacing in the layout pass.
+// They are also used as the initial `width`/`height` on each node so React
+// Flow's wrapper has a reasonable size from the very first render.  After
+// mount React Flow's own ResizeObserver measures the real DOM dimensions and
+// updates accordingly, keeping NodeResizer in sync.
+const NODE_WIDTH  = 240;
+const NODE_HEIGHT = 100; // rough estimate; ResizeObserver will correct it post-mount
+const ROW_GAP     = 60;   // vertical gap between nodes stacked in the same column
+const COL_GAP     = 120;  // horizontal gap between columns (levels)
+
+// ─── Per-type visual style ───────────────────────────────────────────────────
+// Because MinigraphNode renders as a React Fragment (no wrapper <div>),
+// the React Flow wrapper element IS the visible shell.  We apply its visual
+// style via `node.style` so NodeResizer can resize it directly — the exact
+// pattern shown in https://reactflow.dev/examples/nodes/node-resizer.
+//
+// Per-type accent colours are passed as the CSS custom property --node-accent.
+// The component's CSS module reads that variable for the header background,
+// badge colours, and border — keeping the component itself colour-agnostic and
+// following the CSS-variables theming approach described in the React Flow
+// theming guide: https://reactflow.dev/learn/customization/theming
+const BASE_NODE_STYLE: CSSProperties = {
+  boxSizing:    'border-box',
+  borderRadius: '8px',
+  borderWidth:  '1.5px',
+  borderStyle:  'solid',
+  background:   'var(--bg-secondary, #1e1e2e)',
+  color:        'var(--text-primary, #cdd6f4)',
+  fontSize:     '0.75rem',
+  boxShadow:    '0 2px 8px rgba(0,0,0,0.45)',
+  // overflow:visible so NodeResizer handles (absolutely positioned outside the
+  // wrapper bounds) are not clipped — clipping them is what prevents resizing.
+  overflow:     'visible',
+  // Reset the 10px padding React Flow's built-in stylesheet injects on
+  // .react-flow__node-default / -output / -group.
+  padding:      0,
+};
+
+// Accent colours per node type.  Only the accent value differs between types;
+// everything else is shared via BASE_NODE_STYLE.
+const NODE_ACCENT: Record<string, string> = {
+  entry_point: '#a6e3a1',
+  api_fetcher: '#89b4fa',
+  mapper:      '#fab387',
+  terminator:  '#f38ba8',
+};
+const UNKNOWN_ACCENT = '#6c7086';
+
+function nodeStyle(nodeType: string): CSSProperties {
+  const accent = NODE_ACCENT[nodeType] ?? UNKNOWN_ACCENT;
+  return {
+    ...BASE_NODE_STYLE,
+    borderColor: accent,
+    // Expose the accent as a CSS custom property so the CSS module can theme
+    // the header, badge, and any other child elements without touching JS.
+    ['--node-accent' as string]: accent,
+  };
+}
 
 /**
  * Very lightweight left-to-right topological layout.
@@ -114,12 +169,14 @@ export function transformGraphData(
     id:       n.alias,
     type:     n.types[0] ?? 'default',     // matches the nodeTypes key in GraphView
     position: positions.get(n.alias) ?? { x: 0, y: 0 },
-    // Declare explicit dimensions so ReactFlow sizes its drag/selection wrapper
-    // correctly before the ResizeObserver fires. Without these, the wrapper is
-    // initialised at 0×0 and the visible node overflows the hit-box, making
-    // drag and selection unreliable until the component is measured post-mount.
+    // width / height give the React Flow wrapper its initial size.
+    // NodeResizer will update these as the user drags a handle.
     width:  NODE_WIDTH,
     height: NODE_HEIGHT,
+    // style is applied directly to the React Flow wrapper element — since
+    // MinigraphNode renders as a Fragment there is no inner shell div, so
+    // this IS the visible node appearance.
+    style: nodeStyle(n.types[0] ?? 'unknown'),
     data: {
       alias:       n.alias,
       nodeType:    n.types[0] ?? 'unknown',

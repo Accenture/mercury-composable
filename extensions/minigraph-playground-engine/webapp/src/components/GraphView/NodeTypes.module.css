@@ -1,20 +1,22 @@
-/* ── shared node shell ─────────────────────────────────────────────────────── */
-.node {
-  width: 100%;       /* fill the wrapper ReactFlow sizes — never hardcode width here */
-  height: 100%;      /* fill the wrapper ReactFlow sizes — never hardcode height here */
-  box-sizing: border-box;
-  border-radius: 8px;
-  border: 1.5px solid transparent;
-  background: var(--bg-secondary, #1e1e2e);
-  color: var(--text-primary, #cdd6f4);
-  font-size: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-  transition: box-shadow 0.15s;
+/* ── Node content layout ───────────────────────────────────────────────────── */
+/*
+ * There is no wrapper <div> in MinigraphNode — the component returns a
+ * Fragment. React Flow's own wrapper element IS the shell; its visual style
+ * (background, border, border-radius, shadow) is applied via `node.style` in
+ * graphTransformer.ts so that React Flow's NodeResizer can resize it directly.
+ *
+ * .content fills the wrapper and clips its own overflow so text/body rows
+ * don't bleed out when the node is resized smaller than the content.
+ * The wrapper itself uses overflow:visible so NodeResizer handles (positioned
+ * outside the wrapper bounds) are not clipped.
+ */
+.content {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-}
-
-.node:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -25,6 +27,16 @@
   font-weight: 600;
   font-size: 0.8rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  /*
+   * --node-accent is set on the React Flow wrapper via node.style in
+   * graphTransformer.ts (one value per node type).  Reading it here keeps
+   * the component colour-agnostic — the CSS module is the only place
+   * that decides how to apply the accent, following the CSS-variables
+   * theming approach recommended by the React Flow docs:
+   * https://reactflow.dev/learn/customization/theming#css-variables
+   */
+  background: color-mix(in srgb, var(--node-accent, #6c7086) 12%, transparent);
+  color: var(--node-accent, #6c7086);
 }
 
 .icon {
@@ -33,9 +45,9 @@
 }
 
 .alias {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;  /* allow flex child to shrink below content size */
 }
 
 .badge {
@@ -46,6 +58,8 @@
   border-radius: 4px;
   white-space: nowrap;
   opacity: 0.85;
+  background: color-mix(in srgb, var(--node-accent, #6c7086) 20%, transparent);
+  color: var(--node-accent, #6c7086);
 }
 
 .body {
@@ -68,29 +82,9 @@
 }
 
 .value {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;   /* wrap long text instead of truncating */
   flex: 1;
+  min-width: 0;
 }
-
-/* ── per-type colour accents ───────────────────────────────────────────────── */
-.entryPoint  { border-color: #a6e3a1; }
-.entryPoint  .header { background: rgba(166, 227, 161, 0.12); color: #a6e3a1; }
-.entryPoint  .badge  { background: rgba(166, 227, 161, 0.2); color: #a6e3a1; }
-
-.apiFetcher  { border-color: #89b4fa; }
-.apiFetcher  .header { background: rgba(137, 180, 250, 0.12); color: #89b4fa; }
-.apiFetcher  .badge  { background: rgba(137, 180, 250, 0.2); color: #89b4fa; }
-
-.mapper      { border-color: #fab387; }
-.mapper      .header { background: rgba(250, 179, 135, 0.12); color: #fab387; }
-.mapper      .badge  { background: rgba(250, 179, 135, 0.2); color: #fab387; }
-
-.terminator  { border-color: #f38ba8; }
-.terminator  .header { background: rgba(243, 139, 168, 0.12); color: #f38ba8; }
-.terminator  .badge  { background: rgba(243, 139, 168, 0.2); color: #f38ba8; }
-
-.unknown     { border-color: #6c7086; }
-.unknown     .header { background: rgba(108, 112, 134, 0.12); color: #cdd6f4; }
-.unknown     .badge  { background: rgba(108, 112, 134, 0.2); color: #cdd6f4; }
