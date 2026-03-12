@@ -26,7 +26,7 @@ public class DefaultValue implements PluginFunction {
 
     @Override
     public Object calculate(Object... input) {
-        if (input.length == 2 && input[0] == null) {
+        if (input.length > 1 && input[0] == null) {
             return input[1];
         }
         return input.length > 0 ? input[0] : null;
