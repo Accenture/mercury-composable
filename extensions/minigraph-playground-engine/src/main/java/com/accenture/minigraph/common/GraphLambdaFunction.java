@@ -36,6 +36,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
     protected static final Utility util = Utility.getInstance();
     protected static final String ASYNC_HTTP_CLIENT = "async.http.request";
+    protected static final String PLUGIN_PREFIX = "f:";
     protected static final String FILE_PREFIX = "file:";
     protected static final String CLASSPATH_PREFIX = "classpath:";
     protected static final String OPEN = "open";

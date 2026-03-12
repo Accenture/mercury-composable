@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.73, 3/11/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Allow output mapping in data dictionary and fetcher to support Event Script syntax of constants and plugins
+2. Support optional input parameters for data dictionary
+
+---
 ## Version 4.3.72, 3/11/2026
 
 ### Added

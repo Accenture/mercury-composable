@@ -294,9 +294,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             if (colon == -1) {
                 if (parameters.containsKey(key)) {
                     stateMachine.setElement(nodeName + DD + ddName + "." + key, parameters.get(key));
-                } else {
-                    throw new IllegalArgumentException("Missing input parameter '"+key+
-                            "' for data dictionary "+dd.getAlias());
                 }
             } else {
                 var dk = key.substring(0, colon).trim();
@@ -336,14 +333,17 @@ public class GraphApiFetcher extends GraphLambdaFunction {
     private void setFetcherOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
         var value = helper.getConstantValue(lhs);
         if (value == null) {
-            if (lhs.startsWith(RESULT_NAMESPACE) || lhs.startsWith(RESULT+"[")) {
-                lhs = nodeName + "." + lhs;
-            } else if (lhs.startsWith("$.result")) {
-                lhs = "$."+nodeName + lhs.substring(1);
-            } else if (!lhs.startsWith(nodeName+".") &&
-                    !lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
-                throw new IllegalArgumentException("Invalid output data mapping in API fetcher "+nodeName +
-                        " - LHS must start with 'model.', 'result.' namespace or '"+nodeName+".'");
+            if (!lhs.startsWith(PLUGIN_PREFIX)) {
+                // reconstruct lhs with nodeName as namespace
+                if (lhs.startsWith(RESULT_NAMESPACE) || lhs.startsWith(RESULT + "[")) {
+                    lhs = nodeName + "." + lhs;
+                } else if (lhs.startsWith("$.result")) {
+                    lhs = "$." + nodeName + lhs.substring(1);
+                } else if (!lhs.startsWith(nodeName + ".") &&
+                        !lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
+                    throw new IllegalArgumentException("Invalid output data mapping in API fetcher " + nodeName +
+                            " - LHS must start with 'model.', 'result.' namespace or '" + nodeName + ".'");
+                }
             }
             value = helper.getLhsElement(lhs, stateMachine);
         }
@@ -364,24 +364,28 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             if (sep != -1) {
                 var lhs = text.substring(0, sep).trim();
                 var rhs = text.substring(sep + MAP_TO.length()).trim();
-                if (lhs.startsWith(RESPONSE_NAMESPACE)) {
-                    lhs = nodeName + "." + lhs;
-                } else if (lhs.startsWith("$.response")) {
-                    lhs = "$."+nodeName + lhs.substring(1);
-                } else if (!lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
-                    throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+
-                            dictionaryName + " - LHS must start with 'model.' or 'response.' namespace");
+                var constant = helper.getConstantValue(lhs);
+                if (constant == null && !lhs.startsWith(PLUGIN_PREFIX)) {
+                    // reconstruct lhs with nodeName as namespace
+                    if (lhs.startsWith(RESPONSE_NAMESPACE)) {
+                        lhs = nodeName + "." + lhs;
+                    } else if (lhs.startsWith("$.response")) {
+                        lhs = "$." + nodeName + lhs.substring(1);
+                    } else if (!lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
+                        throw new IllegalArgumentException("Invalid output data mapping in data dictionary " +
+                                dictionaryName + " - LHS must start with 'model.' or 'response.' namespace");
+                    }
                 }
-                setDictionaryOutputEntry(nodeName, lhs, rhs, stateMachine, isArray);
+                setDictionaryOutputEntry(nodeName, lhs, rhs, constant, stateMachine, isArray);
             } else {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
             }
         }
     }
 
-    private void setDictionaryOutputEntry(String nodeName, String lhs, String rhs,
+    private void setDictionaryOutputEntry(String nodeName, String lhs, String rhs, Object constant,
                                           MultiLevelMap stateMachine, boolean isArray) {
-        var value = helper.getLhsElement(lhs, stateMachine);
+        var value = constant != null? constant : helper.getLhsElement(lhs, stateMachine);
         if (value != null) {
             if (rhs.startsWith(RESULT_NAMESPACE)) {
                 rhs = nodeName + "." + rhs + (isArray ? "[]" : "");
