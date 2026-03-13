@@ -104,7 +104,7 @@ export default function Playground({ config }: PlaygroundProps) {
     storage: localStorage,
   });
 
-  const handleFormatPayload = () => setPayload(formatJSON(payload));
+  const handleFormatPayload = useCallback(() => setPayload(formatJSON(payload)), [payload]);
 
   // Toggle multiline mode; pass force=true/false to set it explicitly
   // (used by the autocomplete hook when it accepts a multiline template).
@@ -112,12 +112,12 @@ export default function Playground({ config }: PlaygroundProps) {
     setMultiline(m => force !== undefined ? force : !m);
   }, []);
 
-  const handleClearMessages = () => {
+  const handleClearMessages = useCallback(() => {
     ws.clearMessages();
     setPinnedMessageId(null);
     setPinnedGraphPath(null);
     setGraphData(null);
-  };
+  }, [ws.clearMessages, setGraphData]);
 
   return (
     <div className={styles.wrapper}>
@@ -125,7 +125,7 @@ export default function Playground({ config }: PlaygroundProps) {
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
-        <Navigation />
+        <Navigation addToast={addToast} />
       </header>
 
       <Group

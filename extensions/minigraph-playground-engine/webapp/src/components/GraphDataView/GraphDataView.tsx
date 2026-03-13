@@ -36,7 +36,7 @@ interface GraphDataViewProps {
 }
 
 export default function GraphDataView({ graphData, onCopySuccess, onCopyError }: GraphDataViewProps) {
-  const [expandMode, setExpandMode] = useState<ExpandMode>('all'); // set to default for 2 levels;
+  const [expandMode, setExpandMode] = useState<ExpandMode>('all');
 
   const handleCopy = useCallback(() => {
     if (!graphData) return;
