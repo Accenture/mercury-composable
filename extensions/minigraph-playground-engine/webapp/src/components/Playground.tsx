@@ -20,7 +20,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, supportsUpload } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, supportsUpload, tabs } = config;
 
   // Persisted payload
   const [payload, setPayload] = useLocalStorage<string>(storageKeyPayload, '');
@@ -44,30 +44,34 @@ export default function Playground({ config }: PlaygroundProps) {
   // with identical text don't both appear pinned. null = no explicit pin.
   const [pinnedMessageId, setPinnedMessageId] = useState<number | null>(null);
 
-  // Auto-last: most recently received non-JSON, non-graph-link message
+  // Auto-last: most recently received non-JSON, non-graph-link message.
+  // Only computed when the Markdown Preview tab is enabled for this playground.
   const lastNonJsonMessage = useMemo<string | null>(() => {
+    if (!tabs.includes('preview')) return null;
     for (let i = ws.messages.length - 1; i >= 0; i--) {
       const raw = ws.messages[i].raw;
       if (!isGraphLinkMessage(raw) && isMarkdownCandidate(raw)) return raw;
     }
     return null;
-  }, [ws.messages]);
+  }, [ws.messages, tabs]);
 
   // Resolve the pinned id back to its raw string for MarkdownPreview.
   // pinnedMessageId wins; falls back to auto-last.
+  // Only computed when the Markdown Preview tab is enabled for this playground.
   const resolvedPreviewMessage = useMemo<string | null>(() => {
+    if (!tabs.includes('preview')) return null;
     if (pinnedMessageId !== null) {
       return ws.messages.find(m => m.id === pinnedMessageId)?.raw ?? null;
     }
     return lastNonJsonMessage;
-  }, [pinnedMessageId, ws.messages, lastNonJsonMessage]);
+  }, [pinnedMessageId, ws.messages, lastNonJsonMessage, tabs]);
 
   // ── Graph state ──────────────────────────────────────────────────────────
   // The API path extracted from the currently-pinned graph-link message.
   const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
 
   // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
-  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast);
+  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast, tabs[0]);
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   useAutoGraphRefresh({
@@ -158,6 +162,7 @@ export default function Playground({ config }: PlaygroundProps) {
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />
         <Panel defaultSize="40%" minSize="20%">
           <RightPanel
+            tabs={tabs}
             payload={payload}
             onChange={setPayload}
             validation={payloadValidation}

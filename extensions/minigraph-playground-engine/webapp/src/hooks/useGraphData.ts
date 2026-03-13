@@ -37,14 +37,25 @@ export interface UseGraphDataReturn {
  * @param pinnedGraphPath  Relative API path e.g. `/api/graph/model/my-graph/123-1`,
  *                         or null when no graph is pinned.
  * @param addToast         Toast callback from the parent's useToast hook.
+ * @param initialTab       The tab to show before any graph is loaded.
+ *                         Should be the first entry in the playground's `tabs` config.
  */
 export function useGraphData(
   pinnedGraphPath: string | null,
   addToast: (message: string, type?: ToastType) => void,
+  initialTab: RightTab,
 ): UseGraphDataReturn {
   const [graphData, setGraphData] = useState<MinigraphGraphData | null>(null);
-  const [rightTab, setRightTab]   = useState<RightTab>('payload');
+  const [rightTab, setRightTab]   = useState<RightTab>(initialTab);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // useState only uses its initialiser on the very first mount — it ignores
+  // subsequent changes to `initialTab`.  When the user switches playgrounds,
+  // Playground remounts with a different config.tabs[0], so we must
+  // explicitly sync rightTab back to the new playground's first tab.
+  useEffect(() => {
+    setRightTab(initialTab);
+  }, [initialTab]);
 
   // Keep a ref in sync with the prop so that refetchGraph() (which has an
   // empty dep array) always reads the latest path rather than a stale closure.
