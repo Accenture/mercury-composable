@@ -174,17 +174,14 @@ public class MiniGraph {
     }
 
     private void importNodesAndConnections(Map<String, Object> map) {
-        if (map.isEmpty()) {
-            throw new IllegalArgumentException("Graph is empty");
-        }
         var nodeList = map.get("nodes");
         var connectionList = map.get("connections");
-        if (nodeList instanceof List<?> nl && connectionList instanceof List<?> cl) {
+        if (nodeList instanceof List<?> nl) {
             MultiLevelMap mm = new MultiLevelMap(map);
             importNodes(mm, nl.size());
-            importConnections(mm, cl.size());
-        } else {
-            throw new IllegalArgumentException("Input does not seem to be a MiniGraph");
+            if (connectionList instanceof List<?> cl) {
+                importConnections(mm, cl.size());
+            }
         }
     }
 

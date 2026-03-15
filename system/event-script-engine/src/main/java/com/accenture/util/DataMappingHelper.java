@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class DataMappingHelper {
     private static final Logger log = LoggerFactory.getLogger(DataMappingHelper.class);
@@ -81,8 +80,6 @@ public class DataMappingHelper {
     private static final String LENGTH_SUFFIX = "length";
     private static final String NEGATE_SUFFIX = "!";
     private static final String TRUE = "true";
-    private static final String PLUGGABLE_FUNCTION_REGEX = "f:(?<pluginName>.+)\\(.*\\)";
-    private static final Pattern PLUGGABLE_FUNCTION_PATTERN = Pattern.compile(PLUGGABLE_FUNCTION_REGEX);
     private static final DataMappingHelper INSTANCE = new DataMappingHelper();
 
     private enum OPERATION {
@@ -124,12 +121,14 @@ public class DataMappingHelper {
     }
 
     private boolean isValidPluggableFunction(String lhs) {
-        var matcher = PLUGGABLE_FUNCTION_PATTERN.matcher(lhs);
-        if (!matcher.find()) {
-            return false;
+        if (lhs.endsWith(")")) {
+            var bracketStart = lhs.indexOf("(");
+            if (bracketStart > 0) {
+                var pluginName = lhs.substring(SIMPLE_PLUGIN_PREFIX.length(), bracketStart).trim();
+                return SimplePluginLoader.containsSimplePlugin(pluginName);
+            }
         }
-        String pluginName = matcher.group("pluginName");
-        return SimplePluginLoader.containsSimplePlugin(pluginName);
+        return false;
     }
 
     private boolean validModel(String key) {
@@ -364,6 +363,7 @@ public class DataMappingHelper {
             String pluginName = selector.substring(prefix+2, startParen);
             String pluginParams = selector.substring(startParen+1, endParen);
             List<String> params = Utility.getInstance().split(pluginParams, ",");
+            // ignore nested plugin to avoid execution loop
             Object[] input = params.stream()
                     .map(String::trim)
                     .map(lhs -> isPluggableFunction(lhs)? null : getLhsOrConstant(lhs, source))

@@ -43,5 +43,10 @@ flows:
   - 'autostart.yml'
   - 'pluggableFunctions/arithmetic.yml'
   - 'pluggableFunctions/types.yml'
+  - 'input-validation-1.yml'
+  - 'input-validation-2.yml'
+  - 'input-validation-3.yml'
+  - 'input-validation-4.yml'
+  - 'input-validation-5.yml'
 
 location: 'classpath:/flows/'

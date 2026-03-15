@@ -798,8 +798,15 @@ public class AppStarter {
                 for (String id : list) {
                     AsyncContextHolder holder = contexts.get(id);
                     if (holder != null) {
+                        /*
+                         * The housekeeper is checking every 10 seconds.
+                         * Therefore, HTTP timeout does not need to be very accurate.
+                         *
+                         * Adding 100 ms buffer to ensure it does not time out less than the user defined value.
+                         */
+                        long relaxedTimeout = holder.timeout + 100L;
                         long t1 = holder.lastAccess;
-                        if (now - t1 > holder.timeout) {
+                        if (now - t1 > relaxedTimeout) {
                             log.warn("Async HTTP Context {} timeout for {} ms", id, now - t1);
                             SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
                             httpUtil.sendError(id, holder.request, 408,

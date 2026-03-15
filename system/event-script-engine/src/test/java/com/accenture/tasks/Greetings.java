@@ -70,6 +70,7 @@ public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
                     log.info("Set end of flow hook to {}", flowInstance.getEndFlowListeners());
                 }
                 Thread.sleep(2500);
+                return null;
             } else if (CUSTOM.equals(exceptionTag)) {
                 return new EventEnvelope().setStatus(400).setBody(Map.of("error", "non-standard-format"));
             } else {
@@ -83,7 +84,7 @@ public class Greetings implements TypedLambdaFunction<EventEnvelope, Object> {
         }
         if (input.containsKey(USER) && input.containsKey(GREETING)) {
             String greeting = input.get(GREETING).toString();
-            String user = input.get(USER).toString();
+            String user = String.valueOf(input.get(USER));
             Map<String, Object> result = new HashMap<>();
             result.put(USER, user);
             result.put(GREETING, greeting);

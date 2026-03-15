@@ -29,7 +29,7 @@ import org.platformlambda.core.system.PostOffice;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-@PreLoad(route = GraphTraveler.ROUTE, instances=100)
+@PreLoad(route = GraphTraveler.ROUTE, instances=50)
 public class GraphTraveler extends GraphLambdaFunction {
     public static final String ROUTE = "graph.playground.traveler";
 
@@ -56,8 +56,7 @@ public class GraphTraveler extends GraphLambdaFunction {
     private void walk(PostOffice po, String in, String out, GraphInstance graphInstance, SimpleNode node, long timeout)
             throws ExecutionException, InterruptedException {
         var nodeName = node.getAlias();
-        var properties = node.getProperties();
-        String skill = properties.containsKey(SKILL)? String.valueOf(properties.get(SKILL)) : null;
+        String skill = node.getProperty(SKILL) != null? String.valueOf(node.getProperty(SKILL)) : null;
         var seen = graphInstance.hasSeen.get(nodeName);
         if (seen == null) {
             if (!GraphJoin.ROUTE.equals(skill)) {
@@ -80,10 +79,10 @@ public class GraphTraveler extends GraphLambdaFunction {
             }
             po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed"));
         } else {
-            if (skill == null) {
-                walkNext(po, in, out, graphInstance, node, timeout);
-            } else {
+            if (skill != null) {
                 execute(po, skill, in, out, graphInstance, node, timeout);
+            } else {
+                walkNext(po, in, out, graphInstance, node, timeout);
             }
         }
     }
