@@ -10,6 +10,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.74, 3/15/2026
+
+### Added
+
+New plugins f:validate() for simple field validation and f:now() for current date/time.
+
+f:validate() is a light-weight alternative for JSON schema validation.
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Propagate TTL from REST endpoint to a flow and from a parent flow to a subflow
+2. MiniGraph extension skill enhanced to support the "for_each" syntax similar to the fetcher skill
+3. Extension mapping supports both input and output data mapping
+4. Improved "edit node" feature to display statements in their orginal creation order
+
+---
+## Version 4.3.73, 3/11/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Allow output mapping in data dictionary and fetcher to support Event Script syntax of constants and plugins
+2. Support optional input parameters for data dictionary
+
+---
+## Version 4.3.72, 3/11/2026
+
+### Added
+
+new Event Script's plugin "f:defaultValue(original, default)"
+
+### Removed
+
+N/A
+
+### Changed
+
+For minigraph-playground, clear fetcher's temp parameter buffer after each request to ensure correct
+response caching behavior.
+
+---
 ## Version 4.3.71, 3/10/2026
 
 ### Added

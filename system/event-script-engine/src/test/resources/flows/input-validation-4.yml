@@ -1,28 +1,21 @@
 flow:
-  id: 'timeout-test'
-  description: 'Simplest flow of one task'
+  id: 'input-validation-4'
+  description: 'Test input validation - Float range test'
   ttl: 10s
+  exception: 'v1.hello.exception'
 
 first.task: 'greeting.test'
 
 tasks:
   - input:
-      - 'input.path_parameter.user -> user'
-      - 'input.query.ex -> exception'
+      - 'f:validate(input.body.user, text(user; Float; 10.01; 20.02)) -> user'
       - 'text(hello world) -> greeting'
-      - 'text(${PATH}) -> path'
-      - 'long(12345) -> long_number'
-      - 'float(12.345) -> float_number'
-      - 'double(12.345) -> double_number'
-      - 'boolean(true) -> boolean_value'
-      - 'model.instance -> header.instance'
     process: 'greeting.test'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
     description: 'Hello World'
     execution: end
-    exception: 'v1.hello.exception'
 
   - input:
       - 'error.code -> status'

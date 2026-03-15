@@ -1,6 +1,6 @@
 flow:
   id: 'greetings'
-  description: 'Simplest flow of one task'
+  description: 'Test various type conversions'
   ttl: 10s
   exception: 'v1.hello.exception'
 

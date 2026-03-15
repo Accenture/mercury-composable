@@ -1478,7 +1478,8 @@ For example:
 | **Arithmetic**      | increment       | A single _whole_ number                                                                                               |
 | **Arithmetic**      | decrement       | A single _whole_ number                                                                                               |
 | **Generator**       | uuid            | None                                                                                                                  |
-| **Generator**       | dateTime        | None required                                                                                                         |
+| **Generator**       | dateTime        | None.                                                                                                                 |
+| **Generator**       | now             | text(iso), text(local) or text(ms)                                                                                    |
 | **Logical**         | eq              | At least two Objects                                                                                                  |
 | **Logical**         | isNull          | A single Object                                                                                                       |
 | **Logical**         | ternary         | Three variables, the first variable must evaluate to a Boolean                                                        |
@@ -1501,8 +1502,57 @@ For example:
 | **Type Conversion** | listOfMap       | Convert "a map of lists" to "a list of maps"                                                                          |
 | **Type Conversion** | updateListOfMap | Update "a list of maps" with "maps of lists"                                                                          |
 | **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps"                                                                  |
+| **Type Conversion** | defaultValue    | If the first argument is null, return the 2nd argument                                                                |
+| **Type Conversion** | validate        | Perform simple field validation. See details below.                                                                   |
 
-*Notes*: The listOfMap and updateListOfMap plugins are designed to handle the search result of JSON-Path.
+*DateTime plugins*
+
+f:dateTime() will yield a timestamp with local timezone.
+
+```
+2026-03-15T14:48:21.735153-07:00[America/Los_Angeles]
+```
+
+f:now() or f:now(text(iso)) will return an ISO-3339 timestamp like `2026-03-15T21:51:27.083Z`
+
+f:now(text(local)) will yield local date time like `2026-03-15 14:51:27.083`
+
+f:now(text(ms)) will return milliseconds since epoch.
+
+All other command in the "text(command)" argument will throw IllegalArgumentException to advise
+that the plugin support iso, local or ms only.
+
+*Simple Field Validation*
+
+The 'validate' plugin provides input field validation for the left-hand-side of data mapping.
+Support types includes String, Integer, Long, Float, Double, Boolean, Map and List.
+
+Syntax is "f:validate(field, text(id; type; start_range; end_range))".
+
+Examples:
+
+```shell
+f:validate(input.body.id, text(id; String))
+f:validate(input.body.id, text(id; String; required))
+f:validate(input.body.date, text(date; String; 2024-01-01; 2024-02-28))
+f:validate(input.body.id, text(id; Integer))
+f:validate(input.body.id, text(id; Integer; required))
+f:validate(input.body.id, text(id; Integer; 1; 99))
+f:validate(input.body.id, text(id; Long; 100; 9999))
+f:validate(input.body.feature_supported, text(feature_supported; Boolean; required))
+```
+
+Simple field validation is a light weight alternative of JSON schema validation. If you prefer the latter,
+you can write a generalized JSON schema validation task and set it as the first task of a flow.
+
+To check for exact value, set start range and end range to the same value.
+As shown in the examples above, If you want to test for non-null value, use the "required" keyword.
+
+Please note that the validation rule uses semicolon as separator because comma is used for tokenization.
+
+*JSON-Path helpers*
+
+The listOfMap and updateListOfMap plugins are designed to handle the search result of JSON-Path.
 
 The `listOfMap(map1, map2, ...)` plugin re-arranges one or more maps of lists back to a list of maps.
 

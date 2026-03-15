@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Map;
 
-@PreLoad(route = "show.graph.model")
+@PreLoad(route = "show.graph.model", instances=20)
 public class DescribeGraph implements TypedLambdaFunction<AsyncHttpRequest, Object> {
     private static final Logger log = LoggerFactory.getLogger(DescribeGraph.class);
     private static final String FILE_NAMESPACE = "file:";

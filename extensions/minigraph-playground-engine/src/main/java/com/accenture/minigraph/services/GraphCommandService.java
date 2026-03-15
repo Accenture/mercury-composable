@@ -356,11 +356,19 @@ public class GraphCommandService extends GraphLambdaFunction {
         var map = util.getFlatMap(properties);
         var items = new ArrayList<>(map.keySet());
         Collections.sort(items);
+        // zero fill index keys to 3 digits to guarantee correct sorting order, thus [1] = [001]
+        var nMap = new HashMap<String, Object>();
         for (var key : items) {
-            var value = map.get(key);
+            var fixedSizeIndexKey = normalizeKey(key, true);
+            nMap.put(fixedSizeIndexKey, map.get(key));
+        }
+        var nItems = new ArrayList<>(nMap.keySet());
+        Collections.sort(nItems);
+        for (var key : nItems) {
+            var value = nMap.get(key);
             var lines = util.split(String.valueOf(value), "\n");
             if (!lines.isEmpty()) {
-                sb.append(normalizeKey(key)).append("=");
+                sb.append(normalizeKey(key, false)).append("=");
                 if (lines.size() == 1) {
                     sb.append(lines.getFirst()).append('\n');
                 } else {
@@ -375,12 +383,24 @@ public class GraphCommandService extends GraphLambdaFunction {
         return sb.toString();
     }
 
-    private String normalizeKey(String key) {
+    private String normalizeKey(String key, boolean sequence) {
         if (key.contains("[") && key.contains("]")) {
             var segments = util.extractSegments(key, "[", "]");
             if (segments.size() == 1) {
                 var first = segments.getFirst();
-                return key.substring(0, first.start() + 1) + key.substring(first.end()-1);
+                if (sequence) {
+                    var index = util.str2int(key.substring(first.start()+1, first.end()-1));
+                    if (index != -1) {
+                        var part1 = key.substring(0, first.start()+1);
+                        var n = util.zeroFill(index, 999);
+                        var part2 = key.substring(first.end()-1);
+                        return part1 + n + part2;
+                    } else {
+                        return key;
+                    }
+                } else {
+                    return key.substring(0, first.start() + 1) + key.substring(first.end()-1);
+                }
             }
         }
         return key;
@@ -408,7 +428,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         if (node == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + NOT_FOUND);
         }
-        var skill = node.getProperties().get(SKILL);
+        var skill = node.getProperty(SKILL);
         if (skill == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have a skill property");
         }
@@ -468,16 +488,19 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private boolean updateNodeFromAnotherGraph(MiniGraph graph, String nodeName, SimpleNode anotherNode) {
         boolean overwritten = false;
-        var myNode = graph.findNodeByAlias(nodeName);
-        if (myNode != null) {
-            graph.removeNode(nodeName);
-            overwritten = true;
-        }
         var types = anotherNode.getTypes();
         var type = types.isEmpty() ? UNTYPED : types.iterator().next();
-        var newNode = graph.createNode(anotherNode.getAlias(), type);
+        var node = graph.findNodeByAlias(nodeName);
+        if (node != null) {
+            node.getTypes().clear();
+            node.addType(type);
+            node.getProperties().clear();
+            overwritten = true;
+        } else {
+            node = graph.createNode(anotherNode.getAlias(), type);
+        }
         for (var kv : anotherNode.getProperties().entrySet()) {
-            newNode.addProperty(kv.getKey(), kv.getValue());
+            node.addProperty(kv.getKey(), kv.getValue());
         }
         return overwritten;
     }

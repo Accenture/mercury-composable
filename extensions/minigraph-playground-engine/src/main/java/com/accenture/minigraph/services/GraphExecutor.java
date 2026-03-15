@@ -141,8 +141,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             throws ExecutionException, InterruptedException {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
-            var properties = node.getProperties();
-            String skill = properties.containsKey(SKILL) ? String.valueOf(properties.get(SKILL)) : null;
+            String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
             var seen = graphInstance.hasSeen.get(nodeName);
             if (seen == null) {
                 if (!GraphJoin.ROUTE.equals(skill)) {

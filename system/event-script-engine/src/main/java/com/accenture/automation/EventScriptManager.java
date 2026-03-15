@@ -29,6 +29,7 @@ import org.platformlambda.core.system.EventEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -44,6 +45,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
     private static final String INPUT = "input";
     private static final String FLOW_ID = "flow_id";
     private static final String PARENT = "parent";
+    private static final String TTL = "ttl";
 
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
@@ -66,7 +68,14 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         if (flowId == null || flowId.isEmpty()) {
             throw new IllegalArgumentException("Missing "+FLOW_ID);
         }
-        FlowInstance flowInstance = getFlowInstance(event, flowId, Flows.getFlow(flowId));
+        var template = Flows.getFlow(flowId);
+        if (template == null) {
+            throw new IllegalArgumentException("Flow "+ flowId +" not found");
+        }
+        var payload = getInput(event.getBody());
+        var ttl = payload.get(TTL) instanceof Number timeout? timeout : template.ttl;
+        payload.remove(TTL);
+        FlowInstance flowInstance = getFlowInstance(event, flowId, template, ttl);
         Flows.addFlowInstance(flowInstance);
         // Set the input event body into the flow dataset
         flowInstance.dataset.put(INPUT, event.getBody());
@@ -78,10 +87,12 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         po.send(firstTask);
     }
 
-    private FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template) {
-        if (template == null) {
-            throw new IllegalArgumentException("Flow "+ flowId +" not found");
-        }
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getInput(Object payload) {
+        return payload instanceof Map? (Map<String, Object>) payload : Collections.emptyMap();
+    }
+
+    private FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template, Number ttl) {
         String cid = event.getCorrelationId();
         if (cid == null) {
             throw new IllegalArgumentException("Missing correlation ID for "+ flowId);
@@ -89,7 +100,8 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         String replyTo = event.getReplyTo();
         // Save the original correlation-ID ("cid") from the calling party in a flow instance and
         // return this value to the calling party at the end of flow execution
-        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template, event.getHeader(PARENT));
+        var parent = event.getHeader(PARENT);
+        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template, parent, ttl.longValue());
         // Optional distributed trace
         String traceId = event.getTraceId();
         String tracePath = event.getTracePath();

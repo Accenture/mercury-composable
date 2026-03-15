@@ -76,6 +76,7 @@ public class HttpToFlow implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         // convert HTTP context to flow "input" dataset
         Map<String, Object> dataset = new HashMap<>();
+        dataset.put("ttl", request.getTimeoutSeconds() * 1000L);
         dataset.put("header", request.getHeaders());
         dataset.put("body", request.getBody());
         dataset.put("cookie", request.getCookies());

@@ -35,8 +35,7 @@ public class GraphJoin extends GraphLambdaFunction {
         var graphInstance = getGraphInstance(in);
         var graph = graphInstance.graph;
         var node = getNode(nodeName, graph);
-        var properties = node.getProperties();
-        if (!ROUTE.equals(properties.get(SKILL))) {
+        if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
         var connected = graph.getBackwardLinks(nodeName);

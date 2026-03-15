@@ -16,28 +16,34 @@
 
  */
 
-package com.accenture.services.plugins.types;
+package com.accenture.services.plugins.generators;
 
 import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import com.accenture.util.TypeConversionUtils;
 
 @SimplePlugin
-public class ListToSet implements PluginFunction {
+public class Now implements PluginFunction {
+    private static final String ISO = "iso";
+    private static final String LOCAL = "local";
+    private static final String MS = "ms";
 
     @Override
     public String getName() {
-        return "uniqueSet";
+        return "now";
     }
 
     @Override
     public Object calculate(Object... input) {
-        if (input.length == 1 && input[0] instanceof List<?> items) {
-            return new ArrayList<>(new HashSet<>(items));
+        var command = input.length > 0 ? String.valueOf(input[0]) : ISO;
+        if (LOCAL.equalsIgnoreCase(command)) {
+            return TypeConversionUtils.getLocalTimestamp();
+        } else if (MS.equalsIgnoreCase(command)) {
+            return System.currentTimeMillis();
+        } else if (ISO.equalsIgnoreCase(command)) {
+            return TypeConversionUtils.getIsoTimestamp();
+        } else {
+            throw new IllegalArgumentException("Supported types are: iso, local, ms");
         }
-        return null;
     }
 }

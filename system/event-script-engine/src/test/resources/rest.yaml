@@ -24,7 +24,7 @@ rest:
     methods: ['POST']
     url: "/api/header/test"
     flow: 'header-and-json-path-test'
-    timeout: 10s
+    timeout: 12s
 
   - service: "http.flow.adapter"
     methods: ['GET']
@@ -90,7 +90,7 @@ rest:
     methods: ['GET']
     url: "/api/timeout/{user}?ex=_"
     flow: 'timeout-test'
-    timeout: 5s
+    timeout: 1s
     cors: cors_1
     headers: header_1
     tracing: true
@@ -347,6 +347,71 @@ rest:
     url: "/api/wildcard-conversion/test"
     flow: 'wildcard-conversion-test'
     timeout: 10s
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/validation-1"
+    flow: 'input-validation-1'
+    timeout: 10s
+    # optional authentication service which should return result as an EventEnvelope
+    # with session info in headers and true or false in body
+    #    authentication: "v1.api.auth"
+    cors: cors_1
+    headers: header_1
+    # optionally, you can turn on Distributed Tracing
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/validation-2"
+    flow: 'input-validation-2'
+    timeout: 10s
+    # optional authentication service which should return result as an EventEnvelope
+    # with session info in headers and true or false in body
+    #    authentication: "v1.api.auth"
+    cors: cors_1
+    headers: header_1
+    # optionally, you can turn on Distributed Tracing
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/validation-3"
+    flow: 'input-validation-3'
+    timeout: 10s
+    # optional authentication service which should return result as an EventEnvelope
+    # with session info in headers and true or false in body
+    #    authentication: "v1.api.auth"
+    cors: cors_1
+    headers: header_1
+    # optionally, you can turn on Distributed Tracing
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/validation-4"
+    flow: 'input-validation-4'
+    timeout: 10s
+    # optional authentication service which should return result as an EventEnvelope
+    # with session info in headers and true or false in body
+    #    authentication: "v1.api.auth"
+    cors: cors_1
+    headers: header_1
+    # optionally, you can turn on Distributed Tracing
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/validation-5"
+    flow: 'input-validation-5'
+    timeout: 10s
+    # optional authentication service which should return result as an EventEnvelope
+    # with session info in headers and true or false in body
+    #    authentication: "v1.api.auth"
+    cors: cors_1
+    headers: header_1
+    # optionally, you can turn on Distributed Tracing
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

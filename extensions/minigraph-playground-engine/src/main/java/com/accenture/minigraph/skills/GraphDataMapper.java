@@ -37,11 +37,10 @@ public class GraphDataMapper extends GraphLambdaFunction {
         var nodeName = headers.getOrDefault(NODE, "none");
         var graphInstance = getGraphInstance(in);
         var node = getNode(nodeName, graphInstance.graph);
-        var properties = node.getProperties();
-        if (!ROUTE.equals(properties.get(SKILL))) {
+        if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
-        var mapping = getEntries(properties.get(MAPPING));
+        var mapping = getEntries(node.getProperty(MAPPING));
         if (mapping.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'mapping' entries");
         }

@@ -22,7 +22,6 @@ tasks:
       - 'boolean(false) -> model.bool_false'
       - 'text(true) -> model.string_bool'
       - 'text(SGVsbG8=) -> model.b64_str'
-
       - 'f:text(model.text_one) -> string'
       - 'f:int(model.int) -> integer'
       - 'f:int(model.string_int) -> integer_convert'
@@ -60,9 +59,13 @@ tasks:
       - 'f:isNull(model.none) -> isNull'
       - 'f:notNull(model.text_one) -> isNotNull'
       - 'f:uuid() -> uuid'
-      - 'f:dateTime() -> currentTime'
       - 'f:length(model.to_b64_bytes) -> arr_length'
       - 'f:length(model.text_one) -> str_length'
+      - 'f:dateTime() -> currentTime'
+      - 'f:now() -> default_datetime'
+      - 'f:now(text(ms)) -> ms'
+      - 'f:now(text(iso)) -> iso'
+      - 'f:now(text(local)) -> local'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
