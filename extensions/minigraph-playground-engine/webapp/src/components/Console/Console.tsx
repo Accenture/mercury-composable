@@ -9,8 +9,9 @@ interface ConsoleProps {
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
-  onPinMessage?:      (message: string) => void;
-  pinnedMessage?:     string | null;
+  onPinMessage?:      (msg: { id: number; raw: string }) => void;
+  /** The id of the currently-pinned message, or null if nothing is pinned. */
+  pinnedMessageId?:   number | null;
   /** Called after any per-message copy succeeds — use this to show a toast. */
   onCopyMessage?:     () => void;
 }
@@ -23,7 +24,7 @@ export default function Console({
   onClear,
   consoleRef,
   onPinMessage,
-  pinnedMessage,
+  pinnedMessageId,
   onCopyMessage,
 }: ConsoleProps) {
   return (
@@ -63,8 +64,8 @@ export default function Console({
           <ConsoleErrorBoundary key={msg.id} fallback={msg.raw}>
             <ConsoleMessage
               message={msg.raw}
-              onPin={onPinMessage}
-              pinned={pinnedMessage === msg.raw}
+              onPin={onPinMessage ? () => onPinMessage(msg) : undefined}
+              pinned={pinnedMessageId === msg.id}
               onCopyMessage={onCopyMessage}
             />
           </ConsoleErrorBoundary>

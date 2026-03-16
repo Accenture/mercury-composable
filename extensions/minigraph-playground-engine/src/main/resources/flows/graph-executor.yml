@@ -1,7 +1,7 @@
 flow:
   id: 'graph-executor'
   description: 'MiniGraph Traveler'
-  ttl: 3s
+  ttl: 60s
   exception: 'simple.exception.handler'
 
 first.task: 'graph.executor'

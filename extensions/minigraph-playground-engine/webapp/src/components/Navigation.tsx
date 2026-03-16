@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { type WsPhase } from '../contexts/WebSocketContext';
-import { useToast } from '../hooks/useToast';
+import { type ToastType } from '../hooks/useToast';
 import NavMenu, { type DotStatus } from './NavMenu/NavMenu';
 import { makeWsUrl } from '../utils/urls';
 import styles from './Navigation.module.css';
@@ -49,9 +49,14 @@ const EXTERNAL_LINKS = [
 // Component
 // ----------
 
-export default function Navigation() {
+interface NavigationProps {
+  /** Forwarded from the host Playground's useToast() so connect/disconnect
+   *  notifications appear in the same rendered toast stack. */
+  addToast: (message: string, type?: ToastType) => void;
+}
+
+export default function Navigation({ addToast }: NavigationProps) {
   const ctx = useWebSocketContext();
-  const { addToast } = useToast();
 
   // Collect live phases for the aggregate dot on the Tools menu
   const phases = PLAYGROUND_CONFIGS.map(cfg => ctx.getSlot(cfg.wsPath).phase);

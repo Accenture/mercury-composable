@@ -97,7 +97,7 @@
       ],
       "alias": "extension",
       "properties": {
-        "mapping": [
+        "input": [
           "input.body.person_id -> person_id"
         ],
         "extension": "helloworld",

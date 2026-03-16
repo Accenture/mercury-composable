@@ -55,6 +55,104 @@ class FlowTests extends TestBase {
     private static final String HTTP_CLIENT = "async.http.request";
 
     @Test
+    void inputValidationTest1() throws InterruptedException {
+        inputValidationCase(1, "12345", "hello world", false);
+    }
+
+    @Test
+    void inputValidationTest2() throws InterruptedException {
+        inputValidationCase(2, "ABC", "user (ABC) < CCC", true);
+    }
+
+    @Test
+    void inputValidationTest3() throws InterruptedException {
+        inputValidationCase(2, "Dfg", "user (Dfg) > DDD", true);
+    }
+
+    @Test
+    void inputValidationTest4() throws InterruptedException {
+        inputValidationCase(1, null, "user is required.", true);
+    }
+
+    @Test
+    void inputValidationTest5() throws InterruptedException {
+        inputValidationCase(3, null, "user is required.", true);
+    }
+
+    @Test
+    void inputValidationTest6() throws InterruptedException {
+        inputValidationCase(3, 123, "user (123) > 20", true);
+    }
+
+    @Test
+    void inputValidationTest7() throws InterruptedException {
+        inputValidationCase(3, 5, "user (5) < 10", true);
+    }
+
+    @Test
+    void inputValidationTest8() throws InterruptedException {
+        inputValidationCase(3, 10, "hello world", false);
+    }
+
+    @Test
+    void inputValidationTest9() throws InterruptedException {
+        inputValidationCase(4, 10.1, "hello world", false);
+    }
+
+    @Test
+    void inputValidationTest10() throws InterruptedException {
+        inputValidationCase(4, 10.0, "user (10.0) < 10.01", true);
+    }
+
+    @Test
+    void inputValidationTest11() throws InterruptedException {
+        inputValidationCase(4, 21.0, "user (21.0) > 20.02", true);
+    }
+
+    @Test
+    void inputValidationTest12() throws InterruptedException {
+        inputValidationCase(5, true, "hello world", false);
+    }
+
+    @Test
+    void inputValidationTest13() throws InterruptedException {
+        inputValidationCase(5, false, "hello world", false);
+    }
+
+    @Test
+    void inputValidationTest14() throws InterruptedException {
+        inputValidationCase(5, null, "Expect user as Boolean, Actual: null", true);
+    }
+
+    @SuppressWarnings("unchecked")
+    void inputValidationCase(int number, Object user, String message, boolean negative) throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final String traceId = "9002";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        if (user != null) {
+            request.setBody(Map.of("user", user));
+        }
+        request.setUrl("/api/validation-"+number);
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /greeting");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        if (negative) {
+            assertEquals(400, res.getStatus());
+            assertEquals(message, result.get("message"));
+        } else {
+            assertEquals(200, res.getStatus());
+            assertEquals(String.valueOf(user), result.get("user"));
+            assertEquals(message, result.get("greeting"));
+        }
+    }
+
+    @Test
     void getLhsConstant() {
         var empty = new MultiLevelMap();
         var helper = DataMappingHelper.getInstance();
@@ -358,7 +456,7 @@ class FlowTests extends TestBase {
         // f:listToSet() de-duplicates [AAA, AAA] to a list of unique items
         assertEquals(List.of("AAA"), body.get("unique"));
         // check default value feature
-        assertEquals("hello", body.get("default"));
+        assertEquals(101, body.get("default"));
         assertEquals("something", body.get("something"));
     }
 
@@ -454,11 +552,11 @@ class FlowTests extends TestBase {
         // delete control files before running test
         File f1 = new File("/tmp/resilience/cumulative");
         File f2 = new File("/tmp/resilience/backoff");
-        if (f1.exists()) {
-            f1.delete();
+        if (f1.exists() && f1.delete()) {
+            log.info("Deleted temp file: {}", f1.getPath());
         }
-        if (f2.exists()) {
-            f2.delete();
+        if (f2.exists() && f2.delete()) {
+            log.info("Deleted temp file: {}", f2.getPath());
         }
         // run test
         final PostOffice po = new PostOffice("unit.test", "100102", "TEST /resilience");
@@ -1569,12 +1667,28 @@ class FlowTests extends TestBase {
         assertTrue((Boolean) result.get("isNotNull"));
         UUID id = UUID.fromString((String) result.get("uuid"));
         assertNotNull(id);
+        assertInstanceOf(String.class, result.get("currentTime"));
         String date = (String) result.get("currentTime");
-        assertNotNull(date);
+        // 2026-03-15T14:48:21.735153-07:00[America/Los_Angeles]
+        assertTrue(date.contains("T") && date.contains("[") && date.contains("]"));
         ZonedDateTime time = ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME);
         assertNotNull(time);
         assertEquals(5, result.get("arr_length"));
         assertEquals(5, result.get("str_length"));
+        // f:now(text(iso)) - 2026-03-15T21:51:27.083Z
+        assertInstanceOf(String.class, result.get("iso"));
+        var iso = (String) result.get("iso");
+        assertTrue(iso.contains("T") && iso.contains("Z"));
+        // f:now(text(ms)) - 1773611537955
+        assertInstanceOf(Long.class, result.get("ms"));
+        // f:now(text(local)) - 2026-03-15 14:51:27.083
+        assertInstanceOf(String.class, result.get("local"));
+        var local = (String) result.get("local");
+        assertFalse(local.contains("T"));
+        // f:now() is the same as f:now(text(iso)) - 2026-03-15T21:51:27.083Z
+        assertInstanceOf(String.class, result.get("default_datetime"));
+        var defaultDatetime = (String) result.get("default_datetime");
+        assertTrue(defaultDatetime.contains("T") && defaultDatetime.contains("Z"));
     }
 
 

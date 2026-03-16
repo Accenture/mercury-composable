@@ -961,8 +961,8 @@ public class RoutingEntry {
             return 30;
         } else {
             int result = Utility.getInstance().getDurationInSeconds(duration);
-            // 5 seconds > result > 5 minutes
-            return Math.clamp(result, 5, FIVE_MINUTES);
+            // 1 second > result > 5 minutes
+            return Math.clamp(result, 1, FIVE_MINUTES);
         }
     }
 }

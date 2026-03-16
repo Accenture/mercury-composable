@@ -267,10 +267,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             if (value != null) {
                 stateMachine.setElement(target, value);
             } else {
-                if (rhs.endsWith("]") && rhs.contains("[")) {
-                    stateMachine.setElement(rhs, null);
+                if (target.endsWith("]") && target.contains("[")) {
+                    stateMachine.setElement(target, null);
                 } else {
-                    stateMachine.removeElement(rhs);
+                    stateMachine.removeElement(target);
                 }
             }
         } else {
@@ -306,6 +306,86 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
         }
         request.setBody(wholeBody.isEmpty()? body : wholeBody.getFirst());
+    }
+
+    protected Map<String, List<?>> getForEachMapping(String nodeName, List<String> forEach, MultiLevelMap dataset) {
+        int size = -1;
+        Map<String, List<?>> mappings = new HashMap<>();
+        for (var entry : forEach) {
+            var sep = entry.lastIndexOf(MAP_TO);
+            var lhs = entry.substring(0, sep).trim();
+            var rhs = entry.substring(sep+MAP_TO.length()).trim();
+            if (!rhs.startsWith(MODEL_NAMESPACE)) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName +
+                        " RHS of 'for_each' entry must use 'model.' namespace. Actual: " + entry);
+            }
+            var value = helper.getLhsOrConstant(lhs, dataset);
+            if (value instanceof List<?> list) {
+                if (size == -1) {
+                    size = list.size();
+                } else if (size != list.size()) {
+                    throw new IllegalArgumentException(NODE_NAME + nodeName +
+                            " LHS of 'for_each' contains inconsistent array sizes");
+                }
+                mappings.put(rhs, list);
+            } else if (value != null) {
+                dataset.setElement(rhs, value);
+            }
+        }
+        return mappings;
+    }
+
+    protected int getModelArraySize(Map<String, List<?>> mappings) {
+        var keys = new ArrayList<>(mappings.keySet());
+        return mappings.get(keys.getFirst()).size();
+    }
+
+    protected Map<String, Object> getNextModelParamSet(Map<String, List<?>> mappings, int i) {
+        var result = new HashMap<String, Object>();
+        for (var entry : mappings.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().get(i));
+        }
+        return result;
+    }
+
+    protected void performFetcherOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
+        for (var output : mapping) {
+            var text = String.valueOf(output).trim();
+            int sep = text.lastIndexOf(MAP_TO);
+            if (sep != -1) {
+                var lhs = text.substring(0, sep).trim();
+                var rhs = text.substring(sep + MAP_TO.length()).trim();
+                setFetcherOutputEntry(nodeName, lhs, rhs, stateMachine);
+            } else {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
+            }
+        }
+    }
+
+    private void setFetcherOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
+        var value = helper.getConstantValue(lhs);
+        if (value == null) {
+            if (!lhs.startsWith(PLUGIN_PREFIX)) {
+                // reconstruct lhs with nodeName as namespace
+                if (lhs.startsWith(RESULT_NAMESPACE) || lhs.startsWith(RESULT + "[")) {
+                    lhs = nodeName + "." + lhs;
+                } else if (lhs.startsWith("$.result")) {
+                    lhs = "$." + nodeName + lhs.substring(1);
+                } else if (!lhs.startsWith(nodeName + ".") &&
+                        !lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
+                    throw new IllegalArgumentException("Invalid output data mapping in API fetcher " + nodeName +
+                            " - LHS must start with 'model.', 'result.' namespace or '" + nodeName + ".'");
+                }
+            }
+            value = helper.getLhsElement(lhs, stateMachine);
+        }
+        if (value != null) {
+            if (!rhs.startsWith(MODEL_NAMESPACE) && !rhs.startsWith(OUTPUT_NAMESPACE)) {
+                throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
+                        " - RHS must start with 'model.' or 'output.' namespace");
+            }
+            stateMachine.setElement(rhs, value);
+        }
     }
 
     protected String getNormalizedPath(String folder, String graphId) {

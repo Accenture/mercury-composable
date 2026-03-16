@@ -42,7 +42,7 @@ output[]={optional mapping of result set to one or more variables in the 'model.
 Optional properties
 -------------------
 ```
-for_each[]={map a result parameter that is an array into a model variable for iterative API execution}
+for_each[]={map an array parameter for iterative API execution}
 concurrency={controls parallel API calls for an "iterative API request". Default 3, max 30}
 ```
 

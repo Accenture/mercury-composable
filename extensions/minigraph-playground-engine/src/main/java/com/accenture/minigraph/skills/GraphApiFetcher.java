@@ -61,23 +61,26 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         if ("true".equals(headers.get(LIVE))) {
             stateMachine.setElement(nodeName + "." + LIVE, true);
         }
+        // reset result to ensure execution is idempotent
+        stateMachine.removeElement(nodeName + "." + RESULT);
+        stateMachine.removeElement(nodeName + "." + HEADER);
         var po = new PostOffice(headers, instance);
         var dictionary = getEntries(fetcher.getProperty(DICTIONARY));
         var dictionaryNodes = getDictionaryNodes(dictionary, nodeName, graphInstance);
         var forEach = getEntries(fetcher.getProperty(FOR_EACH));
-        var mapping = getEntries(fetcher.getProperty(INPUT));
-        Map<String, List<?>> mappings = getForEachMapping(nodeName, forEach, stateMachine);
+        Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
         if (forEach.isEmpty()) {
             return executeProviders(po, graphInstance, fetcher, dictionaryNodes);
         }
         // iterative API requests with an array of parameters
-        if (mappings.isEmpty()) {
+        if (forEachMapping.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " No data mapping resolved from 'for_each' entries");
+                    " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
         }
-        var size = getModelArraySize(mappings);
+        var mapping = getEntries(fetcher.getProperty(INPUT));
+        var size = getModelArraySize(forEachMapping);
         for (int i = 0; i < size; i++) {
-            var x = getNextModelParamSet(mappings, i);
+            var x = getNextModelParamSet(forEachMapping, i);
             for (var kv : x.entrySet()) {
                 stateMachine.setElement(kv.getKey(), kv.getValue());
             }
@@ -86,19 +89,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             }
         }
         return executeProvidersWithForkJoin(po, graphInstance, fetcher, dictionaryNodes, size);
-    }
-
-    private int getModelArraySize(Map<String, List<?>> mappings) {
-        var keys = new ArrayList<>(mappings.keySet());
-        return mappings.get(keys.getFirst()).size();
-    }
-
-    private Map<String, Object> getNextModelParamSet(Map<String, List<?>> mappings, int i) {
-        var result = new HashMap<String, Object>();
-        for (var entry : mappings.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().get(i));
-        }
-        return result;
     }
 
     private static ArrayList<SimpleNode> getDictionaryNodes(List<String> dictionary, String nodeName,
@@ -120,7 +110,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         return dictionaryNodes;
     }
 
-    @SuppressWarnings("unchecked")
     private Object executeProviders(PostOffice po, GraphInstance graphInstance, SimpleNode fetcher,
                                     List<SimpleNode> dictionaryNodes)
             throws URISyntaxException, ExecutionException, InterruptedException {
@@ -128,20 +117,13 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var timeout = getModelTtl(graphInstance);
         var stateMachine = graphInstance.stateMachine;
         var graph = graphInstance.graph;
+        var parameterMapping = getEntries(fetcher.getProperty(INPUT));
         for (SimpleNode dd : dictionaryNodes) {
-            var parameterMapping = getEntries(fetcher.getProperty(INPUT));
-            // the 'fetch' and 'dd' key-values are used for fetcher to set input parameters
-            // and for dictionary to fill in default value if any
-            for (var entry : parameterMapping) {
-                fillFetcherApiParameters(nodeName, entry, graphInstance, false);
-            }
-            var apiParams = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
-            var parameters = apiParams instanceof Map? (Map<String, Object>) apiParams : new HashMap<String, Object>();
+            var parameters = getFetcherApiParameters(nodeName, graphInstance, parameterMapping);
             var required = getEntries(dd.getProperty(INPUT));
             if (!required.isEmpty()) {
                 fillDictionaryApiParameters(nodeName, stateMachine, dd, required, parameters);
             }
-            stateMachine.removeElement(nodeName + FETCH);
             var provider = dd.getProperty(PROVIDER);
             if (provider instanceof String providerName) {
                 var p = graph.findNodeByAlias(providerName);
@@ -162,6 +144,18 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
         return NEXT;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getFetcherApiParameters(String nodeName, GraphInstance graphInstance,
+                                                        List<String> parameterMapping) {
+        for (var entry : parameterMapping) {
+            fillFetcherApiParameters(nodeName, entry, graphInstance, false);
+        }
+        var stateMachine = graphInstance.stateMachine;
+        var params = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
+        stateMachine.removeElement(nodeName + FETCH);
+        return params instanceof Map? (Map<String, Object>) params : new HashMap<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -316,46 +310,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         }
     }
 
-    private void performFetcherOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
-        for (var output : mapping) {
-            var text = String.valueOf(output).trim();
-            int sep = text.lastIndexOf(MAP_TO);
-            if (sep != -1) {
-                var lhs = text.substring(0, sep).trim();
-                var rhs = text.substring(sep + MAP_TO.length()).trim();
-                setFetcherOutputEntry(nodeName, lhs, rhs, stateMachine);
-            } else {
-                throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid output mapping: "+text);
-            }
-        }
-    }
-
-    private void setFetcherOutputEntry(String nodeName, String lhs, String rhs, MultiLevelMap stateMachine) {
-        var value = helper.getConstantValue(lhs);
-        if (value == null) {
-            if (!lhs.startsWith(PLUGIN_PREFIX)) {
-                // reconstruct lhs with nodeName as namespace
-                if (lhs.startsWith(RESULT_NAMESPACE) || lhs.startsWith(RESULT + "[")) {
-                    lhs = nodeName + "." + lhs;
-                } else if (lhs.startsWith("$.result")) {
-                    lhs = "$." + nodeName + lhs.substring(1);
-                } else if (!lhs.startsWith(nodeName + ".") &&
-                        !lhs.startsWith(MODEL_NAMESPACE) && !lhs.startsWith("$.model.")) {
-                    throw new IllegalArgumentException("Invalid output data mapping in API fetcher " + nodeName +
-                            " - LHS must start with 'model.', 'result.' namespace or '" + nodeName + ".'");
-                }
-            }
-            value = helper.getLhsElement(lhs, stateMachine);
-        }
-        if (value != null) {
-            if (!rhs.startsWith(MODEL_NAMESPACE) && !rhs.startsWith(OUTPUT_NAMESPACE)) {
-                throw new IllegalArgumentException("Invalid output data mapping in data dictionary "+nodeName +
-                        " - RHS must start with 'model.' or 'output.' namespace");
-            }
-            stateMachine.setElement(rhs, value);
-        }
-    }
-
     private void performDictionaryOutputMapping(String nodeName, MultiLevelMap stateMachine,
                                                 String dictionaryName, List<String> mapping, boolean isArray) {
         for (var output : mapping) {
@@ -428,33 +382,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             f.feature().execute(request, null, md.stateMachine, nodeName);
         }
         return request;
-    }
-
-    private Map<String, List<?>> getForEachMapping(String nodeName, List<String> forEach, MultiLevelMap dataset) {
-        int size = -1;
-        Map<String, List<?>> mappings = new HashMap<>();
-        for (var entry : forEach) {
-            var sep = entry.lastIndexOf(MAP_TO);
-            var lhs = entry.substring(0, sep).trim();
-            var rhs = entry.substring(sep+MAP_TO.length()).trim();
-            if (!rhs.startsWith(MODEL_NAMESPACE)) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName +
-                        " RHS of 'for_each' entry must use 'model.' namespace. Actual: " + entry);
-            }
-            var value = helper.getLhsOrConstant(lhs, dataset);
-            if (value instanceof List<?> list) {
-                if (size == -1) {
-                    size = list.size();
-                } else if (size != list.size()) {
-                    throw new IllegalArgumentException(NODE_NAME + nodeName +
-                            " LHS of 'for_each' contains inconsistent array sizes");
-                }
-                mappings.put(rhs, list);
-            } else if (value != null) {
-                dataset.setElement(rhs, value);
-            }
-        }
-        return mappings;
     }
 
     private void makeRegularHttpCall(ProviderMetadata md) throws ExecutionException, InterruptedException {

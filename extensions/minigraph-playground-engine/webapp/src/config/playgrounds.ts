@@ -8,6 +8,11 @@
  * ───────────────────────────────────────────────────────────────────────────
  */
 
+// RightTab is defined in RightPanel but the config needs it to declare which
+// tabs each playground shows.  We import only the type so there is no runtime
+// dependency from config → component.
+import type { RightTab } from '../components/RightPanel/RightPanel';
+
 // ---------------------------------------------------------------------------
 // Shared runtime limits (used by both the hook and the UI)
 // ---------------------------------------------------------------------------
@@ -26,13 +31,25 @@ export const PING_INTERVAL = 20_000;
 
 /** Shape of a single playground tool entry. */
 export interface PlaygroundConfig {
-  path:              string;  // URL route path, must start with "/"
-  label:             string;  // Short name shown in the navigation bar
-  title:             string;  // Full heading shown on the playground page
-  wsPath:            string;  // WebSocket endpoint path served by the backend
-  storageKeyPayload: string;  // localStorage key for the last payload
-  storageKeyHistory: string;  // localStorage key for command history
-  supportsUpload?:   boolean; // true when the backend supports POST /api/json/content/{id} upload
+  path:              string;     // URL route path, must start with "/"
+  label:             string;     // Short name shown in the navigation bar
+  title:             string;     // Full heading shown on the playground page
+  wsPath:            string;     // WebSocket endpoint path served by the backend
+  storageKeyPayload: string;     // localStorage key for the last payload
+  storageKeyHistory: string;     // localStorage key for command history
+  supportsUpload?:   boolean;    // true when the backend supports POST /api/json/content/{id} upload
+  /**
+   * The ordered list of right-panel tabs to show for this playground.
+   * The first entry is the default selected tab on first load.
+   * Tabs absent from this list are not rendered at all.
+   *
+   * Tab meanings:
+   *  'payload'    — JSON/XML payload editor (used by playgrounds that send a data body)
+   *  'preview'    — Markdown preview of the last pinned plain-text response
+   *  'graph'      — ReactFlow graph visualisation
+   *  'graph-data' — Raw JSON viewer for the fetched graph model
+   */
+  tabs:              RightTab[];
 }
 
 export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
@@ -44,6 +61,8 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     storageKeyPayload: 'jsonpath-last-payload',
     storageKeyHistory: 'jsonpath-command-history',
     supportsUpload: true,
+    // JSON-Path needs a payload input and graph views; Markdown Preview is not useful here.
+    tabs: ['payload', 'graph', 'graph-data'],
   },
   {
     path: '/',
@@ -52,6 +71,8 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     wsPath: '/ws/graph/playground',
     storageKeyPayload: 'minigraph-last-payload',
     storageKeyHistory: 'minigraph-command-history',
+    // Minigraph works with graph commands and text responses; it has no payload input.
+    tabs: ['preview', 'graph', 'graph-data'],
   },
 ];
 

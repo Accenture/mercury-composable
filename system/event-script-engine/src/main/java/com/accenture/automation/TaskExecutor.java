@@ -23,6 +23,7 @@ import com.accenture.util.DataMappingHelper;
 import com.accenture.models.SimpleFileDescriptor;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
@@ -117,8 +118,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final String UUID_SUFFIX = "uuid";
     private static final String ITEM_SUFFIX = ".ITEM";
     private static final String INDEX_SUFFIX = ".INDEX";
-    private static final int STATUS_CONTINUE = 100;
-    private static final String DONE = "done";
+    private static final String TTL = "ttl";
     private final int maxModelArraySize;
 
     public TaskExecutor() {
@@ -163,7 +163,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String flowName = flowInstance.getFlow().id;
         if (headers.containsKey(TIMEOUT) && event.getBody() instanceof List) {
             log.warn("Flow {}:{} expired", flowName, flowInstance.id);
-            abortFlow(flowInstance, 408, "Flow timeout for "+ flowInstance.getFlow().ttl+" ms");
+            abortFlow(flowInstance, 408, "Flow timeout for "+ flowInstance.getTtl()+" ms");
             return null;
         }
         try {
@@ -174,8 +174,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 handleFunctionCallback(ref, event, flowInstance, refId, seq);
             }
         } catch (Exception e) {
+            var rc = 500;
+            if (e instanceof IllegalArgumentException) {
+                rc = 400;
+            }
+            if (e instanceof AppException ae) {
+                rc = ae.getStatus();
+            }
             log.error("Unable to execute flow {}:{} - {}", flowName, flowInstance.id, e.getMessage());
-            abortFlow(flowInstance, 500, e.getMessage());
+            abortFlow(flowInstance, rc, e.getMessage());
         }
         return null;
     }
@@ -897,6 +904,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 return;
             }
             Map<String, Object> dataset = new HashMap<>();
+            dataset.put(TTL, flowInstance.getTtl());    // propagate TTL from parent flow
             dataset.put(BODY, unwrapBodyIfWildcard(md));
             if (!md.optionalHeaders.isEmpty()) {
                 dataset.put(HEADER, md.optionalHeaders);
@@ -948,11 +956,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         Object d = md.source.getElement(task.getDelayVar());
         if (d != null) {
             long delay = Math.max(1, util.str2long(d.toString()));
-            if (delay < flowInstance.getFlow().ttl) {
+            if (delay < flowInstance.getTtl()) {
                 return delay;
             } else {
                 log.warn("Unable to schedule future task for {} because {} is invalid (TTL={}, delay={})",
-                        task.service, task.getDelayVar(), flowInstance.getFlow().ttl, delay);
+                        task.service, task.getDelayVar(), flowInstance.getTtl(), delay);
             }
         } else {
             log.warn("Unable to schedule future task for {} because {} does not exist",

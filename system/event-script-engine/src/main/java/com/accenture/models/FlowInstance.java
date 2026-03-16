@@ -63,9 +63,11 @@ public class FlowInstance {
     public final String replyTo;
     private final String timeoutWatcher;
     private final Flow template;
+    private final long ttl;
     private String traceId;
     private String tracePath;
     private String parentId;
+
 
     /**
      * This is reserved for system use.
@@ -77,7 +79,8 @@ public class FlowInstance {
      * @param template event flow configuration
      * @param parentId is the parent flow instance ID
      */
-    public FlowInstance(String flowId, String cid, String replyTo, Flow template, String parentId) {
+    public FlowInstance(String flowId, String cid, String replyTo, Flow template, String parentId, long ttl) {
+        this.ttl = ttl;
         this.template = template;
         this.cid = cid;
         this.replyTo = replyTo;
@@ -85,7 +88,7 @@ public class FlowInstance {
         ConcurrentMap<String, Object> model = new ConcurrentHashMap<>();
         model.put(INSTANCE, id);
         model.put(CID_TAG, cid);
-        model.put(TTL_TAG, template.ttl);
+        model.put(TTL_TAG, ttl);
         model.put(FLOW, flowId);
         // "parent" and "root" are aliases to the shared state machine in the root
         if (parentId == null) {
@@ -104,9 +107,13 @@ public class FlowInstance {
         }
         this.dataset.put(MODEL, model);
         EventEmitter po = EventEmitter.getInstance();
-        EventEnvelope timeoutTask = new EventEnvelope().setTo(TaskExecutor.SERVICE_NAME)
-                                            .setCorrelationId(id).setHeader(TIMEOUT, true).setBody(getEndFlowListeners());
-        this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + template.ttl));
+        EventEnvelope timeoutTask = new EventEnvelope().setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(id)
+                                                        .setHeader(TIMEOUT, true).setBody(getEndFlowListeners());
+        this.timeoutWatcher = po.sendLater(timeoutTask, new Date(System.currentTimeMillis() + ttl));
+    }
+
+    public long getTtl() {
+        return ttl;
     }
 
     public FlowInstance resolveAncestor() {

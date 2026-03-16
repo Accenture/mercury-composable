@@ -21,10 +21,7 @@ package com.accenture.util;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TypeConversionUtils {
     private static final Utility util = Utility.getInstance();
@@ -260,5 +257,37 @@ public class TypeConversionUtils {
         } else {
             return false;
         }
+    }
+
+    public static List<String> split(String str, String chars) {
+        return util.split(str, chars);
+    }
+
+    public static int str2int(String str) {
+        return util.str2int(str);
+    }
+
+    public static long str2long(String str) {
+        return util.str2long(str);
+    }
+
+    public static float str2float(String str) {
+        return util.str2float(str);
+    }
+
+    public static double str2double(String str) {
+        return util.str2double(str);
+    }
+
+    public static boolean str2boolean(String str) {
+        return "true".equalsIgnoreCase(str);
+    }
+
+    public static String getIsoTimestamp() {
+        return util.date2str(new Date());
+    }
+
+    public static String getLocalTimestamp() {
+        return util.getLocalTimestamp();
     }
 }

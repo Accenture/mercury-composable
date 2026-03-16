@@ -6,7 +6,10 @@ import styles from './Console.module.css';
 
 interface ConsoleMessageProps {
   message:         string;
-  onPin?:          (message: string) => void;
+  /** Called when the user clicks/activates this row to pin it. The parent
+   *  is responsible for capturing the message identity — this component
+   *  just signals the intent. */
+  onPin?:          () => void;
   pinned?:         boolean;
   /** Called after a successful clipboard write — use this to show a toast. */
   onCopyMessage?:  () => void;
@@ -18,8 +21,7 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
   const jsonCheck = tryParseJSON(parsed.message);
 
   const isGraphLink  = isGraphLinkMessage(message);
-  const isMarkdown   = !isGraphLink && isMarkdownCandidate(message);
-  const isPinnable   = !!onPin && (isMarkdown || isGraphLink);
+  const isPinnable   = !!onPin && (!isGraphLink ? isMarkdownCandidate(message) : true);
   const pinTitle     = isGraphLink
     ? 'Click to load graph in Graph View'
     : 'Click to pin to Markdown Preview';
@@ -55,12 +57,12 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
         pinned     ? styles.consoleMessagePinned    : '',
         isGraphLink ? styles.consoleMessageGraphLink : '',
       ].filter(Boolean).join(' ')}
-      onClick={isPinnable ? () => onPin!(message) : undefined}
+      onClick={isPinnable ? () => onPin!() : undefined}
       title={isPinnable ? pinTitle : undefined}
       role={isPinnable ? 'button' : undefined}
       tabIndex={isPinnable ? 0 : undefined}
       onKeyDown={isPinnable
-        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin!(message); } }
+        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin!(); } }
         : undefined}
       aria-label={isPinnable ? pinLabel : undefined}
       aria-pressed={isPinnable ? pinned : undefined}
