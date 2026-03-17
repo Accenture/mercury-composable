@@ -756,7 +756,9 @@ public class GraphCommandService extends GraphLambdaFunction {
                 }
             }
             var stateMachine = graphInstance.stateMachine;
-            stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
+            if (!stateMachine.exists(INPUT_BODY_NAMESPACE)) {
+                stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
+            }
             stateMachine.setElement(OUTPUT_NAMESPACE, new HashMap<>());
             var timeout = getModelTtl(graphInstance);
             log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);
