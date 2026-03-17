@@ -35,6 +35,7 @@ For graph model
 For instance model
 ------------------
 - help instantiate (create an instance from a graph model)
+- help upload (mock data)
 - help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
 - help inspect (state-machine for properties of nodes, input, output and model namespaces)
 - help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)

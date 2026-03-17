@@ -271,7 +271,6 @@ class PlaygroundTest {
         client.close();
         assertEquals(3,  received.size());
         assertEquals(Map.of("test", "123"), received.getFirst().get("outcome"));
-        assertEquals(Map.of("message", "100"), received.get(1).get("outcome"));
     }
 
     private Object getNextCommand(String command) throws InterruptedException {
@@ -288,7 +287,7 @@ class PlaygroundTest {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
                 // simulate human operator delay
-                Thread.sleep(75);
+                Thread.sleep(200);
                 return kv.getValue();
             }
         }

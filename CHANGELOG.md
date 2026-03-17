@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.75, 3/16/2026
+
+### Added
+
+1. new "app.env=dev" parameter in application.properties for minigraph-playground engine
+   so that self-service can be disabled when deployed to production.
+2. upload "mock input" for minigraph-playground so that a larger JSON payload can be used
+   as mock input data.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.74, 3/15/2026
 
 ### Added

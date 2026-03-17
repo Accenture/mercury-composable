@@ -27,6 +27,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleConnection;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
@@ -166,7 +167,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
             handleRunCommand(inRoute, outRoute);
         } else {
-            handleMoreCommand(po, inRoute, outRoute, words);
+            handleCommandPartTwo(po, inRoute, outRoute, words);
         }
     }
 
@@ -192,6 +193,30 @@ public class GraphCommandService extends GraphLambdaFunction {
         return words;
     }
 
+    private void handleUploadMockCommand(PostOffice po, String inRoute, String outRoute) {
+        var graphInstance = getGraphInstance(inRoute);
+        if (graphInstance != null) {
+            var name = getTempGraphName(inRoute);
+            po.send(new EventEnvelope().setTo(outRoute).setBody("You may upload JSON payload -> POST /api/mock/" + name));
+        }
+    }
+
+    public static boolean uploadContent(String id, Object content) {
+        var route = id.replace('-', '.');
+        var inRoute = route + ".in";
+        var outRoute = route + ".out";
+        var instance = graphInstances.get(inRoute);
+        if (instance == null) {
+            return false;
+        } else {
+            var stateMachine = instance.stateMachine;
+            stateMachine.setElement(INPUT_BODY_NAMESPACE, content);
+            var po = EventEmitter.getInstance();
+            po.send(outRoute, "Mock data loaded into 'input.body' namespace");
+            return true;
+        }
+    }
+
     private void handleRunCommand(String inRoute, String outRoute) {
         var timeout = getModelTtl(getGraphInstance(inRoute));
         var po = PostOffice.trackable("minigraph.playground", util.getUuid(), "/playground");
@@ -207,7 +232,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 });
     }
 
-    private void handleMoreCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
+    private void handleCommandPartTwo(PostOffice po, String inRoute, String outRoute, List<String> words) {
         if (words.size() > 2 && words.getFirst().equalsIgnoreCase("connect")) {
             handleConnectCommand(po, inRoute, outRoute, words);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(DELETE)) {
@@ -229,6 +254,16 @@ public class GraphCommandService extends GraphLambdaFunction {
             handleEditCommand(po, inRoute, outRoute, words.get(2));
         } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("list")) {
             handleListCommand(po, inRoute, outRoute, words.get(1));
+        } else {
+            handleCommandPartThree(po, inRoute, outRoute, words);
+        }
+    }
+
+    private void handleCommandPartThree(PostOffice po, String inRoute, String outRoute, List<String> words) {
+        if (words.size() == 3 && words.getFirst().equalsIgnoreCase("upload") &&
+                words.get(1).equalsIgnoreCase("mock") &&
+                words.get(2).equalsIgnoreCase("data")) {
+            handleUploadMockCommand(po, inRoute, outRoute);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
         }
@@ -721,9 +756,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 }
             }
             var stateMachine = graphInstance.stateMachine;
-            if (!stateMachine.exists(INPUT_BODY_NAMESPACE)) {
-                stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
-            }
+            stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
             stateMachine.setElement(OUTPUT_NAMESPACE, new HashMap<>());
             var timeout = getModelTtl(graphInstance);
             log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);

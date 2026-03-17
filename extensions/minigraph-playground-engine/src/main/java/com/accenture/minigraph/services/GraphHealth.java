@@ -24,6 +24,13 @@ import org.platformlambda.core.models.LambdaFunction;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This is a template health service. Please replace this with the real
+ * implementation by changing this parameter in application.properties
+ * to your real health check service route name.
+ * <p>
+ * mandatory.health.dependencies=graph.health
+ */
 @PreLoad(route="graph.health", instances=10)
 public class GraphHealth implements LambdaFunction {
 
@@ -55,7 +62,7 @@ public class GraphHealth implements LambdaFunction {
              *
              * Since this app has no external dependency, this is a demo health endpoint only.
              */
-            return Map.of("mini-graph", "I am running fine");
+            return Map.of("mini-graph", "I am doing fine");
         }
         throw new IllegalArgumentException("type must be info or health");
     }

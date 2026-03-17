@@ -18,31 +18,29 @@
 
 package com.accenture.minigraph.rest;
 
-import com.accenture.minigraph.websocket.server.JsonPathHandler;
+import com.accenture.minigraph.services.GraphCommandService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
 
 import java.util.List;
 import java.util.Map;
 
-@PreLoad(route = "upload.json.content", instances = 10)
-public class UploadJsonContent implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+@PreLoad(route = "upload.mock.content", instances = 10)
+public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         var id = input.getPathParameter("id");
         if (input.getBody() instanceof Map || input.getBody() instanceof List) {
-            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(input.getBody());
-            if (JsonPathHandler.uploadContent(id, text)) {
+            if (GraphCommandService.uploadContent(id, input.getBody())) {
                 return new EventEnvelope().setHeader("Content-Type", "application/json")
                         .setBody(Map.of("message", "Content uploaded", "type", "upload"));
             } else {
                 throw new IllegalArgumentException("Session "+id+" is expired or invalid");
             }
         }
-        throw new IllegalArgumentException("Input is not a valid JSON/XML text that represents a Map or List");
+        throw new IllegalArgumentException("Input is not a valid JSON payload that represents a Map or List");
     }
 }

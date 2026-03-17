@@ -5,7 +5,7 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>minigraph-playground-engine</artifactId>
-    <version>4.3.74</version>
+    <version>4.3.75</version>
     <packaging>jar</packaging>
     <name>MiniGraph Playground Engine</name>
 
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.3.74</version>
+            <version>4.3.75</version>
         </dependency>
 
         <dependency>
