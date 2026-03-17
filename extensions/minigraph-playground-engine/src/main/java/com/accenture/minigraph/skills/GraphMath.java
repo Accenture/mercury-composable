@@ -160,11 +160,16 @@ public class GraphMath extends GraphLambdaFunction {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
             var text = getJsWithParameters(rhs, graphInstance.stateMachine, false);
-            var result = engine.evalNumber(text);
+            var result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
+    }
+
+    private boolean hasBooleanOperator(String text) {
+        return text.contains("&&") || text.contains("||") || text.contains("!") || text.contains(">")
+                || text.contains("<") || text.contains(">=") || text.contains("<=") || text.contains("==");
     }
 
     private String evaluate(GraphInstance graphInstance, String nodeName, List<String> lines) {

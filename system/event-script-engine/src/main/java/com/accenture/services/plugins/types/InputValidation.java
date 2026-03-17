@@ -28,6 +28,7 @@ import java.util.Map;
 
 @SimplePlugin
 public class InputValidation implements PluginFunction {
+    private static final String EVALUATE = "evaluate";
     private static final Map<String, Class<?>> TYPES = Map.of(
             "String", String.class,
             "Integer", Integer.class, "Long", Long.class, "Float", Float.class,
@@ -51,6 +52,9 @@ public class InputValidation implements PluginFunction {
      * f:validate(input.body.id, text(id; Integer; required))
      * f:validate(input.body.id, text(id; Integer; 1; 99))
      * f:validate(input.body.id, text(id; Long; 100; 9999))
+     * Optional keyword "evaluate" can be appended to the end.
+     * e.g. adding "evaluate keyword will return true or false instead of value or exception.
+     * f:validate(input.body.id, text(id; String; evaluate))
      *
      * @param input expected 2 arguments where the second one is the validation rule
      * @return argument one if validation passes IllegalArgumentException will be thrown
@@ -59,7 +63,7 @@ public class InputValidation implements PluginFunction {
     public Object calculate(Object... input) {
         if (input.length == 2 && input[1] instanceof String text) {
             var value = input[0];
-            var rules = getRules(text);
+            var rules = TypeConversionUtils.getRules(text);
             if (rules.size() < 2) {
                 throw new IllegalArgumentException("Invalid validation rule. " +
                         "Syntax: text(id, type), text(id, type, required) or text(id, type, range-start, range-end)");
@@ -74,10 +78,40 @@ public class InputValidation implements PluginFunction {
             if (rules.size() > 2 && REQUIRED.equalsIgnoreCase(rules.get(2)) && value == null) {
                 throw new IllegalArgumentException(fieldName+" is required.");
             }
-            return validate(fieldName, value, clazz, rules);
+            var evaluate = EVALUATE.equalsIgnoreCase(rules.getLast());
+            var filtered = filterRules(rules);
+            return evaluateOrException(fieldName, value, clazz, filtered, evaluate);
         } else {
             throw new IllegalArgumentException("Validation syntax error. " +
                     "Expect 2 arguments where the second one is the validation rule.");
+        }
+    }
+
+    private List<String> filterRules(List<String> rules) {
+        var result = new ArrayList<String>();
+        for (String rule : rules) {
+            if (!REQUIRED.equalsIgnoreCase(rule) && !EVALUATE.equalsIgnoreCase(rule)) {
+                result.add(rule);
+            }
+        }
+        return result;
+    }
+
+    private Object evaluateOrException(String fieldName, Object value, Class<?> clazz, List<String> rules,
+                                       boolean evaluate) {
+        try {
+            var outcome = validate(fieldName, value, clazz, rules);
+            if (evaluate) {
+                return true;
+            } else {
+                return outcome;
+            }
+        } catch (IllegalArgumentException e) {
+            if (evaluate) {
+                return false;
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -186,12 +220,5 @@ public class InputValidation implements PluginFunction {
         } else {
             return value.getClass() == clazz;
         }
-    }
-
-    private List<String> getRules(String text) {
-        var rules = TypeConversionUtils.split(text, ";");
-        var result = new ArrayList<String>();
-        rules.forEach(rule -> result.add(rule.trim()));
-        return result;
     }
 }

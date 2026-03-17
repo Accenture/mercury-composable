@@ -1503,24 +1503,36 @@ For example:
 | **Type Conversion** | updateListOfMap | Update "a list of maps" with "maps of lists"                                                                          |
 | **Type Conversion** | removeKey       | Remove one or more keys from a map or "list of maps"                                                                  |
 | **Type Conversion** | defaultValue    | If the first argument is null, return the 2nd argument                                                                |
+| **Type Conversion** | parseDate       | Parse a date string to ISO, Local or Milliseconds.                                                                    |
+| **Type Conversion** | parseDateTime   | Parse a date-time string to ISO, Local or Milliseconds.                                                               |
 | **Type Conversion** | validate        | Perform simple field validation. See details below.                                                                   |
 
 *DateTime plugins*
 
-f:dateTime() will yield a timestamp with local timezone.
+- f:dateTime() will yield a timestamp with local timezone.
 
 ```
 2026-03-15T14:48:21.735153-07:00[America/Los_Angeles]
 ```
 
-f:now() or f:now(text(iso)) will return an ISO-3339 timestamp like `2026-03-15T21:51:27.083Z`
-
-f:now(text(local)) will yield local date time like `2026-03-15 14:51:27.083`
-
-f:now(text(ms)) will return milliseconds since epoch.
+- f:now() or f:now(text(iso)) will return an ISO-3339 timestamp like `2026-03-15T21:51:27.083Z`
+- f:now(text(local)) will yield local date time like `2026-03-15 14:51:27.083`
+- f:now(text(ms)) will return milliseconds since epoch.
 
 All other command in the "text(command)" argument will throw IllegalArgumentException to advise
 that the plugin support iso, local or ms only.
+
+Syntax for parseDate and parseDateTime is the same except the pattern must be provided
+to parse date or date/time string.
+
+- f:parseDate(value, text(pattern, iso | local | ms))
+- f:parseDateTime(value, text(pattern, iso | local | ms))
+
+Example for parsing a date string to milliseconds since epoch
+- f:parseDate(input.body.date, text(MM/dd/yyyy; ms))
+
+Example for parsing a date-time string to an ISO 3339 timestamp
+- f:parseDateTime(input.body.datetime, text(MM/dd/yyyy HH:mm:ss; iso))
 
 *Simple Field Validation*
 
@@ -1547,6 +1559,10 @@ you can write a generalized JSON schema validation task and set it as the first 
 
 To check for exact value, set start range and end range to the same value.
 As shown in the examples above, If you want to test for non-null value, use the "required" keyword.
+
+Optionally, you can add 'evaluate' as the last keyword to tell the plugin to return true or false instead of
+throwing an validation error. For example,
+- f:validate(input.body.id, text(id; String; evaluate))
 
 Please note that the validation rule uses semicolon as separator because comma is used for tokenization.
 

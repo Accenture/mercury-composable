@@ -1,6 +1,6 @@
 flow:
-  id: 'input-validation-2'
-  description: 'Test input validation - String range test'
+  id: 'parse-date-time'
+  description: 'Parse a date-time string to milliseconds'
   ttl: 10s
   exception: 'v1.hello.exception'
 
@@ -8,8 +8,7 @@ first.task: 'no.op'
 
 tasks:
   - input:
-      - 'f:validate(input.body.user, text(user; String; CCC; DDD)) -> user'
-      - 'text(hello world) -> greeting'
+      - 'f:parseDateTime(input.body.datetime, text(MM/dd/yyyy HH:mm:ss; ms)) -> ms'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

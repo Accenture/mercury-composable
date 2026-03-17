@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
@@ -147,9 +147,93 @@ class FlowTests extends TestBase {
             assertEquals(message, result.get("message"));
         } else {
             assertEquals(200, res.getStatus());
-            assertEquals(String.valueOf(user), result.get("user"));
+            assertEquals(user, result.get("user"));
             assertEquals(message, result.get("greeting"));
         }
+    }
+
+    @Test
+    void inputValidationTest15() throws InterruptedException {
+        inputValidationCaseTwo(12345, true);
+    }
+
+    @Test
+    void inputValidationTest16() throws InterruptedException {
+        inputValidationCaseTwo("12345", false);
+    }
+
+    @SuppressWarnings("unchecked")
+    void inputValidationCaseTwo(Object user, boolean outcome) throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final long timeout = 8000;
+        final String traceId = "9002";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        if (user != null) {
+            request.setBody(Map.of("user", user));
+        }
+        request.setUrl("/api/validation-6");
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /greeting");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(200, res.getStatus());
+        assertEquals(outcome, result.get("user"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void parseDateTest() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final String date = "03/17/2026";
+        final long timeout = 8000;
+        final String traceId = "90090";
+        var dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+        Instant instant = LocalDate.parse(date, dateFormatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Date d = Date.from(instant);
+        long ms = d.getTime();
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setBody(Map.of("date", date));
+        request.setUrl("/api/parse-date");
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /parse/date");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(200, res.getStatus());
+        assertEquals(ms, result.get("ms"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void parseDateTimeTest() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final String date = "03/17/2026 12:17:02";
+        final long timeout = 8000;
+        final String traceId = "90091";
+        var dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
+        Instant instant = LocalDateTime.parse(date, dateFormatter).atZone(ZoneId.systemDefault()).toInstant();
+        Date d = Date.from(instant);
+        long ms = d.getTime();
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setBody(Map.of("datetime", date));
+        request.setUrl("/api/parse-date-time");
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /parse/datetime");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(200, res.getStatus());
+        assertEquals(ms, result.get("ms"));
     }
 
     @Test

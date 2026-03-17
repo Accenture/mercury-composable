@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.76, 3/17/2026
+
+### Added
+
+new plugins (f:parseDate and f:parseDateTime)
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated f:validate() plugin with keyword 'evaluate' so that we can configure
+the plugin to return true or false instead of throwing an exception
+
+---
 ## Version 4.3.75, 3/16/2026
 
 ### Added
