@@ -2,11 +2,16 @@
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
   --success-color: #10b981;
-  --warning-color: #f59e0b;
+  --warning-color: #f5780b;
   --danger-color: #ef4444;
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-dark: #1e293b;
+  --grey-50: rgba(0, 0, 0, 0.5);
+  --grey-40: rgba(0, 0, 0, 0.4);
+  --grey-30: rgba(0, 0, 0, 0.3);
+  --grey-20: rgba(0, 0, 0, 0.2);
+  --grey-10: rgba(0, 0, 0, 0.1);
   --border-color: #e2e8f0;
   --text-primary: #0f172a;
   --text-secondary: #64748b;

@@ -109,6 +109,28 @@ export function useAutoGraphRefresh({
     pinnedGraphPathRef.current = pinnedGraphPath;
   }, [pinnedGraphPath]);
 
+  // ── Reset waitingForDescribeRef on disconnect ─────────────────────────────
+  // If the WebSocket drops while we are waiting for a `describe graph` response,
+  // the pending flag must be cleared.  Without this, the first graph-link
+  // message that arrives after reconnection would be silently consumed to call
+  // setPinnedGraphPath — potentially with a stale or unrelated path from an
+  // entirely new session.
+  useEffect(() => {
+    if (!connected) {
+      if (waitingForDescribeRef.current) {
+        waitingForDescribeRef.current = false;
+      }
+      // Also cancel any in-flight debounce — a mutation debounce that fires
+      // after disconnection would set waitingForDescribeRef = true and call
+      // sendRawText, which is a no-op when disconnected but leaves the flag
+      // stranded true for the next reconnect.
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    }
+  }, [connected]);
+
   // ── Set watermark at mount ────────────────────────────────────────────────
   // Runs once on mount. Captures the highest message ID currently in the log
   // so that only genuinely new messages (posted after mount) are processed.
@@ -214,10 +236,14 @@ export function useAutoGraphRefresh({
       }, 300);
     }
 
-    // Cleanup: cancel the debounce timer if the component unmounts while it
-    // is pending. The waitingForDescribeRef is also implicitly abandoned
-    // on unmount, so no stale setPinnedGraphPath calls can occur.
-    // Note: this cleanup is part of the returned teardown of the main effect,
-    // on unmount, so no separate unmount-only useEffect is needed.
+    // Cancel the debounce timer if the component unmounts (or the effect
+    // re-runs) while it is still pending, so sendRawText is never called
+    // after teardown.
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
   }, [messages, connected, sendRawText, setPinnedGraphPath, addToast]);
 }

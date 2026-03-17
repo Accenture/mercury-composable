@@ -73,28 +73,32 @@ export function useGraphData(
   // Nulls graphData while fetching so the UI shows a clean loading state
   // (desired for first load / switching to a different graph).
   // Auto-switches to the Graph tab on success.
+  // Uses an AbortController so the in-flight request is actually cancelled at
+  // the network level (not just guarded by a flag) when the path changes or
+  // the component unmounts.
   useEffect(() => {
     if (!pinnedGraphPath) return;
 
-    let cancelled = false;
+    const controller = new AbortController();
     setGraphData(null); // clear stale data while the new fetch is in-flight
 
-    fetch(pinnedGraphPath)
+    fetch(pinnedGraphPath, { signal: controller.signal })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((json: unknown) => {
-        if (!cancelled && isMinigraphGraphData(json)) {
+        if (isMinigraphGraphData(json)) {
           setGraphData(json);
           setRightTab('graph'); // auto-switch to Graph tab on success
         }
       })
       .catch((err: Error) => {
-        if (!cancelled) addToast(`Graph fetch failed: ${err.message}`, 'error');
+        if (err.name === 'AbortError') return; // intentional cancellation — no toast
+        addToast(`Graph fetch failed: ${err.message}`, 'error');
       });
 
-    return () => { cancelled = true; };
+    return () => { controller.abort(); };
   }, [pinnedGraphPath, addToast]);
 
   // ── Imperative re-fetch (auto-refresh path) ─────────────────────────────
@@ -123,6 +127,8 @@ export function useGraphData(
         setIsRefreshing(false);
       })
       .catch((err: Error) => {
+        // This request was superseded by a newer refetchGraph() call — a new
+        // fetch is already in-flight and owns isRefreshing, so don't reset it.
         if (err.name === 'AbortError') return;
         addToast(`Graph refresh failed: ${err.message}`, 'error');
         setIsRefreshing(false);
@@ -131,6 +137,14 @@ export function useGraphData(
   // The empty dep array is intentional — see pinnedGraphPathRef for path access.
   // addToast is intentionally excluded: it is stable (from useToast) and including
   // it would require listing it which would force the hook consumer to stabilise it.
+
+  // ── Abort any in-flight refetch on unmount ──────────────────────────────
+  // The initial-load fetch is already cleaned up by its own effect's teardown.
+  // This handles the case where refetchGraph() is called and the component
+  // unmounts before the response arrives (e.g. user navigates away mid-refresh).
+  useEffect(() => {
+    return () => { refetchAbortRef.current?.abort(); };
+  }, []);
 
   return { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph };
 }

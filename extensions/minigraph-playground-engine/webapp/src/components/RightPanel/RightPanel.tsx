@@ -48,10 +48,10 @@ export default function RightPanel({
   onGraphDataCopyError,
   isGraphRefreshing,
 }: RightPanelProps) {
-  const uid             = useId();
-  const payloadPanelId  = `${uid}-tab-payload`;
-  const previewPanelId  = `${uid}-tab-preview`;
-  const graphPanelId    = `${uid}-tab-graph`;
+  const uid              = useId();
+  const payloadPanelId   = `${uid}-tab-payload`;
+  const previewPanelId   = `${uid}-tab-preview`;
+  const graphPanelId     = `${uid}-tab-graph`;
   const graphDataPanelId = `${uid}-tab-graph-data`;
 
   return (
@@ -77,7 +77,7 @@ export default function RightPanel({
             className={`${styles.tab}${activeTab === 'preview' ? ` ${styles.tabActive}` : ''}`}
             onClick={() => onTabChange('preview')}
           >
-            Markdown Preview
+            Developer Guides
             {pinnedMessage !== null && (
               <span className={styles.pinnedBadge} aria-label="Message pinned">📌</span>
             )}
@@ -128,7 +128,7 @@ export default function RightPanel({
         </div>
       )}
 
-      {/* Markdown Preview tab body — only mounted when enabled for this playground */}
+      {/* Developer Guides tab body — only mounted when enabled for this playground */}
       {tabs.includes('preview') && (
         <div
           role="tabpanel"
@@ -152,6 +152,8 @@ export default function RightPanel({
             graphData={graphData}
             onRenderError={onGraphRenderError}
             isRefreshing={isGraphRefreshing}
+            onCopySuccess={onGraphDataCopySuccess}
+            onCopyError={onGraphDataCopyError}
           />
         </div>
       )}
@@ -171,6 +173,7 @@ export default function RightPanel({
           />
         </div>
       )}
+
     </div>
   );
 }

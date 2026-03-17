@@ -12,7 +12,6 @@ import { extractUploadPath } from '../utils/messageParser';
 /** Local UI state that does NOT need to persist across navigation. */
 interface LocalState {
   command:      string;
-  autoScroll:   boolean;
   historyIndex: number;
   /**
    * Snapshot of the command field taken the moment the user first presses
@@ -29,8 +28,7 @@ type LocalAction =
   | { type: 'CLEAR_COMMAND' }
   | { type: 'SET_HISTORY_INDEX'; index: number; command: string }
   | { type: 'ENTER_HISTORY';     command: string }
-  | { type: 'EXIT_HISTORY' }
-  | { type: 'TOGGLE_AUTO_SCROLL' };
+  | { type: 'EXIT_HISTORY' };
 
 /** Options accepted by useWebSocket. */
 export interface UseWebSocketOptions {
@@ -52,8 +50,6 @@ export interface UseWebSocketReturn {
   sendCommand:      () => void;
   handleKeyDown:    (e: React.KeyboardEvent<HTMLElement>) => void;
   consoleRef:       React.RefObject<HTMLDivElement | null>;
-  autoScroll:       boolean;
-  toggleAutoScroll: () => void;
   copyMessages:     () => void;
   clearMessages:    () => void;
   uploadPayload:    () => void;
@@ -66,7 +62,6 @@ export interface UseWebSocketReturn {
 
 const localInitial: LocalState = {
   command:      '',
-  autoScroll:   true,
   historyIndex: -1,
   draftCommand: '',
 };
@@ -85,8 +80,6 @@ function localReducer(state: LocalState, action: LocalAction): LocalState {
     // Restore the draft and leave history browsing mode.
     case 'EXIT_HISTORY':
       return { ...state, historyIndex: -1, command: state.draftCommand, draftCommand: '' };
-    case 'TOGGLE_AUTO_SCROLL':
-      return { ...state, autoScroll: !state.autoScroll };
     default:
       return state;
   }
@@ -115,7 +108,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
 
   // Local UI state (not shared, resets on remount — that's intentional).
   const [localState, dispatch] = useReducer(localReducer, localInitial);
-  const { command, autoScroll, historyIndex } = localState;
+  const { command, historyIndex } = localState;
 
   // Persisted command history (keyed per playground so they stay separate).
   const [history, setHistory] = useLocalStorage<string[]>(storageKeyHistory, []);
@@ -129,10 +122,10 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
 
   // --- Auto-scroll effect ---
   useEffect(() => {
-    if (autoScroll && consoleRef.current) {
+    if (consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
     }
-  }, [messages, autoScroll]);
+  }, [messages]);
 
   // --- Public: connect ---
   const connect = useCallback(() => {
@@ -254,8 +247,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
   }, [ctx, wsPath, phase]);
 
   // --- Console helpers ---
-  const toggleAutoScroll = useCallback(() => dispatch({ type: 'TOGGLE_AUTO_SCROLL' }), []);
-
   const copyMessages = useCallback(() => {
     navigator.clipboard.writeText(messages.map((m: { id: number; raw: string }) => m.raw).join('\n'));
     addToast('Console copied to clipboard!', 'success');
@@ -282,8 +273,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     sendCommand,
     handleKeyDown,
     consoleRef,
-    autoScroll,
-    toggleAutoScroll,
     copyMessages,
     clearMessages,
     uploadPayload,

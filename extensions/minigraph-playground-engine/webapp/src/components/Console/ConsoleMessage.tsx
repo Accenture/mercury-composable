@@ -24,10 +24,10 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
   const isPinnable   = !!onPin && (!isGraphLink ? isMarkdownCandidate(message) : true);
   const pinTitle     = isGraphLink
     ? 'Click to load graph in Graph View'
-    : 'Click to pin to Markdown Preview';
+    : 'Click to pin to Developer Guides';
   const pinLabel     = isGraphLink
     ? 'Load graph in Graph View'
-    : 'Pin to Markdown Preview';
+    : 'Pin to Developer Guides';
 
   // Each message row owns its own copy state so the "✓" button confirmation
   // is scoped to exactly the row the user clicked — not the whole console.

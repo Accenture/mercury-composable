@@ -4,8 +4,6 @@ import styles from './Console.module.css';
 
 interface ConsoleProps {
   messages:           { id: number; raw: string }[];
-  autoScroll:         boolean;
-  onToggleAutoScroll: () => void;
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
@@ -18,8 +16,6 @@ interface ConsoleProps {
 
 export default function Console({
   messages,
-  autoScroll,
-  onToggleAutoScroll,
   onCopy,
   onClear,
   consoleRef,
@@ -34,19 +30,11 @@ export default function Console({
         <div className={styles.consoleControls}>
           <button
             className={styles.controlButton}
-            onClick={onToggleAutoScroll}
-            title={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
-            aria-label={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
-          >
-            {autoScroll ? 'Disable AutoScroll' : 'Enable AutoScroll'}
-          </button>
-          <button
-            className={styles.controlButton}
             onClick={onCopy}
             title="Copy console output"
             aria-label="Copy console output to clipboard"
           >
-            Copy Output
+            📑
           </button>
           <button
             className={styles.controlButton}
@@ -54,7 +42,7 @@ export default function Console({
             title="Clear console"
             aria-label="Clear console"
           >
-            Clear
+            🆑
           </button>
         </div>
       </div>

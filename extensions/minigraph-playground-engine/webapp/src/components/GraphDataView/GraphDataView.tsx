@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { JsonView, darkStyles, allExpanded, collapseAllNested } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import type { MinigraphGraphData } from '../../utils/graphTypes';
+import GraphToolbar from '../GraphToolbar/GraphToolbar';
 import styles from './GraphDataView.module.css';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +28,25 @@ const EXPAND_FN: Record<ExpandMode, (level: number) => boolean> = {
   none:    collapseAll,
 };
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive a sensible default save name from the graph data.
+ * Uses the root node's `name` property if present, otherwise falls back to
+ * the entry-point node's alias, or a timestamped default.
+ */
+export function deriveDefaultName(graphData: MinigraphGraphData): string {
+  const root = graphData.nodes.find(n => n.types.includes('entry_point'));
+  const nameFromRoot = root?.properties?.name as string | undefined;
+  if (nameFromRoot && typeof nameFromRoot === 'string') return nameFromRoot;
+  if (root) return root.alias;
+  const first = graphData.nodes[0];
+  if (first) return first.alias;
+  return `graph-${new Date().toISOString().slice(0, 10)}`;
+}
+
 interface GraphDataViewProps {
   graphData:       MinigraphGraphData | null;
   /** Called after the raw graph JSON is successfully copied to the clipboard. */
@@ -37,14 +57,6 @@ interface GraphDataViewProps {
 
 export default function GraphDataView({ graphData, onCopySuccess, onCopyError }: GraphDataViewProps) {
   const [expandMode, setExpandMode] = useState<ExpandMode>('all');
-
-  const handleCopy = useCallback(() => {
-    if (!graphData) return;
-    navigator.clipboard
-      .writeText(JSON.stringify(graphData, null, 2))
-      .then(() => onCopySuccess?.())
-      .catch(() => onCopyError?.());
-  }, [graphData, onCopySuccess, onCopyError]);
 
   if (!graphData) {
     return (
@@ -62,41 +74,33 @@ export default function GraphDataView({ graphData, onCopySuccess, onCopyError }:
 
   return (
     <div className={styles.root}>
-      <div className={styles.toolbar}>
-        <span className={styles.label}>
-          {graphData.nodes.length} node{graphData.nodes.length !== 1 ? 's' : ''}
-          {' · '}
-          {(graphData.connections ?? []).length} connection{(graphData.connections ?? []).length !== 1 ? 's' : ''}
-        </span>
-        <div className={styles.toolbarActions}>
-          <button
-            className={`${styles.copyButton}${expandMode === 'all' ? ` ${styles.copyButtonActive}` : ''}`}
-            onClick={() => setExpandMode('all')}
-            title="Expand all nodes"
-            aria-label="Expand all JSON nodes"
-            aria-pressed={expandMode === 'all'}
-          >
-            Expand All
-          </button>
-          <button
-            className={`${styles.copyButton}${expandMode === 'none' ? ` ${styles.copyButtonActive}` : ''}`}
-            onClick={() => setExpandMode('none')}
-            title="Collapse all nodes"
-            aria-label="Collapse all JSON nodes"
-            aria-pressed={expandMode === 'none'}
-          >
-            Collapse All
-          </button>
-          <button
-            className={styles.copyButton}
-            onClick={handleCopy}
-            title="Copy raw graph JSON to clipboard"
-            aria-label="Copy raw graph JSON to clipboard"
-          >
-            Copy JSON
-          </button>
-        </div>
-      </div>
+      <GraphToolbar
+        graphData={graphData}
+        onCopySuccess={onCopySuccess}
+        onCopyError={onCopyError}
+        extraActions={
+          <>
+            <button
+              className={styles.toolbarButton}
+              onClick={() => setExpandMode('all')}
+              title="Expand all nodes"
+              aria-label="Expand all JSON nodes"
+              aria-pressed={expandMode === 'all'}
+            >
+              ➖
+            </button>
+            <button
+              className={styles.toolbarButton}
+              onClick={() => setExpandMode('none')}
+              title="Collapse all nodes"
+              aria-label="Collapse all JSON nodes"
+              aria-pressed={expandMode === 'none'}
+            >
+              ➕
+            </button>
+          </>
+        }
+      />
 
       <div className={styles.scrollBody}>
         <JsonView

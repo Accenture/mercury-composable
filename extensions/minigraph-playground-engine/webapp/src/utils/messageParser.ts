@@ -109,6 +109,39 @@ export function isGraphLinkMessage(raw: string): boolean {
 }
 
 /**
+ * Returns true when a raw message is the echoed form of a command whose
+ * server response should appear in the Developer Guides panel.
+ *
+ * Only `help` and `describe` sub-commands (excluding `describe graph`, which
+ * produces a graph-link and is handled by the pin flow) qualify.
+ *
+ * The server echoes every user command as `"> {command}"` before the response,
+ * so we use the echo as a reliable signal rather than trying to pattern-match
+ * the response content (which varies widely across commands and locales).
+ *
+ * Examples that return true:
+ *   "> help"
+ *   "> help create"
+ *   "> describe node root"
+ *   "> describe connection A and B"
+ *   "> describe skill graph.math"
+ *
+ * Examples that return false:
+ *   "> describe graph"        — produces a graph-link, handled by pin flow
+ *   "> list nodes"            — read-only, not help/describe
+ *   "> create node foo …"     — mutation command
+ *   "Node foo created"        — server response (no "> " prefix)
+ */
+export function isHelpOrDescribeEcho(raw: string): boolean {
+  if (!raw.startsWith('> ')) return false;
+  const cmd = raw.slice(2).trim().toLowerCase();
+  if (cmd.startsWith('help')) return true;
+  // describe — but NOT "describe graph" (that produces a graph-link)
+  if (cmd.startsWith('describe ') && !cmd.startsWith('describe graph')) return true;
+  return false;
+}
+
+/**
  * Extracts the `/api/json/content/{id}` path from the server's upload-ready
  * message: "Please upload XML/JSON text to /api/json/content/{id}"
  *

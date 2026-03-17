@@ -13,6 +13,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useReducer,
   useRef,
   type ReactNode,
@@ -135,6 +136,18 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const wsRefs    = useRef<Record<string, WebSocket | null>>({});
   const pingRefs  = useRef<Record<string, ReturnType<typeof setInterval> | null>>({});
   const msgIdRefs = useRef<Record<string, number>>({});
+
+  // Tear down all connections when the provider unmounts (e.g. in tests, or if
+  // the app tree is conditionally rendered) to avoid dangling sockets and intervals.
+  useEffect(() => {
+    return () => {
+      Object.entries(wsRefs.current).forEach(([path, ws]) => {
+        ws?.close();
+        const ping = pingRefs.current[path];
+        if (ping) clearInterval(ping);
+      });
+    };
+  }, []);
 
   // Helper: derive a stable WebSocket URL from wsPath
   const makeUrl = (wsPath: string) => makeWsUrl(wsPath);

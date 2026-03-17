@@ -16,10 +16,15 @@ import { nodeTypes } from './NodeTypes';
 import { GraphViewErrorBoundary } from './GraphViewErrorBoundary';
 import { transformGraphData, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
 import type { MinigraphGraphData } from '../../utils/graphTypes';
+import GraphToolbar from '../GraphToolbar/GraphToolbar';
 import styles from './GraphView.module.css';
 
 interface GraphViewProps {
   graphData:       MinigraphGraphData | null;
+  /** Called after the raw graph JSON is successfully copied to the clipboard. */
+  onCopySuccess?:  () => void;
+  /** Called when the clipboard write fails. */
+  onCopyError?:    () => void;
   onRenderError?:  (message: string) => void;
   /** When true, renders a semi-transparent overlay with a spinner to indicate a background re-fetch. */
   isRefreshing?:   boolean;
@@ -28,9 +33,10 @@ interface GraphViewProps {
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
 const EMPTY_EDGES: Edge<GraphEdgeData>[]  = [];
 
-export default function GraphView({ graphData, onRenderError, isRefreshing = false }: GraphViewProps) {
-  // Keep a stable ref so the useMemo callback can read the latest prop
-  // without needing it in the dependency array (avoids spurious re-transforms).
+export default function GraphView({ graphData, onCopySuccess, onCopyError, onRenderError, isRefreshing = false }: GraphViewProps) {
+
+  // Keep a stable ref so the useEffect below can fire the error callback without
+  // needing onRenderError in the useMemo dependency array.
   const onRenderErrorRef = useRef(onRenderError);
   useEffect(() => { onRenderErrorRef.current = onRenderError; }, [onRenderError]);
 
@@ -41,11 +47,28 @@ export default function GraphView({ graphData, onRenderError, isRefreshing = fal
       return { ...result, transformError: null };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      // Fire the callback after the render cycle to avoid setState-during-render.
-      setTimeout(() => onRenderErrorRef.current?.(`Graph render failed: ${message}`), 0);
+      // Do NOT fire side-effects (toasts, setState) inside useMemo — useMemo must
+      // be pure.  The error message is surfaced via state and picked up by the
+      // useEffect below, which fires the callback safely after the render cycle.
       return { nodes: EMPTY_NODES, edges: EMPTY_EDGES, transformError: message };
     }
   }, [graphData]);
+
+  // Fire the render-error callback whenever the transform produces a new error.
+  // A useEffect is the correct place for side-effects that react to derived state.
+  // The ref ensures the callback is always current without adding it to the dep array.
+  useEffect(() => {
+    if (transformError) {
+      onRenderErrorRef.current?.(`Graph render failed: ${transformError}`);
+    }
+  }, [transformError]);
+
+  // Memoize the boundary key so JSON.stringify only runs when graphData actually
+  // changes, not on every render of GraphView triggered by unrelated parent state.
+  const boundaryKey = useMemo(
+    () => graphData ? JSON.stringify(graphData.nodes.map(n => n.alias)) : 'empty',
+    [graphData],
+  );
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<GraphNodeData>>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<GraphEdgeData>>(initialEdges);
@@ -77,13 +100,18 @@ export default function GraphView({ graphData, onRenderError, isRefreshing = fal
   }
 
   return (
-    // key resets the boundary whenever graphData changes, so a corrected graph
-    // after a previous failure renders cleanly without a page reload.
+    // key resets the boundary whenever the node set changes, so a corrected graph
+    // after a previous render failure renders cleanly without a page reload.
     <GraphViewErrorBoundary
-      key={graphData ? JSON.stringify(graphData.nodes.map(n => n.alias)) : 'empty'}
+      key={boundaryKey}
       onRenderError={onRenderError}
     >
       <div className={styles.graphWrapper} aria-busy={isRefreshing}>
+        <GraphToolbar
+          graphData={graphData}
+          onCopySuccess={onCopySuccess}
+          onCopyError={onCopyError}
+        />
         <ReactFlow
           nodes={nodes}
           edges={edges}

@@ -6,8 +6,6 @@ import styles from './LeftPanel.module.css';
 interface LeftPanelProps {
   // Console props
   messages:           { id: number; raw: string }[];
-  autoScroll:         boolean;
-  onToggleAutoScroll: () => void;
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
@@ -28,7 +26,7 @@ interface LeftPanelProps {
 }
 
 export default function LeftPanel({
-  messages, autoScroll, onToggleAutoScroll, onCopy, onClear, consoleRef,
+  messages, onCopy, onClear, consoleRef,
   onPinMessage, pinnedMessageId, onCopyMessage,
   command, onCommandChange, onCommandKeyDown, onSend,
   sendDisabled, inputDisabled, multiline, onToggleMultiline,
@@ -37,8 +35,6 @@ export default function LeftPanel({
     <div className={styles.root}>
       <Console
         messages={messages}
-        autoScroll={autoScroll}
-        onToggleAutoScroll={onToggleAutoScroll}
         onCopy={onCopy}
         onClear={onClear}
         consoleRef={consoleRef}
