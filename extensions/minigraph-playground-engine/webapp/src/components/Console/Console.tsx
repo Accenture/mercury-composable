@@ -42,7 +42,7 @@ export default function Console({
             title="Clear console"
             aria-label="Clear console"
           >
-            🆑
+            🗑️
           </button>
         </div>
       </div>

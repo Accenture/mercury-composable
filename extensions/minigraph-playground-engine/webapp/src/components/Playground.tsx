@@ -8,13 +8,14 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
+import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
 import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import { deriveDefaultName } from './GraphDataView/GraphDataView';
-import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath, isHelpOrDescribeEcho } from '../utils/messageParser';
+import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { type PlaygroundConfig } from '../config/playgrounds';
@@ -48,28 +49,11 @@ export default function Playground({ config }: PlaygroundProps) {
   // with identical text don't both appear pinned. null = no explicit pin.
   const [pinnedMessageId, setPinnedMessageId] = useState<number | null>(null);
 
-  // Auto-last: the most recent plain-text response to a `help` or `describe`
-  // (non-graph) command.  Strategy: walk the message list backwards to find
-  // the most recent echoed command that qualifies (isHelpOrDescribeEcho), then
-  // take the first non-JSON, non-graph-link message that follows it.
-  // Only computed when the Developer Guides tab is enabled for this playground.
+  // Auto-last: most recently received non-JSON, non-graph-link message.
+  // Only computed when the Markdown Preview tab is enabled for this playground.
   const lastNonJsonMessage = useMemo<string | null>(() => {
     if (!tabs.includes('preview')) return null;
-
-    // Find the index of the most recent qualifying echo.
-    let echoIndex = -1;
     for (let i = ws.messages.length - 1; i >= 0; i--) {
-      if (isHelpOrDescribeEcho(ws.messages[i].raw)) {
-        echoIndex = i;
-        break;
-      }
-    }
-    // No qualifying command has been sent yet — nothing to preview.
-    if (echoIndex === -1) return null;
-
-    // Scan forward from the echo to find the first response message that is
-    // renderable as Markdown (plain-text, not a graph-link, not a JSON event).
-    for (let i = echoIndex + 1; i < ws.messages.length; i++) {
       const raw = ws.messages[i].raw;
       if (!isGraphLinkMessage(raw) && isMarkdownCandidate(raw)) return raw;
     }
@@ -78,7 +62,7 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // Resolve the pinned id back to its raw string for MarkdownPreview.
   // pinnedMessageId wins; falls back to auto-last.
-  // Only computed when the Developer Guides tab is enabled for this playground.
+  // Only computed when the Markdown Preview tab is enabled for this playground.
   const resolvedPreviewMessage = useMemo<string | null>(() => {
     if (!tabs.includes('preview')) return null;
     if (pinnedMessageId !== null) {
@@ -104,6 +88,20 @@ export default function Playground({ config }: PlaygroundProps) {
     sendRawText:        ws.sendRawText,
     rightTab,
     addToast,
+  });
+
+  // ── Auto-pin Markdown Preview on help / describe responses ───────────────
+  // When the user sends a `help` or text-producing `describe` command, the
+  // first plain-text response is automatically pinned to the preview panel
+  // and the panel switches to the Developer Guides tab.
+  // This hook is a no-op when the playground config does not include 'preview'.
+  useAutoMarkdownPin({
+    messages:           ws.messages,
+    connected:          ws.connected,
+    setPinnedMessageId,
+    onAutoPin:          tabs.includes('preview')
+                          ? () => setRightTab('preview')
+                          : undefined,
   });
 
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────

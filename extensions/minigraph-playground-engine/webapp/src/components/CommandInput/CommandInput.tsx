@@ -75,6 +75,7 @@ export default function CommandInput({
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
           onSend();
+          onToggleMultiline?.(false);
           textareaRef.current?.focus();
         }
         // plain Enter in multiline: fall through → browser inserts newline
@@ -201,7 +202,7 @@ export default function CommandInput({
           />
           <button
             className={`${styles.sendButton} ${styles.sendButtonFullWidth}`}
-            onClick={() => { onSend(); textareaRef.current?.focus(); }}
+            onClick={() => { onSend(); onToggleMultiline?.(false); textareaRef.current?.focus(); }}
             disabled={sendDisabled}
           >
             Send

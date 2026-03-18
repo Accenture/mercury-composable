@@ -109,39 +109,6 @@ export function isGraphLinkMessage(raw: string): boolean {
 }
 
 /**
- * Returns true when a raw message is the echoed form of a command whose
- * server response should appear in the Developer Guides panel.
- *
- * Only `help` and `describe` sub-commands (excluding `describe graph`, which
- * produces a graph-link and is handled by the pin flow) qualify.
- *
- * The server echoes every user command as `"> {command}"` before the response,
- * so we use the echo as a reliable signal rather than trying to pattern-match
- * the response content (which varies widely across commands and locales).
- *
- * Examples that return true:
- *   "> help"
- *   "> help create"
- *   "> describe node root"
- *   "> describe connection A and B"
- *   "> describe skill graph.math"
- *
- * Examples that return false:
- *   "> describe graph"        — produces a graph-link, handled by pin flow
- *   "> list nodes"            — read-only, not help/describe
- *   "> create node foo …"     — mutation command
- *   "Node foo created"        — server response (no "> " prefix)
- */
-export function isHelpOrDescribeEcho(raw: string): boolean {
-  if (!raw.startsWith('> ')) return false;
-  const cmd = raw.slice(2).trim().toLowerCase();
-  if (cmd.startsWith('help')) return true;
-  // describe — but NOT "describe graph" (that produces a graph-link)
-  if (cmd.startsWith('describe ') && !cmd.startsWith('describe graph')) return true;
-  return false;
-}
-
-/**
  * Extracts the `/api/json/content/{id}` path from the server's upload-ready
  * message: "Please upload XML/JSON text to /api/json/content/{id}"
  *
@@ -151,6 +118,44 @@ export function isHelpOrDescribeEcho(raw: string): boolean {
 export function extractUploadPath(raw: string): string | null {
   const match = raw.match(/\/api\/json\/content\/([\w-]+)/);
   return match ? match[0] : null;
+}
+
+/**
+ * Returns true when a raw WebSocket message is an echoed command that should
+ * trigger an auto-pin of the next plain-text response to the Markdown Preview.
+ *
+ * Matches:
+ *  - `> help`               — top-level help overview
+ *  - `> help <topic>`       — topic-specific help (e.g. `help create`)
+ *  - `> describe skill <r>` — skill documentation (returns plain-text markdown)
+ *  - `> describe node <n>`  — node detail (returns a JSON map → handled by JsonView,
+ *                             BUT we still wait so we don't accidentally steal the
+ *                             next unrelated message; the hook's markdown-candidate
+ *                             guard handles the JSON case cleanly)
+ *  - `> describe connection <a> and <b>` — connection detail (plain-text)
+ *
+ * Explicitly EXCLUDED (returns a graph-link, not a Markdown response):
+ *  - `> describe graph`     — this produces a graph-link message that belongs
+ *                             to the Graph tab, not the Markdown Preview.
+ *
+ * Note: the backend echoes every command with a `> ` prefix, so we match on
+ * that prefix to distinguish user commands from server responses.
+ */
+export function isHelpOrDescribeCommand(raw: string): boolean {
+  if (!raw.startsWith('> ')) return false;
+  const lower = raw.slice(2).trim().toLowerCase();
+
+  // Top-level help or `help <topic>` — matches any `help ...` variant
+  if (lower === 'help' || lower.startsWith('help ')) return true;
+
+  // `describe skill`, `describe node`, `describe connection` — but NOT `describe graph`
+  if (lower.startsWith('describe ')) {
+    const rest = lower.slice('describe '.length).trim();
+    if (rest.startsWith('graph')) return false;   // `describe graph` → graph tab
+    return true;                                  // everything else → markdown preview
+  }
+
+  return false;
 }
 
 /**
