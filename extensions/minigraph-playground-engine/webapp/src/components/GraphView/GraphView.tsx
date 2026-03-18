@@ -122,7 +122,7 @@ export default function GraphView({ graphData, onCopySuccess, onCopyError, onRen
           fitViewOptions={{ padding: 0.25 }}
           minZoom={0.2}
           maxZoom={2.5}
-          colorMode="dark"
+          // colorMode="dark" // enable for dark mode
           proOptions={{ hideAttribution: false }}
         >
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
