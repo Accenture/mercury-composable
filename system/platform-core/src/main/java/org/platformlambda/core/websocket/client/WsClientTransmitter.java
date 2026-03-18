@@ -29,7 +29,7 @@ import java.util.Map;
 
 @ZeroTracing
 public class WsClientTransmitter implements LambdaFunction {
-    private static final int BUFFER_SIZE = 60 * 1024;
+    private static final int BUFFER_SIZE = 62 * 1024;
     private final WebSocket ws;
     private boolean connected = true;
 

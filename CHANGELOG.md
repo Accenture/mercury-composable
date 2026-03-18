@@ -10,6 +10,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.77, 3/18/2026
+
+### Added
+
+1. Variable substitution for data dictionary, provider and fetcher in
+   MiniGraph Playground and Execution engine.
+2. REST endpoint for UI to download larger JSON payload of 62 KB or more.
+
+### Removed
+
+N/A
+
+### Changed
+
+Improved parser for data mapping in data dictionary, provider, fetcher to avoid
+edge case of mixing JSON-Path left-hand-side value and the MAP_TO assignment indicator.
+
+---
+## Version 4.3.76, 3/17/2026
+
+### Added
+
+new plugins (f:parseDate and f:parseDateTime)
+
+### Removed
+
+N/A
+
+### Changed
+
+Updated f:validate() plugin with keyword 'evaluate' so that we can configure
+the plugin to return true or false instead of throwing an exception
+
+---
+## Version 4.3.75, 3/16/2026
+
+### Added
+
+1. new "app.env=dev" parameter in application.properties for minigraph-playground engine
+   so that self-service can be disabled when deployed to production.
+2. upload "mock input" for minigraph-playground so that a larger JSON payload can be used
+   as mock input data.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.74, 3/15/2026
 
 ### Added

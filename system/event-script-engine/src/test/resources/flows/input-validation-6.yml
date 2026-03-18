@@ -1,6 +1,6 @@
 flow:
-  id: 'input-validation-2'
-  description: 'Test input validation - String range test'
+  id: 'input-validation-6'
+  description: 'Test input validation - use evaluate keyword'
   ttl: 10s
   exception: 'v1.hello.exception'
 
@@ -8,8 +8,7 @@ first.task: 'no.op'
 
 tasks:
   - input:
-      - 'f:validate(input.body.user, text(user; String; CCC; DDD)) -> user'
-      - 'text(hello world) -> greeting'
+      - 'f:validate(input.body.user, text(user; Integer; evaluate)) -> user'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

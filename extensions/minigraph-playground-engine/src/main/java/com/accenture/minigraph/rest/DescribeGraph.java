@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.rest;
 
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = "show.graph.model", instances=20)
 public class DescribeGraph implements TypedLambdaFunction<AsyncHttpRequest, Object> {
     private static final Logger log = LoggerFactory.getLogger(DescribeGraph.class);

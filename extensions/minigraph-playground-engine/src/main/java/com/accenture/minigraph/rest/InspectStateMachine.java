@@ -18,36 +18,36 @@
 
 package com.accenture.minigraph.rest;
 
-import com.accenture.minigraph.websocket.server.JsonPathHandler;
+import com.accenture.minigraph.services.GraphCommandService;
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
 
 import java.util.List;
 import java.util.Map;
 
 @OptionalService("app.env=dev")
-@PreLoad(route = "upload.json.content", instances = 10)
-public class UploadJsonContent implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+@PreLoad(route = "inspect.state.machine", instances = 10)
+public class InspectStateMachine implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         var id = input.getPathParameter("id");
+        var key = input.getPathParameter("key");
         if (id == null) {
             throw new IllegalArgumentException("Missing path parameter: id");
         }
-        if (input.getBody() instanceof Map || input.getBody() instanceof List) {
-            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(input.getBody());
-            if (JsonPathHandler.uploadContent(id, text)) {
-                return new EventEnvelope().setHeader("Content-Type", "application/json")
-                        .setBody(Map.of("message", "Content uploaded", "type", "upload"));
-            } else {
-                throw new IllegalArgumentException("Session "+id+" is expired or invalid");
-            }
+        if (key == null) {
+            throw new IllegalArgumentException("Missing path parameter: key");
         }
-        throw new IllegalArgumentException("Input is not a valid JSON/XML text that represents a Map or List");
+        var content = GraphCommandService.downloadContent(id, key);
+        if (content instanceof Map || content instanceof List) {
+            return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(content);
+        } else {
+            throw new AppException(404, "Not found");
+        }
     }
 }

@@ -48,5 +48,8 @@ flows:
   - 'input-validation-3.yml'
   - 'input-validation-4.yml'
   - 'input-validation-5.yml'
+  - 'input-validation-6.yml'
+  - 'parse-date.yml'
+  - 'parse-date-time.yml'
 
 location: 'classpath:/flows/'

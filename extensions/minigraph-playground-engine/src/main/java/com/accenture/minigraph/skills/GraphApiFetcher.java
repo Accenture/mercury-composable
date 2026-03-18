@@ -316,7 +316,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             var text = output.trim();
             int sep = text.lastIndexOf(MAP_TO);
             if (sep != -1) {
-                var lhs = text.substring(0, sep).trim();
+                var lhs = substituteVarIfAny(text.substring(0, sep).trim(), stateMachine, false);
                 var rhs = text.substring(sep + MAP_TO.length()).trim();
                 var constant = helper.getConstantValue(lhs);
                 if (constant == null && !lhs.startsWith(PLUGIN_PREFIX)) {

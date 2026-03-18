@@ -36,7 +36,7 @@ import java.util.Map;
 public class WsServerTransmitter implements LambdaFunction {
     private static final String STATUS = "status";
     private static final String MESSAGE = "message";
-    private static final int BUFFER_SIZE = 60 * 1024;
+    private static final int BUFFER_SIZE = 62 * 1024;
     private final ServerWebSocket ws;
     private boolean connected = true;
 

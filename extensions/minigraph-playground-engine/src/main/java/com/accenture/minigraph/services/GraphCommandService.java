@@ -21,12 +21,14 @@ package com.accenture.minigraph.services;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
 import com.jayway.jsonpath.InvalidPathException;
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleConnection;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
@@ -44,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = GraphCommandService.ROUTE, instances=50)
 public class GraphCommandService extends GraphLambdaFunction {
     public static final String ROUTE = "graph.command.service";
@@ -52,6 +55,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
     private static final String PLAYGROUND = "playground";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
+    private static final long MAX_BUFFER_SIZE = 62 * 1024L;
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
     private final String deployedGraphLocation;
@@ -166,7 +170,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
             handleRunCommand(inRoute, outRoute);
         } else {
-            handleMoreCommand(po, inRoute, outRoute, words);
+            handleCommandPartTwo(po, inRoute, outRoute, words);
         }
     }
 
@@ -192,6 +196,42 @@ public class GraphCommandService extends GraphLambdaFunction {
         return words;
     }
 
+    private void handleUploadMockCommand(PostOffice po, String inRoute, String outRoute) {
+        var graphInstance = getGraphInstance(inRoute);
+        if (graphInstance != null) {
+            var name = getTempGraphName(inRoute);
+            po.send(new EventEnvelope().setTo(outRoute).setBody("You may upload JSON payload -> POST /api/mock/" + name));
+        }
+    }
+
+    public static boolean uploadContent(String id, Object content) {
+        var route = id.replace('-', '.');
+        var inRoute = route + ".in";
+        var outRoute = route + ".out";
+        var instance = graphInstances.get(inRoute);
+        if (instance == null) {
+            return false;
+        } else {
+            var stateMachine = instance.stateMachine;
+            stateMachine.setElement(INPUT_BODY_NAMESPACE, content);
+            var po = EventEmitter.getInstance();
+            po.send(outRoute, "Mock data loaded into 'input.body' namespace");
+            return true;
+        }
+    }
+
+    public static Object downloadContent(String id, String key) {
+        var route = id.replace('-', '.');
+        var inRoute = route + ".in";
+        var instance = graphInstances.get(inRoute);
+        if (instance != null) {
+            var stateMachine = instance.stateMachine;
+            return stateMachine.getElement(key);
+        } else {
+            return null;
+        }
+    }
+
     private void handleRunCommand(String inRoute, String outRoute) {
         var timeout = getModelTtl(getGraphInstance(inRoute));
         var po = PostOffice.trackable("minigraph.playground", util.getUuid(), "/playground");
@@ -207,7 +247,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 });
     }
 
-    private void handleMoreCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
+    private void handleCommandPartTwo(PostOffice po, String inRoute, String outRoute, List<String> words) {
         if (words.size() > 2 && words.getFirst().equalsIgnoreCase("connect")) {
             handleConnectCommand(po, inRoute, outRoute, words);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(DELETE)) {
@@ -229,6 +269,16 @@ public class GraphCommandService extends GraphLambdaFunction {
             handleEditCommand(po, inRoute, outRoute, words.get(2));
         } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("list")) {
             handleListCommand(po, inRoute, outRoute, words.get(1));
+        } else {
+            handleCommandPartThree(po, inRoute, outRoute, words);
+        }
+    }
+
+    private void handleCommandPartThree(PostOffice po, String inRoute, String outRoute, List<String> words) {
+        if (words.size() == 3 && words.getFirst().equalsIgnoreCase("upload") &&
+                words.get(1).equalsIgnoreCase("mock") &&
+                words.get(2).equalsIgnoreCase("data")) {
+            handleUploadMockCommand(po, inRoute, outRoute);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
         }
@@ -409,7 +459,18 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
         var stateMachine = getGraphInstance(inRoute).stateMachine;
         var value = stateMachine.getElement(key, "null");
-        po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
+        if (value instanceof Map || value instanceof List) {
+            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(value);
+            if (text.length() > MAX_BUFFER_SIZE) {
+                var name = getTempGraphName(inRoute);
+                po.send(new EventEnvelope().setTo(outRoute).setBody("Large payload ("+ text.length()
+                        +") -> GET /api/inspect/"+ name+"/"+key));
+            } else {
+                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
+            }
+        } else {
+            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
+        }
     }
 
     private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
@@ -743,7 +804,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             throw new IllegalArgumentException("Did you forget to create an end node?");
         }
         var line = lines.get(i);
-        var sep = line.indexOf(MAP_TO);
+        var sep = line.lastIndexOf(MAP_TO);
         if (sep == -1) {
             throw new IllegalArgumentException("Invalid data mapping entry. e.g. 'source -> target'");
         }

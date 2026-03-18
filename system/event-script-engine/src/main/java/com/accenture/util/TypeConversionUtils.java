@@ -279,15 +279,26 @@ public class TypeConversionUtils {
         return util.str2double(str);
     }
 
-    public static boolean str2boolean(String str) {
-        return "true".equalsIgnoreCase(str);
-    }
-
     public static String getIsoTimestamp() {
         return util.date2str(new Date());
     }
 
+    public static String getIsoTimestamp(Date date) {
+        return util.date2str(date);
+    }
+
     public static String getLocalTimestamp() {
         return util.getLocalTimestamp();
+    }
+
+    public static String getLocalTimestamp(long ms) {
+        return util.getLocalTimestamp(ms);
+    }
+
+    public static List<String> getRules(String text) {
+        var rules = TypeConversionUtils.split(text, ";");
+        var result = new ArrayList<String>();
+        rules.forEach(rule -> result.add(rule.trim()));
+        return result;
     }
 }

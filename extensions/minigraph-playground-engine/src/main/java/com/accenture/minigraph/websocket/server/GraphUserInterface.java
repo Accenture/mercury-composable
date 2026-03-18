@@ -19,6 +19,7 @@
 package com.accenture.minigraph.websocket.server;
 
 import com.accenture.minigraph.services.GraphCommandService;
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.WebSocketService;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @WebSocketService("graph")
 public class GraphUserInterface implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphUserInterface.class);

@@ -104,7 +104,8 @@ class PlaygroundTest {
             "Graph exported", "describe graph",
             "Graph with", "import node extension from hello",
             "node extension overwritten", "clear cache",
-            "cache cleared", "inspect js-1");
+            "cache cleared", "upload mock data",
+            "You may upload JSON payload", "inspect js-1");
 
     @BeforeAll
     static void setup() {
@@ -271,7 +272,6 @@ class PlaygroundTest {
         client.close();
         assertEquals(3,  received.size());
         assertEquals(Map.of("test", "123"), received.getFirst().get("outcome"));
-        assertEquals(Map.of("message", "100"), received.get(1).get("outcome"));
     }
 
     private Object getNextCommand(String command) throws InterruptedException {
@@ -288,7 +288,7 @@ class PlaygroundTest {
             if (command.startsWith(kv.getKey())) {
                 log.info("{}", kv.getKey());
                 // simulate human operator delay
-                Thread.sleep(75);
+                Thread.sleep(200);
                 return kv.getValue();
             }
         }

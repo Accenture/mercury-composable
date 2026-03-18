@@ -37,6 +37,22 @@ rest:
     headers: header_1
     tracing: true
 
+  - service: 'upload.mock.content'
+    methods: ['POST']
+    url: '/api/mock/{id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'inspect.state.machine'
+    methods: ['GET']
+    url: '/api/inspect/{id}/{key}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
   # MOCK endpoints
 
   - service: 'mock.mdm.profile'

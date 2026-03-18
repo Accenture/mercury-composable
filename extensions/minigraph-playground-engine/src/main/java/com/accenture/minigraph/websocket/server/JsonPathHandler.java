@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.websocket.server;
 
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.WebSocketService;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+@OptionalService("app.env=dev")
 @WebSocketService("json")
 public class JsonPathHandler implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(JsonPathHandler.class);

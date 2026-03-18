@@ -4,13 +4,13 @@ flow:
   ttl: 10s
   exception: 'v1.hello.exception'
 
-first.task: 'greeting.test'
+first.task: 'no.op'
 
 tasks:
   - input:
       - 'f:validate(input.body.user, text(user; String; required)) -> user'
       - 'text(hello world) -> greeting'
-    process: 'greeting.test'
+    process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'

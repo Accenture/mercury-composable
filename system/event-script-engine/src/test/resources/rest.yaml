@@ -353,12 +353,8 @@ rest:
     url: "/api/validation-1"
     flow: 'input-validation-1'
     timeout: 10s
-    # optional authentication service which should return result as an EventEnvelope
-    # with session info in headers and true or false in body
-    #    authentication: "v1.api.auth"
     cors: cors_1
     headers: header_1
-    # optionally, you can turn on Distributed Tracing
     tracing: true
 
   - service: "http.flow.adapter"
@@ -366,12 +362,8 @@ rest:
     url: "/api/validation-2"
     flow: 'input-validation-2'
     timeout: 10s
-    # optional authentication service which should return result as an EventEnvelope
-    # with session info in headers and true or false in body
-    #    authentication: "v1.api.auth"
     cors: cors_1
     headers: header_1
-    # optionally, you can turn on Distributed Tracing
     tracing: true
 
   - service: "http.flow.adapter"
@@ -379,12 +371,8 @@ rest:
     url: "/api/validation-3"
     flow: 'input-validation-3'
     timeout: 10s
-    # optional authentication service which should return result as an EventEnvelope
-    # with session info in headers and true or false in body
-    #    authentication: "v1.api.auth"
     cors: cors_1
     headers: header_1
-    # optionally, you can turn on Distributed Tracing
     tracing: true
 
   - service: "http.flow.adapter"
@@ -392,12 +380,8 @@ rest:
     url: "/api/validation-4"
     flow: 'input-validation-4'
     timeout: 10s
-    # optional authentication service which should return result as an EventEnvelope
-    # with session info in headers and true or false in body
-    #    authentication: "v1.api.auth"
     cors: cors_1
     headers: header_1
-    # optionally, you can turn on Distributed Tracing
     tracing: true
 
   - service: "http.flow.adapter"
@@ -405,12 +389,35 @@ rest:
     url: "/api/validation-5"
     flow: 'input-validation-5'
     timeout: 10s
-    # optional authentication service which should return result as an EventEnvelope
-    # with session info in headers and true or false in body
-    #    authentication: "v1.api.auth"
     cors: cors_1
     headers: header_1
-    # optionally, you can turn on Distributed Tracing
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/validation-6"
+    flow: 'input-validation-6'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/parse-date"
+    flow: 'parse-date'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/parse-date-time"
+    flow: 'parse-date-time'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
     tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses

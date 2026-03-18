@@ -158,7 +158,7 @@ public class GraphJs extends GraphLambdaFunction {
     }
 
     private void compute(Context context, String command, String nodeName, GraphInstance graphInstance) {
-        int sep = command.indexOf(MAP_TO);
+        int sep = command.lastIndexOf(MAP_TO);
         if (sep > 0) {
             // lhs is result key and rhs is JavaScript statement
             var lhs = command.substring(0, sep).trim();
@@ -166,7 +166,7 @@ public class GraphJs extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
-            var text = getJsWithParameters(rhs, graphInstance.stateMachine, false);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, false);
             var result = context.eval(JS, text).as(Object.class);
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
@@ -181,7 +181,7 @@ public class GraphJs extends GraphLambdaFunction {
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
-        var text = getJsWithParameters(ifStatement, graphInstance.stateMachine, true);
+        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine, true);
         var result = String.valueOf(context.eval(JS, text).as(Object.class));
         return getNext(graphInstance.graph, isTrue(result)? thenStatement : elseStatement);
     }

@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.rest;
 
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -27,6 +28,7 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = "v1.get.ws.html", instances = 10)
 public class GetWsHtml implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
     private static final String GRAPH = "graph";
