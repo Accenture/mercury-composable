@@ -35,6 +35,7 @@ public class SimpleMapper {
     private final SimpleObjectMapper camelMapper;
     private final Gson snakeGson;
     private final Gson camelGson;
+    private final boolean supportNulls;
     private static final Gson compactGson = new GsonBuilder().disableHtmlEscaping()
                                             .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create();
     private static final Gson prettyGson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting()
@@ -45,6 +46,8 @@ public class SimpleMapper {
         // Camel or snake case
         AppConfigReader config = AppConfigReader.getInstance();
         boolean snake = "true".equals(config.getProperty(SNAKE_CASE_SERIALIZATION, "true"));
+        this.supportNulls = "true".equalsIgnoreCase(
+                config.getProperty("serializer.null.transport", "false"));
         this.mapper = new SimpleObjectMapper(preconfigureGson(snake));
         this.snakeGson = preconfigureGson(true);
         this.camelGson = preconfigureGson(false);
@@ -123,7 +126,9 @@ public class SimpleMapper {
         if (snake) {
             builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
         }
-        builder.serializeNulls();
+        if (supportNulls) {
+            builder.serializeNulls();
+        }
         return builder.create();
     }
 

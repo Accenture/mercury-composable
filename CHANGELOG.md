@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.78, 3/19/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Conditionally set Gson's null transport using parameter "serializer.null.transport"
+2. Print unit test status for Playground websocket client tests
+
+---
 ## Version 4.3.77, 3/18/2026
 
 ### Added
