@@ -21,6 +21,7 @@ package com.accenture.minigraph.services;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.skills.GraphJoin;
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
@@ -29,6 +30,7 @@ import org.platformlambda.core.system.PostOffice;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = GraphTraveler.ROUTE, instances=50)
 public class GraphTraveler extends GraphLambdaFunction {
     public static final String ROUTE = "graph.playground.traveler";

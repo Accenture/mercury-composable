@@ -104,7 +104,8 @@ class PlaygroundTest {
             "Graph exported", "describe graph",
             "Graph with", "import node extension from hello",
             "node extension overwritten", "clear cache",
-            "cache cleared", "inspect js-1");
+            "cache cleared", "upload mock data",
+            "You may upload JSON payload", "inspect js-1");
 
     @BeforeAll
     static void setup() {

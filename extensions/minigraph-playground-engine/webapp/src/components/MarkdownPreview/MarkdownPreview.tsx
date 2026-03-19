@@ -12,9 +12,8 @@ export default function MarkdownPreview({ message }: MarkdownPreviewProps) {
       <div className={styles.previewBody}>
         {message === null ? (
           <div className={styles.emptyPreview}>
-            No preview yet. Send a command and click a plain-text message in the
-            Console to pin it here, or wait for the first text response to appear
-            automatically.
+            No preview yet. Send a 'help' or 'describe' command and/or click a plain-text message in the
+            Console to view it here.
           </div>
         ) : (
           <div className={styles.markdownContent}>

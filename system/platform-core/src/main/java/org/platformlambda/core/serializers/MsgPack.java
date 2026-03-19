@@ -21,6 +21,7 @@ package org.platformlambda.core.serializers;
 import org.msgpack.core.*;
 import org.msgpack.value.ValueType;
 import org.platformlambda.core.models.TypedPayload;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.io.ByteArrayOutputStream;
@@ -35,9 +36,15 @@ public class MsgPack {
     private static final Utility util = Utility.getInstance();
     private static final PayloadMapper converter = PayloadMapper.getInstance();
     private static final SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
-
     private static final String DATA = "_D";
     private static final String TYPE = "_T";
+    private final boolean supportNulls;
+
+    public MsgPack() {
+        var config = AppConfigReader.getInstance();
+        this.supportNulls = "true".equalsIgnoreCase(
+                                config.getProperty("serializer.null.transport", "false"));
+    }
     /**
      * Unpack method for generic map or list object
      *
@@ -109,9 +116,8 @@ public class MsgPack {
                 map.put(key, array);
                 unpack(handler, array);
             } else {
-                // skip null value
                 Object value = unpackValue(handler, mf);
-                if (value != null) {
+                if (supportNulls || value != null) {
                     map.put(key, value);
                 }
             }
@@ -207,12 +213,11 @@ public class MsgPack {
         }
     }
 
-    @SuppressWarnings({"rawtypes" })
     private MessagePacker pack(MessagePacker packer, Object o) throws IOException {
         switch (o) {
             case null -> packer.packNil();
-            case Map map -> packMap(packer, map);
-            case Collection list -> {
+            case Map<?, ?> map -> packMap(packer, map);
+            case Collection<?> list -> {
                 packer.packArrayHeader(list.size());
                 for (Object l : list) {
                     pack(packer, l);
@@ -266,28 +271,35 @@ public class MsgPack {
         return packer;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void packMap(MessagePacker packer, Map map) throws IOException {
-        // In json, the key may not be a string
+    private void packMap(MessagePacker packer, Map<?, ?> map) throws IOException {
         int mapSize = map.size();
         List<Object> keys = new ArrayList<>(map.keySet());
-        for (var k : keys) {
-            // reduce map size if null value
-            if (map.get(k) == null) {
-                mapSize--;
-            }
-        }
+        mapSize -= getNullKeyCount(map, keys);
         packer.packMapHeader(mapSize);
         if (mapSize > 0) {
             for (var k : keys) {
-                // ignore null value
                 Object value = map.get(k);
-                if (value != null) {
-                    // convert key to string
+                if (supportNulls || value != null) {
+                    // Enforce key as a string
                     packer.packString(k instanceof String text ? text : String.valueOf(k));
                     pack(packer, value);
                 }
             }
+        }
+    }
+
+    private int getNullKeyCount(Map<?, ?> map, List<Object> keys) {
+        if (supportNulls) {
+            return 0;
+        } else {
+            int count = 0;
+            for (var k : keys) {
+                // reduce map size if null value
+                if (map.get(k) == null) {
+                    count++;
+                }
+            }
+            return count;
         }
     }
 }

@@ -151,7 +151,7 @@ public class GraphMath extends GraphLambdaFunction {
     }
 
     private void compute(String command, String nodeName, GraphInstance graphInstance) {
-        int sep = command.indexOf(MAP_TO);
+        int sep = command.lastIndexOf(MAP_TO);
         if (sep > 0) {
             // lhs is result key and rhs is JavaScript statement
             var lhs = command.substring(0, sep).trim();
@@ -159,17 +159,12 @@ public class GraphMath extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
-            var text = getJsWithParameters(rhs, graphInstance.stateMachine, false);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, false);
             var result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
-    }
-
-    private boolean hasBooleanOperator(String text) {
-        return text.contains("&&") || text.contains("||") || text.contains("!") || text.contains(">")
-                || text.contains("<") || text.contains(">=") || text.contains("<=") || text.contains("==");
     }
 
     private String evaluate(GraphInstance graphInstance, String nodeName, List<String> lines) {
@@ -179,7 +174,7 @@ public class GraphMath extends GraphLambdaFunction {
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
-        var text = getJsWithParameters(ifStatement, graphInstance.stateMachine, true);
+        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine, true);
         return getNext(graphInstance.graph, engine.evalBoolean(text)? thenStatement : elseStatement);
     }
 

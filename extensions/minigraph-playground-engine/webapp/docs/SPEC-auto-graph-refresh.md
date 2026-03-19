@@ -466,7 +466,7 @@ the `waitingForDescribeRef` branch, not the `detectMutation` branch — so there
 | `node-mutation`, **no graph pinned** — first auto-pin | **Switches to Graph tab** — initial-load path in `useGraphData` fires |
 | `import-graph` (any state) — refresh completes | **Switches to Graph tab** — import is a deliberate whole-graph replacement |
 | User is on Graph Data (Raw) tab during background refresh | No tab switch (§5.1 only) |
-| User is on Payload Editor / Markdown Preview during background refresh | No tab switch (§5.1 only) |
+| User is on Payload Editor / Developer Guides during background refresh | No tab switch (§5.1 only) |
 | **Initial manual pin** (existing behaviour) | **Always** switches to Graph tab ← unchanged |
 
 ---

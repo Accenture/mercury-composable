@@ -19,6 +19,7 @@
 package com.accenture.minigraph.rest;
 
 import com.accenture.minigraph.websocket.server.JsonPathHandler;
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -28,12 +29,16 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import java.util.List;
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = "upload.json.content", instances = 10)
 public class UploadJsonContent implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         var id = input.getPathParameter("id");
+        if (id == null) {
+            throw new IllegalArgumentException("Missing path parameter: id");
+        }
         if (input.getBody() instanceof Map || input.getBody() instanceof List) {
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(input.getBody());
             if (JsonPathHandler.uploadContent(id, text)) {

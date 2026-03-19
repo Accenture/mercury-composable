@@ -121,6 +121,44 @@ export function extractUploadPath(raw: string): string | null {
 }
 
 /**
+ * Returns true when a raw WebSocket message is an echoed command that should
+ * trigger an auto-pin of the next plain-text response to the Markdown Preview.
+ *
+ * Matches:
+ *  - `> help`               — top-level help overview
+ *  - `> help <topic>`       — topic-specific help (e.g. `help create`)
+ *  - `> describe skill <r>` — skill documentation (returns plain-text markdown)
+ *  - `> describe node <n>`  — node detail (returns a JSON map → handled by JsonView,
+ *                             BUT we still wait so we don't accidentally steal the
+ *                             next unrelated message; the hook's markdown-candidate
+ *                             guard handles the JSON case cleanly)
+ *  - `> describe connection <a> and <b>` — connection detail (plain-text)
+ *
+ * Explicitly EXCLUDED (returns a graph-link, not a Markdown response):
+ *  - `> describe graph`     — this produces a graph-link message that belongs
+ *                             to the Graph tab, not the Markdown Preview.
+ *
+ * Note: the backend echoes every command with a `> ` prefix, so we match on
+ * that prefix to distinguish user commands from server responses.
+ */
+export function isHelpOrDescribeCommand(raw: string): boolean {
+  if (!raw.startsWith('> ')) return false;
+  const lower = raw.slice(2).trim().toLowerCase();
+
+  // Top-level help or `help <topic>` — matches any `help ...` variant
+  if (lower === 'help' || lower.startsWith('help ')) return true;
+
+  // `describe skill`, `describe node`, `describe connection` — but NOT `describe graph`
+  if (lower.startsWith('describe ')) {
+    const rest = lower.slice('describe '.length).trim();
+    if (rest.startsWith('graph')) return false;   // `describe graph` → graph tab
+    return true;                                  // everything else → markdown preview
+  }
+
+  return false;
+}
+
+/**
  * Discriminated union of the two mutation kinds the auto-refresh hook handles.
  *  - 'node-mutation'  — any structural node or connection change
  *  - 'import-graph'   — a full graph model replace via `import graph from {name}`

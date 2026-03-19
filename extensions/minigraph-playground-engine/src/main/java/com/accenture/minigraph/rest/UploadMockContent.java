@@ -19,6 +19,7 @@
 package com.accenture.minigraph.rest;
 
 import com.accenture.minigraph.services.GraphCommandService;
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
@@ -27,12 +28,16 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import java.util.List;
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = "upload.mock.content", instances = 10)
 public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         var id = input.getPathParameter("id");
+        if (id == null) {
+            throw new IllegalArgumentException("Missing path parameter: id");
+        }
         if (input.getBody() instanceof Map || input.getBody() instanceof List) {
             if (GraphCommandService.uploadContent(id, input.getBody())) {
                 return new EventEnvelope().setHeader("Content-Type", "application/json")

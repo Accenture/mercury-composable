@@ -28,13 +28,15 @@
 }
 
 .controlButton {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.2s;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.25rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    box-sizing: border-box;
 }
 
 .controlButton:hover {
@@ -52,7 +54,7 @@
   background-color: var(--console-bg);
   color: var(--console-text);
   padding: 1rem;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   flex: 1 1 auto;
   min-height: 150px;
   overflow-y: auto;

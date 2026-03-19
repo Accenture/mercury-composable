@@ -1525,13 +1525,15 @@ that the plugin support iso, local or ms only.
 Syntax for parseDate and parseDateTime is the same except the pattern must be provided
 to parse date or date/time string.
 
-- f:parseDate(value, text(pattern, iso | local | ms))
-- f:parseDateTime(value, text(pattern, iso | local | ms))
+- f:parseDate(value, text(pattern; iso | local | ms))
+- f:parseDateTime(value, text(pattern; iso | local | ms))
 
 Example for parsing a date string to milliseconds since epoch
+
 - f:parseDate(input.body.date, text(MM/dd/yyyy; ms))
 
 Example for parsing a date-time string to an ISO 3339 timestamp
+
 - f:parseDateTime(input.body.datetime, text(MM/dd/yyyy HH:mm:ss; iso))
 
 *Simple Field Validation*

@@ -35,7 +35,7 @@
    * theming approach recommended by the React Flow docs:
    * https://reactflow.dev/learn/customization/theming#css-variables
    */
-  background: color-mix(in srgb, var(--node-accent, #6c7086) 12%, transparent);
+  background: color-mix(in srgb, var(--node-accent, #6c7086) 25%, transparent);
   color: var(--node-accent, #6c7086);
 }
 
@@ -63,17 +63,22 @@
 }
 
 .body {
-  padding: 0.45rem 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  /* node body styles here */
+  padding: 0 0.6rem;
 }
 
 .row {
+  padding: 0.25rem 0rem;
   display: flex;
   gap: 0.3rem;
   align-items: flex-start;
+  border-bottom: 1px solid var(--border-color);
 }
+
+/* .row:last-of-type {
+  padding: 0.25rem 0.6rem 0.5rem;
+  border-bottom: initial;
+} */
 
 .label {
   flex-shrink: 0;

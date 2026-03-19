@@ -1,3 +1,17 @@
+:global(.react-flow.dark) {
+  --xy-edge-stroke-default: #fff;
+  --xy-edge-stroke-width-default: 4px;
+  --xy-connectionline-stroke-width-default: 4px;
+  --xy-edge-stroke-selected-default: var(--primary-color);
+}
+
+:global(.react-flow) {
+  /* --xy-edge-stroke-default: #fff; */
+  --xy-edge-stroke-width-default: 5px;
+  --xy-connectionline-stroke-width-default: 5px;
+  --xy-edge-stroke-selected-default: var(--primary-color);
+}
+
 .graphWrapper {
   position: relative; /* anchors the auto-refresh overlay — see refreshingOverlay */
   width: 100%;
@@ -23,28 +37,15 @@
   opacity: 0.4;
 }
 
+
+:global(.react-flow__node-default) {
+  text-align: initial;
+}
+
 /* ReactFlow attribution link — keep but de-emphasise */
 :global(.react-flow__attribution) {
   opacity: 0.35;
   font-size: 0.65rem;
-}
-
-/* Edge paths — thicker white connectors */
-:global(.react-flow__edge-path) {
-  stroke: #ffffff;
-  stroke-width: 2px;
-}
-
-:global(.react-flow__edge.selected .react-flow__edge-path),
-:global(.react-flow__edge:hover .react-flow__edge-path) {
-  stroke: #ffffff;
-  stroke-width: 3px;
-}
-
-/* Arrow-head markers inherit the white colour */
-:global(.react-flow__arrowhead path) {
-  fill: #ffffff;
-  stroke: #ffffff;
 }
 
 /* Edge labels */

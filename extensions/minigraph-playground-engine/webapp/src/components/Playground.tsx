@@ -8,8 +8,13 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
+import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
+import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
+import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
+import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
+import { deriveDefaultName } from './GraphDataView/GraphDataView';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
@@ -20,7 +25,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, supportsUpload, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeySavedGraphs, supportsUpload, tabs } = config;
 
   // Persisted payload
   const [payload, setPayload] = useLocalStorage<string>(storageKeyPayload, '');
@@ -85,6 +90,48 @@ export default function Playground({ config }: PlaygroundProps) {
     addToast,
   });
 
+  // ── Auto-pin Markdown Preview on help / describe responses ───────────────
+  // When the user sends a `help` or text-producing `describe` command, the
+  // first plain-text response is automatically pinned to the preview panel
+  // and the panel switches to the Developer Guides tab.
+  // This hook is a no-op when the playground config does not include 'preview'.
+  useAutoMarkdownPin({
+    messages:           ws.messages,
+    connected:          ws.connected,
+    setPinnedMessageId,
+    onAutoPin:          tabs.includes('preview')
+                          ? () => setRightTab('preview')
+                          : undefined,
+  });
+
+  // ── Saved graphs (localStorage snapshots) ────────────────────────────────
+  // Only instantiated when the playground config provides a storage key so
+  // playgrounds that don't use this feature have zero overhead.
+  const savedGraphs = useSavedGraphs(storageKeySavedGraphs ?? '');
+
+  // Save the current graph name as a bookmark in localStorage.
+  // Also sends `export graph as {name}` over the WebSocket so the server
+  // writes (or refreshes) the corresponding {name}.json file in its temp
+  // directory — that file is what `import graph from {name}` reads back.
+  // The WS send is a no-op when disconnected; the bookmark is still written
+  // so the user can reconnect and load it later.
+  const handleSaveGraph = useCallback((name: string) => {
+    savedGraphs.saveGraph(name);
+    if (ws.connected) {
+      ws.sendRawText(`export graph as ${name}`);
+    }
+    addToast(`Graph saved as "${name}"`, 'success');
+  }, [savedGraphs.saveGraph, ws.connected, ws.sendRawText, addToast]);
+
+  // Load a saved graph by sending `import graph from {name}` over the WebSocket.
+  // The backend reads {name}.json from its temp directory — the file that was
+  // written by the `export graph as {name}` command issued during save.
+  const handleLoadGraph = useCallback((name: string) => {
+    if (!ws.connected) return;
+    ws.sendRawText(`import graph from ${name}`);
+    addToast(`Importing graph "${name}"…`, 'info');
+  }, [ws.connected, ws.sendRawText, addToast]);
+
   // When a message is pinned, decide whether it is a graph link or a Markdown message.
   // Receives the full message object so we can store the stable id, not the raw string.
   // In both cases we store the id — it drives the highlight in the Console.
@@ -129,7 +176,26 @@ export default function Playground({ config }: PlaygroundProps) {
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
-        <Navigation addToast={addToast} />
+        <div className={styles.headerActions}>
+          {storageKeySavedGraphs && (
+            <GraphSaveButton
+              disabled={!graphData}
+              defaultName={graphData ? deriveDefaultName(graphData) : ''}
+              onSave={handleSaveGraph}
+              nameExists={savedGraphs.hasGraph}
+              connected={ws.connected}
+            />
+          )}
+          {storageKeySavedGraphs && savedGraphs.savedGraphs.length > 0 && (
+            <SavedGraphsMenu
+              savedGraphs={savedGraphs.savedGraphs}
+              onLoad={handleLoadGraph}
+              onDelete={savedGraphs.deleteGraph}
+              connected={ws.connected}
+            />
+          )}
+          <Navigation addToast={addToast} />
+        </div>
       </header>
 
       <Group
@@ -141,8 +207,6 @@ export default function Playground({ config }: PlaygroundProps) {
         <Panel defaultSize="60%" minSize="25%">
           <LeftPanel
             messages={ws.messages}
-            autoScroll={ws.autoScroll}
-            onToggleAutoScroll={ws.toggleAutoScroll}
             onCopy={ws.copyMessages}
             onClear={handleClearMessages}
             consoleRef={ws.consoleRef}

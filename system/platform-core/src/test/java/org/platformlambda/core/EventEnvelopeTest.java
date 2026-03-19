@@ -18,8 +18,10 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.Kv;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -134,6 +136,25 @@ class EventEnvelopeTest {
         EventEnvelope target = new EventEnvelope(b);
         assertEquals(value, target.getRawBody());
         assertEquals(value, target.getBody());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void nullTransportTest() {
+        var config = AppConfigReader.getInstance();
+        var transportNulls = "true".equalsIgnoreCase(
+                                config.getProperty("serializer.null.transport", "false"));
+        var map = new HashMap<String, Object>();
+        map.put("hello", "world");
+        map.put("null", null);
+        EventEnvelope source = new EventEnvelope();
+        source.setBody(map);
+        byte[] b = source.toBytes();
+        EventEnvelope target = new EventEnvelope(b);
+        assertInstanceOf(Map.class, target.getRawBody());
+        var restored = (Map<String, Object>) target.getRawBody();
+        assertEquals("world", restored.get("hello"));
+        assertEquals(transportNulls, restored.containsKey("null"));
     }
 
     @Test

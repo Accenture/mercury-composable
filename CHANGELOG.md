@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.77, 3/18/2026
+
+### Added
+
+1. Variable substitution for data dictionary, provider and fetcher in
+   MiniGraph Playground and Execution engine.
+2. REST endpoint for UI to download larger JSON payload of 62 KB or more.
+3. Parameter "serializer.null.transport=true" to enable transport of null values
+   over events. Default value is false.
+
+### Removed
+
+N/A
+
+### Changed
+
+Improved parser for data mapping in data dictionary, provider, fetcher to avoid
+edge case of mixing JSON-Path left-hand-side value and the MAP_TO assignment indicator.
+
+---
 ## Version 4.3.76, 3/17/2026
 
 ### Added

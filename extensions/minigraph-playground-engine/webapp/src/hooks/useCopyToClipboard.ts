@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 /** How long (ms) the button's in-row "✓" confirmation is shown before resetting. */
 const COPIED_RESET_DELAY_MS = 2000;
@@ -49,6 +49,16 @@ export const useCopyToClipboard = (
 ): UseCopyToClipboardReturn => {
   const { onSuccess, onError } = options;
   const [copied, setCopied] = useState(false);
+  // Track the reset timer so we can cancel it if the component unmounts before
+  // the 2-second window elapses — avoids a setState-after-unmount and keeps
+  // up to MAX_ITEMS (200) simultaneous handles from accumulating in the console.
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+    };
+  }, []);
 
   const copy = useCallback(async (text: string): Promise<boolean> => {
     if (!navigator.clipboard) {
@@ -60,10 +70,13 @@ export const useCopyToClipboard = (
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      // Reset the in-row visual confirmation after the delay.
-      // The state update is a no-op if the component has already unmounted
-      // (React 18+ behaviour), so no explicit cleanup is needed.
-      setTimeout(() => setCopied(false), COPIED_RESET_DELAY_MS);
+      // Cancel any previous pending reset before scheduling a new one so that
+      // rapid successive copies each get a fresh 2-second window.
+      if (resetTimerRef.current !== null) clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = setTimeout(() => {
+        resetTimerRef.current = null;
+        setCopied(false);
+      }, COPIED_RESET_DELAY_MS);
       onSuccess?.();
       return true;
     } catch (err) {

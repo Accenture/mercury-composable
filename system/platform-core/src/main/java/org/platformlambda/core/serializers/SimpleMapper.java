@@ -123,6 +123,7 @@ public class SimpleMapper {
         if (snake) {
             builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
         }
+        builder.serializeNulls();
         return builder.create();
     }
 
