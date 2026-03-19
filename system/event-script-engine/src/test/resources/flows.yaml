@@ -51,5 +51,6 @@ flows:
   - 'input-validation-6.yml'
   - 'parse-date.yml'
   - 'parse-date-time.yml'
+  - 'string-util.yml'
 
 location: 'classpath:/flows/'

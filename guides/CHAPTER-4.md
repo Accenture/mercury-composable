@@ -1488,6 +1488,9 @@ For example:
 | **Logical**         | not             | A single boolean                                                                                                      |
 | **Logical**         | gt              | Two individual whole numbers                                                                                          |
 | **Logical**         | lt              | Two individual whole numbers                                                                                          |
+| **Logical**         | startsWith      | Two strings, case insensitive.                                                                                        |
+| **Logical**         | endsWith        | Two strings, case insensitive.                                                                                        |
+| **Logical**         | includes        | Two strings, case insensitive.                                                                                        |
 | **Type Conversion** | b64             | Either a base64 encoded String, OR a byte[]                                                                           |
 | **Type Conversion** | binary          | Either a byte[], Map or String                                                                                        |
 | **Type Conversion** | length          | Either a byte[], List or String                                                                                       |

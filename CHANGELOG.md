@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.79, 3/19/2026
+
+### Added
+
+Plugins f:includes(), f:startsWith(), f:endsWith()
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.78, 3/19/2026
 
 ### Added
