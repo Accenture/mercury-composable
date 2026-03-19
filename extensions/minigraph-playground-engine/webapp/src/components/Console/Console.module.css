@@ -127,6 +127,13 @@
   outline: 1px solid rgba(20, 184, 166, 0.55);
 }
 
+/* Large-payload download link — amber accent */
+.consoleMessageLargePayload {
+  background-color: rgba(245, 158, 11, 0.06);
+  outline: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 4px;
+}
+
 /* ── Copy-to-clipboard button ───────────────────────────────────── */
 /*
  * The button lives in the third grid column of every message row.

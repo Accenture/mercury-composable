@@ -1,4 +1,4 @@
-import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage } from '../../utils/messageParser';
+import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage, isLargePayloadMessage } from '../../utils/messageParser';
 import { JsonView, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
@@ -20,12 +20,13 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
   const icon      = getMessageIcon(parsed.type);
   const jsonCheck = tryParseJSON(parsed.message);
 
-  const isGraphLink  = isGraphLinkMessage(message);
-  const isPinnable   = !!onPin && (!isGraphLink ? isMarkdownCandidate(message) : true);
-  const pinTitle     = isGraphLink
+  const isGraphLink      = isGraphLinkMessage(message);
+  const isLargePayload   = isLargePayloadMessage(message);
+  const isPinnable       = !!onPin && (!isGraphLink ? isMarkdownCandidate(message) : true);
+  const pinTitle         = isGraphLink
     ? 'Click to load graph in Graph View'
     : 'Click to pin to Developer Guides';
-  const pinLabel     = isGraphLink
+  const pinLabel         = isGraphLink
     ? 'Load graph in Graph View'
     : 'Pin to Developer Guides';
 
@@ -53,9 +54,10 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
       className={[
         styles.consoleMessage,
         styles[`messageType-${parsed.type}`],
-        isPinnable ? styles.consoleMessagePinnable  : '',
-        pinned     ? styles.consoleMessagePinned    : '',
-        isGraphLink ? styles.consoleMessageGraphLink : '',
+        isPinnable    ? styles.consoleMessagePinnable    : '',
+        pinned        ? styles.consoleMessagePinned      : '',
+        isGraphLink   ? styles.consoleMessageGraphLink   : '',
+        isLargePayload ? styles.consoleMessageLargePayload : '',
       ].filter(Boolean).join(' ')}
       onClick={isPinnable ? () => onPin!() : undefined}
       title={isPinnable ? pinTitle : undefined}
@@ -67,7 +69,9 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
       aria-label={isPinnable ? pinLabel : undefined}
       aria-pressed={isPinnable ? pinned : undefined}
     >
-      <span className={styles.messageIcon}>{isGraphLink ? '🕸️' : icon}</span>
+      <span className={styles.messageIcon}>
+        {isLargePayload ? '⬇️' : isGraphLink ? '🕸️' : icon}
+      </span>
 
       <div className={styles.messageContent}>
         {jsonCheck.isJSON ? (

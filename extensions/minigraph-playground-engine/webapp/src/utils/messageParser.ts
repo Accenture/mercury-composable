@@ -40,7 +40,7 @@ export const getMessageIcon = (type: MessageType): string => {
     error:   '❌',
     ping:    '🔄',
     welcome: '👋',
-    raw:     '📝',
+    raw:     '',
   };
   return icons[type] ?? '•';
 };
@@ -118,6 +118,54 @@ export function isGraphLinkMessage(raw: string): boolean {
 export function extractUploadPath(raw: string): string | null {
   const match = raw.match(/\/api\/json\/content\/([\w-]+)/);
   return match ? match[0] : null;
+}
+
+/**
+ * Represents a detected large-payload link with metadata extracted from the
+ * server's "Large payload (N) -> GET /api/inspect/..." message.
+ */
+export interface LargePayloadLink {
+  /** The relative API path to GET the payload, e.g. "/api/inspect/ws-734563-3/input.body" */
+  apiPath:   string;
+  /** The size in bytes reported by the server, e.g. 254922 */
+  byteSize:  number;
+  /**
+   * A suggested filename for the download, derived from the last path segment,
+   * e.g. "input.body.json"
+   */
+  filename:  string;
+}
+
+/**
+ * Matches the server's large-payload message pattern:
+ *   "Large payload (254922) -> GET /api/inspect/ws-734563-3/input.body"
+ *
+ * Returns a {@link LargePayloadLink} when the pattern is found, or null otherwise.
+ *
+ * The message is always a plain-text (non-JSON) line so there is no need to
+ * guard with isMarkdownCandidate — the caller should already know the context.
+ */
+export function extractLargePayloadLink(raw: string): LargePayloadLink | null {
+  // Pattern: Large payload (<bytes>) -> GET <path>
+  const match = raw.match(/Large payload \((\d+)\)\s*->\s*GET\s+(\/api\/inspect\/[^\s]+)/i);
+  if (!match) return null;
+
+  const byteSize = parseInt(match[1], 10);
+  const apiPath  = match[2];
+
+  // Derive a safe filename from the last path segment plus ".json"
+  const lastSegment = apiPath.split('/').filter(Boolean).pop() ?? 'payload';
+  const filename    = `${lastSegment}.json`;
+
+  return { apiPath, byteSize, filename };
+}
+
+/**
+ * Returns true when a raw WebSocket message is a large-payload link.
+ * Used by ConsoleMessage.tsx to apply a distinct visual treatment.
+ */
+export function isLargePayloadMessage(raw: string): boolean {
+  return extractLargePayloadLink(raw) !== null;
 }
 
 /**

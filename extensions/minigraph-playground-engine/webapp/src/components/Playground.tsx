@@ -9,6 +9,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
 import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
+import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
@@ -102,6 +103,18 @@ export default function Playground({ config }: PlaygroundProps) {
     onAutoPin:          tabs.includes('preview')
                           ? () => setRightTab('preview')
                           : undefined,
+  });
+
+  // ── Auto-download large payloads ──────────────────────────────────────────
+  // When the server responds with a "Large payload (N) -> GET /api/inspect/…"
+  // message (i.e. a namespace value that exceeds the 64 KB inline limit),
+  // this hook fetches the data from the provided endpoint and immediately
+  // triggers a browser file download — no extra user interaction required.
+  useLargePayloadDownload({
+    messages:      ws.messages,
+    connected:     ws.connected,
+    appendMessage: ws.appendMessage,
+    addToast,
   });
 
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────

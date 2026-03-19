@@ -54,6 +54,8 @@ export interface UseWebSocketReturn {
   clearMessages:    () => void;
   uploadPayload:    () => void;
   sendRawText:      (text: string) => void;
+  /** Append a local-only message to this slot's console (no WebSocket round-trip). */
+  appendMessage:    (raw: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +259,10 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     addToast('Console cleared', 'info');
   }, [ctx, wsPath, addToast]);
 
+  const appendMessage = useCallback((raw: string) => {
+    ctx.appendMessage(wsPath, raw);
+  }, [ctx, wsPath]);
+
   const setCommand = useCallback(
     (value: string) => dispatch({ type: 'SET_COMMAND', value }),
     []
@@ -277,5 +283,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     clearMessages,
     uploadPayload,
     sendRawText,
+    appendMessage,
   };
 }
