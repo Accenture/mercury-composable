@@ -5,17 +5,23 @@ import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import styles from './Console.module.css';
 
 interface ConsoleMessageProps {
-  message:         string;
+  message:              string;
   /** Called when the user clicks/activates this row to pin it. The parent
    *  is responsible for capturing the message identity — this component
    *  just signals the intent. */
-  onPin?:          () => void;
-  pinned?:         boolean;
+  onPin?:               () => void;
+  pinned?:              boolean;
   /** Called after a successful clipboard write — use this to show a toast. */
-  onCopyMessage?:  () => void;
+  onCopyMessage?:       () => void;
+  /**
+   * When provided, a "Send to JSON-Path" action button is shown on hover for
+   * JSON messages.  Called with the pretty-printed JSON string.
+   * Only rendered when the message body is a valid JSON object/array.
+   */
+  onSendToJsonPath?:    (json: string) => void;
 }
 
-export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }: ConsoleMessageProps) {
+export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, onSendToJsonPath }: ConsoleMessageProps) {
   const parsed    = parseMessage(message);
   const icon      = getMessageIcon(parsed.type);
   const jsonCheck = tryParseJSON(parsed.message);
@@ -29,6 +35,10 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
   const pinLabel         = isGraphLink
     ? 'Load graph in Graph View'
     : 'Pin to Developer Guides';
+
+  // Only show the "send to JSON-Path" button when the message is a JSON object/array
+  // and the parent has wired up the callback.
+  const canSendToJsonPath = !!onSendToJsonPath && jsonCheck.isJSON;
 
   // Each message row owns its own copy state so the "✓" button confirmation
   // is scoped to exactly the row the user clicked — not the whole console.
@@ -47,6 +57,13 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
       e.stopPropagation();
       copy(message);
     }
+  };
+
+  const handleSendToJsonPath = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (!onSendToJsonPath || !jsonCheck.isJSON) return;
+    const pretty = JSON.stringify(jsonCheck.data, null, 2);
+    onSendToJsonPath(pretty);
   };
 
   return (
@@ -108,6 +125,20 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage }
       >
         {copied ? '✅' : '📄'}
       </button>
+
+      {/* ── Send-to-JSON-Path button — only on JSON messages ─── */}
+      {canSendToJsonPath && (
+        <button
+          className={styles.sendToJsonPathButton}
+          onClick={handleSendToJsonPath}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSendToJsonPath(e); }}
+          title="Open in JSON-Path Playground"
+          aria-label="Open this JSON in the JSON-Path Playground"
+          tabIndex={0}
+        >
+          ➡️
+        </button>
+      )}
 
       {parsed.time && (
         <span className={styles.messageTime}>{parsed.time}</span>

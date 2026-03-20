@@ -79,7 +79,7 @@
  */
 .consoleMessage {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr auto auto auto;
   gap: 0.75rem;
   align-items: start;
   padding: 0.5rem;
@@ -198,6 +198,43 @@
   opacity: 1;
   color: #86efac;
   border-color: rgba(134, 239, 172, 0.5);
+}
+
+/* ── Send-to-JSON-Path button ────────────────────────────────────── */
+/* Same hide/reveal pattern as copyButton; uses a green accent to
+ * distinguish it from copy. Only rendered on JSON message rows. */
+.sendToJsonPathButton {
+  appearance: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  align-self: start;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  color: rgba(255, 255, 255, 0.75);
+  opacity: 0;
+  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.consoleMessage:hover .sendToJsonPathButton,
+.consoleMessage:focus-within .sendToJsonPathButton {
+  opacity: 1;
+}
+
+.sendToJsonPathButton:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.6);
+  color: #86efac;
+}
+
+.sendToJsonPathButton:focus-visible {
+  opacity: 1;
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
 }
 
 .messageIcon {

@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
@@ -19,7 +20,8 @@ import { deriveDefaultName } from './GraphDataView/GraphDataView';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
-import { type PlaygroundConfig } from '../config/playgrounds';
+import { type PlaygroundConfig, PLAYGROUND_CONFIGS } from '../config/playgrounds';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
@@ -28,8 +30,40 @@ interface PlaygroundProps {
 export default function Playground({ config }: PlaygroundProps) {
   const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeySavedGraphs, supportsUpload, tabs } = config;
 
-  // Persisted payload
-  const [payload, setPayload] = useLocalStorage<string>(storageKeyPayload, '');
+  const navigate = useNavigate();
+
+  // Persisted payload (survives navigation / refresh via localStorage).
+  const [storedPayload, setStoredPayload] = useLocalStorage<string>(storageKeyPayload, '');
+
+  // Large-payload override — set by useLargePayloadDownload via WebSocketContext
+  // when the server returns a payload too big to echo inline.  Using a separate
+  // useState means we never write large blobs to localStorage, avoiding quota
+  // exhaustion.  null = no override; the stored value is used instead.
+  const ctx = useWebSocketContext();
+  const [payloadOverride, setPayloadOverride] = useState<string | null>(() =>
+    ctx.takePendingPayload(wsPath)
+  );
+
+  // Reactively consume a pending payload deposited by useLargePayloadDownload.
+  // takePendingPayload has a new identity whenever a payload is deposited
+  // (backed by useState in the context), so this effect fires precisely when
+  // a new payload arrives — covering both the first-mount and already-mounted cases.
+  const { takePendingPayload } = ctx;
+  useEffect(() => {
+    const pending = takePendingPayload(wsPath);
+    if (pending !== null) {
+      setPayloadOverride(pending);
+    }
+  }, [takePendingPayload, wsPath]);
+
+  // The active payload: override wins over the persisted value.
+  const payload    = payloadOverride ?? storedPayload;
+  // Writers: the textarea and format/clear actions always write to localStorage.
+  // Clearing the override on any manual edit lets the user take back control.
+  const setPayload = useCallback((value: string | ((prev: string) => string)) => {
+    setPayloadOverride(null);
+    setStoredPayload(value as string);
+  }, [setStoredPayload]);
 
   // Live payload validation — derived synchronously from payload, no extra render cycle needed
   const payloadValidation = useMemo(
@@ -159,6 +193,22 @@ export default function Playground({ config }: PlaygroundProps) {
     }
   }, []);
 
+  // Send an inline JSON response to the JSON-Path playground payload editor.
+  // Mirrors the large-payload flow: navigate first, then deposit via context.
+  // Only offered when the JSON-Path playground is connected; otherwise toast.
+  const jsonPathConfig = PLAYGROUND_CONFIGS.find(c => c.tabs.includes('payload') && c.supportsUpload);
+  const handleSendToJsonPath = useCallback((json: string) => {
+    if (!jsonPathConfig) return;
+    const slot = ctx.getSlot(jsonPathConfig.wsPath);
+    if (slot.phase !== 'connected') {
+      addToast('Open JSON-Path Playground and connect first, then try again.', 'error');
+      return;
+    }
+    ctx.setPendingPayload(jsonPathConfig.wsPath, json);
+    navigate(jsonPathConfig.path);
+    addToast('JSON loaded into JSON-Path editor ✓', 'success');
+  }, [ctx, navigate, addToast, jsonPathConfig]);
+
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -234,6 +284,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onPinMessage={handlePinMessage}
             pinnedMessageId={pinnedMessageId}
             onCopyMessage={() => addToast('Copied to clipboard', 'success')}
+            onSendToJsonPath={jsonPathConfig && wsPath !== jsonPathConfig.wsPath ? handleSendToJsonPath : undefined}
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />

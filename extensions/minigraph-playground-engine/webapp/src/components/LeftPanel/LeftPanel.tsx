@@ -14,6 +14,8 @@ interface LeftPanelProps {
   pinnedMessageId?:   number | null;
   /** Called after any per-message copy succeeds — use this to show a toast. */
   onCopyMessage?:     () => void;
+  /** When provided, a "Send to JSON-Path" button appears on JSON messages. */
+  onSendToJsonPath?:  (json: string) => void;
   // CommandInput props
   command:            string;
   onCommandChange:    (value: string) => void;
@@ -27,7 +29,7 @@ interface LeftPanelProps {
 
 export default function LeftPanel({
   messages, onCopy, onClear, consoleRef,
-  onPinMessage, pinnedMessageId, onCopyMessage,
+  onPinMessage, pinnedMessageId, onCopyMessage, onSendToJsonPath,
   command, onCommandChange, onCommandKeyDown, onSend,
   sendDisabled, inputDisabled, multiline, onToggleMultiline,
 }: LeftPanelProps) {
@@ -41,6 +43,7 @@ export default function LeftPanel({
         onPinMessage={onPinMessage}
         pinnedMessageId={pinnedMessageId}
         onCopyMessage={onCopyMessage}
+        onSendToJsonPath={onSendToJsonPath}
       />
       <CommandInput
         command={command}

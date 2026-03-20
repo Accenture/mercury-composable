@@ -16,6 +16,7 @@ import {
   useEffect,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from 'react';
 import { MAX_ITEMS, PING_INTERVAL } from '../config/playgrounds';
@@ -50,6 +51,17 @@ export interface WebSocketContextValue {
   appendMessage: (wsPath: string, raw: string) => void;
   /** Clear all messages for a given path. */
   clearMessages: (wsPath: string) => void;
+  /**
+   * Store a payload string for the given wsPath so its Playground can pick
+   * it up on the next render without writing to localStorage.
+   * Pass `null` to clear a previously-stored pending payload.
+   */
+  setPendingPayload: (wsPath: string, payload: string | null) => void;
+  /**
+   * Retrieve and immediately clear the pending payload for the given wsPath.
+   * Returns `null` when nothing is pending.
+   */
+  takePendingPayload: (wsPath: string) => string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -288,13 +300,42 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CLEAR_MESSAGES', path: wsPath });
   }, []);
 
+  // ── pendingPayload ────────────────────────────────────────────────────────
+  // useState (not useRef) so that calling setPendingPayload triggers a
+  // re-render in any consuming component — specifically the already-mounted
+  // JSON-Path Playground whose useEffect polls for this value.
+  const [pendingPayloads, setPendingPayloads] = useState<Record<string, string>>({});
+
+  const setPendingPayload = useCallback((wsPath: string, payload: string | null) => {
+    setPendingPayloads(prev => {
+      if (payload === null) {
+        const next = { ...prev };
+        delete next[wsPath];
+        return next;
+      }
+      return { ...prev, [wsPath]: payload };
+    });
+  }, []);
+
+  const takePendingPayload = useCallback((wsPath: string): string | null => {
+    const value = pendingPayloads[wsPath] ?? null;
+    if (value !== null) {
+      setPendingPayloads(prev => {
+        const next = { ...prev };
+        delete next[wsPath];
+        return next;
+      });
+    }
+    return value;
+  }, [pendingPayloads]);
+
   // ── getSlot ──────────────────────────────────────────────────────────────
   const getSlot = useCallback((wsPath: string) => {
     return slots[wsPath] ?? { phase: 'idle' as WsPhase, messages: [] };
   }, [slots]);
 
   return (
-    <WebSocketContext.Provider value={{ getSlot, connect, disconnect, send, appendMessage, clearMessages }}>
+    <WebSocketContext.Provider value={{ getSlot, connect, disconnect, send, appendMessage, clearMessages, setPendingPayload, takePendingPayload }}>
       {children}
     </WebSocketContext.Provider>
   );
