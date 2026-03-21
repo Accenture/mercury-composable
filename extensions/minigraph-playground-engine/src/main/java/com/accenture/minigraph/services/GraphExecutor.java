@@ -80,6 +80,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             var graphInstance = createInstance(headers, event.getReplyTo(), event.getCorrelationId());
             var flowInstanceId = headers.get(INSTANCE);
             var flowInstance = Flows.getFlowInstance(flowInstanceId);
+            graphInstance.hasSeen.clear();
             beginTraversal(po, flowInstance, graphInstance);
         } catch (Exception e) {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;
@@ -152,6 +153,14 @@ public class GraphExecutor extends GraphLambdaFunction {
                 handleErrorResponse(po, graphInstance, response);
                 return;
             }
+            var graph = graphInstance.graph;
+            var node = graph.findNodeByAlias(nodeName);
+            var skill = node.getProperty(SKILL);
+            // Except "graph.join", mark node as seen.
+            // The "graph.join" node itself will mark "hasSeen" only when all joining paths are done.
+            if (skill != null && !skill.equals(GraphJoin.ROUTE)) {
+                graphInstance.hasSeen.put(nodeName, true);
+            }
             // Skill handler can also set status and error in its node properties instead of throwing exception
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
@@ -162,9 +171,7 @@ public class GraphExecutor extends GraphLambdaFunction {
                 po.send(error);
                 graphInstance.complete.set(true);
             } else if (!graphInstance.complete.get()) {
-                var graph = graphInstance.graph;
                 var endNode = graph.getEndNode();
-                var node = graph.findNodeByAlias(nodeName);
                 if (endNode.getId().equals(node.getId())) {
                     executionComplete(po, graphInstance);
                 } else {
@@ -181,7 +188,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
             var seen = graphInstance.hasSeen.get(nodeName);
             if (seen == null) {
-                if (!GraphJoin.ROUTE.equals(skill)) {
+                if (skill == null) {
                     graphInstance.hasSeen.put(nodeName, true);
                 }
                 walkTo(po, skill, graphInstance, node);
