@@ -336,7 +336,7 @@ public class EventEmitter {
                 log.info("Loaded route substitutions from {}", p);
                 return config;
             } catch (IllegalArgumentException e) {
-                log.warn("Skipping {} - {}", p, e.getMessage());
+                log.warn("Skip {} - {}", p, e.getMessage());
             }
         }
         throw new IllegalArgumentException("Route substitutions not found in "+paths);

@@ -39,12 +39,6 @@ import org.platformlambda.core.models.EventEnvelope;
 @PreLoad(route = GraphJs.ROUTE, instances=50)
 public class GraphJs extends GraphLambdaFunction {
     public static final String ROUTE = "graph.js";
-    private static final String MAPPING_TAG = "mapping:";
-    private static final String COMPUTE_TAG = "compute:";
-    private static final String EXECUTE_TAG = "execute:";
-    private static final String IF_TAG = "if:";
-    private static final String THEN_TAG = "then:";
-    private static final String ELSE_TAG = "else:";
 
     public GraphJs() {
         // suppress JavaScript engine warning
@@ -105,30 +99,6 @@ public class GraphJs extends GraphLambdaFunction {
         }
     }
 
-    private int countExecuteStatements(String nodeName, List<String> statements) {
-        var execute = 0;
-        var js = 0;
-        var error = 0;
-        for (var entry : statements) {
-            var line = entry.trim().toLowerCase();
-            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG)) {
-                js++;
-            } else if (line.startsWith(EXECUTE_TAG)) {
-                execute++;
-            } else if (!line.startsWith(MAPPING_TAG)) {
-                error++;
-            }
-        }
-        if (js == 0) {
-            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'IF:' or 'COMPUTE:' statements");
-        }
-        if (error > 0) {
-            throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must use 'IF:', 'COMPUTE:' or 'MAPPING:' statements");
-        }
-        return execute;
-    }
-
     private String executeStatements(String nodeName, List<String> entries, GraphInstance graphInstance) {
         try (Context context = Context.create(JS)) {
             for (var entry : entries) {
@@ -186,86 +156,9 @@ public class GraphJs extends GraphLambdaFunction {
         return getNext(graphInstance.graph, isTrue(result)? thenStatement : elseStatement);
     }
 
-    private String getNext(MiniGraph graph, String statement) {
-        if (!NEXT.equalsIgnoreCase(statement)) {
-            var nextNode = getNode(statement, graph);
-            if (nextNode == null) {
-                throw new IllegalArgumentException(NODE_NAME + statement + NOT_FOUND);
-            } else {
-                return statement;
-            }
-        }
-        return null;
-    }
-
-    private String getFirstWord(String statement) {
-        var space = statement.indexOf(' ');
-        return space == -1? statement : statement.substring(0, space);
-    }
-
     private boolean isTrue(String text) {
         if ("true".equals(text) || "y".equals(text) || "t".equals(text)) return true;
         var number = text.contains(".")? util.str2float(text): util.str2long(text);
         return number >= 0;
-    }
-
-    private String getIfStatement(List<String> lines) {
-        boolean found = false;
-        var sb = new StringBuilder();
-        for (String line : lines) {
-            var lc = line.toLowerCase().trim();
-            if (found) {
-                if (lc.startsWith(THEN_TAG) || lc.startsWith(ELSE_TAG)) {
-                    break;
-                } else {
-                    sb.append(line).append('\n');
-                }
-            }
-            if (lc.startsWith(IF_TAG)) {
-                sb.append(line.substring(3)).append('\n');
-                found = true;
-            }
-        }
-        return sb.toString().trim();
-    }
-
-    private String getThenStatement(List<String> lines) {
-        boolean found = false;
-        var sb = new StringBuilder();
-        for (String line : lines) {
-            var lc = line.toLowerCase().trim();
-            if (found) {
-                if (lc.startsWith(IF_TAG) || lc.startsWith(ELSE_TAG)) {
-                    break;
-                } else {
-                    sb.append(line).append('\n');
-                }
-            }
-            if (lc.startsWith(THEN_TAG)) {
-                sb.append(line.substring(5)).append('\n');
-                found = true;
-            }
-        }
-        return sb.toString().trim();
-    }
-
-    private String getElseStatement(List<String> lines) {
-        boolean found = false;
-        var sb = new StringBuilder();
-        for (String line : lines) {
-            var lc = line.toLowerCase().trim();
-            if (found) {
-                if (lc.startsWith(IF_TAG) || lc.startsWith(THEN_TAG)) {
-                    break;
-                } else {
-                    sb.append(line).append('\n');
-                }
-            }
-            if (lc.startsWith(ELSE_TAG)) {
-                sb.append(line.substring(5)).append('\n');
-                found = true;
-            }
-        }
-        return sb.toString().trim();
     }
 }

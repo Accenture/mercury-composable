@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.80, 3/20/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Refactor GraphExecutor to be an EventInterceptor and the executeSkill method to be event-driven
+2. Improve plugin f:includes() to support list
+3. In addition to boolean operators, detect the "@" comparison operator in JSON-Path query so
+   variable substitution can be properly handled
+4. Simplify MiniGraph's internal representation of adjacent nodes
+5. Improved validation of right-hand-side for input/output data-mapping for Graph Traveler and Executor
+
+---
 ## Version 4.3.79, 3/19/2026
 
 ### Added

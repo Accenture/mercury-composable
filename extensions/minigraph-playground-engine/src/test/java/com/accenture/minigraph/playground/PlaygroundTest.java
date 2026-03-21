@@ -111,7 +111,6 @@ class PlaygroundTest {
     static void setup() {
         deleteTempGraph();
         AutoStart.main(new String[0]);
-
     }
 
     @AfterAll

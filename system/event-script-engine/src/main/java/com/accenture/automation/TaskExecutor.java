@@ -826,7 +826,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         Object body = map.getElement(OUTPUT_BODY);
         Object status = map.getElement(OUTPUT_STATUS);
         if (status != null) {
-            int value = util.str2int(status.toString());
+            int value = util.str2int(String.valueOf(status));
             if (value > 0) {
                 result.setStatus(value);
             } else {

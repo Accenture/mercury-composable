@@ -18,8 +18,6 @@
 
 package org.platformlambda.core.graph;
 
-import com.google.common.graph.GraphBuilder;
-import com.google.common.graph.MutableGraph;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.models.SimpleConnection;
 import org.platformlambda.core.models.SimpleRelationship;
@@ -33,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MiniGraph {
     private static final Logger log = LoggerFactory.getLogger(MiniGraph.class);
@@ -43,23 +42,23 @@ public class MiniGraph {
     private static final Set<String> RESERVED_NAMES = Set.of("input", "output", "model", "response", "result",
                                                             "parameter", "none", "next", "api", "error");
     private static final Utility util = Utility.getInstance();
+    private final ReentrantLock safety = new ReentrantLock();
     private final String graphId = util.getUuid();
     private final ConcurrentMap<String, SimpleNode> nodesByAlias = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SimpleNode> nodesById = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, SimpleConnection> connections = new ConcurrentHashMap<>();
-    private final MutableGraph<String> graph = GraphBuilder.directed().allowsSelfLoops(false).build();
+    private final ConcurrentMap<String, Set<String>> successors = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<String>> predecessors = new ConcurrentHashMap<>();
     private final AtomicInteger nodeCount = new AtomicInteger();
     private final int maxNodes;
-    private SimpleNode rootNode;
-    private SimpleNode endNode;
 
     /**
-     * Create a mini-graph instance with default maximum of 500 nodes
+     * Create a mini-graph instance with default maximum of 750 nodes
      * <p>
      * Mini-graph is an in-memory minimalist graph designed to handle a small number of nodes very efficiently.
      */
     public MiniGraph() {
-        this(500);
+        this(750);
     }
 
     /**
@@ -325,19 +324,11 @@ public class MiniGraph {
     }
 
     public SimpleNode createRootNode() {
-        if (rootNode == null) {
-            return createNode(ROOT, ROOT);
-        } else {
-            return rootNode;
-        }
+        return createNode(ROOT, ROOT);
     }
 
     public SimpleNode createEndNode() {
-        if (endNode == null) {
-            return createNode(END, END);
-        } else {
-            return endNode;
-        }
+        return createNode(END, END);
     }
 
     public SimpleNode getRootNode() {
@@ -373,15 +364,10 @@ public class MiniGraph {
             throw new IllegalArgumentException("max number of nodes is "+maxNodes);
         }
         int count = nodeCount.incrementAndGet();
-
         var cid = util.getUuid();
-        graph.addNode(cid);
         var node = new SimpleNode(cid, alias, type);
         nodesByAlias.put(aliasLower, node);
         nodesById.put(cid, node);
-        if (ROOT.equals(aliasLower)) {
-            rootNode = node;
-        }
         log.debug("Created {} as {}, total={}", type, alias, count);
         return node;
     }
@@ -399,13 +385,9 @@ public class MiniGraph {
         if (node != null) {
             removeConnectionsFromNode(alias, true);
             removeConnectionsFromNode(alias, false);
-            graph.removeNode(node.getId());
             nodesById.remove(node.getId());
             nodesByAlias.remove(alias);
             var count = nodeCount.decrementAndGet();
-            if (ROOT.equals(alias)) {
-                rootNode = null;
-            }
             log.debug("Removed {}, total={}", alias, count);
         }
     }
@@ -490,8 +472,27 @@ public class MiniGraph {
         }
         var key = getRelationshipPair(source.getId(), target.getId());
         if (connections.containsKey(key)) {
-            graph.removeEdge(source.getId(), target.getId());
             connections.remove(key);
+            // remove connection from successors and predecessors
+            safety.lock();
+            try {
+                Set<String> targets = successors.getOrDefault(source.getId(), new HashSet<>());
+                targets.remove(target.getId());
+                if (targets.isEmpty()) {
+                    successors.remove(source.getId());
+                } else {
+                    successors.put(source.getId(), targets);
+                }
+                Set<String> sources = predecessors.getOrDefault(target.getId(), new HashSet<>());
+                sources.remove(source.getId());
+                if (sources.isEmpty()) {
+                    predecessors.remove(target.getId());
+                } else {
+                    predecessors.put(target.getId(), sources);
+                }
+            } finally {
+                safety.unlock();
+            }
             log.debug("Removed connection {} to {}", source.getAlias(), target.getAlias());
         }
     }
@@ -612,7 +613,18 @@ public class MiniGraph {
         var cid = util.getUuid();
         SimpleConnection connection = new SimpleConnection(cid, source, target);
         connections.put(key, connection);
-        graph.putEdge(source.getId(), target.getId());
+        // update predecessors and successors with the new connection
+        safety.lock();
+        try {
+            Set<String> targets = successors.getOrDefault(source.getId(), new HashSet<>());
+            targets.add(target.getId());
+            successors.put(source.getId(), targets);
+            Set<String> sources = predecessors.getOrDefault(target.getId(), new HashSet<>());
+            sources.add(source.getId());
+            predecessors.put(target.getId(), sources);
+        } finally {
+            safety.unlock();
+        }
         log.debug("Created connection {} to {}", sourceAlias, targetAlias);
         return connection;
     }
@@ -690,11 +702,19 @@ public class MiniGraph {
             throw new IllegalArgumentException("node does not exist");
         }
         List<SimpleNode> result = new ArrayList<>();
-        Set<String> nodes = graph.adjacentNodes(node.getId());
+        Set<String> nodes = getAdjacentNodes(node.getId());
         for (var n: nodes) {
             SimpleNode neighbor = findNodeById(n);
             result.add(neighbor);
         }
+        return result;
+    }
+
+    private Set<String> getAdjacentNodes(String nodeId) {
+        Set<String> forwardNodes = successors.getOrDefault(nodeId,  new HashSet<>());
+        Set<String> backwardNodes = predecessors.getOrDefault(nodeId, new HashSet<>());
+        Set<String> result = new HashSet<>(forwardNodes);
+        result.addAll(backwardNodes);
         return result;
     }
 
@@ -710,7 +730,7 @@ public class MiniGraph {
             throw new IllegalArgumentException("node does not exist");
         }
         List<SimpleNode> result = new ArrayList<>();
-        Set<String> nodes = graph.successors(node.getId());
+        Set<String> nodes = successors.getOrDefault(node.getId(), new HashSet<>());
         for (var n: nodes) {
             SimpleNode neighbor = findNodeById(n);
             result.add(neighbor);
@@ -730,7 +750,7 @@ public class MiniGraph {
             throw new IllegalArgumentException("node does not exist");
         }
         List<SimpleNode> result = new ArrayList<>();
-        Set<String> nodes = graph.predecessors(node.getId());
+        Set<String> nodes = predecessors.getOrDefault(node.getId(), new HashSet<>());
         for (var n: nodes) {
             SimpleNode neighbor = findNodeById(n);
             result.add(neighbor);
@@ -753,14 +773,14 @@ public class MiniGraph {
         Map<Integer, List<String>> levelList = new HashMap<>();
         Map<String, Integer> distances = new HashMap<>();
         Deque<String> queue = new ArrayDeque<>();
-        for (String id : graph.nodes()) {
+        for (String id : nodesById.keySet()) {
             distances.put(id, -1);
         }
         distances.put(node.getId(), 0);
         queue.add(node.getId());
         while (!queue.isEmpty()) {
             String u = queue.poll();
-            for (String v : graph.adjacentNodes(u)) {
+            for (String v : getAdjacentNodes(u)) {
                 // only process it when it is not visited before
                 if (distances.get(v) == -1) {
                     distances.put(v, distances.get(u) + 1);

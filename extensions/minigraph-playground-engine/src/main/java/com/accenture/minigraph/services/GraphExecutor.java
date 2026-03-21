@@ -24,28 +24,29 @@ import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.skills.GraphJoin;
 import com.accenture.models.FlowInstance;
 import com.accenture.models.Flows;
+import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
-import org.platformlambda.core.util.MultiLevelMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
+@ZeroTracing
+@EventInterceptor
 @PreLoad(route = GraphExecutor.ROUTE, instances=300)
 public class GraphExecutor extends GraphLambdaFunction {
     public static final String ROUTE = "graph.executor";
     private static final Logger log = LoggerFactory.getLogger(GraphExecutor.class);
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
-    private static final int STATUS_CONTINUE = 100;
-    private static final String DONE = "done";
+    private static final String INSTANCE = "instance";
     private final String deployedGraphLocation;
 
     public GraphExecutor() {
@@ -61,44 +62,45 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     @Override
-    public Object handleEvent(Map<String, String> headers, EventEnvelope event, int instance) throws InterruptedException {
-        if (event.getReplyTo() != null && event.getCorrelationId() != null) {
-            var po = PostOffice.trackable(headers, instance);
-            var graphInstance = create(headers);
-            try {
-                var instanceId = headers.get("instance");
-                var flowInstance = Flows.getFlowInstance(instanceId);
-                traverseAndExecute(po, instanceId, flowInstance, graphInstance, event);
-                if (graphInstance.complete.get()) {
-                    // send task completion signal to Flow's TaskExecutor
-                    return new EventEnvelope().setStatus(STATUS_CONTINUE).setBody(DONE);
-                }
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Exception e) {
-                var rc = e instanceof AppException ex? ex.getStatus() : 400;
-                if (rc != STATUS_CONTINUE || !DONE.equals(e.getMessage())) {
-                    var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc).setBody(e.getMessage())
-                            .setCorrelationId(event.getCorrelationId());
-                    po.send(error);
-                }
+    public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
+        var po = PostOffice.trackable(headers, instance);
+        var cid = event.getCorrelationId();
+        if (cid != null) {
+            if (cid.contains("@")) {
+                handleSkillResponse(po, event);
+            } else if (event.getReplyTo() != null) {
+                executeGraph(po, headers, event);
             }
         }
-        throw new IllegalArgumentException("Graph instance does not resolve to an outcome");
+        return null;
     }
 
-    private GraphInstance create(Map<String, String> headers) {
-        var instanceId = headers.get("instance");
-        if (instanceId == null) {
+    private void executeGraph(PostOffice po, Map<String, String> headers, EventEnvelope event) {
+        try {
+            var graphInstance = createInstance(headers, event.getReplyTo(), event.getCorrelationId());
+            var flowInstanceId = headers.get(INSTANCE);
+            var flowInstance = Flows.getFlowInstance(flowInstanceId);
+            beginTraversal(po, flowInstance, graphInstance);
+        } catch (Exception e) {
+            var rc = e instanceof AppException ex? ex.getStatus() : 400;
+            var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc).setBody(e.getMessage())
+                    .setCorrelationId(event.getCorrelationId());
+            po.send(error);
+        }
+    }
+
+    private GraphInstance createInstance(Map<String, String> headers, String replyTo, String cid) {
+        var flowInstanceId = headers.get(INSTANCE);
+        if (flowInstanceId == null) {
             throw new IllegalArgumentException("Missing instance ID in header");
         }
-        var graphId = headers.get("graph");
+        var graphId = headers.get(GRAPH);
         if (graphId == null) {
             throw new IllegalArgumentException("Missing graph ID in header");
         }
-        var flowInstance = Flows.getFlowInstance(instanceId);
+        var flowInstance = Flows.getFlowInstance(flowInstanceId);
         if (flowInstance == null) {
-            throw new IllegalArgumentException("Invalid flow instance " + instanceId);
+            throw new IllegalArgumentException("Invalid flow instance " + flowInstanceId);
         }
         flowInstance.setEndFlowListeners(GraphHousekeeper.ROUTE);
         var map = getGraphModel(graphId);
@@ -106,16 +108,17 @@ public class GraphExecutor extends GraphLambdaFunction {
             throw new IllegalArgumentException("Unable to load graph model '"+graphId+"' - missing or invalid");
         }
         GraphInstance graphInstance = new GraphInstance(graphId);
+        graphInstance.setFlowInstanceId(flowInstanceId);
+        graphInstance.setCorrelationId(cid);
+        graphInstance.setReplyTo(replyTo);
         var graph = graphInstance.graph;
         graph.importGraph(map);
-        graphInstances.put(instanceId, graphInstance);
+        graphInstances.put(flowInstanceId, graphInstance);
         return graphInstance;
     }
 
     @SuppressWarnings("unchecked")
-    private void traverseAndExecute(PostOffice po, String instanceId, FlowInstance flowInstance,
-                                    GraphInstance graphInstance, EventEnvelope event)
-            throws ExecutionException, InterruptedException {
+    private void beginTraversal(PostOffice po, FlowInstance flowInstance, GraphInstance graphInstance) {
         var stateMachine = graphInstance.stateMachine;
         var graph = graphInstance.graph;
         // make a copy of flow input and model to avoid accidentally changing the original values
@@ -133,12 +136,46 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (end == null) {
             throw new IllegalArgumentException("End node does not exist");
         }
-        walk(po, instanceId, event, graphInstance, root, getModelTtl(graphInstance));
+        walk(po, graphInstance, root);
     }
 
-    private void walk(PostOffice po, String in, EventEnvelope event,
-                      GraphInstance graphInstance, SimpleNode node, long timeout)
-            throws ExecutionException, InterruptedException {
+    private void handleSkillResponse(PostOffice po, EventEnvelope response) {
+        var compositeId = response.getCorrelationId();
+        var at = compositeId.indexOf('@');
+        var flowInstanceId = compositeId.substring(0, at);
+        var nodeName = compositeId.substring(at+1);
+        var graphInstance = graphInstances.get(flowInstanceId);
+        var flowInstance = Flows.getFlowInstance(flowInstanceId);
+        if (graphInstance != null && flowInstance != null) {
+            var stateMachine = graphInstance.stateMachine;
+            if (response.hasError()) {
+                handleErrorResponse(po, graphInstance, response);
+                return;
+            }
+            // Skill handler can also set status and error in its node properties instead of throwing exception
+            var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
+            var resultError = stateMachine.getElement(nodeName + "." + ERROR);
+            if (processStatus instanceof Integer rc && resultError != null) {
+                var replyTo = graphInstance.getReplyTo();
+                var cid = graphInstance.getCorrelationId();
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(resultError).setStatus(rc);
+                po.send(error);
+                graphInstance.complete.set(true);
+            } else if (!graphInstance.complete.get()) {
+                var graph = graphInstance.graph;
+                var endNode = graph.getEndNode();
+                var node = graph.findNodeByAlias(nodeName);
+                if (endNode.getId().equals(node.getId())) {
+                    executionComplete(po, graphInstance);
+                } else {
+                    var next = String.valueOf(response.getBody());
+                    nextOrJump(po, graphInstance, node, next);
+                }
+            }
+        }
+    }
+
+    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
@@ -147,123 +184,78 @@ public class GraphExecutor extends GraphLambdaFunction {
                 if (!GraphJoin.ROUTE.equals(skill)) {
                     graphInstance.hasSeen.put(nodeName, true);
                 }
-                walkTo(po, in, event, skill, graphInstance, node, timeout);
+                walkTo(po, skill, graphInstance, node);
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void walkTo(PostOffice po, String in, EventEnvelope event, String skill, GraphInstance graphInstance,
-                        SimpleNode node, long timeout) throws ExecutionException, InterruptedException {
+    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
             if (skill != null) {
-                execute(po, skill, in, event, graphInstance, node, timeout);
-            }
-            var body = graphInstance.stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
-            var hdr = graphInstance.stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
-            var headers = hdr instanceof Map? (Map<String, Object>) hdr : new HashMap<String, Object>();
-            var response = new EventEnvelope().setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId());
-            for (Map.Entry<String, Object> kv : headers.entrySet()) {
-                response.setHeader(kv.getKey(), kv.getValue());
-            }
-            po.send(response.setBody(body));
-            graphInstance.complete.set(true);
-        } else {
-            if (skill == null) {
-                walkNext(po, in, event, graphInstance, node, timeout);
+                executeSkill(po, skill, graphInstance, node);
             } else {
-                execute(po, skill, in, event, graphInstance, node, timeout);
-            }
-        }
-    }
-
-    private void execute(PostOffice po, String skill, String in, EventEnvelope event, GraphInstance graphInstance,
-                         SimpleNode node, long timeout) throws ExecutionException, InterruptedException {
-        if (po.exists(skill)) {
-            var nodeName = node.getAlias();
-            var response = po.request(new EventEnvelope().setTo(skill).setHeader(IN, in).setHeader(LIVE, true)
-                                        .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout).get();
-            // check processing status
-            var stateMachine = graphInstance.stateMachine;
-            if (response.hasError()) {
-                handleException(po, stateMachine, event, response);
-                // tell executor that response has been sent
-                graphInstance.complete.set(true);
-                throw new AppException(STATUS_CONTINUE, DONE);
-            }
-            // if skill handler does not throw exception, it can also set status and error in its node properties
-            var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
-            var resultError = stateMachine.getElement(nodeName + "." + ERROR);
-            if (processStatus instanceof Integer rc && resultError != null) {
-                var error = new EventEnvelope().setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
-                        .setBody(resultError).setStatus(rc);
-                po.send(error);
-                // tell executor that response has been sent
-                graphInstance.complete.set(true);
-                throw new AppException(STATUS_CONTINUE, DONE);
-            }
-            if (!graphInstance.complete.get()) {
-                var graph = graphInstance.graph;
-                var endNode = graph.getEndNode();
-                if (!endNode.getId().equals(node.getId())) {
-                    var next = String.valueOf(response.getBody());
-                    nextOrJump(po, in, event, graphInstance, node, next, timeout);
-                }
+                executionComplete(po, graphInstance);
             }
         } else {
-            throw new IllegalArgumentException("Skill " + skill + " does not exist");
+            if (skill != null) {
+                executeSkill(po, skill, graphInstance, node);
+            } else {
+                walkNext(po, graphInstance, node);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void handleException(PostOffice po, MultiLevelMap stateMachine, EventEnvelope event, EventEnvelope response) {
-        var ex = response.getException();
-        if (ex instanceof FetchException) {
-            var status = stateMachine.getElement(OUTPUT_NAMESPACE+STATUS);
-            var rc = status instanceof Number number? number.intValue() : response.getStatus();
-            var headers = stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
-            var body = stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
-            var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc)
-                    .setCorrelationId(event.getCorrelationId());
-            error.setBody(body == null? response.getBody() : body);
-            if (headers instanceof Map) {
-                error.setHeaders((Map<String, String>) headers);
-            }
-            po.send(error);
+    private void executionComplete(PostOffice po, GraphInstance graphInstance) {
+        var body = graphInstance.stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
+        var hdr = graphInstance.stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
+        var headers = hdr instanceof Map ? (Map<String, Object>) hdr : new HashMap<String, Object>();
+        var response = new EventEnvelope().setTo(graphInstance.getReplyTo())
+                .setCorrelationId(graphInstance.getCorrelationId());
+        for (Map.Entry<String, Object> kv : headers.entrySet()) {
+            response.setHeader(kv.getKey(), kv.getValue());
+        }
+        po.send(response.setBody(body));
+        graphInstance.complete.set(true);
+    }
+
+    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
+        if (po.exists(skill)) {
+            var flowInstanceId = graphInstance.getFlowInstanceId();
+            var nodeName = node.getAlias();
+            var compositeId = flowInstanceId + "@" + nodeName;
+            po.send(new EventEnvelope().setTo(skill).setHeader(IN, flowInstanceId)
+                    .setHeader(LIVE, true).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
+                    .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId));
         } else {
-            var error = new EventEnvelope().setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
-                    .setBody(response.getBody()).setStatus(response.getStatus());
-            po.send(error);
+            sendError(po, graphInstance, "Skill " + skill + " does not exist");
         }
     }
 
-    private void nextOrJump(PostOffice po, String in, EventEnvelope event, GraphInstance graphInstance, SimpleNode node,
-                            String next, long timeout) throws ExecutionException, InterruptedException {
+    private void nextOrJump(PostOffice po, GraphInstance graphInstance, SimpleNode node, String next) {
         if (!SINK.equals(next)) {
             var graph = graphInstance.graph;
             if (NEXT.equals(next)) {
-                walkNext(po, in, event, graphInstance, node, timeout);
+                walkNext(po, graphInstance, node);
             } else {
                 var nextNode = graph.findNodeByAlias(next);
                 if (nextNode != null) {
-                    walk(po, in, event, graphInstance, nextNode, timeout);
+                    walk(po, graphInstance, nextNode);
                 } else {
-                    throw new IllegalArgumentException("Next node '" + next + "' does not exist");
+                    sendError(po, graphInstance, "Next node '" + next + "' does not exist");
                 }
             }
         }
     }
 
-    private void walkNext(PostOffice po, String in, EventEnvelope event, GraphInstance graphInstance,
-                          SimpleNode node, long timeout)
-            throws ExecutionException, InterruptedException {
+    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
         if (!graphInstance.complete.get()) {
             var graph = graphInstance.graph;
             var nodes = graph.getForwardLinks(node.getAlias());
             for (SimpleNode next : nodes) {
-                walk(po, in, event, graphInstance, next, timeout);
+                walk(po, graphInstance, next);
             }
         }
     }
@@ -272,5 +264,38 @@ public class GraphExecutor extends GraphLambdaFunction {
         // use config reader to resolve environment variables
         var reader = new ConfigReader(getNormalizedPath(deployedGraphLocation, graphId));
         return reader.getMap();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
+        var ex = response.getException();
+        if (ex instanceof FetchException) {
+            var stateMachine = graphInstance.stateMachine;
+            var status = stateMachine.getElement(OUTPUT_NAMESPACE+STATUS);
+            var rc = status instanceof Number number? number.intValue() : response.getStatus();
+            var headers = stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
+            var body = stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
+            var error = new EventEnvelope().setTo(graphInstance.getReplyTo()).setStatus(rc)
+                    .setCorrelationId(graphInstance.getCorrelationId());
+            error.setBody(body == null? response.getBody() : body);
+            if (headers instanceof Map) {
+                error.setHeaders((Map<String, String>) headers);
+            }
+            po.send(error);
+        } else {
+            var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
+                    .setCorrelationId(graphInstance.getCorrelationId())
+                    .setBody(response.getBody()).setStatus(response.getStatus());
+            po.send(error);
+        }
+        graphInstance.complete.set(true);
+    }
+
+    private void sendError(PostOffice po, GraphInstance graphInstance, String message) {
+        var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
+                .setCorrelationId(graphInstance.getCorrelationId())
+                .setBody(message).setStatus(400);
+        po.send(error);
+        graphInstance.complete.set(true);
     }
 }

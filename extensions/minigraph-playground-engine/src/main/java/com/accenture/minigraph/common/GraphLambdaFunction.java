@@ -121,6 +121,13 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String FOR_EACH = "for_each";
     protected static final String CONCURRENCY = "concurrency";
     protected static final String PURPOSE = "purpose";
+    protected static final String MAPPING_TAG = "mapping:";
+    protected static final String COMPUTE_TAG = "compute:";
+    protected static final String EXECUTE_TAG = "execute:";
+    protected static final String IF_TAG = "if:";
+    protected static final String THEN_TAG = "then:";
+    protected static final String ELSE_TAG = "else:";
+    protected static final String INSPECT = "inspect";
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
                                                         STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE);
 
@@ -161,7 +168,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
 
     protected String substituteVarIfAny(String text, MultiLevelMap stateMachine, boolean logical) {
-        var jsonPathOp = text.startsWith("$.") && hasBooleanOperator(text);
+        var jsonPathOperator = text.startsWith("$.") && (hasBooleanOperator(text) || text.contains("@"));
         int leftBrace = text.indexOf('{');
         int rightBrace = text.lastIndexOf('}');
         if (leftBrace != -1 && rightBrace != -1 && rightBrace > leftBrace) {
@@ -169,7 +176,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var sb = new StringBuilder();
             var segments = util.extractSegments(text, "{", "}");
             for (var segment : segments) {
-                start = replaceWithParameter(segment, sb, start, text, stateMachine, logical, jsonPathOp);
+                start = replaceWithParameter(segment, sb, start, text, stateMachine, logical || jsonPathOperator);
             }
             var lastSegment = text.substring(start);
             if (!lastSegment.isEmpty()) {
@@ -182,12 +189,12 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
 
     protected boolean hasBooleanOperator(String text) {
-        return text.contains("&&") || text.contains("||") || text.contains("!") || text.contains(">")
-                || text.contains("<") || text.contains(">=") || text.contains("<=") || text.contains("==");
+        return text.contains("&&") || text.contains("||") || text.contains("!") || text.contains(">") ||
+                text.contains("<") || text.contains(">=") || text.contains("<=") || text.contains("==");
     }
 
     private int replaceWithParameter(VarSegment segment, StringBuilder sb, int start, String text,
-                                     MultiLevelMap stateMachine, boolean logical, boolean jsonPathOp) {
+                                     MultiLevelMap stateMachine, boolean logical) {
         String heading = text.substring(start, segment.start());
         if (!heading.isEmpty()) {
             sb.append(heading);
@@ -206,7 +213,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 var value = SimpleMapper.getInstance().getCompactGson().toJson(parameter);
                 sb.append(value);
             } else {
-                if (logical || jsonPathOp) {
+                if (logical) {
                     sb.append("'").append(escapeVar(parameter)).append("'");
                 } else {
                     sb.append(parameter);
@@ -228,9 +235,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine, false);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
-            if (!validRhs(rhs, graphInstance.graph)) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid mapping '"+command+"'");
-            }
+            validateRhs(nodeName, rhs, graphInstance.graph);
             if (value != null) {
                 stateMachine.setElement(rhs, value);
             } else {
@@ -384,7 +389,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         if (value == null) {
             if (!lhs.startsWith(PLUGIN_PREFIX)) {
                 // reconstruct lhs with nodeName as namespace
-                if (lhs.startsWith(RESULT_NAMESPACE) || lhs.startsWith(RESULT + "[")) {
+                if (lhs.equals(RESULT) || lhs.startsWith(RESULT_NAMESPACE) || lhs.startsWith(RESULT + "[")) {
                     lhs = nodeName + "." + lhs;
                 } else if (lhs.startsWith("$.result")) {
                     lhs = "$." + nodeName + lhs.substring(1);
@@ -452,25 +457,125 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
     }
 
-    private boolean validRhs(String rhs, MiniGraph graph) {
+    private void validateRhs(String nodeName, String rhs, MiniGraph graph) {
         if (rhs.startsWith(OUTPUT_ARRAY) || rhs.startsWith(OUTPUT_NAMESPACE) || rhs.startsWith(MODEL_NAMESPACE)) {
-            return true;
-        }
-        if (rhs.startsWith(".") || !rhs.contains(".")) {
-            return false;
+            return;
         }
         var parts = util.split(rhs, ".[]");
-        if (parts.size() < 2) {
-            return false;
+        if (rhs.startsWith(".") || parts.size() < 2) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid RHS ("+rhs+")");
         }
         var node = graph.findNodeByAlias(parts.getFirst());
         if (node == null) {
-            return false;
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " - RHS node '"+
+                                                parts.getFirst()+"' does not exist");
         }
-        var skill = node.getProperty(SKILL);
-        if (skill == null) {
-            return true;
+        if (RESERVED_PARAMETERS.contains(parts.get(1))) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " - invalid RHS ("+rhs+
+                                                "), '"+parts.get(1)+"' is a reserved property");
         }
-        return !RESERVED_PARAMETERS.contains(parts.get(1));
+    }
+
+    protected int countExecuteStatements(String nodeName, List<String> statements) {
+        var execute = 0;
+        var js = 0;
+        var error = 0;
+        for (var entry : statements) {
+            var line = entry.trim().toLowerCase();
+            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG)) {
+                js++;
+            } else if (line.startsWith(EXECUTE_TAG)) {
+                execute++;
+                js++;
+            } else if (!line.startsWith(MAPPING_TAG)) {
+                error++;
+            }
+        }
+        if (js == 0) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName +
+                    " must include 'IF:', 'COMPUTE:' or 'EXECUTE:' statements");
+        }
+        if (error > 0) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName +
+                    " must use 'IF:', 'COMPUTE:', 'EXECUTE:' or 'MAPPING:' statements");
+        }
+        return execute;
+    }
+
+    protected String getFirstWord(String statement) {
+        var space = statement.indexOf(' ');
+        return space == -1? statement : statement.substring(0, space);
+    }
+
+    protected String getIfStatement(List<String> lines) {
+        boolean found = false;
+        var sb = new StringBuilder();
+        for (String line : lines) {
+            var lc = line.toLowerCase().trim();
+            if (found) {
+                if (lc.startsWith(THEN_TAG) || lc.startsWith(ELSE_TAG)) {
+                    break;
+                } else {
+                    sb.append(line).append(' ');
+                }
+            }
+            if (lc.startsWith(IF_TAG)) {
+                sb.append(line.substring(3)).append(' ');
+                found = true;
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    protected String getThenStatement(List<String> lines) {
+        boolean found = false;
+        var sb = new StringBuilder();
+        for (String line : lines) {
+            var lc = line.toLowerCase().trim();
+            if (found) {
+                if (lc.startsWith(IF_TAG) || lc.startsWith(ELSE_TAG)) {
+                    break;
+                } else {
+                    sb.append(line).append(' ');
+                }
+            }
+            if (lc.startsWith(THEN_TAG)) {
+                sb.append(line.substring(5)).append(' ');
+                found = true;
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    protected String getElseStatement(List<String> lines) {
+        boolean found = false;
+        var sb = new StringBuilder();
+        for (String line : lines) {
+            var lc = line.toLowerCase().trim();
+            if (found) {
+                if (lc.startsWith(IF_TAG) || lc.startsWith(THEN_TAG)) {
+                    break;
+                } else {
+                    sb.append(line).append(' ');
+                }
+            }
+            if (lc.startsWith(ELSE_TAG)) {
+                sb.append(line.substring(5)).append(' ');
+                found = true;
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    protected String getNext(MiniGraph graph, String statement) {
+        if (!NEXT.equalsIgnoreCase(statement)) {
+            var nextNode = getNode(statement, graph);
+            if (nextNode == null) {
+                throw new IllegalArgumentException(NODE_NAME + statement + NOT_FOUND);
+            } else {
+                return statement;
+            }
+        }
+        return null;
     }
 }

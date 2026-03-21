@@ -1490,8 +1490,8 @@ For example:
 | **Logical**         | lt              | Two individual whole numbers                                                                                          |
 | **Logical**         | startsWith      | Two strings, case insensitive.                                                                                        |
 | **Logical**         | endsWith        | Two strings, case insensitive.                                                                                        |
-| **Logical**         | includes        | Two strings, case insensitive.                                                                                        |
-| **Type Conversion** | b64             | Either a base64 encoded String, OR a byte[]                                                                           |
+| **Logical**         | includes        | Two strings, case insensitive OR one list and one string                                                              |
+| **Type Conversion** | b64             | Either a base64 encoded String, OR a byte array.                                                                      |
 | **Type Conversion** | binary          | Either a byte[], Map or String                                                                                        |
 | **Type Conversion** | length          | Either a byte[], List or String                                                                                       |
 | **Type Conversion** | substring       | Two to three variables.<br/>The first must be a String;<br/>the second must be an integer;<br/>the third is optional. |

@@ -14,6 +14,10 @@ tasks:
       - 'f:endsWith(input.body.text, text(H)) -> not_ends_with'
       - 'f:includes(input.body.text, text(test)) -> includes'
       - 'f:includes(input.body.text, text(nothing)) -> not_includes'
+      - 'text(abc) -> model.x[]'
+      - 'text(xyz) -> model.x[]'
+      - 'f:includes(model.x, text(xyz)) -> list_includes'
+      - 'f:includes(model.x, text(123)) -> list_not_includes'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

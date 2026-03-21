@@ -1,7 +1,7 @@
 MiniGraph
 ---------
 A mini-graph is a property graph that is designed to run entirely in memory.
-You should limit the number of nodes to less than 500.
+It is recommended that you limit the number of nodes to less than 750.
 
 Graph Model is used to describe a business use case using graph methodology.
 Optionally, you may configure a nodes to have a special skill to react to incoming events.

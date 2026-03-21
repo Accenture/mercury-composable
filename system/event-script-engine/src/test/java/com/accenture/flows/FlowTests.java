@@ -261,6 +261,8 @@ class FlowTests extends TestBase {
         assertEquals(false, result.get("not_starts_with"));
         assertEquals(false, result.get("not_ends_with"));
         assertEquals(false, result.get("not_includes"));
+        assertEquals(true, result.get("list_includes"));
+        assertEquals(false, result.get("list_not_includes"));
     }
 
     @Test
@@ -1774,8 +1776,8 @@ class FlowTests extends TestBase {
                 .toList();
         assertEquals(byteList, result.get("to_b64_bytes"));
         assertEquals(b64String, result.get("to_bytestring"));
-        assertTrue((Boolean) result.get("isNull"));
-        assertTrue((Boolean) result.get("isNotNull"));
+        assertEquals(true, result.get("isNull"));
+        assertEquals(true, result.get("isNotNull"));
         UUID id = UUID.fromString((String) result.get("uuid"));
         assertNotNull(id);
         assertInstanceOf(String.class, result.get("currentTime"));
