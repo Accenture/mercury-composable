@@ -1,4 +1,4 @@
-import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage, isLargePayloadMessage } from '../../utils/messageParser';
+import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage, isLargePayloadMessage, isMockUploadMessage, extractMockUploadPath } from '../../utils/messageParser';
 import { JsonView, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
@@ -19,16 +19,35 @@ interface ConsoleMessageProps {
    * Only rendered when the message body is a valid JSON object/array.
    */
   onSendToJsonPath?:    (json: string) => void;
+  /**
+   * When provided, a "⬆️ Upload JSON…" re-open button appears on hover for
+   * mock-upload invitation rows. Called with the extracted POST path.
+   */
+  onUploadMockData?:    (uploadPath: string) => void;
+  /**
+   * Set of POST paths for which a mock upload has succeeded this session.
+   * When the current row's path is in this set, a ✅ badge is appended.
+   */
+  successfulUploadPaths?: Set<string>;
 }
 
-export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, onSendToJsonPath }: ConsoleMessageProps) {
+export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, onSendToJsonPath, onUploadMockData, successfulUploadPaths }: ConsoleMessageProps) {
   const parsed    = parseMessage(message);
   const icon      = getMessageIcon(parsed.type);
   const jsonCheck = tryParseJSON(parsed.message);
 
   const isGraphLink      = isGraphLinkMessage(message);
   const isLargePayload   = isLargePayloadMessage(message);
-  const isPinnable       = !!onPin && (!isGraphLink ? isMarkdownCandidate(message) : true);
+  const isMockUpload     = isMockUploadMessage(message);
+  const mockUploadPath   = isMockUpload ? extractMockUploadPath(message) : null;
+  const canUploadMock    = !!onUploadMockData && isMockUpload && mockUploadPath !== null;
+  const uploadSucceeded  = canUploadMock && !!successfulUploadPaths?.has(mockUploadPath!);
+
+  // ⚠️ Critical: isMockUpload must be excluded to prevent the invitation row
+  // from getting role="button" + onClick alongside the canUploadMock button,
+  // which would create a nested interactive element violating WCAG.
+  // Consistent with isLargePayload rows which are also non-pinnable.
+  const isPinnable       = !!onPin && !isMockUpload && (!isGraphLink ? isMarkdownCandidate(message) : true);
   const pinTitle         = isGraphLink
     ? 'Click to load graph in Graph View'
     : 'Click to pin to Developer Guides';
@@ -66,15 +85,22 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
     onSendToJsonPath(pretty);
   };
 
+  const handleUploadMockData = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (!onUploadMockData || !mockUploadPath) return;
+    onUploadMockData(mockUploadPath);
+  };
+
   return (
     <div
       className={[
         styles.consoleMessage,
         styles[`messageType-${parsed.type}`],
-        isPinnable    ? styles.consoleMessagePinnable    : '',
-        pinned        ? styles.consoleMessagePinned      : '',
-        isGraphLink   ? styles.consoleMessageGraphLink   : '',
+        isPinnable     ? styles.consoleMessagePinnable    : '',
+        pinned         ? styles.consoleMessagePinned      : '',
+        isGraphLink    ? styles.consoleMessageGraphLink   : '',
         isLargePayload ? styles.consoleMessageLargePayload : '',
+        isMockUpload   ? styles.consoleMessageMockUpload  : '',
       ].filter(Boolean).join(' ')}
       onClick={isPinnable ? () => onPin!() : undefined}
       title={isPinnable ? pinTitle : undefined}
@@ -87,7 +113,7 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
       aria-pressed={isPinnable ? pinned : undefined}
     >
       <span className={styles.messageIcon}>
-        {isLargePayload ? '⬇️' : isGraphLink ? '🕸️' : icon}
+        {isMockUpload ? '⬆️' : isLargePayload ? '⬇️' : isGraphLink ? '🕸️' : icon}
       </span>
 
       <div className={styles.messageContent}>
@@ -95,7 +121,7 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
           <div className={styles.jsonViewWrapper}>
             <JsonView
               data={jsonCheck.data!}
-              shouldExpandNode={(level) => level < 2}
+              shouldExpandNode={(level) => level < 1}
               style={{
                 ...darkStyles,
                 container: `${darkStyles.container} ${styles.jsonContainer}`,
@@ -108,7 +134,10 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
             />
           </div>
         ) : (
-          <span className={styles.messageText}>{parsed.message}</span>
+          <span className={styles.messageText}>
+            {parsed.message}
+            {uploadSucceeded && <span title="Upload succeeded"> ✅</span>}
+          </span>
         )}
       </div>
 
@@ -119,8 +148,6 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
         onKeyDown={handleCopyKeyDown}
         title={copied ? 'Copied!' : 'Copy message'}
         aria-label={copied ? 'Copied to clipboard' : 'Copy message to clipboard'}
-        // Prevent the button from participating in the pin row's tab stop —
-        // it has its own independent tab stop below.
         tabIndex={0}
       >
         {copied ? '✅' : '📄'}
@@ -137,6 +164,20 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
           tabIndex={0}
         >
           ➡️
+        </button>
+      )}
+
+      {/* ── Upload mock data re-open button — only on upload invitation rows ─── */}
+      {canUploadMock && (
+        <button
+          className={styles.uploadMockButton}
+          onClick={handleUploadMockData}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleUploadMockData(e); }}
+          title="Re-open upload dialog"
+          aria-label="Re-open mock data upload dialog"
+          tabIndex={0}
+        >
+          ⬆️ Upload JSON…
         </button>
       )}
 

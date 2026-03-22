@@ -72,14 +72,14 @@
 
 /* ── Individual message row ─────────────────────────────────────── */
 /*
- * Column layout:  [icon]  [message body]  [copy button]  [timestamp]
- * The copy button column is sized to its content and stays hidden
- * until the row is hovered or focused-within, so it does not consume
- * horizontal space in the normal reading state.
+ * Column layout:  [icon]  [message body]  [copy button]  [send-to-json-path]  [upload-mock]  [timestamp]
+ * Action buttons are sized to their content and stay hidden until the row
+ * is hovered or focused-within, so they do not consume horizontal space
+ * in the normal reading state.
  */
 .consoleMessage {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  grid-template-columns: auto 1fr auto auto auto auto;
   gap: 0.75rem;
   align-items: start;
   padding: 0.5rem;
@@ -132,6 +132,50 @@
   background-color: rgba(245, 158, 11, 0.06);
   outline: 1px solid rgba(245, 158, 11, 0.25);
   border-radius: 4px;
+}
+
+/* Mock-upload invitation row — amber accent (pairs with ⬇️ large-payload style) */
+.consoleMessageMockUpload {
+  background-color: rgba(245, 158, 11, 0.06);
+  outline: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 4px;
+}
+
+/* ── Upload-mock re-open button ───────────────────────────────────── */
+/* Same hide/reveal pattern as copyButton; uses an amber accent to
+ * match the invitation row highlight. Only rendered on mock-upload rows. */
+.uploadMockButton {
+  appearance: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  align-self: start;
+  font-weight: 600;
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  color: rgba(245, 158, 11, 0.85);
+  opacity: 0;
+  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.consoleMessage:hover .uploadMockButton,
+.consoleMessage:focus-within .uploadMockButton {
+  opacity: 1;
+}
+
+.uploadMockButton:hover {
+  background-color: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #fcd34d;
+}
+
+.uploadMockButton:focus-visible {
+  opacity: 1;
+  outline: 2px solid rgba(245, 158, 11, 0.8);
+  outline-offset: 2px;
 }
 
 /* ── Copy-to-clipboard button ───────────────────────────────────── */

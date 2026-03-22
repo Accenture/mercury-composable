@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
@@ -11,6 +11,7 @@ import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
 import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
 import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
+import { useAutoMockUpload } from '../hooks/useAutoMockUpload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
@@ -20,6 +21,7 @@ import { deriveDefaultName } from './GraphDataView/GraphDataView';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
+import { MockUploadModal } from './MockUploadModal/MockUploadModal';
 import { type PlaygroundConfig, PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 
@@ -28,7 +30,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeySavedGraphs, supportsUpload, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -111,7 +113,18 @@ export default function Playground({ config }: PlaygroundProps) {
   const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
 
   // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
-  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast, tabs[0]);
+  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast, tabs[0], storageKeyTab);
+
+  // ── Mock-upload modal state ───────────────────────────────────────────────
+  // Path extracted from the server's upload invitation.
+  // null = modal closed; non-null = modal open for that specific endpoint.
+  const [modalUploadPath, setModalUploadPath] = useState<string | null>(null);
+
+  // Capture the element that triggered the modal so focus can be restored on close.
+  const modalTriggerRef = useRef<HTMLElement | null>(null);
+
+  // POST paths of invitations that have been successfully fulfilled — drives ✅ badge.
+  const [successfulUploadPaths, setSuccessfulUploadPaths] = useState<Set<string>>(new Set());
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   useAutoGraphRefresh({
@@ -149,6 +162,40 @@ export default function Playground({ config }: PlaygroundProps) {
     connected:     ws.connected,
     appendMessage: ws.appendMessage,
     addToast,
+  });
+
+  // ── Mock-upload modal callbacks ───────────────────────────────────────────
+  const handleOpenUploadModal = useCallback((path: string) => {
+    // Capture the focused element before opening so we can restore focus on close.
+    modalTriggerRef.current = document.activeElement as HTMLElement;
+    setModalUploadPath(path);
+  }, []);
+
+  const handleCloseUploadModal = useCallback(() => {
+    setModalUploadPath(null);
+    // Restore focus to the element that triggered the modal open.
+    // setTimeout ensures the dialog is fully unmounted before focus() runs.
+    setTimeout(() => modalTriggerRef.current?.focus(), 0);
+  }, []);
+
+  const handleUploadSuccess = useCallback((_responseBody: string) => {
+    // _responseBody is available but intentionally not surfaced per spec §2.
+    setSuccessfulUploadPaths(prev => new Set([...prev, modalUploadPath!]));
+    setModalUploadPath(null);
+    setTimeout(() => modalTriggerRef.current?.focus(), 0);
+    addToast('Mock data uploaded successfully ✓', 'success');
+  }, [modalUploadPath, addToast]);
+
+  const handleUploadError = useCallback((errorMessage: string) => {
+    // Modal stays open — error is displayed inline inside the modal.
+    addToast(`Upload failed: ${errorMessage}`, 'error');
+  }, [addToast]);
+
+  // ── Auto-open modal when server sends upload invitation ───────────────────
+  useAutoMockUpload({
+    messages:    ws.messages,
+    connected:   ws.connected,
+    onOpenModal: handleOpenUploadModal,
   });
 
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────
@@ -231,11 +278,24 @@ export default function Playground({ config }: PlaygroundProps) {
     setPinnedMessageId(null);
     setPinnedGraphPath(null);
     setGraphData(null);
+    // Reset mock-upload session state so ✅ badges clear with the console.
+    // Modal upload path is NOT reset here — if the modal is open while the
+    // user clears the console, it remains open for the current upload attempt.
+    setSuccessfulUploadPaths(new Set());
   }, [ws.clearMessages, setGraphData]);
 
   return (
     <div className={styles.wrapper}>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {modalUploadPath && (
+        <MockUploadModal
+          uploadPath={modalUploadPath}
+          onSuccess={handleUploadSuccess}
+          onClose={handleCloseUploadModal}
+          onError={handleUploadError}
+        />
+      )}
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
@@ -285,6 +345,8 @@ export default function Playground({ config }: PlaygroundProps) {
             pinnedMessageId={pinnedMessageId}
             onCopyMessage={() => addToast('Copied to clipboard', 'success')}
             onSendToJsonPath={jsonPathConfig && wsPath !== jsonPathConfig.wsPath ? handleSendToJsonPath : undefined}
+            onUploadMockData={handleOpenUploadModal}
+            successfulUploadPaths={successfulUploadPaths}
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />

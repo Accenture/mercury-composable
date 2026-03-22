@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { isHelpOrDescribeCommand, isMarkdownCandidate, isGraphLinkMessage } from '../utils/messageParser';
+import { isHelpOrDescribeCommand, isMarkdownCandidate, isGraphLinkMessage, isMockUploadMessage } from '../utils/messageParser';
 
 export interface UseAutoMarkdownPinOptions {
   /**
@@ -33,15 +33,21 @@ export interface UseAutoMarkdownPinOptions {
 /**
  * Returns true when a raw message is a server response that is a valid
  * auto-pin target: a markdown candidate that is neither a graph-link nor
- * an echoed user command (echoes start with `> `).
+ * an echoed user command (echoes start with `> `), nor a mock-upload invitation.
  *
  * The echo guard is critical: `> help` passes `isMarkdownCandidate` because
  * it is plain text. Without this check a stranded `waitingForResponseRef`
  * would pin the echo instead of the actual help content.
+ *
+ * The mock-upload guard prevents the upload invitation (plain-text) from
+ * being accidentally pinned to the Developer Guides tab when waitingForResponseRef
+ * is armed — e.g. if the user sends `help` and then quickly runs `upload mock data`
+ * before the help response arrives.
  */
 function isPinnableResponse(raw: string): boolean {
   if (raw.startsWith('> ')) return false;       // echoed command — never pin
   if (isGraphLinkMessage(raw)) return false;    // graph-link → Graph tab, not preview
+  if (isMockUploadMessage(raw)) return false;   // upload invitation → modal, not preview
   return isMarkdownCandidate(raw);              // plain-text response → pin candidate
 }
 

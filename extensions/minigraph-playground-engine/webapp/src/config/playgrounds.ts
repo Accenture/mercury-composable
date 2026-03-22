@@ -37,6 +37,7 @@ export interface PlaygroundConfig {
   wsPath:                string;     // WebSocket endpoint path served by the backend
   storageKeyPayload:     string;     // localStorage key for the last payload
   storageKeyHistory:     string;     // localStorage key for command history
+  storageKeyTab:         string;     // localStorage key for the last selected right-panel tab
   storageKeySavedGraphs?: string;   // localStorage key for graphs saved from the Graph Data tab (omit to hide the feature)
   supportsUpload?:       boolean;    // true when the backend supports POST /api/json/content/{id} upload
   /**
@@ -61,6 +62,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     wsPath: '/ws/json/path',
     storageKeyPayload: 'jsonpath-last-payload',
     storageKeyHistory: 'jsonpath-command-history',
+    storageKeyTab: 'jsonpath-right-tab',
     supportsUpload: true,
     // JSON-Path needs a payload input and graph views; Developer Guides is not useful here.
     tabs: ['payload', 'graph', 'graph-data'],
@@ -72,6 +74,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     wsPath: '/ws/graph/playground',
     storageKeyPayload: 'minigraph-last-payload',
     storageKeyHistory: 'minigraph-command-history',
+    storageKeyTab: 'minigraph-right-tab',
     storageKeySavedGraphs: 'minigraph-saved-graphs',
     // Minigraph works with graph commands and text responses; it has no payload input.
     tabs: ['preview', 'graph', 'graph-data'],

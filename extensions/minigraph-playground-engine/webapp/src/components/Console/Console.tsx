@@ -14,6 +14,10 @@ interface ConsoleProps {
   onCopyMessage?:     () => void;
   /** When provided, a "Send to JSON-Path" button appears on JSON messages. */
   onSendToJsonPath?:  (json: string) => void;
+  /** When provided, a "⬆️ Upload JSON…" re-open button appears on mock-upload invitation rows. */
+  onUploadMockData?:  (uploadPath: string) => void;
+  /** Set of POST paths for which a mock upload has succeeded this session. */
+  successfulUploadPaths?: Set<string>;
 }
 
 export default function Console({
@@ -25,6 +29,8 @@ export default function Console({
   pinnedMessageId,
   onCopyMessage,
   onSendToJsonPath,
+  onUploadMockData,
+  successfulUploadPaths,
 }: ConsoleProps) {
   return (
     <div className={styles.consoleRoot}>
@@ -59,6 +65,8 @@ export default function Console({
               pinned={pinnedMessageId === msg.id}
               onCopyMessage={onCopyMessage}
               onSendToJsonPath={onSendToJsonPath}
+              onUploadMockData={onUploadMockData}
+              successfulUploadPaths={successfulUploadPaths}
             />
           </ConsoleErrorBoundary>
         ))}

@@ -169,6 +169,30 @@ export function isLargePayloadMessage(raw: string): boolean {
 }
 
 /**
+ * Extracts the POST path from a mock-data upload invitation:
+ *   "You may upload JSON payload -> POST /api/mock/{id}"
+ *
+ * Returns the path string (e.g. "/api/mock/ws-417669-24") or null if
+ * the message does not match the pattern.
+ *
+ * The regex is anchored to `/api/mock/` (not a generic POST capture) to
+ * avoid false positives from future unrelated messages. The case-insensitive
+ * flag handles any minor casing variation the server might introduce.
+ */
+export function extractMockUploadPath(raw: string): string | null {
+  const match = raw.match(/You may upload .*?->\s*POST\s+(\/api\/mock\/[\w-]+)/i);
+  return match ? match[1] : null;
+}
+
+/**
+ * Returns true when a raw WebSocket message is a mock-data upload invitation.
+ * Used by ConsoleMessage.tsx and useAutoMockUpload to detect the upload trigger.
+ */
+export function isMockUploadMessage(raw: string): boolean {
+  return extractMockUploadPath(raw) !== null;
+}
+
+/**
  * Returns true when a raw WebSocket message is an echoed command that should
  * trigger an auto-pin of the next plain-text response to the Markdown Preview.
  *
