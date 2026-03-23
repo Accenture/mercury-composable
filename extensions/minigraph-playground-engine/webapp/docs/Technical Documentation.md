@@ -2,7 +2,7 @@
 
 **Audience:** Engineers inheriting or maintaining this webapp  
 **Branch:** `feature/playground`  
-**Last updated:** March 20 2026
+**Last updated:** March 23 2026
 
 ---
 
@@ -23,6 +23,7 @@
    - 3.10 [Saved Graph Bookmarks](#310-saved-graph-bookmarks)
    - 3.11 [Keep-Alive Pings](#311-keep-alive-pings)
    - 3.12 [Mock-Data Upload Modal](#312-mock-data-upload-modal)
+   - 3.13 [Save-Name Management](#313-save-name-management)
 4. [Repository Layout](#4-repository-layout)
 5. [Architecture Overview](#5-architecture-overview)
 6. [Layer-by-Layer Walkthrough](#6-layer-by-layer-walkthrough)
@@ -45,6 +46,7 @@
    - 8.4 [Large Payload Flow](#84-large-payload-flow)
    - 8.5 [REST Upload Handshake](#85-rest-upload-handshake)
    - 8.6 [Mock-Data Upload Flow](#86-mock-data-upload-flow)
+   - 8.7 [Save-Name Lifecycle](#87-save-name-lifecycle)
 9. [State Ownership Map](#9-state-ownership-map)
 10. [Build, Dev & Deploy](#10-build-dev--deploy)
 11. [Extending the App](#11-extending-the-app)
@@ -264,6 +266,32 @@ The console row for the invitation displays a ⬆️ icon and an "⬆️ Upload 
 
 ---
 
+### 3.13 Save-Name Management
+When the user opens the **💾 Save Graph** inline form, the input is pre-filled according to a strict priority chain:
+
+| Priority | Source | Condition |
+|---|---|---|
+| 1 | `lastSavedName` | The working graph was previously saved this session |
+| 2 | `importedName` | The graph was loaded via `import graph from {name}` |
+| 3 | `untitled-{n}` | Fallback — monotonically incrementing per-playground counter |
+
+A new import always supersedes a previous save: when a new `import graph from {name}` echo is detected in the message stream, `lastSavedName` is cleared to `null` immediately, ensuring the imported name wins on the next form open.
+
+**Untitled counter semantics.** The counter only advances when the current `untitled-{n}` slot has actually been *used as a save name*. Clearing the console without ever saving reuses the same slot — so `untitled-2` will never appear in storage unless `untitled-1` was saved first. The counter is persisted in localStorage (keyed per playground) so it survives page refreshes.
+
+**Key code locations:**
+- `src/hooks/useGraphSaveName.ts` [L9–L38](../src/hooks/useGraphSaveName.ts#L9) — `UseGraphSaveNameReturn` interface with documented priority order and counter invariant
+- `src/hooks/useGraphSaveName.ts` [L68](../src/hooks/useGraphSaveName.ts#L68) — `useLocalStorage<number>(storageKey, 1)` — counter persisted, starts at 1
+- `src/hooks/useGraphSaveName.ts` [L80–L83](../src/hooks/useGraphSaveName.ts#L80) — `untitledSlotConsumedRef = useRef(false)` — tracks whether the current slot has been used; stored as a ref (not state) because it never drives a re-render
+- `src/hooks/useGraphSaveName.ts` [L104–L118](../src/hooks/useGraphSaveName.ts#L104) — import-echo scanner: clears `lastSavedName` to `null` whenever a new `import graph from {name}` echo arrives, so the imported name takes over immediately
+- `src/hooks/useGraphSaveName.ts` [L122–L131](../src/hooks/useGraphSaveName.ts#L122) — `setLastSavedName(name)`: sets the saved name and marks `untitledSlotConsumedRef = true` only when the name equals the current `untitled-{n}` fallback
+- `src/hooks/useGraphSaveName.ts` [L133–L142](../src/hooks/useGraphSaveName.ts#L133) — `resetName()`: clears both names; advances counter only when `untitledSlotConsumedRef.current` is `true`, then resets the flag
+- `src/hooks/useGraphSaveName.ts` [L145–L148](../src/hooks/useGraphSaveName.ts#L145) — derived `defaultName`: `lastSavedName ?? importedName ?? \`untitled-${untitledCounter}\``
+- `src/components/Playground.tsx` [L216–L219](../src/components/Playground.tsx#L216) — hook instantiated with key `\`${storageKeySavedGraphs}-untitled-counter\`` to keep the counter isolated per playground
+- `src/utils/messageParser.ts` [L266–L276](../src/utils/messageParser.ts#L266) — `extractImportGraphName()`: parses `> import graph from {name}` echoes; returns the trimmed name or `null`
+
+---
+
 ## 4. Repository Layout
 
 ```
@@ -285,6 +313,7 @@ webapp/
 │   │   ├── useAutoMockUpload.ts  # Mock-upload invitation → auto-open modal
 │   │   ├── useMockUpload.ts      # POST fetch lifecycle for mock-upload modal
 │   │   ├── useSavedGraphs.ts     # localStorage graph bookmark CRUD
+│   │   ├── useGraphSaveName.ts   # Save-form pre-fill name (priority: saved > imported > untitled-n)
 │   │   ├── useLocalStorage.ts    # Generic localStorage hook
 │   │   ├── useToast.ts           # Toast notification queue
 │   │   ├── useCopyToClipboard.ts # Clipboard write with copied state
@@ -353,6 +382,7 @@ Each Playground instance:
   ├── useLargePayloadDownload ← oversized payload → REST fetch → console
   ├── useAutoMockUpload     ← upload invitation → auto-open modal
   ├── useSavedGraphs        ← localStorage bookmark CRUD
+  ├── useGraphSaveName      ← save-form pre-fill name (saved › imported › untitled-n)
   │
   ├── LeftPanel
   │   ├── Console           ← message list (ConsoleMessage per row)
@@ -474,6 +504,7 @@ Key responsibilities:
 | Mock-upload modal path | `useState<string \| null>(null)` — `null` = closed; non-null = open for that specific POST endpoint |
 | Modal trigger element | `useRef<HTMLElement \| null>(null)` — captures `document.activeElement` before open; `.focus()` restored on close via `setTimeout` |
 | Successful upload paths | `useState<Set<string>>(new Set())` — keyed by POST path; drives ✅ badge on invitation rows; session-only (cleared with `clearMessages`) |
+| Graph save-form name | `useGraphSaveName(storageKey, ws.messages)` — provides `defaultName`, `setLastSavedName`, `resetName`; see §3.13 |
 
 **Pinning logic** (`handlePinMessage`):
 - If the message is a graph-link → set `pinnedGraphPath` (triggers `useGraphData`) and also highlight the row
@@ -726,6 +757,24 @@ User clicks Load in SavedGraphsMenu →
     → graph renders
 ```
 
+**Save-form pre-fill (`useGraphSaveName`):**
+
+The name pre-filled in the save form is managed entirely by `useGraphSaveName` — `GraphSaveButton` receives only the already-computed `defaultName` string and a `setLastSavedName` callback; it knows nothing about the priority logic.
+
+```
+Priority (highest → lowest):
+
+1. lastSavedName   set by setLastSavedName(name) after a successful save
+2. importedName    extracted from "> import graph from {name}" echo in WS stream
+3. untitled-{n}    persisted localStorage counter, starts at 1, never skips
+```
+
+The counter increment rule: `untitled-{n}` only advances to `untitled-{n+1}` when `untitled-{n}` was actually saved (i.e. `setLastSavedName` was called with a name matching the current untitled fallback). Clearing the console without ever saving reuses the same slot. This guarantees `untitled-2` never appears unless `untitled-1` was saved first.
+
+`importedName` always supersedes `lastSavedName` for a new import: the import-echo scanner calls `setLastSavedNameState(null)` immediately when a fresh `> import graph from {name}` arrives — `lastSavedName` is cleared in the same effect pass that sets `importedName`, so the priority chain reflects the new state in the very next render.
+
+See §3.13 for the full feature description and all code locations.
+
 ---
 
 ## 7. Key Engineering Decisions
@@ -948,6 +997,57 @@ User clicks "⬆️ Upload JSON…" re-open button on the console row:
 
 ---
 
+### 8.7 Save-Name Lifecycle
+
+```
+── Fresh session ─────────────────────────────────────────────────────
+localStorage has no counter yet
+  → useLocalStorage initialises untitledCounter = 1
+  → defaultName = "untitled-1"
+
+── User saves as "untitled-1" ────────────────────────────────────────
+handleSaveGraph("untitled-1"):
+  savedGraphs.saveGraph("untitled-1")          // localStorage bookmark
+  setLastSavedName("untitled-1")               // in useGraphSaveName
+    → setLastSavedNameState("untitled-1")
+    → "untitled-1" === `untitled-${1}` → untitledSlotConsumedRef = true
+  ws.sendRawText("export graph as untitled-1") // server writes file
+  → defaultName = "untitled-1"                 // lastSavedName wins
+
+── User clears console (slot was consumed) ───────────────────────────
+handleClearMessages() → resetSaveName() → resetName():
+  setImportedName(null)
+  setLastSavedNameState(null)
+  untitledSlotConsumedRef.current === true
+    → setUntitledCounter(1 + 1 = 2)            // advances: slot was used
+  untitledSlotConsumedRef.current = false
+  → defaultName = "untitled-2"
+
+── User clears console WITHOUT saving ────────────────────────────────
+resetName():
+  setImportedName(null)
+  setLastSavedNameState(null)
+  untitledSlotConsumedRef.current === false
+    → counter stays at 2                        // slot NOT advanced: never used
+  → defaultName = "untitled-2"                 // same slot reused
+
+── User saves as "my-graph" (renaming away from untitled) ────────────
+setLastSavedName("my-graph"):
+  setLastSavedNameState("my-graph")
+  "my-graph" !== `untitled-${2}` → flag stays false
+  → defaultName = "my-graph"                   // lastSavedName wins
+  → counter is still 2; "untitled-2" was never used
+
+── User imports "other-graph" (supersedes lastSavedName) ─────────────
+WS echo: "> import graph from other-graph"
+  → extractImportGraphName → "other-graph"
+  → setImportedName("other-graph")
+  → setLastSavedNameState(null)               // lastSavedName cleared
+  → defaultName = "other-graph"              // importedName wins
+```
+
+---
+
 ## 9. State Ownership Map
 
 | State | Owner | Persistence | Notes |
@@ -969,6 +1069,10 @@ User clicks "⬆️ Upload JSON…" re-open button on the console row:
 | Right panel tab | `useLocalStorage` in `useGraphData` | `localStorage` | Keyed per playground |
 | Is refreshing | `useState` in `useGraphData` | Memory only | |
 | Saved graph names | `useLocalStorage` in `useSavedGraphs` | `localStorage` | Keyed per playground |
+| Untitled counter | `useLocalStorage` in `useGraphSaveName` | `localStorage` | Keyed per playground; only increments when slot was consumed by a save |
+| Last-saved name | `useState` in `useGraphSaveName` | Memory only | Cleared on import or reset |
+| Imported graph name | `useState` in `useGraphSaveName` | Memory only | Set from WS echo; cleared on reset |
+| Untitled slot consumed | `useRef` in `useGraphSaveName` | Memory only | Write-only flag; never drives a re-render |
 | Multiline mode | `useState` in `Playground` | Memory only | |
 | Toasts | `useReducer` in `useToast` | Memory only | Auto-expires |
 | Panel split ratio | `react-resizable-panels` | `localStorage` | Keyed per route path |

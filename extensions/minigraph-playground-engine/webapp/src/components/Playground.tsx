@@ -258,18 +258,52 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // Send an inline JSON response to the JSON-Path playground payload editor.
   // Mirrors the large-payload flow: navigate first, then deposit via context.
-  // Only offered when the JSON-Path playground is connected; otherwise toast.
+  // If JSON-Path is not yet connected, auto-connect and defer the
+  // navigation + payload deposit until the socket reaches 'connected' phase.
   const jsonPathConfig = PLAYGROUND_CONFIGS.find(c => c.tabs.includes('payload') && c.supportsUpload);
+
+  // Holds a pending deferred send triggered while JSON-Path was still connecting.
+  // Stored as a ref so the watching useEffect below can consume it without
+  // needing to be in the dependency array of handleSendToJsonPath.
+  const deferredSendRef = useRef<{ wsPath: string; json: string } | null>(null);
+
+  // Watch the JSON-Path slot phase; when it reaches 'connected' and there is a
+  // deferred send pending, execute it and clear the ref.
+  const jsonPathWsPath = jsonPathConfig?.wsPath;
+  useEffect(() => {
+    if (!jsonPathWsPath || !deferredSendRef.current) return;
+    const slot = ctx.getSlot(jsonPathWsPath);
+    if (slot.phase === 'connected') {
+      const { wsPath: targetPath, json } = deferredSendRef.current;
+      deferredSendRef.current = null;
+      ctx.setPendingPayload(targetPath, json);
+      navigate(jsonPathConfig!.path);
+      addToast('JSON loaded into JSON-Path editor ✓', 'success');
+    }
+  }, [jsonPathWsPath, ctx, navigate, addToast, jsonPathConfig,
+      // getSlot returns a new object reference when the slot changes, so
+      // reading it inside the effect (keyed on ctx) is sufficient — but we
+      // also need to re-run when the slot's phase changes.  ctx.getSlot is
+      // wrapped in useCallback(_, [slots]) so it changes whenever slots does,
+      // which is exactly what we want.
+     ]);
+
   const handleSendToJsonPath = useCallback((json: string) => {
     if (!jsonPathConfig) return;
     const slot = ctx.getSlot(jsonPathConfig.wsPath);
-    if (slot.phase !== 'connected') {
-      addToast('Open JSON-Path Playground and connect first, then try again.', 'error');
-      return;
+    if (slot.phase === 'connected') {
+      // Already connected — deposit immediately.
+      ctx.setPendingPayload(jsonPathConfig.wsPath, json);
+      navigate(jsonPathConfig.path);
+      addToast('JSON loaded into JSON-Path editor ✓', 'success');
+    } else {
+      // Not yet connected — arm a deferred send and auto-connect.
+      deferredSendRef.current = { wsPath: jsonPathConfig.wsPath, json };
+      if (slot.phase === 'idle') {
+        ctx.connect(jsonPathConfig.wsPath, addToast);
+      }
+      addToast('Connecting to JSON-Path Playground…', 'info');
     }
-    ctx.setPendingPayload(jsonPathConfig.wsPath, json);
-    navigate(jsonPathConfig.path);
-    addToast('JSON loaded into JSON-Path editor ✓', 'success');
   }, [ctx, navigate, addToast, jsonPathConfig]);
 
   // Responsive layout: stack panels vertically on narrow viewports

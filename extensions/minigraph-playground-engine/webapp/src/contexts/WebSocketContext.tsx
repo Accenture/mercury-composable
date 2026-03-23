@@ -19,7 +19,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MAX_ITEMS, PING_INTERVAL } from '../config/playgrounds';
+import { MAX_ITEMS, PING_INTERVAL, PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import { type ToastType } from '../hooks/useToast';
 import { makeWsUrl } from '../utils/urls';
 
@@ -41,8 +41,13 @@ export interface WsSlot {
 export interface WebSocketContextValue {
   /** Get the reactive state (phase + messages) for a given wsPath. */
   getSlot: (wsPath: string) => { phase: WsPhase; messages: { id: number; raw: string }[] };
-  /** Open a WebSocket connection for the given path. */
-  connect: (wsPath: string, onToast: (msg: string, type?: ToastType) => void) => void;
+  /**
+   * Open a WebSocket connection for the given path.
+   * When `onToast` is omitted the connection is established silently — no
+   * toast is shown for "Connected", "Already connected", or "Disconnected".
+   * Useful for background auto-connect at startup or deferred-send flows.
+   */
+  connect: (wsPath: string, onToast?: (msg: string, type?: ToastType) => void) => void;
   /** Close the connection for the given path. */
   disconnect: (wsPath: string) => void;
   /** Send a raw string on the given path's socket. */
@@ -78,7 +83,7 @@ type SlotAction =
   | { type: 'CONNECTED';         path: string; id: number; msg: string }
   | { type: 'MESSAGE_RECEIVED';  path: string; id: number; msg: string }
   | { type: 'DISCONNECTED';      path: string; id: number; msg: string }
-  | { type: 'CONNECT_ERROR';     path: string }
+  | { type: 'CONNECT_ERROR';     path: string; id: number; msg: string }
   | { type: 'CLEAR_MESSAGES';    path: string };
 
 type AllSlots = Record<string, SlotState>;
@@ -118,7 +123,10 @@ function slotsReducer(state: AllSlots, action: SlotAction): AllSlots {
       );
 
     case 'CONNECT_ERROR':
-      return { ...state, [action.path]: { ...prev, phase: 'idle' } };
+      return appendMsg(
+        { ...state, [action.path]: { ...prev, phase: 'idle' } },
+        action.path, action.id, action.msg,
+      );
 
     case 'CLEAR_MESSAGES':
       return { ...state, [action.path]: { ...prev, messages: [] } };
@@ -198,14 +206,14 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   };
 
   // ── connect ──────────────────────────────────────────────────────────────
-  const connect = useCallback((wsPath: string, onToast: (msg: string, type?: ToastType) => void) => {
+  const connect = useCallback((wsPath: string, onToast?: (msg: string, type?: ToastType) => void) => {
     if (!window.WebSocket) {
-      onToast('WebSocket not supported by your browser', 'error');
+      onToast?.('WebSocket not supported by your browser', 'error');
       return;
     }
     const existing = wsRefs.current[wsPath];
     if (existing && (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)) {
-      onToast('Already connected', 'error');
+      onToast?.('Already connected', 'error');
       return;
     }
 
@@ -221,7 +229,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         id:   nextId(wsPath),
         msg:  eventWithTimestamp('info', 'connected'),
       });
-      onToast('Connected to WebSocket', 'success');
+      onToast?.('Connected to WebSocket', 'success');
       ws.send(JSON.stringify({ type: 'welcome' }));
 
       pingRefs.current[wsPath] = setInterval(() => {
@@ -243,7 +251,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onerror = () => {
-      dispatch({ type: 'CONNECT_ERROR', path: wsPath });
+      dispatch({
+        type: 'CONNECT_ERROR',
+        path: wsPath,
+        id:   nextId(wsPath),
+        msg:  eventWithTimestamp('error', 'connection error'),
+      });
+      onToast?.('WebSocket connection error', 'error');
     };
 
     ws.onclose = (evt) => {
@@ -255,8 +269,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         id:   nextId(wsPath),
         msg:  eventWithTimestamp('info', `disconnected - (${evt.code}) ${evt.reason}`),
       });
-      onToast('Disconnected from WebSocket', 'info');
-      wsRefs.current[wsPath] = null;
+      onToast?.('Disconnected from WebSocket', 'info');
+      // Only clear the ref if it still points to THIS socket.  If a new
+      // connect() call already stored a different socket (e.g. StrictMode
+      // remount), leaving the ref alone keeps the new socket reachable.
+      if (wsRefs.current[wsPath] === ws) {
+        wsRefs.current[wsPath] = null;
+      }
     };
   }, []);
 
@@ -273,6 +292,30 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         msg:  eventWithTimestamp('error', 'already disconnected'),
       });
     }
+  }, []);
+
+  // ── Auto-connect on startup ───────────────────────────────────────────────
+  // Silently opens a WebSocket for every configured playground when the
+  // provider first mounts.  Placed here — after connect/disconnect are defined
+  // — so the closure captures the final, stable function references.
+  //
+  // The cleanup closes whatever sockets this effect opened.  This makes the
+  // React StrictMode double-invoke cycle safe: the cleanup undoes the first
+  // mount's connections so the second mount starts from a clean slate, and the
+  // status dots (driven entirely by the reducer) accurately reflect each
+  // transition (idle → connecting → connected, and back on cleanup).
+  useEffect(() => {
+    PLAYGROUND_CONFIGS.forEach(cfg => {
+      connect(cfg.wsPath); // silent — no onToast
+    });
+    return () => {
+      PLAYGROUND_CONFIGS.forEach(cfg => {
+        const ws = wsRefs.current[cfg.wsPath];
+        if (ws) ws.close();
+      });
+    };
+  // connect is useCallback([]) — stable for the lifetime of the provider.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── send ─────────────────────────────────────────────────────────────────
