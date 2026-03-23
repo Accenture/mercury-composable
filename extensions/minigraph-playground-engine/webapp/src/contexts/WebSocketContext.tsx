@@ -83,7 +83,7 @@ type SlotAction =
   | { type: 'CONNECTED';         path: string; id: number; msg: string }
   | { type: 'MESSAGE_RECEIVED';  path: string; id: number; msg: string }
   | { type: 'DISCONNECTED';      path: string; id: number; msg: string }
-  | { type: 'CONNECT_ERROR';     path: string; id: number; msg: string }
+  | { type: 'CONNECT_ERROR';     path: string }
   | { type: 'CLEAR_MESSAGES';    path: string };
 
 type AllSlots = Record<string, SlotState>;
@@ -123,10 +123,7 @@ function slotsReducer(state: AllSlots, action: SlotAction): AllSlots {
       );
 
     case 'CONNECT_ERROR':
-      return appendMsg(
-        { ...state, [action.path]: { ...prev, phase: 'idle' } },
-        action.path, action.id, action.msg,
-      );
+      return { ...state, [action.path]: { ...prev, phase: 'idle' } };
 
     case 'CLEAR_MESSAGES':
       return { ...state, [action.path]: { ...prev, messages: [] } };
@@ -251,13 +248,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onerror = () => {
-      dispatch({
-        type: 'CONNECT_ERROR',
-        path: wsPath,
-        id:   nextId(wsPath),
-        msg:  eventWithTimestamp('error', 'connection error'),
-      });
-      onToast?.('WebSocket connection error', 'error');
+      dispatch({ type: 'CONNECT_ERROR', path: wsPath });
     };
 
     ws.onclose = (evt) => {
