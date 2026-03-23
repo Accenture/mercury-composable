@@ -231,6 +231,24 @@ export function isHelpOrDescribeCommand(raw: string): boolean {
 }
 
 /**
+ * Extracts the graph name from an echoed `import graph from {name}` command.
+ *
+ * The backend echoes every user command with a `> ` prefix, so the message
+ * that arrives in the WebSocket stream looks like:
+ *   "> import graph from my-graph-name"
+ *
+ * Returns the trimmed name string (e.g. `"my-graph-name"`) or `null` if the
+ * message is not an import-graph echo.
+ */
+export function extractImportGraphName(raw: string): string | null {
+  if (!raw.startsWith('> ')) return null;
+  const lower = raw.slice(2).trimStart().toLowerCase();
+  if (!lower.startsWith('import graph from ')) return null;
+  const name = raw.slice(2).trimStart().slice('import graph from '.length).trim();
+  return name.length > 0 ? name : null;
+}
+
+/**
  * Discriminated union of the two mutation kinds the auto-refresh hook handles.
  *  - 'node-mutation'  — any structural node or connection change
  *  - 'import-graph'   — a full graph model replace via `import graph from {name}`

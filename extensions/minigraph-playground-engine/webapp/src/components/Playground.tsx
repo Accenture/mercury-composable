@@ -13,11 +13,11 @@ import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
 import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
 import { useAutoMockUpload } from '../hooks/useAutoMockUpload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
+import { useGraphSaveName } from '../hooks/useGraphSaveName';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
 import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
-import { deriveDefaultName } from './GraphDataView/GraphDataView';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
@@ -203,6 +203,21 @@ export default function Playground({ config }: PlaygroundProps) {
   // playgrounds that don't use this feature have zero overhead.
   const savedGraphs = useSavedGraphs(storageKeySavedGraphs ?? '');
 
+  // ── Save-form default name ────────────────────────────────────────────────
+  // Tracks the pre-fill name for the GraphSaveButton input with priority:
+  //   1. last-saved name (if this working graph was previously saved)
+  //   2. imported name   (if the graph was loaded via `import graph from …`)
+  //   3. untitled-{n}    (monotonically incrementing per-playground fallback)
+  //
+  // The untitled counter key is derived from the saved-graphs key so it stays
+  // isolated per playground (e.g. "minigraph-saved-graphs" →
+  // "minigraph-untitled-counter").  When there is no saved-graphs key the hook
+  // is still instantiated but is effectively unused (the save button is hidden).
+  const { defaultName: graphSaveName, setLastSavedName, resetName: resetSaveName } = useGraphSaveName(
+    storageKeySavedGraphs ? `${storageKeySavedGraphs}-untitled-counter` : 'untitled-counter',
+    ws.messages,
+  );
+
   // Save the current graph name as a bookmark in localStorage.
   // Also sends `export graph as {name}` over the WebSocket so the server
   // writes (or refreshes) the corresponding {name}.json file in its temp
@@ -211,11 +226,12 @@ export default function Playground({ config }: PlaygroundProps) {
   // so the user can reconnect and load it later.
   const handleSaveGraph = useCallback((name: string) => {
     savedGraphs.saveGraph(name);
+    setLastSavedName(name);
     if (ws.connected) {
       ws.sendRawText(`export graph as ${name}`);
     }
     addToast(`Graph saved as "${name}"`, 'success');
-  }, [savedGraphs.saveGraph, ws.connected, ws.sendRawText, addToast]);
+  }, [savedGraphs.saveGraph, setLastSavedName, ws.connected, ws.sendRawText, addToast]);
 
   // Load a saved graph by sending `import graph from {name}` over the WebSocket.
   // The backend reads {name}.json from its temp directory — the file that was
@@ -282,7 +298,9 @@ export default function Playground({ config }: PlaygroundProps) {
     // Modal upload path is NOT reset here — if the modal is open while the
     // user clears the console, it remains open for the current upload attempt.
     setSuccessfulUploadPaths(new Set());
-  }, [ws.clearMessages, setGraphData]);
+    // Advance the untitled counter so the next saved graph gets a fresh name.
+    resetSaveName();
+  }, [ws.clearMessages, setGraphData, resetSaveName]);
 
   return (
     <div className={styles.wrapper}>
@@ -303,7 +321,7 @@ export default function Playground({ config }: PlaygroundProps) {
           {storageKeySavedGraphs && (
             <GraphSaveButton
               disabled={!graphData}
-              defaultName={graphData ? deriveDefaultName(graphData) : ''}
+              defaultName={graphSaveName}
               onSave={handleSaveGraph}
               nameExists={savedGraphs.hasGraph}
               connected={ws.connected}
