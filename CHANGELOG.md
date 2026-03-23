@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.82, 3/23/2026
+
+### Added
+
+Type conversion for "graph.js" embedded JavaScript engine
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.81, 3/21/2026
 
 ### Added

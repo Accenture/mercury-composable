@@ -41,7 +41,7 @@ public class GraphHousekeeper extends GraphLambdaFunction {
             var graphInstance = graphInstances.get(instanceId);
             if (graphInstance != null) {
                 graphInstances.remove(instanceId);
-                log.debug("Graph instance {} for model '{}' cleared", instanceId, graphInstance.graphId);
+                log.info("Graph instance {} for model '{}' cleared", instanceId, graphInstance.graphId);
             }
         }
         return null;

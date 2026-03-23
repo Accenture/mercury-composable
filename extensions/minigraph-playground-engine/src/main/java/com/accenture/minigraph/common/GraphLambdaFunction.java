@@ -200,8 +200,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             sb.append(heading);
         }
         var key = text.substring(segment.start() + 1, segment.end() - 1);
-        if (key.contains("\n")) {
-            // it is likely a JavaScript function instead of a variable
+        if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
+            // it is likely a JavaScript function or a JSON object instead of a variable
             sb.append(text, segment.start(), segment.end());
         } else {
             var parameter = helper.getLhsOrConstant(key, stateMachine);
