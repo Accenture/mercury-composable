@@ -180,8 +180,8 @@ public class GraphJs extends GraphLambdaFunction {
         if (v.isNumber())  return v.as(Number.class);
         if (v.isString())  return v.asString();
         if (v.isNull()) return null;
-        // Fallback
-        return String.valueOf(v.as(Object.class));
+        // Fallback - all other types will be converted to String
+        return v.asString();
     }
 
     private String evaluate(Context context, GraphInstance graphInstance, String nodeName, List<String> lines) {
