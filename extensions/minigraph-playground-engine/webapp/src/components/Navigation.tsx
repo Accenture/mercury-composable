@@ -62,11 +62,43 @@ export default function Navigation({ addToast }: NavigationProps) {
   const phases = PLAYGROUND_CONFIGS.map(cfg => ctx.getSlot(cfg.wsPath).phase);
   const toolsDotStatus = aggregateDotStatus(phases);
 
+  const allConnected  = phases.every(p => p === 'connected');
+  const anyConnecting = phases.some(p => p === 'connecting');
+
+  function handleConnectAll() {
+    PLAYGROUND_CONFIGS.forEach(cfg => {
+      if (ctx.getSlot(cfg.wsPath).phase === 'idle') {
+        ctx.connect(cfg.wsPath, addToast);
+      }
+    });
+  }
+
+  function handleDisconnectAll() {
+    PLAYGROUND_CONFIGS.forEach(cfg => {
+      const { phase } = ctx.getSlot(cfg.wsPath);
+      if (phase === 'connected' || phase === 'connecting') {
+        ctx.disconnect(cfg.wsPath);
+      }
+    });
+  }
+
   return (
     <nav className={styles.nav} aria-label="Main navigation">
 
       {/* ── Tools (nav + connection status combined) ── */}
       <NavMenu label="Tools" dotStatus={toolsDotStatus}>
+        {/* ── Connect / Disconnect All ── */}
+        <div className={styles.connectAllRow}>
+          <button
+            className={`${styles.connectAllBtn} ${allConnected ? styles.connectAllBtnStop : ''}`}
+            onClick={allConnected ? handleDisconnectAll : handleConnectAll}
+            disabled={anyConnecting}
+            aria-label={anyConnecting ? 'Connecting…' : allConnected ? 'Disconnect all WebSockets' : 'Connect all WebSockets'}
+          >
+            {anyConnecting ? 'Connecting…' : allConnected ? 'Disconnect All' : 'Connect All'}
+          </button>
+        </div>
+
         <ul className={styles.menuList} role="none">
           {PLAYGROUND_CONFIGS.map((cfg) => {
             const { phase } = ctx.getSlot(cfg.wsPath);

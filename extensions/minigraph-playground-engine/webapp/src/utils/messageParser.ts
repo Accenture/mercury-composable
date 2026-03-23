@@ -40,7 +40,7 @@ export const getMessageIcon = (type: MessageType): string => {
     error:   '❌',
     ping:    '🔄',
     welcome: '👋',
-    raw:     '📝',
+    raw:     '',
   };
   return icons[type] ?? '•';
 };
@@ -121,6 +121,78 @@ export function extractUploadPath(raw: string): string | null {
 }
 
 /**
+ * Represents a detected large-payload link with metadata extracted from the
+ * server's "Large payload (N) -> GET /api/inspect/..." message.
+ */
+export interface LargePayloadLink {
+  /** The relative API path to GET the payload, e.g. "/api/inspect/ws-734563-3/input.body" */
+  apiPath:   string;
+  /** The size in bytes reported by the server, e.g. 254922 */
+  byteSize:  number;
+  /**
+   * A suggested filename for the download, derived from the last path segment,
+   * e.g. "input.body.json"
+   */
+  filename:  string;
+}
+
+/**
+ * Matches the server's large-payload message pattern:
+ *   "Large payload (254922) -> GET /api/inspect/ws-734563-3/input.body"
+ *
+ * Returns a {@link LargePayloadLink} when the pattern is found, or null otherwise.
+ *
+ * The message is always a plain-text (non-JSON) line so there is no need to
+ * guard with isMarkdownCandidate — the caller should already know the context.
+ */
+export function extractLargePayloadLink(raw: string): LargePayloadLink | null {
+  // Pattern: Large payload (<bytes>) -> GET <path>
+  const match = raw.match(/Large payload \((\d+)\)\s*->\s*GET\s+(\/api\/inspect\/[^\s]+)/i);
+  if (!match) return null;
+
+  const byteSize = parseInt(match[1], 10);
+  const apiPath  = match[2];
+
+  // Derive a safe filename from the last path segment plus ".json"
+  const lastSegment = apiPath.split('/').filter(Boolean).pop() ?? 'payload';
+  const filename    = `${lastSegment}.json`;
+
+  return { apiPath, byteSize, filename };
+}
+
+/**
+ * Returns true when a raw WebSocket message is a large-payload link.
+ * Used by ConsoleMessage.tsx to apply a distinct visual treatment.
+ */
+export function isLargePayloadMessage(raw: string): boolean {
+  return extractLargePayloadLink(raw) !== null;
+}
+
+/**
+ * Extracts the POST path from a mock-data upload invitation:
+ *   "You may upload JSON payload -> POST /api/mock/{id}"
+ *
+ * Returns the path string (e.g. "/api/mock/ws-417669-24") or null if
+ * the message does not match the pattern.
+ *
+ * The regex is anchored to `/api/mock/` (not a generic POST capture) to
+ * avoid false positives from future unrelated messages. The case-insensitive
+ * flag handles any minor casing variation the server might introduce.
+ */
+export function extractMockUploadPath(raw: string): string | null {
+  const match = raw.match(/You may upload .*?->\s*POST\s+(\/api\/mock\/[\w-]+)/i);
+  return match ? match[1] : null;
+}
+
+/**
+ * Returns true when a raw WebSocket message is a mock-data upload invitation.
+ * Used by ConsoleMessage.tsx and useAutoMockUpload to detect the upload trigger.
+ */
+export function isMockUploadMessage(raw: string): boolean {
+  return extractMockUploadPath(raw) !== null;
+}
+
+/**
  * Returns true when a raw WebSocket message is an echoed command that should
  * trigger an auto-pin of the next plain-text response to the Markdown Preview.
  *
@@ -156,6 +228,24 @@ export function isHelpOrDescribeCommand(raw: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * Extracts the graph name from an echoed `import graph from {name}` command.
+ *
+ * The backend echoes every user command with a `> ` prefix, so the message
+ * that arrives in the WebSocket stream looks like:
+ *   "> import graph from my-graph-name"
+ *
+ * Returns the trimmed name string (e.g. `"my-graph-name"`) or `null` if the
+ * message is not an import-graph echo.
+ */
+export function extractImportGraphName(raw: string): string | null {
+  if (!raw.startsWith('> ')) return null;
+  const lower = raw.slice(2).trimStart().toLowerCase();
+  if (!lower.startsWith('import graph from ')) return null;
+  const name = raw.slice(2).trimStart().slice('import graph from '.length).trim();
+  return name.length > 0 ? name : null;
 }
 
 /**

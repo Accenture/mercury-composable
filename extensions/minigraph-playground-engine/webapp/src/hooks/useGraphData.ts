@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { isMinigraphGraphData, type MinigraphGraphData } from '../utils/graphTypes';
 import { type ToastType } from './useToast';
 import { type RightTab } from '../components/RightPanel/RightPanel';
+import { useLocalStorage } from './useLocalStorage';
 
 export interface UseGraphDataReturn {
   graphData:    MinigraphGraphData | null;
@@ -37,25 +38,24 @@ export interface UseGraphDataReturn {
  * @param pinnedGraphPath  Relative API path e.g. `/api/graph/model/my-graph/123-1`,
  *                         or null when no graph is pinned.
  * @param addToast         Toast callback from the parent's useToast hook.
- * @param initialTab       The tab to show before any graph is loaded.
+ * @param initialTab       The tab to show when no persisted selection exists.
  *                         Should be the first entry in the playground's `tabs` config.
+ * @param storageKeyTab    localStorage key for persisting the selected tab across
+ *                         navigation. Each playground supplies its own key so
+ *                         selections are independent and survive page refreshes.
  */
 export function useGraphData(
   pinnedGraphPath: string | null,
   addToast: (message: string, type?: ToastType) => void,
   initialTab: RightTab,
+  storageKeyTab: string,
 ): UseGraphDataReturn {
   const [graphData, setGraphData] = useState<MinigraphGraphData | null>(null);
-  const [rightTab, setRightTab]   = useState<RightTab>(initialTab);
+  // useLocalStorage re-reads from storage whenever `storageKeyTab` changes
+  // (playground switch), so the correct persisted tab is restored immediately
+  // without any additional synchronisation effect.
+  const [rightTab, setRightTab]   = useLocalStorage<RightTab>(storageKeyTab, initialTab);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // useState only uses its initialiser on the very first mount — it ignores
-  // subsequent changes to `initialTab`.  When the user switches playgrounds,
-  // Playground remounts with a different config.tabs[0], so we must
-  // explicitly sync rightTab back to the new playground's first tab.
-  useEffect(() => {
-    setRightTab(initialTab);
-  }, [initialTab]);
 
   // Keep a ref in sync with the prop so that refetchGraph() (which has an
   // empty dep array) always reads the latest path rather than a stale closure.
