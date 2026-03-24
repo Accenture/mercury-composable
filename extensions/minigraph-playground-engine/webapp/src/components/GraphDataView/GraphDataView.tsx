@@ -28,25 +28,6 @@ const EXPAND_FN: Record<ExpandMode, (level: number) => boolean> = {
   none:    collapseAll,
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Derive a sensible default save name from the graph data.
- * Uses the root node's `name` property if present, otherwise falls back to
- * the entry-point node's alias, or a timestamped default.
- */
-export function deriveDefaultName(graphData: MinigraphGraphData): string {
-  const root = graphData.nodes.find(n => n.types.includes('entry_point'));
-  const nameFromRoot = root?.properties?.name as string | undefined;
-  if (nameFromRoot && typeof nameFromRoot === 'string') return nameFromRoot;
-  if (root) return root.alias;
-  const first = graphData.nodes[0];
-  if (first) return first.alias;
-  return `graph-${new Date().toISOString().slice(0, 10)}`;
-}
-
 interface GraphDataViewProps {
   graphData:       MinigraphGraphData | null;
   /** Called after the raw graph JSON is successfully copied to the clipboard. */
