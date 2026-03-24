@@ -763,6 +763,10 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
         if (graph != null) {
+            var currentInstance = graphInstances.get(inRoute);
+            if (currentInstance != null) {
+                graphInstances.remove(inRoute);
+            }
             var mapper = SimpleMapper.getInstance().getMapper();
             var filename = getTempGraphName(inRoute);
             var file = new File(tempDir, filename+JSON_EXT);

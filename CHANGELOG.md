@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.82, 3/23/2026
+
+### Added
+
+1. Type conversion for "graph.js" embedded JavaScript engine
+2. "For each" iterative processing of statement block in both JS and Math skill modules
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.3.81, 3/21/2026
 
 ### Added

@@ -167,8 +167,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         return name.replace('.', '-');
     }
 
-    protected String substituteVarIfAny(String text, MultiLevelMap stateMachine, boolean logical) {
-        var jsonPathOperator = text.startsWith("$.") && (hasBooleanOperator(text) || text.contains("@"));
+    protected String substituteVarIfAny(String text, MultiLevelMap stateMachine) {
+        var logical = hasBooleanOperator(text) || (text.startsWith("$.") && text.contains("@"));
         int leftBrace = text.indexOf('{');
         int rightBrace = text.lastIndexOf('}');
         if (leftBrace != -1 && rightBrace != -1 && rightBrace > leftBrace) {
@@ -176,7 +176,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var sb = new StringBuilder();
             var segments = util.extractSegments(text, "{", "}");
             for (var segment : segments) {
-                start = replaceWithParameter(segment, sb, start, text, stateMachine, logical || jsonPathOperator);
+                start = replaceWithParameter(segment, sb, start, text, stateMachine, logical);
             }
             var lastSegment = text.substring(start);
             if (!lastSegment.isEmpty()) {
@@ -195,13 +195,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     private int replaceWithParameter(VarSegment segment, StringBuilder sb, int start, String text,
                                      MultiLevelMap stateMachine, boolean logical) {
-        String heading = text.substring(start, segment.start());
-        if (!heading.isEmpty()) {
-            sb.append(heading);
-        }
+        boolean dot = hasDot(segment, sb, start, text);
         var key = text.substring(segment.start() + 1, segment.end() - 1);
-        if (key.contains("\n")) {
-            // it is likely a JavaScript function instead of a variable
+        if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
+            // it is likely a JavaScript function or a JSON object instead of a variable
             sb.append(text, segment.start(), segment.end());
         } else {
             var parameter = helper.getLhsOrConstant(key, stateMachine);
@@ -213,7 +210,9 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 var value = SimpleMapper.getInstance().getCompactGson().toJson(parameter);
                 sb.append(value);
             } else {
-                if (logical) {
+                // add single quote wrapper only when it is a boolean (i.e. logical) operation
+                // and the resultant value is not a variable name by itself
+                if (logical && !dot) {
                     sb.append("'").append(escapeVar(parameter)).append("'");
                 } else {
                     sb.append(parameter);
@@ -221,6 +220,18 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
         }
         return segment.end();
+    }
+
+    private boolean hasDot(VarSegment segment, StringBuilder sb, int start, String text) {
+        String heading = text.substring(start, segment.start());
+        if (!heading.isEmpty()) {
+            sb.append(heading);
+        }
+        boolean dot = heading.endsWith(".");
+        if (text.length() > segment.end() && text.charAt(segment.end()) == '.') {
+            dot = true;
+        }
+        return dot;
     }
     
     private String escapeVar(Object parameter) {
@@ -232,7 +243,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         int sep = command.lastIndexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;
-            var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine, false);
+            var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             validateRhs(nodeName, rhs, graphInstance.graph);
@@ -282,7 +293,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         int sep = command.lastIndexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;
-            var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine, false);
+            var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : getFetcherTarget(nodeName, rhs, isArray);
             var value = helper.getLhsOrConstant(lhs, stateMachine);
@@ -335,9 +346,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         Map<String, List<?>> mappings = new HashMap<>();
         for (var entry : forEach) {
             var sep = entry.lastIndexOf(MAP_TO);
-            var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine, false);
+            var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
             var rhs = entry.substring(sep+MAP_TO.length()).trim();
-            if (!rhs.startsWith(MODEL_NAMESPACE)) {
+            var parts = util.split(rhs, ".");
+            if (parts.size() < 2 || !parts.getFirst().equals(MODEL)) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName +
                         " RHS of 'for_each' entry must use 'model.' namespace. Actual: " + entry);
             }
@@ -352,6 +364,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                 mappings.put(rhs, list);
             } else if (value != null) {
                 stateMachine.setElement(rhs, value);
+            } else {
+                stateMachine.removeElement(rhs);
             }
         }
         return mappings;
@@ -375,7 +389,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var text = String.valueOf(output).trim();
             int sep = text.lastIndexOf(MAP_TO);
             if (sep != -1) {
-                var lhs = substituteVarIfAny(text.substring(0, sep).trim(), stateMachine, false);
+                var lhs = substituteVarIfAny(text.substring(0, sep).trim(), stateMachine);
                 var rhs = text.substring(sep + MAP_TO.length()).trim();
                 setFetcherOutputEntry(nodeName, lhs, rhs, stateMachine);
             } else {

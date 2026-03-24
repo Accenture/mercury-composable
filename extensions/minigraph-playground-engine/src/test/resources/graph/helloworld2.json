@@ -2,100 +2,10 @@
   "nodes": [
     {
       "types": [
-        "Dictionary"
-      ],
-      "alias": "account-details",
-      "properties": {
-        "output": [
-          "response.profile.name -> result.person_name",
-          "response.account.details -> result.account_details"
-        ],
-        "input": [
-          "person_id",
-          "account_id"
-        ],
-        "provider": "account-details-provider",
-        "purpose": "Account details"
-      }
-    },
-    {
-      "types": [
-        "Provider"
-      ],
-      "alias": "account-details-provider",
-      "properties": {
-        "input": [
-          "text(application/json) -> header.accept",
-          "text(application/json) -> header.content-type",
-          "person_id -> body.person_id",
-          "account_id -> body.account_id"
-        ],
-        "feature": [
-          "oauth-bearer",
-          "log-request-headers",
-          "log-response-headers"
-        ],
-        "method": "POST",
-        "purpose": "Account Management Endpoint",
-        "url": "http://127.0.0.1:${rest.server.port}/api/account/details"
-      }
-    },
-    {
-      "types": [
-        "Join"
-      ],
-      "alias": "converge",
-      "properties": {
-        "skill": "graph.join"
-      }
-    },
-    {
-      "types": [
-        "mapper"
-      ],
-      "alias": "data-mapper",
-      "properties": {
-        "mapping": [
-          "helloworld.x.y.z -> model.number",
-          "model.number:int -> hello.xyz",
-          "int(${rest.server.port}) -> hello.port"
-        ],
-        "skill": "graph.data.mapper"
-      }
-    },
-    {
-      "types": [
-        "Decision"
-      ],
-      "alias": "decision-1",
-      "properties": {
-        "skill": "graph.js",
-        "statement": [
-          "IF: {helloworld.x.y.z} == 100\nTHEN: hello\nELSE: next\",\n\"IF: {hello.hello} == 200\nTHEN: hello\nELSE: helloworld",
-          "COMPUTE: value -> 3 * {helloworld.x.y.z}",
-          "COMPUTE: sum -> 5 * 123"
-        ]
-      }
-    },
-    {
-      "types": [
         "End"
       ],
       "alias": "end",
       "properties": {}
-    },
-    {
-      "types": [
-        "Extension"
-      ],
-      "alias": "extension",
-      "properties": {
-        "input": [
-          "input.body.person_id -> person_id"
-        ],
-        "extension": "helloworld",
-        "skill": "graph.extension"
-      }
     },
     {
       "types": [
@@ -123,21 +33,19 @@
     },
     {
       "types": [
-        "Fetcher"
+        "Extension"
       ],
-      "alias": "fetcher-2",
+      "alias": "fetcher-ext",
       "properties": {
         "output": [
-          "result.account_details -> output.body.account_details"
+          "$.result[*].account_details -> output.body.account_details"
         ],
         "input": [
           "input.body.person_id -> person_id",
           "model.account_number -> account_id"
         ],
-        "dictionary": [
-          "account-details"
-        ],
-        "skill": "graph.api.fetcher",
+        "extension": "helloext",
+        "skill": "graph.extension",
         "for_each": [
           "fetcher.result.person_accounts -> model.account_number"
         ]
@@ -145,7 +53,7 @@
     },
     {
       "types": [
-        "test"
+        "Test"
       ],
       "alias": "hello",
       "properties": {
@@ -154,7 +62,7 @@
     },
     {
       "types": [
-        "demo"
+        "Test"
       ],
       "alias": "helloworld",
       "properties": {
@@ -167,27 +75,6 @@
     },
     {
       "types": [
-        "mapper"
-      ],
-      "alias": "invalid-data-mapper",
-      "properties": {
-        "mapping": [
-          "hello.hello -> hello.skill"
-        ],
-        "skill": "graph.data.mapper"
-      }
-    },
-    {
-      "types": [
-        "Island"
-      ],
-      "alias": "island",
-      "properties": {
-        "skill": "graph.island"
-      }
-    },
-    {
-      "types": [
         "Math"
       ],
       "alias": "js-1",
@@ -196,8 +83,10 @@
         "statement": [
           "EXECUTE: js-2",
           "COMPUTE: sum -> 3 + 555",
-          "compute: multiply -> {helloworld.x.y.z} * 500",
-          "IF: {helloworld.x.y.z} == '100'\nTHEN: hello\nELSE: next"
+          "COMPUTE: multiply -> {helloworld.x.y.z} * 500",
+          "MAPPING: js-1.result.sum -> output.body.sum",
+          "MAPPING: js-1.result.multiply -> output.body.multiply",
+          "MAPPING: js-1.result.value -> output.body.value"
         ]
       }
     },
@@ -288,51 +177,41 @@
       ],
       "alias": "root",
       "properties": {
-        "purpose": "Demo Graph with 2 fetchers",
-        "name": "helloworld3"
+        "purpose": "Demo Graph Model to use helloext",
+        "name": "helloworld2"
       }
     }
   ],
   "connections": [
     {
-      "source": "converge",
+      "source": "fetcher-ext",
       "relations": [
         {
-          "type": "finish",
+          "type": "compute",
           "properties": {}
         }
       ],
-      "target": "end"
-    },
-    {
-      "source": "data-mapper",
-      "relations": [
-        {
-          "type": "fork",
-          "properties": {}
-        }
-      ],
-      "target": "converge"
+      "target": "js-1"
     },
     {
       "source": "fetcher",
       "relations": [
         {
-          "type": "fetch",
+          "type": "ext-call",
           "properties": {}
         }
       ],
-      "target": "converge"
+      "target": "fetcher-ext"
     },
     {
-      "source": "root",
+      "source": "js-1",
       "relations": [
         {
-          "type": "mapping",
+          "type": "done",
           "properties": {}
         }
       ],
-      "target": "data-mapper"
+      "target": "end"
     },
     {
       "source": "root",

@@ -52,10 +52,36 @@ public class GraphMath extends GraphLambdaFunction {
         if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
+        var stateMachine = graphInstance.stateMachine;
+        var forEach = getEntries(node.getProperty(FOR_EACH));
         var statements = getEntries(node.getProperty(STATEMENT));
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
+        if (forEach.isEmpty()) {
+            return executeStatementBlock(nodeName, statements, graphInstance);
+        } else {
+            Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+            if (forEachMapping.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName +
+                        " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
+            }
+            var size = getModelArraySize(forEachMapping);
+            for (int i = 0; i < size; i++) {
+                var x = getNextModelParamSet(forEachMapping, i);
+                for (var kv : x.entrySet()) {
+                    stateMachine.setElement(kv.getKey(), kv.getValue());
+                }
+                var result = executeStatementBlock(nodeName, statements, graphInstance);
+                if (!NEXT.equals(result)) {
+                    return result;
+                }
+            }
+            return NEXT;
+        }
+    }
+
+    private String executeStatementBlock(String nodeName, List<String> statements, GraphInstance graphInstance) {
         var execute = countExecuteStatements(nodeName, statements);
         if (execute > 0) {
             return executeStatements(nodeName, combine(nodeName, graphInstance.graph, statements), graphInstance);
@@ -129,7 +155,7 @@ public class GraphMath extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
-            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, false);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine);
             var result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
@@ -144,7 +170,7 @@ public class GraphMath extends GraphLambdaFunction {
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
-        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine, true);
+        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine);
         return getNext(graphInstance.graph, engine.evalBoolean(text)? thenStatement : elseStatement);
     }
 }

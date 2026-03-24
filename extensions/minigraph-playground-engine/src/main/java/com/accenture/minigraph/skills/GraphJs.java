@@ -20,10 +20,13 @@ package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
+import org.graalvm.polyglot.Value;
 import org.platformlambda.core.annotations.KernelThreadRunner;
 import org.platformlambda.core.annotations.PreLoad;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,10 +60,36 @@ public class GraphJs extends GraphLambdaFunction {
         if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
+        var stateMachine = graphInstance.stateMachine;
+        var forEach = getEntries(node.getProperty(FOR_EACH));
         var statements = getEntries(node.getProperty(STATEMENT));
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
+        if (forEach.isEmpty()) {
+            return executeStatementBlock(nodeName, statements, graphInstance);
+        } else {
+            Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+            if (forEachMapping.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName +
+                        " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
+            }
+            var size = getModelArraySize(forEachMapping);
+            for (int i = 0; i < size; i++) {
+                var x = getNextModelParamSet(forEachMapping, i);
+                for (var kv : x.entrySet()) {
+                    stateMachine.setElement(kv.getKey(), kv.getValue());
+                }
+                var result = executeStatementBlock(nodeName, statements, graphInstance);
+                if (!NEXT.equals(result)) {
+                    return result;
+                }
+            }
+            return NEXT;
+        }
+    }
+
+    private String executeStatementBlock(String nodeName, List<String> statements, GraphInstance graphInstance) {
         var execute = countExecuteStatements(nodeName, statements);
         if (execute > 0) {
             return executeStatements(nodeName, combine(nodeName, graphInstance.graph, statements), graphInstance);
@@ -136,12 +165,48 @@ public class GraphJs extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
-            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, false);
-            var result = context.eval(JS, text).as(Object.class);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine);
+            Object result = toJavaObject(context.eval(JS, text));
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
+    }
+
+    private Map<String, Object> toJavaMap(Value v) {
+        if (v == null || v.isNull()) return Collections.emptyMap();
+        // JSON Object or alike
+        if (v.hasMembers()) {
+            Map<String, Object> out = new HashMap<>();
+            for (String key : v.getMemberKeys()) {
+                Value member = v.getMember(key);
+                out.put(key, toJavaObject(member));
+            }
+            return out;
+        }
+
+        throw new IllegalArgumentException("Value is not object-like (no members).");
+    }
+
+    private Object toJavaObject(Value v) {
+        if (v == null) return null;
+        // Arrays
+        if (v.hasArrayElements()) {
+            long n = v.getArraySize();
+            List<Object> list = new ArrayList<>();
+            for (long i = 0; i < n; i++) {
+                list.add(toJavaObject(v.getArrayElement(i)));
+            }
+            return list;
+        }
+        // JSON object or alike
+        if (v.hasMembers()) return toJavaMap(v);
+        // Scalars
+        if (v.isBoolean()) return v.asBoolean();
+        if (v.isNumber())  return v.as(Number.class);
+        if (v.isNull()) return null;
+        // All other types will be converted to String
+        return v.asString();
     }
 
     private String evaluate(Context context, GraphInstance graphInstance, String nodeName, List<String> lines) {
@@ -151,14 +216,22 @@ public class GraphJs extends GraphLambdaFunction {
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
-        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine, true);
-        var result = String.valueOf(context.eval(JS, text).as(Object.class));
+        if (thenStatement.equals(elseStatement)) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " then and else statements cannot be the same");
+        }
+        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine);
+        Object result = toJavaObject(context.eval(JS, text));
         return getNext(graphInstance.graph, isTrue(result)? thenStatement : elseStatement);
     }
 
-    private boolean isTrue(String text) {
-        if ("true".equals(text) || "y".equals(text) || "t".equals(text)) return true;
-        var number = text.contains(".")? util.str2float(text): util.str2long(text);
-        return number >= 0;
+    private boolean isTrue(Object value) {
+        if (value instanceof Boolean booleanValue) {
+            return booleanValue;
+        } else {
+            var text = value instanceof String v? v: String.valueOf(value);
+            if ("true".equalsIgnoreCase(text) || "y".equalsIgnoreCase(text) || "yes".equalsIgnoreCase(text)) return true;
+            var number = text.contains(".")? util.str2double(text): util.str2long(text);
+            return number >= 0;
+        }
     }
 }
