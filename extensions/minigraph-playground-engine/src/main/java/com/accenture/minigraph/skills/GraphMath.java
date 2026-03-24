@@ -34,12 +34,6 @@ import java.util.Map;
 public class GraphMath extends GraphLambdaFunction {
     public static final String ROUTE = "graph.math";
     private static final ExpressionEngine engine = new ExpressionEngine();
-    private static final String MAPPING_TAG = "mapping:";
-    private static final String COMPUTE_TAG = "compute:";
-    private static final String EXECUTE_TAG = "execute:";
-    private static final String IF_TAG = "if:";
-    private static final String THEN_TAG = "then:";
-    private static final String ELSE_TAG = "else:";
 
     public GraphMath() {
         // suppress JavaScript engine warning
@@ -58,10 +52,36 @@ public class GraphMath extends GraphLambdaFunction {
         if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
+        var stateMachine = graphInstance.stateMachine;
+        var forEach = getEntries(node.getProperty(FOR_EACH));
         var statements = getEntries(node.getProperty(STATEMENT));
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
+        if (forEach.isEmpty()) {
+            return executeStatementBlock(nodeName, statements, graphInstance);
+        } else {
+            Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+            if (forEachMapping.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName +
+                        " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
+            }
+            var size = getModelArraySize(forEachMapping);
+            for (int i = 0; i < size; i++) {
+                var x = getNextModelParamSet(forEachMapping, i);
+                for (var kv : x.entrySet()) {
+                    stateMachine.setElement(kv.getKey(), kv.getValue());
+                }
+                var result = executeStatementBlock(nodeName, statements, graphInstance);
+                if (!NEXT.equals(result)) {
+                    return result;
+                }
+            }
+            return NEXT;
+        }
+    }
+
+    private String executeStatementBlock(String nodeName, List<String> statements, GraphInstance graphInstance) {
         var execute = countExecuteStatements(nodeName, statements);
         if (execute > 0) {
             return executeStatements(nodeName, combine(nodeName, graphInstance.graph, statements), graphInstance);
@@ -100,30 +120,6 @@ public class GraphMath extends GraphLambdaFunction {
         }
     }
 
-    private int countExecuteStatements(String nodeName, List<String> statements) {
-        var execute = 0;
-        var js = 0;
-        var error = 0;
-        for (var entry : statements) {
-            var line = entry.trim().toLowerCase();
-            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG)) {
-                js++;
-            } else if (line.startsWith(EXECUTE_TAG)) {
-                execute++;
-            } else if (!line.startsWith(MAPPING_TAG)) {
-                error++;
-            }
-        }
-        if (js == 0) {
-            throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'IF:' or 'COMPUTE:' statements");
-        }
-        if (error > 0) {
-            throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must use 'IF:', 'COMPUTE:' or 'MAPPING:' statements");
-        }
-        return execute;
-    }
-
     private String executeStatements(String nodeName, List<String> entries, GraphInstance graphInstance) {
         for (var entry : entries) {
             var block = entry.trim();
@@ -159,7 +155,7 @@ public class GraphMath extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
-            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, false);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine);
             var result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
@@ -174,84 +170,7 @@ public class GraphMath extends GraphLambdaFunction {
         if (ifStatement.isEmpty() || thenStatement.isEmpty() || elseStatement.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
-        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine, true);
+        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine);
         return getNext(graphInstance.graph, engine.evalBoolean(text)? thenStatement : elseStatement);
-    }
-
-    private String getNext(MiniGraph graph, String statement) {
-        if (!NEXT.equalsIgnoreCase(statement)) {
-            var nextNode = getNode(statement, graph);
-            if (nextNode == null) {
-                throw new IllegalArgumentException(NODE_NAME + statement + NOT_FOUND);
-            } else {
-                return statement;
-            }
-        }
-        return null;
-    }
-
-    private String getFirstWord(String statement) {
-        var space = statement.indexOf(' ');
-        return space == -1? statement : statement.substring(0, space);
-    }
-
-    private String getIfStatement(List<String> lines) {
-        boolean found = false;
-        var sb = new StringBuilder();
-        for (String line : lines) {
-            var lc = line.toLowerCase().trim();
-            if (found) {
-                if (lc.startsWith(THEN_TAG) || lc.startsWith(ELSE_TAG)) {
-                    break;
-                } else {
-                    sb.append(line).append(' ');
-                }
-            }
-            if (lc.startsWith(IF_TAG)) {
-                sb.append(line.substring(3)).append(' ');
-                found = true;
-            }
-        }
-        return sb.toString().trim();
-    }
-
-    private String getThenStatement(List<String> lines) {
-        boolean found = false;
-        var sb = new StringBuilder();
-        for (String line : lines) {
-            var lc = line.toLowerCase().trim();
-            if (found) {
-                if (lc.startsWith(IF_TAG) || lc.startsWith(ELSE_TAG)) {
-                    break;
-                } else {
-                    sb.append(line).append(' ');
-                }
-            }
-            if (lc.startsWith(THEN_TAG)) {
-                sb.append(line.substring(5)).append(' ');
-                found = true;
-            }
-        }
-        return sb.toString().trim();
-    }
-
-    private String getElseStatement(List<String> lines) {
-        boolean found = false;
-        var sb = new StringBuilder();
-        for (String line : lines) {
-            var lc = line.toLowerCase().trim();
-            if (found) {
-                if (lc.startsWith(IF_TAG) || lc.startsWith(THEN_TAG)) {
-                    break;
-                } else {
-                    sb.append(line).append(' ');
-                }
-            }
-            if (lc.startsWith(ELSE_TAG)) {
-                sb.append(line.substring(5)).append(' ');
-                found = true;
-            }
-        }
-        return sb.toString().trim();
     }
 }

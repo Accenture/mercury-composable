@@ -82,7 +82,14 @@
         "End"
       ],
       "alias": "end",
-      "properties": {}
+      "properties": {
+        "mapping": [
+          "js-1.result.sum -> output.body.sum",
+          "js-1.result.multiply -> output.body.multiply",
+          "js-1.result.value -> output.body.value"
+        ],
+        "skill": "graph.data.mapper"
+      }
     },
     {
       "types": [
@@ -132,17 +139,20 @@
         ],
         "input": [
           "input.body.person_id -> person_id",
-          "fetcher.result.person_accounts[0] -> account_id"
+          "model.account_number -> account_id"
         ],
         "dictionary": [
           "account-details"
         ],
-        "skill": "graph.api.fetcher"
+        "skill": "graph.api.fetcher",
+        "for_each": [
+          "fetcher.result.person_accounts -> model.account_number"
+        ]
       }
     },
     {
       "types": [
-        "test"
+        "Test"
       ],
       "alias": "hello",
       "properties": {
@@ -151,7 +161,7 @@
     },
     {
       "types": [
-        "demo"
+        "Test"
       ],
       "alias": "helloworld",
       "properties": {
@@ -193,7 +203,7 @@
         "statement": [
           "EXECUTE: js-2",
           "COMPUTE: sum -> 3 + 555",
-          "compute: multiply -> {helloworld.x.y.z} * 500",
+          "COMPUTE: multiply -> {helloworld.x.y.z} * 500",
           "IF: {helloworld.x.y.z} == '100'\nTHEN: hello\nELSE: next"
         ]
       }
@@ -312,7 +322,37 @@
       "target": "converge"
     },
     {
+      "source": "fetcher-2",
+      "relations": [
+        {
+          "type": "calculate",
+          "properties": {}
+        }
+      ],
+      "target": "js-1"
+    },
+    {
       "source": "fetcher",
+      "relations": [
+        {
+          "type": "more",
+          "properties": {}
+        }
+      ],
+      "target": "fetcher-2"
+    },
+    {
+      "source": "hello",
+      "relations": [
+        {
+          "type": "computed",
+          "properties": {}
+        }
+      ],
+      "target": "converge"
+    },
+    {
+      "source": "js-1",
       "relations": [
         {
           "type": "done",

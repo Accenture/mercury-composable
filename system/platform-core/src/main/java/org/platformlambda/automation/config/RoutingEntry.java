@@ -20,6 +20,7 @@ package org.platformlambda.automation.config;
 
 import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.models.*;
+import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
@@ -58,7 +59,7 @@ public class RoutingEntry {
     private static final String DROP = "drop";
     private static final String KEEP = "keep";
     private static final String AUTHENTICATION_SERVICE_NAME = "authentication service name ";
-    private static final String SKIP_INVALID_ENTRY = "Skipping invalid REST entry";
+    private static final String SKIP_INVALID_ENTRY = "Skip invalid REST entry";
     private static final String ACCESS_CONTROL_PREFIX = "Access-Control-";
     private static final String[] VALID_METHODS = {"GET", "PUT", "POST", "DELETE", "HEAD", "PATCH", OPTIONS_METHOD};
     private static final List<String> METHOD_LIST = Arrays.asList(VALID_METHODS);
@@ -483,7 +484,11 @@ public class RoutingEntry {
         try {
             info.services = validateServiceList(services);
         } catch (IllegalArgumentException e) {
-            log.error("Skipping entry {} - {}", config.get(REST+"["+idx+"]"), e.getMessage());
+            if (e.getMessage().endsWith("not available")) {
+                log.warn("Skip {} {} - {} ", methods, url, e.getMessage());
+            } else {
+                log.error("Skip {} {} - {} ", methods, url, e.getMessage());
+            }
             return;
         }
         info.primary = info.services.getFirst();
@@ -726,12 +731,17 @@ public class RoutingEntry {
 
     private void validateMultipleServices(List<String> result) {
         Utility util = Utility.getInstance();
+        EventEmitter po = EventEmitter.getInstance();
         for (String item: result) {
             if (item.startsWith(HTTP) || item.startsWith(HTTPS)) {
                 throw new IllegalArgumentException("Cannot mix HTTP and service target");
             }
-            if (!util.validServiceName(item) || !item.contains(".")) {
-                throw new IllegalArgumentException("Invalid service name");
+            if (util.validServiceName(item) && item.contains(".")) {
+                if (!po.exists(item)) {
+                    throw new IllegalArgumentException("Service " + item + " not available");
+                }
+            } else {
+                throw new IllegalArgumentException("Invalid service name - " + item);
             }
         }
     }
@@ -813,10 +823,10 @@ public class RoutingEntry {
                 if (validCorsList(optionList) && validCorsList(headerList)) {
                     loadCorsEntry(config, id, optionList, headerList, i);
                 } else {
-                    log.error("Skipping invalid cors entry id={}, options={}, headers={}", id, options, headers);
+                    log.error("Skip invalid cors entry id={}, options={}, headers={}", id, options, headers);
                 }
             } else {
-                log.error("Skipping invalid cors definition {}", config.get(CORS+"["+i+"]"));
+                log.error("Skip invalid cors definition {}", config.get(CORS+"["+i+"]"));
             }
         }
     }
@@ -874,7 +884,7 @@ public class RoutingEntry {
                 loadHeaderEntry(config, i, true);
                 loadHeaderEntry(config, i, false);
             } else {
-                log.error("Skipping invalid header definition - Missing {}[{}]", HEADERS, i);
+                log.error("Skip invalid header definition - Missing {}[{}]", HEADERS, i);
             }
         }
     }
@@ -925,7 +935,7 @@ public class RoutingEntry {
                 }
             }
             if (!valid) {
-                log.warn("Skipping invalid header {} {}[{}].{}.{}", id, HEADERS, i, type, ADD);
+                log.warn("Skip invalid header {} {}[{}].{}.{}", id, HEADERS, i, type, ADD);
             }
         }
         return count;

@@ -163,9 +163,9 @@ public class GraphCommandService extends GraphLambdaFunction {
             handleMultiLineCommand(po, inRoute, outRoute, command, true);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
             handleDescribeCommand(po, inRoute, outRoute, words);
-        } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("execute")) {
+        } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(EXECUTE)) {
             handleExecuteCommand(po, inRoute, outRoute, words);
-        } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase("inspect")) {
+        } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase(INSPECT)) {
             handleInspectCommand(po, inRoute, outRoute, words.get(1));
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
             handleRunCommand(inRoute, outRoute);
@@ -458,18 +458,18 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
         var stateMachine = getGraphInstance(inRoute).stateMachine;
-        var value = stateMachine.getElement(key, "null");
+        var value = stateMachine.getElement(key, false);
         if (value instanceof Map || value instanceof List) {
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(value);
             if (text.length() > MAX_BUFFER_SIZE) {
                 var name = getTempGraphName(inRoute);
-                po.send(new EventEnvelope().setTo(outRoute).setBody("Large payload ("+ text.length()
-                        +") -> GET /api/inspect/"+ name+"/"+key));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(
+                        "Large payload (" + text.length() +") -> GET /api/inspect/"+ name+"/"+key));
             } else {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, "outcome", value)));
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of("inspect", key, "outcome", value)));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, "outcome", value)));
         }
     }
 
@@ -763,6 +763,10 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void handleInstantiateGraph(PostOffice po, String inRoute, String outRoute, List<String> lines) {
         var graph = graphModels.get(inRoute);
         if (graph != null) {
+            var currentInstance = graphInstances.get(inRoute);
+            if (currentInstance != null) {
+                graphInstances.remove(inRoute);
+            }
             var mapper = SimpleMapper.getInstance().getMapper();
             var filename = getTempGraphName(inRoute);
             var file = new File(tempDir, filename+JSON_EXT);

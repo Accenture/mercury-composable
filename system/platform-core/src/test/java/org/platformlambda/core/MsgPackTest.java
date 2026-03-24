@@ -23,6 +23,7 @@ import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.io.IOException;
@@ -35,12 +36,41 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MsgPackTest {
-
     private static final MsgPack msgPack = new MsgPack();
 
     @SuppressWarnings("unchecked")
     @Test
+    void nullTransportTest() throws IOException {
+        System.setProperty("serializer.null.transport", "false");
+        var map = new HashMap<String, Object>();
+        map.put("hello", "world");
+        map.put("null", null);
+        var msgPack1 = new MsgPack();
+        var b1 = msgPack1.pack(map);
+        var x1 = msgPack1.unpack(b1);
+        assertInstanceOf(Map.class, x1);
+        var restored = (Map<String, Object>) x1;
+        assertEquals("world", restored.get("hello"));
+        assertNull(restored.get("null"));
+        assertFalse(restored.containsKey("null"));
+        // enable null transport
+        System.setProperty("serializer.null.transport", "true");
+        var msgPack2 = new MsgPack();
+        var b2 = msgPack2.pack(map);
+        var x2 = msgPack2.unpack(b2);
+        assertInstanceOf(Map.class, x2);
+        var restored1 = (Map<String, Object>) x2;
+        assertEquals("world", restored1.get("hello"));
+        assertNull(restored.get("null"));
+        assertTrue(restored1.containsKey("null"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void dataIsMap() throws IOException {
+        var config = AppConfigReader.getInstance();
+        var transportNulls = "true".equalsIgnoreCase(
+                                config.getProperty("serializer.null.transport", "false"));
         PoJo pojo = new PoJo();
         pojo.setName("hello world");
         String[] helloWorld = {"hello", "world"};
@@ -52,7 +82,7 @@ class MsgPackTest {
         input.put("long", 12345L);
         input.put("float", 12.345f);
         input.put("double", 12.345d);
-        input.put("pojo", pojo);
+        input.put("poJo", pojo);
         input.put(PayloadMapper.NOTHING, null);
         byte[] b = msgPack.pack(input);
         Object o = msgPack.unpack(b);
@@ -63,14 +93,15 @@ class MsgPackTest {
         assertInstanceOf(Integer.class, result.get("long"));
         assertInstanceOf(Float.class, result.get("float"));
         assertInstanceOf(Double.class, result.get("double"));
-        // MsgPack does not transport null elements in a map
-        assertFalse(result.containsKey(PayloadMapper.NOTHING));
+        // serializer.null.transport=true in application.properties
+        // to enable transport of null values
+        assertEquals(transportNulls, result.containsKey(PayloadMapper.NOTHING));
         result.remove(PayloadMapper.NOTHING);
         assertEquals(o, result);
         // array is converted to list of objects
         assertEquals(Arrays.asList(helloWorld), result.get("array"));
         // embedded pojo in a map is converted to a map
-        Object innerPoJo = result.get("pojo");
+        Object innerPoJo = result.get("poJo");
         assertInstanceOf(Map.class, innerPoJo);
         PoJo restored = SimpleMapper.getInstance().getMapper().readValue(innerPoJo, PoJo.class);
         assertEquals(pojo.getName(), restored.getName());

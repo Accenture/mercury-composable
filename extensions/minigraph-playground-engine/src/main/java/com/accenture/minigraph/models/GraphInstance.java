@@ -26,13 +26,42 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GraphInstance {
+    private static final String FLOW_INSTANCE = "flow_instance";
+    private static final String REPLY_TO = "reply_to";
+    private static final String CID = "cid";
+    private static final String NONE = "none";
     public final String graphId;
     public final MiniGraph graph = new MiniGraph();
     public final MultiLevelMap stateMachine = new MultiLevelMap();
     public final ConcurrentMap<String, Boolean> hasSeen = new ConcurrentHashMap<>();
     public final AtomicBoolean complete = new AtomicBoolean(false);
+    private final ConcurrentMap<String, Object> metadata = new ConcurrentHashMap<>();
 
     public GraphInstance(String graphId) {
         this.graphId = graphId;
+    }
+
+    public String getCorrelationId() {
+        return metadata.get(CID) instanceof String v? v : NONE;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        metadata.put(CID, correlationId);
+    }
+
+    public String getFlowInstanceId() {
+        return metadata.get(FLOW_INSTANCE) instanceof String v? v : NONE;
+    }
+
+    public void setFlowInstanceId(String instanceId) {
+        metadata.put(FLOW_INSTANCE, instanceId);
+    }
+
+    public String getReplyTo() {
+        return metadata.get(REPLY_TO) instanceof String v? v : NONE;
+    }
+
+    public void setReplyTo(String replyTo) {
+        metadata.put(REPLY_TO, replyTo);
     }
 }

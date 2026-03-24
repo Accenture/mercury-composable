@@ -17,7 +17,7 @@ eliminates network latency typically associated with a full feature network base
 database.
 
 From a usability perspective, it is viable to display the whole knowledge base in a
-graphical user interface (not included in this project). A smaller graph not only increases
+graphical user interface (e.g. The MiniGraph Playground). A smaller graph not only increases
 computational efficiency but also reduces the cognitive complexity for the reader.
 
 We call this in-memory property graph as a "mini-graph".
@@ -54,8 +54,12 @@ be cleared.
 
 ## Underlying technology
 
-The system extends the Google Guava's MutableGraph module with alias for nodes, types and
-properties for nodes and edges.
+Inspired by Google Guava's MutableGraph, the system implements graph traversal feature
+using two concurrent hashmaps per graph model since version 4.3.80.
+
+Each node is supported by a SimpleNode object with properties and each connection is
+represented by a SimpleConnection. Inside each SimpleConnection, one or more relationships
+can be described.
 
 ## API summary
 
@@ -223,12 +227,21 @@ graph.importGraph(map);
 
 Mini-graph is memory efficient with its minimalist design.
 
-However, please limit the number of nodes to 500 or less. The default value is 500.
+It is recommended that you limit the number of nodes to less than 750.
 
-Its typical use case is real-time computation of policies for decision making.
+This is the default graph model size for the MiniGraph Playground which
+is an interactive graph designer's workbench and a graph execution engine.
+For details, please refer to [Active Knowledge Graph](CHAPTER-11.md).
 
-It is important that your application must unload graph memory after use.
-There are multiple ways to unload graph instance memory.
+While the typical use case is real-time computation or decision making,
+MiniGraph may be used to model general business use cases without writing
+code. The MiniGraph Playground and Graph Execution Engine handles memory
+management efficiently. The state machine of each instance of graph execution
+releases memory after use automatically.
+
+If you write low-level code using MiniGraph, it is important that your application
+must unload graph memory after use. There are multiple ways to unload graph instance
+memory.
 
 *Functional scope*
 

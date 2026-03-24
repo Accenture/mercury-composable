@@ -58,7 +58,7 @@ public class AppStarter {
     private static final ConcurrentMap<String, LambdaFunction> wsLambdas = new ConcurrentHashMap<>();
     private static final AtomicInteger compileCycle = new AtomicInteger(0);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 1000L;    // 10 seconds
-    private static final String SKIP_OPTIONAL = "Skipping optional {}";
+    private static final String SKIP_OPTIONAL = "Skip optional {}";
     private static final String CLASS_NOT_FOUND = "Class {} not found";
     private static final String JAVA_VERSION = "java.version";
     private static final String STATIC_CONTENT = "static-content";
@@ -448,7 +448,7 @@ public class AppStarter {
                 throw new IllegalArgumentException("Invalid implementation of CustomSerializer");
             }
         } catch (Exception ce) {
-            log.error("Skipping custom serializer {} for {} - {}: {}",
+            log.error("Skip custom serializer {} for {} - {}: {}",
                     svc.customSerializer(), routes,
                     ce.getClass().getSimpleName(), ce.getMessage());
             return null;

@@ -76,6 +76,7 @@ precedence.
 | worker.instances.<br/>simple.exception.handler | Maximum instances for `simple.exception.handler`<br/>(Default: 250) | EventScript |
 | spring.boot.main                               | Default main class:<br/>org.platformlambda.rest.RestServer          | Optional*   |
 | oversize.http.response.header                  | Default false. Set response header size to 16 KB if true.           | Optional    |
+| serializer.null.transport                      | Default false. Set to true to enable transport.                     | Optional    |
 
 *Note*: `oversize.http.response.header` should not be set. Use with caution due to potential security vulnerability.
 

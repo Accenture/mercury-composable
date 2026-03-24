@@ -40,8 +40,8 @@ public class ElasticQueue implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ElasticQueue.class);
     private static final Utility util = Utility.getInstance();
     private static final AtomicInteger generation = new AtomicInteger(0);
-    private static final ReentrantLock lock = new ReentrantLock();
     private static final AtomicInteger initCounter = new AtomicInteger(0);
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     public static final int MEMORY_BUFFER = 20;
     private static final byte[] NOTHING = new byte[0];
     private static final long ONE_SECOND = 1000L;
@@ -231,13 +231,13 @@ public class ElasticQueue implements AutoCloseable {
 
     private static Database getDatabase() {
         if (db == null) {
-            lock.lock();
+            SAFETY.lock();
             try {
                 if (dbEnv == null) {
                     setupCommitLog(dbFolder);
                 }
             } finally {
-                lock.unlock();
+                SAFETY.unlock();
             }
         }
         return db;

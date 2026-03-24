@@ -10,6 +10,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.82, 3/23/2026
+
+### Added
+
+1. Type conversion for "graph.js" embedded JavaScript engine
+2. "For each" iterative processing of statement block in both JS and Math skill modules
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.3.81, 3/21/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix for "has-seen" protocol in graph traversal of Graph Executor
+
+---
+## Version 4.3.80, 3/20/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Refactor GraphExecutor to be an EventInterceptor and the executeSkill method to be event-driven
+2. Improve plugin f:includes() to support list
+3. In addition to boolean operators, detect the "@" comparison operator in JSON-Path query so
+   variable substitution can be properly handled
+4. Simplify MiniGraph's internal representation of adjacent nodes
+5. Improved validation of right-hand-side for input/output data-mapping for Graph Traveler and Executor
+
+---
+## Version 4.3.79, 3/19/2026
+
+### Added
+
+Plugins f:includes(), f:startsWith(), f:endsWith()
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
+## Version 4.3.78, 3/19/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Conditionally set Gson's null transport using parameter "serializer.null.transport"
+2. Print unit test status for Playground websocket client tests
+
+---
 ## Version 4.3.77, 3/18/2026
 
 ### Added
@@ -17,6 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 1. Variable substitution for data dictionary, provider and fetcher in
    MiniGraph Playground and Execution engine.
 2. REST endpoint for UI to download larger JSON payload of 62 KB or more.
+3. Parameter "serializer.null.transport=true" to enable transport of null values
+   over events. Default value is false.
 
 ### Removed
 

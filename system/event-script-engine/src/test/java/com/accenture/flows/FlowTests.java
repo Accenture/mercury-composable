@@ -236,6 +236,35 @@ class FlowTests extends TestBase {
         assertEquals(ms, result.get("ms"));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void stringUtilTest() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        final String text = "hello (test) world";
+        final long timeout = 8000;
+        final String traceId = "90092";
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST").setHeader("content-type", "application/json");
+        request.setBody(Map.of("text", text));
+        request.setUrl("/api/string-util");
+        PostOffice po = new PostOffice("unit.test", traceId, "TEST /string/util");
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        po.asyncRequest(req, timeout).onSuccess(bench::add);
+        EventEnvelope res = bench.poll(timeout, TimeUnit.MILLISECONDS);
+        assert res != null;
+        assertInstanceOf(Map.class, res.getBody());
+        Map<String, Object> result = (Map<String, Object>) res.getBody();
+        assertEquals(200, res.getStatus());
+        assertEquals(true, result.get("starts_with"));
+        assertEquals(true, result.get("ends_with"));
+        assertEquals(true, result.get("includes"));
+        assertEquals(false, result.get("not_starts_with"));
+        assertEquals(false, result.get("not_ends_with"));
+        assertEquals(false, result.get("not_includes"));
+        assertEquals(true, result.get("list_includes"));
+        assertEquals(false, result.get("list_not_includes"));
+    }
+
     @Test
     void getLhsConstant() {
         var empty = new MultiLevelMap();
@@ -1747,8 +1776,8 @@ class FlowTests extends TestBase {
                 .toList();
         assertEquals(byteList, result.get("to_b64_bytes"));
         assertEquals(b64String, result.get("to_bytestring"));
-        assertTrue((Boolean) result.get("isNull"));
-        assertTrue((Boolean) result.get("isNotNull"));
+        assertEquals(true, result.get("isNull"));
+        assertEquals(true, result.get("isNotNull"));
         UUID id = UUID.fromString((String) result.get("uuid"));
         assertNotNull(id);
         assertInstanceOf(String.class, result.get("currentTime"));

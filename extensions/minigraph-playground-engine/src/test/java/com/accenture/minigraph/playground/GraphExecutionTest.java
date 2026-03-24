@@ -27,8 +27,6 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -39,9 +37,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class GraphExecutionTest {
-    private static final Logger log = LoggerFactory.getLogger(GraphExecutionTest.class);
     private static final Utility util = Utility.getInstance();
     private static final AtomicInteger PORT = new AtomicInteger(0);
+    private static final String JS = "js";
+    private static final String MATH = "math";
+    private static final String CONVERT = "convert";
     private static final long TIMEOUT = 8000;
 
     @BeforeAll
@@ -53,22 +53,24 @@ class GraphExecutionTest {
 
     @Test
     void testGraphExecutionMath() throws ExecutionException, InterruptedException {
-        testGraphExecution("helloworld", false);
+        testGraphExecution("hello", MATH);
+        testGraphExecution("helloworld", CONVERT);
+        testGraphExecution("helloworld2", MATH);
     }
 
     @Test
     void testGraphExecutionJs() throws ExecutionException, InterruptedException {
-        testGraphExecution("hellojs", true);
+        testGraphExecution("hellojs", JS);
     }
 
     @SuppressWarnings("unchecked")
-    private void testGraphExecution(String graphId, boolean js) throws ExecutionException, InterruptedException {
+    private void testGraphExecution(String graphId, String type) throws ExecutionException, InterruptedException {
         var host = "http://127.0.0.1:" + PORT.get();
         var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(host);
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-Type", "application/json");
         request.setUrl("/api/graph/"+graphId).setBody(Map.of("person_id", 100));
-        var po = PostOffice.trackable("unit.test", "100", "TEST /api/graph/helloworld");
+        var po = PostOffice.trackable("unit.test", "100", "TEST /api/graph/hello");
         var event = new EventEnvelope().setTo("async.http.request").setBody(request.toMap());
         var response = po.request(event, TIMEOUT).get();
         assertInstanceOf(Map.class, response.getBody());
@@ -76,19 +78,22 @@ class GraphExecutionTest {
         assertEquals("Peter", mm.getElement("name"));
         assertEquals("100 World Blvd", mm.getElement("address"));
         // number representation in JavaScript and Graph Math package is different
-        if (js) {
+        if (JS.equals(type)) {
             // JavaScript returns Integer class when the operands are integers
             assertEquals(558, mm.getElement("sum"));
             assertEquals(50000, mm.getElement("multiply"));
-        } else {
+        }
+        if (MATH.equals(type)) {
             // For simplicity, Graph Math package always returns numbers in Double class
             assertEquals(558.0, mm.getElement("sum"));
             assertEquals(50000.0, mm.getElement("multiply"));
         }
-        assertEquals(List.of("a101", "b202", "c303", "d400", "e500"), mm.getElement("accounts"));
-        assertInstanceOf(List.class, mm.getElement("account_details"));
-        var list = (List<String>) mm.getElement("account_details");
-        assertEquals(5, list.size());
+        if (!CONVERT.equals(type)) {
+            assertEquals(List.of("a101", "b202", "c303", "d400", "e500"), mm.getElement("accounts"));
+            assertInstanceOf(List.class, mm.getElement("account_details"));
+            var list = (List<String>) mm.getElement("account_details");
+            assertEquals(5, list.size());
+        }
     }
 
     @SuppressWarnings("unchecked")
