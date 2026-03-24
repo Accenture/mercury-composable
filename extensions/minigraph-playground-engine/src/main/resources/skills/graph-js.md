@@ -38,6 +38,12 @@ statement[]=MAPPING: source -> target
 statement[]=EXECUTE: another-node
 ```
 
+Optional properties
+-------------------
+```
+for_each[]={map an array parameter for iterative statement execution}
+```
+
 Execution
 ---------
 Upon successful execution of a "COMPUTE" statement, the result set will be stored in the "result" namespace
@@ -47,6 +53,14 @@ For an "IF" statement, the system will execute a boolean operation.
 This process will override the natural graph traversal order and jump to a specific node.
 If the function returns "next" after evaluation of all statements, the natural graph traversal order
 will be preserved.
+
+Iterative Execution
+-------------------
+Using the optional `for_each` statement, you can tell the skill module to execute the statements iteratively.
+
+A "for_each" statement extracts the next array element from another array variable into a model variable.
+You can then put the model variable in the "left-hand-side" of an input statement. The module will then
+execute the statement block using an iterative stream of the model variable.
 
 Syntax for COMPUTE statement
 ----------------------------

@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Type conversion for "graph.js" embedded JavaScript engine
+1. Type conversion for "graph.js" embedded JavaScript engine
+2. "For each" iterative processing of statement block in both JS and Math skill modules
 
 ### Removed
 

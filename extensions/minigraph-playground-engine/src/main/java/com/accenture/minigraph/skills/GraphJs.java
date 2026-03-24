@@ -60,10 +60,36 @@ public class GraphJs extends GraphLambdaFunction {
         if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
+        var stateMachine = graphInstance.stateMachine;
+        var forEach = getEntries(node.getProperty(FOR_EACH));
         var statements = getEntries(node.getProperty(STATEMENT));
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
+        if (forEach.isEmpty()) {
+            return executeStatementBlock(nodeName, statements, graphInstance);
+        } else {
+            Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+            if (forEachMapping.isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName +
+                        " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
+            }
+            var size = getModelArraySize(forEachMapping);
+            for (int i = 0; i < size; i++) {
+                var x = getNextModelParamSet(forEachMapping, i);
+                for (var kv : x.entrySet()) {
+                    stateMachine.setElement(kv.getKey(), kv.getValue());
+                }
+                var result = executeStatementBlock(nodeName, statements, graphInstance);
+                if (!NEXT.equals(result)) {
+                    return result;
+                }
+            }
+            return NEXT;
+        }
+    }
+
+    private String executeStatementBlock(String nodeName, List<String> statements, GraphInstance graphInstance) {
         var execute = countExecuteStatements(nodeName, statements);
         if (execute > 0) {
             return executeStatements(nodeName, combine(nodeName, graphInstance.graph, statements), graphInstance);
@@ -139,7 +165,7 @@ public class GraphJs extends GraphLambdaFunction {
             if (lhs.isEmpty() || rhs.isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
-            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, false);
+            var text = substituteVarIfAny(rhs, graphInstance.stateMachine);
             Object result = toJavaObject(context.eval(JS, text));
             graphInstance.stateMachine.setElement(nodeName + ".result." + lhs, result);
         } else {
@@ -178,9 +204,8 @@ public class GraphJs extends GraphLambdaFunction {
         // Scalars
         if (v.isBoolean()) return v.asBoolean();
         if (v.isNumber())  return v.as(Number.class);
-        if (v.isString())  return v.asString();
         if (v.isNull()) return null;
-        // Fallback - all other types will be converted to String
+        // All other types will be converted to String
         return v.asString();
     }
 
@@ -194,7 +219,7 @@ public class GraphJs extends GraphLambdaFunction {
         if (thenStatement.equals(elseStatement)) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " then and else statements cannot be the same");
         }
-        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine, true);
+        var text = substituteVarIfAny(ifStatement, graphInstance.stateMachine);
         Object result = toJavaObject(context.eval(JS, text));
         return getNext(graphInstance.graph, isTrue(result)? thenStatement : elseStatement);
     }

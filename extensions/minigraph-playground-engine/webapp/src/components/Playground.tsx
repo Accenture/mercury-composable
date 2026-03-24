@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
@@ -9,26 +10,62 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
 import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
+import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
+import { useAutoMockUpload } from '../hooks/useAutoMockUpload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
+import { useGraphSaveName } from '../hooks/useGraphSaveName';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
 import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
-import { deriveDefaultName } from './GraphDataView/GraphDataView';
 import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
-import { type PlaygroundConfig } from '../config/playgrounds';
+import { MockUploadModal } from './MockUploadModal/MockUploadModal';
+import { type PlaygroundConfig, PLAYGROUND_CONFIGS } from '../config/playgrounds';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeySavedGraphs, supportsUpload, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, tabs } = config;
 
-  // Persisted payload
-  const [payload, setPayload] = useLocalStorage<string>(storageKeyPayload, '');
+  const navigate = useNavigate();
+
+  // Persisted payload (survives navigation / refresh via localStorage).
+  const [storedPayload, setStoredPayload] = useLocalStorage<string>(storageKeyPayload, '');
+
+  // Large-payload override — set by useLargePayloadDownload via WebSocketContext
+  // when the server returns a payload too big to echo inline.  Using a separate
+  // useState means we never write large blobs to localStorage, avoiding quota
+  // exhaustion.  null = no override; the stored value is used instead.
+  const ctx = useWebSocketContext();
+  const [payloadOverride, setPayloadOverride] = useState<string | null>(() =>
+    ctx.takePendingPayload(wsPath)
+  );
+
+  // Reactively consume a pending payload deposited by useLargePayloadDownload.
+  // takePendingPayload has a new identity whenever a payload is deposited
+  // (backed by useState in the context), so this effect fires precisely when
+  // a new payload arrives — covering both the first-mount and already-mounted cases.
+  const { takePendingPayload } = ctx;
+  useEffect(() => {
+    const pending = takePendingPayload(wsPath);
+    if (pending !== null) {
+      setPayloadOverride(pending);
+    }
+  }, [takePendingPayload, wsPath]);
+
+  // The active payload: override wins over the persisted value.
+  const payload    = payloadOverride ?? storedPayload;
+  // Writers: the textarea and format/clear actions always write to localStorage.
+  // Clearing the override on any manual edit lets the user take back control.
+  const setPayload = useCallback((value: string | ((prev: string) => string)) => {
+    setPayloadOverride(null);
+    setStoredPayload(value as string);
+  }, [setStoredPayload]);
 
   // Live payload validation — derived synchronously from payload, no extra render cycle needed
   const payloadValidation = useMemo(
@@ -76,7 +113,18 @@ export default function Playground({ config }: PlaygroundProps) {
   const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
 
   // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
-  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast, tabs[0]);
+  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast, tabs[0], storageKeyTab);
+
+  // ── Mock-upload modal state ───────────────────────────────────────────────
+  // Path extracted from the server's upload invitation.
+  // null = modal closed; non-null = modal open for that specific endpoint.
+  const [modalUploadPath, setModalUploadPath] = useState<string | null>(null);
+
+  // Capture the element that triggered the modal so focus can be restored on close.
+  const modalTriggerRef = useRef<HTMLElement | null>(null);
+
+  // POST paths of invitations that have been successfully fulfilled — drives ✅ badge.
+  const [successfulUploadPaths, setSuccessfulUploadPaths] = useState<Set<string>>(new Set());
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   useAutoGraphRefresh({
@@ -104,10 +152,71 @@ export default function Playground({ config }: PlaygroundProps) {
                           : undefined,
   });
 
+  // ── Auto-download large payloads ──────────────────────────────────────────
+  // When the server responds with a "Large payload (N) -> GET /api/inspect/…"
+  // message (i.e. a namespace value that exceeds the 64 KB inline limit),
+  // this hook fetches the data from the provided endpoint and immediately
+  // triggers a browser file download — no extra user interaction required.
+  useLargePayloadDownload({
+    messages:      ws.messages,
+    connected:     ws.connected,
+    appendMessage: ws.appendMessage,
+    addToast,
+  });
+
+  // ── Mock-upload modal callbacks ───────────────────────────────────────────
+  const handleOpenUploadModal = useCallback((path: string) => {
+    // Capture the focused element before opening so we can restore focus on close.
+    modalTriggerRef.current = document.activeElement as HTMLElement;
+    setModalUploadPath(path);
+  }, []);
+
+  const handleCloseUploadModal = useCallback(() => {
+    setModalUploadPath(null);
+    // Restore focus to the element that triggered the modal open.
+    // setTimeout ensures the dialog is fully unmounted before focus() runs.
+    setTimeout(() => modalTriggerRef.current?.focus(), 0);
+  }, []);
+
+  const handleUploadSuccess = useCallback((_responseBody: string) => {
+    // _responseBody is available but intentionally not surfaced per spec §2.
+    setSuccessfulUploadPaths(prev => new Set([...prev, modalUploadPath!]));
+    setModalUploadPath(null);
+    setTimeout(() => modalTriggerRef.current?.focus(), 0);
+    addToast('Mock data uploaded successfully ✓', 'success');
+  }, [modalUploadPath, addToast]);
+
+  const handleUploadError = useCallback((errorMessage: string) => {
+    // Modal stays open — error is displayed inline inside the modal.
+    addToast(`Upload failed: ${errorMessage}`, 'error');
+  }, [addToast]);
+
+  // ── Auto-open modal when server sends upload invitation ───────────────────
+  useAutoMockUpload({
+    messages:    ws.messages,
+    connected:   ws.connected,
+    onOpenModal: handleOpenUploadModal,
+  });
+
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────
   // Only instantiated when the playground config provides a storage key so
   // playgrounds that don't use this feature have zero overhead.
   const savedGraphs = useSavedGraphs(storageKeySavedGraphs ?? '');
+
+  // ── Save-form default name ────────────────────────────────────────────────
+  // Tracks the pre-fill name for the GraphSaveButton input with priority:
+  //   1. last-saved name (if this working graph was previously saved)
+  //   2. imported name   (if the graph was loaded via `import graph from …`)
+  //   3. untitled-{n}    (monotonically incrementing per-playground fallback)
+  //
+  // The untitled counter key is derived from the saved-graphs key so it stays
+  // isolated per playground (e.g. "minigraph-saved-graphs" →
+  // "minigraph-untitled-counter").  When there is no saved-graphs key the hook
+  // is still instantiated but is effectively unused (the save button is hidden).
+  const { defaultName: graphSaveName, setLastSavedName, resetName: resetSaveName } = useGraphSaveName(
+    storageKeySavedGraphs ? `${storageKeySavedGraphs}-untitled-counter` : 'untitled-counter',
+    ws.messages,
+  );
 
   // Save the current graph name as a bookmark in localStorage.
   // Also sends `export graph as {name}` over the WebSocket so the server
@@ -117,11 +226,12 @@ export default function Playground({ config }: PlaygroundProps) {
   // so the user can reconnect and load it later.
   const handleSaveGraph = useCallback((name: string) => {
     savedGraphs.saveGraph(name);
+    setLastSavedName(name);
     if (ws.connected) {
       ws.sendRawText(`export graph as ${name}`);
     }
     addToast(`Graph saved as "${name}"`, 'success');
-  }, [savedGraphs.saveGraph, ws.connected, ws.sendRawText, addToast]);
+  }, [savedGraphs.saveGraph, setLastSavedName, ws.connected, ws.sendRawText, addToast]);
 
   // Load a saved graph by sending `import graph from {name}` over the WebSocket.
   // The backend reads {name}.json from its temp directory — the file that was
@@ -146,6 +256,56 @@ export default function Playground({ config }: PlaygroundProps) {
     }
   }, []);
 
+  // Send an inline JSON response to the JSON-Path playground payload editor.
+  // Mirrors the large-payload flow: navigate first, then deposit via context.
+  // If JSON-Path is not yet connected, auto-connect and defer the
+  // navigation + payload deposit until the socket reaches 'connected' phase.
+  const jsonPathConfig = PLAYGROUND_CONFIGS.find(c => c.tabs.includes('payload') && c.supportsUpload);
+
+  // Holds a pending deferred send triggered while JSON-Path was still connecting.
+  // Stored as a ref so the watching useEffect below can consume it without
+  // needing to be in the dependency array of handleSendToJsonPath.
+  const deferredSendRef = useRef<{ wsPath: string; json: string } | null>(null);
+
+  // Watch the JSON-Path slot phase; when it reaches 'connected' and there is a
+  // deferred send pending, execute it and clear the ref.
+  const jsonPathWsPath = jsonPathConfig?.wsPath;
+  useEffect(() => {
+    if (!jsonPathWsPath || !deferredSendRef.current) return;
+    const slot = ctx.getSlot(jsonPathWsPath);
+    if (slot.phase === 'connected') {
+      const { wsPath: targetPath, json } = deferredSendRef.current;
+      deferredSendRef.current = null;
+      ctx.setPendingPayload(targetPath, json);
+      navigate(jsonPathConfig!.path);
+      addToast('JSON loaded into JSON-Path editor ✓', 'success');
+    }
+  }, [jsonPathWsPath, ctx, navigate, addToast, jsonPathConfig,
+      // getSlot returns a new object reference when the slot changes, so
+      // reading it inside the effect (keyed on ctx) is sufficient — but we
+      // also need to re-run when the slot's phase changes.  ctx.getSlot is
+      // wrapped in useCallback(_, [slots]) so it changes whenever slots does,
+      // which is exactly what we want.
+     ]);
+
+  const handleSendToJsonPath = useCallback((json: string) => {
+    if (!jsonPathConfig) return;
+    const slot = ctx.getSlot(jsonPathConfig.wsPath);
+    if (slot.phase === 'connected') {
+      // Already connected — deposit immediately.
+      ctx.setPendingPayload(jsonPathConfig.wsPath, json);
+      navigate(jsonPathConfig.path);
+      addToast('JSON loaded into JSON-Path editor ✓', 'success');
+    } else {
+      // Not yet connected — arm a deferred send and auto-connect.
+      deferredSendRef.current = { wsPath: jsonPathConfig.wsPath, json };
+      if (slot.phase === 'idle') {
+        ctx.connect(jsonPathConfig.wsPath, addToast);
+      }
+      addToast('Connecting to JSON-Path Playground…', 'info');
+    }
+  }, [ctx, navigate, addToast, jsonPathConfig]);
+
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -168,11 +328,26 @@ export default function Playground({ config }: PlaygroundProps) {
     setPinnedMessageId(null);
     setPinnedGraphPath(null);
     setGraphData(null);
-  }, [ws.clearMessages, setGraphData]);
+    // Reset mock-upload session state so ✅ badges clear with the console.
+    // Modal upload path is NOT reset here — if the modal is open while the
+    // user clears the console, it remains open for the current upload attempt.
+    setSuccessfulUploadPaths(new Set());
+    // Advance the untitled counter so the next saved graph gets a fresh name.
+    resetSaveName();
+  }, [ws.clearMessages, setGraphData, resetSaveName]);
 
   return (
     <div className={styles.wrapper}>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {modalUploadPath && (
+        <MockUploadModal
+          uploadPath={modalUploadPath}
+          onSuccess={handleUploadSuccess}
+          onClose={handleCloseUploadModal}
+          onError={handleUploadError}
+        />
+      )}
 
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
@@ -180,7 +355,7 @@ export default function Playground({ config }: PlaygroundProps) {
           {storageKeySavedGraphs && (
             <GraphSaveButton
               disabled={!graphData}
-              defaultName={graphData ? deriveDefaultName(graphData) : ''}
+              defaultName={graphSaveName}
               onSave={handleSaveGraph}
               nameExists={savedGraphs.hasGraph}
               connected={ws.connected}
@@ -221,6 +396,9 @@ export default function Playground({ config }: PlaygroundProps) {
             onPinMessage={handlePinMessage}
             pinnedMessageId={pinnedMessageId}
             onCopyMessage={() => addToast('Copied to clipboard', 'success')}
+            onSendToJsonPath={jsonPathConfig && wsPath !== jsonPathConfig.wsPath ? handleSendToJsonPath : undefined}
+            onUploadMockData={handleOpenUploadModal}
+            successfulUploadPaths={successfulUploadPaths}
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />

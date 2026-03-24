@@ -63,6 +63,40 @@
     },
     {
       "types": [
+        "Math"
+      ],
+      "alias": "js-1",
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "COMPUTE: isHello[] -> {model.item} == 'hello'"
+        ],
+        "for_each": [
+          "model.none -> model.items",
+          "text(hello) -> model.items[]",
+          "text(world) -> model.items[]",
+          "model.items -> model.item"
+        ]
+      }
+    },
+    {
+      "types": [
+        "JavaScript"
+      ],
+      "alias": "js-2",
+      "properties": {
+        "skill": "graph.js",
+        "statement": [
+          "COMPUTE: positive_items -> {model.item} == 'Y'",
+          "COMPUTE: negative_items -> {model.item} != 'Y'"
+        ],
+        "for_each": [
+          "model.a -> model.item"
+        ]
+      }
+    },
+    {
+      "types": [
         "JavaScript"
       ],
       "alias": "js-3",
@@ -161,11 +195,11 @@
       "source": "converge",
       "relations": [
         {
-          "type": "compute",
+          "type": "one",
           "properties": {}
         }
       ],
-      "target": "js-3"
+      "target": "js-1"
     },
     {
       "source": "data-mapper",
@@ -186,6 +220,26 @@
         }
       ],
       "target": "converge"
+    },
+    {
+      "source": "js-1",
+      "relations": [
+        {
+          "type": "two",
+          "properties": {}
+        }
+      ],
+      "target": "js-2"
+    },
+    {
+      "source": "js-2",
+      "relations": [
+        {
+          "type": "three",
+          "properties": {}
+        }
+      ],
+      "target": "js-3"
     },
     {
       "source": "js-3",
