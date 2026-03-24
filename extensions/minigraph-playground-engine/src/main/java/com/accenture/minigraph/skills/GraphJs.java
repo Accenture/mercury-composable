@@ -66,35 +66,38 @@ public class GraphJs extends GraphLambdaFunction {
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
-        if (forEach.isEmpty()) {
-            return executeStatementBlock(nodeName, statements, graphInstance);
-        } else {
-            Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
-            if (forEachMapping.isEmpty()) {
-                throw new IllegalArgumentException(NODE_NAME + nodeName +
-                        " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
-            }
-            var size = getModelArraySize(forEachMapping);
-            for (int i = 0; i < size; i++) {
-                var x = getNextModelParamSet(forEachMapping, i);
-                for (var kv : x.entrySet()) {
-                    stateMachine.setElement(kv.getKey(), kv.getValue());
+        try (Context context = Context.create(JS)) {
+            if (forEach.isEmpty()) {
+                return executeStatementBlock(context, nodeName, statements, graphInstance);
+            } else {
+                Map<String, List<?>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
+                if (forEachMapping.isEmpty()) {
+                    throw new IllegalArgumentException(NODE_NAME + nodeName +
+                            " - No data mapping resolved from 'for_each' entries. LHS must be a list.");
                 }
-                var result = executeStatementBlock(nodeName, statements, graphInstance);
-                if (!NEXT.equals(result)) {
-                    return result;
+                var size = getModelArraySize(forEachMapping);
+                for (int i = 0; i < size; i++) {
+                    var x = getNextModelParamSet(forEachMapping, i);
+                    for (var kv : x.entrySet()) {
+                        stateMachine.setElement(kv.getKey(), kv.getValue());
+                    }
+                    var result = executeStatementBlock(context, nodeName, statements, graphInstance);
+                    if (!NEXT.equals(result)) {
+                        return result;
+                    }
                 }
+                return NEXT;
             }
-            return NEXT;
         }
     }
 
-    private String executeStatementBlock(String nodeName, List<String> statements, GraphInstance graphInstance) {
+    private String executeStatementBlock(Context context, String nodeName, List<String> statements,
+                                         GraphInstance graphInstance) {
         var execute = countExecuteStatements(nodeName, statements);
         if (execute > 0) {
-            return executeStatements(nodeName, combine(nodeName, graphInstance.graph, statements), graphInstance);
+            return executeStatements(context, nodeName, combine(nodeName, graphInstance.graph, statements), graphInstance);
         } else {
-            return executeStatements(nodeName, statements, graphInstance);
+            return executeStatements(context, nodeName, statements, graphInstance);
         }
     }
 
@@ -128,29 +131,27 @@ public class GraphJs extends GraphLambdaFunction {
         }
     }
 
-    private String executeStatements(String nodeName, List<String> entries, GraphInstance graphInstance) {
-        try (Context context = Context.create(JS)) {
-            for (var entry : entries) {
-                var block = entry.trim();
-                var colon = block.indexOf(':');
-                var tag = block.substring(0, colon+1).toLowerCase();
-                var command = block.substring(colon + 1).trim();
-                if (IF_TAG.equals(tag)) {
-                    // evaluate decisions from an if-then-else multiline statement
-                    var lines = util.split(block, "\n");
-                    var decision = evaluate(context, graphInstance, nodeName, lines);
-                    if (decision != null) {
-                        return decision;
-                    }
+    private String executeStatements(Context context, String nodeName, List<String> entries, GraphInstance graphInstance) {
+        for (var entry : entries) {
+            var block = entry.trim();
+            var colon = block.indexOf(':');
+            var tag = block.substring(0, colon+1).toLowerCase();
+            var command = block.substring(colon + 1).trim();
+            if (IF_TAG.equals(tag)) {
+                // evaluate decisions from an if-then-else multiline statement
+                var lines = util.split(block, "\n");
+                var decision = evaluate(context, graphInstance, nodeName, lines);
+                if (decision != null) {
+                    return decision;
                 }
-                // guarantee that it is a single line
-                command = command.replace('\n', ' ');
-                if (COMPUTE_TAG.equals(tag)) {
-                    compute(context, command, nodeName, graphInstance);
-                }
-                if (MAPPING_TAG.equals(tag)) {
-                    handleDataMappingEntry(nodeName, command, graphInstance);
-                }
+            }
+            // guarantee that it is a single line
+            command = command.replace('\n', ' ');
+            if (COMPUTE_TAG.equals(tag)) {
+                compute(context, command, nodeName, graphInstance);
+            }
+            if (MAPPING_TAG.equals(tag)) {
+                handleDataMappingEntry(nodeName, command, graphInstance);
             }
         }
         return NEXT;
