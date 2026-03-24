@@ -145,12 +145,12 @@ public class GraphJs extends GraphLambdaFunction {
                     return decision;
                 }
             }
-            // guarantee that it is a single line
-            command = command.replace('\n', ' ');
             if (COMPUTE_TAG.equals(tag)) {
                 compute(context, command, nodeName, graphInstance);
             }
             if (MAPPING_TAG.equals(tag)) {
+                // guarantee that it is a single line
+                command = command.replace('\n', ' ');
                 handleDataMappingEntry(nodeName, command, graphInstance);
             }
         }
