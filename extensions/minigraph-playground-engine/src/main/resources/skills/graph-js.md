@@ -86,6 +86,8 @@ skill=graph.js
 statement[]=COMPUTE: amount -> (1 - {input.body.discount}) * {book.price}
 ```
 
+The syntax `{variable_name}` is used to resolve the value from the variable into the COMPUTE statement.
+
 Syntax for IF statement
 -----------------------
 Each IF statement is a multiline command:
@@ -112,6 +114,8 @@ THEN: high-price
 ELSE: low-price
 ```
 
+The syntax `{variable_name}` is used to resolve the value from the variable into the IF statement.
+
 Syntax for MAPPING statement
 ----------------------------
 MAPPING: source.composite.key -> target.composite.key
@@ -132,6 +136,9 @@ Example
 statment[]=MAPPING: input.body.hr_id -> employee.id
 statement[]=MAPPING: input.body.join_date -> employee.join_date
 ```
+
+Note that the MAPPING statement operates exactly in the same way as a data-mapper so there is
+no need to use curly braces to wrap around variables.
 
 Syntax for EXECUTE statement
 ----------------------------

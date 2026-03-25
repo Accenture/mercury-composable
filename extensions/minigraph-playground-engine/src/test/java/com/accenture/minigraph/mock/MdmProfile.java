@@ -43,7 +43,11 @@ public class MdmProfile implements TypedLambdaFunction<AsyncHttpRequest, Object>
         if (personId == null) {
             throw new IllegalArgumentException("Missing person id");
         }
-        var data = new ConfigReader("classpath:/mock/profile-"+personId+".json");
-        return data.getMap();
+        try {
+            var data = new ConfigReader("classpath:/mock/profile-" + personId + ".json");
+            return data.getMap();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Profile "+ personId+" not found");
+        }
     }
 }

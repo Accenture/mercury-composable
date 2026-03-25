@@ -80,7 +80,6 @@ public class GraphExecutor extends GraphLambdaFunction {
             var graphInstance = createInstance(headers, event.getReplyTo(), event.getCorrelationId());
             var flowInstanceId = headers.get(INSTANCE);
             var flowInstance = Flows.getFlowInstance(flowInstanceId);
-            graphInstance.hasSeen.clear();
             beginTraversal(po, flowInstance, graphInstance);
         } catch (Exception e) {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;
@@ -300,8 +299,7 @@ public class GraphExecutor extends GraphLambdaFunction {
 
     private void sendError(PostOffice po, GraphInstance graphInstance, String message) {
         var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
-                .setCorrelationId(graphInstance.getCorrelationId())
-                .setBody(message).setStatus(400);
+                            .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400);
         po.send(error);
         graphInstance.complete.set(true);
     }

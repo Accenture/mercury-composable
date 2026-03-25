@@ -233,18 +233,21 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleRunCommand(String inRoute, String outRoute) {
-        var timeout = getModelTtl(getGraphInstance(inRoute));
-        var po = PostOffice.trackable("minigraph.playground", util.getUuid(), "/playground");
-        po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
-                        .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
-                .thenAccept(response -> {
-                    if (response.hasError()) {
-                        po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
-                    } else {
-                        po.send(new EventEnvelope().setTo(outRoute).setBody(
-                                "Knowledge graph executed in " + response.getExecutionTime() + " ms"));
-                    }
-                });
+        var cid = util.getUuid();
+        var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
+        po.send(new EventEnvelope().setTo(GraphTraveler.ROUTE).setHeader(IN, inRoute)
+                .setReplyTo(outRoute).setCorrelationId(cid));
+
+//        po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
+//                        .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
+//                .thenAccept(response -> {
+//                    if (response.hasError()) {
+//                        po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
+//                    } else {
+//                        po.send(new EventEnvelope().setTo(outRoute).setBody(
+//                                "Knowledge graph executed in " + response.getExecutionTime() + " ms"));
+//                    }
+//                });
     }
 
     private void handleCommandPartTwo(PostOffice po, String inRoute, String outRoute, List<String> words) {
