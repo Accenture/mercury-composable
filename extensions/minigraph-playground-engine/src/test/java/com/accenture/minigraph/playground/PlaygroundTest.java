@@ -88,7 +88,7 @@ class PlaygroundTest {
             "node root connected to mapper","connect mapper to end with second",
             "node mapper connected to end", "instantiate graph\ntext(100) -> input.body.id",
             "Graph instance created. Loaded 1 mock entry", "run",
-            "Knowledge graph executed", "inspect root",
+            "Graph traversal completed", "inspect root",
             "Graph model imported as draft", "list nodes"
     );
     // "inspect js-1"
@@ -108,7 +108,14 @@ class PlaygroundTest {
             "Graph with", "import node extension from hello",
             "node extension overwritten", "clear cache",
             "cache cleared", "upload mock data",
-            "You may upload JSON payload", "inspect js-1");
+            "You may upload JSON payload", """
+                    start graph
+                    int(10) -> input.body.person_id
+                    text(world) -> model.hello
+                    int(8000) -> model.ttl
+                    """,
+            "Graph instance created. Loaded 3 mock entries", "run",
+            "Graph traversal aborted", "inspect js-1");
 
     @BeforeAll
     static void setup() {

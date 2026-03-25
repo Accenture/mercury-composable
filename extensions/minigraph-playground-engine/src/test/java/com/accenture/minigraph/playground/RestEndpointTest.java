@@ -37,7 +37,6 @@ class RestEndpointTest {
     @BeforeAll
     static void setup() {
         AutoStart.main(new String[0]);
-
     }
 
     @SuppressWarnings("unchecked")

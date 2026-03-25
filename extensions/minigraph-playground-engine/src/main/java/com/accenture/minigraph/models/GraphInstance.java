@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class GraphInstance {
     private static final String FLOW_INSTANCE = "flow_instance";
     private static final String REPLY_TO = "reply_to";
+    private static final String WS_INSTANCE = "ws_instance";
     private static final String CID = "cid";
     private static final String NONE = "none";
     public final String graphId;
@@ -63,5 +64,13 @@ public class GraphInstance {
 
     public void setReplyTo(String replyTo) {
         metadata.put(REPLY_TO, replyTo);
+    }
+
+    public void setWsInstance(String instanceId) {
+        metadata.put(WS_INSTANCE, instanceId);
+    }
+
+    public String getWsInstance() {
+        return metadata.get(WS_INSTANCE) instanceof String v? v : NONE;
     }
 }

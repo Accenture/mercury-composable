@@ -1,7 +1,0 @@
-flows:
-  - 'data-by-dictionary.yml'
-  - 'show-question-specs.yml'
-  - 'show-data-specs.yml'
-  - 'show-provider-specs.yml'
-
-location: 'classpath:/flows/'

@@ -111,6 +111,6 @@ class GraphExecutionTest {
         assertEquals(400, response.getStatus());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("error", mm.getElement("type"));
-        assertEquals("classpath:/mock/profile-10.json not found", mm.getElement("message"));
+        assertEquals("Profile 10 not found", mm.getElement("message"));
     }
 }

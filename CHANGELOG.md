@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.83, 3/24/2026
+
+### Added
+
+N/A
+
+### Removed
+
+Data dictionary extension and example subprojects are retired. The Data dictionary feature
+has been ported to the MiniGraph Playground Engine and Example projects.
+
+### Changed
+
+Graph Traveler refactored to be consistent with Graph Executor using event-driven design
+so that dry-run in Playground mimics exactly the same behavior as deployed graph execution.
+
+---
 ## Version 4.3.82, 3/23/2026
 
 ### Added

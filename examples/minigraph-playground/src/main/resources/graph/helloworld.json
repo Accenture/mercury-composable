@@ -28,14 +28,7 @@
         "End"
       ],
       "alias": "end",
-      "properties": {
-        "mapping": [
-          "js-1.result.sum -> output.body.sum",
-          "js-1.result.multiply -> output.body.multiply",
-          "js-1.result.value -> output.body.value"
-        ],
-        "skill": "graph.data.mapper"
-      }
+      "properties": {}
     },
     {
       "types": [

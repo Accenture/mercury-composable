@@ -37,8 +37,12 @@ public class AccountDetails implements TypedLambdaFunction<AsyncHttpRequest, Obj
         log.info("Got request parameters {} and Authorization='{}'", input.getBody(), token);
         if (input.getMethod().equals("POST") && input.getBody() instanceof Map<?, ?> map && map.containsKey("account_id")) {
             var accountId = String.valueOf(map.get("account_id"));
-            var data = new ConfigReader("classpath:/mock/account-"+accountId+".json");
-            return data.getMap();
+            try {
+                var data = new ConfigReader("classpath:/mock/account-" + accountId + ".json");
+                return data.getMap();
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Account "+accountId+" not found");
+            }
         } else {
             throw new IllegalArgumentException("Missing account id");
         }
