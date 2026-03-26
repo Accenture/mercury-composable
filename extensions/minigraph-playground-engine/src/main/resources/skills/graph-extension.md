@@ -1,8 +1,8 @@
 Skill: Graph Extension
 ----------------------
 When a node is configured with this skill of "graph extension", it will make an API call to another graph model
-and collect result set into the "result" property of the node. In case of exception, the "status" and "result.error"
-fields will be set to the node's properties and the graph execution will stop.
+(or flow) and collect result set into the "result" property of the node. In case of exception, the "status" and
+"result.error" fields will be set to the node's properties and the graph execution will stop.
 
 Execution will start when the GraphExecutor reaches the node containing this skill.
 
@@ -16,8 +16,10 @@ To enable this skill for a node, set "skill=graph.extension" as a property in a 
 
 The following parameters are required in the properties of the node:
 
-1. extension - this should be a valid graph model name in the same memory space
+1. extension - this should be a valid graph model name or flow identifier in the same memory space
 2. input - this should include one or more data mapping as input parameters to invoke the API call
+
+A flow identifier is prefixed by a flow protocol signature "flow://". e.g. "flow://hello-world".
 
 The system uses the same syntax of Event Script for data mapping.
 
@@ -25,7 +27,7 @@ Properties
 ----------
 ```
 skill=graph.extension
-extension=graph-id
+extension=graph-id or flow-id
 input[]={mapping of key-value from input or another node to input parameter(s) of the data dictionary item(s)}
 output[]={optional mapping of result set to one or more variables in the 'model.' or 'output.' namespace}
 ```

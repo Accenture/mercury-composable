@@ -49,7 +49,6 @@ import javax.net.ssl.SSLException;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -128,38 +127,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private String queryParametersToString(AsyncHttpRequest request) {
-        StringBuilder sb = new StringBuilder();
-        Map<String, Object> params = request.getQueryParameters();
-        if (params.isEmpty()) {
-            return null;
-        }
-        for (Map.Entry<String, Object> kv: params.entrySet()) {
-            String k = kv.getKey();
-            Object v = kv.getValue();
-            if (v instanceof String value) {
-                sb.append(k);
-                sb.append('=');
-                sb.append(value);
-                sb.append('&');
-            }
-            if (v instanceof List) {
-                List<String> list = (List<String>) v;
-                for (String item: list) {
-                    sb.append(k);
-                    sb.append('=');
-                    sb.append(item);
-                    sb.append('&');
-                }
-            }
-        }
-        if (sb.isEmpty()) {
-            return null;
-        }
-        return sb.substring(0, sb.length()-1);
-    }
-
     @Override
     public Void handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
         try {
@@ -204,10 +171,9 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             throws AppException, URISyntaxException, SSLException {
         PostOffice po = PostOffice.trackable(headers, instance);
         AsyncHttpRequest request = new AsyncHttpRequest(input.getBody());
-        HttpMetadata md = new HttpMetadata();
-        validateUrl(request, md);
-        String uri = normalizeUrl(request, md);
-        po.annotateTrace(DESTINATION, request.getTargetHost() + md.rawUri);
+        validateUrl(request);
+        String uri = request.getFinalizedUrl();
+        po.annotateTrace(DESTINATION, request.getTargetHost() + getRawUrl(uri));
         HttpClient client = HttpClient.create()
                             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
                             .headers(h -> updateHttpHeaders(po, request, h));
@@ -216,7 +182,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             client = client.httpResponseDecoder(spec -> spec.maxHeaderSize(16 * 1024));
         }
         client = client.responseTimeout(Duration.ofSeconds(request.getTimeoutSeconds()));
-        if (md.secure) {
+        if (request.isSecure()) {
             if (request.isTrustAllCert()) {
                 Http11SslContextSpec http11Context = Http11SslContextSpec.forClient()
                     .configure(builder -> builder.trustManager(InsecureTrustManagerFactory.INSTANCE));
@@ -226,7 +192,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 client = client.secure();
             }
         }
-        var sender = client.request(md.httpMethod).uri(request.getTargetHost() + uri);
+        var sender = client.request(getMethod(request.getMethod())).uri(request.getTargetHost() + uri);
         // get request body if any
         String method = request.getMethod();
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
@@ -240,6 +206,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             var httpResponse = new HttpResponseHandler(input, request, sender);
             httpResponse.process();
         }
+    }
+
+    private String getRawUrl(String uri) {
+        return uri.contains("?") ? uri.substring(0, uri.lastIndexOf("?")) : uri;
     }
 
     private void uploadFiles(HttpClient.RequestSender sender, EventEnvelope input, AsyncHttpRequest request) {
@@ -303,75 +273,28 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         httpResponse.process();
     }
 
-    private void validateUrl(AsyncHttpRequest request, HttpMetadata md) throws URISyntaxException {
-        md.httpMethod = getMethod(request.getMethod());
+    private void validateUrl(AsyncHttpRequest request) throws URISyntaxException {
         String targetHost = request.getTargetHost();
         if (targetHost == null) {
             throw new IllegalArgumentException("Missing target host. e.g. https://hostname");
         }
-        md.url = new URI(targetHost);
-        String protocol = md.url.getScheme();
+        var url = new URI(targetHost);
+        String protocol = url.getScheme();
         if ("http".equals(protocol)) {
-            md.secure = false;
+            request.setSecure(false);
         } else if ("https".equals(protocol)) {
-            md.secure = true;
+            request.setSecure(true);
         } else {
             throw new IllegalArgumentException("Protocol must be http or https");
         }
-        md.host = md.url.getHost().trim();
-        if (md.host.isEmpty()) {
+        var host = url.getHost().trim();
+        if (host.isEmpty()) {
             throw new IllegalArgumentException("Unable to resolve target host as domain or IP address");
         }
-        String path = md.url.getPath();
+        String path = url.getPath();
         if (!path.isEmpty()) {
             throw new IllegalArgumentException("Target host must not contain URI path");
         }
-    }
-
-    private String normalizeUrl(AsyncHttpRequest request, HttpMetadata md) {
-        Utility util = Utility.getInstance();
-        final String uri = request.getUrl();
-        int hashMark = uri.lastIndexOf('#');
-        final String uriWithoutHash = hashMark == -1? uri : uri.substring(0, hashMark);
-        final String hashParams = hashMark == -1? null : uri.substring(hashMark+1);
-        md.queryString = null;
-        int questionMark = uriWithoutHash.lastIndexOf('?');
-        if (questionMark == -1) {
-            md.rawUri = uriWithoutHash;
-        } else {
-            md.rawUri = uriWithoutHash.substring(0, questionMark);
-            md.queryString = decodeUri(uriWithoutHash.substring(questionMark+1));
-            request.setQueryString(md.queryString);
-        }
-        // construct target URL
-        final String queryParams = queryParametersToString(request);
-        // combine query parameters from query string and query parameters
-        if (queryParams != null) {
-            md.queryString = md.queryString == null? queryParams : md.queryString + "&" + queryParams;
-        }
-        // render path parameters
-        var path = md.rawUri;
-        var pathParameters = request.getPathParameters();
-        for (var entry : pathParameters.entrySet()) {
-            var key = "{"+entry.getKey()+"}";
-            if (md.rawUri.contains(key)) {
-                md.rawUri = md.rawUri.replace(key, entry.getValue());
-            } else {
-                log.warn("path parameter {} not found in URI {}", key, path);
-            }
-        }
-        // reconstruct full URI
-        var sb = new StringBuilder();
-        sb.append(md.rawUri);
-        if (md.queryString != null) {
-            sb.append('?');
-            sb.append(md.queryString);
-        }
-        if (hashParams != null) {
-            sb.append('#');
-            sb.append(hashParams);
-        }
-        return util.getEncodedUri(sb.toString());
     }
 
     private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpHeaders http) {
@@ -410,10 +333,6 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             // remove the ending separator
             http.set(COOKIE, sb.substring(0, sb.length()-2));
         }
-    }
-
-    public String decodeUri(String uri) {
-        return uri != null && uri.contains("%")? URLDecoder.decode(uri, StandardCharsets.UTF_8) : uri;
     }
 
     private void sendResponse(EventEnvelope input, EventEnvelope response) {
@@ -669,14 +588,5 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     contentType.startsWith(APPLICATION_JSON) || contentType.startsWith(APPLICATION_XML) ||
                     contentType.startsWith(TEXT_PREFIX) || contentType.startsWith(APPLICATION_JAVASCRIPT));
         }
-    }
-
-    private static class HttpMetadata {
-        URI url;
-        String rawUri;
-        String queryString;
-        HttpMethod httpMethod;
-        boolean secure;
-        String host;
     }
 }

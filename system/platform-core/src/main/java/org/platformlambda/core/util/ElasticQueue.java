@@ -33,15 +33,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ElasticQueue implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ElasticQueue.class);
     private static final Utility util = Utility.getInstance();
-    private static final AtomicInteger generation = new AtomicInteger(0);
-    private static final AtomicInteger initCounter = new AtomicInteger(0);
     private static final ReentrantLock SAFETY = new ReentrantLock();
+    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
+    private static final AtomicInteger generation = new AtomicInteger(0);
     public static final int MEMORY_BUFFER = 20;
     private static final byte[] NOTHING = new byte[0];
     private static final long ONE_SECOND = 1000L;
@@ -75,39 +76,42 @@ public class ElasticQueue implements AutoCloseable {
     public ElasticQueue(String id) {
         this.id = util.validServiceName(id)? id : util.filteredServiceName(id);
         resetCounter();
-        if (initCounter.incrementAndGet() == 1) {
-            Platform platform = Platform.getInstance();
-            platform.registerPrivate(CLEAN_UP_TASK, new Cleanup(), 1);
-            Runtime.getRuntime().addShutdownHook(new Thread(ElasticQueue::shutdown));
-            AppConfigReader config = AppConfigReader.getInstance();
-            runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
-            File tmpRoot = new File(config.getProperty("transient.data.store", "/tmp/reactive"));
-            if (runningInCloud) {
-                dbFolder = tmpRoot;
-            } else {
-                String instanceId = platform.getName() + "-" + platform.getOrigin();
-                dbFolder = new File(tmpRoot, instanceId);
+        SAFETY.lock();
+        try {
+            if (!LOADED.get()) {
+                LOADED.set(true);
+                Platform platform = Platform.getInstance();
+                platform.registerPrivate(CLEAN_UP_TASK, new Cleanup(), 1);
+                Runtime.getRuntime().addShutdownHook(new Thread(ElasticQueue::shutdown));
+                AppConfigReader config = AppConfigReader.getInstance();
+                runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
+                File tmpRoot = new File(config.getProperty("transient.data.store", "/tmp/reactive"));
+                if (runningInCloud) {
+                    dbFolder = tmpRoot;
+                } else {
+                    String instanceId = platform.getName() + "-" + platform.getOrigin();
+                    dbFolder = new File(tmpRoot, instanceId);
+                }
+                if (!dbFolder.exists() && dbFolder.mkdirs()) {
+                    log.info("{} created", dbFolder);
+                }
+                // save a signature file first
+                util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
+                /*
+                 * Normally the system should initialize commit log before using the elastic queue.
+                 */
+                boolean deferred = "true".equals(config.getProperty("deferred.commit.log", "false"));
+                if (!deferred) {
+                    getDatabase();
+                    log.info("Commit log started");
+                }
+                scanExpiredStores(tmpRoot);
+                platform.getVertx().setPeriodic(KEEP_ALIVE_INTERVAL, t -> keepAlive());
+                platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> housekeeping());
+                log.info("Housekeeper started");
             }
-            if (!dbFolder.exists() && dbFolder.mkdirs()) {
-                log.info("{} created", dbFolder);
-            }
-            // save a signature file first
-            util.str2file(new File(dbFolder, RUNNING), util.getTimestamp());
-            /*
-             * Normally the system should initialize commit log before using the elastic queue.
-             */
-            boolean deferred = "true".equals(config.getProperty("deferred.commit.log", "false"));
-            if (!deferred) {
-                getDatabase();
-                log.info("Commit log started");
-            }
-            scanExpiredStores(tmpRoot);
-            platform.getVertx().setPeriodic(KEEP_ALIVE_INTERVAL, t -> keepAlive());
-            platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> housekeeping());
-            log.info("Housekeeper started");
-        }
-        if (initCounter.get() > 10000) {
-            initCounter.set(10);
+        } finally {
+            SAFETY.unlock();
         }
     }
 
@@ -222,7 +226,6 @@ public class ElasticQueue implements AutoCloseable {
             dbLoaded = true;
             long diff = System.currentTimeMillis() - t1;
             log.info("Created holding area {} in {} ms", dir, diff);
-
         } catch (Exception e) {
             log.error("Unable to create holding area in {} - {}", dir, e.getMessage());
             System.exit(-1);
@@ -378,5 +381,4 @@ public class ElasticQueue implements AutoCloseable {
             return true;
         }
     }
-
 }

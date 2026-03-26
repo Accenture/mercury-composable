@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.3.84, 3/25/2026
+
+### Added
+
+1. Support "flow" as one kind of extensions in MiniGraph extension skill module
+2. For the platform-core, it can select virtual or kernel thread to process Mono/Flux responses
+   from a composable function. i.e. When a function uses kernel resource, it Mono/Flux response
+   will be subscribed using a kernel thread.
+
+### Removed
+
+N/A
+
+### Changed
+
+Annotate trace information of MiniGraph execution with node-name and essential metadata
+
+---
 ## Version 4.3.83, 3/24/2026
 
 ### Added

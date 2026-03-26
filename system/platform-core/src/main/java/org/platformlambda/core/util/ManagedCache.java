@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ManagedCache {
@@ -37,10 +36,10 @@ public class ManagedCache {
     private static final long DEFAULT_MAX_ITEMS = 2000L;
     private static final long MIN_EXPIRY = 1000L;
     private static final ConcurrentMap<String, ManagedCache> COLLECTION = new ConcurrentHashMap<>();
-    private static final AtomicInteger INIT_COUNTER = new AtomicInteger(0);
+    private static final ReentrantLock SAFETY = new ReentrantLock();
+    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     private static final AtomicBoolean NOT_RUNNING = new AtomicBoolean(true);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 60 * 1000L; // 10 minutes
-    private static final ReentrantLock SAFETY = new ReentrantLock();
     private final String name;
     private final long expiry;
     private final long maxItems;
@@ -54,12 +53,15 @@ public class ManagedCache {
         this.name = name;
         this.expiry = expiryMs;
         this.maxItems = maxItems;
-        if (INIT_COUNTER.incrementAndGet() == 1) {
-            Platform.getInstance().getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredCache());
-            log.info("Housekeeper started");
-        }
-        if (INIT_COUNTER.get() > 10000) {
-            INIT_COUNTER.set(10);
+        SAFETY.lock();
+        try {
+            if (!LOADED.get()) {
+                LOADED.set(true);
+                Platform.getInstance().getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredCache());
+                log.info("Housekeeper started");
+            }
+        } finally {
+            SAFETY.unlock();
         }
     }
 

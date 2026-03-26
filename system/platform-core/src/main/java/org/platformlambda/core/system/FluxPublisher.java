@@ -49,6 +49,7 @@ public class FluxPublisher<T> {
     private final AtomicBoolean expired = new AtomicBoolean(false);
     private Disposable disposable = null;
     private CustomSerializer serializer = null;
+    private boolean useVirtualThread = true;
 
     /**
      * Create a publisher to process a Flux stream object
@@ -78,6 +79,10 @@ public class FluxPublisher<T> {
         });
     }
 
+    public void enableVirtualThread(boolean useVirtualThread) {
+        this.useVirtualThread = useVirtualThread;
+    }
+
     /**
      * Set custom serializer if necessary
      *
@@ -95,7 +100,9 @@ public class FluxPublisher<T> {
     public String publish() {
         Utility util = Utility.getInstance();
         String outStream = stream.getOutputStreamId();
-        disposable = flux.subscribeOn(Schedulers.fromExecutor(Platform.getInstance().getVirtualThreadExecutor()))
+        Platform platform = Platform.getInstance();
+        var executor = useVirtualThread? platform.getVirtualThreadExecutor() : platform.getKernelThreadExecutor();
+        disposable = flux.subscribeOn(Schedulers.fromExecutor(executor))
                 .doFinally(signal -> {
                     if (!expired.get()) {
                         expired.set(true);

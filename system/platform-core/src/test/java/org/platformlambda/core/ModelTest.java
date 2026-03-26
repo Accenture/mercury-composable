@@ -82,4 +82,18 @@ class ModelTest {
         assertEquals(1, qp.size());
         assertEquals(world, qp.getFirst());
     }
+
+    @Test
+    void finalizedUrlTest() {
+        var request = new AsyncHttpRequest();
+        request.setTargetHost("http://localhost");
+        request.setUrl("/api/hello/{id}?hello=world#x=y 2");
+        request.setPathParameter("id", "100").setQueryParameter("a x", "b 0");
+        var params = request.getPathParameters();
+        var query = request.getQueryParameters();
+        request.setFileName("hello.txt").setUploadTag("hello");
+        request.setQueryParameters(query).setPathParameters(params)
+                .setUploadTags(request.getUploadTags()).setMethod("GET");
+        assertEquals("/api/hello/100?a%20x=b%200&hello=world#x=y%202", request.getFinalizedUrl());
+    }
 }

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -83,7 +84,7 @@ public class Utility {
     private static final int ONE_MINUTE = 60;
     private static final int ONE_HOUR = 60 * ONE_MINUTE;
     private static final int ONE_DAY = 24 * ONE_HOUR;
-    private static String appVersion;
+    private static final List<String> appVersion = new ArrayList<>();
     private static final List<String> libs = new ArrayList<>();
     private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final Utility instance = new Utility();
@@ -162,10 +163,10 @@ public class Utility {
     }
 
     public String getVersion() {
-        if (appVersion == null) {
-            appVersion = ManifestReader.getVersionFromManifest();
+        if (appVersion.isEmpty()) {
+            appVersion.add(ManifestReader.getVersionFromManifest());
         }
-        return appVersion;
+        return appVersion.getFirst();
     }
 
     public List<String> getLibraryList() {
@@ -361,23 +362,19 @@ public class Utility {
 
     @SuppressWarnings("unchecked")
     private void deepCopyInnerList(String key, List<Object> values, Map<String, Object> target) {
-        if (isSimpleList(values)) {
-            target.put(key, values);
-        } else {
-            List<Object> list = new ArrayList<>();
-            for (Object o : values) {
-                if (o instanceof Map) {
-                    Map<String, Object> inner = new HashMap<>();
-                    list.add(inner);
-                    deepCopy((Map<String, Object>) o, inner);
-                } else if (o instanceof List) {
-                    list.add(deepCopy((List<Object>) o));
-                } else {
-                    list.add(o);
-                }
+        List<Object> list = new ArrayList<>();
+        for (Object o : values) {
+            if (o instanceof Map) {
+                Map<String, Object> inner = new HashMap<>();
+                list.add(inner);
+                deepCopy((Map<String, Object>) o, inner);
+            } else if (o instanceof List) {
+                list.add(deepCopy((List<Object>) o));
+            } else {
+                list.add(o);
             }
-            target.put(key, list);
         }
+        target.put(key, list);
     }
 
     /**
@@ -388,30 +385,17 @@ public class Utility {
      */
     @SuppressWarnings("unchecked")
     public List<Object> deepCopy(List<Object> values) {
-        if (isSimpleList(values)) {
-            return values;
-        } else {
-            List<Object> list = new ArrayList<>();
-            for (Object o : values) {
-                if (o instanceof Map) {
-                    list.add(deepCopy((Map<String, Object>) o));
-                } else if (o instanceof List) {
-                    list.add(deepCopy((List<Object>) o));
-                } else {
-                    list.add(o);
-                }
-            }
-            return list;
-        }
-    }
-
-    private boolean isSimpleList(List<Object> values) {
-        for (Object o: values) {
-            if (o instanceof Map || o instanceof List) {
-                return false;
+        List<Object> list = new ArrayList<>();
+        for (Object o : values) {
+            if (o instanceof Map) {
+                list.add(deepCopy((Map<String, Object>) o));
+            } else if (o instanceof List) {
+                list.add(deepCopy((List<Object>) o));
+            } else {
+                list.add(o);
             }
         }
-        return true;
+        return list;
     }
 
     public String getTimestamp() {

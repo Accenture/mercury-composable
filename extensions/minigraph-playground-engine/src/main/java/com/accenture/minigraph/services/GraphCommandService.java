@@ -164,7 +164,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
             handleDescribeCommand(po, inRoute, outRoute, words);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(EXECUTE)) {
-            handleExecuteCommand(po, inRoute, outRoute, words);
+            handleExecuteCommand(inRoute, outRoute, words);
         } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase(INSPECT)) {
             handleInspectCommand(po, inRoute, outRoute, words.get(1));
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
@@ -237,17 +237,6 @@ public class GraphCommandService extends GraphLambdaFunction {
         var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
         po.send(new EventEnvelope().setTo(GraphTraveler.ROUTE).setHeader(IN, inRoute)
                 .setReplyTo(outRoute).setCorrelationId(cid));
-
-//        po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
-//                        .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
-//                .thenAccept(response -> {
-//                    if (response.hasError()) {
-//                        po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
-//                    } else {
-//                        po.send(new EventEnvelope().setTo(outRoute).setBody(
-//                                "Knowledge graph executed in " + response.getExecutionTime() + " ms"));
-//                    }
-//                });
     }
 
     private void handleCommandPartTwo(PostOffice po, String inRoute, String outRoute, List<String> words) {
@@ -476,7 +465,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
-    private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
+    private void handleExecuteCommand(String inRoute, String outRoute, List<String> words) {
         final String nodeName;
         if (words.size() == 2) {
             nodeName = words.get(1);
@@ -497,6 +486,8 @@ public class GraphCommandService extends GraphLambdaFunction {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have a skill property");
         }
         var skillRoute = String.valueOf(skill);
+        var cid = util.getUuid();
+        var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
         if (po.exists(skillRoute)) {
             po.eRequest(new EventEnvelope().setTo(skillRoute)
                             .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)

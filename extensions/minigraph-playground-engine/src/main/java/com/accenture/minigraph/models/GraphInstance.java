@@ -31,10 +31,12 @@ public class GraphInstance {
     private static final String WS_INSTANCE = "ws_instance";
     private static final String CID = "cid";
     private static final String NONE = "none";
+    private long startTime = System.currentTimeMillis();
     public final String graphId;
     public final MiniGraph graph = new MiniGraph();
     public final MultiLevelMap stateMachine = new MultiLevelMap();
-    public final ConcurrentMap<String, Boolean> hasSeen = new ConcurrentHashMap<>();
+    public final ConcurrentMap<String, Boolean> nodeSeen = new ConcurrentHashMap<>();
+    public final ConcurrentMap<String, Boolean> skillRun = new ConcurrentHashMap<>();
     public final AtomicBoolean complete = new AtomicBoolean(false);
     private final ConcurrentMap<String, Object> metadata = new ConcurrentHashMap<>();
 
@@ -72,5 +74,13 @@ public class GraphInstance {
 
     public String getWsInstance() {
         return metadata.get(WS_INSTANCE) instanceof String v? v : NONE;
+    }
+
+    public void resetStartTime() {
+        this.startTime = System.currentTimeMillis();
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 }
