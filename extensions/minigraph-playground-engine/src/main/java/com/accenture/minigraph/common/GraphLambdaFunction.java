@@ -35,6 +35,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
     protected static final Utility util = Utility.getInstance();
+    protected static final long MAX_BUFFER_SIZE = 62 * 1024L;
     protected static final String FLOW_PROTOCOL = "flow://";
     protected static final String ASYNC_HTTP_CLIENT = "async.http.request";
     protected static final String PLUGIN_PREFIX = "f:";

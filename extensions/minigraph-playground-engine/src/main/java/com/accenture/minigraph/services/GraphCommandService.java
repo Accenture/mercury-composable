@@ -53,9 +53,9 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphCommandService.class);
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
+    private static final String OUTCOME = "outcome";
     private static final String PLAYGROUND = "playground";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
-    private static final long MAX_BUFFER_SIZE = 62 * 1024L;
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
     private final String deployedGraphLocation;
@@ -458,10 +458,10 @@ public class GraphCommandService extends GraphLambdaFunction {
                 po.send(new EventEnvelope().setTo(outRoute).setBody(
                         "Large payload (" + text.length() +") -> GET /api/inspect/"+ name+"/"+key));
             } else {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, "outcome", value)));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, OUTCOME, value)));
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, "outcome", value)));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, OUTCOME, value)));
         }
     }
 

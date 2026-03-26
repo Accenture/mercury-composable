@@ -29,8 +29,10 @@ import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 
+import java.util.List;
 import java.util.Map;
 
 @OptionalService("app.env=dev")
@@ -160,10 +162,22 @@ public class GraphTraveler extends GraphLambdaFunction {
     }
 
     private void executionComplete(PostOffice po, GraphInstance graphInstance) {
+        var stateMachine = graphInstance.stateMachine;
+        var in = graphInstance.getWsInstance();
         var out = graphInstance.getReplyTo();
-        var body = graphInstance.stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
-        var response = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId());
-        po.send(response.setBody(body));
+        var value = stateMachine.getElement(OUTPUT, false);
+        if (value instanceof Map || value instanceof List) {
+            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(value);
+            if (text.length() > MAX_BUFFER_SIZE) {
+                var name = getTempGraphName(in);
+                po.send(new EventEnvelope().setTo(out).setBody(
+                        "Large payload (" + text.length() +") -> GET /api/inspect/"+ name+"/"+OUTPUT));
+            } else {
+                po.send(new EventEnvelope().setTo(out).setBody(Map.of(OUTPUT, value)));
+            }
+        } else {
+            po.send(new EventEnvelope().setTo(out).setBody(Map.of(OUTPUT, value)));
+        }
         graphInstance.complete.set(true);
         long elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
         po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed in " + elapsed + " ms"));
