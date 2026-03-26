@@ -19,8 +19,10 @@
 package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
+import com.accenture.minigraph.models.GraphInstance;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.PostOffice;
 
 import java.util.Map;
 
@@ -30,8 +32,10 @@ public class GraphJoin extends GraphLambdaFunction {
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
-        var in = headers.get(IN);
+        var po = PostOffice.trackable(headers, instance);
         var nodeName = headers.getOrDefault(NODE, "none");
+        po.annotateTrace(NODE, nodeName);
+        var in = headers.get(IN);
         var graphInstance = getGraphInstance(in);
         var graph = graphInstance.graph;
         var node = getNode(nodeName, graph);
@@ -41,16 +45,24 @@ public class GraphJoin extends GraphLambdaFunction {
         var connected = graph.getBackwardLinks(nodeName);
         var count = 0;
         for (var from : connected) {
-            if (graphInstance.hasSeen.containsKey(from.getAlias())) {
+            if (nodeCompleted(from.getAlias(), graphInstance)) {
                 count++;
             }
         }
         // successful "join" when all the upstream nodes have been seen
         if (count == connected.size()) {
-            graphInstance.hasSeen.put(nodeName, true);
+            graphInstance.nodeSeen.put(nodeName, true);
             return NEXT;
         } else {
+            graphInstance.nodeSeen.put(nodeName, false);
             return SINK;
         }
+    }
+
+    private boolean nodeCompleted(String predecessor, GraphInstance graphInstance) {
+        var graph = graphInstance.graph;
+        var node = graph.findNodeByAlias(predecessor);
+        return node.getProperty(SKILL) != null?
+                graphInstance.skillRun.containsKey(predecessor) :graphInstance.nodeSeen.containsKey(predecessor);
     }
 }

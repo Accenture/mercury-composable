@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Platform {
@@ -53,6 +53,9 @@ public class Platform {
     private static final String NOT_FOUND = " not found";
     private static final String INVALID_ROUTE = "Invalid route ";
     private static final String RELOADING = "Reloading";
+    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
+    private static final ReentrantLock SAFETY1 = new ReentrantLock();
+    private static final ReentrantLock SAFETY2 = new ReentrantLock();
     private static String originId;
     private static String appId;
     private static Vertx vertx;
@@ -61,9 +64,6 @@ public class Platform {
     private static final ExecutorService vThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private static SimpleCache cache;
     private final long startTime = System.currentTimeMillis();
-    private static final AtomicInteger initCounter = new AtomicInteger(0);
-    private static final ReentrantLock SAFETY1 = new ReentrantLock();
-    private static final ReentrantLock SAFETY2 = new ReentrantLock();
     private String applicationName = null;
     private boolean cloudSelected = false;
     private boolean cloudServicesStarted = false;
@@ -79,18 +79,21 @@ public class Platform {
     }
 
     private static void initialize() {
-        if (initCounter.incrementAndGet() == 1) {
-            var util = Utility.getInstance();
-            var config = AppConfigReader.getInstance();
-            int poolSize = Math.max(32, util.str2int(config.getProperty("kernel.thread.pool", "100")));
-            system = Vertx.vertx().eventBus();
-            vertx = Vertx.vertx();
-            cache = SimpleCache.createCache("system.log.cache", 30000);
-            kernelExecutor = Executors.newWorkStealingPool(poolSize);
-            log.info("Event system started with up to {} kernel threads", poolSize);
-        }
-        if (initCounter.get() > 10000) {
-            initCounter.set(10);
+        SAFETY2.lock();
+        try {
+            if (!LOADED.get()) {
+                LOADED.set(true);
+                var util = Utility.getInstance();
+                var config = AppConfigReader.getInstance();
+                int poolSize = Math.max(32, util.str2int(config.getProperty("kernel.thread.pool", "100")));
+                system = Vertx.vertx().eventBus();
+                vertx = Vertx.vertx();
+                cache = SimpleCache.createCache("system.log.cache", 30000);
+                kernelExecutor = Executors.newWorkStealingPool(poolSize);
+                log.info("Event system started with up to {} kernel threads", poolSize);
+            }
+        } finally {
+            SAFETY2.unlock();
         }
     }
 
@@ -203,7 +206,7 @@ public class Platform {
                 byte[] hash = crypto.getSHA256(util.getUTF(Platform.appId));
                 id = util.bytes2hex(hash).substring(0, id.length());
             }
-            originId = util.getDateOnly(new Date()) + id;
+            originId = util.getDateOnly(new Date(startTime)) + id;
         }
         return originId;
     }

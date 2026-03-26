@@ -25,6 +25,7 @@ import com.accenture.minigraph.models.GraphInstance;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.PostOffice;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +46,10 @@ public class GraphMath extends GraphLambdaFunction {
         if (!EXECUTE.equals(headers.get(TYPE))) {
             throw new IllegalArgumentException("Type must be EXECUTE");
         }
-        var in = headers.get(IN);
+        var po = PostOffice.trackable(headers, instance);
         var nodeName = headers.getOrDefault(NODE, "none");
+        po.annotateTrace(NODE, nodeName);
+        var in = headers.get(IN);
         var graphInstance = getGraphInstance(in);
         var node = getNode(nodeName, graphInstance.graph);
         if (!ROUTE.equals(node.getProperty(SKILL))) {

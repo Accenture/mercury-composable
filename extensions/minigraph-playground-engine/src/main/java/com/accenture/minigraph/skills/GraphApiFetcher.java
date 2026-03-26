@@ -50,8 +50,10 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         if (!EXECUTE.equals(headers.get(TYPE))) {
             throw new IllegalArgumentException("Type must be EXECUTE");
         }
-        var in = headers.get(IN);
+        var po = PostOffice.trackable(headers, instance);
         var nodeName = headers.getOrDefault(NODE, "none");
+        po.annotateTrace(NODE, nodeName);
+        var in = headers.get(IN);
         var graphInstance = getGraphInstance(in);
         var stateMachine = graphInstance.stateMachine;
         var fetcher = getNode(nodeName, graphInstance.graph);
@@ -64,7 +66,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         // reset result to ensure execution is idempotent
         stateMachine.removeElement(nodeName + "." + RESULT);
         stateMachine.removeElement(nodeName + "." + HEADER);
-        var po = new PostOffice(headers, instance);
         var dictionary = getEntries(fetcher.getProperty(DICTIONARY));
         var dictionaryNodes = getDictionaryNodes(dictionary, nodeName, graphInstance);
         var forEach = getEntries(fetcher.getProperty(FOR_EACH));
@@ -242,8 +243,11 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                 }
                 var parameterNames = batch.getFirst().parameterNames;
                 var firstReq = batch.getFirst().request;
-                log.info("{} {}, for each {}, parallel={}, ttl={}", firstReq.getMethod(), firstReq.getUrl(),
+                var finalUri = firstReq.getFinalizedUrl();
+                log.info("{} {}, for each {}, parallel={}, ttl={}", firstReq.getMethod(), finalUri,
                             parameterNames, batch.size(), md.timeout);
+                md.po.annotateTrace(FOR_EACH, String.valueOf(parameterNames))
+                        .annotateTrace(URL, firstReq.getMethod()+" "+firstReq.getTargetHost() + finalUri);
                 var responses = md.po.request(events, md.timeout, false).get();
                 for (int i = 0; i < responses.size(); i++) {
                     processApiResponses(md, responses, batch, i);
@@ -397,7 +401,9 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             return;
         }
         var parameterNames = params instanceof Map<?, ?> map? map.keySet(): Set.of();
-        log.info("{} {}, with {}, ttl={}", request.getMethod(), request.getUrl(), parameterNames, md.timeout);
+        log.info("{} {}, with {}, ttl={}", request.getMethod(), request.getFinalizedUrl(), parameterNames, md.timeout);
+        md.po.annotateTrace("parameters", String.valueOf(parameterNames))
+                .annotateTrace(URL, request.getMethod()+" "+request.getTargetHost() + request.getFinalizedUrl());
         var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request.toMap());
         var response = md.po.request(event, md.timeout, false).get();
         for (FeatureDef f : md.after) {

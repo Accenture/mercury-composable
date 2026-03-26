@@ -35,6 +35,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
     protected static final Utility util = Utility.getInstance();
+    protected static final String FLOW_PROTOCOL = "flow://";
     protected static final String ASYNC_HTTP_CLIENT = "async.http.request";
     protected static final String PLUGIN_PREFIX = "f:";
     protected static final String FILE_PREFIX = "file:";
@@ -72,9 +73,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String BODY_NAMESPACE = "body.";
     protected static final String PROVIDER = "provider";
     protected static final String DICTIONARY = "dictionary";
-    protected static final String HEADER_PARAMETER = "header.";
-    protected static final String QUERY_PARAMETER = "query.";
-    protected static final String PATH_PARAMETER = "path_parameter.";
+    protected static final String HEADER_NAMESPACE = "header.";
+    protected static final String QUERY_NAMESPACE = "query.";
+    protected static final String PATH_PARAMETER = "path_parameter";
+    protected static final String PATH_PARAMETER_NAMESPACE = "path_parameter.";
     protected static final String INPUT_BODY_NAMESPACE = "input.body";
     protected static final String INPUT_HEADER_NAMESPACE = "input.header";
     protected static final String OUTPUT_BODY_NAMESPACE = "output.body";
@@ -102,12 +104,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String SAME_SOURCE_TARGET = "source and target node names cannot be the same";
     protected static final String JSON_EXT = ".json";
     protected static final String GRAPH = "graph";
+    protected static final String GRAPH_ID = "graph_id";
     protected static final String EXECUTE = "execute";
     protected static final String SKILL = "skill";
     protected static final String SKILL_PREFIX = "/skills/";
     protected static final String SINK = ".sink";
     protected static final String RUN = "run";
     protected static final String LIVE = "live";
+    protected static final String TTL = "ttl";
     protected static final String MODEL_TTL = "model.ttl";
     protected static final String STATUS = "status";
     protected static final String HEADER = "header";
@@ -448,14 +452,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     private void mapHttpParams(AsyncHttpRequest request, String rhs, Object value,
                                Map<String, Object> body, List<Object> wholeBody) {
-        if (rhs.startsWith(PATH_PARAMETER)) {
-            var key = rhs.substring(PATH_PARAMETER.length()).trim();
+        if (rhs.startsWith(PATH_PARAMETER_NAMESPACE)) {
+            var key = rhs.substring(PATH_PARAMETER_NAMESPACE.length()).trim();
             request.setPathParameter(key, String.valueOf(value));
-        } else if (rhs.startsWith(QUERY_PARAMETER)) {
-            var key = rhs.substring(QUERY_PARAMETER.length()).trim();
+        } else if (rhs.startsWith(QUERY_NAMESPACE)) {
+            var key = rhs.substring(QUERY_NAMESPACE.length()).trim();
             request.setQueryParameter(key, String.valueOf(value));
-        } else if (rhs.startsWith(HEADER_PARAMETER)) {
-            var key = rhs.substring(HEADER_PARAMETER.length()).trim();
+        } else if (rhs.startsWith(HEADER_NAMESPACE)) {
+            var key = rhs.substring(HEADER_NAMESPACE.length()).trim();
             request.setHeader(key, String.valueOf(value));
         } else if (rhs.startsWith(BODY_NAMESPACE)) {
             var key = rhs.substring(BODY_NAMESPACE.length()).trim();
