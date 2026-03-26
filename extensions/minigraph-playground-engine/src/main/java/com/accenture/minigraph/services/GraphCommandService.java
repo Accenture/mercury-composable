@@ -456,7 +456,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             if (text.length() > MAX_BUFFER_SIZE) {
                 var name = getTempGraphName(inRoute);
                 po.send(new EventEnvelope().setTo(outRoute).setBody(
-                        "Large payload (" + text.length() +") -> GET /api/inspect/"+ name+"/"+key));
+                        "Large payload (" + text.length() +") -> GET /api/inspect/"+name+"/"+key));
             } else {
                 po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, OUTCOME, value)));
             }

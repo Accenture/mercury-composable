@@ -171,7 +171,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             if (text.length() > MAX_BUFFER_SIZE) {
                 var name = getTempGraphName(in);
                 po.send(new EventEnvelope().setTo(out).setBody(
-                        "Large payload (" + text.length() +") -> GET /api/inspect/"+ name+"/"+OUTPUT));
+                        "Large payload (" + text.length() +") -> GET /api/inspect/"+name+"/"+OUTPUT));
             } else {
                 po.send(new EventEnvelope().setTo(out).setBody(Map.of(OUTPUT, value)));
             }
