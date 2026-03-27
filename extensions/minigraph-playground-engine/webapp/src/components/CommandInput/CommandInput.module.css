@@ -31,34 +31,39 @@
   align-items: center;
 }
 
-.infoIcon {
+.paletteToggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  border: 1.5px solid var(--text-secondary);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  /* Reset <button> default styles */
+  border: 1px solid var(--border-color);
+  padding: 0;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.5rem;
-  font-weight: 700;
-  font-style: normal;
-  line-height: 1;
-  cursor: default;
+  cursor: pointer;
   user-select: none;
   flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.infoWrapper:hover .infoIcon {
+.paletteToggle:hover,
+.paletteToggle:focus-visible {
+  background: var(--bg-secondary);
   border-color: var(--primary-color);
   color: var(--primary-color);
-  cursor: pointer;
-
+  outline: none;
 }
 
-/* The popover panel — hidden by default, shown on hover via sibling selector */
+.paletteToggleActive {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* The popover / command palette panel */
 .popover {
   position: absolute;
   /* Sit just above the icon */
@@ -66,49 +71,88 @@
   top: auto;
   left: 0;
   z-index: 200;
-  width: 25rem;
+  width: 26rem;
+  max-height: 22rem;
+  overflow-y: scroll;
   background: var(--bg-primary, #fff);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-  padding: 0.6rem 0.75rem 0.5rem;
-  /* Hidden until the wrapper is hovered */
+  padding: 0 0.75rem 0.5rem;
+  /* Hidden until hovered or pinned open via click */
   opacity: 0;
   pointer-events: none;
   transform: translateY(4px);
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.infoWrapper:hover .popover {
+/* Opened via click only — toggled by the .popoverOpen class */
+.popoverOpen {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
+/* ── Webkit scrollbar — always visible on macOS/Chrome ─────────── */
+.popover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.popover::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.popover::-webkit-scrollbar-thumb {
+  background: var(--text-secondary);
+  border-radius: 3px;
+}
+
+.popover::-webkit-scrollbar-thumb:hover {
+  background: var(--text-primary);
+}
+
 .popoverTitle {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-primary);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.4rem;
-  padding-bottom: 0.3rem;
+  margin: 0 -0.75rem 0.4rem;
+  padding: 0.6rem 0.75rem 0.3rem;
   border-bottom: 1px solid var(--border-color);
 }
 
 /* Each row inside the popover: keyword badge + description */
 .popoverRow {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.25rem 0.35rem;
+  margin: 0 -0.35rem;
+  border-radius: var(--radius-xs, 3px);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.popoverRow:hover,
+.popoverRow:focus-visible {
+  background: var(--hover-bg, rgba(37, 99, 235, 0.07));
+  outline: none;
 }
 
 .popoverKeyword {
-  flex-shrink: 0;
+  flex: 0 0 9.5rem;
   font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--primary-color);
-  min-width: 5.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 0.05rem; /* optical alignment with description text */
 }
 
 .popoverDesc {
@@ -123,17 +167,6 @@
   opacity: 1;
 }
 
-/* ── Checkbox label (replaces toggle button) ────────────────────── */
-.checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  user-select: none;
-}
-
 /* ── Single-line layout: textarea and Send button share one row ─── */
 .inputRow {
   display: flex;
@@ -141,7 +174,7 @@
   align-items: flex-end;
 }
 
-.inputRow .textarea {
+.inputRow .inputWrapper {
   flex: 1 1 auto;
 }
 
@@ -152,14 +185,17 @@
 
 /* ── Textarea ───────────────────────────────────────────────────── */
 .textarea {
+  display: flex;
   width: 100%;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-size: 1rem;
   font-family: inherit;
-  resize: vertical;
+  resize: none;
   min-height: 2.5rem;
+  max-height: 28rem;
+  overflow-y: auto;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   box-sizing: border-box;
 }
@@ -193,12 +229,6 @@
 .sendButton:hover:not(:disabled) { background: var(--primary-hover); }
 .sendButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Multiline layout: Send button is full-width below the textarea */
-.sendButtonFullWidth {
-  width: 100%;
-  margin-top: 0.5rem;
-}
-
 /* ── Hint text ──────────────────────────────────────────────────── */
 .hint {
   font-size: 0.75rem;
@@ -207,76 +237,80 @@
   margin-top: 0.25rem;
 }
 
-/* ── Autocomplete dropdown ──────────────────────────────────────── */
-.suggestions {
+/* ── Dropup container — positioned above the textarea ──────────── */
+.dropup {
   position: absolute;
-  /* Sit just above the inputRow, anchored to the left edge of inputWrapper */
-  bottom: calc(100% + 0.25rem);
+  bottom: 100%;
   left: 0;
   right: 0;
-  z-index: 100;
-  margin: 0;
-  padding: 0.25rem 0;
-  list-style: none;
-  background: var(--surface-color, #fff);
-  border: 1px solid var(--border-color, #d1d5db);
-  border-radius: var(--radius-sm, 4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  max-height: 14rem;
-  overflow-y: auto;
+  z-index: 200;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);  /* shadow projects upward */
+  margin-bottom: 0.25rem;                        /* small gap between dropup and textarea */
+  overflow: hidden;                              /* clips item border-radius */
 }
 
-.suggestionItem {
+/* Dropup header label — identifies the panel as history-based autocomplete */
+.dropupHeader {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
+  justify-content: space-between;
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-secondary, #f8fafc);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+/* Individual suggestion row */
+.dropupItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.75rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  line-height: 1.4;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary);
   transition: background 0.1s;
 }
 
-.suggestionItem:hover,
-.suggestionItemActive {
-  background: var(--primary-color, #2563eb);
-  color: #fff;
+.dropupItem:hover {
+  background-color: var(--hover-bg, rgba(0, 0, 0, 0.04));
 }
 
-.suggestionItem:hover .suggestionHint,
-.suggestionItemActive .suggestionHint {
-  color: rgba(255, 255, 255, 0.75);
+/* Driven by aria-selected so visual and semantic states are always in sync */
+.dropupItem[aria-selected="true"] {
+  background-color: var(--autocomplete-highlight, rgba(37, 99, 235, 0.1));
+  color: var(--text-primary);  /* ensures readable text in dark-mode themes */
 }
 
-.suggestionItem:hover .suggestionBadge,
-.suggestionItemActive .suggestionBadge {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.suggestionTokens {
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.suggestionHint {
+/* Text part of the row — truncates long lines */
+.dropupItemText {
   flex: 1 1 auto;
-  color: var(--text-secondary, #6b7280);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
-.suggestionBadge {
-  flex-shrink: 0;
-  font-size: 0.7rem;
-  font-weight: 500;
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  background: var(--primary-color, #2563eb);
-  color: #fff;
-  letter-spacing: 0.02em;
+/* Bold matched prefix inside a suggestion row */
+.matchHighlight {
+  font-weight: 700;
+  color: var(--primary-color);
 }
+
+/* Multi-line indicator symbol */
+.multilineIndicator {
+  flex: 0 0 auto;
+  font-style: normal;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  user-select: none;
+}
+

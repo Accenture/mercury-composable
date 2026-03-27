@@ -7,7 +7,9 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["vitest/globals", "react", "react-dom"],
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

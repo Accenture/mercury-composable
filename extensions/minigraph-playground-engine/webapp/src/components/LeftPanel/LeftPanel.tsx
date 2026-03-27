@@ -2,10 +2,12 @@ import React from 'react';
 import Console from '../Console/Console';
 import CommandInput from '../CommandInput/CommandInput';
 import styles from './LeftPanel.module.css';
+import type { ProtocolEvent } from '../../protocol/events';
 
 interface LeftPanelProps {
   // Console props
   messages:           { id: number; raw: string }[];
+  classificationMap?: Map<number, ProtocolEvent[]>;
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
@@ -27,21 +29,22 @@ interface LeftPanelProps {
   onSend:             () => void;
   sendDisabled:       boolean;
   inputDisabled:      boolean;
-  multiline:          boolean;
-  onToggleMultiline:  (force?: boolean) => void;
+  /** Ordered command history (newest-first) for history-based autocomplete. */
+  commandHistory:     string[];
 }
 
 export default function LeftPanel({
-  messages, onCopy, onClear, consoleRef,
+  messages, classificationMap, onCopy, onClear, consoleRef,
   onPinMessage, pinnedMessageId, onCopyMessage, onSendToJsonPath,
   onUploadMockData, successfulUploadPaths,
   command, onCommandChange, onCommandKeyDown, onSend,
-  sendDisabled, inputDisabled, multiline, onToggleMultiline,
+  sendDisabled, inputDisabled, commandHistory,
 }: LeftPanelProps) {
   return (
     <div className={styles.root}>
       <Console
         messages={messages}
+        classificationMap={classificationMap}
         onCopy={onCopy}
         onClear={onClear}
         consoleRef={consoleRef}
@@ -59,8 +62,7 @@ export default function LeftPanel({
         onSend={onSend}
         disabled={inputDisabled}
         sendDisabled={sendDisabled}
-        multiline={multiline}
-        onToggleMultiline={onToggleMultiline}
+        history={commandHistory}
       />
     </div>
   );

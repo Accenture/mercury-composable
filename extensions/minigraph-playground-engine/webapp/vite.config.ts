@@ -1,12 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import svgr from 'vite-plugin-svgr';
 
 export default defineConfig({
-  plugins: [react({
+  plugins: [
+    react({
       babel: {
         plugins: ['babel-plugin-react-compiler'],
-      }
-    })],
+      },
+    }),
+    // SVG files imported with ?react are transformed into React components.
+    // Plain ?url / asset imports remain unaffected.
+    svgr(),
+  ],
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
