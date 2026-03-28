@@ -50,3 +50,7 @@ Built-in skills
 5. graph.extension - issue API call to another graph model
 6. graph.island - this indicates that the node leads to isolated nodes and graph traversal would pause
 7. graph.join - a node with this skill will wait for completion of all nodes that connect to it
+
+Tutorials
+---------
+- help tutorial 1 (hello world)
