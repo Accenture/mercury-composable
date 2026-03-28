@@ -7,8 +7,8 @@ application into an executable Spring Boot application.
 
 There are two ways to do that:
 
-1. Add dependency for Spring Boot version 3 and implement your Spring Boot main application
-2. Add the `rest-spring-3` add-on library for a pre-configured Spring Boot experience
+1. Add dependency for Spring Boot version 3/4 and implement your Spring Boot main application
+2. Add the `rest-spring-3` or `rest-spring-4` add-on library for a pre-configured Spring Boot 3/4 experience
 
 ## Add platform-core to an existing Spring Boot application
 
@@ -36,14 +36,14 @@ platform-core foundation code to load the event-listener functions into memory b
 
 ## Use the rest-spring library in your application
 
-The second option is to add the `rest-spring-3` dependency to your composable application.
+The second option is to add the `rest-spring-3` or `rest-spring-4` dependency to your composable application.
 The rest-spring-3 library is a pre-configured Spring Boot 3 library with WebFlux as the asynchronous
-HTTP servlet engine.
+HTTP servlet engine. Similarly, the rest-spring-4 is pre-configured for Spring Boot 4.
 
-This turns your composable application into a pre-configured Spring Boot 3 application.
+This turns your composable application into a pre-configured Spring Boot 3/4 application.
 It provides consistent behavior for XML and JSON serialization and exception handling.
 
-The RestServer class in the rest-spring-3 library is used to bootstrap a Spring Boot application.
+The RestServer class in the rest-spring-3/rest-spring-4 library is used to bootstrap a Spring Boot application.
 
 Spring Boot is a sophisticated ecosystem by itself. If the simple RestServer bootstrap does not fit your
 use cases, please use the sample MainApp to implement your own Spring Boot initializer.
@@ -123,7 +123,7 @@ The platform-core and Spring Boot will use `rest.server.port` and `server.port` 
 
 ## Spring Autowiring
  
-When using the `rest-spring-3` module, bean and value injection may be used:
+When using the `rest-spring-3` or `rest-spring-4` module, bean and value injection may be used:
  
 ```java
 @PreLoad(route = "v1.demo.function")
@@ -164,11 +164,14 @@ is included in pom.xml.
 * Only applies to instances loaded with `@PreLoad` - Functions registered programmatically will not undergo injection.
 * Constructor injection is not viable - these instances are constructed before the Spring context is created.
 
-## The rest-spring-3-example demo application
+## The rest-spring-example demo applications
 
-Let's review the `rest-spring-3-example` demo application in the "examples/rest-spring-3-example" project.
+The two example applications (`rest-spring-3-example` and `rest-spring-4-example`) are the same and they
+use the rest-spring-3 and rest-spring-4 libraries respectively.
 
-You can use the rest-spring-3-example as a template to create a Spring Boot application.
+Let's review the `rest-spring-4-example` demo application in the "examples/rest-spring-4-example" project.
+
+You can use the rest-spring-4-example as a template to create a Spring Boot application.
 
 In addition to the REST automation engine that lets you create REST endpoints by configuration, you can also
 programmatically create REST endpoints with the following methods:

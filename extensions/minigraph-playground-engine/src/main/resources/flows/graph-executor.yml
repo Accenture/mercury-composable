@@ -2,7 +2,7 @@ flow:
   id: 'graph-executor'
   description: 'MiniGraph Traveler'
   ttl: 60s
-  exception: 'simple.exception.handler'
+  exception: 'graph.exception.handler'
 
 first.task: 'graph.executor'
 
@@ -23,7 +23,7 @@ tasks:
       - 'error.code -> status'
       - 'error.message -> message'
       - 'error.stack -> stack'
-    process: 'simple.exception.handler'
+    process: 'graph.exception.handler'
     output:
       # In normal response, the status code is available in 'status'.
       # Since this is an exception handler, the status code is obtained from the result set.

@@ -148,7 +148,12 @@ public class GraphExecutor extends GraphLambdaFunction {
         var flowInstance = Flows.getFlowInstance(flowInstanceId);
         if (graphInstance != null && flowInstance != null) {
             var stateMachine = graphInstance.stateMachine;
+            var target = stateMachine.getElement(nodeName + "." + TARGET);
             if (response.hasError()) {
+                if (target != null) {
+                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
+                    stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
+                }
                 handleErrorResponse(po, graphInstance, response);
                 return;
             }
@@ -159,9 +164,10 @@ public class GraphExecutor extends GraphLambdaFunction {
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
             if (processStatus instanceof Integer rc && resultError != null) {
+                var errorMap = getErrorMap(resultError, target);
                 var replyTo = graphInstance.getReplyTo();
                 var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(resultError).setStatus(rc);
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
                 po.send(error);
                 graphInstance.complete.set(true);
             } else if (!graphInstance.complete.get()) {

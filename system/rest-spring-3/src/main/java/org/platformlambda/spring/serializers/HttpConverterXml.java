@@ -18,6 +18,8 @@
 
 package org.platformlambda.spring.serializers;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
@@ -29,7 +31,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
-import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -45,26 +46,29 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
     private static final SimpleXmlParser xml = new SimpleXmlParser();
     private static final MediaType XML_TYPE = new MediaType("application", "xml", StandardCharsets.UTF_8);
     private static final List<MediaType> types = Collections.singletonList(XML_TYPE);
+    private static final String RESULT = "result";
 
     @Override
-    public boolean canRead(Class<?> clazz, @Nullable MediaType mediaType) {
+    public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
         return mediaType != null && XML_TYPE.getType().equals(mediaType.getType())
                 && XML_TYPE.getSubtype().equals(mediaType.getSubtype());
     }
 
     @Override
-    public boolean canWrite(Class<?> clazz, MediaType mediaType) {
+    public boolean canWrite(@Nullable Class<?> clazz, MediaType mediaType) {
         return mediaType != null && XML_TYPE.getType().equals(mediaType.getType())
                 && XML_TYPE.getSubtype().equals(mediaType.getSubtype());
     }
 
+    @NonNull
     @Override
     public List<MediaType> getSupportedMediaTypes() {
         return types;
     }
 
+    @NonNull
     @Override
-    public Object read(Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
+    public Object read(@Nullable Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
         try {
             return xml.parse(inputMessage.getBody());
         } catch (IOException e) {
@@ -74,7 +78,7 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void write(Object o, MediaType contentType, HttpOutputMessage outputMessage)
+    public void write(@Nullable Object o, MediaType contentType, HttpOutputMessage outputMessage)
             throws HttpMessageNotWritableException, IOException {
         outputMessage.getHeaders().setContentType(XML_TYPE);
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
@@ -87,15 +91,18 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
             final String root;
             final Map<String, Object> map;
             if (o instanceof List) {
-                root = "result";
+                root = RESULT;
                 map = new HashMap<>();
                 map.put("item", mapper.readValue(o, List.class));
             } else if (o instanceof Map) {
-                root = "result";
+                root = RESULT;
                 map = (Map<String, Object>) o;
-            } else {
+            } else if (o != null) {
                 root = o.getClass().getSimpleName().toLowerCase();
                 map = mapper.readValue(o, Map.class);
+            } else {
+                root = RESULT;
+                map = new HashMap<>();
             }
             String result = map2xml.write(root, map);
             out.write(util.getUTF(result));

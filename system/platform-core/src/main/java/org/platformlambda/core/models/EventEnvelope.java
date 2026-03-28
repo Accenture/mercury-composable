@@ -28,6 +28,8 @@ public class EventEnvelope {
     private static final Logger log = LoggerFactory.getLogger(EventEnvelope.class);
     private static final Utility util = Utility.getInstance();
     private static final MsgPack msgPack = new MsgPack();
+    private static final String TYPE = "type";
+    private static final String ERROR = "error";
     private static final String ID_FIELD = "id";
     private static final String TO_FIELD = "to";
     private static final String FROM_FIELD = "from";
@@ -192,7 +194,6 @@ public class EventEnvelope {
         return status != null && status >= 400;
     }
 
-    @SuppressWarnings("rawtypes")
     public Object getError() {
         if (hasError()) {
             switch (body) {
@@ -202,11 +203,11 @@ public class EventEnvelope {
                 case String str -> {
                     return str;
                 }
-                case Map error -> {
-                    // extract error message if error message signature is found
-                    return "error".equals(error.get("type")) &&
-                            error.containsKey(STATUS_FIELD) && error.containsKey(MESSAGE)?
-                            String.valueOf(error.get(MESSAGE)) : body;
+                case Map<?, ?> error -> {
+                    // extract error message as text if standard Composable signature is detected
+                    return error.size() == 3 &&
+                            ERROR.equals(error.get(TYPE)) && error.get(STATUS_FIELD) instanceof Integer &&
+                            error.get(MESSAGE) instanceof String text? text : body;
                 }
                 case byte[] ignored -> {
                     return "***";

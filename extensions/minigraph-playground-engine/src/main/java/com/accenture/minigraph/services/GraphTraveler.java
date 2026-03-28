@@ -32,6 +32,7 @@ import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -97,7 +98,12 @@ public class GraphTraveler extends GraphLambdaFunction {
         var graphInstance = graphInstances.get(wsInstance);
         if (graphInstance != null) {
             var stateMachine = graphInstance.stateMachine;
+            var target = stateMachine.getElement(nodeName + "." + TARGET);
             if (response.hasError()) {
+                if (target != null) {
+                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
+                    stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
+                }
                 handleErrorResponse(po, graphInstance, response);
                 return;
             }
@@ -113,8 +119,9 @@ public class GraphTraveler extends GraphLambdaFunction {
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
             if (processStatus instanceof Integer rc && resultError != null) {
+                var errorMap = getErrorMap(resultError, target);
                 var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(resultError).setStatus(rc);
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
                 po.send(error);
                 sendError(po, graphInstance, "Graph traversal aborted");
             } else if (!graphInstance.complete.get()) {

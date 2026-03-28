@@ -39,6 +39,7 @@ For instance model
 - help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
 - help inspect (state-machine for properties of nodes, input, output and model namespaces)
 - help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)
+- help seen (display the nodes that have been seen or executed)
 
 Built-in skills
 ---------------

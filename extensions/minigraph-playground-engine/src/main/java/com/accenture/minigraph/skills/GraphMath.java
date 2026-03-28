@@ -145,6 +145,9 @@ public class GraphMath extends GraphLambdaFunction {
             if (MAPPING_TAG.equals(tag)) {
                 handleDataMappingEntry(nodeName, command, graphInstance);
             }
+            if (RESET_TAG.equals(tag)) {
+                resetNodes(command, graphInstance);
+            }
         }
         return NEXT;
     }
