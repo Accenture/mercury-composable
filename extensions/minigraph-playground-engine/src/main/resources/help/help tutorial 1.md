@@ -107,9 +107,7 @@ because there are no further nodes to reach after the root node.
 
 Connecting nodes
 ----------------
-Please connect the root node to the end node.
-
-Please enter the following command:
+Please enter the following command to connect the root node to the end node.
 
 ```terminaloutput
 connect root to end with done
