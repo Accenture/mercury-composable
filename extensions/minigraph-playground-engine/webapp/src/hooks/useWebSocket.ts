@@ -4,6 +4,7 @@ import { type ToastType } from './useToast';
 import { MAX_BUFFER, MAX_HISTORY } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { extractUploadPath } from '../utils/messageParser';
+import { type ProtocolBus } from '../protocol/bus';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +37,7 @@ export interface UseWebSocketOptions {
   storageKeyHistory: string;
   payload:           string;
   addToast:          (message: string, type?: ToastType) => void;
+  bus?:              ProtocolBus;
 }
 
 /** Public API surface returned by useWebSocket. */
@@ -56,6 +58,8 @@ export interface UseWebSocketReturn {
   sendRawText:      (text: string) => void;
   /** Append a local-only message to this slot's console (no WebSocket round-trip). */
   appendMessage:    (raw: string) => void;
+  /** Ordered command history for this playground slot (newest-first). */
+  history:          string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -71,7 +75,10 @@ const localInitial: LocalState = {
 function localReducer(state: LocalState, action: LocalAction): LocalState {
   switch (action.type) {
     case 'SET_COMMAND':
-      return { ...state, command: action.value };
+      // Any explicit setCommand call (including suggestion accept) exits history
+      // navigation: reset the cursor and discard the draft. Semantically correct —
+      // if text is being set externally, history browsing is over.
+      return { ...state, command: action.value, historyIndex: -1, draftCommand: '' };
     case 'CLEAR_COMMAND':
       return { ...state, command: '', historyIndex: -1, draftCommand: '' };
     case 'SET_HISTORY_INDEX':
@@ -98,7 +105,7 @@ function localReducer(state: LocalState, action: LocalAction): LocalState {
  *
  * Public API is unchanged — Playground.tsx needs no edits.
  */
-export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: UseWebSocketOptions): UseWebSocketReturn {
+export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus }: UseWebSocketOptions): UseWebSocketReturn {
 
   // Shared context — connection phase + messages live here, surviving navigation.
   const ctx = useWebSocketContext();
@@ -189,7 +196,45 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
   }, [history, historyIndex]);
 
   // --- Watch incoming messages for the upload URL when a POST is pending ---
+  // Bus-based subscription (active when bus is provided)
   useEffect(() => {
+    if (!bus) return;
+    return bus.on('upload.contentPath', (event) => {
+      if (!pendingUploadRef.current) return;
+      pendingUploadRef.current = false;
+
+      if (payload.length === 0) {
+        ctx.appendMessage(wsPath, 'ERROR: please paste JSON/XML payload in the input text area');
+        return;
+      }
+
+      let body: string;
+      try {
+        body = JSON.stringify(JSON.parse(payload));
+      } catch {
+        ctx.appendMessage(wsPath, 'ERROR: payload is not valid JSON — cannot upload');
+        return;
+      }
+
+      fetch(event.uploadPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          addToast('Payload uploaded successfully', 'success');
+        })
+        .catch((err: Error) => {
+          ctx.appendMessage(wsPath, `ERROR: upload failed — ${err.message}`);
+          addToast(`Upload failed: ${err.message}`, 'error');
+        });
+    });
+  }, [bus, payload, wsPath, ctx, addToast]);
+
+  // Legacy messages-watch fallback (active when bus is NOT provided)
+  useEffect(() => {
+    if (bus) return;
     if (!pendingUploadRef.current || messages.length === 0) return;
     const latest = messages[messages.length - 1].raw;
     const uploadPath = extractUploadPath(latest);
@@ -226,7 +271,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
         ctx.appendMessage(wsPath, `ERROR: upload failed — ${err.message}`);
         addToast(`Upload failed: ${err.message}`, 'error');
       });
-  }, [messages, payload, wsPath, ctx, addToast]);
+  }, [bus, messages, payload, wsPath, ctx, addToast]);
 
   // --- Public: trigger the two-step upload handshake ---
   const uploadPayload = useCallback(() => {
@@ -284,5 +329,6 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast }: U
     uploadPayload,
     sendRawText,
     appendMessage,
+    history,
   };
 }

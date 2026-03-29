@@ -18,12 +18,14 @@ import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
 import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
-import { isMarkdownCandidate, isGraphLinkMessage, extractGraphApiPath } from '../utils/messageParser';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
 import { type PlaygroundConfig, PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
+import { ProtocolBus } from '../protocol/bus';
+import { useProtocolKernel } from '../protocol/useProtocolKernel';
+import type { GraphLinkEvent } from '../protocol/events';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
@@ -36,12 +38,15 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // Persisted payload (survives navigation / refresh via localStorage).
   const [storedPayload, setStoredPayload] = useLocalStorage<string>(storageKeyPayload, '');
-
-  // Large-payload override — set by useLargePayloadDownload via WebSocketContext
-  // when the server returns a payload too big to echo inline.  Using a separate
-  // useState means we never write large blobs to localStorage, avoiding quota
-  // exhaustion.  null = no override; the stored value is used instead.
   const ctx = useWebSocketContext();
+
+  // Cross-playground payload transfer: when the user clicks ➡️ in the
+  // Minigraph console to send a JSON result to JSON-Path, Playground.tsx
+  // calls ctx.setPendingPayload() and navigates.  The receiving playground
+  // picks it up here at mount (useState initialiser) and also reactively via
+  // the effect below (if the playground is already mounted).
+  // Using a separate useState means we never write cross-playground payloads
+  // to localStorage. null = no override; the stored value is used instead.
   const [payloadOverride, setPayloadOverride] = useState<string | null>(() =>
     ctx.takePendingPayload(wsPath)
   );
@@ -76,11 +81,16 @@ export default function Playground({ config }: PlaygroundProps) {
   // Toast notifications
   const { toasts, addToast, removeToast } = useToast();
 
-  // Multiline command input toggle
-  const [multiline, setMultiline] = useState(false);
+  // ── Protocol Kernel ─────────────────────────────────────────────────────
+  const busRef = useRef(new ProtocolBus());
+  const bus = busRef.current;
 
   // All WebSocket + console logic lives in the hook
-  const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast });
+  const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus });
+
+  const { classificationMap } = useProtocolKernel({
+    messages: ws.messages, bus,
+  });
 
   // Pinned message state — stored as a message id (number) so two messages
   // with identical text don't both appear pinned. null = no explicit pin.
@@ -88,14 +98,18 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // Auto-last: most recently received non-JSON, non-graph-link message.
   // Only computed when the Markdown Preview tab is enabled for this playground.
+  // Uses docs.response from classificationMap — stricter than the original
+  // isMarkdownCandidate check (excludes echoes, mock-upload invitations,
+  // upload-content-path messages, and large-payload messages).
   const lastNonJsonMessage = useMemo<string | null>(() => {
     if (!tabs.includes('preview')) return null;
     for (let i = ws.messages.length - 1; i >= 0; i--) {
-      const raw = ws.messages[i].raw;
-      if (!isGraphLinkMessage(raw) && isMarkdownCandidate(raw)) return raw;
+      const msg = ws.messages[i];
+      const events = classificationMap.get(msg.id);
+      if (events?.some(e => e.kind === 'docs.response')) return msg.raw;
     }
     return null;
-  }, [ws.messages, tabs]);
+  }, [ws.messages, tabs, classificationMap]);
 
   // Resolve the pinned id back to its raw string for MarkdownPreview.
   // pinnedMessageId wins; falls back to auto-last.
@@ -128,7 +142,7 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   useAutoGraphRefresh({
-    messages:           ws.messages,
+    bus,
     pinnedGraphPath,
     setPinnedGraphPath,
     connected:          ws.connected,
@@ -144,7 +158,7 @@ export default function Playground({ config }: PlaygroundProps) {
   // and the panel switches to the Developer Guides tab.
   // This hook is a no-op when the playground config does not include 'preview'.
   useAutoMarkdownPin({
-    messages:           ws.messages,
+    bus,
     connected:          ws.connected,
     setPinnedMessageId,
     onAutoPin:          tabs.includes('preview')
@@ -158,7 +172,7 @@ export default function Playground({ config }: PlaygroundProps) {
   // this hook fetches the data from the provided endpoint and immediately
   // triggers a browser file download — no extra user interaction required.
   useLargePayloadDownload({
-    messages:      ws.messages,
+    bus,
     connected:     ws.connected,
     appendMessage: ws.appendMessage,
     addToast,
@@ -193,9 +207,10 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // ── Auto-open modal when server sends upload invitation ───────────────────
   useAutoMockUpload({
-    messages:    ws.messages,
+    bus,
     connected:   ws.connected,
     onOpenModal: handleOpenUploadModal,
+    modalOpen:   modalUploadPath !== null,
   });
 
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────
@@ -215,7 +230,7 @@ export default function Playground({ config }: PlaygroundProps) {
   // is still instantiated but is effectively unused (the save button is hidden).
   const { defaultName: graphSaveName, setLastSavedName, resetName: resetSaveName } = useGraphSaveName(
     storageKeySavedGraphs ? `${storageKeySavedGraphs}-untitled-counter` : 'untitled-counter',
-    ws.messages,
+    bus,
   );
 
   // Save the current graph name as a bookmark in localStorage.
@@ -243,18 +258,18 @@ export default function Playground({ config }: PlaygroundProps) {
   }, [ws.connected, ws.sendRawText, addToast]);
 
   // When a message is pinned, decide whether it is a graph link or a Markdown message.
-  // Receives the full message object so we can store the stable id, not the raw string.
-  // In both cases we store the id — it drives the highlight in the Console.
+  // Reads from classificationMap — no direct parser calls needed.
   const handlePinMessage = useCallback((msg: { id: number; raw: string }) => {
-    if (isGraphLinkMessage(msg.raw)) {
-      const path = extractGraphApiPath(msg.raw);
-      setPinnedGraphPath(path);
-      setPinnedMessageId(msg.id);  // highlight graph-link row too
+    const events = classificationMap.get(msg.id);
+    const graphLink = events?.find(e => e.kind === 'graph.link') as GraphLinkEvent | undefined;
+    if (graphLink) {
+      setPinnedGraphPath(graphLink.apiPath);
+      setPinnedMessageId(msg.id);
     } else {
       setPinnedMessageId(msg.id);
-      setPinnedGraphPath(null);    // clear any graph pin
+      setPinnedGraphPath(null);
     }
-  }, []);
+  }, [classificationMap]);
 
   // Send an inline JSON response to the JSON-Path playground payload editor.
   // Mirrors the large-payload flow: navigate first, then deposit via context.
@@ -317,12 +332,6 @@ export default function Playground({ config }: PlaygroundProps) {
 
   const handleFormatPayload = useCallback(() => setPayload(formatJSON(payload)), [payload]);
 
-  // Toggle multiline mode; pass force=true/false to set it explicitly
-  // (used by the autocomplete hook when it accepts a multiline template).
-  const handleToggleMultiline = useCallback((force?: boolean) => {
-    setMultiline(m => force !== undefined ? force : !m);
-  }, []);
-
   const handleClearMessages = useCallback(() => {
     ws.clearMessages();
     setPinnedMessageId(null);
@@ -382,6 +391,7 @@ export default function Playground({ config }: PlaygroundProps) {
         <Panel defaultSize="60%" minSize="25%">
           <LeftPanel
             messages={ws.messages}
+            classificationMap={classificationMap}
             onCopy={ws.copyMessages}
             onClear={handleClearMessages}
             consoleRef={ws.consoleRef}
@@ -391,8 +401,7 @@ export default function Playground({ config }: PlaygroundProps) {
             onSend={ws.sendCommand}
             sendDisabled={!ws.connected || !ws.command.trim()}
             inputDisabled={!ws.connected}
-            multiline={multiline}
-            onToggleMultiline={handleToggleMultiline}
+            commandHistory={ws.history}
             onPinMessage={handlePinMessage}
             pinnedMessageId={pinnedMessageId}
             onCopyMessage={() => addToast('Copied to clipboard', 'success')}

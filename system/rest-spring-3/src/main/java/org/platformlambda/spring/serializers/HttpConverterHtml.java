@@ -18,6 +18,8 @@
 
 package org.platformlambda.spring.serializers;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.util.Utility;
@@ -27,7 +29,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
-import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,30 +43,32 @@ public class HttpConverterHtml implements HttpMessageConverter<Object> {
     private static final List<MediaType> types = Collections.singletonList(HTML_CONTENT);
 
     @Override
-    public boolean canRead(Class<?> clazz, @Nullable MediaType mediaType) {
+    public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
         return mediaType != null && HTML_CONTENT.getType().equals(mediaType.getType())
                 && (HTML_CONTENT.getSubtype().equals(mediaType.getSubtype()));
     }
 
     @Override
-    public boolean canWrite(Class<?> clazz, @Nullable MediaType mediaType) {
+    public boolean canWrite(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
         return mediaType != null && HTML_CONTENT.getType().equals(mediaType.getType())
                 && (HTML_CONTENT.getSubtype().equals(mediaType.getSubtype()));
     }
 
+    @NonNull
     @Override
     public List<MediaType> getSupportedMediaTypes() {
         return types;
     }
 
+    @NonNull
     @Override
-    public Object read(Class<?> clazz, HttpInputMessage inputMessage)
+    public Object read(@Nullable Class<?> clazz, HttpInputMessage inputMessage)
             throws HttpMessageNotReadableException, IOException {
         return util.getUTF(util.stream2bytes(inputMessage.getBody(), false));
     }
 
     @Override
-    public void write(Object o, MediaType contentType, HttpOutputMessage outputMessage)
+    public void write(@Nullable Object o, MediaType contentType, HttpOutputMessage outputMessage)
             throws HttpMessageNotWritableException, IOException {
         outputMessage.getHeaders().setContentType(HTML_CONTENT);
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();

@@ -4,7 +4,7 @@ import { PLAYGROUND_CONFIGS } from './config/playgrounds';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 
 /**
- * To add a new playground tool, edit src/config/playgrounds.js only —
+ * To add a new playground tool, edit src/config/playgrounds.ts only —
  * no changes needed here. Routes are generated automatically from the config.
  */
 export default function App() {

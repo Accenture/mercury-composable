@@ -159,6 +159,7 @@ public class GraphExtension extends GraphLambdaFunction {
                 }
                 log.info("Call extension {}, for each {}, parallel={}, ttl={}", extension,
                         parameterNames, batch.size(), timeout);
+                stateMachine.setElement(nodeName + "." + TARGET, extension);
                 doForkJoin(po, nodeName, stateMachine, batch, timeout);
                 batch.clear();
             }
@@ -202,6 +203,7 @@ public class GraphExtension extends GraphLambdaFunction {
         po.annotateTrace(EXTENSION, extension);
         var nodeName = node.getAlias();
         var stateMachine = graphInstance.stateMachine;
+        stateMachine.setElement(nodeName + "." + TARGET, extension);
         // construct dataset
         var parameters = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
         var forward = new EventEnvelope();

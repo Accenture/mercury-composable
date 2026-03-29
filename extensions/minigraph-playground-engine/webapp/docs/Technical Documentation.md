@@ -2,7 +2,7 @@
 
 **Audience:** Engineers inheriting or maintaining this webapp  
 **Branch:** `feature/playground`  
-**Last updated:** March 23 2026
+**Last updated:** March 27 2026
 
 ---
 
@@ -24,6 +24,7 @@
    - 3.11 [Keep-Alive Pings](#311-keep-alive-pings)
    - 3.12 [Mock-Data Upload Modal](#312-mock-data-upload-modal)
    - 3.13 [Save-Name Management](#313-save-name-management)
+   - 3.14 [Protocol Kernel (Centralized Message Classification)](#314-protocol-kernel-centralized-message-classification)
 4. [Repository Layout](#4-repository-layout)
 5. [Architecture Overview](#5-architecture-overview)
 6. [Layer-by-Layer Walkthrough](#6-layer-by-layer-walkthrough)
@@ -34,10 +35,11 @@
    - 6.5 [Left Panel — Console & Command Input](#65-left-panel--console--command-input)
    - 6.6 [Right Panel — Tabs](#66-right-panel--tabs)
    - 6.7 [Graph Pipeline](#67-graph-pipeline)
-   - 6.8 [Automation Hooks](#68-automation-hooks)
-   - 6.9 [Utilities](#69-utilities)
-   - 6.10 [Navigation Bar](#610-navigation-bar)
-   - 6.11 [Saved Graphs](#611-saved-graphs)
+   - 6.8 [Protocol Kernel Layer](#68-protocol-kernel-layer)
+   - 6.9 [Automation Hooks](#69-automation-hooks)
+   - 6.10 [Utilities](#610-utilities)
+   - 6.11 [Navigation Bar](#611-navigation-bar)
+   - 6.12 [Saved Graphs](#612-saved-graphs)
 7. [Key Engineering Decisions](#7-key-engineering-decisions)
 8. [Data & Message Flows](#8-data--message-flows)
    - 8.1 [User Sends a Command](#81-user-sends-a-command)
@@ -88,8 +90,10 @@ The built output (`dist/`) is copied into the Java application's `src/main/resou
 | Panel layout | **react-resizable-panels v4** | Draggable left/right split |
 | Markdown | **react-markdown + remark-gfm** | GitHub-flavoured Markdown |
 | JSON viewer | **react-json-view-lite** | Collapsible inline JSON tree |
+| SVG components | **vite-plugin-svgr** | SVG files imported with `?react` are transformed into React components; plain `?url` / asset imports are unaffected |
 | Styling | **CSS Modules** | Per-component `.module.css` files; global resets in `index.css` |
 | State persistence | **localStorage** | Via custom `useLocalStorage` hook |
+| Testing | **Vitest 3** | `npm run test` / `npm run test:watch`; globals enabled; built-in `node` environment (tests are pure logic — no DOM or rendering library needed) |
 | Dev proxy | **Vite server.proxy** | `/ws`, `/api`, `/health`, `/info`, `/env` → `localhost:8085` |
 
 ### React Compiler
@@ -104,10 +108,10 @@ The project opts in to the **React Compiler** (`babel-plugin-react-compiler`), w
 The app supports multiple independent playgrounds configured entirely in one file (`src/config/playgrounds.ts`). Adding a new playground requires no changes to routing, navigation, or state management — only a new entry in `PLAYGROUND_CONFIGS`.
 
 **Key code locations:**
-- `src/config/playgrounds.ts` [L33–L56](../src/config/playgrounds.ts#L33) — `PlaygroundConfig` interface defining every per-playground property
+- `src/config/playgrounds.ts` [L33–L55](../src/config/playgrounds.ts#L33) — `PlaygroundConfig` interface defining every per-playground property
 - `src/config/playgrounds.ts` [L57–end](../src/config/playgrounds.ts#L57) — `PLAYGROUND_CONFIGS` array (the only file to edit for a new playground)
-- `src/App.tsx` [L21–L23](../src/App.tsx#L21) — routes auto-generated: `PLAYGROUND_CONFIGS.map((cfg) => <Route … element={<Playground config={cfg} />} />)`
-- `src/components/Navigation.tsx` [L102–L143](../src/components/Navigation.tsx#L102) — nav links and status dots also auto-generated from the same array
+- `src/App.tsx` [L21–L22](../src/App.tsx#L21) — routes auto-generated: `PLAYGROUND_CONFIGS.map((cfg) => <Route … element={<Playground config={cfg} />} />)`
+- `src/components/Navigation.tsx` [L103–end](../src/components/Navigation.tsx#L103) — nav links and status dots also auto-generated from the same array
 
 ---
 
@@ -115,12 +119,12 @@ The app supports multiple independent playgrounds configured entirely in one fil
 Switching between the Minigraph and JSON-Path playgrounds does **not** close either WebSocket connection. Each connection is owned by `WebSocketContext` which lives above `<Routes>` in the tree, so both sockets stay alive simultaneously. The navigation bar shows a live status dot per playground.
 
 **Key code locations:**
-- `src/App.tsx` [L17–L29](../src/App.tsx#L17) — `<WebSocketProvider>` wraps `<BrowserRouter>`, not the other way around
+- `src/App.tsx` [L14–L29](../src/App.tsx#L14) — `<WebSocketProvider>` wraps `<BrowserRouter>`, not the other way around
 - `src/contexts/WebSocketContext.tsx` [L1–L10](../src/contexts/WebSocketContext.tsx#L1) — explains the "above Routes" contract in the module JSDoc
 - `src/contexts/WebSocketContext.tsx` [L30](../src/contexts/WebSocketContext.tsx#L30) — `WsPhase = 'idle' | 'connecting' | 'connected'`
-- `src/contexts/WebSocketContext.tsx` [L140–L165](../src/contexts/WebSocketContext.tsx#L140) — `useReducer`-managed `slots` map keyed by `wsPath`; `wsRefs` / `pingRefs` / `msgIdRefs` live in `useRef` outside the reducer
-- `src/contexts/WebSocketContext.tsx` [L196–L253](../src/contexts/WebSocketContext.tsx#L196) — `connect()`: opens socket, sends `welcome`, starts ping interval
-- `src/components/Navigation.tsx` [L21–L33](../src/components/Navigation.tsx#L21) — `aggregateDotStatus()` + `phaseToDotStatus()` derive nav dot colours
+- `src/contexts/WebSocketContext.tsx` [L147–L157](../src/contexts/WebSocketContext.tsx#L147) — `useReducer`-managed `slots` map keyed by `wsPath`; `wsRefs` / `pingRefs` / `msgIdRefs` live in `useRef` outside the reducer, not inside `SlotState`
+- `src/contexts/WebSocketContext.tsx` [L206–L270](../src/contexts/WebSocketContext.tsx#L206) — `connect()`: opens socket, sends `{"type":"welcome"}`, starts ping interval
+- `src/components/Navigation.tsx` [L21–L28](../src/components/Navigation.tsx#L21) — `aggregateDotStatus()` + `phaseToDotStatus()` derive nav dot colours
 
 ---
 
@@ -130,15 +134,20 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 - Graph-link messages (🕸️) are clickable to pin the graph
 - Plain-text messages (📌) are clickable to pin them to the Markdown Preview
 - Per-row copy button; command history navigation with ↑/↓ arrow keys
-- Multiline input mode toggle for multi-line commands
+- **History-based autocomplete dropup** — as the user types, matching history entries appear in a dropup above the textarea; Tab or Enter accepts the highlighted suggestion; Escape dismisses it
+- **Command palette** — a terminal-icon button opens a popover listing all known commands with descriptions; clicking a row inserts the command template into the textarea
+- **Auto-grow textarea** — the input is a single auto-growing textarea; Shift+Enter inserts a newline, Enter sends; there is no separate multiline toggle mode
 
 **Key code locations:**
-- `src/components/Console/ConsoleMessage.tsx` [L24–L42](../src/components/Console/ConsoleMessage.tsx#L24) — per-message classification: `isGraphLink`, `isLargePayload`, `isPinnable`, `canSendToJsonPath`
-- `src/components/Console/ConsoleMessage.tsx` [L70–L149](../src/components/Console/ConsoleMessage.tsx#L70) — JSX: `<JsonView>` for JSON, plain `<span>` for text, copy button, ➡️ send-to-JSON-Path button
-- `src/components/Console/ConsoleMessage.tsx` [L29–L31](../src/components/Console/ConsoleMessage.tsx#L29) — `isGraphLinkMessage` / `isLargePayloadMessage` / `isPinnable` flags drive rendering branches
-- `src/hooks/useWebSocket.ts` [L143–L163](../src/hooks/useWebSocket.ts#L143) — `sendCommand()`: sends text, pushes to history, handles special `load` command
-- `src/hooks/useWebSocket.ts` [L165–L189](../src/hooks/useWebSocket.ts#L165) — `handleKeyDown()`: ↑/↓ history navigation with draft-save/restore (`ENTER_HISTORY` / `EXIT_HISTORY` / `SET_HISTORY_INDEX` reducer actions)
-- `src/hooks/useWebSocket.ts` [L11–L32](../src/hooks/useWebSocket.ts#L11) — `LocalState` + `LocalAction` types; `draftCommand` field saves in-progress input on first ↑ press
+- `src/components/Console/ConsoleMessage.tsx` [L37–L54](../src/components/Console/ConsoleMessage.tsx#L37) — per-message classification: reads from `classificationMap` to derive `isGraphLink`, `isLargePayload`, `isMockUpload`, `mockUploadPath`; `isPinnable` guard; `canSendToJsonPath`
+- `src/components/Console/ConsoleMessage.tsx` [L98–L170](../src/components/Console/ConsoleMessage.tsx#L98) — JSX: `<JsonView>` for JSON, plain `<span>` for text, copy button, ➡️ send-to-JSON-Path button
+- `src/components/Console/ConsoleMessage.tsx` [L42–L47](../src/components/Console/ConsoleMessage.tsx#L42) — `events` looked up from `classificationMap.get(msgId)`; `isGraphLink` / `isLargePayload` / `isMockUpload` derived via `events.some(e => e.kind === ...)` instead of direct parser calls
+- `src/hooks/useWebSocket.ts` [L145–L167](../src/hooks/useWebSocket.ts#L145) — `sendCommand()`: sends text, pushes to history, handles special `load` command
+- `src/hooks/useWebSocket.ts` [L168–L191](../src/hooks/useWebSocket.ts#L168) — `handleKeyDown()`: ↑/↓ history navigation with draft-save/restore (`ENTER_HISTORY` / `EXIT_HISTORY` / `SET_HISTORY_INDEX` reducer actions)
+- `src/hooks/useWebSocket.ts` [L14–L32](../src/hooks/useWebSocket.ts#L14) — `LocalState` + `LocalAction` types; `draftCommand` field saves in-progress input on first ↑ press
+- `src/hooks/useHistoryAutocomplete.ts` — `useHistoryAutocomplete(history, command)`: pure filtering + dedup in a single `useMemo`; returns `suggestions`, `isOpen`, `activeIndex`, `navigate`, `accept`, `onTab`, `dismiss`, `onCommandChange`
+- `src/components/CommandInput/CommandInput.tsx` [L5](../src/components/CommandInput/CommandInput.tsx#L5) — imports `useHistoryAutocomplete`; [L43–L71](../src/components/CommandInput/CommandInput.tsx#L43) — command palette open/close + outside-click handler; [L62](../src/components/CommandInput/CommandInput.tsx#L62) — auto-grow `useEffect` (always rows=1, height derived from `scrollHeight`); [L82–L175](../src/components/CommandInput/CommandInput.tsx#L82) — `handleKeyDown`: Tab → accept suggestion; Enter → accept or send; Escape → dismiss dropup; ↑/↓ → navigate dropup or history
+- `src/utils/commandSuggestions.ts` — `QuickstartEntry` now has `template: string` (text inserted on palette click) and optional `multiline?: boolean` (informational metadata indicating a multi-line command)
 
 ---
 
@@ -166,33 +175,43 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 ### 3.5 Auto-Graph Refresh
 After any graph-mutating command (`create node`, `delete node`, `connect`, etc.), the graph automatically re-fetches and re-renders without user interaction. If no graph was previously loaded, the app issues `describe graph` silently, receives the graph-link, and opens the Graph tab automatically. This is debounced at 300 ms to collapse rapid-fire commands.
 
+The hook subscribes to `graph.mutation` and `graph.link` events on the `ProtocolBus` — it no longer scans the raw message array directly.
+
 **Key code locations:**
-- `src/utils/messageParser.ts` [L237–L265](../src/utils/messageParser.ts#L237) — `detectMutation()`: classifies a raw message as `'node-mutation'`, `'import-graph'`, or `null`; includes the critical `startsWith('node ')` prefix guard
-- `src/hooks/useAutoGraphRefresh.ts` [L89–L102](../src/hooks/useAutoGraphRefresh.ts#L89) — three core refs: `watermarkRef` (prevents replaying history), `debounceTimerRef` (300 ms collapse), `waitingForDescribeRef` (two-step describe-graph/graph-link handshake)
-- `src/hooks/useAutoGraphRefresh.ts` [L112–L131](../src/hooks/useAutoGraphRefresh.ts#L112) — disconnect guard: clears `waitingForDescribeRef` and cancels any pending debounce on socket close
-- `src/hooks/useAutoGraphRefresh.ts` [L143–L250](../src/hooks/useAutoGraphRefresh.ts#L143) — main `useEffect`: Pass 1 consumes pending graph-link when `waitingForDescribeRef` is true; Pass 2 detects mutations and fires the debounce or immediate `describe graph` send
-- `src/hooks/useWebSocket.ts` [L246–L249](../src/hooks/useWebSocket.ts#L246) — `sendRawText()`: sends without echoing to console or history (used exclusively by automation hooks)
+- `src/utils/messageParser.ts` [L279–L306](../src/utils/messageParser.ts#L279) — `detectMutation()`: classifies a raw message as `'node-mutation'`, `'import-graph'`, or `null`; includes the critical `startsWith('node ')` prefix guard
+- `src/protocol/classifier.ts` [L116–L122](../src/protocol/classifier.ts#L116) — Rule 7: calls `detectMutation()` and emits `graph.mutation` event
+- `src/hooks/useAutoGraphRefresh.ts` [L32–L36](../src/hooks/useAutoGraphRefresh.ts#L32) — five key refs: `debounceTimerRef`, `waitingForDescribeRef`, `pinnedGraphPathRef`, `connectedRef`, `sendRawTextRef`
+- `src/hooks/useAutoGraphRefresh.ts` [L44–L53](../src/hooks/useAutoGraphRefresh.ts#L44) — disconnect guard: clears `waitingForDescribeRef` and cancels any pending debounce on socket close
+- `src/hooks/useAutoGraphRefresh.ts` [L55–L64](../src/hooks/useAutoGraphRefresh.ts#L55) — `bus.on('graph.link')`: consumes pending graph-link when `waitingForDescribeRef` is true → calls `setPinnedGraphPath(event.apiPath)`
+- `src/hooks/useAutoGraphRefresh.ts` [L65–L96](../src/hooks/useAutoGraphRefresh.ts#L65) — `bus.on('graph.mutation')`: fires immediate `describe graph` for `import-graph`; debounced (300 ms) for `node-mutation`
+- `src/hooks/useWebSocket.ts` [L286](../src/hooks/useWebSocket.ts#L286) — `sendRawText()`: sends without echoing to console or history (used exclusively by automation hooks)
 
 ---
 
 ### 3.6 Markdown Preview (Developer Guides)
 After `help` or text-producing `describe` commands, the response is automatically pinned to the **Developer Guides** tab and the tab switches into view. The panel renders GitHub-flavoured Markdown.
 
+The hook subscribes to `command.helpOrDescribe` and `docs.response` events on the `ProtocolBus`. Non-pinnable responses (`json.response`, `graph.link`, `upload.invitation`, `lifecycle`, `payload.large`) clear the waiting flag to prevent flag accumulation.
+
 **Key code locations:**
-- `src/utils/messageParser.ts` [L192–L210](../src/utils/messageParser.ts#L192) — `isHelpOrDescribeCommand()`: matches `"> help …"` and `"> describe <non-graph>"` echoes (explicitly excludes `"> describe graph"`)
-- `src/hooks/useAutoMarkdownPin.ts` [L42–L46](../src/hooks/useAutoMarkdownPin.ts#L42) — `isPinnableResponse()`: a message is pinnable if it is not an echo (`> ` prefix), not a graph-link, and passes `isMarkdownCandidate`
-- `src/hooks/useAutoMarkdownPin.ts` [L88–L163](../src/hooks/useAutoMarkdownPin.ts#L88) — main hook: `watermarkRef`, `waitingForResponseRef`; armed when a `help`/`describe` echo is seen; pins first pinnable response and calls `onAutoPin()` to switch the tab
-- `src/utils/messageParser.ts` [L80–L92](../src/utils/messageParser.ts#L80) — `isMarkdownCandidate()`: true for non-JSON strings; false for JSON lifecycle events (`{type, message, time}`)
+- `src/utils/messageParser.ts` [L216–L241](../src/utils/messageParser.ts#L216) — `isHelpOrDescribeCommand()`: matches `"> help …"` and `"> describe <non-graph>"` echoes (explicitly excludes `"> describe graph"`)
+- `src/protocol/classifier.ts` [L131–L138](../src/protocol/classifier.ts#L131) — Rule 9: calls `isHelpOrDescribeCommand()` and emits `command.helpOrDescribe` event
+- `src/hooks/useAutoMarkdownPin.ts` [L34–L48](../src/hooks/useAutoMarkdownPin.ts#L34) — main subscription: `bus.on('command.helpOrDescribe')` arms `waitingForResponseRef`; `bus.on('docs.response')` consumes the first markdown response and calls `setPinnedMessageId` + `onAutoPin()`
+- `src/hooks/useAutoMarkdownPin.ts` [L51–L65](../src/hooks/useAutoMarkdownPin.ts#L51) — clearWaiting subscriptions: `json.response`, `graph.link`, `upload.invitation`, `lifecycle`, `payload.large` all clear the waiting flag
+- `src/utils/messageParser.ts` [L80–L86](../src/utils/messageParser.ts#L80) — `isMarkdownCandidate()`: true for non-JSON strings; false for JSON objects/arrays (including lifecycle events)
 
 ---
 
 ### 3.7 Large Payload Handling
 When the server reports a payload exceeding 64 KB (`"Large payload (N) -> GET /api/inspect/…"`), the hook fetches it via REST and appends the result directly to the console as a collapsible JSON row — identical in appearance to small payloads.
 
+The hook subscribes to `payload.large` events on the `ProtocolBus`. An `isFetchingRef` re-entrancy guard prevents concurrent fetches.
+
 **Key code locations:**
-- `src/utils/messageParser.ts` [L148–L168](../src/utils/messageParser.ts#L148) — `extractLargePayloadLink()`: regex parses byte size and API path from the server notification; `isLargePayloadMessage()` (L167) is the boolean predicate
-- `src/hooks/useLargePayloadDownload.ts` [L56–L64](../src/hooks/useLargePayloadDownload.ts#L56) — three key refs: `watermarkRef`, `abortRef` (AbortController for in-flight cancellation), `isFetchingRef` (re-entrancy guard)
-- `src/hooks/useLargePayloadDownload.ts` [L92–L167](../src/hooks/useLargePayloadDownload.ts#L92) — main effect: scans new messages for `extractLargePayloadLink`, fetches the endpoint, pretty-prints JSON, calls `appendMessage(content)` (L142); `break` on first match (L165) prevents concurrent fetches
+- `src/utils/messageParser.ts` [L148–L168](../src/utils/messageParser.ts#L148) — `extractLargePayloadLink()`: regex parses byte size and API path from the server notification; `isLargePayloadMessage()` ([L167](../src/utils/messageParser.ts#L167)) is the boolean predicate
+- `src/protocol/classifier.ts` [L65–L77](../src/protocol/classifier.ts#L65) — Rule 3: calls `extractLargePayloadLink()` and emits `payload.large` event
+- `src/hooks/useLargePayloadDownload.ts` [L24–L25](../src/hooks/useLargePayloadDownload.ts#L24) — two key refs: `abortRef` (AbortController for in-flight cancellation), `isFetchingRef` (re-entrancy guard)
+- `src/hooks/useLargePayloadDownload.ts` [L50–L87](../src/hooks/useLargePayloadDownload.ts#L50) — `bus.on('payload.large')`: guards with `isFetchingRef`, fetches the endpoint, pretty-prints JSON, calls `appendMessage(content)`
 - `src/config/playgrounds.ts` [L27](../src/config/playgrounds.ts#L27) — `MAX_BUFFER = 63_488` — the 62 KB send limit that makes large-payload handling necessary
 
 ---
@@ -203,7 +222,7 @@ A JSON response in the Minigraph console can be sent directly to the JSON-Path P
 **Key code locations:**
 - `src/components/Console/ConsoleMessage.tsx` [L41](../src/components/Console/ConsoleMessage.tsx#L41) — `canSendToJsonPath = !!onSendToJsonPath && jsonCheck.isJSON` — button only shown on JSON messages when the callback is wired
 - `src/components/Console/ConsoleMessage.tsx` [L63–L67](../src/components/Console/ConsoleMessage.tsx#L63) — `handleSendToJsonPath`: pretty-prints the JSON and calls `onSendToJsonPath(pretty)`
-- `src/components/Playground.tsx` [L200–L211](../src/components/Playground.tsx#L200) — `handleSendToJsonPath`: calls `ctx.setPendingPayload(wsPath, json)` then `navigate(jsonPathConfig.path)`
+- `src/components/Playground.tsx` [L309–L320](../src/components/Playground.tsx#L309) — `handleSendToJsonPath`: calls `ctx.setPendingPayload(wsPath, json)` then `navigate(jsonPathConfig.path)`
 - `src/contexts/WebSocketContext.tsx` [L59–L64](../src/contexts/WebSocketContext.tsx#L59) — `setPendingPayload` / `takePendingPayload` interface; backed by `useState` (not `useRef`) so that depositing triggers a re-render in the consuming playground
 - `src/components/Playground.tsx` [L43–L56](../src/components/Playground.tsx#L43) — receiving side: `payloadOverride` state initialised from `ctx.takePendingPayload(wsPath)` at mount; `useEffect` (L50–L57) also fires reactively when a new payload is deposited into an already-mounted playground
 
@@ -213,13 +232,15 @@ A JSON response in the Minigraph console can be sent directly to the JSON-Path P
 The JSON-Path Playground supports uploading large JSON payloads over REST:
 1. The user clicks **Upload** → the hook sends `"upload"` over the WebSocket
 2. The server responds with `"Please upload XML/JSON text to /api/json/content/{id}"`
-3. The hook detects that URL in the message stream and fires `POST /api/json/content/{id}` with the payload
+3. The hook detects that URL via `upload.contentPath` event on the ProtocolBus (or legacy message scanning when bus is not provided) and fires `POST /api/json/content/{id}` with the payload
 
 **Key code locations:**
-- `src/utils/messageParser.ts` [L118–L123](../src/utils/messageParser.ts#L118) — `extractUploadPath()`: regex extracts `/api/json/content/{id}` from the server's reply
-- `src/hooks/useWebSocket.ts` [L123](../src/hooks/useWebSocket.ts#L123) — `pendingUploadRef = useRef(false)` — arms the two-step handshake
-- `src/hooks/useWebSocket.ts` [L232–L241](../src/hooks/useWebSocket.ts#L232) — `uploadPayload()`: sets `pendingUploadRef.current = true`, sends `"upload"` over the socket
-- `src/hooks/useWebSocket.ts` [L191–L230](../src/hooks/useWebSocket.ts#L191) — `useEffect` watching `messages`: when `pendingUploadRef` is true and `extractUploadPath` matches, fires `fetch(uploadPath, { method: 'POST', body })` (L200–L225)
+- `src/utils/messageParser.ts` [L118–L127](../src/utils/messageParser.ts#L118) — `extractUploadPath()`: regex extracts `/api/json/content/{id}` from the server's reply
+- `src/protocol/classifier.ts` [L93–L102](../src/protocol/classifier.ts#L93) — Rule 5: calls `extractUploadPath()` and emits `upload.contentPath` event
+- `src/hooks/useWebSocket.ts` [L125](../src/hooks/useWebSocket.ts#L125) — `pendingUploadRef = useRef(false)` — arms the two-step handshake
+- `src/hooks/useWebSocket.ts` [L272–L283](../src/hooks/useWebSocket.ts#L272) — `uploadPayload()`: sets `pendingUploadRef.current = true`, sends `"upload"` over the socket
+- `src/hooks/useWebSocket.ts` [L194–L228](../src/hooks/useWebSocket.ts#L194) — bus-based `upload.contentPath` subscription: when `pendingUploadRef` is true, clears flag synchronously before `fetch()`, fires `POST` with the payload
+- `src/hooks/useWebSocket.ts` [L230–L269](../src/hooks/useWebSocket.ts#L230) — legacy messages-watch fallback (active when bus is NOT provided): checks `extractUploadPath` on last message
 
 ---
 
@@ -229,8 +250,8 @@ The Minigraph playground lets users save a named graph snapshot. The name is sto
 **Key code locations:**
 - `src/hooks/useSavedGraphs.ts` [L19–L28](../src/hooks/useSavedGraphs.ts#L19) — `UseSavedGraphsReturn` interface: `savedGraphs`, `saveGraph`, `deleteGraph`, `hasGraph`
 - `src/hooks/useSavedGraphs.ts` [L55–L82](../src/hooks/useSavedGraphs.ts#L55) — implementation: `useLocalStorage<SavedGraphsMap>` backing store; `useMemo` sort newest-first (L78)
-- `src/components/Playground.tsx` [L165–L173](../src/components/Playground.tsx#L165) — `handleSaveGraph()`: calls `savedGraphs.saveGraph(name)` then `ws.sendRawText('export graph as ${name}')`
-- `src/components/Playground.tsx` [L176–L182](../src/components/Playground.tsx#L176) — `handleLoadGraph()`: calls `ws.sendRawText('import graph from ${name}')` — auto-refresh hook takes it from there
+- `src/components/Playground.tsx` [L245–L252](../src/components/Playground.tsx#L245) — `handleSaveGraph()`: calls `savedGraphs.saveGraph(name)` then `ws.sendRawText('export graph as ${name}')`
+- `src/components/Playground.tsx` [L257–L263](../src/components/Playground.tsx#L257) — `handleLoadGraph()`: calls `ws.sendRawText('import graph from ${name}')` — auto-refresh hook takes it from there
 - `src/components/GraphSaveButton/GraphSaveButton.tsx` [L1–L116](../src/components/GraphSaveButton/GraphSaveButton.tsx#L1) — self-contained inline save form (open/close, pre-filled name, overwrite warning, Enter/Escape keyboard handling)
 - `src/components/SavedGraphsMenu/SavedGraphsMenu.tsx` [L1–L85](../src/components/SavedGraphsMenu/SavedGraphsMenu.tsx#L1) — dropdown list reusing `NavMenu`; Load/Delete actions per entry
 
@@ -242,7 +263,7 @@ Every 20 seconds the client sends `{"type":"ping","message":"keep alive"}` over 
 **Key code locations:**
 - `src/config/playgrounds.ts` [L30](../src/config/playgrounds.ts#L30) — `PING_INTERVAL = 20_000` — the only place to change the frequency
 - `src/contexts/WebSocketContext.tsx` [L227–L231](../src/contexts/WebSocketContext.tsx#L227) — `setInterval` started in `ws.onopen`; fires `ws.send(eventWithTimestamp('ping', 'keep alive'))`
-- `src/contexts/WebSocketContext.tsx` [L187–L196](../src/contexts/WebSocketContext.tsx#L187) — `isKeepAliveMessage()`: checks `parsed.type === 'ping' || 'pong'`; messages passing this check are dropped before `dispatch(MESSAGE_RECEIVED)` (L234–L239)
+- `src/contexts/WebSocketContext.tsx` [L192–L205](../src/contexts/WebSocketContext.tsx#L192) — `isKeepAliveMessage()`: checks `parsed.type === 'ping' || 'pong'`; messages passing this check are dropped before `dispatch(MESSAGE_RECEIVED)` ([L240](../src/contexts/WebSocketContext.tsx#L240))
 
 ---
 
@@ -255,12 +276,12 @@ The console row for the invitation displays a ⬆️ icon and an "⬆️ Upload 
 
 **Key code locations:**
 - `src/utils/messageParser.ts` [L182–L193](../src/utils/messageParser.ts#L182) — `extractMockUploadPath()` / `isMockUploadMessage()`: regex extracts `/api/mock/{id}` from the server's invitation message
-- `src/hooks/useAutoMockUpload.ts` — watches the message stream for `isMockUploadMessage`, follows the watermark pattern, calls `onOpenModal(uploadPath)` on first match per batch
+- `src/hooks/useAutoMockUpload.ts` — subscribes to `bus.on('upload.invitation')`; `pendingModalRef` ([L22](../src/hooks/useAutoMockUpload.ts#L22)) prevents duplicate modal opens per batch; a `modalOpen: boolean` prop clears `pendingModalRef` via a separate effect ([L26](../src/hooks/useAutoMockUpload.ts#L26)) when the modal closes, so the next invitation can trigger normally
 - `src/hooks/useMockUpload.ts` — owns the `fetch` lifecycle: `AbortController` per attempt, `isUploading` state, `upload()` / `cancel()` functions
 - `src/components/MockUploadModal/MockUploadModal.tsx` — native `<dialog>` with `.showModal()`; textarea + drop zone + "Browse file…" button; `Ctrl+Enter` / `⌘+Enter` submit shortcut; inline JSON validation via `tryParseJSON`
 - `src/components/MockUploadModal/MockUploadModal.module.css` — amber accent theming; drop zone active state; spinner; `--warning-color` token for file/validation errors
-- `src/components/Playground.tsx` [L121–L127](../src/components/Playground.tsx#L121) — `modalUploadPath` / `modalTriggerRef` / `successfulUploadPaths` state
-- `src/components/Playground.tsx` [L168–L200](../src/components/Playground.tsx#L168) — `handleOpenUploadModal`, `handleCloseUploadModal`, `handleUploadSuccess`, `handleUploadError` callbacks + `useAutoMockUpload` invocation
+- `src/components/Playground.tsx` [L135–L144](../src/components/Playground.tsx#L135) — `modalUploadPath` / `modalTriggerRef` / `successfulUploadPaths` state
+- `src/components/Playground.tsx` [L185–L215](../src/components/Playground.tsx#L185) — `handleOpenUploadModal`, `handleCloseUploadModal`, `handleUploadSuccess`, `handleUploadError` callbacks + `useAutoMockUpload` invocation
 - `src/components/Console/ConsoleMessage.tsx` [L41–L50](../src/components/Console/ConsoleMessage.tsx#L41) — `isMockUpload`, `mockUploadPath`, `canUploadMock`, `uploadSucceeded` derived flags; `isPinnable` guard (`&& !isMockUpload`) prevents a nested-interactive-element accessibility violation
 - `src/hooks/useAutoMarkdownPin.ts` — `isPinnableResponse()` excludes `isMockUploadMessage` rows so the invitation is never accidentally pinned to the Developer Guides tab
 
@@ -280,15 +301,53 @@ A new import always supersedes a previous save: when a new `import graph from {n
 **Untitled counter semantics.** The counter only advances when the current `untitled-{n}` slot has actually been *used as a save name*. Clearing the console without ever saving reuses the same slot — so `untitled-2` will never appear in storage unless `untitled-1` was saved first. The counter is persisted in localStorage (keyed per playground) so it survives page refreshes.
 
 **Key code locations:**
-- `src/hooks/useGraphSaveName.ts` [L9–L38](../src/hooks/useGraphSaveName.ts#L9) — `UseGraphSaveNameReturn` interface with documented priority order and counter invariant
-- `src/hooks/useGraphSaveName.ts` [L68](../src/hooks/useGraphSaveName.ts#L68) — `useLocalStorage<number>(storageKey, 1)` — counter persisted, starts at 1
-- `src/hooks/useGraphSaveName.ts` [L80–L83](../src/hooks/useGraphSaveName.ts#L80) — `untitledSlotConsumedRef = useRef(false)` — tracks whether the current slot has been used; stored as a ref (not state) because it never drives a re-render
-- `src/hooks/useGraphSaveName.ts` [L104–L118](../src/hooks/useGraphSaveName.ts#L104) — import-echo scanner: clears `lastSavedName` to `null` whenever a new `import graph from {name}` echo arrives, so the imported name takes over immediately
-- `src/hooks/useGraphSaveName.ts` [L122–L131](../src/hooks/useGraphSaveName.ts#L122) — `setLastSavedName(name)`: sets the saved name and marks `untitledSlotConsumedRef = true` only when the name equals the current `untitled-{n}` fallback
-- `src/hooks/useGraphSaveName.ts` [L133–L142](../src/hooks/useGraphSaveName.ts#L133) — `resetName()`: clears both names; advances counter only when `untitledSlotConsumedRef.current` is `true`, then resets the flag
-- `src/hooks/useGraphSaveName.ts` [L145–L148](../src/hooks/useGraphSaveName.ts#L145) — derived `defaultName`: `lastSavedName ?? importedName ?? \`untitled-${untitledCounter}\``
-- `src/components/Playground.tsx` [L216–L219](../src/components/Playground.tsx#L216) — hook instantiated with key `\`${storageKeySavedGraphs}-untitled-counter\`` to keep the counter isolated per playground
-- `src/utils/messageParser.ts` [L266–L276](../src/utils/messageParser.ts#L266) — `extractImportGraphName()`: parses `> import graph from {name}` echoes; returns the trimmed name or `null`
+- `src/hooks/useGraphSaveName.ts` [L9–L37](../src/hooks/useGraphSaveName.ts#L9) — `UseGraphSaveNameReturn` interface with documented priority order and counter invariant
+- `src/hooks/useGraphSaveName.ts` [L75](../src/hooks/useGraphSaveName.ts#L75) — `useLocalStorage<number>(storageKey, 1)` — counter persisted, starts at 1
+- `src/hooks/useGraphSaveName.ts` [L82](../src/hooks/useGraphSaveName.ts#L82) — `untitledSlotConsumedRef = useRef(false)` — tracks whether the current slot has been used; stored as a ref (not state) because it never drives a re-render
+- `src/hooks/useGraphSaveName.ts` [L99–L103](../src/hooks/useGraphSaveName.ts#L99) — import-echo subscription: `bus.on('command.importGraph')` clears `lastSavedName` to `null` whenever a new `import graph from {name}` echo arrives, so the imported name takes over immediately
+- `src/hooks/useGraphSaveName.ts` [L107–L115](../src/hooks/useGraphSaveName.ts#L107) — `setLastSavedName(name)`: sets the saved name and marks `untitledSlotConsumedRef = true` only when the name equals the current `untitled-{n}` fallback
+- `src/hooks/useGraphSaveName.ts` [L117–L127](../src/hooks/useGraphSaveName.ts#L117) — `resetName()`: clears both names; advances counter only when `untitledSlotConsumedRef.current` is `true`, then resets the flag
+- `src/hooks/useGraphSaveName.ts` [L130–L133](../src/hooks/useGraphSaveName.ts#L130) — derived `defaultName`: `lastSavedName ?? importedName ?? \`untitled-${untitledCounter}\``
+- `src/components/Playground.tsx` [L234–L236](../src/components/Playground.tsx#L234) — hook instantiated with `bus` instead of `ws.messages`; key `\`${storageKeySavedGraphs}-untitled-counter\`` keeps the counter isolated per playground
+- `src/utils/messageParser.ts` [L243–L254](../src/utils/messageParser.ts#L243) — `extractImportGraphName()`: parses `> import graph from {name}` echoes; returns the trimmed name or `null`
+
+---
+
+### 3.14 Protocol Kernel — Centralised Message Classification
+
+The Protocol Kernel is a classify-once, emit-to-many layer that sits between the raw WebSocket message stream and all consuming hooks/components. Instead of each automation hook scanning every message independently (duplicated regex work, duplicated watermark bookkeeping), a single `useProtocolKernel` hook:
+
+1. **Maintains one watermark** for the entire message log
+2. **Classifies each new message once** via the pure `classifyMessage()` function
+3. **Emits typed events** to a `ProtocolBus` — hooks subscribe to only the event kinds they care about
+4. **Builds a `classificationMap`** (`Map<number, ProtocolEvent[]>`) keyed by message ID — components read pre-computed classifications instead of re-parsing at render time
+
+This architecture eliminates O(hooks × messages) repeated parsing and provides a single extension point (the classifier's rule list) for new message types.
+
+**Modules:**
+
+| File | Purpose | Lines |
+|---|---|---|
+| `src/protocol/events.ts` | 12-kind discriminated union type (`ProtocolEvent`) | 113 |
+| `src/protocol/classifier.ts` | Pure `classifyMessage(msgId, raw)` → `ProtocolEvent[]` (12 rules) | 181 |
+| `src/protocol/bus.ts` | `ProtocolBus` — lightweight typed event emitter (~45 lines) | 45 |
+| `src/protocol/useProtocolKernel.ts` | React hook: watermark + classify + memoised map + bus emission | 73 |
+| `src/protocol/index.ts` | Barrel re-export | 18 |
+
+**Event kinds:** `graph.link`, `graph.mutation`, `payload.large`, `upload.invitation`, `upload.contentPath`, `command.echo`, `command.helpOrDescribe`, `command.importGraph`, `docs.response`, `json.response`, `lifecycle`, `unclassified`.
+
+**Key code locations:**
+- `src/protocol/events.ts` [L103](../src/protocol/events.ts#L103) — `export type ProtocolEvent` discriminated union
+- `src/protocol/classifier.ts` [L27](../src/protocol/classifier.ts#L27) — `export function classifyMessage(msgId, raw)`: returns an array (one message may match multiple rules, e.g. a graph-link that is also a mutation response)
+- `src/protocol/bus.ts` [L16](../src/protocol/bus.ts#L16) — `export class ProtocolBus`: `on(kind, handler)` returns an unsubscribe function; `emit(event)` fires all registered handlers for that `event.kind`; `clear()` removes all listeners
+- `src/protocol/useProtocolKernel.ts` [L33](../src/protocol/useProtocolKernel.ts#L33) — hook entry; [L40](../src/protocol/useProtocolKernel.ts#L40) — watermark init effect; [L47](../src/protocol/useProtocolKernel.ts#L47) — `classificationMap = useMemo(...)` over the full messages array; [L56](../src/protocol/useProtocolKernel.ts#L56) — watermark-gated bus emission effect
+- `src/components/Playground.tsx` [L88](../src/components/Playground.tsx#L88) — `busRef = useRef(new ProtocolBus())`; [L94](../src/components/Playground.tsx#L94) — `useProtocolKernel({ messages, bus })`
+
+**Test infrastructure:**
+- `src/protocol/__tests__/classifier.test.ts` — golden transcript tests using fixture JSON files
+- `src/protocol/__tests__/bus.test.ts` — ProtocolBus unit tests
+- `src/protocol/__tests__/fixtures/*.json` — 12 fixture files (one per event kind)
+- `vitest.config.ts` — Vitest 3 + built-in `node` environment; `globals: true`
 
 ---
 
@@ -307,18 +366,29 @@ webapp/
 │   ├── hooks/
 │   │   ├── useWebSocket.ts       # Per-playground WS + command input logic
 │   │   ├── useGraphData.ts       # REST fetch + graph state management
-│   │   ├── useAutoGraphRefresh.ts# Mutation detection → auto re-fetch
-│   │   ├── useAutoMarkdownPin.ts # help/describe echo → auto-pin preview
-│   │   ├── useLargePayloadDownload.ts # Large payload REST fetch → console
-│   │   ├── useAutoMockUpload.ts  # Mock-upload invitation → auto-open modal
+│   │   ├── useAutoGraphRefresh.ts# Mutation detection → auto re-fetch (bus-based)
+│   │   ├── useAutoMarkdownPin.ts # help/describe echo → auto-pin preview (bus-based)
+│   │   ├── useLargePayloadDownload.ts # Large payload REST fetch → console (bus-based)
+│   │   ├── useAutoMockUpload.ts  # Mock-upload invitation → auto-open modal (bus-based)
 │   │   ├── useMockUpload.ts      # POST fetch lifecycle for mock-upload modal
 │   │   ├── useSavedGraphs.ts     # localStorage graph bookmark CRUD
-│   │   ├── useGraphSaveName.ts   # Save-form pre-fill name (priority: saved > imported > untitled-n)
+│   │   ├── useGraphSaveName.ts   # Save-form pre-fill name (bus-based; priority: saved > imported > untitled-n)
 │   │   ├── useLocalStorage.ts    # Generic localStorage hook
 │   │   ├── useToast.ts           # Toast notification queue
 │   │   ├── useCopyToClipboard.ts # Clipboard write with copied state
 │   │   ├── useMediaQuery.ts      # Responsive breakpoint detection
-│   │   └── useAutocomplete.ts    # Command autocomplete suggestions
+│   │   ├── useHistoryAutocomplete.ts  # History-based autocomplete for CommandInput dropup
+│   │   └── useAutocomplete.ts    # Template-based autocomplete (dormant — not currently wired to CommandInput)
+│   ├── protocol/                  # ★ Protocol Kernel — centralised message classification
+│   │   ├── events.ts             # ProtocolEvent discriminated union (12 event kinds)
+│   │   ├── classifier.ts         # classifyMessage() pure function (12 rules)
+│   │   ├── bus.ts                # ProtocolBus typed event emitter
+│   │   ├── useProtocolKernel.ts  # React hook: watermark + classify + map + emit
+│   │   ├── index.ts              # Barrel re-export
+│   │   └── __tests__/
+│   │       ├── classifier.test.ts  # Golden transcript tests
+│   │       ├── bus.test.ts         # Bus unit tests
+│   │       └── fixtures/           # 12 JSON fixture files (one per event kind)
 │   ├── components/
 │   │   ├── Playground.tsx        # ★ Top-level orchestrator per route
 │   │   ├── Navigation.tsx        # Header nav bar (Tools + Quick Links menus)
@@ -344,11 +414,12 @@ webapp/
 │       ├── urls.ts               # WebSocket & HTTP URL construction
 │       └── commandSuggestions.ts # Autocomplete command list
 ├── docs/
+│   ├── Technical Documentation.md
+│   ├── SPEC-protocol-kernel.md
 │   ├── SPEC-auto-graph-refresh.md
 │   ├── SPEC-large-payload-inline.md
 │   └── SPEC-mock-data-upload-modal.md
-├── scripts/
-│   └── upload-json.mjs           # CLI helper: POST a JSON file to the backend
+├── vitest.config.ts              # Vitest 3 + node environment test configuration
 ├── vite.config.ts
 ├── tsconfig.json
 └── package.json
@@ -376,16 +447,18 @@ Each Playground instance:
 
   Playground.tsx (orchestrator)
   ├── useWebSocket          ← command input + history + WS actions
+  ├── useProtocolKernel     ← classifies messages once → ProtocolBus + classificationMap
   ├── useGraphData          ← REST fetch + graph state
-  ├── useAutoGraphRefresh   ← mutation detection → silent describe graph
-  ├── useAutoMarkdownPin    ← help/describe echo → auto-pin preview
-  ├── useLargePayloadDownload ← oversized payload → REST fetch → console
-  ├── useAutoMockUpload     ← upload invitation → auto-open modal
+  ├── useAutoGraphRefresh   ← bus: graph.link + graph.mutation → silent describe graph
+  ├── useAutoMarkdownPin    ← bus: command.helpOrDescribe + docs.response → auto-pin preview
+  ├── useLargePayloadDownload ← bus: payload.large → REST fetch → console
+  ├── useAutoMockUpload     ← bus: upload.invitation → auto-open modal
   ├── useSavedGraphs        ← localStorage bookmark CRUD
-  ├── useGraphSaveName      ← save-form pre-fill name (saved › imported › untitled-n)
+  ├── useGraphSaveName      ← bus: command.importGraph → save-form pre-fill name
   │
   ├── LeftPanel
   │   ├── Console           ← message list (ConsoleMessage per row)
+  │   │                       classificationMap threaded down for render-time lookups
   │   └── CommandInput      ← textarea + send button + history nav
   │
   ├── RightPanel (tabbed)
@@ -395,6 +468,18 @@ Each Playground instance:
   │   └── GraphDataView     ← raw JSON tree of graph model
   │
   └── MockUploadModal       ← native <dialog>; JSON paste / drop / browse; POST
+
+  Message flow:
+    WebSocket → messages[] → useProtocolKernel
+                              ├── classificationMap (Map<msgId, ProtocolEvent[]>)
+                              │     └── ConsoleMessage reads at render time
+                              └── ProtocolBus.emit(event)
+                                    ├── useAutoGraphRefresh.on('graph.link' | 'graph.mutation')
+                                    ├── useAutoMarkdownPin.on('command.helpOrDescribe' | 'docs.response' | ...)
+                                    ├── useLargePayloadDownload.on('payload.large')
+                                    ├── useAutoMockUpload.on('upload.invitation')
+                                    ├── useGraphSaveName.on('command.importGraph')
+                                    └── useWebSocket.on('upload.contentPath')  [when bus provided]
 ```
 
 **Key design principle:** State flows top-down through props; side-effects are encapsulated in hooks; components are dumb renderers. `Playground.tsx` is the only component that coordinates between hooks.
@@ -440,6 +525,7 @@ The file also exports shared runtime constants used across the app:
 |---|---|---|
 | `MAX_ITEMS` | 200 | Console message ring buffer size |
 | `MAX_HISTORY` | 50 | Command history entries in localStorage |
+| `MAX_AUTOCOMPLETE_SUGGESTIONS` | 8 | Maximum history suggestions shown in the command input dropup |
 | `MAX_BUFFER` | 63,488 | WebSocket send character limit (safely under 64 KB) |
 | `PING_INTERVAL` | 20,000 ms | Keep-alive ping frequency |
 
@@ -453,20 +539,24 @@ The WebSocket layer is split across two files with distinct responsibilities:
 
 #### `src/contexts/WebSocketContext.tsx` — shared, navigation-persistent state
 
-Holds a `useReducer`-managed map of `SlotState` objects, one per `wsPath`. A "slot" contains:
+Holds a `useReducer`-managed map of `SlotState` objects (`AllSlots`), one per `wsPath`. Each `SlotState` contains:
 - `phase: 'idle' | 'connecting' | 'connected'`
 - `messages: { id: number; raw: string }[]` (ring-buffered at `MAX_ITEMS`)
 
-WebSocket instances, ping interval handles, and message ID counters live in `useRef` objects (outside the reducer) so they never cause re-renders.
+> **⚠️ Gotcha:** An exported `WsSlot` interface also exists on this file (L32) but is **not** what the reducer uses internally — it is a public type for potential external consumers. The actual per-slot reducer state is `SlotState` (L76). Do not confuse these.
 
-**`connect(wsPath, onToast)`:**
+WebSocket instances (`wsRefs`), ping interval handles (`pingRefs`), and message ID counters (`msgIdRefs`) live in `useRef` Records (outside the reducer, L153–L155) so they never cause re-renders.
+
+**`connect(wsPath, onToast)`** ([L206](../src/contexts/WebSocketContext.tsx#L206)):
 1. Dispatches `CONNECTING`
 2. Opens `new WebSocket(makeWsUrl(wsPath))`
-3. On `open`: dispatches `CONNECTED`, sends `{"type":"welcome"}`, starts the ping interval
-4. On `message`: filters out keep-alive ping/pong frames, dispatches `MESSAGE_RECEIVED`
+3. On `open`: dispatches `CONNECTED`, sends `{"type":"welcome"}` (plain `JSON.stringify`, not `eventWithTimestamp`), starts the ping interval
+4. On `message`: filters out keep-alive ping/pong frames via `isKeepAliveMessage()` ([L192](../src/contexts/WebSocketContext.tsx#L192)), dispatches `MESSAGE_RECEIVED`
 5. On `close`/`error`: clears ping interval, dispatches `DISCONNECTED`
 
-**`send(wsPath, data)`:** Writes directly to `wsRef.current` — no React re-render.
+Auto-connect on startup: on mount the provider silently opens a socket for every entry in `PLAYGROUND_CONFIGS` ([L288](../src/contexts/WebSocketContext.tsx#L288)). React StrictMode double-invoke is handled safely by the `onclose` ref guard.
+
+**`send(wsPath, data)`** ([L313](../src/contexts/WebSocketContext.tsx#L313)): Writes directly to `wsRef.current` — no React re-render.
 
 **`pendingPayloads`** is a `useState` (not `useRef`) map so that depositing a payload via `setPendingPayload` triggers a re-render in consuming components (specifically the JSON-Path Playground's `useEffect` polling for cross-playground payload transfer).
 
@@ -478,8 +568,8 @@ A thin delegation layer that reads its slot from the context and adds purely loc
 - **Auto-scroll** via a `consoleRef` and a `useEffect` watching `messages`
 - **History navigation** with ↑/↓ arrow key handling; saves and restores the in-progress draft when entering/exiting history mode
 - **`sendCommand()`**: sends the command, pushes to history, and — for the special `load` command — also sends the payload as a second WebSocket message
-- **Two-step upload handshake**: a `pendingUploadRef` is armed by `uploadPayload()`; a `useEffect` watches messages for the `extractUploadPath` pattern and fires the `fetch` POST
-- **`sendRawText(text)`**: sends without echoing to history, used by automation hooks for silent commands like `describe graph`
+- **Two-step upload handshake**: a `pendingUploadRef` is armed by `uploadPayload()` ([L272](../src/hooks/useWebSocket.ts#L272)). When a `ProtocolBus` is provided via the optional `bus?` prop ([L40](../src/hooks/useWebSocket.ts#L40)), the hook subscribes to `upload.contentPath` events ([L194](../src/hooks/useWebSocket.ts#L194)) for responsive detection. Otherwise, a legacy `useEffect` watches messages for the `extractUploadPath` pattern ([L230](../src/hooks/useWebSocket.ts#L230)) and fires the `fetch` POST.
+- **`sendRawText(text)`** ([L286](../src/hooks/useWebSocket.ts#L286)): sends without echoing to history, used by automation hooks for silent commands like `describe graph`
 
 ---
 
@@ -491,23 +581,29 @@ Key responsibilities:
 
 | Concern | How handled |
 |---|---|
+| Protocol Kernel | `busRef = useRef(new ProtocolBus())` ([L88](../src/components/Playground.tsx#L88)) keeps a single stable bus instance; `useProtocolKernel({ messages, bus })` ([L94](../src/components/Playground.tsx#L94)) returns `classificationMap` |
 | Payload persistence | `useLocalStorage(storageKeyPayload)` — survives navigation and refresh |
-| Large payload override | Separate `useState(null)` — never written to localStorage to avoid quota exhaustion; wins over stored value when set |
+| Cross-playground payload | Separate `useState(null)` (`payloadOverride`) initialised from `ctx.takePendingPayload` at mount; never written to localStorage; wins over stored value when set |
 | Payload validation | `useMemo(() => validatePayload(payload))` — synchronous, no extra render |
 | Toast notifications | `useToast()` — queue-based, auto-removes after timeout |
 | Graph path pinning | `useState<string \| null>(null)` — the REST path extracted from a graph-link message |
 | Preview message pinning | `useState<number \| null>(null)` — stores message **id**, not raw string |
-| Panel split persistence | `useDefaultLayout` from `react-resizable-panels` — keyed per route |
+| Panel split persistence | `useDefaultLayout` from `react-resizable-panels` — keyed per route path (`config.path + '-panel-split'`) |
 | Responsive layout | `useMediaQuery('(max-width: 768px)')` → vertical panel stacking on mobile |
-| Clear messages | Also clears `pinnedMessageId`, `pinnedGraphPath`, `modalUploadPath`, `successfulUploadPaths`, and `graphData` so no stale state lingers |
+| Clear messages | Clears `pinnedMessageId`, `pinnedGraphPath`, `successfulUploadPaths`, and `graphData`; does **not** clear `modalUploadPath` (modal stays open if active during clear) |
 | Cross-playground routing | `ctx.setPendingPayload` + `navigate()` — deposits JSON then navigates; consuming playground reads it via `ctx.takePendingPayload` |
 | Mock-upload modal path | `useState<string \| null>(null)` — `null` = closed; non-null = open for that specific POST endpoint |
 | Modal trigger element | `useRef<HTMLElement \| null>(null)` — captures `document.activeElement` before open; `.focus()` restored on close via `setTimeout` |
 | Successful upload paths | `useState<Set<string>>(new Set())` — keyed by POST path; drives ✅ badge on invitation rows; session-only (cleared with `clearMessages`) |
-| Graph save-form name | `useGraphSaveName(storageKey, ws.messages)` — provides `defaultName`, `setLastSavedName`, `resetName`; see §3.13 |
+| Graph save-form name | `useGraphSaveName(storageKey, bus)` — provides `defaultName`, `setLastSavedName`, `resetName`; see §3.13 |
+| Command history for autocomplete | `ws.history` (string array, newest-first) passed as `commandHistory` to `LeftPanel` → `CommandInput` for the history dropup |
+| Classification map threading | `classificationMap` passed to `LeftPanel` → `Console` → `ConsoleMessage` ([L403](../src/components/Playground.tsx#L403)) |
 
-**Pinning logic** (`handlePinMessage`):
-- If the message is a graph-link → set `pinnedGraphPath` (triggers `useGraphData`) and also highlight the row
+**Last non-JSON message** ([L107](../src/components/Playground.tsx#L107)): derived via `useMemo` filtering messages through the `classificationMap` — selects the last message whose events include `docs.response`, used for auto-pinning the Developer Guides preview.
+
+**Pinning logic** (`handlePinMessage` at [L265](../src/components/Playground.tsx#L265)):
+- Reads `classificationMap.get(msg.id)` to find pre-classified events
+- If any event has `kind === 'graph.link'` → reads `event.apiPath` to set `pinnedGraphPath` (triggers `useGraphData`) and highlight the row
 - Otherwise → set `pinnedMessageId` and clear `pinnedGraphPath`
 
 ---
@@ -516,19 +612,25 @@ Key responsibilities:
 
 **`LeftPanel.tsx`** — a thin layout shell that positions `Console` above `CommandInput`.
 
-**`Console.tsx`** — renders a scrollable `role="log"` div. Each message is wrapped in a `ConsoleErrorBoundary` so a rendering crash in one row does not take down the whole list. It also has copy-all and clear-all toolbar buttons.
+**`Console.tsx`** — renders a scrollable `role="log"` div. Each message is wrapped in a `ConsoleErrorBoundary` so a rendering crash in one row does not take down the whole list. It also has copy-all and clear-all toolbar buttons. Receives `classificationMap` as a prop and passes it through to each `ConsoleMessage`.
 
-**`ConsoleMessage.tsx`** — the most visually complex component. For each message it:
+**`ConsoleMessage.tsx`** ([L37](../src/components/Console/ConsoleMessage.tsx#L37)) — the most visually complex component. Receives `msgId` and `classificationMap` props ([L10–L11](../src/components/Console/ConsoleMessage.tsx#L10)). For each message it:
 1. Calls `parseMessage()` to extract `{type, message, time}`
 2. Calls `tryParseJSON()` — JSON messages render as a collapsible `<JsonView>` tree
-3. Classifies the message as a graph-link, large-payload link, mock-upload invitation, or plain text for appropriate styling and icons
+3. Reads pre-computed events from `classificationMap.get(msgId)` ([L42](../src/components/Console/ConsoleMessage.tsx#L42)) — `isGraphLink`, `isLargePayload` ([L44](../src/components/Console/ConsoleMessage.tsx#L44)), `isMockUpload` are derived via `events.some(e => e.kind === ...)` instead of calling parser functions at render time
 4. Conditionally renders:
-   - A **pin button** (📌 for plain-text, 🕸️ for graph-links) — clickable rows with full keyboard support (`role="button"`, `tabIndex`, `Enter`/`Space` handlers). Mock-upload rows are **explicitly excluded** from `isPinnable` via `&& !isMockUpload` to prevent a nested-interactive-element accessibility violation
+   - A **pin button** (📌 for plain-text, 🕸️ for graph-links) — clickable rows with full keyboard support (`role="button"`, `tabIndex`, `Enter`/`Space` handlers). Mock-upload and large-payload rows are **explicitly excluded** from `isPinnable` via `&& !isMockUpload && !isLargePayload` ([L54](../src/components/Console/ConsoleMessage.tsx#L54)) to prevent nested-interactive-element accessibility violations
    - A **copy button** (📄 → ✅) with scoped `copied` state
    - A **send-to-JSON-Path button** (➡️) on JSON messages when the callback is wired
    - A **"⬆️ Upload JSON…" re-open button** on mock-upload invitation rows when `onUploadMockData` is wired; shows a ✅ badge when `successfulUploadPaths` contains the row's POST path
 
-**`CommandInput.tsx`** — textarea (single or multiline mode) with a Send button and multiline toggle. Delegates all logic to `useWebSocket` via callbacks.
+**`CommandInput.tsx`** — a single auto-growing textarea with a Send button. No separate multiline toggle exists; the textarea grows naturally as the user types. Key behaviours:
+- **Auto-grow:** a `useEffect` watching `command` sets `el.style.height` from `scrollHeight` on every value change — covers both user typing and programmatic history-navigation updates
+- **History dropup:** powered by `useHistoryAutocomplete(history, command)`; the dropup (`role="listbox"`, `id="history-dropup"`) is always in the DOM (toggled via `hidden`) so `aria-controls` always resolves; items show the matched prefix in `<strong>` and a `↵` badge for multi-line entries
+- **Command palette:** a terminal-prompt icon button (`aria-expanded`, `aria-controls="command-palette"`) opens a popover `role="listbox"` listing all `COMMAND_QUICKSTART` entries; clicking a row inserts the entry's `template` string and closes the palette
+- **ARIA combobox pattern:** the textarea has `role="combobox"`, `aria-haspopup="listbox"`, `aria-controls="history-dropup"`, and `aria-activedescendant` pointing to the active item; focus never leaves the textarea
+- **Key handling** (`handleKeyDown`): Tab accepts active suggestion (or first if none highlighted); Enter accepts highlighted suggestion or sends; Shift+Enter lets the browser insert a newline; Escape dismisses the dropup; ↑/↓ navigates the dropup when open, otherwise delegates to the history handler in `useWebSocket` with a `requestAnimationFrame` caret-to-end fix
+- **Outside-click:** a `mousedown` listener on `document` closes the palette when focus moves outside `paletteWrapperRef`
 
 ---
 
@@ -594,75 +696,102 @@ A class-based error boundary that resets when its `key` prop changes. `GraphView
 
 ---
 
-### 6.8 Automation Hooks
+### 6.8 Protocol Kernel Layer
 
-These hooks share the same pattern: **message-ID watermark + flag ref + effects**.
+This layer centralises message classification so that hooks subscribe to typed events instead of scanning raw messages themselves. See §3.14 for the feature overview.
 
-#### Pattern common to all automation hooks
+#### `src/protocol/events.ts` — Event type definitions
 
-```
-useEffect (runs once at mount, empty dep []):
-  watermarkRef.current = last message ID in existing log
+A 12-kind discriminated union type `ProtocolEvent` ([L103](../src/protocol/events.ts#L103)). Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize` and `apiPath`). `ProtocolEventKind` ([L113](../src/protocol/events.ts#L113)) is the union of all `kind` string literals.
 
-useEffect (runs on connect change):
-  if (!connected) clear pending flags + cancel timers/fetches
+#### `src/protocol/classifier.ts` — Pure classification function
 
-useEffect (runs on messages change — the main loop):
-  newMessages = messages.filter(m => m.id > watermarkRef.current)
-  watermarkRef.current = messages[last].id
-  for each new message: inspect + act
-```
+`classifyMessage(msgId: number, raw: string): ProtocolEvent[]` ([L27](../src/protocol/classifier.ts#L27)) returns an **array** because a single message may match multiple rules (e.g. a graph-link that is also a mutation response). The 12 rules are applied in order; Rule 12 (`unclassified` at [L175](../src/protocol/classifier.ts#L175)) fires only when no other rule matched.
 
-The watermark prevents replaying historical messages as new mutations/echoes/large-payloads when the component mounts into an already-populated message log.
+The classifier delegates to `messageParser.ts` predicates (`extractGraphApiPath`, `extractLargePayloadLink`, `extractMockUploadPath`, `extractUploadPath`, `isHelpOrDescribeCommand`, `detectMutation`, `extractImportGraphName`, `isGraphLinkMessage`, `isMarkdownCandidate`, `tryParseJSON`) — it adds no new parsing logic, only orchestrates existing parsers into a single classification pass.
 
-#### `useAutoGraphRefresh`
+#### `src/protocol/bus.ts` — Typed event emitter
 
-Watches for `detectMutation(raw)` returning `'node-mutation'` or `'import-graph'`.
+`ProtocolBus` ([L16](../src/protocol/bus.ts#L16)) is a ~45-line synchronous event emitter. Listeners are stored in a `Map<ProtocolEventKind, Set<(event: ProtocolEvent) => void>>`. Key methods:
+- `on(kind, handler)` ([L22](../src/protocol/bus.ts#L22)) — returns an unsubscribe function (for `useEffect` cleanup)
+- `emit(event)` ([L31](../src/protocol/bus.ts#L31)) — fires all registered handlers for `event.kind` in Set insertion order
+- `clear()` ([L42](../src/protocol/bus.ts#L42)) — removes all listeners (used in tests; not called in production code)
 
-- **`'node-mutation'`**: arms a 300 ms debounce timer. On fire, sends `describe graph` silently and sets `waitingForDescribeRef = true`. The next graph-link message is consumed to call `setPinnedGraphPath`.
-- **`'import-graph'`**: immediately cancels any pending debounce and sends `describe graph`.
-- When `waitingForDescribeRef` is true, a prior "Pass 1" in the main effect scans new messages for a graph-link and calls `setPinnedGraphPath` on the first one found, then returns early.
+The bus is created **once** via `useRef` in `Playground.tsx` and never changes identity. It is deliberately *not* React Context — it is an imperative coordination mechanism between effects, not a source of rendered state.
 
-**Stale-closure fix**: `pinnedGraphPath` is read via `pinnedGraphPathRef` inside the debounce timer callback — if it were read directly from closure it would be stale after subsequent renders.
+#### `src/protocol/useProtocolKernel.ts` — React integration hook
 
-#### `useAutoMarkdownPin`
+`useProtocolKernel({ messages, bus })` ([L33](../src/protocol/useProtocolKernel.ts#L33)):
 
-Watches for `isHelpOrDescribeCommand(raw)` (echoed `> help ...` or `> describe <non-graph>` commands). Sets `waitingForResponseRef = true`. The next message that passes `isPinnableResponse` (plain text, not an echo, not a graph-link, **not a mock-upload invitation**) is pinned via `setPinnedMessageId` and `onAutoPin()` is called to switch the tab.
+1. **Effect 1** ([L40](../src/protocol/useProtocolKernel.ts#L40)): On mount, initialises `watermarkRef` to the last message ID in the existing log — prevents replaying historical messages
+2. **`classificationMap`** ([L47](../src/protocol/useProtocolKernel.ts#L47)): A `useMemo` that iterates the full messages array and builds `Map<number, ProtocolEvent[]>` via `classifyMessage()`. This is the **render-path** output consumed by `ConsoleMessage`
+3. **Effect 2** ([L56](../src/protocol/useProtocolKernel.ts#L56)): Watermark-gated loop that emits only **new** events to the bus. This is the **effect-path** output consumed by automation hooks
 
-**Critical guard**: echoed commands start with `> ` and pass `isMarkdownCandidate`. Without the echo guard in `isPinnableResponse`, the echo itself would be pinned instead of the actual response.
-
-**Mock-upload guard**: `isPinnableResponse` also excludes `isMockUploadMessage` rows. Because the upload invitation is plain text, `isMarkdownCandidate` returns `true` for it. Without this exclusion, if `waitingForResponseRef` were armed (e.g. the user sent `help` and then quickly ran `upload mock data`), the invitation would be stolen and pinned to the Developer Guides tab instead of opening the modal.
-
-#### `useLargePayloadDownload`
-
-Watches for `extractLargePayloadLink(raw)` matching `"Large payload (N) -> GET /api/inspect/..."`. Fetches the endpoint, pretty-prints the JSON, and calls `appendMessage(content)` to inject the result into the console. An `isFetchingRef` re-entrancy guard prevents the appended result from being re-processed as a new notification. Only the first large-payload link in each message batch is processed (a `break` after the first match prevents concurrent fetches).
-
-#### `useAutoMockUpload`
-
-Watches for `isMockUploadMessage(raw)` — the server's upload invitation pattern `"You may upload JSON payload -> POST /api/mock/{id}"`. When detected, calls `onOpenModal(uploadPath)` immediately (no debounce, no two-step handshake — the invitation message itself contains the complete target URL).
-
-Key design decisions compared with the other automation hooks:
-
-| Decision | Rationale |
-|---|---|
-| No `waitingForRef` flag | No two-step server handshake; the invitation is self-contained |
-| Watermark NOT reset on disconnect | No pending-wait flag to clear; resetting would replay old invitations on reconnect and auto-open the modal for stale endpoints |
-| `connected` accepted but aliased `_connected` | Symmetry with peer hooks; body does not depend on it |
-| Break on first match per batch | Consistent with `useLargePayloadDownload`; prevents two modal opens in one message batch |
+The two outputs are deliberately separate: the map is stable across re-renders (same `messages` array → same map reference), while the bus emission is a one-shot side-effect.
 
 ---
 
-### 6.9 Utilities
+### 6.9 Automation Hooks
+
+All automation hooks now subscribe to the `ProtocolBus` instead of scanning messages directly. The common pattern:
+
+```
+useEffect (runs once at mount):
+  const unsub = bus.on('event.kind', (event) => {
+    // act on event
+  });
+  return () => unsub();
+```
+
+Because `bus` is a stable `useRef` object, the subscription effect runs only once. Hooks read mutable state through refs (e.g. `connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`) to avoid stale closures without adding dependencies.
+
+#### `useAutoGraphRefresh`
+
+Subscribes to:
+- `bus.on('graph.link')` — when `waitingForDescribeRef` is true, consumes the graph path and calls `setPinnedGraphPath`
+- `bus.on('graph.mutation')` — arms a 300 ms debounce timer; on fire, sends `describe graph` silently
+
+**Stale-closure fix**: `pinnedGraphPath` is read via `pinnedGraphPathRef` inside the debounce timer callback — if it were read directly from closure it would be stale after subsequent renders. Same pattern for `connectedRef` and `sendRawTextRef`.
+
+Disconnect cleanup ([L44](../src/hooks/useAutoGraphRefresh.ts#L44)): when `connected` flips to false, pending debounce timers are cleared and `waitingForDescribeRef` is reset.
+
+#### `useAutoMarkdownPin`
+
+Subscribes to:
+- `bus.on('command.helpOrDescribe')` — sets `waitingForResponseRef = true`
+- `bus.on('docs.response')` — when `waitingForResponseRef` is true, pins the message via `setPinnedMessageId` and calls `onAutoPin()` to switch the tab
+
+**clearWaiting subscriptions** — subscribes to `json.response`, `graph.link`, `upload.invitation`, `lifecycle`, and `payload.large` to reset `waitingForResponseRef = false` when a non-docs response arrives (so the waiting state doesn't persist across unrelated commands).
+
+**Critical guard**: The `docs.response` classifier rule in `classifier.ts` (Rule 11, [L155](../src/protocol/classifier.ts#L155)) already excludes echoes, graph-links, mock-upload invitations, large-payload notices, JSON responses, and lifecycle messages — the hook no longer needs its own `isPinnableResponse` filter.
+
+#### `useLargePayloadDownload`
+
+Subscribes to `bus.on('payload.large')`. An `isFetchingRef` ([L25](../src/hooks/useLargePayloadDownload.ts#L25)) re-entrancy guard prevents concurrent fetches. When the event fires, retrieves `event.apiPath`, fetches the endpoint, pretty-prints JSON, and calls `appendMessage(content)` to inject the result into the console.
+
+#### `useAutoMockUpload`
+
+Subscribes to `bus.on('upload.invitation')` ([L31](../src/hooks/useAutoMockUpload.ts#L31)). Uses `pendingModalRef` ([L22](../src/hooks/useAutoMockUpload.ts#L22)) as a first-match guard — only the first invitation in a batch opens the modal. A `modalOpen: boolean` prop ([L8](../src/hooks/useAutoMockUpload.ts#L8)) tracks the modal's open/closed state; a dedicated clearing effect ([L26](../src/hooks/useAutoMockUpload.ts#L26)) resets `pendingModalRef` to `false` when `modalOpen` flips from `true` to `false`, so the next server invitation will trigger the modal normally.
+
+Note: the `connected` prop is still accepted for interface symmetry with peer hooks but has no effect on the hook's behaviour — its JSDoc describes exactly why the watermark pattern was **not** reset on disconnect (replaying stale invitations on reconnect would be worse than missing a new one).
+
+#### `useGraphSaveName`
+
+Subscribes to `bus.on('command.importGraph')` ([L99](../src/hooks/useGraphSaveName.ts#L99)) — clears `lastSavedName` to `null` when a new `import graph from {name}` echo arrives, so the imported name takes over immediately. See §3.13 for the full priority logic.
+
+---
+
+### 6.10 Utilities
 
 #### `src/utils/messageParser.ts`
 
-The classification engine for all WebSocket messages. Key exports:
+The low-level classification engine for WebSocket messages. These functions are now called by the Protocol Kernel's `classifier.ts` instead of being invoked directly by automation hooks (though they remain exported for use in `ConsoleMessage` rendering). Key exports:
 
 | Function | Purpose |
 |---|---|
 | `parseMessage(raw)` | Parse JSON or return raw as `{type:'raw'}` |
 | `tryParseJSON(str)` | Returns `{isJSON, data}` — only true for objects/arrays, not primitives |
-| `isMarkdownCandidate(raw)` | True for non-JSON strings; false for JSON lifecycle events |
+| `isMarkdownCandidate(raw)` | True for non-JSON strings; false for **any** valid JSON object or array |
 | `isGraphLinkMessage(raw)` | True when the message contains `/api/graph/model/...` |
 | `isLargePayloadMessage(raw)` | True for `"Large payload (N) -> GET ..."` |
 | `isMockUploadMessage(raw)` | True for `"You may upload … -> POST /api/mock/..."` upload invitations |
@@ -711,7 +840,7 @@ HTTP API paths are always **relative** — the Vite proxy forwards them in dev; 
 
 ---
 
-### 6.10 Navigation Bar
+### 6.11 Navigation Bar
 
 **`Navigation.tsx`** reads all playground configs and renders two dropdown menus built on `NavMenu`:
 
@@ -734,7 +863,7 @@ The aggregate dot status across all playgrounds uses `aggregateDotStatus()`:
 
 ---
 
-### 6.11 Saved Graphs
+### 6.12 Saved Graphs
 
 **`useSavedGraphs(storageKey)`** manages a `Record<string, SavedGraphEntry>` in localStorage. The data model stores only the graph **name** (a string), not the graph data itself — the server holds the actual file.
 
@@ -771,7 +900,7 @@ Priority (highest → lowest):
 
 The counter increment rule: `untitled-{n}` only advances to `untitled-{n+1}` when `untitled-{n}` was actually saved (i.e. `setLastSavedName` was called with a name matching the current untitled fallback). Clearing the console without ever saving reuses the same slot. This guarantees `untitled-2` never appears unless `untitled-1` was saved first.
 
-`importedName` always supersedes `lastSavedName` for a new import: the import-echo scanner calls `setLastSavedNameState(null)` immediately when a fresh `> import graph from {name}` arrives — `lastSavedName` is cleared in the same effect pass that sets `importedName`, so the priority chain reflects the new state in the very next render.
+`importedName` always supersedes `lastSavedName` for a new import: the `bus.on('command.importGraph')` subscription calls `setLastSavedNameState(null)` immediately when a fresh `> import graph from {name}` arrives — `lastSavedName` is cleared in the same callback that sets `importedName`, so the priority chain reflects the new state in the very next render.
 
 See §3.13 for the full feature description and all code locations.
 
@@ -807,9 +936,9 @@ See §3.13 for the full feature description and all code locations.
 
 ### 7.4 Message Watermark Pattern
 
-**Decision:** All three automation hooks (`useAutoGraphRefresh`, `useAutoMarkdownPin`, `useLargePayloadDownload`) initialise a watermark ref at mount to the highest ID in the existing log.
+**Decision:** The `useProtocolKernel` hook centralises the watermark — a single `watermarkRef` ([L37](../src/protocol/useProtocolKernel.ts#L37)) that gates bus emission so that only messages newer than the watermark are emitted. Individual automation hooks no longer maintain their own watermarks.
 
-**Why:** Without this, a `useEffect` that runs on the initial `messages` dependency would scan every historical message as if it were new — triggering spurious mutations, auto-pins, or payload downloads for messages that arrived before the component mounted (e.g. from a previous session's localStorage-restored messages or from messages received while the user was on a different playground tab).
+**Why:** Without the watermark, mounting `useProtocolKernel` into an existing message log would emit every historical message as a new event — triggering spurious mutations, auto-pins, or payload downloads. Previously each of the five automation hooks maintained its own watermark; centralising this into one watermark in `useProtocolKernel` eliminates redundancy and ensures all hooks agree on what has already been processed.
 
 ---
 
@@ -867,6 +996,18 @@ The hook has two distinct code paths:
 
 ---
 
+### 7.11 Protocol Bus — Why Not React Context?
+
+**Decision:** The `ProtocolBus` is a plain class stored in a `useRef`, not a React Context provider.
+
+**Why:** The bus connects effects to effects — none of its state drives rendering. Putting it in Context would cause every consumer component to re-render whenever the bus’s internal listener map changes. As a `useRef`, the bus has a stable identity for the lifetime of the `Playground` component, and subscriptions are managed entirely in `useEffect` cleanup functions.
+
+**Classify-once, emit-to-many:** Because `classifyMessage` is a pure function and `useProtocolKernel` classifies each message exactly once, all downstream hooks receive the same event objects. This prevents subtle bugs where two hooks would classify the same message differently (e.g. due to regex flag differences or parser updates that landed in one hook but not another).
+
+**Ref-wrapping for stable subscriptions:** Automation hooks read mutable state through refs (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, `onAutoPinRef`) so their bus subscription callbacks never close over stale values. This is critical because the `bus.on()` subscription runs only once (the bus reference never changes), so the callback must be able to read current state without being a React dependency.
+
+---
+
 ## 8. Data & Message Flows
 
 ### 8.1 User Sends a Command
@@ -893,11 +1034,12 @@ Server sends response (JSON or plain text)
 
 ```
 User clicks 🕸️ row in Console → handlePinMessage(msg)
-  → extractGraphApiPath(msg.raw) → "/api/graph/model/ws-123-1"
-  → setPinnedGraphPath("/api/graph/model/ws-123-1")
+  → classificationMap.get(msg.id) → events[]
+  → find event with kind === 'graph.link' → event.apiPath
+  → setPinnedGraphPath(event.apiPath)
   → setPinnedMessageId(msg.id)   — highlights the row
   → useGraphData effect fires:
-      fetch("/api/graph/model/ws-123-1")
+      fetch(event.apiPath)
       → transformGraphData(json)  — BFS layout + ReactFlow nodes/edges
       → setGraphData(result)
       → setRightTab('graph')      — tab switches automatically
@@ -907,18 +1049,20 @@ User clicks 🕸️ row in Console → handlePinMessage(msg)
 
 ```
 User sends "create node foo" → ws.sendCommand()
-Server echoes "> create node foo"   — ignored by useAutoGraphRefresh
-Server responds "Node foo created"  — detectMutation → 'node-mutation'
-  → 300 ms debounce arms
+Server echoes "> create node foo"   — ignored by classifier (command.echo kind)
+Server responds "Node foo created"  — classifier emits graph.mutation event
+  → useAutoGraphRefresh.on('graph.mutation'):
+      arms 300 ms debounce timer
   → (300 ms passes, no further mutations)
-  → sendRawText('describe graph')   — silent, no history entry
+  → sendRawTextRef.current('describe graph')   — silent, no history entry
   → waitingForDescribeRef = true
 
-Server echoes graph-link "Graph described in /api/graph/model/ws-123-2"
-  → useAutoGraphRefresh Pass 1: waitingForDescribeRef === true
-  → extractGraphApiPath → "/api/graph/model/ws-123-2"
-  → setPinnedGraphPath("/api/graph/model/ws-123-2")
-  → waitingForDescribeRef = false
+Server emits graph-link "Graph described in /api/graph/model/ws-123-2"
+  → classifier emits graph.link event
+  → useAutoGraphRefresh.on('graph.link'):
+      waitingForDescribeRef === true
+      → setPinnedGraphPath(event.apiPath)
+      → waitingForDescribeRef = false
 
   → useGraphData initial-load path:
       fetch("/api/graph/model/ws-123-2")
@@ -948,10 +1092,15 @@ User pastes JSON in PayloadEditor, clicks Upload
       ctx.send(wsPath, 'upload')
 
 Server responds: "Please upload XML/JSON text to /api/json/content/ws-123-1"
-  → useWebSocket effect detects extractUploadPath
-  → pendingUploadRef = false
-  → fetch POST /api/json/content/ws-123-1  body: payload JSON
-  → addToast('Payload uploaded successfully')
+  → classifier emits upload.contentPath event
+  → useWebSocket.on('upload.contentPath'):  [bus-based path]
+      pendingUploadRef === true
+      → pendingUploadRef = false  (cleared synchronously before fetch)
+      → fetch POST /api/json/content/ws-123-1  body: payload JSON
+      → addToast('Payload uploaded successfully')
+
+  (If bus is not provided, a legacy useEffect watches messages
+   for extractUploadPath and follows the same logic)
 ```
 
 ### 8.6 Mock-Data Upload Flow
@@ -959,11 +1108,13 @@ Server responds: "Please upload XML/JSON text to /api/json/content/ws-123-1"
 ```
 User sends "upload mock data" → ws.sendCommand()
 Server responds: "You may upload JSON payload -> POST /api/mock/ws-417669-24"
-  → useAutoMockUpload detects isMockUploadMessage (watermark-guarded)
-  → extractMockUploadPath → "/api/mock/ws-417669-24"
-  → handleOpenUploadModal("/api/mock/ws-417669-24")
-      modalTriggerRef.current = document.activeElement   (command input)
-      setModalUploadPath("/api/mock/ws-417669-24")        → modal mounts + showModal()
+  → classifier emits upload.invitation event
+  → useAutoMockUpload.on('upload.invitation'):
+      pendingModalRef guard check
+      → extractMockUploadPath → "/api/mock/ws-417669-24"
+      → handleOpenUploadModal("/api/mock/ws-417669-24")
+          modalTriggerRef.current = document.activeElement   (command input)
+          setModalUploadPath("/api/mock/ws-417669-24")        → modal mounts + showModal()
 
 ConsoleMessage renders the invitation row with ⬆️ icon + "⬆️ Upload JSON…" button
 
@@ -1073,10 +1224,13 @@ WS echo: "> import graph from other-graph"
 | Last-saved name | `useState` in `useGraphSaveName` | Memory only | Cleared on import or reset |
 | Imported graph name | `useState` in `useGraphSaveName` | Memory only | Set from WS echo; cleared on reset |
 | Untitled slot consumed | `useRef` in `useGraphSaveName` | Memory only | Write-only flag; never drives a re-render |
-| Multiline mode | `useState` in `Playground` | Memory only | |
 | Toasts | `useReducer` in `useToast` | Memory only | Auto-expires |
 | Panel split ratio | `react-resizable-panels` | `localStorage` | Keyed per route path |
-| Automation watermarks | `useRef` in automation hooks | Memory only | Per hook instance |
+| Autocomplete dropup state | `useState` in `useHistoryAutocomplete` | Memory only | `isOpen`, `activeIndex`; resets on unmount — intentional |
+| ProtocolBus | `useRef` in `Playground` | Memory only | Stable identity for component lifetime; never triggers re-renders |
+| Classification map | `useMemo` in `useProtocolKernel` | Memory only | `Map<number, ProtocolEvent[]>` — re-derived when `messages` changes |
+| Protocol watermark | `useRef` in `useProtocolKernel` | Memory only | Single centralised watermark; replaces per-hook watermarks |
+| Pending modal ref | `useRef` in `useAutoMockUpload` | Memory only | First-match guard; reset by `modalOpen` clearing effect |
 
 ---
 
@@ -1086,13 +1240,25 @@ WS echo: "> import graph from other-graph"
 
 ```bash
 # Start the Java backend (in examples/minigraph-playground)
-java -jar target/minigraph-playground-4.3.77.jar   # port 8085
+java -jar target/minigraph-playground-4.3.83.jar   # port 8085
 
 # Start the Vite dev server (in webapp/)
 npm run dev   # port 3000, proxies /ws and /api to 8085
 ```
 
 Open `http://localhost:3000`. Hot module replacement is active.
+
+### Testing
+
+```bash
+# Run all tests once
+npm run test
+
+# Run with watch mode during development
+npm run test:watch
+```
+
+Tests use Vitest 3 with the built-in `node` environment and `globals: true` (no explicit imports needed for `describe`/`it`/`expect`). The tests are pure TypeScript logic with no DOM or React rendering dependency, so no external testing library is required. Test files live alongside source in `__tests__/` directories. See `vitest.config.ts` for configuration.
 
 ### Production Build + Deploy
 
@@ -1118,16 +1284,6 @@ Manual chunks keep each heavy vendor isolated:
 | `vendor-panels` | `react-resizable-panels` |
 
 Source maps are enabled for production (`sourcemap: true`).
-
-### Upload JSON CLI
-
-`scripts/upload-json.mjs` is a Node.js script for testing the REST upload endpoint directly without the UI:
-
-```bash
-node scripts/upload-json.mjs \
-  --url http://localhost:8085/api/mock/ws-563496-16 \
-  --file ./64.json
-```
 
 ---
 
@@ -1155,6 +1311,17 @@ node scripts/upload-json.mjs \
 
 Edit `detectMutation()` in `messageParser.ts`. Follow the existing patterns — always guard with `!isMarkdownCandidate` (skip JSON), `!raw.startsWith('> ')` (skip echoes), and `!isGraphLinkMessage` (skip graph links). Add the new success message pattern as a return case.
 
+The Protocol Kernel's `classifier.ts` calls `detectMutation()` internally, so no changes to the classifier are needed for new mutation patterns — they will automatically emit `graph.mutation` events.
+
+### Add a new message type to the Protocol Kernel
+
+1. Add a new event variant to the `ProtocolEvent` union in `src/protocol/events.ts`
+2. Add the corresponding `kind` string literal to `ProtocolEventKind`
+3. Add a classification rule in `src/protocol/classifier.ts` (before Rule 12, the unclassified fallback)
+4. Add a test fixture JSON file in `src/protocol/__tests__/fixtures/`
+5. Add golden transcript test cases in `src/protocol/__tests__/classifier.test.ts`
+6. Subscribe to the new event kind in the appropriate hook via `bus.on('new.kind', handler)`
+
 ---
 
 ## 12. Pitfalls & Gotchas
@@ -1169,13 +1336,13 @@ It must stay *above* the router. Inside the router it would unmount on every nav
 The ring buffer drops old messages. Always identify pinned/processed messages by their stable `id`, never by their position in the array. See §7.3.
 
 ### P4 — `detectMutation` requires the `startsWith('node ')` prefix
-Without this guard, `"Graph instance created"` and `"Root node created because..."` trigger false-positive auto-refreshes. Do not remove the prefix check. See §6.9 and §7.4.
+Without this guard, `"Graph instance created"` and `"Root node created because..."` trigger false-positive auto-refreshes. Do not remove the prefix check. See §3.5 and §6.10.
 
 ### P5 — `sendRawText` must be used for silent commands, not `sendCommand`
 `sendCommand` pushes to history and echos the command — the echo would trigger `useAutoMarkdownPin`'s `describe` guard and steal the graph-link response. See §7.5.
 
-### P6 — Watermarks must be set in a separate `useEffect` with an empty dep array
-The watermark init must run *before* the main scanning effect at mount, not inside it. React guarantees effects in a component run in declaration order on the first render, so declaring it first works. Merging it into the main effect would process historical messages as new ones. See §7.4.
+### P6 — The centralised watermark in `useProtocolKernel` must initialise before the emission effect
+The watermark init effect ([L40](../src/protocol/useProtocolKernel.ts#L40)) must run *before* the bus emission effect ([L56](../src/protocol/useProtocolKernel.ts#L56)) at mount. React guarantees effects in a component run in declaration order on the first render, so declaring the watermark init first works. Merging them into a single effect would process historical messages as new events. See §7.4.
 
 ### P7 — `payloadOverride` must be cleared on manual edits
 The `setPayload` callback does `setPayloadOverride(null)` before calling `setStoredPayload`. If you add a new code path that modifies the payload, ensure it also clears the override so the user's edit is not silently discarded. See §7.10.
@@ -1189,13 +1356,16 @@ The payload override pattern exists precisely for this reason. Never call `setSt
 ### P10 — ReactFlow node type must be in `nodeTypes` map
 If the backend sends a node whose `types[0]` value is not a key in the `nodeTypes` map in `NodeTypes.tsx`, ReactFlow will render a default node without the custom styling. Add new types to all four places listed in §11.
 
-### P11 — `isPinnable` must exclude mock-upload invitation rows
-The upload invitation is plain text, so `isMarkdownCandidate` returns `true` for it. Without the `&& !isMockUpload` guard in the `isPinnable` derivation in `ConsoleMessage.tsx`, the row would receive `role="button"` and `onClick` *alongside* the "⬆️ Upload JSON…" re-open button — creating nested interactive elements that violate WCAG. Always keep the `!isMockUpload` exclusion. See §3.12 and §6.5.
+### P11 — `isPinnable` must exclude mock-upload and large-payload rows
+The upload invitation is plain text, so `isMarkdownCandidate` returns `true` for it. Without the `&& !isMockUpload && !isLargePayload` guard in the `isPinnable` derivation in `ConsoleMessage.tsx` ([L51](../src/components/Console/ConsoleMessage.tsx#L51)), the row would receive `role="button"` and `onClick` *alongside* the "⬆️ Upload JSON…" re-open button — creating nested interactive elements that violate WCAG. Always keep both exclusions. See §3.12 and §6.5.
 
-### P12 — `useAutoMarkdownPin.isPinnableResponse` must exclude mock-upload invitations
-Same plain-text nature: if `waitingForResponseRef` is armed (user sent `help`, then quickly ran `upload mock data`), the invitation message passes `isMarkdownCandidate` and would be stolen as the "response" and pinned to the Developer Guides tab. The `isMockUploadMessage` exclusion in `isPinnableResponse` prevents this. Do not remove it. See §6.8.
+### P12 — `docs.response` classifier rule must exclude all non-docs message types
+The `docs.response` classification rule in `classifier.ts` ([L155](../src/protocol/classifier.ts#L155)) excludes echoes, graph-links, mock-upload invitations, large-payload notices, JSON responses, and lifecycle messages. If a new message type is added that is plain text, it must also be excluded from `docs.response` to prevent it from being stolen as an auto-pin target. See §6.8 and §6.9.
 
-### P13 — Do not reset `useAutoMockUpload`'s watermark on disconnect
-Unlike the other automation hooks, this hook has no pending-wait flag to clear on disconnect. Resetting the watermark to `−1` on disconnect would cause invitation messages still in the store to be replayed as "new" on reconnect, auto-opening the modal for a stale endpoint from a previous session. Leave the watermark at its current value. See §6.8.
+### P13 — Bus subscription callbacks must read mutable state through refs
+Because `bus.on()` registers a callback only once (the bus `useRef` identity never changes), any React state read inside the callback would be stale after subsequent renders. All automation hooks use ref-wrapping (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, `onAutoPinRef`) to access current values. Adding a new bus subscriber that reads state directly from closure will produce stale-closure bugs. See §7.11.
+
+### P14 — `classificationMap` identity changes on every new message
+The `classificationMap` is a `useMemo` that re-derives when `messages` changes. Components that receive it as a prop will see a new `Map` reference on every new WebSocket message. This is intentional — React Compiler handles memoisation — but avoid using `classificationMap` as a `useEffect` dependency without wrapping the effect in additional guards, as it will fire on every message.
 
 ---

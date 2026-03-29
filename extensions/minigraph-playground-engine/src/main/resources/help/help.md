@@ -39,6 +39,7 @@ For instance model
 - help execute (skill of a specific node. Graph traversal is paused to enable functional test in isolation.)
 - help inspect (state-machine for properties of nodes, input, output and model namespaces)
 - help run (execute a graph instance from a root node to the end node, if any, using graph traversal.)
+- help seen (display the nodes that have been seen or executed)
 
 Built-in skills
 ---------------
@@ -49,3 +50,7 @@ Built-in skills
 5. graph.extension - issue API call to another graph model
 6. graph.island - this indicates that the node leads to isolated nodes and graph traversal would pause
 7. graph.join - a node with this skill will wait for completion of all nodes that connect to it
+
+Tutorials
+---------
+- help tutorial 1 (hello world)

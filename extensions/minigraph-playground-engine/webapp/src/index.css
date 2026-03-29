@@ -27,6 +27,14 @@
   --code-text:          #86efac;   /* green-300 — inline code highlight colour */
   --disabled-bg:        #e9ecef;
   --input-focus-border: var(--primary-color);
+  --autocomplete-highlight: rgba(37, 99, 235, 0.1);  /* blue-600 at 10% — matches --primary-color */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 20% opacity passes WCAG SC 1.4.11 Non-text Contrast on --bg-dark: #1e293b */
+    --autocomplete-highlight: rgba(37, 99, 235, 0.2);
+  }
 }
 
 @keyframes pulse {

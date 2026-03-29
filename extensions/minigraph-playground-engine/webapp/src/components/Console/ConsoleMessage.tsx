@@ -1,11 +1,14 @@
-import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate, isGraphLinkMessage, isLargePayloadMessage, isMockUploadMessage, extractMockUploadPath } from '../../utils/messageParser';
+import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate } from '../../utils/messageParser';
 import { JsonView, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import styles from './Console.module.css';
+import type { ProtocolEvent, UploadInvitationEvent } from '../../protocol/events';
 
 interface ConsoleMessageProps {
   message:              string;
+  msgId?:               number;
+  classificationMap?:   Map<number, ProtocolEvent[]>;
   /** Called when the user clicks/activates this row to pin it. The parent
    *  is responsible for capturing the message identity — this component
    *  just signals the intent. */
@@ -31,15 +34,16 @@ interface ConsoleMessageProps {
   successfulUploadPaths?: Set<string>;
 }
 
-export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, onSendToJsonPath, onUploadMockData, successfulUploadPaths }: ConsoleMessageProps) {
+export default function ConsoleMessage({ message, msgId, classificationMap, onPin, pinned, onCopyMessage, onSendToJsonPath, onUploadMockData, successfulUploadPaths }: ConsoleMessageProps) {
   const parsed    = parseMessage(message);
   const icon      = getMessageIcon(parsed.type);
   const jsonCheck = tryParseJSON(parsed.message);
 
-  const isGraphLink      = isGraphLinkMessage(message);
-  const isLargePayload   = isLargePayloadMessage(message);
-  const isMockUpload     = isMockUploadMessage(message);
-  const mockUploadPath   = isMockUpload ? extractMockUploadPath(message) : null;
+  const events           = (msgId !== undefined ? classificationMap?.get(msgId) : undefined) ?? [];
+  const isGraphLink      = events.some(e => e.kind === 'graph.link');
+  const isLargePayload   = events.some(e => e.kind === 'payload.large');
+  const isMockUpload     = events.some(e => e.kind === 'upload.invitation');
+  const mockUploadPath   = (events.find(e => e.kind === 'upload.invitation') as UploadInvitationEvent | undefined)?.uploadPath ?? null;
   const canUploadMock    = !!onUploadMockData && isMockUpload && mockUploadPath !== null;
   const uploadSucceeded  = canUploadMock && !!successfulUploadPaths?.has(mockUploadPath!);
 
@@ -47,7 +51,7 @@ export default function ConsoleMessage({ message, onPin, pinned, onCopyMessage, 
   // from getting role="button" + onClick alongside the canUploadMock button,
   // which would create a nested interactive element violating WCAG.
   // Consistent with isLargePayload rows which are also non-pinnable.
-  const isPinnable       = !!onPin && !isMockUpload && (!isGraphLink ? isMarkdownCandidate(message) : true);
+  const isPinnable       = !!onPin && !isMockUpload && !isLargePayload && (!isGraphLink ? isMarkdownCandidate(message) : true);
   const pinTitle         = isGraphLink
     ? 'Click to load graph in Graph View'
     : 'Click to pin to Developer Guides';

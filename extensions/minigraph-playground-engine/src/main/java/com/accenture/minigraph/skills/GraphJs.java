@@ -156,6 +156,9 @@ public class GraphJs extends GraphLambdaFunction {
                 command = command.replace('\n', ' ');
                 handleDataMappingEntry(nodeName, command, graphInstance);
             }
+            if (RESET_TAG.equals(tag)) {
+                resetNodes(command, graphInstance);
+            }
         }
         return NEXT;
     }

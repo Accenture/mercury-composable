@@ -104,7 +104,8 @@ class PlaygroundTest {
             "hello -> helloworld removed", "connect hello to xyz with test");
 
     private static final Map<String, Object> dialog4 = Map.of("node xyz not found", "export graph as hello",
-            "Graph exported", "describe graph",
+            "Graph exported", "seen",
+            "Total", "describe graph",
             "Graph with", "import node extension from hello",
             "node extension overwritten", "clear cache",
             "cache cleared", "upload mock data",
@@ -246,6 +247,9 @@ class PlaygroundTest {
                 }
                 if (next instanceof String nextCommand) {
                     po.send(txPath, nextCommand);
+                }
+                if (message.startsWith("Total")) {
+                    log.info("{}", message);
                 }
                 if (message.startsWith("You may upload")) {
                     var parts = util.split(message, " ");

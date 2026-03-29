@@ -271,8 +271,36 @@ public class GraphCommandService extends GraphLambdaFunction {
                 words.get(1).equalsIgnoreCase("mock") &&
                 words.get(2).equalsIgnoreCase("data")) {
             handleUploadMockCommand(po, inRoute, outRoute);
+        } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase("seen")) {
+            handleSeenCommand(po, inRoute, outRoute);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+        }
+    }
+
+    private void handleSeenCommand(PostOffice po, String inRoute, String outRoute) {
+        var graphInstance = getGraphInstance(inRoute);
+        if (graphInstance != null) {
+            var root = new AtomicBoolean(false);
+            var end = new AtomicBoolean(false);
+            var nodes = new ArrayList<String>();
+            graphInstance.nodeSeen.forEach((k, v) -> {
+                if (k.equals(ROOT)) {
+                    root.set(true);
+                } else if (k.equals(END)) {
+                    end.set(true);
+                } else {
+                    nodes.add(k);
+                }
+            });
+            Collections.sort(nodes);
+            var result = new ArrayList<String>();
+            if (root.get()) result.add(ROOT);
+            result.addAll(nodes);
+            if (end.get()) result.add(END);
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Total "+result.size()+
+                                                " node"+(result.size() == 1? "" : "s")+" have been seen"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(result));
         }
     }
 
@@ -450,7 +478,7 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
         var stateMachine = getGraphInstance(inRoute).stateMachine;
-        var value = stateMachine.getElement(key, false);
+        var value = stateMachine.getElement(key, Collections.emptyMap());
         if (value instanceof Map || value instanceof List) {
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(value);
             if (text.length() > MAX_BUFFER_SIZE) {
@@ -489,6 +517,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var cid = util.getUuid();
         var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
         if (po.exists(skillRoute)) {
+            graphInstance.nodeSeen.put(nodeName, true);
             po.eRequest(new EventEnvelope().setTo(skillRoute)
                             .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)
                     .thenAccept(response -> {
