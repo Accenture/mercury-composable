@@ -1,7 +1,8 @@
 Tutorial 1
 ----------
 Welcome to the MiniGraph Playground, the self-service user interface for creating amazing applications
-using Active Knowledge Graph.
+using [Active Knowledge Graph](https://accenture.github.io/mercury-composable/guides/CHAPTER-11/)
+(*right-click to open new tab*).
 
 Let's get started.
 
@@ -67,9 +68,12 @@ The "skill=graph.data.mapper" assigns the data mapper function to the end node.
 In a data mapper, you can do data mapping. 
 
 The mapping statement `mapping[]=text(hello world) -> output.body` tells the
-system to map the constant "hello world" to the `output.body` that is the response
-payload when the graph is executed. The "[]" syntax means append the data mapping statement
-to a list of statements.
+system to map the constant "hello world" to `output.body` that is the response
+payload when the graph is executed. The `[]` syntax means it is a list of statements.
+
+The MiniGraph system uses the same Event Script's data mapping syntax. For more details, please refer to
+[Data Mapping Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/#tasks-and-data-mapping)
+(*right-click to open new tab*).
 
 First attempt to run a graph
 ----------------------------
@@ -162,19 +166,19 @@ You may now export the graph so that you can deploy it to production.
 Enter the export command below:
 
 ```terminaloutput
-export graph as helloworld
+export graph as tutorial-1
 ```
 
-This will export the graph model in JSON format with the name `helloworld`
+This will export the graph model in JSON format with the name `tutorial-1`
 in "/tmp/graph/helloworld.json"
 
 The console displays:
 
 ```terminaloutput
-> export graph as helloworld
-Added name=helloworld to Root node
-Graph exported to /tmp/graph/helloworld.json
-Described in /api/graph/model/helloworld/436-4
+> export graph as tutorial-1
+Added name=tutorial-1 to Root node
+Graph exported to /tmp/graph/tutorial-1.json
+Described in /api/graph/model/tutorial-1/436-4
 ```
 
 Note that the system will add the graph name (i.e. unique "id") to the root node.
