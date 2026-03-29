@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/ANNOTATIONS-REFERENCE/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Annotations Reference - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Annotations Reference";
+        var mkdocs_page_input_path = "guides/ANNOTATIONS-REFERENCE.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/ANNOTATIONS-REFERENCE/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-11/">Active Knowledge Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ARCHITECTURE/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Annotations Reference</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#quick-lookup">Quick lookup</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#preload">@PreLoad</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#websocketservice">@WebSocketService</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_1">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_1">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_1">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_1">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_1">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mainapplication">@MainApplication</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_2">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_2">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_2">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_2">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_2">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#beforeapplication">@BeforeApplication</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_3">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_3">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_3">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_3">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_3">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#kernelthreadrunner">@KernelThreadRunner</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_4">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_4">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#when-to-use-vs-virtual-threads">When to use vs. virtual threads</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_4">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#eventinterceptor">@EventInterceptor</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_5">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_4">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_5">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_5">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#zerotracing">@ZeroTracing</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_6">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_6">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_6">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#optionalservice">@OptionalService</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_4">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#expression-syntax">Expression syntax</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_7">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_7">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cloudconnector">@CloudConnector</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_5">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_7">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_5">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_8">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_8">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cloudservice">@CloudService</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#parameters_6">Parameters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_8">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_6">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_9">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_9">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#simpleplugin">@SimplePlugin</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#behavior_9">Behavior</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#required-interface_7">Required interface</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example_10">Example</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#notes_10">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#annotation-combinations">Annotation combinations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#required-interfaces">Required interfaces</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#interface-signatures">Interface signatures</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#component-scanning">Component scanning</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION-REFERENCE/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Annotations Reference</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="annotations-reference">Annotations Reference</h1>
+<p><em>Reference: Complete reference for all Mercury Composable Java annotations.</em></p>
+<p>Mercury Composable uses annotations to declare composable functions, control execution
+behavior, and manage application lifecycle. This page documents every annotation with
+its full parameter set, behavior, and usage examples.</p>
+<p>All core annotations are in the <code>org.platformlambda.core.annotations</code> package.
+The <code>@SimplePlugin</code> annotation is in <code>com.accenture.models</code> (event-script-engine module).</p>
+<hr />
+<h2 id="quick-lookup">Quick lookup</h2>
+<table>
+<thead>
+<tr>
+<th>Annotation</th>
+<th>Category</th>
+<th>Parameters</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#preload"><code>@PreLoad</code></a></td>
+<td>Service registration</td>
+<td>8</td>
+<td>Register a composable function at startup</td>
+</tr>
+<tr>
+<td><a href="#websocketservice"><code>@WebSocketService</code></a></td>
+<td>Service registration</td>
+<td>2</td>
+<td>Register a WebSocket endpoint handler</td>
+</tr>
+<tr>
+<td><a href="#mainapplication"><code>@MainApplication</code></a></td>
+<td>Lifecycle</td>
+<td>1</td>
+<td>Application entry point</td>
+</tr>
+<tr>
+<td><a href="#beforeapplication"><code>@BeforeApplication</code></a></td>
+<td>Lifecycle</td>
+<td>1</td>
+<td>Pre-startup initialization hook</td>
+</tr>
+<tr>
+<td><a href="#kernelthreadrunner"><code>@KernelThreadRunner</code></a></td>
+<td>Execution control</td>
+<td>0</td>
+<td>Run in kernel thread pool instead of virtual threads</td>
+</tr>
+<tr>
+<td><a href="#zerotracing"><code>@ZeroTracing</code></a></td>
+<td>Execution control</td>
+<td>0</td>
+<td>Suppress distributed tracing</td>
+</tr>
+<tr>
+<td><a href="#eventinterceptor"><code>@EventInterceptor</code></a></td>
+<td>Execution control</td>
+<td>0</td>
+<td>Receive raw <code>EventEnvelope</code> as input</td>
+</tr>
+<tr>
+<td><a href="#optionalservice"><code>@OptionalService</code></a></td>
+<td>Conditional loading</td>
+<td>1</td>
+<td>Load only when a config condition is true</td>
+</tr>
+<tr>
+<td><a href="#cloudconnector"><code>@CloudConnector</code></a></td>
+<td>Cloud integration</td>
+<td>2</td>
+<td>Service mesh connector plug-in</td>
+</tr>
+<tr>
+<td><a href="#cloudservice"><code>@CloudService</code></a></td>
+<td>Cloud integration</td>
+<td>2</td>
+<td>Cloud service plug-in</td>
+</tr>
+<tr>
+<td><a href="#simpleplugin"><code>@SimplePlugin</code></a></td>
+<td>Event Script</td>
+<td>0</td>
+<td>Event Script <code>f:</code> function plug-in</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="preload">@PreLoad</h2>
+<p>Registers a class as a composable function with the event system at startup. This is the
+most frequently used annotation in Mercury — every composable function requires it.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code> (class-level)
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>route</code></td>
+<td><code>String</code></td>
+<td><em>(required)</em></td>
+<td>Route name(s) for this function. Use lowercase with dots (e.g. <code>"v1.get.profile"</code>). Comma-separate multiple routes to register the same function under several names.</td>
+</tr>
+<tr>
+<td><code>instances</code></td>
+<td><code>int</code></td>
+<td><code>1</code></td>
+<td>Maximum concurrent worker instances. Range 1–1000. Controls how many events this function can handle simultaneously.</td>
+</tr>
+<tr>
+<td><code>envInstances</code></td>
+<td><code>String</code></td>
+<td><code>""</code></td>
+<td>Override <code>instances</code> from an application property or environment variable. Syntax: <code>"${SOME_VAR:default}"</code>. Takes precedence over <code>instances</code> when the property is present.</td>
+</tr>
+<tr>
+<td><code>isPrivate</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td><code>true</code> = accessible only within this JVM. <code>false</code> = published to the service mesh and reachable from other instances via PostOffice or Event-over-HTTP.</td>
+</tr>
+<tr>
+<td><code>inputPojoClass</code></td>
+<td><code>Class&lt;?&gt;</code></td>
+<td><code>Void.class</code></td>
+<td>Hint for deserializing <code>List&lt;T&gt;</code> input. Set when the function accepts a list of PoJos and the generic type is erased at runtime (e.g. <code>inputPojoClass = MyPojo.class</code>).</td>
+</tr>
+<tr>
+<td><code>customSerializer</code></td>
+<td><code>Class&lt;?&gt;</code></td>
+<td><code>Void.class</code></td>
+<td>Custom serializer class implementing <code>CustomSerializer</code>. Overrides <code>inputStrategy</code>/<code>outputStrategy</code> for this function. Use when the default Gson/MsgPack serialization is insufficient for a PoJo type.</td>
+</tr>
+<tr>
+<td><code>inputStrategy</code></td>
+<td><code>SerializationStrategy</code></td>
+<td><code>DEFAULT</code></td>
+<td>Input deserialization case convention. <code>DEFAULT</code> — inherits global <code>snake.case.serialization</code>. <code>SNAKE</code> — forces snake_case. <code>CAMEL</code> — forces camelCase.</td>
+</tr>
+<tr>
+<td><code>outputStrategy</code></td>
+<td><code>SerializationStrategy</code></td>
+<td><code>DEFAULT</code></td>
+<td>Output serialization case convention. Same values as <code>inputStrategy</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavior">Behavior</h3>
+<p>During application startup the framework scans packages listed in <code>web.component.scan</code> for
+classes annotated with <code>@PreLoad</code>. Each annotated class is instantiated (requires a default
+no-arg constructor), validated against the required interface, and registered in the
+Platform singleton under each route name. Worker instances are created on demand up to the
+<code>instances</code> limit; excess requests queue until a worker is free.</p>
+<h3 id="required-interface">Required interface</h3>
+<p>The annotated class must implement <code>TypedLambdaFunction&lt;I, O&gt;</code> or <code>LambdaFunction</code>.</p>
+<h3 id="example">Example</h3>
+<pre><code class="language-java">// Basic registration
+@PreLoad(route = &quot;v1.get.profile&quot;, instances = 100)
+public class GetProfile implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Profile&gt; {
+
+    @Override
+    public Profile handleEvent(Map&lt;String, String&gt; headers,
+                               Map&lt;String, Object&gt; input, int instance) throws Exception {
+        String profileId = headers.get(&quot;profile_id&quot;);
+        return profileService.findById(profileId);
+    }
+}
+
+// Public function with serialization strategy
+@PreLoad(route = &quot;v1.search.users&quot;, instances = 50, isPrivate = false,
+         outputStrategy = SerializationStrategy.CAMEL)
+public class SearchUsers implements TypedLambdaFunction&lt;SearchRequest, List&lt;UserRecord&gt;&gt; { ... }
+
+// Multiple routes from one class
+@PreLoad(route = &quot;greeting.case.1, greeting.case.2&quot;, instances = 10)
+public class Greetings implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; { ... }
+
+// Instance count from environment variable
+@PreLoad(route = &quot;v1.heavy.task&quot;, envInstances = &quot;${HEAVY_TASK_INSTANCES:10}&quot;)
+public class HeavyTask implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; { ... }
+</code></pre>
+<h3 id="notes">Notes</h3>
+<ul>
+<li>Route names must be lowercase letters, digits, and dots. At least one dot is required.</li>
+<li>Multiple routes: each name gets a full, independent set of <code>instances</code> workers.</li>
+<li>The <code>instance</code> parameter in <code>handleEvent</code> indicates which worker is executing (0-based).</li>
+<li>Spring Boot (<code>rest-spring-3</code> module): field injection (<code>@Autowired</code>, <code>@Value</code>) works.
+  Constructor injection does NOT work because instances are created before the Spring context.</li>
+<li><code>@PreLoad</code> can be combined with <code>@KernelThreadRunner</code>, <code>@EventInterceptor</code>, <code>@ZeroTracing</code>,
+  and <code>@OptionalService</code> on the same class.</li>
+<li>Runtime instance count override (without recompiling):
+  set <code>worker.instances.&lt;route&gt;=N</code> in <code>application.properties</code>.</li>
+<li>Preload override YAML: use <code>yaml.preload.override</code> to re-map routes or change instance
+  counts for library functions you cannot recompile.</li>
+</ul>
+<hr />
+<h2 id="websocketservice">@WebSocketService</h2>
+<p>Registers a class as a WebSocket endpoint handler.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters_1">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td><code>String</code></td>
+<td><em>(required)</em></td>
+<td>WebSocket endpoint path segment. Combined with <code>namespace</code> to form the full URL: <code>/{namespace}/{value}/{handle}</code>.</td>
+</tr>
+<tr>
+<td><code>namespace</code></td>
+<td><code>String</code></td>
+<td><code>"ws"</code></td>
+<td>URL namespace prefix. Default produces URLs like <code>/ws/hello/{handle}</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavior_1">Behavior</h3>
+<p>At startup the framework registers the annotated class as a handler for the constructed
+WebSocket path. Incoming WebSocket events are delivered via the standard <code>handleEvent</code>
+method with <code>type</code> headers set to <code>"open"</code>, <code>"close"</code>, <code>"bytes"</code>, or <code>"string"</code>.</p>
+<h3 id="required-interface_1">Required interface</h3>
+<p>The annotated class must implement <code>LambdaFunction</code>.</p>
+<h3 id="example_1">Example</h3>
+<pre><code class="language-java">@WebSocketService(&quot;hello&quot;)
+public class WsEchoDemo implements LambdaFunction {
+
+    @Override
+    public Object handleEvent(Map&lt;String, String&gt; headers, Object body,
+                              int instance) throws Exception {
+        String type = headers.get(&quot;type&quot;);
+        if (&quot;string&quot;.equals(type)) {
+            // echo the message back
+            return body;
+        }
+        return null;
+    }
+}
+</code></pre>
+<p>This creates a WebSocket endpoint at <code>/ws/hello/{handle}</code>.</p>
+<h3 id="notes_1">Notes</h3>
+<ul>
+<li>Requires <code>rest.automation=true</code> and either <code>rest.server.port</code> or <code>websocket.server.port</code>.</li>
+<li>Can be combined with <code>@OptionalService</code> for conditional loading.</li>
+<li>To disable WebSocket support, remove both the <code>websocket.server.port</code> property and all
+  <code>@WebSocketService</code> classes.</li>
+</ul>
+<hr />
+<h2 id="mainapplication">@MainApplication</h2>
+<p>Marks the application entry point class. Its <code>start()</code> method is called after the event
+system initialises and all <code>@PreLoad</code> services are registered.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters_2">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sequence</code></td>
+<td><code>int</code></td>
+<td><code>10</code></td>
+<td>Execution order when multiple <code>@MainApplication</code> classes exist. Range 1–999. Lower values run first.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavior_2">Behavior</h3>
+<p>After <code>@BeforeApplication</code> hooks and <code>@PreLoad</code> service registration complete, the
+framework instantiates all <code>@MainApplication</code> classes in <code>sequence</code> order and calls
+<code>start(String[] args)</code> on each.</p>
+<h3 id="required-interface_2">Required interface</h3>
+<p>The annotated class must implement <code>EntryPoint</code>.</p>
+<h3 id="example_2">Example</h3>
+<pre><code class="language-java">@MainApplication
+public class MainApp implements EntryPoint {
+
+    public static void main(String[] args) {
+        AutoStart.main(args);   // bootstraps the Mercury runtime
+    }
+
+    @Override
+    public void start(String[] args) throws Exception {
+        log.info(&quot;Application started&quot;);
+        // initialization logic: register dynamic routes, start background jobs, etc.
+    }
+}
+</code></pre>
+<h3 id="notes_2">Notes</h3>
+<ul>
+<li>Multiple <code>@MainApplication</code> classes are allowed in the same application. Use <code>sequence</code>
+  to order them.</li>
+<li>The static <code>main</code> method should contain only <code>AutoStart.main(args)</code>. All initialization
+  logic belongs in <code>start()</code>.</li>
+<li>Can be combined with <code>@OptionalService</code> for conditional activation.</li>
+<li>In Spring Boot apps (<code>rest-spring-3</code>) execution is deferred until the HTTP server
+  completes startup.</li>
+</ul>
+<hr />
+<h2 id="beforeapplication">@BeforeApplication</h2>
+<p>Initialization hook that runs <strong>before</strong> <code>@PreLoad</code> service registration and before any
+<code>@MainApplication</code> classes execute. Use it for pre-flight checks, secret decryption, or
+generating X.509 certificates before the rest of the application starts.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters_3">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sequence</code></td>
+<td><code>int</code></td>
+<td><code>10</code></td>
+<td>Execution order. Range 1–999. Sequences 0 and 2 are reserved by the framework.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavior_3">Behavior</h3>
+<p><code>@BeforeApplication</code> classes are the first user code to execute. They run in <code>sequence</code>
+order before the event system finishes starting and before any <code>@PreLoad</code> services are
+registered.</p>
+<h3 id="required-interface_3">Required interface</h3>
+<p>The annotated class must implement <code>EntryPoint</code>.</p>
+<h3 id="example_3">Example</h3>
+<pre><code class="language-java">@BeforeApplication(sequence = 5)
+public class EnvSetup implements EntryPoint {
+
+    @Override
+    public void start(String[] args) throws Exception {
+        // decrypt secrets, write certs to /tmp, set system properties
+        log.info(&quot;Environment initialized&quot;);
+    }
+}
+</code></pre>
+<h3 id="notes_3">Notes</h3>
+<ul>
+<li><strong>Reserved sequences</strong>: <code>0</code> is used by <code>EssentialServiceLoader</code>; <code>2</code> is used by the
+  Event Script engine. User code should use sequences 3–999 (or 1 if it must run before
+  all framework modules).</li>
+<li>Execution order: <code>@BeforeApplication</code> → <code>@PreLoad</code> registration → <code>@MainApplication</code>.</li>
+<li>Can be combined with <code>@OptionalService</code>.</li>
+</ul>
+<hr />
+<h2 id="kernelthreadrunner">@KernelThreadRunner</h2>
+<p>Forces the annotated function to run on the kernel thread pool instead of the default
+Java 21 virtual thread pool. Use only for legacy blocking code or CPU-intensive loops
+that are incompatible with virtual threads.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code>
+<strong>Parameters:</strong> None (marker annotation)</p>
+<h3 id="behavior_4">Behavior</h3>
+<p>When the <code>ServiceDef</code> constructor detects <code>@KernelThreadRunner</code>, it sets the runner type
+to <code>KERNEL_THREAD</code>. The <code>WorkerDispatcher</code> then uses the kernel thread pool (configured
+by <code>kernel.thread.pool</code>, default 100, max 200) instead of virtual threads for every
+invocation of this function.</p>
+<h3 id="example_4">Example</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.heavy.computation&quot;, instances = 5)
+@KernelThreadRunner
+public class HeavyComputation implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input, int instance) throws Exception {
+        // CPU-intensive or unavoidably blocking work
+        return result;
+    }
+}
+</code></pre>
+<h3 id="when-to-use-vs-virtual-threads">When to use vs. virtual threads</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Thread type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Standard business logic</td>
+<td>Virtual (default)</td>
+</tr>
+<tr>
+<td>PostOffice RPC calls</td>
+<td>Virtual — <code>request().get()</code> suspends, not blocks</td>
+</tr>
+<tr>
+<td><code>Thread.sleep()</code></td>
+<td>Virtual — sleep suspends the virtual thread</td>
+</tr>
+<tr>
+<td><code>synchronized</code> block</td>
+<td>Kernel — synchronized blocks a carrier thread</td>
+</tr>
+<tr>
+<td><code>ThreadLocal</code> variables</td>
+<td>Kernel — <code>ThreadLocal</code> makes virtual threads heavyweight</td>
+</tr>
+<tr>
+<td>Legacy JDBC / blocking I/O that cannot be refactored</td>
+<td>Kernel</td>
+</tr>
+<tr>
+<td>CPU-bound tight loops</td>
+<td>Kernel — keeps CPU hot without yielding</td>
+</tr>
+</tbody>
+</table>
+<h3 id="notes_4">Notes</h3>
+<ul>
+<li>Keep <code>instances</code> small (5–20) for kernel-thread functions to avoid exhausting the pool.</li>
+<li>The sum of worker instances across all <code>@KernelThreadRunner</code> functions should not exceed
+  <code>kernel.thread.pool</code>.</li>
+<li>Can be combined with <code>@PreLoad</code>, <code>@EventInterceptor</code>, and <code>@ZeroTracing</code>.</li>
+</ul>
+<hr />
+<h2 id="eventinterceptor">@EventInterceptor</h2>
+<p>Causes the function to receive the raw <code>EventEnvelope</code> as its input body instead of the
+unwrapped payload. The function's return value is <strong>ignored</strong> — responses must be sent
+programmatically via <code>PostOffice</code>.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code>
+<strong>Parameters:</strong> None (marker annotation)</p>
+<h3 id="behavior_5">Behavior</h3>
+<p>When <code>ServiceDef</code> detects <code>@EventInterceptor</code>, it sets the <code>interceptor</code> flag. The
+runtime delivers the original <code>EventEnvelope</code> as the input object rather than its
+deserialized body. The function must inspect headers, route the event, and send any
+response manually through <code>PostOffice</code>.</p>
+<h3 id="required-interface_4">Required interface</h3>
+<p>Typically <code>TypedLambdaFunction&lt;EventEnvelope, Void&gt;</code>.</p>
+<h3 id="example_5">Example</h3>
+<pre><code class="language-java">@EventInterceptor
+@ZeroTracing
+@PreLoad(route = &quot;v1.request.router&quot;, instances = 200)
+public class RequestRouter implements TypedLambdaFunction&lt;EventEnvelope, Void&gt; {
+
+    @Override
+    public Void handleEvent(Map&lt;String, String&gt; headers, EventEnvelope input,
+                            int instance) throws Exception {
+        PostOffice po = new PostOffice(headers, instance);
+        // examine input.getHeaders(), reroute or transform
+        EventEnvelope forwarded = new EventEnvelope()
+            .setTo(&quot;v1.backend.service&quot;)
+            .setBody(input.getBody())
+            .setHeaders(input.getHeaders());
+        po.send(forwarded);
+        return null;   // return value always ignored
+    }
+}
+</code></pre>
+<h3 id="notes_5">Notes</h3>
+<ul>
+<li>Use for middleware, protocol adapters, resilience patterns, and async callback handlers.</li>
+<li>Cannot return a value to the caller automatically — use <code>po.send(replyTo, response)</code> or
+  <code>po.asyncRequest()</code> to reply.</li>
+<li>Frequently combined with <code>@ZeroTracing</code> (high-volume routing should not be traced).</li>
+<li>Can be combined with <code>@KernelThreadRunner</code> when the interception logic needs blocking I/O.</li>
+<li>For the complete <code>EventEnvelope</code> API, see the <a href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>.</li>
+</ul>
+<hr />
+<h2 id="zerotracing">@ZeroTracing</h2>
+<p>Suppresses distributed trace annotation for the annotated function. The function's
+executions are not recorded in the telemetry stream.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code>
+<strong>Parameters:</strong> None (marker annotation)</p>
+<h3 id="behavior_6">Behavior</h3>
+<p>When <code>ServiceDef</code> detects <code>@ZeroTracing</code>, it sets <code>trackable = false</code>. The telemetry
+service skips trace recording for every invocation of this function.</p>
+<h3 id="example_6">Example</h3>
+<pre><code class="language-java">@ZeroTracing
+@PreLoad(route = &quot;v1.health.check&quot;, instances = 10)
+public class HealthCheck implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input, int instance) throws Exception {
+        return Map.of(&quot;status&quot;, &quot;UP&quot;);
+    }
+}
+</code></pre>
+<h3 id="notes_6">Notes</h3>
+<ul>
+<li>Use for high-frequency internal utilities where tracing adds overhead without value.</li>
+<li>System services such as <code>HttpAuth</code>, <code>Telemetry</code>, and <code>EventApiService</code> use this.</li>
+<li>Can be combined with <code>@PreLoad</code>, <code>@EventInterceptor</code>, and <code>@KernelThreadRunner</code>.</li>
+</ul>
+<hr />
+<h2 id="optionalservice">@OptionalService</h2>
+<p>Makes any annotated class conditional: the class is loaded only when the configuration
+expression evaluates to <code>true</code>. The expression is evaluated against <code>application.properties</code>
+or <code>application.yml</code>.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters_4">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td><code>String</code></td>
+<td><em>(required)</em></td>
+<td>One or more condition expressions, comma-separated (OR logic). See expression syntax below.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="expression-syntax">Expression syntax</h3>
+<table>
+<thead>
+<tr>
+<th>Expression</th>
+<th>Loads when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"key"</code></td>
+<td><code>key=true</code> in application.properties</td>
+</tr>
+<tr>
+<td><code>"key=value"</code></td>
+<td>property <code>key</code> equals <code>value</code></td>
+</tr>
+<tr>
+<td><code>"!key"</code></td>
+<td><code>key</code> is absent or <code>false</code></td>
+</tr>
+<tr>
+<td><code>"k1=v1, k2=v2"</code></td>
+<td><code>k1=v1</code> <strong>OR</strong> <code>k2=v2</code> (any one match)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="example_7">Example</h3>
+<pre><code class="language-java">// Load only in production environment
+@OptionalService(&quot;env=production&quot;)
+@PreLoad(route = &quot;v1.analytics.tracker&quot;, instances = 20)
+public class AnalyticsTracker implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Void&gt; { ... }
+
+// Load only if feature flag is off
+@OptionalService(&quot;!legacy.mode&quot;)
+@MainApplication(sequence = 15)
+public class NewMainApp implements EntryPoint { ... }
+
+// Load if either condition matches
+@OptionalService(&quot;server.port=8080, rest.automation&quot;)
+public class DevHelper implements EntryPoint { ... }
+</code></pre>
+<h3 id="notes_7">Notes</h3>
+<ul>
+<li>Can be combined with <code>@PreLoad</code>, <code>@MainApplication</code>, <code>@BeforeApplication</code>, and
+  <code>@WebSocketService</code>.</li>
+<li>When the condition is false, the framework logs "Skipping optional [class]" and does
+  not instantiate the class.</li>
+<li>Multiple conditions use OR logic: the class loads if <strong>any</strong> condition matches.</li>
+</ul>
+<hr />
+<h2 id="cloudconnector">@CloudConnector</h2>
+<p>Marks a class as a cloud connector plug-in. Exactly one connector is activated per
+application, selected by the <code>cloud.connector</code> application property.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters_5">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>String</code></td>
+<td><em>(required)</em></td>
+<td>Connector identifier. Must match the value of <code>cloud.connector</code> in application.properties for this connector to be loaded.</td>
+</tr>
+<tr>
+<td><code>original</code></td>
+<td><code>String</code></td>
+<td><code>""</code></td>
+<td>When non-empty, this connector wraps the connector named by <code>original</code>. Use for the decorator pattern.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavior_7">Behavior</h3>
+<p>When the application calls <code>Platform.connectToCloud()</code>, the framework scans for the
+<code>@CloudConnector</code> whose <code>name</code> matches the <code>cloud.connector</code> property, instantiates it,
+validates it implements <code>CloudSetup</code>, and calls <code>initialize()</code>. The connector then
+publishes public-function routes to the distributed registry and bridges inter-instance
+events through the message broker.</p>
+<h3 id="required-interface_5">Required interface</h3>
+<p><code>CloudSetup</code> — <code>void initialize()</code></p>
+<h3 id="example_8">Example</h3>
+<pre><code class="language-java">// From kafka-connector module
+@CloudConnector(name = &quot;kafka&quot;)
+public class KafkaConnector implements CloudSetup {
+
+    @Override
+    public void initialize() {
+        // set up Kafka producer/consumer and register presence monitor
+    }
+}
+</code></pre>
+<p>Activated by: <code>cloud.connector=kafka</code> in <code>application.properties</code>.</p>
+<h3 id="notes_8">Notes</h3>
+<ul>
+<li>Only one <code>@CloudConnector</code> is loaded per application instance.</li>
+<li>Runs before any <code>@CloudService</code> modules.</li>
+<li>Use <code>cloud.connector=none</code> (the default) to disable the service mesh.</li>
+</ul>
+<hr />
+<h2 id="cloudservice">@CloudService</h2>
+<p>Marks a class as a cloud service plug-in. Multiple services can be loaded per
+application, selected by the <code>cloud.services</code> property.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>org.platformlambda.core.annotations</code></p>
+<h3 id="parameters_6">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>String</code></td>
+<td><em>(required)</em></td>
+<td>Service identifier. Must match one entry in the <code>cloud.services</code> comma-separated list for this service to be loaded.</td>
+</tr>
+<tr>
+<td><code>original</code></td>
+<td><code>String</code></td>
+<td><code>""</code></td>
+<td>When non-empty, this service wraps the service named by <code>original</code>. Use for the decorator pattern.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavior_8">Behavior</h3>
+<p>After connector initialization, the framework scans for all <code>@CloudService</code> classes
+whose <code>name</code> appears in <code>cloud.services</code>, instantiates them, and calls <code>initialize()</code>
+on each. Services are started automatically after the connector or can be started
+standalone via <code>Platform.startCloudServices()</code>.</p>
+<h3 id="required-interface_6">Required interface</h3>
+<p><code>CloudSetup</code> — <code>void initialize()</code></p>
+<h3 id="example_9">Example</h3>
+<pre><code class="language-java">@CloudService(name = &quot;kafka.pubsub&quot;)
+public class PubSubSetup implements CloudSetup {
+
+    @Override
+    public void initialize() {
+        // set up Kafka pub/sub topics and handlers
+    }
+}
+</code></pre>
+<p>Activated by: <code>cloud.services=kafka.pubsub</code> in <code>application.properties</code>.</p>
+<h3 id="notes_9">Notes</h3>
+<ul>
+<li>Unlike <code>@CloudConnector</code>, multiple <code>@CloudService</code> entries can be active simultaneously.</li>
+<li>Used for optional cloud features such as pub/sub and service registries.</li>
+</ul>
+<hr />
+<h2 id="simpleplugin">@SimplePlugin</h2>
+<p>Registers a class as a plugin function usable in Event Script YAML flows via the <code>f:</code>
+prefix. Plugins perform atomic calculations directly inside data mapping rules without
+requiring a full <code>TypedLambdaFunction</code> service.</p>
+<p><strong>Target:</strong> <code>ElementType.TYPE</code>
+<strong>Retention:</strong> <code>RetentionPolicy.RUNTIME</code>
+<strong>Package:</strong> <code>com.accenture.models</code> (event-script-engine module)
+<strong>Parameters:</strong> None (marker annotation)</p>
+<h3 id="behavior_9">Behavior</h3>
+<p>At startup the <code>SimplePluginLoader</code> scans configured packages for <code>@SimplePlugin</code> classes,
+validates security constraints (only <code>java.lang</code>, <code>java.util</code>, <code>java.math</code>, <code>java.time</code>,
+and Mercury framework classes are permitted — no I/O), instantiates each class, and
+registers it by the name returned by <code>getName()</code>.</p>
+<h3 id="required-interface_7">Required interface</h3>
+<p><code>PluginFunction</code>:</p>
+<pre><code class="language-java">public interface PluginFunction {
+    // Default: camelCase of the class simple name
+    default String getName() {
+        String name = this.getClass().getSimpleName();
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+    }
+    Object calculate(Object... input);
+}
+</code></pre>
+<h3 id="example_10">Example</h3>
+<pre><code class="language-java">@SimplePlugin
+public class TaxCalculator implements PluginFunction {
+
+    @Override
+    public Object calculate(Object... input) {
+        if (input.length != 2) throw new IllegalArgumentException(&quot;requires 2 args&quot;);
+        double amount = ((Number) input[0]).doubleValue();
+        double rate   = ((Number) input[1]).doubleValue();
+        return amount * rate;
+    }
+    // getName() returns &quot;taxCalculator&quot; by default
+}
+</code></pre>
+<p>Usage in a flow YAML:</p>
+<pre><code class="language-yaml">input:
+  - 'model.subtotal -&gt; amount'
+  - 'double(0.08) -&gt; rate'
+  - 'f:taxCalculator(model.subtotal, double(0.08)) -&gt; tax'
+</code></pre>
+<h3 id="notes_10">Notes</h3>
+<ul>
+<li>Plugin name defaults to the camelCase of the class simple name. Override <code>getName()</code> to
+  use a different name.</li>
+<li>Security-enforced: classes that attempt I/O, reflection, or dynamic loading will fail
+  to load (logged as errors at startup).</li>
+<li>Built-in plugins cover arithmetic, logic, type conversion, string operations, collection
+  transformation, and generators. See <a href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema Reference</a>
+  for the full list.</li>
+<li>Located in the <code>event-script-engine</code> module; requires that module on the classpath.</li>
+</ul>
+<hr />
+<h2 id="annotation-combinations">Annotation combinations</h2>
+<p>The following combinations are confirmed valid. Annotations applied to the same class are
+processed independently; applying multiple annotations to one class stacks their effects.</p>
+<table>
+<thead>
+<tr>
+<th>Combination</th>
+<th>Valid</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@PreLoad</code> + <code>@KernelThreadRunner</code></td>
+<td>✅</td>
+<td>Function runs on the kernel thread pool</td>
+</tr>
+<tr>
+<td><code>@PreLoad</code> + <code>@EventInterceptor</code></td>
+<td>✅</td>
+<td>Function receives raw <code>EventEnvelope</code>; return value ignored</td>
+</tr>
+<tr>
+<td><code>@PreLoad</code> + <code>@ZeroTracing</code></td>
+<td>✅</td>
+<td>Function executions are not traced</td>
+</tr>
+<tr>
+<td><code>@PreLoad</code> + <code>@OptionalService</code></td>
+<td>✅</td>
+<td>Function registered only when condition is true</td>
+</tr>
+<tr>
+<td><code>@KernelThreadRunner</code> + <code>@EventInterceptor</code></td>
+<td>✅</td>
+<td>Blocking interceptor on kernel threads</td>
+</tr>
+<tr>
+<td><code>@KernelThreadRunner</code> + <code>@ZeroTracing</code></td>
+<td>✅</td>
+<td>Untraced kernel-thread function</td>
+</tr>
+<tr>
+<td><code>@EventInterceptor</code> + <code>@ZeroTracing</code></td>
+<td>✅</td>
+<td>High-volume interceptor without tracing (used by system services)</td>
+</tr>
+<tr>
+<td><code>@PreLoad</code> + <code>@KernelThreadRunner</code> + <code>@EventInterceptor</code> + <code>@ZeroTracing</code></td>
+<td>✅</td>
+<td>All four can coexist</td>
+</tr>
+<tr>
+<td><code>@MainApplication</code> + <code>@OptionalService</code></td>
+<td>✅</td>
+<td>Entry point loaded conditionally</td>
+</tr>
+<tr>
+<td><code>@BeforeApplication</code> + <code>@OptionalService</code></td>
+<td>✅</td>
+<td>Init hook loaded conditionally</td>
+</tr>
+<tr>
+<td><code>@WebSocketService</code> + <code>@OptionalService</code></td>
+<td>✅</td>
+<td>WebSocket endpoint loaded conditionally</td>
+</tr>
+<tr>
+<td><code>@KernelThreadRunner</code> without <code>@PreLoad</code></td>
+<td>⚠️</td>
+<td>No effect; only processed for registered functions</td>
+</tr>
+<tr>
+<td><code>@EventInterceptor</code> without <code>@PreLoad</code></td>
+<td>⚠️</td>
+<td>No effect; only processed for registered functions</td>
+</tr>
+<tr>
+<td><code>@MainApplication</code> + <code>@PreLoad</code></td>
+<td>⚠️</td>
+<td>Technically valid; rarely useful in practice</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="required-interfaces">Required interfaces</h2>
+<p>Each annotation requires the annotated class to implement a specific interface.</p>
+<table>
+<thead>
+<tr>
+<th>Annotation</th>
+<th>Required Interface</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@PreLoad</code></td>
+<td><code>TypedLambdaFunction&lt;I, O&gt;</code> or <code>LambdaFunction</code></td>
+<td><code>handleEvent(headers, input, instance)</code></td>
+</tr>
+<tr>
+<td><code>@WebSocketService</code></td>
+<td><code>LambdaFunction</code></td>
+<td><code>handleEvent(headers, input, instance)</code></td>
+</tr>
+<tr>
+<td><code>@MainApplication</code></td>
+<td><code>EntryPoint</code></td>
+<td><code>start(String[] args)</code></td>
+</tr>
+<tr>
+<td><code>@BeforeApplication</code></td>
+<td><code>EntryPoint</code></td>
+<td><code>start(String[] args)</code></td>
+</tr>
+<tr>
+<td><code>@KernelThreadRunner</code></td>
+<td><em>(combined with @PreLoad)</em></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>@EventInterceptor</code></td>
+<td><code>TypedLambdaFunction&lt;EventEnvelope, Void&gt;</code> <em>(typical)</em></td>
+<td><code>handleEvent(headers, input, instance)</code></td>
+</tr>
+<tr>
+<td><code>@ZeroTracing</code></td>
+<td><em>(combined with @PreLoad)</em></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>@OptionalService</code></td>
+<td><em>(combined with another annotation)</em></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>@CloudConnector</code></td>
+<td><code>CloudSetup</code></td>
+<td><code>initialize()</code></td>
+</tr>
+<tr>
+<td><code>@CloudService</code></td>
+<td><code>CloudSetup</code></td>
+<td><code>initialize()</code></td>
+</tr>
+<tr>
+<td><code>@SimplePlugin</code></td>
+<td><code>PluginFunction</code></td>
+<td><code>calculate(Object... input)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="interface-signatures">Interface signatures</h3>
+<pre><code class="language-java">// org.platformlambda.core.models.TypedLambdaFunction&lt;I, O&gt;
+public interface TypedLambdaFunction&lt;I, O&gt; {
+    O handleEvent(Map&lt;String, String&gt; headers, I input, int instance) throws Exception;
+}
+
+// org.platformlambda.core.models.LambdaFunction
+// (extends TypedLambdaFunction&lt;Object, Object&gt;)
+public interface LambdaFunction extends TypedLambdaFunction&lt;Object, Object&gt; {
+    Object handleEvent(Map&lt;String, String&gt; headers, Object input, int instance) throws Exception;
+}
+
+// org.platformlambda.core.system.EntryPoint
+public interface EntryPoint {
+    void start(String[] args) throws Exception;
+}
+
+// org.platformlambda.core.models.CloudSetup
+public interface CloudSetup {
+    void initialize();
+}
+
+// com.accenture.models.PluginFunction  (event-script-engine module)
+public interface PluginFunction {
+    default String getName() {
+        String name = this.getClass().getSimpleName();
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+    }
+    Object calculate(Object... input);
+}
+
+// org.platformlambda.core.models.CustomSerializer  (for @PreLoad customSerializer)
+public interface CustomSerializer {
+    Map&lt;String, Object&gt; toMap(Object obj);
+    &lt;T&gt; T toPoJo(Object obj, Class&lt;T&gt; toValueType);
+}
+</code></pre>
+<hr />
+<h2 id="component-scanning">Component scanning</h2>
+<p>Annotated classes are discovered by scanning Java packages at startup. Only classes
+located inside the configured packages are found.</p>
+<pre><code class="language-properties"># application.properties
+web.component.scan=com.example.myapp, com.example.shared
+</code></pre>
+<p>The <code>web.component.scan</code> property accepts a comma-separated list of package names. The
+scanner finds <code>@PreLoad</code>, <code>@MainApplication</code>, <code>@BeforeApplication</code>, <code>@WebSocketService</code>,
+and <code>@SimplePlugin</code> classes within those packages (and all sub-packages).</p>
+<p><strong>Spring Boot note</strong>: When using <code>rest-spring-3</code> with multiple packages in
+<code>web.component.scan</code>, Spring's own component scanner requires the separate
+<code>spring.component.scan</code> property to scan for Spring beans.</p>
+<p><strong>What happens if a class is outside the scan path</strong>: The class is silently ignored.
+No error is raised. If a function is unexpectedly missing from the event system, verify
+that its package is listed in <code>web.component.scan</code>.</p>
+<p>See the <a href="../CONFIGURATION-REFERENCE/">Configuration Reference</a> for all scanning-related
+properties.</p>
+<hr />
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../CHAPTER-1/">Getting Started</a> — first tutorial with <code>@PreLoad</code> and <code>@MainApplication</code> examples</li>
+<li><a href="../CHAPTER-2/">Function Execution Strategies</a> — deep dive on <code>@KernelThreadRunner</code> and <code>@EventInterceptor</code></li>
+<li><a href="../CHAPTER-4/">Event Script Syntax</a> — <code>@PreLoad</code> serialization strategies; <code>@SimplePlugin</code> reference</li>
+<li><a href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema Reference</a> — <code>f:</code> plugin usage in flow YAML</li>
+<li><a href="../CONFIGURATION-REFERENCE/">Configuration Reference</a> — <code>web.component.scan</code>, <code>kernel.thread.pool</code>, and related properties</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../arch-decisions/DESIGN-NOTES/" class="btn btn-neutral float-left" title="Design Notes"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../CONFIGURATION-REFERENCE/" class="btn btn-neutral float-right" title="Configuration Reference">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../arch-decisions/DESIGN-NOTES/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../CONFIGURATION-REFERENCE/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
