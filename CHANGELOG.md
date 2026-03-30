@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.1, 3/30/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Update platform-core's deepCopy method to support cloning null values
+2. Enhance event-script-engine's input/output data mapping to allow mapping null values to model and input
+
+---
 ## Version 4.4.0, 3/26/2026
 
 ### Added

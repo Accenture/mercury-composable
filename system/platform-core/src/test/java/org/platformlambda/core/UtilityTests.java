@@ -86,11 +86,17 @@ class UtilityTests {
             assertEquals(entry.getValue(), mm.getElement(entry.getKey()));
         }
         var copied = util.deepCopy(mm.getMap());
-        // map's null elements are not copied
-        assertNotEquals(mm.getMap(), copied);
-        mm.removeElement("map-with-null.nothing");
-        // should be the same after removing null element from a map
+        // map's null elements are also copied
         assertEquals(mm.getMap(), copied);
+        // key exists
+        assertTrue(mm.keyExists("map-with-null.nothing"));
+        // value does not exist
+        assertFalse(mm.exists("map-with-null.nothing"));
+        assertNull(mm.getElement("map-with-null.nothing"));
+        mm.removeElement("map-with-null.nothing");
+        assertFalse(mm.keyExists("map-with-null.nothing"));
+        // is not the same after removing null element from a map
+        assertNotEquals(mm.getMap(), copied);
         // modify the original map
         mm.setElement("modified", true);
         // prove that the original map and the cloned map are different

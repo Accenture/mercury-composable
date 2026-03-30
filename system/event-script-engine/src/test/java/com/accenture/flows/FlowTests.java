@@ -1804,7 +1804,7 @@ class FlowTests extends TestBase {
         assertTrue(defaultDatetime.contains("T") && defaultDatetime.contains("Z"));
     }
 
-
+    @SuppressWarnings("unchecked")
     @Test
     void inputConversionTest() throws ExecutionException, InterruptedException {
         AsyncHttpRequest request = new AsyncHttpRequest();
@@ -1819,7 +1819,59 @@ class FlowTests extends TestBase {
         // Take return value as PoJo
         assertInstanceOf(List.class, result.getBody());
         List<?> restored = result.getBody(List.class);
-        assertEquals(Map.of("user", "foo", "sequence", 0), restored.getFirst());
-        assertEquals(Map.of("user", "bar", "sequence", 0), restored.get(1));
+        assertEquals(2, restored.size());
+        assertInstanceOf(Map.class, restored.getFirst());
+        assertInstanceOf(Map.class, restored.get(1));
+        var pojo1 = new PoJo("foo", 0);
+        pojo1.date = null;
+        var pojo2 = new PoJo("bar", 0);
+        pojo2.date = null;
+        var map1 = (Map<String, Object>) SimpleMapper.getInstance().getMapper().readValue(pojo1, Map.class);
+        var map2 = (Map<String, Object>) SimpleMapper.getInstance().getMapper().readValue(pojo2, Map.class);
+        var restored1 = (Map<String, Object>) restored.getFirst();
+        var restored2 = (Map<String, Object>) restored.get(1);
+        assertEquals(map1.get("user"), restored1.get("user"));
+        assertEquals(String.valueOf(map1.get("sequence")), String.valueOf(restored1.get("sequence")));
+        assertEquals(map2.get("user"), restored2.get("user"));
+        assertEquals(String.valueOf(map2.get("sequence")), String.valueOf(restored2.get("sequence")));
+        var config = AppConfigReader.getInstance();
+        var nullTransport = "true".equals(config.getProperty("serializer.null.transport", "false"));
+        if (nullTransport) {
+            log.info("Testing optional transport of null values");
+            assertNull(restored1.get("key1"));
+            assertNull(restored2.get("key1"));
+            assertTrue(restored1.containsKey("key1"));
+            assertTrue(restored2.containsKey("key1"));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void nullTransportTest() throws ExecutionException, InterruptedException {
+        var map = new HashMap<String, Object>();
+        map.put("id", null);
+        map.put("user", "hello");
+        AsyncHttpRequest request = new AsyncHttpRequest();
+        request.setTargetHost(HOST).setMethod("POST")
+                .setHeader("accept", "application/json")
+                .setHeader("content-type", "application/json")
+                .setBody(map)
+                .setUrl("/api/null-transport");
+        EventEmitter po = EventEmitter.getInstance();
+        EventEnvelope req = new EventEnvelope().setTo(HTTP_CLIENT).setBody(request);
+        EventEnvelope result = po.request(req, 8_000).get();
+        assertInstanceOf(Map.class, result.getBody());
+        var resultMap = (Map<String, Object>) result.getBody();
+        // normal key-value
+        assertEquals("hello", resultMap.get("user"));
+        // null values are transported
+        assertTrue(resultMap.containsKey("id"));
+        assertNull(resultMap.get("id"));
+        assertTrue(resultMap.containsKey("id2"));
+        assertNull(resultMap.get("id2"));
+        assertTrue(resultMap.containsKey("id3"));
+        assertNull(resultMap.get("id3"));
+        // model key-value that does not exist would trigger removal of the RHS model variable
+        assertFalse(resultMap.containsKey("removed"));
     }
 }

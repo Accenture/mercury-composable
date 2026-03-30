@@ -354,7 +354,8 @@ public class Utility {
                 target.put(k, deepCopy((Map<String, Object>) v));
             } else if (v instanceof List) {
                 deepCopyInnerList(k, (List<Object>) v, target);
-            } else if (v != null) {
+            } else {
+                // copy content even it is a null value
                 target.put(k, v);
             }
         }

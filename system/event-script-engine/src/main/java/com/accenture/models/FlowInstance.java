@@ -85,7 +85,7 @@ public class FlowInstance {
         this.cid = cid;
         this.replyTo = replyTo;
         // initialize the state machine
-        ConcurrentMap<String, Object> model = new ConcurrentHashMap<>();
+        Map<String, Object> model = new HashMap<>();
         model.put(INSTANCE, id);
         model.put(CID_TAG, cid);
         model.put(TTL_TAG, ttl);
@@ -187,7 +187,7 @@ public class FlowInstance {
         this.setTraceId(traceId);
         this.setTracePath(tracePath);
         if (traceId != null) {
-            ConcurrentMap<String, Object> model = (ConcurrentMap<String, Object>) dataset.get(MODEL);
+            var model = (Map<String, Object>) dataset.get(MODEL);
             model.put(TRACE, traceId);
         }
     }

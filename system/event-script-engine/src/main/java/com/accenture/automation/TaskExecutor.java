@@ -546,7 +546,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 md.lhs.equals(RESULT) || md.lhs.startsWith(RESULT_NAMESPACE)) {
             value = helper.getLhsElement(md.lhs, md.consolidated);
             if (value == null) {
-                removeModelElement(md.rhs, md.consolidated);
+                if (md.consolidated.keyExists(md.lhs)) {
+                    md.consolidated.setElement(md.rhs, null);
+                } else {
+                    removeModelElement(md.rhs, md.consolidated);
+                }
             }
         } else {
             value = helper.getConstantValue(md.lhs);
@@ -1046,21 +1050,27 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (md.rhs.startsWith(EXT_NAMESPACE)) {
             callExternalStateMachine(flowInstance, task, md.rhs, value);
         } else if (md.rhs.startsWith(MODEL_NAMESPACE)) {
-            setInputDataMappingModelVar(md, flowInstance, value, inputLike);
+            Map<String, Object> modelOnly = new HashMap<>();
+            modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
+            MultiLevelMap model = new MultiLevelMap(modelOnly);
+            if (value == null && md.source.keyExists(md.lhs)) {
+                model.setElement(md.rhs, null);
+            } else {
+                setInputDataMappingModelVar(md, model, value, inputLike);
+            }
         } else if (inputLike) {
             if (value != null) {
                 setInputDataMappingRhs(entry, md, value);
+            } else if (md.source.keyExists(md.lhs)) {
+                md.target.setElement(md.rhs, null);
             }
         } else {
             setInputDataMappingRhsAsConstant(md);
         }
     }
 
-    private void setInputDataMappingModelVar(InputMappingMetadata md, FlowInstance flowInstance,
+    private void setInputDataMappingModelVar(InputMappingMetadata md, MultiLevelMap model,
                                              Object value, boolean inputLike) {
-        Map<String, Object> modelOnly = new HashMap<>();
-        modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
-        MultiLevelMap model = new MultiLevelMap(modelOnly);
         if (inputLike) {
             if (value == null) {
                 removeModelElement(md.rhs, model);
