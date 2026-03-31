@@ -8,18 +8,18 @@ first.task: 'no.op'
 
 tasks:
   - input:
-      - 'input.body.id -> id'
-      - 'input.body.user -> user'
-      - 'input.body.id -> model.id'
-      - 'model.id -> id2'
-      - 'input.body.id -> model.to_be_removed'
+      - 'input.body.number -> number'
+      - 'input.body.hello -> hello'
+      - 'input.body.number -> model.number'
+      - 'model.number -> number2'
+      - 'input.body.number -> model.to_be_removed'
       - 'model.nothing -> model.to_be_removed'
       - 'model.to_be_removed -> removed'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'
       - 'result -> output.body'
-      - 'model.id -> output.body.id3'
+      - 'model.number -> output.body.number3'
     description: 'Demo transport and mapping of null values'
     execution: end
 

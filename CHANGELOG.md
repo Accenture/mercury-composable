@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.2, 3/31/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Update nullTransportTest in Event Script Engine to avoid false positive in Snyk static code analysis
+
+---
 ## Version 4.4.1, 3/30/2026
 
 ### Added

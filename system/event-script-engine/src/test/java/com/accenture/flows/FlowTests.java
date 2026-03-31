@@ -1849,8 +1849,8 @@ class FlowTests extends TestBase {
     @Test
     void nullTransportTest() throws ExecutionException, InterruptedException {
         var map = new HashMap<String, Object>();
-        map.put("id", null);
-        map.put("user", "hello");
+        map.put("number", null);
+        map.put("hello", "world");
         AsyncHttpRequest request = new AsyncHttpRequest();
         request.setTargetHost(HOST).setMethod("POST")
                 .setHeader("accept", "application/json")
@@ -1863,14 +1863,14 @@ class FlowTests extends TestBase {
         assertInstanceOf(Map.class, result.getBody());
         var resultMap = (Map<String, Object>) result.getBody();
         // normal key-value
-        assertEquals("hello", resultMap.get("user"));
+        assertEquals("world", resultMap.get("hello"));
         // null values are transported
-        assertTrue(resultMap.containsKey("id"));
-        assertNull(resultMap.get("id"));
-        assertTrue(resultMap.containsKey("id2"));
-        assertNull(resultMap.get("id2"));
-        assertTrue(resultMap.containsKey("id3"));
-        assertNull(resultMap.get("id3"));
+        assertTrue(resultMap.containsKey("number"));
+        assertNull(resultMap.get("number"));
+        assertTrue(resultMap.containsKey("number2"));
+        assertNull(resultMap.get("number2"));
+        assertTrue(resultMap.containsKey("number3"));
+        assertNull(resultMap.get("number3"));
         // model key-value that does not exist would trigger removal of the RHS model variable
         assertFalse(resultMap.containsKey("removed"));
     }
