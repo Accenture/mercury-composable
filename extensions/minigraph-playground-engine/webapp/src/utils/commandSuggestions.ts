@@ -47,24 +47,57 @@ export interface QuickstartEntry {
   keyword:     string;
   alias?:      string;   // backend alias, shown as "(alias: <x>)"
   description: string;
+  /** Text inserted into the command input when the palette row is clicked. */
+  template:    string;
+  /** When true, the command spans multiple lines (e.g. create / update / instantiate). */
+  multiline?:  boolean;
 }
 
 export const COMMAND_QUICKSTART: QuickstartEntry[] = [
-  { keyword: 'help',            description: 'List all help topics, or get help for a specific command' },
-  { keyword: 'create',          description: 'Create a new graph node' },
-  { keyword: 'update',          description: 'Update an existing node' },
-  { keyword: 'edit',            description: 'Print raw node data ready for editing and re-submitting' },
-  { keyword: 'delete',          description: 'Delete a node or a connection',         alias: 'clear' },
-  { keyword: 'clear cache',     description: 'Clear cached API fetcher results' },
-  { keyword: 'connect',         description: 'Connect two nodes with a named relation' },
-  { keyword: 'list',            description: 'List all nodes or connections in the graph' },
-  { keyword: 'describe',        description: 'Describe the graph, a node, connection or skill' },
-  { keyword: 'export',          description: 'Export the graph model to a JSON file' },
-  { keyword: 'import',          description: 'Import a graph model or a single node from a file' },
-  { keyword: 'instantiate',     description: 'Create a runnable graph instance with mock input', alias: 'start' },
-  { keyword: 'execute',         description: 'Execute a single node skill in isolation' },
-  { keyword: 'inspect',         description: 'Inspect a state-machine variable' },
-  { keyword: 'run',             description: 'Run the graph instance from root to end' },
+  { keyword: 'help',            description: 'List all help topics, or get help for a specific command',
+    template: 'help' },
+  { keyword: 'create',          description: 'Create a new graph node',
+    template: 'create node {name}\nwith type {type}\nwith properties\n{key}={value}', multiline: true },
+  { keyword: 'update',          description: 'Update an existing node',
+    template: 'update node {name}\nwith type {type}\nwith properties\n{key}={value}', multiline: true },
+  { keyword: 'edit',            description: 'Print raw node data ready for editing and re-submitting',
+    template: 'edit node {name}' },
+  { keyword: 'delete node',       description: 'Delete a node by name', alias: 'clear node',
+    template: 'delete node {name}' },
+  { keyword: 'delete connection', description: 'Delete connection(s) between two nodes', alias: 'clear connection',
+    template: 'delete connection {nodeA} and {nodeB}' },
+  { keyword: 'delete cache',      description: 'Clear cached API fetcher results', alias: 'clear cache',
+    template: 'delete cache' },
+  { keyword: 'connect',           description: 'Connect two nodes with a named relation',
+    template: 'connect {node-A} to {node-B} with {relation}' },
+  { keyword: 'list nodes',        description: 'List all nodes in the current graph',
+    template: 'list nodes' },
+  { keyword: 'list connections',  description: 'List all connections in the current graph',
+    template: 'list connections' },
+  { keyword: 'describe graph',    description: 'Describe the current graph model',
+    template: 'describe graph' },
+  { keyword: 'describe node',     description: 'Describe a specific node and its connections',
+    template: 'describe node {name}' },
+  { keyword: 'describe connection', description: 'Describe connection(s) between two nodes',
+    template: 'describe connection {nodeA} and {nodeB}' },
+  { keyword: 'describe skill',    description: 'Show documentation for a skill by route name',
+    template: 'describe skill {skill.route}' },
+  { keyword: 'export',            description: 'Export the graph model to a JSON file',
+    template: 'export graph as {name}' },
+  { keyword: 'import graph',      description: 'Import a graph model from a saved file',
+    template: 'import graph from {name}' },
+  { keyword: 'import node',       description: 'Import a single node from another saved graph',
+    template: 'import node {node-name} from {graph-name}' },
+  { keyword: 'instantiate',     description: 'Create a runnable graph instance with mock input', alias: 'start',
+    template: 'instantiate graph\n{constant} -> input.body.{key}', multiline: true },
+  { keyword: 'upload mock data', description: 'Print the URL to POST a JSON payload as mock input.body',
+    template: 'upload mock data' },
+  { keyword: 'execute',         description: 'Execute a single node skill in isolation',
+    template: 'execute node {name}' },
+  { keyword: 'inspect',         description: 'Inspect a state-machine variable',
+    template: 'inspect {variable_name}' },
+  { keyword: 'run',             description: 'Run the graph instance from root to end',
+    template: 'run' },
 ];
 
 // ---------------------------------------------------------------------------

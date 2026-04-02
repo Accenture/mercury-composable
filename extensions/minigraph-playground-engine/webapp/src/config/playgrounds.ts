@@ -3,8 +3,8 @@
  *
  * ─── HOW TO ADD A NEW PLAYGROUND ───────────────────────────────────────────
  *  1. Add an entry to PLAYGROUND_CONFIGS below.
- *  2. Add a matching <Route> in App.tsx pointing to the same `path`.
- *  That's it — the navigation bar updates automatically.
+ *  That's it — the route, navigation bar link, and connection dot are all
+ *  derived automatically from this array. No changes to App.tsx needed.
  * ───────────────────────────────────────────────────────────────────────────
  */
 
@@ -22,6 +22,9 @@ export const MAX_ITEMS    = 200;
 
 /** Maximum number of command history entries kept in localStorage. */
 export const MAX_HISTORY  = 50;
+
+/** Maximum number of history-based autocomplete suggestions shown in the dropup. */
+export const MAX_AUTOCOMPLETE_SUGGESTIONS = 8;
 
 /** Maximum payload size in characters accepted by the WebSocket send path. */
 export const MAX_BUFFER = 63_488; // 62 * 1024 - some overhead for WebSocket framing, to stay safely under the 64KB limit of most browsers

@@ -46,8 +46,10 @@ public class GraphExtension extends GraphLambdaFunction {
         if (!EXECUTE.equals(headers.get(TYPE))) {
             throw new IllegalArgumentException("Type must be EXECUTE");
         }
-        var in = headers.get(IN);
+        var po = PostOffice.trackable(headers, instance);
         var nodeName = headers.getOrDefault(NODE, "none");
+        po.annotateTrace(NODE, nodeName);
+        var in = headers.get(IN);
         var graphInstance = getGraphInstance(in);
         var stateMachine = graphInstance.stateMachine;
         var node = getNode(nodeName, graphInstance.graph);
@@ -64,7 +66,6 @@ public class GraphExtension extends GraphLambdaFunction {
         // reset result to ensure execution is idempotent
         stateMachine.removeElement(nodeName + "." + RESULT);
         stateMachine.removeElement(nodeName + "." + HEADER);
-        var po = new PostOffice(headers, instance);
         var forEach = getEntries(node.getProperty(FOR_EACH));
         if (forEach.isEmpty()) {
             return callExtension(po, node, graphInstance, graphId);
@@ -92,7 +93,7 @@ public class GraphExtension extends GraphLambdaFunction {
 
     @SuppressWarnings("unchecked")
     private void callExtensionWithForkJoin(PostOffice po, GraphInstance graphInstance,
-                                             SimpleNode node, String graphId, int size)
+                                             SimpleNode node, String extension, int size)
                                                 throws ExecutionException, InterruptedException {
         var nodeName = node.getAlias();
         var givenConcurrency = util.str2int(String.valueOf(node.getProperty(CONCURRENCY)));
@@ -109,14 +110,24 @@ public class GraphExtension extends GraphLambdaFunction {
                 var value = kv.getValue().get(i);
                 parameters.put(key, value);
             }
-            var dataset = Map.of("body", parameters, "header", Map.of(),
-                                "ttl", timeout, "path_parameter", Map.of("graph_id", graphId));
-            var forward = new EventEnvelope();
-            forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, GRAPH_EXECUTOR);
-            forward.setCorrelationId(util.getUuid()).setBody(dataset);
+            var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME).setCorrelationId(util.getUuid());
+            if (extension.startsWith(FLOW_PROTOCOL)) {
+                var flowId = extension.substring(FLOW_PROTOCOL.length());
+                var flow = Flows.getFlow(flowId);
+                if (flow == null) {
+                    throw new IllegalArgumentException(NODE_NAME + nodeName + " -  "+extension+" does not exist");
+                }
+                forward.setHeader(FLOW_ID, flowId);
+                forward.setBody(Map.of(BODY, parameters, HEADER, Map.of(), TTL, timeout));
+            } else {
+                var dataset = Map.of(BODY, parameters, HEADER, Map.of(), TTL, timeout,
+                                    PATH_PARAMETER, Map.of(GRAPH_ID, extension));
+                forward.setHeader(FLOW_ID, GRAPH_EXECUTOR);
+                forward.setBody(dataset);
+            }
             stack.add(forward);
         }
-        runConcurrentRequests(po, graphInstance, node, graphId, concurrency, stack, timeout);
+        runConcurrentRequests(po, graphInstance, node, extension, concurrency, stack, timeout);
         var outputMapping = getEntries(node.getProperty(OUTPUT));
         performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
         // clear temporary dataset
@@ -127,6 +138,9 @@ public class GraphExtension extends GraphLambdaFunction {
     private void runConcurrentRequests(PostOffice po, GraphInstance graphInstance, SimpleNode node,
                                        String extension, int concurrency, Deque<EventEnvelope> stack, long timeout)
                                         throws ExecutionException, InterruptedException {
+        po.annotateTrace(EXTENSION, extension);
+        var nameLoaded = false;
+        var parameterNames = new HashSet<String>();
         var nodeName = node.getAlias();
         var stateMachine = graphInstance.stateMachine;
         List<EventEnvelope> batch = new ArrayList<>();
@@ -137,9 +151,15 @@ public class GraphExtension extends GraphLambdaFunction {
             if (stack.isEmpty() || n == 0) {
                 n = concurrency;
                 var body = batch.getFirst().getBody() instanceof Map<?, ?> map? map : Map.of();
-                var parameterNames = body.get("body") instanceof Map<?, ?> map? map.keySet() : Set.of();
+                if (!nameLoaded) {
+                    nameLoaded = true;
+                    var names = body.get(BODY) instanceof Map<?, ?> map? map.keySet() : Set.of();
+                    names.forEach(name -> parameterNames.add(String.valueOf(name)));
+                    po.annotateTrace(FOR_EACH, String.valueOf(parameterNames));
+                }
                 log.info("Call extension {}, for each {}, parallel={}, ttl={}", extension,
                         parameterNames, batch.size(), timeout);
+                stateMachine.setElement(nodeName + "." + TARGET, extension);
                 doForkJoin(po, nodeName, stateMachine, batch, timeout);
                 batch.clear();
             }
@@ -165,7 +185,6 @@ public class GraphExtension extends GraphLambdaFunction {
     }
 
     private Object callExtension(PostOffice po, SimpleNode node, GraphInstance graphInstance, String graphId) {
-        var stateMachine = graphInstance.stateMachine;
         var nodeName = node.getAlias();
         var mapping = getEntries(node.getProperty(INPUT));
         if (mapping.isEmpty()) {
@@ -174,28 +193,36 @@ public class GraphExtension extends GraphLambdaFunction {
         for (var entry : mapping) {
             fillFetcherApiParameters(nodeName, entry, graphInstance, false);
         }
-        var flow = Flows.getFlow(GRAPH_EXECUTOR);
-        if (flow == null) {
-            throw new IllegalArgumentException("flow://"+ GRAPH_EXECUTOR +" not found");
-        }
         var timeout = getModelTtl(graphInstance);
-        var parameters = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
-        var dataset = Map.of("body", parameters instanceof Map? parameters : Map.of(), "header", Map.of(),
-                            "ttl", timeout,
-                            "path_parameter", Map.of("graph_id", graphId));
-        // clean up working area
-        stateMachine.removeElement(nodeName + FETCH);
-        return retrieveFromExtension(po, node, graphInstance, graphId, dataset, timeout);
+        return retrieveFromExtension(po, node, graphInstance, graphId, timeout);
     }
 
     private Object retrieveFromExtension(PostOffice po, SimpleNode node, GraphInstance graphInstance,
-                                         String extension, Map<String, Object> dataset, long ttl) {
+                                         String extension, long ttl) {
         log.info("Call extension {}, ttl={}", extension, ttl);
+        po.annotateTrace(EXTENSION, extension);
         var nodeName = node.getAlias();
         var stateMachine = graphInstance.stateMachine;
+        stateMachine.setElement(nodeName + "." + TARGET, extension);
+        // construct dataset
+        var parameters = stateMachine.getElement(nodeName + FETCH, new HashMap<>());
         var forward = new EventEnvelope();
-        forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, GRAPH_EXECUTOR);
-        forward.setCorrelationId(util.getUuid()).setBody(dataset);
+        forward.setTo(EventScriptManager.SERVICE_NAME).setCorrelationId(util.getUuid());
+        if (extension.startsWith(FLOW_PROTOCOL)) {
+            var flowId = extension.substring(FLOW_PROTOCOL.length());
+            var flow = Flows.getFlow(flowId);
+            if (flow == null) {
+                throw new IllegalArgumentException(NODE_NAME + nodeName + " -  "+extension+" does not exist");
+            }
+            var dataset = Map.of(BODY, parameters instanceof Map? parameters : Map.of(), HEADER, Map.of(), TTL, ttl);
+            forward.setHeader(FLOW_ID, flowId).setBody(dataset);
+        } else {
+            var dataset = Map.of(BODY, parameters instanceof Map? parameters : Map.of(), HEADER, Map.of(), TTL, ttl,
+                                PATH_PARAMETER, Map.of(GRAPH_ID, extension));
+            forward.setHeader(FLOW_ID, GRAPH_EXECUTOR).setBody(dataset);
+        }
+        // clean up working area
+        stateMachine.removeElement(nodeName + FETCH);
         return Mono.create(sink ->
             po.eRequest(forward, ttl, false).thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());

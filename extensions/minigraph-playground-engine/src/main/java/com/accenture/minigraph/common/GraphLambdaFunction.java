@@ -35,10 +35,13 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
     protected static final Utility util = Utility.getInstance();
+    protected static final long MAX_BUFFER_SIZE = 62 * 1024L;
+    protected static final String FLOW_PROTOCOL = "flow://";
     protected static final String ASYNC_HTTP_CLIENT = "async.http.request";
     protected static final String PLUGIN_PREFIX = "f:";
     protected static final String FILE_PREFIX = "file:";
     protected static final String CLASSPATH_PREFIX = "classpath:";
+    protected static final String TARGET = "target";
     protected static final String OPEN = "open";
     protected static final String CLOSE = "close";
     protected static final String COMMAND = "command";
@@ -72,9 +75,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String BODY_NAMESPACE = "body.";
     protected static final String PROVIDER = "provider";
     protected static final String DICTIONARY = "dictionary";
-    protected static final String HEADER_PARAMETER = "header.";
-    protected static final String QUERY_PARAMETER = "query.";
-    protected static final String PATH_PARAMETER = "path_parameter.";
+    protected static final String HEADER_NAMESPACE = "header.";
+    protected static final String QUERY_NAMESPACE = "query.";
+    protected static final String PATH_PARAMETER = "path_parameter";
+    protected static final String PATH_PARAMETER_NAMESPACE = "path_parameter.";
     protected static final String INPUT_BODY_NAMESPACE = "input.body";
     protected static final String INPUT_HEADER_NAMESPACE = "input.header";
     protected static final String OUTPUT_BODY_NAMESPACE = "output.body";
@@ -102,12 +106,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String SAME_SOURCE_TARGET = "source and target node names cannot be the same";
     protected static final String JSON_EXT = ".json";
     protected static final String GRAPH = "graph";
+    protected static final String GRAPH_ID = "graph_id";
     protected static final String EXECUTE = "execute";
     protected static final String SKILL = "skill";
     protected static final String SKILL_PREFIX = "/skills/";
     protected static final String SINK = ".sink";
     protected static final String RUN = "run";
     protected static final String LIVE = "live";
+    protected static final String TTL = "ttl";
     protected static final String MODEL_TTL = "model.ttl";
     protected static final String STATUS = "status";
     protected static final String HEADER = "header";
@@ -124,12 +130,13 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String MAPPING_TAG = "mapping:";
     protected static final String COMPUTE_TAG = "compute:";
     protected static final String EXECUTE_TAG = "execute:";
+    protected static final String RESET_TAG = "reset:";
     protected static final String IF_TAG = "if:";
     protected static final String THEN_TAG = "then:";
     protected static final String ELSE_TAG = "else:";
     protected static final String INSPECT = "inspect";
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
-                                                        STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE);
+                                        EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE);
 
     protected GraphInstance getGraphInstance(String id) {
         var instance = graphInstances.get(id);
@@ -278,6 +285,19 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
         }
         return nodes.size();
+    }
+
+    protected void resetNodes(String command, GraphInstance graphInstance) {
+        var graph = graphInstance.graph;
+        var stateMachine = graphInstance.stateMachine;
+        var nodes = util.split(command, ",; ");
+        for (var name : nodes) {
+            graphInstance.nodeSeen.remove(name);
+            var node = graph.findNodeByAlias(name);
+            if (node != null) {
+                stateMachine.removeElement(name);
+            }
+        }
     }
 
     protected long getModelTtl(GraphInstance instance) {
@@ -448,14 +468,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     private void mapHttpParams(AsyncHttpRequest request, String rhs, Object value,
                                Map<String, Object> body, List<Object> wholeBody) {
-        if (rhs.startsWith(PATH_PARAMETER)) {
-            var key = rhs.substring(PATH_PARAMETER.length()).trim();
+        if (rhs.startsWith(PATH_PARAMETER_NAMESPACE)) {
+            var key = rhs.substring(PATH_PARAMETER_NAMESPACE.length()).trim();
             request.setPathParameter(key, String.valueOf(value));
-        } else if (rhs.startsWith(QUERY_PARAMETER)) {
-            var key = rhs.substring(QUERY_PARAMETER.length()).trim();
+        } else if (rhs.startsWith(QUERY_NAMESPACE)) {
+            var key = rhs.substring(QUERY_NAMESPACE.length()).trim();
             request.setQueryParameter(key, String.valueOf(value));
-        } else if (rhs.startsWith(HEADER_PARAMETER)) {
-            var key = rhs.substring(HEADER_PARAMETER.length()).trim();
+        } else if (rhs.startsWith(HEADER_NAMESPACE)) {
+            var key = rhs.substring(HEADER_NAMESPACE.length()).trim();
             request.setHeader(key, String.valueOf(value));
         } else if (rhs.startsWith(BODY_NAMESPACE)) {
             var key = rhs.substring(BODY_NAMESPACE.length()).trim();
@@ -496,7 +516,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         var error = 0;
         for (var entry : statements) {
             var line = entry.trim().toLowerCase();
-            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG)) {
+            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG) || line.startsWith(RESET_TAG)) {
                 js++;
             } else if (line.startsWith(EXECUTE_TAG)) {
                 execute++;
@@ -507,11 +527,11 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }
         if (js == 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must include 'IF:', 'COMPUTE:' or 'EXECUTE:' statements");
+                    " must include 'IF:', 'COMPUTE:', 'EXECUTE:' or 'RESET:' statements");
         }
         if (error > 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must use 'IF:', 'COMPUTE:', 'EXECUTE:' or 'MAPPING:' statements");
+                    " must use 'IF:', 'COMPUTE:', 'EXECUTE:', 'RESET:' or 'MAPPING:' statements");
         }
         return execute;
     }
@@ -591,5 +611,19 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
         }
         return null;
+    }
+
+    protected Map<String, Object> getErrorMap(Object error, Object target) {
+        Map<String, Object> result = new HashMap<>();
+        if (target instanceof String text) {
+            result.put(TARGET, text);
+        }
+        if (error instanceof Map<?, ?> map) {
+            map.forEach((k, v) -> result.put(k.toString(), v));
+        } else {
+            result.put(TYPE, ERROR);
+            result.put(MESSAGE, error == null? "null" : error);
+        }
+        return result;
     }
 }

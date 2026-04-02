@@ -56,6 +56,19 @@
     },
     {
       "types": [
+        "Extension"
+      ],
+      "alias": "flowext",
+      "properties": {
+        "input": [
+          "input.body.person_id -> id"
+        ],
+        "extension": "flow://echo",
+        "skill": "graph.extension"
+      }
+    },
+    {
+      "types": [
         "Math"
       ],
       "alias": "js-1",
@@ -101,6 +114,19 @@
           "COMPUTE: test -> var x = {name:'Alice', age: 30, nested: {'inner': {model.a}}, tags: ['a','b']}; x;",
           "COMPUTE: y -> 3 * 4",
           "COMPUTE: z -> var x = 3 * 4.02; x.toFixed(3);"
+        ]
+      }
+    },
+    {
+      "types": [
+        "Math"
+      ],
+      "alias": "js-4",
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "COMPUTE: x -> 3 * 100",
+          "RESET: js-4"
         ]
       }
     },
@@ -236,6 +262,16 @@
     },
     {
       "source": "js-3",
+      "relations": [
+        {
+          "type": "more",
+          "properties": {}
+        }
+      ],
+      "target": "js-4"
+    },
+    {
+      "source": "js-4",
       "relations": [
         {
           "type": "complete",

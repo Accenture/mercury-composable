@@ -1,6 +1,6 @@
 Data Dictionary
 ---------------
-Based on the MiniGraph technology, the data dictionary system consists of (1) Data Dictionary items,
+Based on the MiniGraph technology, the data dictionary method requires (1) Data Dictionary items,
 (2) Data Providers and (3) API Fetchers.
 
 1. You can create a node holding a data dictionary item
@@ -224,9 +224,9 @@ Example
 create node fetcher-1
 with properties
 skill=graph.api.fetcher
-dictionary[]=person_name
-dictionary[]=person_address
-dictionary[]=person_accounts
+dictionary[]=person-name
+dictionary[]=person-address
+dictionary[]=person-accounts
 input[]=input.body.person_id -> person_id
 output[]=result.person_name -> output.body.name
 output[]=result.person_address -> output.body.address
@@ -252,8 +252,8 @@ The concurrency property tells the API fetcher to limit parallelism to avoid ove
 create node fetcher-2
 with properties
 skill=graph.api.fetcher
-dictionary[]=person_id
-dictionary[]=account_id
+dictionary[]=person-id
+dictionary[]=account-id
 for_each[]=fetcher-1.result.person_accounts -> model.account_id
 concurrency=3
 input[]=input.body.person_id -> person_id

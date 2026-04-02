@@ -243,28 +243,38 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (!isTaskLevel) {
                 flowInstance.setExceptionAtTopLevel(true);
             }
-            Map<String, Object> error = new HashMap<>();
-            error.put(TASK, task.service);
-            error.put(CODE, statusCode);
-            error.put(MESSAGE, event.getError());
-            String stackTrace = event.getStackTrace();
-            if (stackTrace != null) {
-                error.put(STACK_TRACE, stackTrace);
-            }
-            executeTask(flowInstance, handler, error);
+            executeTask(flowInstance, handler, getTaskErrorMap(task.service, statusCode, event));
         } else {
             // when there are no task or flow exception handlers
             abortFlow(flowInstance, statusCode, event.getError());
         }
     }
 
+    private Map<String, Object> getTaskErrorMap(String taskName, int statusCode, EventEnvelope event) {
+        Map<String, Object> error = new HashMap<>();
+        error.put(TASK, taskName);
+        error.put(CODE, statusCode);
+        var stack = event.getStackTrace();
+        if (stack != null) error.put(STACK_TRACE, stack);
+        var message = event.getError();
+        error.put(MESSAGE, message);
+        // nested exception from a subflow?
+        if (message instanceof Map<?,?> map && ERROR.equals(map.get(TYPE)) &&
+                    map.get(STATUS) instanceof Integer rc && rc == statusCode && map.containsKey(MESSAGE)) {
+            if (map.size() == 3) {
+                error.put(MESSAGE, map.get(MESSAGE));
+            } else if (map.size() == 4 && map.containsKey(STACK_TRACE)) {
+                error.put(MESSAGE, map.get(MESSAGE));
+                error.put(STACK_TRACE, map.get(STACK_TRACE));
+            }
+        }
+        return error;
+    }
+
     private void abortFlow(FlowInstance flowInstance, int status, Object message) {
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
-            Map<String, Object> result = new HashMap<>();
-            result.put(STATUS, status);
-            result.put(MESSAGE, message);
-            result.put(TYPE, ERROR);
+            Map<String, Object> result = getFlowErrorMap(status, message);
             flowInstance.setReference(ERROR, result);
             EventEnvelope error = new EventEnvelope();
             // restore the original correlation-ID to the calling party
@@ -275,6 +285,19 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             po.send(error);
         }
         endFlow(flowInstance, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getFlowErrorMap(int status, Object message) {
+        if (message instanceof Map<?,?> map && ERROR.equals(map.get(TYPE)) &&
+                map.get(STATUS) instanceof Integer rc && rc == status && map.containsKey(MESSAGE)) {
+            return (Map<String, Object>) map;
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put(TYPE, ERROR);
+        result.put(STATUS, status);
+        result.put(MESSAGE, message);
+        return result;
     }
 
     private void endFlow(FlowInstance flowInstance, boolean normal) {
@@ -523,7 +546,11 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 md.lhs.equals(RESULT) || md.lhs.startsWith(RESULT_NAMESPACE)) {
             value = helper.getLhsElement(md.lhs, md.consolidated);
             if (value == null) {
-                removeModelElement(md.rhs, md.consolidated);
+                if (md.consolidated.keyExists(md.lhs)) {
+                    md.consolidated.setElement(md.rhs, null);
+                } else {
+                    removeModelElement(md.rhs, md.consolidated);
+                }
             }
         } else {
             value = helper.getConstantValue(md.lhs);
@@ -1023,21 +1050,27 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         if (md.rhs.startsWith(EXT_NAMESPACE)) {
             callExternalStateMachine(flowInstance, task, md.rhs, value);
         } else if (md.rhs.startsWith(MODEL_NAMESPACE)) {
-            setInputDataMappingModelVar(md, flowInstance, value, inputLike);
+            Map<String, Object> modelOnly = new HashMap<>();
+            modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
+            MultiLevelMap model = new MultiLevelMap(modelOnly);
+            if (value == null && md.source.keyExists(md.lhs)) {
+                model.setElement(md.rhs, null);
+            } else {
+                setInputDataMappingModelVar(md, model, value, inputLike);
+            }
         } else if (inputLike) {
             if (value != null) {
                 setInputDataMappingRhs(entry, md, value);
+            } else if (md.source.keyExists(md.lhs)) {
+                md.target.setElement(md.rhs, null);
             }
         } else {
             setInputDataMappingRhsAsConstant(md);
         }
     }
 
-    private void setInputDataMappingModelVar(InputMappingMetadata md, FlowInstance flowInstance,
+    private void setInputDataMappingModelVar(InputMappingMetadata md, MultiLevelMap model,
                                              Object value, boolean inputLike) {
-        Map<String, Object> modelOnly = new HashMap<>();
-        modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
-        MultiLevelMap model = new MultiLevelMap(modelOnly);
         if (inputLike) {
             if (value == null) {
                 removeModelElement(md.rhs, model);

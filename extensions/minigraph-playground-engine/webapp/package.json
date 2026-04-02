@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "clean": "rm -rf ../src/main/resources/public/*",
     "build:deploy": "npm run build && npm run deploy",
-    "deploy": "cp -r dist/* ../src/main/resources/public/"
+    "deploy": "cp -r dist/* ../src/main/resources/public/",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.1",
@@ -27,6 +29,8 @@
     "@vitejs/plugin-react": "^4.3.4",
     "babel-plugin-react-compiler": "^1.0.0",
     "typescript": "^5.9.3",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "vite-plugin-svgr": "^4.5.0",
+    "vitest": "^3.1.1"
   }
 }

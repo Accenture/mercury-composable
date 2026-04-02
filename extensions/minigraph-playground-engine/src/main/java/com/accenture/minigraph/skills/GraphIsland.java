@@ -21,6 +21,7 @@ package com.accenture.minigraph.skills;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.PostOffice;
 
 import java.util.Map;
 
@@ -29,6 +30,9 @@ public class GraphIsland extends GraphLambdaFunction {
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
+        var po = PostOffice.trackable(headers, instance);
+        var nodeName = headers.getOrDefault(NODE, "none");
+        po.annotateTrace(NODE, nodeName);
         return SINK;
     }
 }

@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Foundation module for event Streaming to support the following classes
@@ -42,7 +42,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ObjectStreamIO {
     private static final Logger log = LoggerFactory.getLogger(ObjectStreamIO.class);
     private static final ConcurrentMap<String, StreamInfo> streams = new ConcurrentHashMap<>();
-    private static final AtomicInteger initCounter = new AtomicInteger(0);
+    private static final ReentrantLock SAFETY = new ReentrantLock();
+    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     private static final long HOUSEKEEPING_INTERVAL = 30 * 1000L;    // 30 seconds
     private static final String TYPE = "type";
     private static final String READ = "read";
@@ -81,12 +82,15 @@ public class ObjectStreamIO {
 
     private void createStream() {
         Platform platform = Platform.getInstance();
-        if (initCounter.incrementAndGet() == 1) {
-            platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredStreams());
-            log.debug("Housekeeper started");
-        }
-        if (initCounter.get() > 10000) {
-            initCounter.set(10);
+        SAFETY.lock();
+        try {
+            if (!LOADED.get()) {
+                LOADED.set(true);
+                platform.getVertx().setPeriodic(HOUSEKEEPING_INTERVAL, t -> removeExpiredStreams());
+                log.debug("Housekeeper started");
+            }
+        } finally {
+            SAFETY.unlock();
         }
         Utility util = Utility.getInstance();
         String id = util.getUuid();

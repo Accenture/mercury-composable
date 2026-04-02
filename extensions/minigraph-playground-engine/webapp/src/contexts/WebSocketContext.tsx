@@ -29,6 +29,11 @@ import { makeWsUrl } from '../utils/urls';
 
 export type WsPhase = 'idle' | 'connecting' | 'connected';
 
+/**
+ * Public shape of a WebSocket slot (for external consumers).
+ * Internally, per-path state uses the `SlotState` type in the reducer
+ * and separate `wsRefs`/`pingRefs`/`msgIdRefs` Records — not `WsSlot`.
+ */
 export interface WsSlot {
   phase:    WsPhase;
   messages: { id: number; raw: string }[];

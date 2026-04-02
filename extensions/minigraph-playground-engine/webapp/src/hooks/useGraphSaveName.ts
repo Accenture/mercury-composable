@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { extractImportGraphName } from '../utils/messageParser';
+import { type ProtocolBus } from '../protocol/bus';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,11 +62,11 @@ export interface UseGraphSaveNameReturn {
  * @param storageKey  localStorage key for the untitled counter
  *                    (should be unique per playground, e.g.
  *                    `"minigraph-untitled-counter"`).
- * @param messages    Incoming WebSocket message log from useWebSocket.
+ * @param bus         The shared ProtocolBus instance for this playground.
  */
 export function useGraphSaveName(
   storageKey: string,
-  messages:   { id: number; raw: string }[],
+  bus:        ProtocolBus,
 ): UseGraphSaveNameReturn {
 
   // ── Untitled counter ──────────────────────────────────────────────────────
@@ -92,41 +92,15 @@ export function useGraphSaveName(
   const [lastSavedName, setLastSavedNameState] = useState<string | null>(null);
 
   // ── Message-ID watermark ──────────────────────────────────────────────────
-  // Mirrors the pattern used by useAutoMockUpload / useAutoGraphRefresh.
-  // Initialised to -1; set to the highest ID present at mount time so that
-  // import commands that are already in the console history at page load
-  // are NOT replayed as a fresh import.
-  const watermarkRef = useRef<number>(-1);
-
-  // ── Set watermark at mount ────────────────────────────────────────────────
-  useEffect(() => {
-    if (messages.length > 0) {
-      watermarkRef.current = messages[messages.length - 1].id;
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Replaced by bus subscription — no watermark needed.
 
   // ── Scan new messages for import-graph echoes ─────────────────────────────
   useEffect(() => {
-    if (messages.length === 0) return;
-
-    const newMessages = messages.filter(m => m.id > watermarkRef.current);
-    if (newMessages.length === 0) return;
-
-    watermarkRef.current = messages[messages.length - 1].id;
-
-    // Walk in reverse so that if multiple imports arrived in one batch, the
-    // most-recent one wins (consistent with "last command wins" semantics).
-    for (let i = newMessages.length - 1; i >= 0; i--) {
-      const name = extractImportGraphName(newMessages[i].raw);
-      if (name) {
-        // A new import supersedes any previous saved name — the user is working
-        // with an externally-supplied graph now.
-        setImportedName(name);
-        setLastSavedNameState(null);
-        break;
-      }
-    }
-  }, [messages]);
+    return bus.on('command.importGraph', (event) => {
+      setImportedName(event.graphName);
+      setLastSavedNameState(null);
+    });
+  }, [bus]);
 
   // ── Public setters ────────────────────────────────────────────────────────
 

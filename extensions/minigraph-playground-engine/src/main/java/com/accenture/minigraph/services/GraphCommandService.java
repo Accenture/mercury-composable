@@ -53,9 +53,9 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphCommandService.class);
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
+    private static final String OUTCOME = "outcome";
     private static final String PLAYGROUND = "playground";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
-    private static final long MAX_BUFFER_SIZE = 62 * 1024L;
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
     private final String deployedGraphLocation;
@@ -164,7 +164,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase("describe")) {
             handleDescribeCommand(po, inRoute, outRoute, words);
         } else if (words.size() > 1 && words.getFirst().equalsIgnoreCase(EXECUTE)) {
-            handleExecuteCommand(po, inRoute, outRoute, words);
+            handleExecuteCommand(inRoute, outRoute, words);
         } else if (words.size() == 2 && words.getFirst().equalsIgnoreCase(INSPECT)) {
             handleInspectCommand(po, inRoute, outRoute, words.get(1));
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
@@ -237,17 +237,6 @@ public class GraphCommandService extends GraphLambdaFunction {
         var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
         po.send(new EventEnvelope().setTo(GraphTraveler.ROUTE).setHeader(IN, inRoute)
                 .setReplyTo(outRoute).setCorrelationId(cid));
-
-//        po.eRequest(new EventEnvelope().setTo(GraphTraveler.ROUTE)
-//                        .setHeader(IN, inRoute).setHeader(OUT, outRoute), timeout)
-//                .thenAccept(response -> {
-//                    if (response.hasError()) {
-//                        po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
-//                    } else {
-//                        po.send(new EventEnvelope().setTo(outRoute).setBody(
-//                                "Knowledge graph executed in " + response.getExecutionTime() + " ms"));
-//                    }
-//                });
     }
 
     private void handleCommandPartTwo(PostOffice po, String inRoute, String outRoute, List<String> words) {
@@ -282,8 +271,36 @@ public class GraphCommandService extends GraphLambdaFunction {
                 words.get(1).equalsIgnoreCase("mock") &&
                 words.get(2).equalsIgnoreCase("data")) {
             handleUploadMockCommand(po, inRoute, outRoute);
+        } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase("seen")) {
+            handleSeenCommand(po, inRoute, outRoute);
         } else {
             po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+        }
+    }
+
+    private void handleSeenCommand(PostOffice po, String inRoute, String outRoute) {
+        var graphInstance = getGraphInstance(inRoute);
+        if (graphInstance != null) {
+            var root = new AtomicBoolean(false);
+            var end = new AtomicBoolean(false);
+            var nodes = new ArrayList<String>();
+            graphInstance.nodeSeen.forEach((k, v) -> {
+                if (k.equals(ROOT)) {
+                    root.set(true);
+                } else if (k.equals(END)) {
+                    end.set(true);
+                } else {
+                    nodes.add(k);
+                }
+            });
+            Collections.sort(nodes);
+            var result = new ArrayList<String>();
+            if (root.get()) result.add(ROOT);
+            result.addAll(nodes);
+            if (end.get()) result.add(END);
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Total "+result.size()+
+                                                " node"+(result.size() == 1? "" : "s")+" have been seen"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(result));
         }
     }
 
@@ -461,22 +478,22 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleInspectCommand(PostOffice po, String inRoute, String outRoute, String key) {
         var stateMachine = getGraphInstance(inRoute).stateMachine;
-        var value = stateMachine.getElement(key, false);
+        var value = stateMachine.getElement(key, Collections.emptyMap());
         if (value instanceof Map || value instanceof List) {
             var text = SimpleMapper.getInstance().getMapper().writeValueAsString(value);
             if (text.length() > MAX_BUFFER_SIZE) {
                 var name = getTempGraphName(inRoute);
                 po.send(new EventEnvelope().setTo(outRoute).setBody(
-                        "Large payload (" + text.length() +") -> GET /api/inspect/"+ name+"/"+key));
+                        "Large payload (" + text.length() +") -> GET /api/inspect/"+name+"/"+key));
             } else {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, "outcome", value)));
+                po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, OUTCOME, value)));
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, "outcome", value)));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(Map.of(INSPECT, key, OUTCOME, value)));
         }
     }
 
-    private void handleExecuteCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
+    private void handleExecuteCommand(String inRoute, String outRoute, List<String> words) {
         final String nodeName;
         if (words.size() == 2) {
             nodeName = words.get(1);
@@ -497,7 +514,10 @@ public class GraphCommandService extends GraphLambdaFunction {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have a skill property");
         }
         var skillRoute = String.valueOf(skill);
+        var cid = util.getUuid();
+        var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");
         if (po.exists(skillRoute)) {
+            graphInstance.nodeSeen.put(nodeName, true);
             po.eRequest(new EventEnvelope().setTo(skillRoute)
                             .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)
                     .thenAccept(response -> {

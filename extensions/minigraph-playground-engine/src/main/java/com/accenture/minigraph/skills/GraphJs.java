@@ -34,6 +34,7 @@ import org.platformlambda.core.graph.MiniGraph;
 
 import org.graalvm.polyglot.Context;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.PostOffice;
 
 /**
  * Since JavaScript uses Kernel resources, we must limit it to a small number less than 100
@@ -53,8 +54,10 @@ public class GraphJs extends GraphLambdaFunction {
         if (!EXECUTE.equals(headers.get(TYPE))) {
             throw new IllegalArgumentException("Type must be EXECUTE");
         }
-        var in = headers.get(IN);
+        var po = PostOffice.trackable(headers, instance);
         var nodeName = headers.getOrDefault(NODE, "none");
+        po.annotateTrace(NODE, nodeName);
+        var in = headers.get(IN);
         var graphInstance = getGraphInstance(in);
         var node = getNode(nodeName, graphInstance.graph);
         if (!ROUTE.equals(node.getProperty(SKILL))) {
@@ -152,6 +155,9 @@ public class GraphJs extends GraphLambdaFunction {
                 // guarantee that it is a single line
                 command = command.replace('\n', ' ');
                 handleDataMappingEntry(nodeName, command, graphInstance);
+            }
+            if (RESET_TAG.equals(tag)) {
+                resetNodes(command, graphInstance);
             }
         }
         return NEXT;

@@ -29,8 +29,11 @@ import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @OptionalService("app.env=dev")
@@ -61,8 +64,10 @@ public class GraphTraveler extends GraphLambdaFunction {
             graphInstance.setWsInstance(in);
             graphInstance.setCorrelationId(event.getCorrelationId());
             graphInstance.setReplyTo(event.getReplyTo());
-            graphInstance.hasSeen.clear();
+            graphInstance.nodeSeen.clear();
+            graphInstance.skillRun.clear();
             graphInstance.complete.set(false);
+            graphInstance.resetStartTime();
             beginTraversal(po, graphInstance);
         } catch (Exception e) {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;
@@ -93,25 +98,30 @@ public class GraphTraveler extends GraphLambdaFunction {
         var graphInstance = graphInstances.get(wsInstance);
         if (graphInstance != null) {
             var stateMachine = graphInstance.stateMachine;
+            var target = stateMachine.getElement(nodeName + "." + TARGET);
             if (response.hasError()) {
+                if (target != null) {
+                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
+                    stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
+                }
                 handleErrorResponse(po, graphInstance, response);
                 return;
             }
             var graph = graphInstance.graph;
             var node = graph.findNodeByAlias(nodeName);
+            graphInstance.skillRun.put(nodeName, true);
+            // advise user that the node with skill has been executed
             var skill = node.getProperty(SKILL);
-            // Except "graph.join", mark node as seen.
-            // The "graph.join" node itself will mark "hasSeen" only when all joining paths are done.
-            if (skill != null && !skill.equals(GraphJoin.ROUTE)) {
-                graphInstance.hasSeen.put(nodeName, true);
-            }
+            var replyTo = graphInstance.getReplyTo();
+            po.send(new EventEnvelope().setTo(replyTo).setBody("Executed " + nodeName + " with skill " + skill +
+                    " in " +response.getExecutionTime() + " ms"));
             // Skill handler can also set status and error in its node properties instead of throwing exception
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
             if (processStatus instanceof Integer rc && resultError != null) {
-                var replyTo = graphInstance.getReplyTo();
+                var errorMap = getErrorMap(resultError, target);
                 var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(resultError).setStatus(rc);
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
                 po.send(error);
                 sendError(po, graphInstance, "Graph traversal aborted");
             } else if (!graphInstance.complete.get()) {
@@ -130,16 +140,12 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
-            var seen = graphInstance.hasSeen.get(nodeName);
+            var seen = !GraphJoin.ROUTE.equals(skill) && graphInstance.nodeSeen.get(nodeName) != null;
             var out = graphInstance.getReplyTo();
-            if (seen == null) {
-                if (skill == null) {
-                    graphInstance.hasSeen.put(nodeName, true);
-                }
+            if (!seen) {
+                graphInstance.nodeSeen.put(nodeName, true);
                 po.send(new EventEnvelope().setTo(out).setBody("Walk to " + nodeName));
                 walkTo(po, skill, graphInstance, node);
-            } else {
-                po.send(new EventEnvelope().setTo(out).setBody("I have seen '" + nodeName +"'"));
             }
         }
     }
@@ -163,12 +169,25 @@ public class GraphTraveler extends GraphLambdaFunction {
     }
 
     private void executionComplete(PostOffice po, GraphInstance graphInstance) {
+        var stateMachine = graphInstance.stateMachine;
+        var in = graphInstance.getWsInstance();
         var out = graphInstance.getReplyTo();
-        var body = graphInstance.stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
-        var response = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId());
-        po.send(response.setBody(body));
+        var value = stateMachine.getElement(OUTPUT, false);
+        if (value instanceof Map || value instanceof List) {
+            var text = SimpleMapper.getInstance().getMapper().writeValueAsString(value);
+            if (text.length() > MAX_BUFFER_SIZE) {
+                var name = getTempGraphName(in);
+                po.send(new EventEnvelope().setTo(out).setBody(
+                        "Large payload (" + text.length() +") -> GET /api/inspect/"+name+"/"+OUTPUT));
+            } else {
+                po.send(new EventEnvelope().setTo(out).setBody(Map.of(OUTPUT, value)));
+            }
+        } else {
+            po.send(new EventEnvelope().setTo(out).setBody(Map.of(OUTPUT, value)));
+        }
         graphInstance.complete.set(true);
-        po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed"));
+        long elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
+        po.send(new EventEnvelope().setTo(out).setBody("Graph traversal completed in " + elapsed + " ms"));
     }
 
     private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
@@ -176,8 +195,6 @@ public class GraphTraveler extends GraphLambdaFunction {
             var wsInstanceId = graphInstance.getWsInstance();
             var nodeName = node.getAlias();
             var compositeId = wsInstanceId + "@" + nodeName;
-            var out = graphInstance.getReplyTo();
-            po.send(new EventEnvelope().setTo(out).setBody("Execute " + nodeName + " with skill " + skill));
             po.send(new EventEnvelope().setTo(skill).setHeader(IN, wsInstanceId)
                     .setHeader(LIVE, true).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
                     .setReplyTo(GraphTraveler.ROUTE).setCorrelationId(compositeId));

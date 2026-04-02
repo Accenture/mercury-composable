@@ -30,11 +30,12 @@ Setup
 To enable this skill for a node, set "skill=graph.math" as a property in a node.
 One or more statements can be added.
 
-There are 4 types of statements:
+There are 5 types of statements:
 1. "IF" statement for decision-making
 2. "COMPUTE" statement to evaluate a mathematical formula
 3. "MAPPING" statement to do data mapping from a source to a target variable
 4. "EXECUTE" statement to execute another node with "graph.math" skill
+5. "RESET" statement to reset the state machine for one or more nodes
 
 You can configure one or more statements of these 3 types.
 
@@ -52,6 +53,20 @@ statement[]=COMPUTE: variable -> mathematical statement
 statement[]=IF: if-then-else statement
 statement[]=MAPPING: source -> target
 statement[]=EXECUTE: another-node
+```
+
+Node cannot be executed more than once
+--------------------------------------
+To avoid unintended looping, the system guarantees that a node, that has been "seen", is not executed again.
+
+The `reset` command clears the "seen" status and erases its result from the state machine. This is reserved
+for advanced use cases that execute a node more than once. *This optional feature must be used with care*.
+
+The following statement resets the node named "previous-node" so that the graph executor can run this node
+again when conditional traversal points to the node.
+
+```
+statement[]=RESET: previous-node
 ```
 
 Optional properties

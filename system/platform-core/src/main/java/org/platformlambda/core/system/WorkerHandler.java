@@ -329,6 +329,7 @@ public class WorkerHandler {
     private void handleFlexResponse(Flux flux, EventEnvelope response, long expiry) {
         var serializer = def.getCustomSerializer();
         FluxPublisher<Object> fluxRelay = new FluxPublisher<>(flux, expiry);
+        fluxRelay.enableVirtualThread(def.isVirtualThread());
         if (serializer != null) {
             fluxRelay.setCustomSerializer(serializer);
         }
@@ -342,7 +343,8 @@ public class WorkerHandler {
         Platform platform = Platform.getInstance();
         final AtomicLong timer = new AtomicLong(-1);
         final AtomicBoolean completed = new AtomicBoolean(false);
-        // For non-blocking operation, use a new virtual thread for the subscription
+        // For non-blocking operation, use a new virtual/kernel thread for the subscription
+        var executor = def.isVirtualThread()? platform.getVirtualThreadExecutor() : platform.getKernelThreadExecutor();
         final Disposable disposable = mono.doFinally(done -> {
                     long t1 = timer.get();
                     if (t1 > 0) {
@@ -350,7 +352,7 @@ public class WorkerHandler {
                     }
                     // finally, send service acknowledgement
                     platform.getEventSystem().send(def.getRoute(), READY + route);
-                }).subscribeOn(Schedulers.fromExecutor(platform.getVirtualThreadExecutor()))
+                }).subscribeOn(Schedulers.fromExecutor(executor))
                 .subscribe(data -> {
                     completed.set(true);
                     sendMonoResponse(response, data, begin);

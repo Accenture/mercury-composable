@@ -48,9 +48,11 @@ public class GraphExecutor extends GraphLambdaFunction {
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
     private static final String INSTANCE = "instance";
     private final String deployedGraphLocation;
+    private final boolean isDevEnv;
 
     public GraphExecutor() {
         var config = AppConfigReader.getInstance();
+        this.isDevEnv = "dev".equals(config.getProperty("app.env", "dev"));
         var deployLocation = config.getProperty("location.graph.deployed", DEFAULT_DEPLOY_DIR);
         if (deployLocation.startsWith(FILE_PREFIX) || deployLocation.startsWith(CLASSPATH_PREFIX)) {
             this.deployedGraphLocation = deployLocation;
@@ -148,25 +150,26 @@ public class GraphExecutor extends GraphLambdaFunction {
         var flowInstance = Flows.getFlowInstance(flowInstanceId);
         if (graphInstance != null && flowInstance != null) {
             var stateMachine = graphInstance.stateMachine;
+            var target = stateMachine.getElement(nodeName + "." + TARGET);
             if (response.hasError()) {
+                if (target != null) {
+                    var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
+                    stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
+                }
                 handleErrorResponse(po, graphInstance, response);
                 return;
             }
             var graph = graphInstance.graph;
             var node = graph.findNodeByAlias(nodeName);
-            var skill = node.getProperty(SKILL);
-            // Except "graph.join", mark node as seen.
-            // The "graph.join" node itself will mark "hasSeen" only when all joining paths are done.
-            if (skill != null && !skill.equals(GraphJoin.ROUTE)) {
-                graphInstance.hasSeen.put(nodeName, true);
-            }
+            graphInstance.skillRun.put(nodeName, true);
             // Skill handler can also set status and error in its node properties instead of throwing exception
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
             if (processStatus instanceof Integer rc && resultError != null) {
+                var errorMap = getErrorMap(resultError, target);
                 var replyTo = graphInstance.getReplyTo();
                 var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(resultError).setStatus(rc);
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
                 po.send(error);
                 graphInstance.complete.set(true);
             } else if (!graphInstance.complete.get()) {
@@ -185,11 +188,9 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
-            var seen = graphInstance.hasSeen.get(nodeName);
-            if (seen == null) {
-                if (skill == null) {
-                    graphInstance.hasSeen.put(nodeName, true);
-                }
+            var seen = !GraphJoin.ROUTE.equals(skill) && graphInstance.nodeSeen.get(nodeName) != null;
+            if (!seen) {
+                graphInstance.nodeSeen.put(nodeName, true);
                 walkTo(po, skill, graphInstance, node);
             }
         }
@@ -267,9 +268,20 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private Map<String, Object> getGraphModel(String graphId) {
+        if (graphId.startsWith("tutorial") && !isDevEnv) {
+            throw new IllegalArgumentException("tutorial graph models not allowed");
+        }
         // use config reader to resolve environment variables
-        var reader = new ConfigReader(getNormalizedPath(deployedGraphLocation, graphId));
-        return reader.getMap();
+        try {
+            var reader = new ConfigReader(getNormalizedPath(deployedGraphLocation, graphId));
+            return reader.getMap();
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().endsWith("not found")) {
+                throw new IllegalArgumentException(graphId + " not found");
+            } else {
+                throw e;
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

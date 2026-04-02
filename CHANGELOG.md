@@ -10,6 +10,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.2, 3/31/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+Update nullTransportTest in Event Script Engine to avoid false positive in Snyk static code analysis
+
+---
+## Version 4.4.1, 3/30/2026
+
+### Added
+
+N/A
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Update platform-core's deepCopy method to support cloning null values
+2. Enhance event-script-engine's input/output data mapping to allow mapping null values to model and input
+
+---
+## Version 4.4.0, 3/26/2026
+
+### Added
+
+1. 'seen' command in MiniGraph Playground UI to display nodes that have been executed
+2. 'reset' command in graph.math and graph.js skill modules in MiniGraph Playground to
+   support advanced use cases that execute a node more than once
+3. Include extension / data dictionary name in error response when extension or fetcher fails
+4. Support Spring Boot versions 3 and 4 by adding a rest-spring-4 library and
+   rest-spring-4-example template
+
+### Removed
+
+N/A
+
+### Changed
+
+OSS update:
+
+1. Spring Boot 3.5.12 and 4.0.4
+2. Vertx 5.0.9
+3. Netty 4.2.12.Final
+4. Kafka client 4.2.0
+5. Reactor-BOM 2025.0.4
+6. JSON-Path 3.0.0
+7. jUnit-bom 6.0.3
+
+---
+## Version 4.3.84, 3/25/2026
+
+### Added
+
+1. Support "flow" as one kind of extensions in MiniGraph extension skill module
+2. For the platform-core, it can select virtual or kernel thread to process Mono/Flux responses
+   from a composable function. i.e. When a function uses kernel resource, it Mono/Flux response
+   will be subscribed using a kernel thread.
+
+### Removed
+
+N/A
+
+### Changed
+
+Annotate trace information of MiniGraph execution with node-name and essential metadata
+
+---
 ## Version 4.3.83, 3/24/2026
 
 ### Added

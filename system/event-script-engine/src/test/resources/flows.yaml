@@ -52,5 +52,6 @@ flows:
   - 'parse-date.yml'
   - 'parse-date-time.yml'
   - 'string-util.yml'
+  - 'null-transport.yml'
 
 location: 'classpath:/flows/'

@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This is reserved for system use.
@@ -60,10 +61,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HttpRouter {
     private static final Logger log = LoggerFactory.getLogger(HttpRouter.class);
+    private static final ReentrantLock SAFETY = new ReentrantLock();
+    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     private static final CustomContentTypeResolver resolver = CustomContentTypeResolver.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
-    private static final AtomicInteger initCounter = new AtomicInteger(0);
     private static final String HTTP_REQUEST = "http.request";
     private static final String AUTH_HANDLER = "http.auth.handler";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -109,35 +111,41 @@ public class HttpRouter {
     }
 
     public static void initialize() {
-        if (initCounter.incrementAndGet() == 1) {
-            Platform platform = Platform.getInstance();
-            Utility util = Utility.getInstance();
-            AppConfigReader config = AppConfigReader.getInstance();
-            List<String> labels = util.split(config.getProperty("trace.http.header"), ", ");
-            if (labels.isEmpty()) {
-                labels.add("X-Trace-Id");
+        SAFETY.lock();
+        try {
+            if (!LOADED.get()) {
+                LOADED.set(true);
+                Platform platform = Platform.getInstance();
+                Utility util = Utility.getInstance();
+                AppConfigReader config = AppConfigReader.getInstance();
+                List<String> labels = util.split(config.getProperty("trace.http.header"), ", ");
+                if (labels.isEmpty()) {
+                    labels.add("X-Trace-Id");
+                }
+                traceIdLabels = labels;
+                log.info("Initialized with HTTP trace headers {}", traceIdLabels);
+                String folder = config.getProperty("spring.web.resources.static-locations",
+                        config.getProperty("static.html.folder", "classpath:/public"));
+                if (folder.endsWith("/")) {
+                    folder = folder.substring(0, folder.length()-1);
+                }
+                if (folder.startsWith(CLASSPATH)) {
+                    resourceFolder = folder.substring(CLASSPATH.length());
+                } else if (folder.startsWith(FILEPATH)) {
+                    staticFolder = folder.substring(FILEPATH.length());
+                } else if (folder.startsWith("/")) {
+                    staticFolder = folder;
+                } else {
+                    log.warn("Static content folder must start with {} or {}", CLASSPATH, FILEPATH);
+                }
+                // initialize mime-type and custom content-type resolvers
+                MimeTypeResolver.getInstance().init();
+                CustomContentTypeResolver.getInstance().init();
+                // register authentication handler
+                platform.registerPrivate(AUTH_HANDLER, new HttpAuth(), 200);
             }
-            traceIdLabels = labels;
-            log.info("Initialized with HTTP trace headers {}", traceIdLabels);
-            String folder = config.getProperty("spring.web.resources.static-locations",
-                    config.getProperty("static.html.folder", "classpath:/public"));
-            if (folder.endsWith("/")) {
-                folder = folder.substring(0, folder.length()-1);
-            }
-            if (folder.startsWith(CLASSPATH)) {
-                resourceFolder = folder.substring(CLASSPATH.length());
-            } else if (folder.startsWith(FILEPATH)) {
-                staticFolder = folder.substring(FILEPATH.length());
-            } else if (folder.startsWith("/")) {
-                staticFolder = folder;
-            } else {
-                log.warn("Static content folder must start with {} or {}", CLASSPATH, FILEPATH);
-            }
-            // initialize mime-type and custom content-type resolvers
-            MimeTypeResolver.getInstance().init();
-            CustomContentTypeResolver.getInstance().init();
-            // register authentication handler
-            platform.registerPrivate(AUTH_HANDLER, new HttpAuth(), 200);
+        } finally {
+            SAFETY.unlock();
         }
     }
 

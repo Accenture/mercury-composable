@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class AsyncHttpRequest {
@@ -94,6 +96,82 @@ public class AsyncHttpRequest {
 
     public String getUrl() {
         return url == null? "/" : url;
+    }
+
+    public String getFinalizedUrl() {
+        var uri = getUrl();
+        int hashMark = uri.lastIndexOf('#');
+        final String uriWithoutHash = hashMark == -1? uri : uri.substring(0, hashMark);
+        final String hashParams = hashMark == -1? null : uri.substring(hashMark+1);
+        String rawUri;
+        int questionMark = uriWithoutHash.lastIndexOf('?');
+        if (questionMark == -1) {
+            rawUri = uriWithoutHash;
+            setQueryString(null);
+        } else {
+            rawUri = uriWithoutHash.substring(0, questionMark);
+            setQueryString(decodeUri(uriWithoutHash.substring(questionMark+1)));
+        }
+        // combine query parameters from query string and query parameters
+        final String qs = queryParametersToString();
+        if (qs != null) {
+            setQueryString(getQueryString() == null? qs : getQueryString() + "&" + qs);
+        }
+        var pathParameters = getPathParameters();
+        for (var entry : pathParameters.entrySet()) {
+            var key = "{"+entry.getKey()+"}";
+            if (rawUri.contains(key)) {
+                rawUri = rawUri.replace(key, entry.getValue());
+            }
+        }
+        // reconstruct full URI
+        var sb = new StringBuilder();
+        sb.append(rawUri);
+        if (getQueryString() != null) {
+            sb.append('?');
+            sb.append(getQueryString());
+        }
+        if (hashParams != null) {
+            sb.append('#');
+            sb.append(hashParams);
+        }
+        return Utility.getInstance().getEncodedUri(sb.toString());
+    }
+
+    private String decodeUri(String uri) {
+        return uri != null && uri.contains("%")? URLDecoder.decode(uri, StandardCharsets.UTF_8) : uri;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String queryParametersToString() {
+        StringBuilder sb = new StringBuilder();
+        Map<String, Object> params = getQueryParameters();
+        if (params.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, Object> kv: params.entrySet()) {
+            String k = kv.getKey();
+            Object v = kv.getValue();
+            if (v instanceof String value) {
+                sb.append(k);
+                sb.append('=');
+                sb.append(value);
+                sb.append('&');
+            }
+            if (v instanceof List) {
+                List<String> list = (List<String>) v;
+                for (String item: list) {
+                    sb.append(k);
+                    sb.append('=');
+                    sb.append(item);
+                    sb.append('&');
+                }
+            }
+        }
+        if (sb.isEmpty()) {
+            return null;
+        }
+        return sb.substring(0, sb.length()-1);
     }
 
     public AsyncHttpRequest setUrl(String url) {

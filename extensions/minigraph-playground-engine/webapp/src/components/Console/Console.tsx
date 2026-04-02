@@ -1,9 +1,11 @@
 import { ConsoleErrorBoundary } from './ConsoleErrorBoundary';
 import ConsoleMessage from './ConsoleMessage';
 import styles from './Console.module.css';
+import type { ProtocolEvent } from '../../protocol/events';
 
 interface ConsoleProps {
   messages:           { id: number; raw: string }[];
+  classificationMap?: Map<number, ProtocolEvent[]>;
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
@@ -22,6 +24,7 @@ interface ConsoleProps {
 
 export default function Console({
   messages,
+  classificationMap,
   onCopy,
   onClear,
   consoleRef,
@@ -61,6 +64,8 @@ export default function Console({
           <ConsoleErrorBoundary key={msg.id} fallback={msg.raw}>
             <ConsoleMessage
               message={msg.raw}
+              msgId={msg.id}
+              classificationMap={classificationMap}
               onPin={onPinMessage ? () => onPinMessage(msg) : undefined}
               pinned={pinnedMessageId === msg.id}
               onCopyMessage={onCopyMessage}

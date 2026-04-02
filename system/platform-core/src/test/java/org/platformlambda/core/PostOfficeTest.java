@@ -674,7 +674,7 @@ class PostOfficeTest extends TestBase {
         String id = util.getUuid();
         byte[] hash = crypto.getSHA256(util.getUTF(platform.getAppId()));
         id = util.bytes2hex(hash).substring(0, id.length());
-        String originId = util.getDateOnly(new Date()) + id;
+        String originId = util.getDateOnly(new Date(platform.getStartTime())) + id;
         assertEquals(platform.getOrigin(), originId);
     }
 

@@ -1,12 +1,12 @@
-# Design notes
+# Design Notes
 
-## Event choreography by configuration
+## Event Choreography by Configuration
 
 The recommended way to write a composable application is event choreography by configuration using "Event Script".
 
 This would potentially reduce code size by half.
 
-## Support sequential synchronous RPC in a non-blocking fashion
+## Support Sequential Synchronous RPC in a Non-Blocking fashion
 
 The foundation library (platform-core) has been integrated with Java 21 virtual thread and 
 Kotlin suspend function features.
@@ -19,7 +19,7 @@ This makes sequential code with RPC performs as good as reactive code.
 More importantly, the sequential code represents the intent of the application clearly,
 thus making code easier to read and maintain.
 
-## Low level control of function execution strategies
+## Low Level Control of Function Execution Strategies
 
 You can precisely control how your functions execute, using virtual threads
 or kernel thread pools to yield the highest performance and throughput.
@@ -43,7 +43,7 @@ The convertValue method has been consolidated into the readValue method.
 For efficient and serialization performance, we use MsgPack as schemaless binary transport for
 EventEnvelope that contains event metadata, headers and payload.
 
-### Handling numbers in a Map
+### Handling Numbers in a Map
 
 The system assumes each key of a Map object to be a text string. If you use integer as a key,
 it will be converted to a text string. The assumed Map class is `Map<String, Object>`.
@@ -80,7 +80,7 @@ The system enforces the use of strings as keys in a map for reliable serializati
 For example, the configuration management module will convert integers and other types as strings
 for keys in a configuration.
 
-### User provided serializers
+### Pluggable User Provided Serializers
 
 This provides more flexibility for user function to take full control of their PoJo serialization needs.
 
@@ -88,7 +88,7 @@ This provides more flexibility for user function to take full control of their P
 
 For consistency, we have customized Spring Boot and Servlet serialization and exception handlers.
 
-## Reactive design
+## Reactive Design
 
 Mercury uses the temporary local file system (`/tmp`) as an overflow area for events when the
 consumer is slower than the producer. This event buffering design means that user application
@@ -96,7 +96,7 @@ does not have to handle back-pressure logic directly.
 
 However, it does not restrict you from implementing your flow-control logic.
 
-## In-memory event system
+## In-memory Event System
 
 In Mercury version 1, the Akka actor system is used as the in-memory event bus.
 Since Mercury version 2, we have migrated from Akka to Eclipse Vertx.
@@ -111,13 +111,22 @@ event choreography capability directly in the event system. Event script describ
 an event flow configuration that drives composable functions to work together as a single application.
 A composable function, by design, is self-contained with I/O immutability.
 
-## Spring Boot 3
+## Active Knowledge Graph
+
+The MiniGraph playground and execution engine implements the Active Knowledge Graph design principle.
+It is an extension of "property graph" design where one or more nodes may be associated with some
+built-in "skills". These nodes are active such that the Graph Execution engine will run a composable
+function that provides a special skill associated with a node. For example, doing data mapping
+and transformation, fetching external data, perform calculation and decision making.
+
+## Spring Boot version 3 and 4
 
 The `platform-core` includes a non-blocking HTTP and websocket server for standalone operation without
-Spring Boot. The `rest-spring-3` library is designed to turn your code to be a Spring Boot application.
+Spring Boot. The `rest-spring-3` and `rest-spring-4` libraries are designed to turn your code to be a
+Spring Boot 3/4 application.
 
 You may also use the `platform-core` library with a regular Spring Boot application without the
-`rest-spring-3` library if you prefer.
+`rest-spring-3` or `rest-spring-4` library if you prefer.
 
 ## Support of Mono and Flux results
 
