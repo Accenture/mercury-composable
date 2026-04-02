@@ -5,11 +5,9 @@ import type { MinigraphGraphData } from './graphTypes';
 /** Data bag attached to every ReactFlow node we create. */
 export interface GraphNodeData extends Record<string, unknown> {
   alias: string;
-  nodeType: string;   // primary type label, e.g. "entry_point"
-  skill?: string;
-  description?: string;
-  question?: string;
-  mapping?: string[];
+  nodeType: string;   // primary type label, e.g. "Root"
+  /** All properties from the MinigraphNode, passed through for rendering. */
+  properties: Record<string, unknown>;
 }
 
 /** Data bag attached to every ReactFlow edge we create. */
@@ -59,10 +57,18 @@ const BASE_NODE_STYLE: CSSProperties = {
 // Accent colours per node type.  Only the accent value differs between types;
 // everything else is shared via BASE_NODE_STYLE.
 const NODE_ACCENT: Record<string, string> = {
-  entry_point: '#a6e3a1',
-  api_fetcher: '#89b4fa',
-  mapper:      '#fab387',
-  terminator:  '#f38ba8',
+  Root:        '#15803d',   // green-700
+  End:         '#dc2626',   // red-600
+  Fetcher:     '#2563eb',   // blue-600
+  mapper:      '#ea580c',   // orange-600
+  Math:        '#a16207',   // yellow-700
+  JavaScript:  '#7e22ce',   // purple-700
+  Provider:    '#be185d',   // pink-700
+  Dictionary:  '#0e7490',   // cyan-700
+  Join:        '#65a30d',   // lime-700
+  Extension:   '#4338ca',   // indigo-700
+  Island:      '#475569',   // slate-600
+  Decision:    '#b45309',   // amber-700
 };
 const UNKNOWN_ACCENT = '#6c7086';
 
@@ -180,10 +186,7 @@ export function transformGraphData(
     data: {
       alias:       n.alias,
       nodeType:    n.types[0] ?? 'unknown',
-      skill:       n.properties.skill,
-      description: n.properties.description,
-      question:    n.properties.question,
-      mapping:     n.properties.mapping,
+      properties:  n.properties,
     },
   }));
 

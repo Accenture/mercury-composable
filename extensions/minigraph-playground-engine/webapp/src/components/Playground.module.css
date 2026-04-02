@@ -38,6 +38,29 @@
   display: flex;
 }
 
+/* ── Clipboard toggle button ── */
+.clipboardToggle {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.clipboardToggle:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.clipboardToggle[aria-pressed="true"] {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
 /* ── Drag handle between panels ── */
 .resizeHandle {
   width: 1px;

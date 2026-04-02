@@ -43,6 +43,7 @@ export interface PlaygroundConfig {
   storageKeyTab:         string;     // localStorage key for the last selected right-panel tab
   storageKeySavedGraphs?: string;   // localStorage key for graphs saved from the Graph Data tab (omit to hide the feature)
   supportsUpload?:       boolean;    // true when the backend supports POST /api/json/content/{id} upload
+  supportsClipboard?:    boolean;    // true when clip/paste features are enabled (Minigraph only)
   /**
    * The ordered list of right-panel tabs to show for this playground.
    * The first entry is the default selected tab on first load.
@@ -79,6 +80,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     storageKeyHistory: 'minigraph-command-history',
     storageKeyTab: 'minigraph-right-tab',
     storageKeySavedGraphs: 'minigraph-saved-graphs',
+    supportsClipboard: true,
     // Minigraph works with graph commands and text responses; it has no payload input.
     tabs: ['preview', 'graph', 'graph-data'],
   },
