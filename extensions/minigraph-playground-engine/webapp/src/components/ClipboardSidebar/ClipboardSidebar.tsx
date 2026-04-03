@@ -54,7 +54,7 @@ export default function ClipboardSidebar({ connected, onPaste }: ClipboardSideba
       {inspectItem && (
         <div className={styles.inspectPanel}>
           <div className={styles.inspectHeader}>
-            <span>Inspect: {inspectItem.node.alias}</span>
+            <span>Describe node {inspectItem.node.alias}</span>
             <button
               className={styles.inspectClose}
               onClick={() => setInspectItem(null)}

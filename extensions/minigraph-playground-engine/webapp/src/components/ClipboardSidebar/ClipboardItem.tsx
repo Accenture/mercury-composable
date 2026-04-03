@@ -55,7 +55,7 @@ export function ClipboardItem({ item, connected, onPaste, onRemove, onInspect }:
           onClick={onInspect}
           aria-label={`Inspect node ${node.alias}`}
         >
-          Inspect
+          Describe
         </button>
         <button
           className={styles.removeBtn}
