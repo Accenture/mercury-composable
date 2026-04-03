@@ -29,8 +29,8 @@ export default function SavedGraphsMenu({
   connected,
 }: SavedGraphsMenuProps) {
   const label = savedGraphs.length > 0
-    ? `Saved Graphs (${savedGraphs.length})`
-    : 'Saved Graphs';
+    ? `Load Graph (${savedGraphs.length})`
+    : 'Load Graph';
 
   return (
     <NavMenu label={label}>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -15,7 +15,8 @@ import '@xyflow/react/dist/style.css';
 import { nodeTypes } from './NodeTypes';
 import { GraphViewErrorBoundary } from './GraphViewErrorBoundary';
 import { transformGraphData, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
-import type { MinigraphGraphData } from '../../utils/graphTypes';
+import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
+import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
 import GraphToolbar from '../GraphToolbar/GraphToolbar';
 import styles from './GraphView.module.css';
 
@@ -28,12 +29,44 @@ interface GraphViewProps {
   onRenderError?:  (message: string) => void;
   /** When true, renders a semi-transparent overlay with a spinner to indicate a background re-fetch. */
   isRefreshing?:   boolean;
+  /** Callback for "Clip to Clipboard" from the node context menu. */
+  onClipNode?:     (node: MinigraphNode, connections: MinigraphConnection[]) => void;
 }
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
 const EMPTY_EDGES: Edge<GraphEdgeData>[]  = [];
 
-export default function GraphView({ graphData, onCopySuccess, onCopyError, onRenderError, isRefreshing = false }: GraphViewProps) {
+export default function GraphView({ graphData, onCopySuccess, onCopyError, onRenderError, isRefreshing = false, onClipNode }: GraphViewProps) {
+
+  // ── Context menu state ──────────────────────────────────────────────────
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    nodeAlias: string;
+  } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Dismiss context menu on outside click or Escape
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleDismiss = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as globalThis.Node)) {
+        setContextMenu(null);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null);
+    };
+
+    document.addEventListener('mousedown', handleDismiss);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleDismiss);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contextMenu]);
 
   // Keep a stable ref so the useEffect below can fire the error callback without
   // needing onRenderError in the useMemo dependency array.
@@ -124,16 +157,30 @@ export default function GraphView({ graphData, onCopySuccess, onCopyError, onRen
           maxZoom={2.5}
           // colorMode="dark" // enable for dark mode
           proOptions={{ hideAttribution: false }}
+          onNodeContextMenu={(event, node) => {
+            if (!onClipNode) return;
+            event.preventDefault();
+            setContextMenu({ x: event.clientX, y: event.clientY, nodeAlias: node.data.alias });
+          }}
+          onPaneClick={() => setContextMenu(null)}
         >
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
           <Controls showInteractive={false} />
           <MiniMap
             nodeColor={(node) => {
               const colorMap: Record<string, string> = {
-                entry_point: '#a6e3a1',
-                api_fetcher: '#89b4fa',
-                mapper:      '#fab387',
-                terminator:  '#f38ba8',
+                Root:        '#15803d',
+                End:         '#dc2626',
+                Fetcher:     '#2563eb',
+                mapper:      '#ea580c',
+                Math:        '#a16207',
+                JavaScript:  '#7e22ce',
+                Provider:    '#be185d',
+                Dictionary:  '#0e7490',
+                Join:        '#65a30d',
+                Extension:   '#4338ca',
+                Island:      '#475569',
+                Decision:    '#b45309',
               };
               return colorMap[node.type ?? ''] ?? '#6c7086';
             }}
@@ -148,6 +195,30 @@ export default function GraphView({ graphData, onCopySuccess, onCopyError, onRen
               role="status"
               aria-label="Graph refreshing"
             />
+          </div>
+        )}
+        {contextMenu && onClipNode && graphData && (
+          <div
+            ref={menuRef}
+            className={styles.contextMenu}
+            style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x }}
+            role="menu"
+          >
+            <button
+              role="menuitem"
+              autoFocus
+              className={styles.contextMenuItem}
+              onClick={() => {
+                const node = findNodeByAlias(graphData, contextMenu.nodeAlias);
+                if (node) {
+                  const connections = extractDirectConnections(graphData, contextMenu.nodeAlias);
+                  onClipNode(node, connections);
+                }
+                setContextMenu(null);
+              }}
+            >
+              Clip to Clipboard
+            </button>
           </div>
         )}
       </div>
