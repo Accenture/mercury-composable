@@ -55,5 +55,6 @@ Tutorials
 ---------
 - help tutorial 1 (your first 'hello world' graph model)
 - help tutorial 2 (deploying a graph model)
-- help tutorial 3 (data dictionary, provider and fetcher)
-- help tutorial 4 (decision making using mathematics and boolean operations)
+- help tutorial 3 (data dictionary, provider and API fetcher)
+- help tutorial 4 (decision-making using mathematics and boolean operations)
+- help tutorial 5 (more sophisticated graph navigation)

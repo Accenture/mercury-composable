@@ -5,7 +5,7 @@ import GraphView from '../GraphView/GraphView';
 import GraphDataView from '../GraphDataView/GraphDataView';
 import styles from './RightPanel.module.css';
 import { type ValidationResult } from '../../utils/validators';
-import type { MinigraphGraphData } from '../../utils/graphTypes';
+import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
 
 export type RightTab = 'payload' | 'preview' | 'graph' | 'graph-data';
 
@@ -29,6 +29,8 @@ interface RightPanelProps {
   onGraphDataCopyError?:   () => void;
   /** When true, forwards the loading-overlay state to GraphView. */
   isGraphRefreshing?:      boolean;
+  /** Callback for "Clip to Clipboard" from the node context menu in GraphView. */
+  onClipNode?:             (node: MinigraphNode, connections: MinigraphConnection[]) => void;
 }
 
 export default function RightPanel({
@@ -47,6 +49,7 @@ export default function RightPanel({
   onGraphDataCopySuccess,
   onGraphDataCopyError,
   isGraphRefreshing,
+  onClipNode,
 }: RightPanelProps) {
   const uid              = useId();
   const payloadPanelId   = `${uid}-tab-payload`;
@@ -154,6 +157,7 @@ export default function RightPanel({
             isRefreshing={isGraphRefreshing}
             onCopySuccess={onGraphDataCopySuccess}
             onCopyError={onGraphDataCopyError}
+            onClipNode={onClipNode}
           />
         </div>
       )}

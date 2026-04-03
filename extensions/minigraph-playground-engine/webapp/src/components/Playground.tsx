@@ -14,6 +14,7 @@ import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
 import { useAutoMockUpload } from '../hooks/useAutoMockUpload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { useGraphSaveName } from '../hooks/useGraphSaveName';
+import { buildNodeCommand } from '../clipboard/commandBuilder';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
@@ -21,18 +22,23 @@ import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
+import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
+import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateDialog';
 import { type PlaygroundConfig, PLAYGROUND_CONFIGS } from '../config/playgrounds';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
+import { useClipboardContext } from '../contexts/ClipboardContext';
 import { ProtocolBus } from '../protocol/bus';
 import { useProtocolKernel } from '../protocol/useProtocolKernel';
 import type { GraphLinkEvent } from '../protocol/events';
+import type { ClipboardItemRecord } from '../clipboard/db';
+import type { MinigraphNode, MinigraphConnection } from '../utils/graphTypes';
 
 interface PlaygroundProps {
   config: PlaygroundConfig;
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -213,6 +219,53 @@ export default function Playground({ config }: PlaygroundProps) {
     modalOpen:   modalUploadPath !== null,
   });
 
+  // ── Clipboard integration ────────────────────────────────────────────────
+  const clipboardCtx = useClipboardContext();
+
+  const [clipboardOpen, setClipboardOpen] = useLocalStorage<boolean>('clipboard-sidebar-open', false);
+
+  const [duplicateDialogState, setDuplicateDialogState] = useState<{
+    pendingItem: ClipboardItemRecord;
+    existingItem: ClipboardItemRecord;
+  } | null>(null);
+
+  const handlePasteToInput = useCallback((item: ClipboardItemRecord) => {
+    const existsLocally = graphData?.nodes.some(n => n.alias === item.node.alias) ?? false;
+    const verb = existsLocally ? 'update' : 'create';
+    const command = buildNodeCommand(verb, item.node);
+    ws.setCommand(command);
+    addToast(`${verb === 'create' ? 'Create' : 'Update'} command for "${item.node.alias}" pasted to input`, 'info');
+  }, [graphData, ws.setCommand, addToast]);
+
+  const handleClipNode = useCallback(async (
+    node: MinigraphNode,
+    connections: MinigraphConnection[],
+  ) => {
+    try {
+      const result = await clipboardCtx.clipNode(node, connections, {
+        sourceWsPath: wsPath,
+        sourceLabel: config.label,
+      });
+
+      switch (result.status) {
+        case 'added':
+          addToast(`Node "${node.alias}" clipped to clipboard`, 'success');
+          break;
+        case 'duplicate':
+          setDuplicateDialogState({
+            pendingItem: result.pendingItem,
+            existingItem: result.existingItem,
+          });
+          break;
+        case 'error':
+          addToast(`Clip failed: ${result.message}`, 'error');
+          break;
+      }
+    } catch (err) {
+      addToast(`Clip failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    }
+  }, [clipboardCtx, wsPath, config.label, addToast]);
+
   // ── Saved graphs (localStorage snapshots) ────────────────────────────────
   // Only instantiated when the playground config provides a storage key so
   // playgrounds that don't use this feature have zero overhead.
@@ -233,20 +286,67 @@ export default function Playground({ config }: PlaygroundProps) {
     bus,
   );
 
-  // Save the current graph name as a bookmark in localStorage.
-  // Also sends `export graph as {name}` over the WebSocket so the server
-  // writes (or refreshes) the corresponding {name}.json file in its temp
-  // directory — that file is what `import graph from {name}` reads back.
-  // The WS send is a no-op when disconnected; the bookmark is still written
-  // so the user can reconnect and load it later.
+  // ── Pending graph export ──────────────────────────────────────────────────
+  // Tracks a save that is waiting for server confirmation.
+  // null = no pending save; string = the name being exported.
+  const pendingSaveRef = useRef<string | null>(null);
+
+  // Save the current graph under the given name.
+  // When connected, the localStorage write and success toast are deferred
+  // until the server confirms the export (graph.link → success, lifecycle
+  // error → failure).  When disconnected, the bookmark is written
+  // optimistically so the user can reconnect and load it later.
   const handleSaveGraph = useCallback((name: string) => {
-    savedGraphs.saveGraph(name);
     setLastSavedName(name);
     if (ws.connected) {
+      pendingSaveRef.current = name;
       ws.sendRawText(`export graph as ${name}`);
+    } else {
+      savedGraphs.saveGraph(name);
+      addToast(`Graph saved as "${name}"`, 'success');
     }
-    addToast(`Graph saved as "${name}"`, 'success');
   }, [savedGraphs.saveGraph, setLastSavedName, ws.connected, ws.sendRawText, addToast]);
+
+  // Confirm pending save: server responded with a graph-link after export.
+  useEffect(() => {
+    return bus.on('graph.link', () => {
+      if (pendingSaveRef.current === null) return;
+      const name = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      savedGraphs.saveGraph(name);
+      addToast(`Graph saved as "${name}"`, 'success');
+    });
+  }, [bus, savedGraphs.saveGraph, addToast]);
+
+  // Reject pending save: server responded with a plain-text error after export.
+  // The backend sends export errors as raw text (not JSON lifecycle events),
+  // which the classifier maps to docs.response.  Any docs.response while a
+  // save is pending means the export was rejected.
+  useEffect(() => {
+    return bus.on('docs.response', (event) => {
+      if (pendingSaveRef.current === null) return;
+      pendingSaveRef.current = null;
+      addToast(`Save failed: ${event.raw}`, 'error');
+    });
+  }, [bus, addToast]);
+
+  // Safety net: also handle JSON lifecycle errors in case future server
+  // versions send export errors as structured JSON.
+  useEffect(() => {
+    return bus.on('lifecycle', (event) => {
+      if (pendingSaveRef.current === null) return;
+      if (event.type !== 'error') return;
+      pendingSaveRef.current = null;
+      addToast(`Save failed: ${event.message}`, 'error');
+    });
+  }, [bus, addToast]);
+
+  // Clear pending save on disconnect so it doesn't linger.
+  useEffect(() => {
+    if (!ws.connected) {
+      pendingSaveRef.current = null;
+    }
+  }, [ws.connected]);
 
   // Load a saved graph by sending `import graph from {name}` over the WebSocket.
   // The backend reads {name}.json from its temp directory — the file that was
@@ -378,9 +478,42 @@ export default function Playground({ config }: PlaygroundProps) {
               connected={ws.connected}
             />
           )}
+          {supportsClipboard && (
+            <button
+              className={styles.clipboardToggle}
+              onClick={() => setClipboardOpen(prev => !prev)}
+              aria-label={clipboardOpen ? 'Close clipboard sidebar' : 'Open clipboard sidebar'}
+              aria-pressed={clipboardOpen}
+            >
+              Clipboard{clipboardCtx.items.length > 0 ? ` (${clipboardCtx.items.length})` : ''}
+            </button>
+          )}
           <Navigation addToast={addToast} />
         </div>
       </header>
+
+      {duplicateDialogState && (
+        <ClipboardDuplicateDialog
+          existingItem={duplicateDialogState.existingItem}
+          pendingItem={duplicateDialogState.pendingItem}
+          onReplace={async () => {
+            try {
+              await clipboardCtx.confirmReplace(
+                duplicateDialogState.pendingItem,
+                duplicateDialogState.existingItem.id,
+              );
+              setDuplicateDialogState(null);
+              addToast(`Clipboard item "${duplicateDialogState.pendingItem.node.alias}" replaced`, 'success');
+            } catch (err) {
+              addToast(`Replace failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+            }
+          }}
+          onCancel={() => {
+            setDuplicateDialogState(null);
+            addToast('Clip cancelled', 'info');
+          }}
+        />
+      )}
 
       <Group
         className={styles.panelGroup}
@@ -388,7 +521,7 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        <Panel defaultSize="60%" minSize="25%">
+        <Panel defaultSize={clipboardOpen ? "50%" : "60%"} minSize="25%">
           <LeftPanel
             messages={ws.messages}
             classificationMap={classificationMap}
@@ -411,7 +544,7 @@ export default function Playground({ config }: PlaygroundProps) {
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />
-        <Panel defaultSize="40%" minSize="20%">
+        <Panel defaultSize={clipboardOpen ? "30%" : "40%"} minSize="20%">
           <RightPanel
             tabs={tabs}
             payload={payload}
@@ -428,8 +561,20 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphDataCopySuccess={() => addToast('Graph JSON copied to clipboard!', 'success')}
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
             isGraphRefreshing={isRefreshing}
+            onClipNode={supportsClipboard ? handleClipNode : undefined}
           />
         </Panel>
+        {supportsClipboard && clipboardOpen && (
+          <>
+            <Separator className={styles.resizeHandle} aria-label="Resize clipboard" />
+            <Panel defaultSize="20%" minSize="10%" maxSize="40%">
+              <ClipboardSidebar
+                connected={ws.connected}
+                onPaste={handlePasteToInput}
+              />
+            </Panel>
+          </>
+        )}
       </Group>
     </div>
   );

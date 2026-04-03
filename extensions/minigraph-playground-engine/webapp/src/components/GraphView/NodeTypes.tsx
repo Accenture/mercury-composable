@@ -7,10 +7,18 @@ export type MinigraphRFNode = Node<GraphNodeData>;
 
 // ─── Per-type metadata ────────────────────────────────────────────────────────
 const TYPE_META: Record<string, { icon: string; label: string }> = {
-  entry_point: { icon: '🚀', label: 'Entry Point' },
-  api_fetcher: { icon: '🌐', label: 'API Fetcher'  },
+  Root:        { icon: '🚀', label: 'Root'         },
+  End:         { icon: '🏁', label: 'End'          },
+  Fetcher:     { icon: '🌐', label: 'Fetcher'      },
   mapper:      { icon: '🗺️', label: 'Mapper'       },
-  terminator:  { icon: '🏁', label: 'Terminator'   },
+  Math:        { icon: '🔢', label: 'Math'         },
+  JavaScript:  { icon: '📜', label: 'JavaScript'   },
+  Provider:    { icon: '🔌', label: 'Provider'     },
+  Dictionary:  { icon: '📖', label: 'Dictionary'   },
+  Join:        { icon: '🔀', label: 'Join'         },
+  Extension:   { icon: '🧩', label: 'Extension'    },
+  Island:      { icon: '🏝️', label: 'Island'       },
+  Decision:    { icon: '❓', label: 'Decision'     },
 };
 
 function getMeta(nodeType: string) {
@@ -18,8 +26,9 @@ function getMeta(nodeType: string) {
 }
 
 // ─── Shared detail rows ───────────────────────────────────────────────────────
-function Row({ label, value }: { label: string; value?: string }) {
-  if (!value) return null;
+
+/** Render a single key=value row. */
+function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className={styles.row}>
       <span className={styles.label}>{label}</span>
@@ -28,16 +37,27 @@ function Row({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function MappingRows({ mapping }: { mapping?: string[] }) {
-  if (!mapping?.length) return null;
+/** Render all properties generically. Arrays get one row per element. */
+function PropertyRows({ properties }: { properties: Record<string, unknown> }) {
+  const entries = Object.entries(properties).filter(
+    ([, v]) => v !== undefined && v !== null,
+  );
+  if (entries.length === 0) return null;
+
   return (
     <>
-      {mapping.map((m, i) => (
-        <div key={m} className={styles.row}>
-          <span className={styles.label}>{i === 0 ? 'map' : ''}</span>
-          <span className={styles.value} title={m}>{m}</span>
-        </div>
-      ))}
+      {entries.map(([key, value]) => {
+        if (Array.isArray(value)) {
+          return value.map((item, i) => {
+            const str = typeof item === 'string' ? item : JSON.stringify(item);
+            return (
+              <Row key={`${key}-${i}`} label={i === 0 ? key : ''} value={str} />
+            );
+          });
+        }
+        const str = typeof value === 'string' ? value : JSON.stringify(value);
+        return <Row key={key} label={key} value={str} />;
+      })}
     </>
   );
 }
@@ -75,10 +95,7 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
         </div>
 
         <div className={styles.body}>
-          <Row label="skill"    value={data.skill} />
-          <Row label="question" value={data.question} />
-          <Row label="desc"     value={data.description} />
-          <MappingRows mapping={data.mapping} />
+          <PropertyRows properties={data.properties} />
         </div>
       </div>
 
@@ -94,9 +111,17 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
 // Our transformer sets node.type = n.types[0], so we need an entry per known
 // type plus a "default" fallback for anything unrecognised.
 export const nodeTypes = {
-  entry_point: MinigraphNode,
-  api_fetcher: MinigraphNode,
+  Root:        MinigraphNode,
+  End:         MinigraphNode,
+  Fetcher:     MinigraphNode,
   mapper:      MinigraphNode,
-  terminator:  MinigraphNode,
+  Math:        MinigraphNode,
+  JavaScript:  MinigraphNode,
+  Provider:    MinigraphNode,
+  Dictionary:  MinigraphNode,
+  Join:        MinigraphNode,
+  Extension:   MinigraphNode,
+  Island:      MinigraphNode,
+  Decision:    MinigraphNode,
   default:     MinigraphNode,
 } as const;

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@xyflow/react": "^12.10.1",
+    "idb": "^8.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-json-view-lite": "^2.5.0",
@@ -28,6 +29,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
     "babel-plugin-react-compiler": "^1.0.0",
+    "fake-indexeddb": "^6.2.5",
     "typescript": "^5.9.3",
     "vite": "^6.0.5",
     "vite-plugin-svgr": "^4.5.0",

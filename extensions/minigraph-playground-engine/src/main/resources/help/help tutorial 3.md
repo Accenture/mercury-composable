@@ -4,7 +4,8 @@ In this session, you will learn about the data dictionary method to source data 
 
 Exercise
 --------
-You will create a root node, a data dictionary node, a data provider node and an API fetcher node as an exercise.
+You will create a root node, an end node, a data dictionary node, a data provider node and an API fetcher node
+as an exercise.
 
 To clear the previous graph session, click the Tools button in the top-right corner and click the "Stop" and "Start"
 toggle button. A new graph session will start.
@@ -14,16 +15,16 @@ Create root and end nodes
 Enter the "create node" command for "root" and "end" nodes first.
 
 ```
-Welcome to MiniGraph Playground!
-> create node root
-> with type Root
-> with properties
-> name=tutorial-3
-> purpose=Demonstrate data sourcing using the Data Dictionary method
-node root created
-> create node end
-> with type End
-node end created
+create node root
+with type Root
+with properties
+name=tutorial-3
+purpose=Demonstrate data sourcing using the Data Dictionary method
+```
+
+```
+create node end
+with type End
 ```
 
 Create data dictionary items
@@ -106,6 +107,7 @@ You will create a fetcher node like this:
 
 ```
 create node fetcher
+with type Fetcher
 with properties
 skill=graph.api.fetcher
 dictionary[]=person-name

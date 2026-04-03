@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Playground from './components/Playground';
 import { PLAYGROUND_CONFIGS } from './config/playgrounds';
 import { WebSocketProvider } from './contexts/WebSocketContext';
+import { ClipboardProvider } from './contexts/ClipboardContext';
 
 /**
  * To add a new playground tool, edit src/config/playgrounds.ts only —
@@ -15,17 +16,19 @@ export default function App() {
     // connections survive tab navigation — switching playgrounds no longer
     // closes the active socket.
     <WebSocketProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* One route per configured playground */}
-          {PLAYGROUND_CONFIGS.map((cfg) => (
-            <Route key={cfg.path} path={cfg.path} element={<Playground config={cfg} />} />
-          ))}
+      <ClipboardProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* One route per configured playground */}
+            {PLAYGROUND_CONFIGS.map((cfg) => (
+              <Route key={cfg.path} path={cfg.path} element={<Playground config={cfg} />} />
+            ))}
 
-          {/* Fallback: unknown routes go to the first playground */}
-          <Route path="*" element={<Navigate to={defaultPath} replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Fallback: unknown routes go to the first playground */}
+            <Route path="*" element={<Navigate to={defaultPath} replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ClipboardProvider>
     </WebSocketProvider>
   );
 }
