@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/CHAPTER-11/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Active Knowledge Graph - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Active Knowledge Graph";
+        var mkdocs_page_input_path = "guides/CHAPTER-11.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/CHAPTER-11/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Active Knowledge Graph</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#what-is-an-active-knowledge-graph">What Is an Active Knowledge Graph?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#semantic-application-design">Semantic Application Design</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#why-this-matters">Why This Matters</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#business-impact">Business Impact</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#industry-context">Industry Context</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#built-in-capabilities">Built-In Capabilities</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#governance-and-lifecycle">Governance and Lifecycle</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#strategic-value">Strategic Value</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#technology-review">Technology Review</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#core-concepts">Core Concepts</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#active-knowledge-graph">Active Knowledge Graph</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#node-types">Node Types</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#1-data-entity-nodes">1. Data Entity Nodes</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#2-data-dictionary-provider-nodes">2. Data Dictionary &amp; Provider Nodes</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#3-skill-nodes-active-nodes">3. Skill Nodes (Active Nodes)</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#skills-and-execution-model">Skills and Execution Model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#built-in-skills">Built-In Skills</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#interactive-development-experience">Interactive Development Experience</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#testing-and-dry-run-execution">Testing and Dry-Run Execution</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deployment-model">Deployment Model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#help-system">Help System</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#extensibility">Extensibility</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#glossary">Glossary</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ARCHITECTURE/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION-REFERENCE/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Guides</li>
+      <li class="breadcrumb-item active">Active Knowledge Graph</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="minigraph-playground-executive-summary">MiniGraph Playground – Executive Summary</h1>
+<p><em>Guide: An implementation of in-memory property graph for computation and decision-making.</em></p>
+<h2 id="overview">Overview</h2>
+<p>MiniGraph Playground is a graph-based application modeling and execution platform designed to enable rapid development of backend services, APIs, and decision logic <strong>without writing application code</strong>.</p>
+<p>It introduces the concept of an <strong>Active Knowledge Graph</strong> — a graph model that not only represents knowledge and relationships, but also <strong>executes behavior</strong> through embedded skills during graph traversal.</p>
+<p>This approach allows organizations to:</p>
+<ul>
+<li>Build decision-centric and data-driven backend services</li>
+<li>Rapidly prototype and evolve business logic</li>
+<li>Decouple application behavior from traditional code deployments</li>
+</ul>
+<hr />
+<h2 id="what-is-an-active-knowledge-graph">What Is an Active Knowledge Graph?</h2>
+<p>Traditional <strong>property graphs</strong> model entities (nodes), relationships (edges), and attributes. MiniGraph extends this model by allowing nodes to carry <strong>executable skills</strong>.</p>
+<p>An <strong>Active Knowledge Graph</strong>:</p>
+<ul>
+<li>Encodes business knowledge as graph structures</li>
+<li>Assigns executable skills to selected nodes</li>
+<li>Executes logic dynamically as the graph is traversed</li>
+</ul>
+<p>When traversal reaches a node with a skill:</p>
+<ol>
+<li>The graph executor invokes a composable function</li>
+<li>Inputs are derived from node attributes and execution context</li>
+<li>The function returns a result</li>
+<li>The executor determines the next traversal path</li>
+</ol>
+<p>This transforms a static knowledge graph into a <strong>living execution model</strong>.</p>
+<hr />
+<h2 id="semantic-application-design">Semantic Application Design</h2>
+<p>Active Knowledge Graph leads to a new paradigm that we call "Semantic application".</p>
+<blockquote>
+<p>Figure 1 - Semantic Application development with Active Knowledge Graph</p>
+</blockquote>
+<p><img alt="Semantic Application" src="../diagrams/semantic-app.png" /></p>
+<p>It rides on the foundation of Composable and Event-Driven programming.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Technology</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Semantic</td>
+<td style="text-align: left;">Application execution is based on derived knowledge without code.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Composable</td>
+<td style="text-align: left;">Event choreography of independent and immutable functions. 50/50 config/code.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Event-driven</td>
+<td style="text-align: left;">Asynchronous and parallel processing of application code, wired by events.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="why-this-matters">Why This Matters</h2>
+<h3 id="business-impact">Business Impact</h3>
+<ul>
+<li><strong>Faster time-to-market</strong>: Change logic by updating graph models, not code</li>
+<li><strong>Lower risk</strong>: Dry-run and inspect execution paths before deployment</li>
+<li><strong>Better alignment</strong>: Business rules, data, and execution live in one model</li>
+<li><strong>Scalability</strong>: Execution is backed by composable, event-driven architecture</li>
+</ul>
+<h3 id="industry-context">Industry Context</h3>
+<p>MiniGraph aligns with and advances industry trends such as:</p>
+<ul>
+<li>Graph-based decision engines</li>
+<li>Workflow and orchestration platforms</li>
+<li>Event-driven and composable architectures</li>
+<li>Low-code / no-code backend development</li>
+</ul>
+<p>Unlike traditional workflow tools, MiniGraph models both <strong>knowledge and execution</strong> in a single graph.</p>
+<hr />
+<h2 id="built-in-capabilities">Built-In Capabilities</h2>
+<p>MiniGraph Playground includes built-in skills for common enterprise needs:</p>
+<ul>
+<li>Data mapping and transformation</li>
+<li>Mathematical and logical evaluation</li>
+<li>External API integration</li>
+<li>Cross-graph execution</li>
+<li>Orchestration and branching control</li>
+</ul>
+<p>These capabilities allow complex backend behaviors to be composed visually and executed reliably.</p>
+<hr />
+<h2 id="governance-and-lifecycle">Governance and Lifecycle</h2>
+<p>MiniGraph supports a structured, enterprise-grade lifecycle:</p>
+<ol>
+<li>Create graph models interactively</li>
+<li>Test and validate individual skills</li>
+<li>Perform full dry-run executions</li>
+<li>Certify graph behavior</li>
+<li>Deploy to non-production environments</li>
+<li>Execute functional and performance tests</li>
+<li>Promote models through staging</li>
+<li>Approve and deploy to production</li>
+</ol>
+<p>Once deployed, a graph model can be invoked as a standard API endpoint or event listener.</p>
+<hr />
+<h2 id="strategic-value">Strategic Value</h2>
+<p>MiniGraph Playground enables organizations to:</p>
+<ul>
+<li>Externalize business logic from code</li>
+<li>Standardize execution patterns across teams</li>
+<li>Improve observability and explainability</li>
+<li>Build adaptable systems resilient to change</li>
+</ul>
+<p>It represents a shift from <strong>application-centric development</strong> to <strong>knowledge- and execution-centric design</strong>.</p>
+<hr />
+<h2 id="technology-review">Technology Review</h2>
+<blockquote>
+<p>Figure 2 - Architecture Diagram</p>
+</blockquote>
+<p><img alt="Active Knowledge Graph Architecture" src="../diagrams/active-knowledge-graph.png" /></p>
+<p>MiniGraph Playground is a developer-focused environment for creating, testing, and executing <strong>Active Knowledge Graphs</strong>.</p>
+<p>It provides both:</p>
+<ul>
+<li>A <strong>graph execution engine</strong></li>
+<li>A <strong>self-service interactive UI</strong></li>
+</ul>
+<p>Developers use MiniGraph to model backend logic, decision flows, data access, and orchestration using graph structures and composable skills.</p>
+<hr />
+<h2 id="core-concepts">Core Concepts</h2>
+<h3 id="active-knowledge-graph">Active Knowledge Graph</h3>
+<p>An Active Knowledge Graph is a directed graph with:</p>
+<ul>
+<li>A <strong>root node</strong> (execution entry point)</li>
+<li>An <strong>end node</strong> (execution completion)</li>
+<li>One or more nodes configured with executable skills</li>
+</ul>
+<p>Traversal begins at the root and continues until the end node is reached or traversal is intentionally paused or redirected.</p>
+<hr />
+<h3 id="node-types">Node Types</h3>
+<p>MiniGraph supports three primary node categories:</p>
+<h4 id="1-data-entity-nodes">1. Data Entity Nodes</h4>
+<p>Represent business entities and their attributes</p>
+<p>Examples:</p>
+<ul>
+<li>Person</li>
+<li>Account</li>
+<li>Order</li>
+</ul>
+<p>These nodes describe <em>what the system knows</em>.</p>
+<hr />
+<h4 id="2-data-dictionary-provider-nodes">2. Data Dictionary &amp; Provider Nodes</h4>
+<p>Define external data sources and API contracts:</p>
+<ul>
+<li>Attribute definitions</li>
+<li>Endpoint configurations</li>
+<li>Request and response mappings</li>
+</ul>
+<p>These nodes enable integration with external systems.</p>
+<hr />
+<h4 id="3-skill-nodes-active-nodes">3. Skill Nodes (Active Nodes)</h4>
+<p>Skill nodes execute actions during traversal:</p>
+<ul>
+<li>Computation</li>
+<li>Decision making</li>
+<li>Data fetching</li>
+<li>Flow control</li>
+</ul>
+<p>Skill nodes are the <strong>behavioral backbone</strong> of the graph.</p>
+<hr />
+<h2 id="skills-and-execution-model">Skills and Execution Model</h2>
+<p>A skill is implemented as a <strong>Composable Function</strong>:</p>
+<ul>
+<li>Self-contained</li>
+<li>Event-driven</li>
+<li>Stateless</li>
+</ul>
+<p>During execution:</p>
+<ol>
+<li>The graph executor sends input to the skill</li>
+<li>The skill executes and returns a result</li>
+<li>The executor updates the graph state machine</li>
+<li>Traversal continues based on the outcome</li>
+</ol>
+<hr />
+<h2 id="built-in-skills">Built-In Skills</h2>
+<p>MiniGraph includes the following built-in skills:</p>
+<ul>
+<li>
+<p><strong>graph.data.mapper</strong><br />
+  Maps data between nodes</p>
+</li>
+<li>
+<p><strong>graph.math</strong><br />
+  High-performance math and boolean evaluation using native Java</p>
+</li>
+<li>
+<p><strong>graph.js</strong><br />
+  JavaScript-based expression evaluation (more flexible, slower)</p>
+</li>
+<li>
+<p><strong>graph.api.fetcher</strong><br />
+  Invokes external APIs using data dictionary definitions</p>
+</li>
+<li>
+<p><strong>graph.extension</strong><br />
+  Executes another graph model</p>
+</li>
+<li>
+<p><strong>graph.island</strong><br />
+  Pauses traversal to isolated subgraphs</p>
+</li>
+<li>
+<p><strong>graph.join</strong><br />
+  Synchronizes multiple execution paths</p>
+</li>
+</ul>
+<p>Each skill has its own help page with syntax, parameters, and examples.</p>
+<hr />
+<h2 id="interactive-development-experience">Interactive Development Experience</h2>
+<p>MiniGraph Playground provides:</p>
+<ul>
+<li>Command prompt for graph operations</li>
+<li>Console output with execution details</li>
+<li>Visual graph rendering via <code>describe graph</code></li>
+</ul>
+<p>The environment is intentionally <strong>playful and exploratory</strong>, encouraging incremental modeling and validation.</p>
+<hr />
+<h2 id="testing-and-dry-run-execution">Testing and Dry-Run Execution</h2>
+<p>Developers are encouraged to:</p>
+<ul>
+<li>Execute individual skill nodes</li>
+<li>Inspect intermediate state machine data</li>
+<li>Validate traversal paths visually</li>
+</ul>
+<p>A <strong>dry-run</strong>:</p>
+<ul>
+<li>Starts at the root node</li>
+<li>Traverses the graph using mock input</li>
+<li>Displays execution paths and outputs</li>
+<li>Requires no live system dependencies</li>
+</ul>
+<hr />
+<h2 id="deployment-model">Deployment Model</h2>
+<p>After validation:</p>
+<ul>
+<li>Graph models are deployed to cloud environments</li>
+<li>Each graph is exposed via a generalized API: <code>/api/graph/{graph-id}</code></li>
+</ul>
+<p>Execution is decoupled from protocol using <strong>Event Script</strong>, allowing:</p>
+<ul>
+<li>REST invocation</li>
+<li>Event-driven execution (e.g., Kafka)</li>
+<li>Future protocol extensions</li>
+</ul>
+<hr />
+<h2 id="help-system">Help System</h2>
+<p>MiniGraph includes comprehensive built-in help pages covering:</p>
+<ul>
+<li>Node creation, editing, deletion</li>
+<li>Graph traversal and execution</li>
+<li>Import/export</li>
+<li>Data dictionary configuration</li>
+<li>Skill-specific usage</li>
+</ul>
+<p>These help pages are accessible directly from the Playground UI and serve as the primary learning resource.</p>
+<hr />
+<h2 id="extensibility">Extensibility</h2>
+<p>Developers can extend a graph model in multiple ways:</p>
+<ol>
+<li>Adding a new <em>feature</em> for API fetcher - you can write a small piece of software to perform pre-processing of 
+   API request and/or post-processing of API response. e.g. Handling of OAuth2 bearer token.</li>
+<li>Graph <em>extension</em> - you can extend the functionality of a graph model by connecting it with one or more graph models.</li>
+<li>Flow <em>extension</em> - you can extend the capability of a graph model by integrating it with one or more event flows,
+   therefore delegating more complex processing to composable software modules.   </li>
+<li>Custom <em>graph skill</em> - in exceptional cases, you may create a new graph skill that can be reused among graph models.
+   This is not recommended for user application development because graph skills are reserved for the graph execution engine itself.</li>
+</ol>
+<hr />
+<h2 id="summary">Summary</h2>
+<p>MiniGraph Playground enables developers to:</p>
+<ul>
+<li>Model backend logic visually</li>
+<li>Execute complex flows without orchestration code</li>
+<li>Test and validate behavior early</li>
+<li>Deploy production-ready graph-based services</li>
+</ul>
+<p>It bridges graph modeling, event-driven execution, and composable design into a single, coherent developer experience.</p>
+<h2 id="glossary">Glossary</h2>
+<p><strong>Active Knowledge Graph</strong> — A property graph extended with executable skills on nodes; execution occurs during traversal.</p>
+<p><strong>Active Node / Skill Node</strong> — A node configured with a skill that runs during traversal (compute, decision, fetch, flow control).</p>
+<p><strong>Composable Function</strong> — A self‑contained, stateless, event‑driven function that can be invoked independently and reused across graphs.</p>
+<p><strong>Data Cache</strong> — Runtime cache used by the execution engine to store intermediate values and reduce repeated lookups.</p>
+<p><strong>Data Dictionary Node</strong> — Graph node describing data attributes and external contract definitions (schemas/mappings).</p>
+<p><strong>Data Entity Node</strong> — Graph node representing a business entity and its attributes (e.g., Person, Account).</p>
+<p><strong>Data Provider Node</strong> — Graph node defining how external data is accessed (endpoints/configuration, request/response mapping).</p>
+<p><strong>Dry‑Run</strong> — A non‑production execution that traverses the graph using mock input, displays execution paths and outputs, and requires no live dependencies.</p>
+<p><strong>End Node</strong> — Terminal node that indicates execution completion.</p>
+<p><strong>Event Script</strong> — Event choreography of composable functions. In the graph context, it is used as a protocol‑decoupling layer enabling REST or event-driven invocation of graph execution.</p>
+<p><strong>Execution Context</strong> — Inputs and runtime state passed between skills and used to evaluate branching.</p>
+<p><strong>Graph Execution Engine</strong> — Runtime responsible for orchestrating traversal, invoking skills, managing state, and caching.</p>
+<p><strong>Graph Extension</strong> — Composition pattern where one graph invokes another to build larger capabilities.</p>
+<p><strong>Graph Orchestrator</strong> — Component coordinating traversal steps and skill invocation sequencing.</p>
+<p><strong>Join</strong> — Synchronization mechanism to merge multiple execution paths.</p>
+<p><strong>Island</strong> — Isolated subgraph execution pattern that pauses traversal for containment or staged processing.</p>
+<p><strong>Property Graph</strong> — Graph model of nodes and edges where both can hold properties/attributes.</p>
+<p><strong>Root Node</strong> — Entry point for traversal/execution.</p>
+<p><strong>Semantic Application Development</strong> — Paradigm where execution is based on derived knowledge represented in an Active Knowledge Graph rather than imperative application code.</p>
+<p><strong>Skill Executor</strong> — Component that invokes skills and handles results.</p>
+<p><strong>State Machine</strong> — Runtime component that tracks traversal state, transitions, and branching outcomes.</p>
+<p><br/></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Chapter-10</th>
+<th style="text-align: center;">Home</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><a href="../CHAPTER-10/">Mini-Graph</a></td>
+<td style="text-align: center;"><a href="../TABLE-OF-CONTENTS/">Table of Contents</a></td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../CHAPTER-10/" class="btn btn-neutral float-left" title="Minimalist Property Graph"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../METHODOLOGY/" class="btn btn-neutral float-right" title="Methodology">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../CHAPTER-10/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../METHODOLOGY/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
