@@ -39,19 +39,13 @@ This transforms a static knowledge graph into a **living execution model**.
 
 ## Semantic Application Design
 
-Active Knowledge Graph leads to a new paradigm that we call "Semantic application".
+Active Knowledge Graph is a new paradigm that we call "Semantic application".
 
-> Figure 1 - Semantic Application development with Active Knowledge Graph
-
-![Semantic Application](./diagrams/semantic-app.png)
-
-It rides on the foundation of Composable and Event-Driven programming.
-
-| Technology   | Description                                                                   |
-|:-------------|:------------------------------------------------------------------------------|
-| Semantic     | Application execution is based on derived knowledge without code.             | 
-| Composable   | Event choreography of independent and immutable functions. 50/50 config/code. | 
-| Event-driven | Asynchronous and parallel processing of application code, wired by events.    | 
+| Technology   | Description                                                                                      |
+|:-------------|:-------------------------------------------------------------------------------------------------|
+| Semantic     | *Active Knowledge Graph*<br/>Application execution is based on derived knowledge without code.   | 
+| Composable   | *Event Script*<br/>Event choreography of independent and immutable functions. 50/50 config/code. | 
+| Event-driven | *Platform Core*<br/>Asynchronous and parallel processing of application code through events.     | 
 
 ---
 
@@ -120,7 +114,7 @@ It represents a shift from **application-centric development** to **knowledge- a
 
 ## Technology Review
 
-> Figure 2 - Architecture Diagram
+> Figure 1 - Architecture Diagram
 
 ![Active Knowledge Graph Architecture](./diagrams/active-knowledge-graph.png)
 
