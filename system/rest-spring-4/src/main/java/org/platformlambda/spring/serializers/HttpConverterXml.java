@@ -47,12 +47,13 @@ public class HttpConverterXml extends AbstractHttpMessageConverter<Object> {
     }
 
     @Override
-    protected boolean supports(@NonNull Class<?> clazz) {
+    public boolean supports(@NonNull Class<?> clazz) {
         return true;
     }
 
+    @NonNull
     @Override
-    protected Object readInternal(@NonNull Class<?> clazz, HttpInputMessage inputMessage)
+    public Object readInternal(@NonNull Class<?> clazz, HttpInputMessage inputMessage)
             throws HttpMessageNotReadableException {
         try {
             return xml.parse(inputMessage.getBody());
@@ -63,30 +64,30 @@ public class HttpConverterXml extends AbstractHttpMessageConverter<Object> {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void writeInternal(Object o, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+    public void writeInternal(Object o, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
         outputMessage.getHeaders().setContentType(MediaType.APPLICATION_XML);
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         OutputStream out = outputMessage.getBody();
-        if (o instanceof String text) {
-            out.write(util.getUTF(text));
-        } else if (o instanceof byte[] bytes) {
-            out.write(bytes);
-        } else {
-            final String root;
-            final Map<String, Object> map;
-            if (o instanceof List) {
-                root = "result";
-                map = new HashMap<>();
-                map.put("item", mapper.readValue(o, List.class));
-            } else if (o instanceof Map) {
-                root = "result";
-                map = (Map<String, Object>) o;
-            } else {
-                root = o.getClass().getSimpleName().toLowerCase();
-                map = mapper.readValue(o, Map.class);
+        switch (o) {
+            case String text -> out.write(util.getUTF(text));
+            case byte[] bytes -> out.write(bytes);
+            default -> {
+                final String root;
+                final Map<String, Object> map;
+                if (o instanceof List) {
+                    root = "result";
+                    map = new HashMap<>();
+                    map.put("item", mapper.readValue(o, List.class));
+                } else if (o instanceof Map) {
+                    root = "result";
+                    map = (Map<String, Object>) o;
+                } else {
+                    root = o.getClass().getSimpleName().toLowerCase();
+                    map = mapper.readValue(o, Map.class);
+                }
+                String result = map2xml.write(root, map);
+                out.write(util.getUTF(result));
             }
-            String result = map2xml.write(root, map);
-            out.write(util.getUTF(result));
         }
     }
 }

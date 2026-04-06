@@ -41,7 +41,7 @@ public class GraphExceptionHandler implements TypedLambdaFunction<Map<String, Ob
 
     public GraphExceptionHandler() {
         var config = AppConfigReader.getInstance();
-        isDevEnv = "dev".equals(config.getProperty("app.env", "dev"));
+        this.isDevEnv = "dev".equals(config.getProperty("app.env", "dev"));
     }
 
     @Override

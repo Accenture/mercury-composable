@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.3, 4/2/2026
+
+### Added
+
+Tutorials 2 to 5 of MiniGraph Playground
+
+### Removed
+
+Remove sample kafka.properties from main/resources folder in cloud-connector and kafka-connector
+
+### Changed
+
+1. Improved MiniGraph's export root node name validation
+2. Updated documentation for Active Knowledge Graph (Chapter 4 of developer guide)
+
+---
 ## Version 4.4.2, 3/31/2026
 
 ### Added

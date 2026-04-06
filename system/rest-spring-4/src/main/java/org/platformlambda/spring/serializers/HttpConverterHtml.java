@@ -42,30 +42,31 @@ public class HttpConverterHtml extends AbstractHttpMessageConverter<Object> {
     }
 
     @Override
-    protected boolean supports(@NonNull Class<?> clazz) {
+    public boolean supports(@NonNull Class<?> clazz) {
         return true;
     }
 
+    @NonNull
     @Override
-    protected Object readInternal(@NonNull Class<?> clazz, HttpInputMessage inputMessage)
+    public Object readInternal(@NonNull Class<?> clazz, HttpInputMessage inputMessage)
             throws IOException, HttpMessageNotReadableException {
         return util.getUTF(util.stream2bytes(inputMessage.getBody(), false));
     }
 
     @Override
-    protected void writeInternal(Object o, HttpOutputMessage outputMessage)
+    public void writeInternal(Object o, HttpOutputMessage outputMessage)
             throws IOException, HttpMessageNotWritableException {
         outputMessage.getHeaders().setContentType(HTML_CONTENT);
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         OutputStream out = outputMessage.getBody();
-        if (o instanceof String text) {
-            out.write(util.getUTF(text));
-        } else if (o instanceof byte[] bytes) {
-            out.write(bytes);
-        } else {
-            out.write(util.getUTF("<html><body><pre>\n"));
-            out.write(mapper.writeValueAsBytes(o));
-    		out.write(util.getUTF("\n</pre></body></html>"));
+        switch (o) {
+            case String text -> out.write(util.getUTF(text));
+            case byte[] bytes -> out.write(bytes);
+            default -> {
+                out.write(util.getUTF("<html><body><pre>\n"));
+                out.write(mapper.writeValueAsBytes(o));
+                out.write(util.getUTF("\n</pre></body></html>"));
+            }
         }
     }
 }

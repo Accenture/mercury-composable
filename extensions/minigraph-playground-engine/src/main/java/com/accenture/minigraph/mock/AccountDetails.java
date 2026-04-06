@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.mock;
 
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = "mock.account.details", instances = 50)
 public class AccountDetails implements TypedLambdaFunction<AsyncHttpRequest, Object> {
     private static final Logger log = LoggerFactory.getLogger(AccountDetails.class);

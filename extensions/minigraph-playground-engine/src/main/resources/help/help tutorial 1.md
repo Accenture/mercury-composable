@@ -10,7 +10,6 @@ In this session, you will create the simplest application that returns a "hello 
 
 Exercise
 --------
-
 If you can see this page, this means you have successfully started the MiniGraph Playground from a browser
 and connected to a designer workbench session.
 
@@ -22,7 +21,7 @@ Create a starting point of a graph
 **Create a root node** that is the starting point for a graph model.
 Select multiline and enter the following command in the bottom-right inbox box.
 
-```terminaloutput
+```
 create node root
 with type Root
 with properties
@@ -31,7 +30,7 @@ purpose=Tutorial one to return a 'hello world' message
 
 The console displays:
 
-```terminaloutput
+```
 > create node root...
 Graph with 1 node described in /api/graph/model/ws-875677-2/165-1
 ```
@@ -49,7 +48,7 @@ An end node is the exit point of a graph model.
 
 Enter the following to create an end node.
 
-```terminaloutput
+```
 create node end
 with type End
 with properties
@@ -59,7 +58,7 @@ mapping[]=text(hello world) -> output.body
 
 The console displays:
 
-```terminaloutput
+```
 > create node end...
 Graph with 2 nodes described in /api/graph/model/ws-875677-2/061-2
 ```
@@ -81,7 +80,7 @@ To run a graph model, you can use the `instantiate graph` command.
 
 The console displays:
 
-```terminaloutput
+```
 > instantiate graph
 Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms
 ```
@@ -93,7 +92,7 @@ You can now try to run the graph by entering the "run" command.
 
 The console displays:
 
-```terminaloutput
+```
 > run
 Walk to root
 ```
@@ -106,20 +105,23 @@ What is missing?
 Active Knowledge Graph is a "property graph" that contains one or more "active" nodes.
 An active node is associated with a "skill" that is backed by a composable function.
 
-The system will perform graph traversal from the root node. There is nothing happened
+The system performs graph traversal from the root node. There is nothing happened
 because there are no further nodes to reach after the root node.
+
+Graph traversal will stop when running in the MiniGraph Playground because the graph
+model is incomplete without an "end" node.
 
 Connecting nodes
 ----------------
 Please enter the following command to connect the root node to the end node.
 
-```terminaloutput
+```
 connect root to end with done
 ```
 
 The console displays:
 
-```terminaloutput
+```
 > connect root to end with done
 node root connected to end
 Graph with 2 nodes described in /api/graph/model/ws-875677-2/551-3
@@ -134,14 +136,14 @@ i.e. the end node with a data mapping statement.
 
 You can now instantiate the graph again and run it by entering the following commands.
 
-```terminaloutput
+```
 instantiate graph
 run
 ```
 
 The console displays:
 
-```terminaloutput
+```
 > instantiate graph
 Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms
 > run
@@ -165,7 +167,7 @@ You may now export the graph so that you can deploy it to production.
 
 Enter the export command below:
 
-```terminaloutput
+```
 export graph as tutorial-1
 ```
 
@@ -174,7 +176,7 @@ in "/tmp/graph/helloworld.json"
 
 The console displays:
 
-```terminaloutput
+```
 > export graph as tutorial-1
 Added name=tutorial-1 to Root node
 Graph exported to /tmp/graph/tutorial-1.json
@@ -189,7 +191,7 @@ Help pages
 To display more information about each command that you use in this tutorial,
 enter the following:
 
-```terminaloutput
+```
 help create
 help connect
 help instantiate
@@ -198,7 +200,3 @@ help export
 ```
 
 Well done. Let's move on to "Tutorial 2".
-
-Solution
---------
-The solution for this tutorial is available in the "tutorials" folder of this repository.

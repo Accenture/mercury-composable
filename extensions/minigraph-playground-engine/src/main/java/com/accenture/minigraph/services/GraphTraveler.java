@@ -68,6 +68,8 @@ public class GraphTraveler extends GraphLambdaFunction {
             graphInstance.skillRun.clear();
             graphInstance.complete.set(false);
             graphInstance.resetStartTime();
+            // clean output for idempotent behavior because the traveler may be invoked multiple times by the operator
+            graphInstance.stateMachine.setElement(OUTPUT, new HashMap<>());
             beginTraversal(po, graphInstance);
         } catch (Exception e) {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;

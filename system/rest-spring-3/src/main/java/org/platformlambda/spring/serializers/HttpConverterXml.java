@@ -19,7 +19,6 @@
 package org.platformlambda.spring.serializers;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
@@ -28,47 +27,34 @@ import org.platformlambda.core.util.Utility;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.AbstractHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HttpConverterXml implements HttpMessageConverter<Object> {
+public class HttpConverterXml extends AbstractHttpMessageConverter<Object> {
     private static final Utility util = Utility.getInstance();
     private static final SimpleXmlWriter map2xml = new SimpleXmlWriter();
     private static final SimpleXmlParser xml = new SimpleXmlParser();
-    private static final MediaType XML_TYPE = new MediaType("application", "xml", StandardCharsets.UTF_8);
-    private static final List<MediaType> types = Collections.singletonList(XML_TYPE);
-    private static final String RESULT = "result";
 
-    @Override
-    public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
-        return mediaType != null && XML_TYPE.getType().equals(mediaType.getType())
-                && XML_TYPE.getSubtype().equals(mediaType.getSubtype());
+    public HttpConverterXml() {
+        super(MediaType.APPLICATION_XML, MediaType.TEXT_XML);
     }
 
     @Override
-    public boolean canWrite(@Nullable Class<?> clazz, MediaType mediaType) {
-        return mediaType != null && XML_TYPE.getType().equals(mediaType.getType())
-                && XML_TYPE.getSubtype().equals(mediaType.getSubtype());
+    public boolean supports(@NonNull Class<?> clazz) {
+        return true;
     }
 
     @NonNull
     @Override
-    public List<MediaType> getSupportedMediaTypes() {
-        return types;
-    }
-
-    @NonNull
-    @Override
-    public Object read(@Nullable Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
+    public Object readInternal(@NonNull Class<?> clazz, HttpInputMessage inputMessage)
+            throws HttpMessageNotReadableException {
         try {
             return xml.parse(inputMessage.getBody());
         } catch (IOException e) {
@@ -76,36 +62,32 @@ public class HttpConverterXml implements HttpMessageConverter<Object> {
         }
     }
 
-    @Override
     @SuppressWarnings("unchecked")
-    public void write(@Nullable Object o, MediaType contentType, HttpOutputMessage outputMessage)
-            throws HttpMessageNotWritableException, IOException {
-        outputMessage.getHeaders().setContentType(XML_TYPE);
+    @Override
+    public void writeInternal(Object o, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+        outputMessage.getHeaders().setContentType(MediaType.APPLICATION_XML);
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         OutputStream out = outputMessage.getBody();
-        if (o instanceof String text) {
-            out.write(util.getUTF(text));
-        } else if (o instanceof byte[] bytes) {
-            out.write(bytes);
-        } else {
-            final String root;
-            final Map<String, Object> map;
-            if (o instanceof List) {
-                root = RESULT;
-                map = new HashMap<>();
-                map.put("item", mapper.readValue(o, List.class));
-            } else if (o instanceof Map) {
-                root = RESULT;
-                map = (Map<String, Object>) o;
-            } else if (o != null) {
-                root = o.getClass().getSimpleName().toLowerCase();
-                map = mapper.readValue(o, Map.class);
-            } else {
-                root = RESULT;
-                map = new HashMap<>();
+        switch (o) {
+            case String text -> out.write(util.getUTF(text));
+            case byte[] bytes -> out.write(bytes);
+            default -> {
+                final String root;
+                final Map<String, Object> map;
+                if (o instanceof List) {
+                    root = "result";
+                    map = new HashMap<>();
+                    map.put("item", mapper.readValue(o, List.class));
+                } else if (o instanceof Map) {
+                    root = "result";
+                    map = (Map<String, Object>) o;
+                } else {
+                    root = o.getClass().getSimpleName().toLowerCase();
+                    map = mapper.readValue(o, Map.class);
+                }
+                String result = map2xml.write(root, map);
+                out.write(util.getUTF(result));
             }
-            String result = map2xml.write(root, map);
-            out.write(util.getUTF(result));
         }
     }
 }

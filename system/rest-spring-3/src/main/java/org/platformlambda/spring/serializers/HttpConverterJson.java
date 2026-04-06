@@ -19,53 +19,40 @@
 package org.platformlambda.spring.serializers;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.util.Utility;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.AbstractHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
 
-public class HttpConverterJson implements HttpMessageConverter<Object> {
-
+public class HttpConverterJson extends AbstractHttpMessageConverter<Object> {
     private static final Utility util = Utility.getInstance();
     private static final MediaType JSON = new MediaType("application", "json", StandardCharsets.UTF_8);
-    private static final List<MediaType> types = Collections.singletonList(JSON);
 
-    @Override
-    public boolean canRead(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
-        return mediaType != null && JSON.getType().equals(mediaType.getType())
-                && JSON.getSubtype().equals(mediaType.getSubtype());
+    public HttpConverterJson() {
+        super(JSON);
     }
 
     @Override
-    public boolean canWrite(@Nullable Class<?> clazz, @Nullable MediaType mediaType) {
-        return mediaType != null && JSON.getType().equals(mediaType.getType())
-                && JSON.getSubtype().equals(mediaType.getSubtype());
+    public boolean supports(@NonNull Class<?> clazz) {
+        return true;
     }
 
     @NonNull
     @Override
-    public List<MediaType> getSupportedMediaTypes() {
-        return types;
-    }
-
-    @NonNull
-    @Override
-    public Object read(@Nullable Class<?> clazz, HttpInputMessage inputMessage) throws HttpMessageNotReadableException {
+    public Object readInternal(@NonNull Class<?> clazz, HttpInputMessage inputMessage)
+            throws HttpMessageNotReadableException {
         try {
-            SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
-            String input = util.stream2str(inputMessage.getBody());
+            var mapper = SimpleMapper.getInstance().getMapper();
+            byte[] input = util.stream2bytes(inputMessage.getBody(), false);
             return mapper.readValue(input, clazz);
         } catch (IOException e) {
             throw new IllegalArgumentException(e.getMessage());
@@ -73,17 +60,15 @@ public class HttpConverterJson implements HttpMessageConverter<Object> {
     }
 
     @Override
-    public void write(@Nullable Object o, @Nullable MediaType contentType, HttpOutputMessage outputMessage)
+    public void writeInternal(Object o, HttpOutputMessage outputMessage)
             throws HttpMessageNotWritableException, IOException {
         outputMessage.getHeaders().setContentType(JSON);
         SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
         OutputStream out = outputMessage.getBody();
-        if (o instanceof String text) {
-            out.write(util.getUTF(text));
-        } else if (o instanceof byte[] bytes) {
-            out.write(bytes);
-        } else {
-            out.write(mapper.writeValueAsBytes(o));
+        switch (o) {
+            case String text -> out.write(util.getUTF(text));
+            case byte[] bytes -> out.write(bytes);
+            default -> out.write(mapper.writeValueAsBytes(o));
         }
     }
 }

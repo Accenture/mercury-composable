@@ -48,9 +48,11 @@ public class GraphExecutor extends GraphLambdaFunction {
     private static final String DEFAULT_DEPLOY_DIR = "classpath:/graph";
     private static final String INSTANCE = "instance";
     private final String deployedGraphLocation;
+    private final boolean isDevEnv;
 
     public GraphExecutor() {
         var config = AppConfigReader.getInstance();
+        this.isDevEnv = "dev".equals(config.getProperty("app.env", "dev"));
         var deployLocation = config.getProperty("location.graph.deployed", DEFAULT_DEPLOY_DIR);
         if (deployLocation.startsWith(FILE_PREFIX) || deployLocation.startsWith(CLASSPATH_PREFIX)) {
             this.deployedGraphLocation = deployLocation;
@@ -266,9 +268,20 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private Map<String, Object> getGraphModel(String graphId) {
+        if (graphId.startsWith("tutorial") && !isDevEnv) {
+            throw new IllegalArgumentException("tutorial graph models not allowed");
+        }
         // use config reader to resolve environment variables
-        var reader = new ConfigReader(getNormalizedPath(deployedGraphLocation, graphId));
-        return reader.getMap();
+        try {
+            var reader = new ConfigReader(getNormalizedPath(deployedGraphLocation, graphId));
+            return reader.getMap();
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().endsWith("not found")) {
+                throw new IllegalArgumentException(graphId + " not found");
+            } else {
+                throw e;
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -37,6 +37,24 @@ This transforms a static knowledge graph into a **living execution model**.
 
 ---
 
+## Semantic Application Design
+
+Active Knowledge Graph leads to a new paradigm that we call "Semantic application".
+
+> Figure 1 - Semantic Application development with Active Knowledge Graph
+
+![Semantic Application](./diagrams/semantic-app.png)
+
+It rides on the foundation of Composable and Event-Driven programming.
+
+| Software technology  | Description                                                                   |
+|:---------------------|:------------------------------------------------------------------------------|
+| Semantic             | Application execution is based on derived knowledge without code.             | 
+| Composable           | Event choreography of independent and immutable functions. 50/50 config/code. | 
+| Event-driven         | Asynchronous and parallel processing of application code, wired by events.    | 
+
+---
+
 ## Why This Matters
 
 ### Business Impact
@@ -98,17 +116,13 @@ MiniGraph Playground enables organizations to:
 
 It represents a shift from **application-centric development** to **knowledge- and execution-centric design**.
 
+---
 
-Technology Review
------------------
+## Technology Review
 
-## Architecture Diagram
-
-> Figure 1 - Active Knowledge Graph
+> Figure 2 - Architecture Diagram
 
 ![Active Knowledge Graph Architecture](./diagrams/active-knowledge-graph.png)
-
-## Introduction
 
 MiniGraph Playground is a developer-focused environment for creating, testing, and executing **Active Knowledge Graphs**.
 
@@ -282,13 +296,16 @@ These help pages are accessible directly from the Playground UI and serve as the
 
 ## Extensibility
 
-Developers can extend MiniGraph by:
+Developers can extend MiniGraph in multiple ways:
 
-- Writing new composable functions
-- Registering them as custom skills
-- Reusing them across multiple graph models
-
-This enables organization-specific logic without modifying the core platform.
+1. Adding new *features* for API fetcher - you can write a small piece of software to perform pre-processing of 
+   API request and/or post-processing of API response. e.g. OAuth2 bearer token acquisition.
+2. Graph *extensions* - you can extend the functionality of a graph model by connecting it with one or more graph models.
+3. Flow *extensions* - you can extend the capability of a graph model by integrating it with one or more event flows,
+   therefore delegating more complex processing to composable software modules.
+4. Custom *graph skills* - you can create additional graph skills that can be reused among graph models. 
+   The rich extensibility of knowledge graph capabilities using features and extensions means that custom graph skills
+   are usually not required. Therefore, custom graph skills are intended for low-level system programming.
 
 ---
 
@@ -302,6 +319,50 @@ MiniGraph Playground enables developers to:
 - Deploy production-ready graph-based services
 
 It bridges graph modeling, event-driven execution, and composable design into a single, coherent developer experience.
+
+## Glossary
+
+**Active Knowledge Graph** — A property graph extended with executable skills on nodes; execution occurs during traversal.
+
+**Active Node / Skill Node** — A node configured with a skill that runs during traversal (compute, decision, fetch, flow control).
+
+**Composable Function** — A self‑contained, stateless, event‑driven function that can be invoked independently and reused across graphs.
+
+**Data Cache** — Runtime cache used by the execution engine to store intermediate values and reduce repeated lookups.
+
+**Data Dictionary Node** — Graph node describing data attributes and external contract definitions (schemas/mappings).
+
+**Data Entity Node** — Graph node representing a business entity and its attributes (e.g., Person, Account).
+
+**Data Provider Node** — Graph node defining how external data is accessed (endpoints/configuration, request/response mapping).
+
+**Dry‑Run** — A non‑production execution that traverses the graph using mock input, displays execution paths and outputs, and requires no live dependencies.
+
+**End Node** — Terminal node that indicates execution completion.
+
+**Event Script** — Event choreography of composable functions. In the graph context, it is used as a protocol‑decoupling layer enabling REST or event-driven invocation of graph execution.
+
+**Execution Context** — Inputs and runtime state passed between skills and used to evaluate branching.
+
+**Graph Execution Engine** — Runtime responsible for orchestrating traversal, invoking skills, managing state, and caching.
+
+**Graph Extension** — Composition pattern where one graph invokes another to build larger capabilities.
+
+**Graph Orchestrator** — Component coordinating traversal steps and skill invocation sequencing.
+
+**Join** — Synchronization mechanism to merge multiple execution paths.
+
+**Island** — Isolated subgraph execution pattern that pauses traversal for containment or staged processing.
+
+**Property Graph** — Graph model of nodes and edges where both can hold properties/attributes.
+
+**Root Node** — Entry point for traversal/execution.
+
+**Semantic Application Development** — Paradigm where execution is based on derived knowledge represented in an Active Knowledge Graph rather than imperative application code.
+
+**Skill Executor** — Component that invokes skills and handles results.
+
+**State Machine** — Runtime component that tracks traversal state, transitions, and branching outcomes.
 
 <br/>
 

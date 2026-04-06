@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.mock;
 
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -25,6 +26,7 @@ import org.platformlambda.core.util.ConfigReader;
 
 import java.util.Map;
 
+@OptionalService("app.env=dev")
 @PreLoad(route = "mock.mdm.profile", instances = 50)
 public class MdmProfile implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 

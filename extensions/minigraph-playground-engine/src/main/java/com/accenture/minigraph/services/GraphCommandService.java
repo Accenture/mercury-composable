@@ -646,25 +646,22 @@ public class GraphCommandService extends GraphLambdaFunction {
         if (validGraphFileName(filename)) {
             var graph = graphModels.get(inRoute);
             if (graph != null) {
+                var file = new File(tempDir, filename+JSON_EXT);
                 // check if the filename is the same as the Root's name property
                 var root = graph.getRootNode();
                 if (root == null) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("Root node created because it does not exist"));
                     root = graph.createRootNode();
                     root.addType(ROOT);
-                    root.addProperty(NAME, filename);
+                    po.send(new EventEnvelope().setTo(outRoute).setBody("Root node created because it does not exist"));
                 } else {
                     var name = root.getProperty(NAME);
-                    if (name == null) {
-                        root.addProperty(NAME, filename);
-                        po.send(new EventEnvelope().setTo(outRoute).setBody("Added name="+filename+" to Root node"));
-                    } else if (!name.equals(filename)) {
+                    if (!filename.equals(name) && file.exists()) {
                         po.send(new EventEnvelope().setTo(outRoute).setBody("Expect root node name="+
-                                filename+ ", Actual: "+name+"\nPlease update root node to match exported graph name"));
+                                filename+ ", Actual: "+name+"\nUpdate root node to overwrite existing graph model"));
                         return;
                     }
                 }
-                var file = new File(tempDir, filename+JSON_EXT);
+                root.addProperty(NAME, filename);
                 var text = SimpleMapper.getInstance().getMapper().writeValueAsString(graph.exportGraph());
                 util.str2file(file, text);
                 var n = getRandomCounter();
@@ -812,7 +809,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             if (!stateMachine.exists(INPUT_BODY_NAMESPACE)) {
                 stateMachine.setElement(INPUT_BODY_NAMESPACE, new HashMap<>());
             }
-            stateMachine.setElement(OUTPUT_NAMESPACE, new HashMap<>());
+            stateMachine.setElement(OUTPUT, new HashMap<>());
             var timeout = getModelTtl(graphInstance);
             log.info("Instantiate graph with {} nodes, model.ttl = {} ms", nodeCount, timeout);
             graphInstances.put(inRoute, graphInstance);

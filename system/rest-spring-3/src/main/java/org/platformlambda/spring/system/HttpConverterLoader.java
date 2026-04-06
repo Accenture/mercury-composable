@@ -41,7 +41,4 @@ public class HttpConverterLoader {
         HttpConverterText text = new HttpConverterText();
         return new HttpMessageConverters(json, xml, html, text);
     }
-
-
-
 }
