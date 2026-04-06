@@ -47,11 +47,11 @@ Active Knowledge Graph leads to a new paradigm that we call "Semantic applicatio
 
 It rides on the foundation of Composable and Event-Driven programming.
 
-| Software technology  | Description                                                                   |
-|:---------------------|:------------------------------------------------------------------------------|
-| Semantic             | Application execution is based on derived knowledge without code.             | 
-| Composable           | Event choreography of independent and immutable functions. 50/50 config/code. | 
-| Event-driven         | Asynchronous and parallel processing of application code, wired by events.    | 
+| Technology   | Description                                                                   |
+|:-------------|:------------------------------------------------------------------------------|
+| Semantic     | Application execution is based on derived knowledge without code.             | 
+| Composable   | Event choreography of independent and immutable functions. 50/50 config/code. | 
+| Event-driven | Asynchronous and parallel processing of application code, wired by events.    | 
 
 ---
 
@@ -196,7 +196,6 @@ A skill is implemented as a **Composable Function**:
 - Self-contained
 - Event-driven
 - Stateless
-- Independently deployable
 
 During execution:
 
@@ -296,16 +295,15 @@ These help pages are accessible directly from the Playground UI and serve as the
 
 ## Extensibility
 
-Developers can extend MiniGraph in multiple ways:
+Developers can extend a graph model in multiple ways:
 
-1. Adding new *features* for API fetcher - you can write a small piece of software to perform pre-processing of 
-   API request and/or post-processing of API response. e.g. OAuth2 bearer token acquisition.
-2. Graph *extensions* - you can extend the functionality of a graph model by connecting it with one or more graph models.
-3. Flow *extensions* - you can extend the capability of a graph model by integrating it with one or more event flows,
-   therefore delegating more complex processing to composable software modules.
-4. Custom *graph skills* - you can create additional graph skills that can be reused among graph models. 
-   The rich extensibility of knowledge graph capabilities using features and extensions means that custom graph skills
-   are usually not required. Therefore, custom graph skills are intended for low-level system programming.
+1. Adding a new *feature* for API fetcher - you can write a small piece of software to perform pre-processing of 
+   API request and/or post-processing of API response. e.g. Handling of OAuth2 bearer token.
+2. Graph *extension* - you can extend the functionality of a graph model by connecting it with one or more graph models.
+3. Flow *extension* - you can extend the capability of a graph model by integrating it with one or more event flows,
+   therefore delegating more complex processing to composable software modules.   
+4. Custom *graph skill* - in exceptional cases, you may create a new graph skill that can be reused among graph models.
+   This is not recommended for user application development because graph skills are reserved for the graph execution engine itself.
 
 ---
 
