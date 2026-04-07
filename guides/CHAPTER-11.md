@@ -43,11 +43,11 @@ This transforms a static knowledge graph into a **living execution model**.
 
 Active Knowledge Graph introduces a new paradigm called **Semantic Application Development**:
 
-| Layer        | Technology               | Description                                                                           |
-|:-------------|:-------------------------|:--------------------------------------------------------------------------------------|
-| Semantic     | *Active Knowledge Graph* | Application execution is based on derived knowledge — no imperative code required.    |
-| Composable   | *Event Script*           | Event choreography of independent, immutable functions. Roughly 50% config, 50% code. |
-| Event-driven | *Platform Core*          | Asynchronous, parallel processing of application logic through events.                |
+| Layer        | Technology               | Description                                                                               |
+|:-------------|:-------------------------|:------------------------------------------------------------------------------------------|
+| Semantic     | *Active Knowledge Graph* | Application execution is based on derived knowledge<br/>— no imperative code required.    |
+| Composable   | *Event Script*           | Event choreography of independent, immutable functions.<br/>Roughly 50% config, 50% code. |
+| Event-driven | *Platform Core*          | Asynchronous, parallel processing of application logic<br/>through events.                |
 
 ---
 
