@@ -68,6 +68,11 @@ export interface WebSocketContextValue {
    */
   setPendingPayload: (wsPath: string, payload: string | null) => void;
   /**
+   * Read the pending payload for the given wsPath without clearing it.
+   * Safe to call during render.
+   */
+  peekPendingPayload: (wsPath: string) => string | null;
+  /**
    * Retrieve and immediately clear the pending payload for the given wsPath.
    * Returns `null` when nothing is pending.
    */
@@ -356,6 +361,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const peekPendingPayload = useCallback((wsPath: string): string | null => {
+    return pendingPayloads[wsPath] ?? null;
+  }, [pendingPayloads]);
+
   const takePendingPayload = useCallback((wsPath: string): string | null => {
     const value = pendingPayloads[wsPath] ?? null;
     if (value !== null) {
@@ -374,7 +383,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, [slots]);
 
   return (
-    <WebSocketContext.Provider value={{ getSlot, connect, disconnect, send, appendMessage, clearMessages, setPendingPayload, takePendingPayload }}>
+    <WebSocketContext.Provider value={{ getSlot, connect, disconnect, send, appendMessage, clearMessages, setPendingPayload, peekPendingPayload, takePendingPayload }}>
       {children}
     </WebSocketContext.Provider>
   );
