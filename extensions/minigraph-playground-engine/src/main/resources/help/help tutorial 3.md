@@ -255,7 +255,7 @@ Enter the `list nodes` and `list connections` commands:
 ```
 > list nodes
 root [Root]
-fetcher [untyped]
+fetcher [Fetcher]
 mdm-profile [Provider]
 person-address [Dictionary]
 person-name [Dictionary]

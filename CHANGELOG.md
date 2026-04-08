@@ -10,6 +10,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.4, 4/7/2026
+
+### Added
+
+Tutorial 6 of MiniGraph Playground
+
+### Removed
+
+N/A
+
+### Changed
+
+Bugfix for mapping null to boolean value for a model variable. Since version 4.4.1, a side effect
+was introduced to disable "null to boolean" conversion when the left-hand-side key exists with
+a null value.
+
+This release restores the original behavior for "null to boolean" conversion.
+This is illustrated in the following input data mapping:
+
+```
+- input:
+   # left-hand-side does not exist
+   - 'model.nothing -> model.null_is_true:boolean(null=true)'
+   # left-hand-side exists with null value
+   - 'input.body.number -> model.null_is_false:boolean(null=false)'
+```
+
+---
 ## Version 4.4.3, 4/2/2026
 
 ### Added

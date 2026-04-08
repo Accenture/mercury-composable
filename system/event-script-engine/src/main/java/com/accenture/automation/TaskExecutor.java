@@ -1053,11 +1053,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             Map<String, Object> modelOnly = new HashMap<>();
             modelOnly.put(MODEL, flowInstance.dataset.get(MODEL));
             MultiLevelMap model = new MultiLevelMap(modelOnly);
-            if (value == null && md.source.keyExists(md.lhs)) {
-                model.setElement(md.rhs, null);
-            } else {
-                setInputDataMappingModelVar(md, model, value, inputLike);
-            }
+            setInputDataMappingModelVar(md, model, value, inputLike);
         } else if (inputLike) {
             if (value != null) {
                 setInputDataMappingRhs(entry, md, value);
@@ -1072,7 +1068,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private void setInputDataMappingModelVar(InputMappingMetadata md, MultiLevelMap model,
                                              Object value, boolean inputLike) {
         if (inputLike) {
-            if (value == null) {
+            if (value == null && !md.source.keyExists(md.lhs)) {
                 removeModelElement(md.rhs, model);
             } else {
                 setRhsElement(value, md.rhs, model);

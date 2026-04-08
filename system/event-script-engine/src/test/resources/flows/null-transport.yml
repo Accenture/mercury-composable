@@ -15,6 +15,12 @@ tasks:
       - 'input.body.number -> model.to_be_removed'
       - 'model.nothing -> model.to_be_removed'
       - 'model.to_be_removed -> removed'
+      # left-hand-side does not exist
+      - 'model.nothing -> model.null_is_true:boolean(null=true)'
+      # left-hand-side exists with null value
+      - 'input.body.number -> model.null_is_false:boolean(null=false)'
+      - 'model.null_is_true -> null_is_true'
+      - 'model.null_is_false -> null_is_false'
     process: 'no.op'
     output:
       - 'text(application/json) -> output.header.content-type'

@@ -27,7 +27,7 @@ You can examine the graph model with the 'list nodes' and 'list connections' com
 ```
 > list nodes
 root [Root]
-fetcher [untyped]
+fetcher [Fetcher]
 mdm-profile [Provider]
 person-address [Dictionary]
 person-name [Dictionary]
@@ -201,6 +201,16 @@ If you check the application log, you will see the two fetchers are executed in 
            GET http://127.0.0.1:8085/api/mdm/profile/100, with [person_id], ttl=30000
 2026-04-02 16:47:32.633 INFO  com.accenture.minigraph.skills.GraphApiFetcher:410 - 
            GET http://127.0.0.1:8085/api/mdm/profile/200, with [person_id], ttl=30000
+```
+
+Export the graph model
+----------------------
+You may save the graph model by exporting it.
+
+```
+> export graph as tutorial-5
+Graph exported to /tmp/graph/tutorial-5.json
+Described in /api/graph/model/tutorial-5/920-28
 ```
 
 Deploy the graph model

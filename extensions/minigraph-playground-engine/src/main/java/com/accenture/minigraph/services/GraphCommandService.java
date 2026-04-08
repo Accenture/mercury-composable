@@ -849,7 +849,8 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
-    private void handleDescribeCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
+    private void handleDescribeCommand(PostOffice po, String inRoute, String outRoute, List<String> words)
+            throws IOException {
         if (words.size() > 1 && words.get(1).equalsIgnoreCase(GRAPH)) {
             describeGraph(po, inRoute, outRoute);
         } else if (words.size() == 3 && words.get(1).equalsIgnoreCase(SKILL)) {
@@ -864,8 +865,12 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
-    private void describeSkill(PostOffice po, String outRoute, String skillRoute) {
-        po.send(new EventEnvelope().setTo(outRoute).setBody(getSkillDoc(po, skillRoute)));
+    private void describeSkill(PostOffice po, String outRoute, String skillRoute) throws IOException {
+        var command = HELP + " " + skillRoute.replace('.', '-');
+        var words = util.split(command, " ");
+        var helpText = getHelp(words);
+        po.send(new EventEnvelope().setTo(outRoute).setBody(
+                Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
     }
 
     private void describeGraph(PostOffice po, String inRoute, String outRoute) {
@@ -1103,19 +1108,6 @@ public class GraphCommandService extends GraphLambdaFunction {
         var title = sb.toString().toLowerCase().trim();
         try (var in = this.getClass().getResourceAsStream(HELP_PREFIX + title + MARKDOWN_EXT)) {
             return in == null? null : util.stream2str(in);
-        }
-    }
-
-    private String getSkillDoc(PostOffice po, String skill) {
-        if (po.exists(skill)) {
-            var filename = SKILL_PREFIX + skill.replace('.', '-') + MARKDOWN_EXT;
-            try (var in = this.getClass().getResourceAsStream(filename)) {
-                return in == null? "Did you forget to add "+filename+"?" : util.stream2str(in);
-            } catch (IOException e) {
-                throw new IllegalArgumentException(e);
-            }
-        } else {
-            throw new IllegalArgumentException(SKILL_TAG + skill + NOT_FOUND);
         }
     }
 
