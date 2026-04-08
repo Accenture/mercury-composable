@@ -22,9 +22,10 @@ N/A
 
 ### Changed
 
-Bugfix for mapping null to boolean value for a model variable. Since version 4.4.1, a side effect
-was introduced to disable "null to boolean" conversion when the left-hand-side key exists with
-a null value.
+1. Log stacktrace when EventScriptManager cannot process an event
+2. Bugfix for mapping null to boolean value for a model variable. Since version 4.4.1, a side effect
+   was introduced to disable "null to boolean" conversion when the left-hand-side key exists with
+   a null value.
 
 This release restores the original behavior for "null to boolean" conversion.
 This is illustrated in the following input data mapping:
@@ -36,6 +37,8 @@ This is illustrated in the following input data mapping:
    # left-hand-side exists with null value
    - 'input.body.number -> model.null_is_false:boolean(null=false)'
 ```
+
+
 
 ---
 ## Version 4.4.3, 4/2/2026
