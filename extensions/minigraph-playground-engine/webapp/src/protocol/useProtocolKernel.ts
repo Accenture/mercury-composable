@@ -8,8 +8,6 @@ export interface UseProtocolKernelOptions {
   messages: { id: number; raw: string }[];
   /** The shared ProtocolBus instance for this playground. */
   bus: ProtocolBus;
-  /** Stable identity for the current WebSocket slot (e.g. wsPath). */
-  slotKey: string;
 }
 
 export interface UseProtocolKernelReturn {
@@ -35,19 +33,15 @@ export interface UseProtocolKernelReturn {
 export function useProtocolKernel({
   messages,
   bus,
-  slotKey,
 }: UseProtocolKernelOptions): UseProtocolKernelReturn {
   const watermarkRef = useRef<number>(-1);
 
-  // Effect 1: reset the watermark whenever this kernel is pointed at a new
-  // WebSocket slot. Message ids are tracked independently per wsPath, so
-  // carrying a watermark across slots can suppress legitimate "new" events.
+  // Effect 1: Watermark initialization (mount only)
   useEffect(() => {
-    watermarkRef.current = messages.length > 0 ? messages[messages.length - 1].id : -1;
-  // Intentionally keyed only on slotKey: we want a one-time reset when the
-  // slot changes, not on every new message.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slotKey]);
+    if (messages.length > 0) {
+      watermarkRef.current = messages[messages.length - 1].id;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Render-synchronous classification map (covers all visible messages)
   const classificationMap = useMemo(() => {

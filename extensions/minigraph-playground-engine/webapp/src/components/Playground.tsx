@@ -96,7 +96,6 @@ export default function Playground({ config }: PlaygroundProps) {
 
   const { classificationMap } = useProtocolKernel({
     messages: ws.messages, bus,
-    slotKey: wsPath,
   });
 
   // Pinned message state — stored as a message id (number) so two messages
