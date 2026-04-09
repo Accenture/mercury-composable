@@ -21,7 +21,7 @@ export default function App() {
           <Routes>
             {/* One route per configured playground */}
             {PLAYGROUND_CONFIGS.map((cfg) => (
-              <Route key={cfg.path} path={cfg.path} element={<Playground config={cfg} />} />
+              <Route key={cfg.path} path={cfg.path} element={<Playground key={cfg.path} config={cfg} />} />
             ))}
 
             {/* Fallback: unknown routes go to the first playground */}
