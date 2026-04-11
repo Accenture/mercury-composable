@@ -88,6 +88,19 @@ export interface LifecycleEvent extends ProtocolEventBase {
   time: string | null;
 }
 
+export interface GraphExportedEvent extends ProtocolEventBase {
+  kind: 'graph.exported';
+  /** The user-supplied name extracted from the export API path. */
+  graphName: string;
+  /** e.g. "/api/graph/model/my-graph/1" */
+  apiPath: string;
+}
+
+export interface GraphExportFailedEvent extends ProtocolEventBase {
+  kind: 'graph.export.failed';
+  reason: 'invalid-name' | 'root-name-conflict';
+}
+
 /** Catch-all for messages that match no other classifier rule. */
 export interface UnclassifiedEvent extends ProtocolEventBase {
   kind: 'unclassified';
@@ -98,6 +111,8 @@ export interface UnclassifiedEvent extends ProtocolEventBase {
 export type ProtocolEvent =
   | GraphLinkEvent
   | GraphMutationEvent
+  | GraphExportedEvent
+  | GraphExportFailedEvent
   | LargePayloadEvent
   | UploadInvitationEvent
   | UploadContentPathEvent

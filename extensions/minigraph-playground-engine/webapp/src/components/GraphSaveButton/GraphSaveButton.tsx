@@ -10,7 +10,7 @@ interface GraphSaveButtonProps {
   onSave:       (name: string) => void;
   /** Returns true if a bookmark with this name already exists. */
   nameExists?:  (name: string) => boolean;
-  /** Affects tooltip only — save always writes to localStorage regardless. */
+  /** When false the button is disabled — an active connection is required to export. */
   connected?:   boolean;
 }
 
@@ -101,11 +101,11 @@ export default function GraphSaveButton({
     <button
       className={styles.saveBtn}
       onClick={handleOpen}
-      disabled={disabled}
+      disabled={disabled || !connected}
       title={
         disabled    ? 'No graph loaded'
-        : connected ? 'Save name to localStorage and export snapshot to server'
-        :             'Save snapshot to localStorage only (connect first to also export to server)'
+        : !connected ? 'Connect first to save'
+        :              'Export graph snapshot to server and save bookmark'
       }
       aria-label="Save graph snapshot"
     >

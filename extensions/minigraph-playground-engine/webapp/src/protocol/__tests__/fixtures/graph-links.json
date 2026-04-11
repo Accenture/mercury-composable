@@ -8,8 +8,9 @@
   {
     "name": "graph exported then described",
     "raw": "Graph exported to '/tmp/abc'\nDescribed in /api/graph/model/my-graph",
-    "expectedKinds": ["graph.link"],
-    "expectedProps": { "apiPath": "/api/graph/model/my-graph" }
+    "expectedKinds": ["graph.link", "graph.exported"],
+    "expectedProps": { "apiPath": "/api/graph/model/my-graph" },
+    "expectedLength": 2
   },
   {
     "name": "graph described with session id",

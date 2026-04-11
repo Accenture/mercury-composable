@@ -5,6 +5,8 @@ export type {
   ProtocolEventKind,
   GraphLinkEvent,
   GraphMutationEvent,
+  GraphExportedEvent,
+  GraphExportFailedEvent,
   LargePayloadEvent,
   UploadInvitationEvent,
   UploadContentPathEvent,

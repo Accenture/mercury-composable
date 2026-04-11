@@ -2,7 +2,9 @@
 
 **Audience:** Engineers inheriting or maintaining this webapp  
 **Branch:** `feature/playground`  
-**Last updated:** March 27 2026
+**Last updated:** April 10, 2026
+
+> **Note on line-number citations:** All `[Lxx]` anchors in this document are approximate and reflect the state of the codebase at the last documentation update. The codebase continues to grow; use the cited symbols and function names to locate code rather than relying on line numbers literally.
 
 ---
 
@@ -16,7 +18,7 @@
    - 3.3 [Interactive Console (REPL-like)](#33-interactive-console-repl-like)
    - 3.4 [Graph Visualisation](#34-graph-visualisation)
    - 3.5 [Auto-Graph Refresh](#35-auto-graph-refresh)
-   - 3.6 [Markdown Preview (Developer Guides)](#36-markdown-preview-developer-guides)
+   - 3.6 [Bundled Help Panel (Developer Guides)](#36-bundled-help-panel-developer-guides)
    - 3.7 [Large Payload Handling](#37-large-payload-handling)
    - 3.8 [JSON-Path ↔ Minigraph Cross-Playground Routing](#38-json-path--minigraph-cross-playground-routing)
    - 3.9 [Two-Step Payload Upload (REST Handshake)](#39-two-step-payload-upload-rest-handshake)
@@ -25,6 +27,7 @@
    - 3.12 [Mock-Data Upload Modal](#312-mock-data-upload-modal)
    - 3.13 [Save-Name Management](#313-save-name-management)
    - 3.14 [Protocol Kernel (Centralized Message Classification)](#314-protocol-kernel-centralized-message-classification)
+   - 3.15 [Clipboard Panel](#315-clipboard-panel)
 4. [Repository Layout](#4-repository-layout)
 5. [Architecture Overview](#5-architecture-overview)
 6. [Layer-by-Layer Walkthrough](#6-layer-by-layer-walkthrough)
@@ -68,11 +71,12 @@ The **Minigraph Playground** is a React-based developer tool that communicates w
 The UI offers:
 - A **live WebSocket console** (like a REPL) where commands are sent and responses printed
 - A **ReactFlow graph visualiser** that renders the current graph model
-- A **Markdown preview panel** for `help` and `describe` command responses
+- A **bundled help panel** — `help` commands and their topics are served from files bundled at build time; the panel is a resizable right-side overlay toggled by a header button or `Ctrl + \``
 - A **JSON/XML payload editor** for the JSON-Path playground
 - **Saved graph bookmarks** (export/import graph snapshots by name)
 - **Large payload handling** — payloads exceeding 64 KB are automatically fetched via REST and displayed inline
 - **Mock-data upload modal** — when the server responds to a command with an upload invitation, a modal dialog opens automatically so the user can paste, drag-and-drop, or browse a JSON file and POST it to the provided endpoint
+- **Clipboard panel** — a resizable sidebar (Minigraph only) for clipping nodes from the graph and pasting their create/update command templates into the console input; persisted in IndexedDB and synchronised across open tabs via BroadcastChannel
 
 The built output (`dist/`) is copied into the Java application's `src/main/resources/public/` directory and served as a static SPA by the same Spring Boot server that provides the WebSocket and REST endpoints.
 
@@ -153,15 +157,16 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 
 ### 3.4 Graph Visualisation
 - Fetched via REST (`GET /api/graph/model/{id}`) after the server emits a graph-link in the WebSocket stream
-- Rendered with **ReactFlow**: nodes are colour-coded by type (`entry_point`, `api_fetcher`, `mapper`, `terminator`), edges show relation labels
+- Rendered with **ReactFlow**: nodes are colour-coded by type (`Root`, `End`, `Fetcher`, `mapper`, `Math`, `JavaScript`, `Provider`, `Dictionary`, `Join`, `Extension`, `Island`, `Decision`), edges show relation labels
 - Nodes are **resizable** (NodeResizer) and can be re-arranged interactively
 - A **minimap** provides navigation for large graphs
 - A **refreshing overlay** (spinner) is displayed during background re-fetches without clearing the existing graph
 
 **Key code locations:**
 - `src/utils/graphTypes.ts` [L1–L47](../src/utils/graphTypes.ts#L1) — `MinigraphGraphData`, `MinigraphNode`, `MinigraphConnection` types + `isMinigraphGraphData()` type guard
-- `src/hooks/useGraphData.ts` [L53–L101](../src/hooks/useGraphData.ts#L53) — initial-load path: `fetch(pinnedGraphPath)` → `setGraphData(json)` → `setRightTab('graph')` (L93); clears `graphData` to `null` on path change (L83)
-- `src/hooks/useGraphData.ts` [L106–L137](../src/hooks/useGraphData.ts#L106) — `refetchGraph()`: overlay-mode re-fetch; does NOT clear `graphData` (stale graph stays visible), sets `isRefreshing = true` (L116)
+- `src/hooks/useGraphData.ts` [L7–L20](../src/hooks/useGraphData.ts#L7) — `normalizeRightTab()`: validates the persisted tab value against the current playground's `tabs` list and migrates stale entries (for example legacy `"preview"`) to a safe fallback before render
+- `src/hooks/useGraphData.ts` [L66–L144](../src/hooks/useGraphData.ts#L66) — normalized right-tab state + initial-load path: reads `storedRightTab` from localStorage, derives a safe `rightTab`, writes the normalized value back when migration is needed, then `fetch(pinnedGraphPath)` → `setGraphData(json)` → `setRightTab('graph')`; clears `graphData` to `null` on path change
+- `src/hooks/useGraphData.ts` [L149–L189](../src/hooks/useGraphData.ts#L149) — `refetchGraph()`: overlay-mode re-fetch; does NOT clear `graphData` (stale graph stays visible), sets `isRefreshing = true`
 - `src/utils/graphTransformer.ts` [L61–L76](../src/utils/graphTransformer.ts#L61) — `NODE_ACCENT` colour map + `nodeStyle()` applying `--node-accent` CSS custom property
 - `src/utils/graphTransformer.ts` [L83–L157](../src/utils/graphTransformer.ts#L83) — `computeLayout()`: BFS topological layout (levels = columns, stacked vertically within each level)
 - `src/utils/graphTransformer.ts` [L163–L205](../src/utils/graphTransformer.ts#L163) — `transformGraphData()`: converts `MinigraphGraphData` → ReactFlow `nodes[]` + `edges[]`
@@ -177,6 +182,11 @@ After any graph-mutating command (`create node`, `delete node`, `connect`, etc.)
 
 The hook subscribes to `graph.mutation` and `graph.link` events on the `ProtocolBus` — it no longer scans the raw message array directly.
 
+Each mutation also emits a toast notification visible in the playground's toast stack:
+- `import-graph` mutation → `'Graph imported — refreshing view…'` (immediate, no debounce)
+- `node-mutation` with an existing graph → `'Graph updated — refreshing…'` (after debounce)
+- `node-mutation` with no graph yet → `'Graph updated — opening Graph tab…'` (after debounce)
+
 **Key code locations:**
 - `src/utils/messageParser.ts` [L279–L306](../src/utils/messageParser.ts#L279) — `detectMutation()`: classifies a raw message as `'node-mutation'`, `'import-graph'`, or `null`; includes the critical `startsWith('node ')` prefix guard
 - `src/protocol/classifier.ts` [L116–L122](../src/protocol/classifier.ts#L116) — Rule 7: calls `detectMutation()` and emits `graph.mutation` event
@@ -188,17 +198,20 @@ The hook subscribes to `graph.mutation` and `graph.link` events on the `Protocol
 
 ---
 
-### 3.6 Markdown Preview (Developer Guides)
-After `help` or text-producing `describe` commands, the response is automatically pinned to the **Developer Guides** tab and the tab switches into view. The panel renders GitHub-flavoured Markdown.
+### 3.6 Bundled Help Panel (Developer Guides)
+Help content (`help.md`, `help create.md`, `help tutorial 1.md`, …) is bundled into the webapp at build time via `import.meta.glob`. When the user types `help` or `help <topic>` while connected, the command is **handled locally** by `handleLocalCommand` in `useWebSocket` — no WebSocket round-trip occurs. The console receives a local echo (`> help …`) that is classified identically to a server-echoed command, so `useAutoHelpNavigate` opens the help panel automatically.
 
-The hook subscribes to `command.helpOrDescribe` and `docs.response` events on the `ProtocolBus`. Non-pinnable responses (`json.response`, `graph.link`, `upload.invitation`, `lifecycle`, `payload.large`) clear the waiting flag to prevent flag accumulation.
+Access while disconnected: the header `?` button and the `Ctrl + \`` hotkey always open the help panel regardless of connection state.
+
+`describe …` responses remain **console-driven**; they are not captured by the help panel.
 
 **Key code locations:**
-- `src/utils/messageParser.ts` [L216–L241](../src/utils/messageParser.ts#L216) — `isHelpOrDescribeCommand()`: matches `"> help …"` and `"> describe <non-graph>"` echoes (explicitly excludes `"> describe graph"`)
-- `src/protocol/classifier.ts` [L131–L138](../src/protocol/classifier.ts#L131) — Rule 9: calls `isHelpOrDescribeCommand()` and emits `command.helpOrDescribe` event
-- `src/hooks/useAutoMarkdownPin.ts` [L34–L48](../src/hooks/useAutoMarkdownPin.ts#L34) — main subscription: `bus.on('command.helpOrDescribe')` arms `waitingForResponseRef`; `bus.on('docs.response')` consumes the first markdown response and calls `setPinnedMessageId` + `onAutoPin()`
-- `src/hooks/useAutoMarkdownPin.ts` [L51–L65](../src/hooks/useAutoMarkdownPin.ts#L51) — clearWaiting subscriptions: `json.response`, `graph.link`, `upload.invitation`, `lifecycle`, `payload.large` all clear the waiting flag
-- `src/utils/messageParser.ts` [L80–L86](../src/utils/messageParser.ts#L80) — `isMarkdownCandidate()`: true for non-JSON strings; false for JSON objects/arrays (including lifecycle events)
+- `src/data/helpContent.ts` — `getHelpContent(topic)`: looks up the bundled markdown string; `HELP_TOPIC_KEYS`: ordered list of all valid topic keys
+- `src/utils/helpTopic.ts` — `extractHelpTopic(commandText)`: strips `"help "` prefix → bare topic key (lowercased)
+- `src/utils/localHelpCommand.ts` — `resolveBundledHelpTopic(commandText, supportsHelp)`: returns the topic key when the command should be handled locally, or `null` when it should go to the backend
+- `src/hooks/useWebSocket.ts` — `handleLocalCommand` option: called inside `sendCommand` before the remote-send path; return `true` to intercept
+- `src/hooks/useAutoHelpNavigate.ts` — subscribes to `command.helpOrDescribe` on the bus; opens the help panel from server-echoed **and** locally-appended echoes (both classify identically)
+- `src/components/HelpBrowser/HelpBrowser.tsx` — the rendered help panel component; `activeTopic` + `onNavigate` props drive the current topic view
 
 ---
 
@@ -219,12 +232,17 @@ The hook subscribes to `payload.large` events on the `ProtocolBus`. An `isFetchi
 ### 3.8 JSON-Path ↔ Minigraph Cross-Playground Routing
 A JSON response in the Minigraph console can be sent directly to the JSON-Path Playground payload editor with one click (➡️ button), navigating automatically and pre-filling the editor.
 
+There are three branches depending on the JSON-Path slot phase:
+
+1. **`'connected'`** — deposit `json` into the context via `ctx.setPendingPayload(wsPath, json)` and `navigate(jsonPathConfig.path)` immediately.
+2. **`'connecting'`** — overwrite `pendingJsonTransferRef` with the new payload; do **not** call `ctx.connect()` again (already in progress); toast `'Updated pending JSON transfer — latest payload will open when connected'`. Last-write-wins.
+3. **`'idle'`** — arm `pendingJsonTransferRef`, call `ctx.connect(jsonPathConfig.wsPath, addToast)`, and toast `'Connecting to JSON-Path Playground…'`. A `useEffect` in `useSendToJsonPath` watches the JSON-Path slot phase; once it reaches `'connected'`, the deposit + navigate executes and `pendingJsonTransferRef` is cleared.
+
 **Key code locations:**
-- `src/components/Console/ConsoleMessage.tsx` [L41](../src/components/Console/ConsoleMessage.tsx#L41) — `canSendToJsonPath = !!onSendToJsonPath && jsonCheck.isJSON` — button only shown on JSON messages when the callback is wired
-- `src/components/Console/ConsoleMessage.tsx` [L63–L67](../src/components/Console/ConsoleMessage.tsx#L63) — `handleSendToJsonPath`: pretty-prints the JSON and calls `onSendToJsonPath(pretty)`
-- `src/components/Playground.tsx` [L309–L320](../src/components/Playground.tsx#L309) — `handleSendToJsonPath`: calls `ctx.setPendingPayload(wsPath, json)` then `navigate(jsonPathConfig.path)`
-- `src/contexts/WebSocketContext.tsx` [L59–L64](../src/contexts/WebSocketContext.tsx#L59) — `setPendingPayload` / `takePendingPayload` interface; backed by `useState` (not `useRef`) so that depositing triggers a re-render in the consuming playground
-- `src/components/Playground.tsx` [L43–L56](../src/components/Playground.tsx#L43) — receiving side: `payloadOverride` state initialised from `ctx.takePendingPayload(wsPath)` at mount; `useEffect` (L50–L57) also fires reactively when a new payload is deposited into an already-mounted playground
+- `src/components/Console/ConsoleMessage.tsx` — `canSendToJsonPath = !!onSendToJsonPath && jsonCheck.isJSON` — button only shown on JSON messages when the callback is wired
+- `src/hooks/useSendToJsonPath.ts` — `handleSendToJsonPathInner`: three-branch phase switch; `pendingJsonTransferRef` is the single-slot last-write-wins mailbox
+- `src/contexts/WebSocketContext.tsx` — `setPendingPayload` / `takePendingPayload` interface; backed by `useState` (not `useRef`) so depositing triggers a re-render in the consuming playground
+- `src/components/Playground.tsx` — receiving side: `payloadOverride` state initialised from `ctx.takePendingPayload(wsPath)` at mount
 
 ---
 
@@ -247,13 +265,18 @@ The JSON-Path Playground supports uploading large JSON payloads over REST:
 ### 3.10 Saved Graph Bookmarks
 The Minigraph playground lets users save a named graph snapshot. The name is stored in localStorage and sent to the server via `export graph as {name}`. Loading re-issues `import graph from {name}`, and the auto-refresh hook re-renders the graph.
 
+**Save flow (connection required):** The save button is disabled when disconnected — `GraphSaveButton` enforces `disabled={disabled || !connected}`. When connected, `handleSaveGraph(name)` in `useSavedGraphWorkflow` does **not** write to localStorage immediately. Instead it arms `pendingSaveRef.current = { graphName: name, timeoutId }` and sends `export graph as {name}` over the WebSocket. Four resolution paths:
+- `graph.exported` event with matching `graphName` → `savedGraphs.saveGraph(name)` + `setLastSavedName(name)` + success toast (server-side file is guaranteed to exist for future import)
+- `graph.export.failed` event → typed error toast (invalid filename or root-name mismatch); no bookmark written
+- 10-second timeout → error toast; no bookmark written
+- Disconnect while in-flight → pending ref cleared + failure toast; no bookmark written
+
 **Key code locations:**
-- `src/hooks/useSavedGraphs.ts` [L19–L28](../src/hooks/useSavedGraphs.ts#L19) — `UseSavedGraphsReturn` interface: `savedGraphs`, `saveGraph`, `deleteGraph`, `hasGraph`
-- `src/hooks/useSavedGraphs.ts` [L55–L82](../src/hooks/useSavedGraphs.ts#L55) — implementation: `useLocalStorage<SavedGraphsMap>` backing store; `useMemo` sort newest-first (L78)
-- `src/components/Playground.tsx` [L245–L252](../src/components/Playground.tsx#L245) — `handleSaveGraph()`: calls `savedGraphs.saveGraph(name)` then `ws.sendRawText('export graph as ${name}')`
-- `src/components/Playground.tsx` [L257–L263](../src/components/Playground.tsx#L257) — `handleLoadGraph()`: calls `ws.sendRawText('import graph from ${name}')` — auto-refresh hook takes it from there
-- `src/components/GraphSaveButton/GraphSaveButton.tsx` [L1–L116](../src/components/GraphSaveButton/GraphSaveButton.tsx#L1) — self-contained inline save form (open/close, pre-filled name, overwrite warning, Enter/Escape keyboard handling)
-- `src/components/SavedGraphsMenu/SavedGraphsMenu.tsx` [L1–L85](../src/components/SavedGraphsMenu/SavedGraphsMenu.tsx#L1) — dropdown list reusing `NavMenu`; Load/Delete actions per entry
+- `src/hooks/useSavedGraphs.ts` — `UseSavedGraphsReturn` interface: `savedGraphs`, `saveGraph`, `deleteGraph`, `hasGraph`; implementation uses `useLocalStorage<SavedGraphsMap>` backing store; `useMemo` sorted newest-first
+- `src/hooks/useSavedGraphWorkflow.ts` — `handleSaveGraph(name)`: guards against disconnected calls (error toast + early return); when connected, arms `pendingSaveRef.current = { graphName, timeoutId }` and sends `export graph as ${name}`; four `useEffect`-based resolution paths: `graph.exported` (name-matched) → bookmark + success; `graph.export.failed` → typed error; 10 s timeout → error; disconnect → error
+- `src/hooks/useSavedGraphWorkflow.ts` — `handleLoadGraph(name)`: guards `!connected`; sends `import graph from ${name}` — auto-refresh hook takes it from there
+- `src/components/GraphSaveButton/GraphSaveButton.tsx` — self-contained inline save form (open/close, pre-filled name, overwrite warning, Enter/Escape keyboard handling); `disabled={disabled || !connected}` prevents the form from opening while disconnected
+- `src/components/SavedGraphsMenu/SavedGraphsMenu.tsx` — dropdown list reusing `NavMenu`; Load/Delete actions per entry
 
 ---
 
@@ -283,7 +306,7 @@ The console row for the invitation displays a ⬆️ icon and an "⬆️ Upload 
 - `src/components/Playground.tsx` [L135–L144](../src/components/Playground.tsx#L135) — `modalUploadPath` / `modalTriggerRef` / `successfulUploadPaths` state
 - `src/components/Playground.tsx` [L185–L215](../src/components/Playground.tsx#L185) — `handleOpenUploadModal`, `handleCloseUploadModal`, `handleUploadSuccess`, `handleUploadError` callbacks + `useAutoMockUpload` invocation
 - `src/components/Console/ConsoleMessage.tsx` [L41–L50](../src/components/Console/ConsoleMessage.tsx#L41) — `isMockUpload`, `mockUploadPath`, `canUploadMock`, `uploadSucceeded` derived flags; `isPinnable` guard (`&& !isMockUpload`) prevents a nested-interactive-element accessibility violation
-- `src/hooks/useAutoMarkdownPin.ts` — `isPinnableResponse()` excludes `isMockUploadMessage` rows so the invitation is never accidentally pinned to the Developer Guides tab
+- `src/hooks/useAutoHelpNavigate.ts` — subscribes to `command.helpOrDescribe`; the `isMockUploadMessage` guard in `ConsoleMessage` ensures upload invitation rows are never mistaken for help-command echoes
 
 ---
 
@@ -346,8 +369,33 @@ This architecture eliminates O(hooks × messages) repeated parsing and provides 
 **Test infrastructure:**
 - `src/protocol/__tests__/classifier.test.ts` — golden transcript tests using fixture JSON files
 - `src/protocol/__tests__/bus.test.ts` — ProtocolBus unit tests
-- `src/protocol/__tests__/fixtures/*.json` — 12 fixture files (one per event kind)
+- `src/protocol/__tests__/fixtures/*.json` — 12 fixture files covering all event kinds, including `multi-event.json` (tests a single message matching multiple rules simultaneously) and `negative-cases.json` (tests inputs that must NOT produce specific event kinds); not a strict one-per-event-kind mapping
 - `vitest.config.ts` — Vitest 3 + built-in `node` environment; `globals: true`
+
+---
+
+### 3.15 Clipboard Panel
+The Minigraph playground includes a resizable **Clipboard** sidebar (enabled when `supportsClipboard: true` in the playground config). It allows engineers to clip individual nodes from the current graph and later paste their create/update command templates into the console input.
+
+**Clipboard features:**
+- Right-click any node in the graph → "Clip to Clipboard" menu item
+- Items are persisted in **IndexedDB** and survive page reloads
+- **BroadcastChannel** keeps all open browser tabs in sync automatically
+- Duplicate detection: if an item with the same alias already exists, a `ClipboardDuplicateDialog` asks whether to replace it
+- **Paste** button on each clipboard item builds a `create`/`update` command from the node data and inserts it into the console's command input; whether to create or update is determined by checking the current graph for an existing node with the same alias
+
+**UI entry points:**
+- A **Clipboard** toggle button appears in the playground header when `supportsClipboard` is true; it shows the item count and persists its open/closed state in localStorage
+- The sidebar is a third resizable panel in the `react-resizable-panels` `<Group>` — only mounted when `clipboardOpen === true`
+
+**Key code locations:**
+- `src/contexts/ClipboardContext.tsx` — context + `useReducer` + IndexedDB hydration + BroadcastChannel sync; `ClipboardProvider` lives at the app level (wraps `BrowserRouter`)
+- `src/clipboard/db.ts` — IndexedDB schema + CRUD helpers
+- `src/clipboard/channel.ts` — `createClipboardChannel()`: wraps `BroadcastChannel` for cross-tab sync
+- `src/clipboard/commandBuilder.ts` — `buildNodeCommand(verb, node)`: builds the command string from a clipped node
+- `src/components/ClipboardSidebar/ClipboardSidebar.tsx` — sidebar container: item list + paste buttons + empty state
+- `src/components/ClipboardSidebar/ClipboardDuplicateDialog.tsx` — dialog for resolving duplicate-alias clips
+- `src/components/Playground.tsx` — `handleClipNode` / `handlePasteToInput` callbacks; `clipboardOpen` via `useLocalStorage`; `duplicateDialogState` via `useState`
 
 ---
 
@@ -357,22 +405,23 @@ This architecture eliminates O(hooks × messages) repeated parsing and provides 
 webapp/
 ├── src/
 │   ├── main.tsx                  # React root mount
-│   ├── App.tsx                   # Router + WebSocketProvider bootstrap
+│   ├── App.tsx                   # Router + WebSocketProvider + ClipboardProvider bootstrap
 │   ├── index.css                 # Global resets / CSS variables
 │   ├── config/
 │   │   └── playgrounds.ts        # ★ SINGLE source of truth for all playgrounds
-│   ├── contexts/
-│   │   └── WebSocketContext.tsx  # Shared multi-socket state (above Routes)
 │   ├── hooks/
-│   │   ├── useWebSocket.ts       # Per-playground WS + command input logic
+│   │   ├── useWebSocket.ts       # Per-playground WS + command input logic (handleLocalCommand extension)
 │   │   ├── useGraphData.ts       # REST fetch + graph state management
 │   │   ├── useAutoGraphRefresh.ts# Mutation detection → auto re-fetch (bus-based)
-│   │   ├── useAutoMarkdownPin.ts # help/describe echo → auto-pin preview (bus-based)
+│   │   ├── useAutoHelpNavigate.ts# help/describe echo → auto-open help panel (bus-based)
 │   │   ├── useLargePayloadDownload.ts # Large payload REST fetch → console (bus-based)
 │   │   ├── useAutoMockUpload.ts  # Mock-upload invitation → auto-open modal (bus-based)
 │   │   ├── useMockUpload.ts      # POST fetch lifecycle for mock-upload modal
 │   │   ├── useSavedGraphs.ts     # localStorage graph bookmark CRUD
+│   │   ├── useSavedGraphWorkflow.ts   # Save/load workflow — export-domain protocol events
 │   │   ├── useGraphSaveName.ts   # Save-form pre-fill name (bus-based; priority: saved > imported > untitled-n)
+│   │   ├── usePinnedGraphPath.ts # Session-bound graph API path (module-scope Map)
+│   │   ├── useSendToJsonPath.ts  # Cross-playground JSON transfer (last-write-wins mailbox)
 │   │   ├── useLocalStorage.ts    # Generic localStorage hook
 │   │   ├── useToast.ts           # Toast notification queue
 │   │   ├── useCopyToClipboard.ts # Clipboard write with copied state
@@ -380,7 +429,7 @@ webapp/
 │   │   ├── useHistoryAutocomplete.ts  # History-based autocomplete for CommandInput dropup
 │   │   └── useAutocomplete.ts    # Template-based autocomplete (dormant — not currently wired to CommandInput)
 │   ├── protocol/                  # ★ Protocol Kernel — centralised message classification
-│   │   ├── events.ts             # ProtocolEvent discriminated union (12 event kinds)
+│   │   ├── events.ts             # ProtocolEvent discriminated union (14 event kinds incl. graph.exported, graph.export.failed)
 │   │   ├── classifier.ts         # classifyMessage() pure function (12 rules)
 │   │   ├── bus.ts                # ProtocolBus typed event emitter
 │   │   ├── useProtocolKernel.ts  # React hook: watermark + classify + map + emit
@@ -388,7 +437,16 @@ webapp/
 │   │   └── __tests__/
 │   │       ├── classifier.test.ts  # Golden transcript tests
 │   │       ├── bus.test.ts         # Bus unit tests
-│   │       └── fixtures/           # 12 JSON fixture files (one per event kind)
+│   │       └── fixtures/           # 12 JSON fixture files covering all event kinds
+│   ├── clipboard/                 # ★ Clipboard module (IndexedDB + BroadcastChannel)
+│   │   ├── db.ts                 # IndexedDB schema + CRUD helpers
+│   │   ├── channel.ts            # BroadcastChannel wrapper for cross-tab sync
+│   │   ├── commandBuilder.ts     # Builds create/update command strings from clipped nodes
+│   │   ├── helpers.ts            # Shared clipboard utilities
+│   │   └── __tests__/
+│   ├── contexts/
+│   │   ├── WebSocketContext.tsx  # Shared multi-socket state (above Routes)
+│   │   └── ClipboardContext.tsx  # Clipboard items — IndexedDB-backed, cross-tab synced
 │   ├── components/
 │   │   ├── Playground.tsx        # ★ Top-level orchestrator per route
 │   │   ├── Navigation.tsx        # Header nav bar (Tools + Quick Links menus)
@@ -402,12 +460,14 @@ webapp/
 │   │   ├── GraphToolbar/         # Copy/download toolbar for graph panel
 │   │   ├── GraphSaveButton/      # Inline save-form button in header
 │   │   ├── SavedGraphsMenu/      # Dropdown list of saved graph bookmarks
-│   │   ├── MockUploadModal/      # Modal dialog for mock-data JSON upload
+│   │   │   ├── MockUploadModal/      # Modal dialog for mock-data JSON upload
+│   │   ├── ClipboardSidebar/     # Resizable clipboard panel (ClipboardSidebar + ClipboardItem + ClipboardDuplicateDialog)
+│   │   ├── HelpBrowser/          # Bundled help panel renderer (react-markdown)
 │   │   ├── PayloadEditor/        # Textarea + validation + SampleButtons
-│   │   ├── MarkdownPreview/      # react-markdown renderer
 │   │   └── NavMenu/              # Generic accessible dropdown menu
 │   └── utils/
-│       ├── messageParser.ts      # ★ Message classification & pattern matching
+│       ├── messageParser.ts      # ★ Message classification & pattern matching (extractGraphExportSuccess, detectGraphExportFailure)
+│       ├── localHelpCommand.ts   # resolveBundledHelpTopic — pure local-help resolver
 │       ├── graphTransformer.ts   # Backend JSON → ReactFlow nodes + edges
 │       ├── graphTypes.ts         # TypeScript interfaces + type guard
 │       ├── validators.ts         # JSON/XML payload validation + formatting
@@ -436,9 +496,13 @@ webapp/
 │  │           WebSocketProvider                  │  │
 │  │   (lives above Routes — sockets persist)     │  │
 │  │  ┌────────────────────────────────────────┐  │  │
-│  │  │           BrowserRouter                │  │  │
-│  │  │   Route /        → Playground (cfg A)  │  │  │
-│  │  │   Route /json-path → Playground (cfg B)|  │  │
+│  │  │         ClipboardProvider              │  │  │
+│  │  │  (app-level — IndexedDB + cross-tab)   │  │  │
+│  │  │  ┌──────────────────────────────────┐  │  │  │
+│  │  │  │         BrowserRouter            │  │  │  │
+│  │  │  │  Route /json-path → Playground A │  │  │  │
+│  │  │  │  Route /         → Playground B  │  │  │  │
+│  │  │  └──────────────────────────────────┘  │  │  │
 │  │  └────────────────────────────────────────┘  │  │
 │  └──────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
@@ -446,28 +510,32 @@ webapp/
 Each Playground instance:
 
   Playground.tsx (orchestrator)
-  ├── useWebSocket          ← command input + history + WS actions
+  ├── useWebSocket          ← command input + history + WS actions (handleLocalCommand for local help)
   ├── useProtocolKernel     ← classifies messages once → ProtocolBus + classificationMap
   ├── useGraphData          ← REST fetch + graph state
-  ├── useAutoGraphRefresh   ← bus: graph.link + graph.mutation → silent describe graph
-  ├── useAutoMarkdownPin    ← bus: command.helpOrDescribe + docs.response → auto-pin preview
-  ├── useLargePayloadDownload ← bus: payload.large → REST fetch → console
+  ├── useAutoGraphRefresh   ← bus: graph.link + graph.mutation → silent describe graph + toast
+  ├── useAutoHelpNavigate   ← bus: command.helpOrDescribe → auto-open help panel
+  ├── useSavedGraphWorkflow ← bus: graph.exported / graph.export.failed → export-domain save correlation
+  ├── useLargePayloadDownload ← bus: payload.large → REST fetch → console (inline)
   ├── useAutoMockUpload     ← bus: upload.invitation → auto-open modal
   ├── useSavedGraphs        ← localStorage bookmark CRUD
   ├── useGraphSaveName      ← bus: command.importGraph → save-form pre-fill name
+  ├── useClipboardContext   ← IndexedDB items + clipNode + confirmReplace
   │
   ├── LeftPanel
   │   ├── Console           ← message list (ConsoleMessage per row)
   │   │                       classificationMap threaded down for render-time lookups
   │   └── CommandInput      ← textarea + send button + history nav
   │
-  ├── RightPanel (tabbed)
+  ├── RightPanel (tabbed: payload / graph / graph-data)
   │   ├── PayloadEditor     ← textarea + validation (JSON-Path only)
-  │   ├── MarkdownPreview   ← react-markdown (Minigraph only)
-  │   ├── GraphView         ← ReactFlow canvas
-  │   └── GraphDataView     ← raw JSON tree of graph model
+  │   ├── GraphView         ← ReactFlow canvas (onClipNode wired when supportsClipboard)
+  │   ├── GraphDataView     ← raw JSON tree of graph model
+  │   └── HelpBrowser       ← bundled help panel (resizable overlay — not a tab)
   │
-  └── MockUploadModal       ← native <dialog>; JSON paste / drop / browse; POST
+  ├── MockUploadModal       ← native <dialog>; JSON paste / drop / browse; POST
+  │
+  └── ClipboardSidebar      ← conditional third panel (only when supportsClipboard && clipboardOpen)
 
   Message flow:
     WebSocket → messages[] → useProtocolKernel
@@ -475,7 +543,8 @@ Each Playground instance:
                               │     └── ConsoleMessage reads at render time
                               └── ProtocolBus.emit(event)
                                     ├── useAutoGraphRefresh.on('graph.link' | 'graph.mutation')
-                                    ├── useAutoMarkdownPin.on('command.helpOrDescribe' | 'docs.response' | ...)
+                                    ├── useAutoHelpNavigate.on('command.helpOrDescribe')
+                                    ├── useSavedGraphWorkflow.on('graph.exported' | 'graph.export.failed')
                                     ├── useLargePayloadDownload.on('payload.large')
                                     ├── useAutoMockUpload.on('upload.invitation')
                                     ├── useGraphSaveName.on('command.importGraph')
@@ -493,10 +562,10 @@ Each Playground instance:
 **`src/main.tsx`** — Standard React 19 root mount. Wraps `<App>` in `<StrictMode>`.
 
 **`src/App.tsx`** — Two responsibilities:
-1. Wraps the entire tree in `<WebSocketProvider>` *outside* `<BrowserRouter>` so connections survive route changes.
+1. Wraps the entire tree in `<WebSocketProvider>` *outside* `<BrowserRouter>` so connections survive route changes. `<ClipboardProvider>` is also at this level, between `WebSocketProvider` and `BrowserRouter`.
 2. Generates one `<Route>` per entry in `PLAYGROUND_CONFIGS` — adding a playground requires only a config entry, never a code change here.
 
-A catch-all `<Route path="*">` redirects unknown paths to the first playground.
+A catch-all `<Route path="*">` redirects unknown paths to `PLAYGROUND_CONFIGS[0].path`. Currently JSON-Path (`/json-path`) is index 0 and therefore the default route; Minigraph (`/`) is index 1.
 
 ---
 
@@ -515,6 +584,7 @@ interface PlaygroundConfig {
   storageKeyTab:         string;   // localStorage key for right-panel tab
   storageKeySavedGraphs?: string;  // present → enables saved-graph bookmarks
   supportsUpload?:       boolean;  // present → enables REST upload handshake
+  supportsClipboard?:    boolean;  // true → enables node clip/paste sidebar (Minigraph only)
   tabs:                  RightTab[]; // ordered list of right-panel tabs to show
 }
 ```
@@ -528,6 +598,8 @@ The file also exports shared runtime constants used across the app:
 | `MAX_AUTOCOMPLETE_SUGGESTIONS` | 8 | Maximum history suggestions shown in the command input dropup |
 | `MAX_BUFFER` | 63,488 | WebSocket send character limit (safely under 64 KB) |
 | `PING_INTERVAL` | 20,000 ms | Keep-alive ping frequency |
+
+The file also exports `SAMPLE_DATA: Record<string, string>` — a set of quick-load JSON/XML payloads for the `PayloadEditor`. Key format: `"<type>_<label>"` where the type prefix (`json` or `xml`) groups buttons by row and the label becomes button text (underscores become spaces). Adding a new entry causes a new button to appear automatically in the `PayloadEditor`.
 
 > **Maintainer tip:** To add a new playground, add one object to `PLAYGROUND_CONFIGS`. The route, nav link, connection dot, localStorage namespace, and right-panel tabs are all derived automatically.
 
@@ -581,30 +653,30 @@ Key responsibilities:
 
 | Concern | How handled |
 |---|---|
-| Protocol Kernel | `busRef = useRef(new ProtocolBus())` ([L88](../src/components/Playground.tsx#L88)) keeps a single stable bus instance; `useProtocolKernel({ messages, bus })` ([L94](../src/components/Playground.tsx#L94)) returns `classificationMap` |
+| Protocol Kernel | `busRef = useRef(new ProtocolBus())` keeps a single stable bus instance; `useProtocolKernel({ messages, bus })` returns `classificationMap` |
 | Payload persistence | `useLocalStorage(storageKeyPayload)` — survives navigation and refresh |
 | Cross-playground payload | Separate `useState(null)` (`payloadOverride`) initialised from `ctx.takePendingPayload` at mount; never written to localStorage; wins over stored value when set |
 | Payload validation | `useMemo(() => validatePayload(payload))` — synchronous, no extra render |
 | Toast notifications | `useToast()` — queue-based, auto-removes after timeout |
-| Graph path pinning | `useState<string \| null>(null)` — the REST path extracted from a graph-link message |
-| Preview message pinning | `useState<number \| null>(null)` — stores message **id**, not raw string |
+| Graph path pinning | `usePinnedGraphPath(wsPath)` — module-scope `Map<string, string | null>` keyed by wsPath; cleared on disconnect via transition-based `useEffect` in Playground.tsx |
+| Preview message pinning | removed — `MarkdownPreview` and `pinnedMessageId` are deleted |
 | Panel split persistence | `useDefaultLayout` from `react-resizable-panels` — keyed per route path (`config.path + '-panel-split'`) |
 | Responsive layout | `useMediaQuery('(max-width: 768px)')` → vertical panel stacking on mobile |
-| Clear messages | Clears `pinnedMessageId`, `pinnedGraphPath`, `successfulUploadPaths`, and `graphData`; does **not** clear `modalUploadPath` (modal stays open if active during clear) |
-| Cross-playground routing | `ctx.setPendingPayload` + `navigate()` — deposits JSON then navigates; consuming playground reads it via `ctx.takePendingPayload` |
+| Clear messages | Clears `pinnedGraphPath`, `successfulUploadPaths`, and `graphData`; does **not** clear `modalUploadPath` (modal stays open if active during clear) |
+| Cross-playground routing | Three branches: immediate deposit + navigate when JSON-Path is `'connected'`; overwrite `pendingJsonTransferRef` + toast when `'connecting'` (last-write-wins); `pendingJsonTransferRef` + `ctx.connect()` when `'idle'` |
 | Mock-upload modal path | `useState<string \| null>(null)` — `null` = closed; non-null = open for that specific POST endpoint |
 | Modal trigger element | `useRef<HTMLElement \| null>(null)` — captures `document.activeElement` before open; `.focus()` restored on close via `setTimeout` |
 | Successful upload paths | `useState<Set<string>>(new Set())` — keyed by POST path; drives ✅ badge on invitation rows; session-only (cleared with `clearMessages`) |
 | Graph save-form name | `useGraphSaveName(storageKey, bus)` — provides `defaultName`, `setLastSavedName`, `resetName`; see §3.13 |
+| Deferred graph export | `pendingSaveRef = useRef<PendingSave | null>(null)` where `PendingSave = { graphName, timeoutId }` — armed when connected save is sent; confirmed by `graph.exported` (name-matched), rejected by `graph.export.failed`, timeout (10 s), or disconnect |
+| Deferred JSON-Path send | `pendingJsonTransferRef = useRef<{ wsPath, json } | null>(null)` — last-write-wins mailbox; overwritten on each send while JSON-Path is `'connecting'`; consumed by a `useEffect` watching the slot once `phase === 'connected'` |
+| Clipboard integration | `useClipboardContext()` for `clipNode` / `confirmReplace`; `clipboardOpen` via `useLocalStorage`; `duplicateDialogState` via `useState`; guarded by `supportsClipboard` config flag |
 | Command history for autocomplete | `ws.history` (string array, newest-first) passed as `commandHistory` to `LeftPanel` → `CommandInput` for the history dropup |
-| Classification map threading | `classificationMap` passed to `LeftPanel` → `Console` → `ConsoleMessage` ([L403](../src/components/Playground.tsx#L403)) |
+| Classification map threading | `classificationMap` passed to `LeftPanel` → `Console` → `ConsoleMessage` |
 
-**Last non-JSON message** ([L107](../src/components/Playground.tsx#L107)): derived via `useMemo` filtering messages through the `classificationMap` — selects the last message whose events include `docs.response`, used for auto-pinning the Developer Guides preview.
-
-**Pinning logic** (`handlePinMessage` at [L265](../src/components/Playground.tsx#L265)):
+**Pinning logic** (`handleGraphLinkMessage`):
 - Reads `classificationMap.get(msg.id)` to find pre-classified events
 - If any event has `kind === 'graph.link'` → reads `event.apiPath` to set `pinnedGraphPath` (triggers `useGraphData`) and highlight the row
-- Otherwise → set `pinnedMessageId` and clear `pinnedGraphPath`
 
 ---
 
@@ -638,14 +710,17 @@ Key responsibilities:
 
 **`RightPanel.tsx`** — renders only the tabs listed in the playground's `tabs` config. Uses `useId()` for accessible `aria-controls` / `role="tab"` associations. Active tab is driven by `rightTab` state from `useGraphData` (persisted in localStorage).
 
+`useGraphData` normalizes the persisted tab value against the current `tabs` array before `RightPanel` renders. This prevents legacy localStorage entries from older UI versions from blanking the panel after a tab is removed. Example: an old Minigraph value of `preview` is migrated to `graph` because Minigraph now exposes only `graph` and `graph-data`.
+
 The four possible tabs:
 
 | Tab key | Component | When shown |
 |---|---|---|
 | `'payload'` | `PayloadEditor` | JSON-Path playground |
-| `'preview'` | `MarkdownPreview` | Minigraph playground |
 | `'graph'` | `GraphView` | Both playgrounds |
 | `'graph-data'` | `GraphDataView` | Both playgrounds |
+
+The help panel is **not** a tab. It is a resizable overlay rendered inside `RightPanel` when `supportsHelp` is true and `helpOpen` is set. Its split position and maximised state are persisted in `localStorage`.
 
 ---
 
@@ -679,16 +754,20 @@ Defines `MinigraphGraphData`, `MinigraphNode`, `MinigraphConnection`, and `Minig
 
 Uses a **BFS topological layout**:
 1. Build adjacency lists and in-degree counts from `connections`
-2. Identify seed nodes: in-degree 0 or typed as `entry_point`
+2. Identify seed nodes: in-degree 0 or typed as `Root`
 3. BFS assigns a column (level) to each node — a node's level is always ≥ its predecessor's level + 1
 4. Within each level, nodes are stacked vertically with equal spacing
 5. Disconnected nodes are placed in a trailing column
 
-Node styles are applied via `node.style` (not CSS classes) using the CSS custom property `--node-accent` for per-type accent colours. This is the pattern required by ReactFlow's `NodeResizer` — having no inner wrapper div means the RF wrapper element *is* the visual shell.
+Node styles are applied via `node.style` (not CSS classes) using the CSS custom property `--node-accent` for per-type accent colours. The full set of recognised type names is `Root`, `End`, `Fetcher`, `mapper`, `Math`, `JavaScript`, `Provider`, `Dictionary`, `Join`, `Extension`, `Island`, `Decision` — unknown types fall back to a neutral grey accent. This is the pattern required by ReactFlow's `NodeResizer` — having no inner wrapper div means the RF wrapper element *is* the visual shell.
 
 #### `src/components/GraphView/NodeTypes.tsx` — Custom node
 
 `MinigraphNode` renders as a **React Fragment** (no wrapper div). `NodeResizer`, handles, and content are top-level siblings. This avoids all the sizing workarounds that a nested div structure requires. The `nodeTypes` map exported here is passed directly to `<ReactFlow nodeTypes={nodeTypes}>`.
+
+#### `src/components/GraphView/GraphView.tsx` — Clipboard context menu
+
+When `onClipNode` is wired (i.e. `supportsClipboard` is true in the playground config), right-clicking a node opens a context menu with a "Clip to Clipboard" option. This calls `onClipNode(node, connections)` which is threaded from `Playground.tsx` → `RightPanel` → `GraphView`.
 
 #### `src/components/GraphView/GraphViewErrorBoundary.tsx`
 
@@ -702,7 +781,7 @@ This layer centralises message classification so that hooks subscribe to typed e
 
 #### `src/protocol/events.ts` — Event type definitions
 
-A 12-kind discriminated union type `ProtocolEvent` ([L103](../src/protocol/events.ts#L103)). Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize` and `apiPath`). `ProtocolEventKind` ([L113](../src/protocol/events.ts#L113)) is the union of all `kind` string literals.
+A 12-kind discriminated union type `ProtocolEvent`. Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize`, `apiPath`, and `filename` — the last path segment of `apiPath` with `.json` appended, reserved for a future download action). `ProtocolEventKind` is the union of all `kind` string literals.
 
 #### `src/protocol/classifier.ts` — Pure classification function
 
@@ -749,21 +828,19 @@ Because `bus` is a stable `useRef` object, the subscription effect runs only onc
 
 Subscribes to:
 - `bus.on('graph.link')` — when `waitingForDescribeRef` is true, consumes the graph path and calls `setPinnedGraphPath`
-- `bus.on('graph.mutation')` — arms a 300 ms debounce timer; on fire, sends `describe graph` silently
+- `bus.on('graph.mutation')` — arms a 300 ms debounce timer; on fire, sends `describe graph` silently and emits an `addToast` notification to indicate the refresh in progress
 
 **Stale-closure fix**: `pinnedGraphPath` is read via `pinnedGraphPathRef` inside the debounce timer callback — if it were read directly from closure it would be stale after subsequent renders. Same pattern for `connectedRef` and `sendRawTextRef`.
 
-Disconnect cleanup ([L44](../src/hooks/useAutoGraphRefresh.ts#L44)): when `connected` flips to false, pending debounce timers are cleared and `waitingForDescribeRef` is reset.
+**`refetchGraph` is accepted but unused**: the hook's interface accepts `refetchGraph` (passed through from `useGraphData`) but stores it as `_refetchGraph` — the underscore convention signals it is received for interface symmetry but intentionally not called. Auto-refresh always works by sending `describe graph` via `sendRawText`, which triggers `setPinnedGraphPath` via the bus, which then triggers the **initial-load** path in `useGraphData` (graph clears to `null`, re-fetches without an overlay spinner). The overlay-spinner path (`refetchGraph`) is only triggered imperatively by direct user actions, not by auto-refresh.
 
-#### `useAutoMarkdownPin`
+Disconnect cleanup: when `connected` flips to false, pending debounce timers are cleared and `waitingForDescribeRef` is reset.
 
-Subscribes to:
-- `bus.on('command.helpOrDescribe')` — sets `waitingForResponseRef = true`
-- `bus.on('docs.response')` — when `waitingForResponseRef` is true, pins the message via `setPinnedMessageId` and calls `onAutoPin()` to switch the tab
+#### `useAutoHelpNavigate`
 
-**clearWaiting subscriptions** — subscribes to `json.response`, `graph.link`, `upload.invitation`, `lifecycle`, and `payload.large` to reset `waitingForResponseRef = false` when a non-docs response arrives (so the waiting state doesn't persist across unrelated commands).
+Subscribes to `bus.on('command.helpOrDescribe')`. When the echo is a bundled `help` topic, calls `onTabSwitch()` to open the help panel and sets `activeHelpTopic` via `setHelpTopic`. Both server-echoed and locally-appended help command echoes classify identically, so the hook works for both connected and disconnected local-help paths.
 
-**Critical guard**: The `docs.response` classifier rule in `classifier.ts` (Rule 11, [L155](../src/protocol/classifier.ts#L155)) already excludes echoes, graph-links, mock-upload invitations, large-payload notices, JSON responses, and lifecycle messages — the hook no longer needs its own `isPinnableResponse` filter.
+`useAutoMarkdownPin` has been removed. `describe` responses are console-driven and are not captured by the help panel.
 
 #### `useLargePayloadDownload`
 
@@ -800,7 +877,7 @@ The low-level classification engine for WebSocket messages. These functions are 
 | `extractGraphApiPath(raw)` | Regex extracts `/api/graph/model/{id}` |
 | `extractUploadPath(raw)` | Regex extracts `/api/json/content/{id}` (JSON-Path upload handshake) |
 | `extractMockUploadPath(raw)` | Regex extracts `/api/mock/{id}` from the mock-upload invitation |
-| `extractLargePayloadLink(raw)` | Parses the size and path from the large-payload notification |
+| `extractLargePayloadLink(raw)` | Parses the byte size, API path, and a derived `filename` (last path segment + `.json`, e.g. `"input.body.json"`) from the large-payload notification; the `filename` field is reserved for a future "save to disk" action |
 
 **`detectMutation` matching rules** (important to understand for maintenance):
 
@@ -844,9 +921,13 @@ HTTP API paths are always **relative** — the Vite proxy forwards them in dev; 
 
 **`Navigation.tsx`** reads all playground configs and renders two dropdown menus built on `NavMenu`:
 
-**Tools menu** — per-playground entry with:
-- A `<NavLink>` (navigates) with a status dot
-- A separate **Start/Stop** button (connects/disconnects without navigating)
+**Tools menu** — contains a **Connect All / Disconnect All** batch action at the top, followed by per-playground entries:
+
+- **Connect All / Disconnect All** button at the top of the menu:
+  - `anyConnecting` → "Connecting…" (disabled)
+  - `allConnected` → "Disconnect All"
+  - otherwise → "Connect All"
+- Per-playground entries: a `<NavLink>` (navigates) with a status dot, plus a separate **Start/Stop** button (connects/disconnects without navigating)
 
 The aggregate dot status across all playgrounds uses `aggregateDotStatus()`:
 - All connected → green
@@ -867,12 +948,33 @@ The aggregate dot status across all playgrounds uses `aggregateDotStatus()`:
 
 **`useSavedGraphs(storageKey)`** manages a `Record<string, SavedGraphEntry>` in localStorage. The data model stores only the graph **name** (a string), not the graph data itself — the server holds the actual file.
 
-**Save flow:**
+**Save flow (connection required, deferred confirmation):**
 ```
-User clicks Save → GraphSaveButton inline form →
-  handleSaveGraph(name):
-    savedGraphs.saveGraph(name)          // write to localStorage
+User clicks Save → GraphSaveButton inline form
+  (button disabled when !connected — GraphSaveButton enforces disabled={disabled || !connected})
+
+  handleSaveGraph(name):     [in useSavedGraphWorkflow]
+    if (!connected):
+      addToast('Save failed: connection required to export graph', 'error')
+      return                 // no bookmark written; no state advanced
+
+    pendingSaveRef.current = { graphName: name, timeoutId }  // arm — no localStorage write yet
     ws.sendRawText(`export graph as ${name}`)  // server writes {name}.json
+
+    Resolution paths (bus effects):
+      → bus.on('graph.exported', name-matched)
+              → clearTimeout(timeoutId)
+              → savedGraphs.saveGraph(name)       // localStorage bookmark written HERE
+              → setLastSavedName(name)            // in useGraphSaveName
+              → addToast(`Graph saved as "${name}"`, 'success')
+      → bus.on('graph.export.failed')
+              → clearTimeout(timeoutId)
+              → addToast(typed error message, 'error')   // NO bookmark written
+      → 10-second timeout fires
+              → addToast('Save failed: export confirmation timed out', 'error')
+      → disconnect while in-flight (connected flips to false)
+              → clearTimeout(timeoutId)
+              → addToast('Save failed: connection closed before export confirmation', 'error')
 ```
 
 **Load flow:**
@@ -930,7 +1032,7 @@ See §3.13 for the full feature description and all code locations.
 
 **Decision:** Each message has a stable `id: number` that increments globally per slot, never recycled.
 
-**Why:** Array indices shift when the ring buffer drops old messages. A pinned message identified by index would shift to a different message after the buffer rotates. The stable ID means `pinnedMessageId` always refers to the correct row.
+**Why:** Array indices shift when the ring buffer drops old messages. A pinned message identified by index would shift to a different message after the buffer rotates. The stable ID ensures `pinnedGraphPath` and console message lookups via `classificationMap` always refer to the correct row.
 
 ---
 
@@ -949,7 +1051,7 @@ See §3.13 for the full feature description and all code locations.
 - `sendCommand()` — writes to history, echoes the command, handles the `load` special case
 - `sendRawText(text)` — sends silently, used exclusively by automation hooks
 
-**Why:** Automation hooks must not pollute the command history or produce `> describe graph` echo entries in the console (those would trigger `useAutoMarkdownPin` falsely, since `describe` is a triggering word). `sendRawText` bypasses all that.
+**Why:** Automation hooks must not pollute the command history or produce `> describe graph` echo entries in the console (those would trigger `useAutoHelpNavigate`, since `describe` is a triggering word). `sendRawText` bypasses all that.
 
 ---
 
@@ -969,6 +1071,8 @@ The hook has two distinct code paths:
 - **Auto-refresh path** (triggered by `refetchGraph()` call): does *not* clear `graphData` (stale graph stays visible under a spinner overlay), does *not* switch the tab (user is not interrupted). Uses a `useCallback`-stable imperative function with its own abort ref.
 
 **Why separate paths?** A first-time load of a new graph needs visual loading feedback and should switch context to the Graph tab. A background refresh should be invisible to the user — just a spinner on the existing graph.
+
+> **Note:** `useAutoGraphRefresh` currently triggers **only the initial-load path** — it always issues `describe graph` via `sendRawText`, which sends a new graph-link event and updates `pinnedGraphPath`, causing a clean re-fetch. The auto-refresh path (overlay spinner) is structurally available but not invoked by any automated hook; it exists for future imperative use.
 
 ---
 
@@ -1054,6 +1158,7 @@ Server responds "Node foo created"  — classifier emits graph.mutation event
   → useAutoGraphRefresh.on('graph.mutation'):
       arms 300 ms debounce timer
   → (300 ms passes, no further mutations)
+  → addToast('Graph updated — refreshing…')          [or '…opening Graph tab…' if no graph yet]
   → sendRawTextRef.current('describe graph')   — silent, no history entry
   → waitingForDescribeRef = true
 
@@ -1156,13 +1261,18 @@ localStorage has no counter yet
   → useLocalStorage initialises untitledCounter = 1
   → defaultName = "untitled-1"
 
-── User saves as "untitled-1" ────────────────────────────────────────
-handleSaveGraph("untitled-1"):
-  savedGraphs.saveGraph("untitled-1")          // localStorage bookmark
-  setLastSavedName("untitled-1")               // in useGraphSaveName
-    → setLastSavedNameState("untitled-1")
-    → "untitled-1" === `untitled-${1}` → untitledSlotConsumedRef = true
+── User saves as "untitled-1" (connected) ───────────────────────────
+handleSaveGraph("untitled-1"):   [in useSavedGraphWorkflow]
+  pendingSaveRef.current = { graphName: "untitled-1", timeoutId }  // arm — no localStorage write yet
   ws.sendRawText("export graph as untitled-1") // server writes file
+  → (server responds with graph.exported event, graphName === "untitled-1")
+  → bus.on('graph.exported') fires (name-matched):
+      clearTimeout(timeoutId)
+      savedGraphs.saveGraph("untitled-1")      // localStorage bookmark written HERE
+      setLastSavedName("untitled-1")           // in useGraphSaveName
+        → setLastSavedNameState("untitled-1")
+        → "untitled-1" === `untitled-${1}` → untitledSlotConsumedRef = true
+      addToast(`Graph saved as "untitled-1"`)
   → defaultName = "untitled-1"                 // lastSavedName wins
 
 ── User clears console (slot was consumed) ───────────────────────────
@@ -1216,8 +1326,13 @@ WS echo: "> import graph from other-graph"
 | Modal upload path | `useState` in `Playground` | Memory only | `null` = closed; non-null = modal open |
 | Modal trigger element | `useRef` in `Playground` | Memory only | Captures active element before open for focus restore |
 | Successful upload paths | `useState` in `Playground` | Memory only | `Set<string>`; cleared on `clearMessages` |
+| `pendingSaveRef` | `useRef` in `useSavedGraphWorkflow` | Memory only | `PendingSave = { graphName, timeoutId }` while awaiting server confirmation; cleared on `graph.exported` (matched), `graph.export.failed`, timeout (10 s), or disconnect |
+| `pendingJsonTransferRef` | `useRef` in `useSendToJsonPath` | Memory only | Last-write-wins mailbox; armed when ➡️ is clicked while JSON-Path is connecting; consumed once slot reaches `connected` |
+| Clipboard items | `ClipboardContext` reducer | IndexedDB | Hydrated at mount; cross-tab sync via BroadcastChannel |
+| `clipboardOpen` | `useLocalStorage` in `Playground` | `localStorage` | Key `'clipboard-sidebar-open'`; persists sidebar open/closed state |
+| Duplicate dialog state | `useState` in `Playground` | Memory only | `null` = closed; non-null = `{ pendingItem, existingItem }` |
 | Graph data | `useState` in `useGraphData` | Memory only | |
-| Right panel tab | `useLocalStorage` in `useGraphData` | `localStorage` | Keyed per playground |
+| Right panel tab | `useLocalStorage` in `useGraphData` | `localStorage` | Keyed per playground; normalized against the current `tabs` array before render so removed legacy values are migrated to a valid tab |
 | Is refreshing | `useState` in `useGraphData` | Memory only | |
 | Saved graph names | `useLocalStorage` in `useSavedGraphs` | `localStorage` | Keyed per playground |
 | Untitled counter | `useLocalStorage` in `useGraphSaveName` | `localStorage` | Keyed per playground; only increments when slot was consumed by a save |
@@ -1339,7 +1454,7 @@ The ring buffer drops old messages. Always identify pinned/processed messages by
 Without this guard, `"Graph instance created"` and `"Root node created because..."` trigger false-positive auto-refreshes. Do not remove the prefix check. See §3.5 and §6.10.
 
 ### P5 — `sendRawText` must be used for silent commands, not `sendCommand`
-`sendCommand` pushes to history and echos the command — the echo would trigger `useAutoMarkdownPin`'s `describe` guard and steal the graph-link response. See §7.5.
+`sendCommand` pushes to history and echoes the command — the echo would trigger `useAutoHelpNavigate`'s `describe` guard and open the help panel unexpectedly. `sendRawText` bypasses all that. See §7.5.
 
 ### P6 — The centralised watermark in `useProtocolKernel` must initialise before the emission effect
 The watermark init effect ([L40](../src/protocol/useProtocolKernel.ts#L40)) must run *before* the bus emission effect ([L56](../src/protocol/useProtocolKernel.ts#L56)) at mount. React guarantees effects in a component run in declaration order on the first render, so declaring the watermark init first works. Merging them into a single effect would process historical messages as new events. See §7.4.
@@ -1367,5 +1482,8 @@ Because `bus.on()` registers a callback only once (the bus `useRef` identity nev
 
 ### P14 — `classificationMap` identity changes on every new message
 The `classificationMap` is a `useMemo` that re-derives when `messages` changes. Components that receive it as a prop will see a new `Map` reference on every new WebSocket message. This is intentional — React Compiler handles memoisation — but avoid using `classificationMap` as a `useEffect` dependency without wrapping the effect in additional guards, as it will fire on every message.
+
+### P15 — Never allow saves while disconnected
+`useSavedGraphs` stores only the graph **name**, not the graph data. A bookmark without a matching server-side `{name}.json` export file cannot be loaded — `import graph from {name}` will fail after reconnect. `useSavedGraphWorkflow.handleSaveGraph` guards against disconnected calls with an early-return error toast; `GraphSaveButton` enforces `disabled={disabled || !connected}` at the UI level. If you add any new path that calls `saveGraph(name)` directly, ensure the caller is always connected first. See §3.10 and §6.12.
 
 ---

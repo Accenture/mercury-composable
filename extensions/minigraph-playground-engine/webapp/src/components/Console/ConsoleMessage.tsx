@@ -1,4 +1,4 @@
-import { parseMessage, getMessageIcon, tryParseJSON, isMarkdownCandidate } from '../../utils/messageParser';
+import { parseMessage, getMessageIcon, tryParseJSON } from '../../utils/messageParser';
 import { JsonView, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
@@ -9,11 +9,9 @@ interface ConsoleMessageProps {
   message:              string;
   msgId?:               number;
   classificationMap?:   Map<number, ProtocolEvent[]>;
-  /** Called when the user clicks/activates this row to pin it. The parent
-   *  is responsible for capturing the message identity — this component
-   *  just signals the intent. */
-  onPin?:               () => void;
-  pinned?:              boolean;
+  /** Called when the user clicks/activates a graph-link row, triggering the
+   *  graph view to load the referenced graph. */
+  onGraphLink?:         () => void;
   /** Called after a successful clipboard write — use this to show a toast. */
   onCopyMessage?:       () => void;
   /**
@@ -34,7 +32,7 @@ interface ConsoleMessageProps {
   successfulUploadPaths?: Set<string>;
 }
 
-export default function ConsoleMessage({ message, msgId, classificationMap, onPin, pinned, onCopyMessage, onSendToJsonPath, onUploadMockData, successfulUploadPaths }: ConsoleMessageProps) {
+export default function ConsoleMessage({ message, msgId, classificationMap, onGraphLink, onCopyMessage, onSendToJsonPath, onUploadMockData, successfulUploadPaths }: ConsoleMessageProps) {
   const parsed    = parseMessage(message);
   const icon      = getMessageIcon(parsed.type);
   const jsonCheck = tryParseJSON(parsed.message);
@@ -47,17 +45,10 @@ export default function ConsoleMessage({ message, msgId, classificationMap, onPi
   const canUploadMock    = !!onUploadMockData && isMockUpload && mockUploadPath !== null;
   const uploadSucceeded  = canUploadMock && !!successfulUploadPaths?.has(mockUploadPath!);
 
-  // ⚠️ Critical: isMockUpload must be excluded to prevent the invitation row
-  // from getting role="button" + onClick alongside the canUploadMock button,
-  // which would create a nested interactive element violating WCAG.
-  // Consistent with isLargePayload rows which are also non-pinnable.
-  const isPinnable       = !!onPin && !isMockUpload && !isLargePayload && (!isGraphLink ? isMarkdownCandidate(message) : true);
-  const pinTitle         = isGraphLink
-    ? 'Click to load graph in Graph View'
-    : 'Click to pin to Developer Guides';
-  const pinLabel         = isGraphLink
-    ? 'Load graph in Graph View'
-    : 'Pin to Developer Guides';
+  // Graph-link rows are activatable (clicking loads the graph into Graph View).
+  // ⚠️ isMockUpload and isLargePayload rows are never activatable to avoid
+  // conflicting interactive elements violating WCAG.
+  const isActivatable = !!onGraphLink && isGraphLink && !isMockUpload && !isLargePayload;
 
   // Only show the "send to JSON-Path" button when the message is a JSON object/array
   // and the parent has wired up the callback.
@@ -100,21 +91,19 @@ export default function ConsoleMessage({ message, msgId, classificationMap, onPi
       className={[
         styles.consoleMessage,
         styles[`messageType-${parsed.type}`],
-        isPinnable     ? styles.consoleMessagePinnable    : '',
-        pinned         ? styles.consoleMessagePinned      : '',
-        isGraphLink    ? styles.consoleMessageGraphLink   : '',
-        isLargePayload ? styles.consoleMessageLargePayload : '',
-        isMockUpload   ? styles.consoleMessageMockUpload  : '',
+        isActivatable  ? styles.consoleMessageActivatable  : '',
+        isGraphLink    ? styles.consoleMessageGraphLink     : '',
+        isLargePayload ? styles.consoleMessageLargePayload  : '',
+        isMockUpload   ? styles.consoleMessageMockUpload    : '',
       ].filter(Boolean).join(' ')}
-      onClick={isPinnable ? () => onPin!() : undefined}
-      title={isPinnable ? pinTitle : undefined}
-      role={isPinnable ? 'button' : undefined}
-      tabIndex={isPinnable ? 0 : undefined}
-      onKeyDown={isPinnable
-        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPin!(); } }
+      onClick={isActivatable ? () => onGraphLink!() : undefined}
+      title={isActivatable ? 'Click to load graph in Graph View' : undefined}
+      role={isActivatable ? 'button' : undefined}
+      tabIndex={isActivatable ? 0 : undefined}
+      onKeyDown={isActivatable
+        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onGraphLink!(); } }
         : undefined}
-      aria-label={isPinnable ? pinLabel : undefined}
-      aria-pressed={isPinnable ? pinned : undefined}
+      aria-label={isActivatable ? 'Load graph in Graph View' : undefined}
     >
       <span className={styles.messageIcon}>
         {isMockUpload ? '⬆️' : isLargePayload ? '⬇️' : isGraphLink ? '🕸️' : icon}

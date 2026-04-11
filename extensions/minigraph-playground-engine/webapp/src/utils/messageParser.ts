@@ -59,6 +59,43 @@ export const tryParseJSON = (str: string): JSONParseResult => {
 };
 
 /**
+ * Result type for a successfully matched graph export response.
+ */
+export interface GraphExportSuccess {
+  /** The graph name segment from the API path, e.g. "my-graph" from "/api/graph/model/my-graph/1". */
+  graphName: string;
+  /** The full API path, e.g. "/api/graph/model/my-graph/1". */
+  apiPath: string;
+}
+
+/**
+ * Returns non-null only when `raw` contains the literal substring
+ * `"Graph exported to "`.  Pure describe-graph responses (which also
+ * contain `/api/graph/model/…`) do not contain that prefix and return
+ * `null`, so Rule 6a never fires for background refresh traffic.
+ */
+export function extractGraphExportSuccess(raw: string): GraphExportSuccess | null {
+  if (!raw.includes('Graph exported to ')) return null;
+  const apiPath = extractGraphApiPath(raw);
+  if (!apiPath) return null;
+  const graphName = apiPath.split('/')[4]; // ["", "api", "graph", "model", "<name>", ...]
+  if (!graphName) return null;
+  return { graphName, apiPath };
+}
+
+/**
+ * Detects known export-failure messages from the server.
+ * Returns the failure reason or `null` if the message is not an export failure.
+ */
+export function detectGraphExportFailure(
+  raw: string,
+): { reason: 'invalid-name' | 'root-name-conflict' } | null {
+  if (raw.includes('Invalid filename')) return { reason: 'invalid-name' };
+  if (raw.includes('Expect root node name')) return { reason: 'root-name-conflict' };
+  return null;
+}
+
+/**
  * Returns true when a raw WebSocket message string is a plain-text
  * (non-JSON) candidate for Markdown rendering.
  *
@@ -193,22 +230,20 @@ export function isMockUploadMessage(raw: string): boolean {
 }
 
 /**
- * Returns true when a raw WebSocket message is an echoed command that should
- * trigger an auto-pin of the next plain-text response to the Markdown Preview.
+ * Returns true when a raw WebSocket message is an echoed `help` or `describe`
+ * command.  Used by the classifier (Rule 9) to emit `command.helpOrDescribe`
+ * events on the ProtocolBus.
  *
  * Matches:
  *  - `> help`               — top-level help overview
  *  - `> help <topic>`       — topic-specific help (e.g. `help create`)
  *  - `> describe skill <r>` — skill documentation (returns plain-text markdown)
- *  - `> describe node <n>`  — node detail (returns a JSON map → handled by JsonView,
- *                             BUT we still wait so we don't accidentally steal the
- *                             next unrelated message; the hook's markdown-candidate
- *                             guard handles the JSON case cleanly)
+ *  - `> describe node <n>`  — node detail
  *  - `> describe connection <a> and <b>` — connection detail (plain-text)
  *
- * Explicitly EXCLUDED (returns a graph-link, not a Markdown response):
+ * Explicitly EXCLUDED (returns a graph-link, not a text response):
  *  - `> describe graph`     — this produces a graph-link message that belongs
- *                             to the Graph tab, not the Markdown Preview.
+ *                             to the Graph tab.
  *
  * Note: the backend echoes every command with a `> ` prefix, so we match on
  * that prefix to distinguish user commands from server responses.
@@ -224,7 +259,7 @@ export function isHelpOrDescribeCommand(raw: string): boolean {
   if (lower.startsWith('describe ')) {
     const rest = lower.slice('describe '.length).trim();
     if (rest.startsWith('graph')) return false;   // `describe graph` → graph tab
-    return true;                                  // everything else → markdown preview
+    return true;                                  // everything else → text response
   }
 
   return false;

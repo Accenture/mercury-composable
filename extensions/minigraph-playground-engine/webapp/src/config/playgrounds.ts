@@ -44,6 +44,13 @@ export interface PlaygroundConfig {
   storageKeySavedGraphs?: string;   // localStorage key for graphs saved from the Graph Data tab (omit to hide the feature)
   supportsUpload?:       boolean;    // true when the backend supports POST /api/json/content/{id} upload
   supportsClipboard?:    boolean;    // true when clip/paste features are enabled (Minigraph only)
+  supportsHelp?:         boolean;    // true when the help panel is available (Minigraph only)
+  /**
+   * localStorage key for the last-viewed help topic.
+   * Only used when the playground includes the 'help' tab.
+   * Omit to use a static fallback key (not recommended for production configs).
+   */
+  storageKeyHelpTopic?:  string;
   /**
    * The ordered list of right-panel tabs to show for this playground.
    * The first entry is the default selected tab on first load.
@@ -51,7 +58,6 @@ export interface PlaygroundConfig {
    *
    * Tab meanings:
    *  'payload'    — JSON/XML payload editor (used by playgrounds that send a data body)
-   *  'preview'    — Developer Guides of the last pinned plain-text response
    *  'graph'      — ReactFlow graph visualisation
    *  'graph-data' — Raw JSON viewer for the fetched graph model
    */
@@ -68,7 +74,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     storageKeyHistory: 'jsonpath-command-history',
     storageKeyTab: 'jsonpath-right-tab',
     supportsUpload: true,
-    // JSON-Path needs a payload input and graph views; Developer Guides is not useful here.
+    // JSON-Path needs a payload input and graph views.
     tabs: ['payload', 'graph', 'graph-data'],
   },
   {
@@ -80,9 +86,11 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     storageKeyHistory: 'minigraph-command-history',
     storageKeyTab: 'minigraph-right-tab',
     storageKeySavedGraphs: 'minigraph-saved-graphs',
+    storageKeyHelpTopic: 'minigraph-help-topic',
     supportsClipboard: true,
+    supportsHelp: true,
     // Minigraph works with graph commands and text responses; it has no payload input.
-    tabs: ['preview', 'graph', 'graph-data'],
+    tabs: ['graph', 'graph-data'],
   },
 ];
 

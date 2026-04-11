@@ -38,6 +38,12 @@ export interface UseWebSocketOptions {
   payload:           string;
   addToast:          (message: string, type?: ToastType) => void;
   bus?:              ProtocolBus;
+  /**
+   * Optional local command interception.  Return `true` to signal the command
+   * was handled locally and must not be sent over the WebSocket; return `false`
+   * (or omit) to fall through to the normal remote-send path.
+   */
+  handleLocalCommand?: (text: string) => boolean;
 }
 
 /** Public API surface returned by useWebSocket. */
@@ -105,7 +111,7 @@ function localReducer(state: LocalState, action: LocalAction): LocalState {
  *
  * Public API is unchanged — Playground.tsx needs no edits.
  */
-export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus }: UseWebSocketOptions): UseWebSocketReturn {
+export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus, handleLocalCommand }: UseWebSocketOptions): UseWebSocketReturn {
 
   // Shared context — connection phase + messages live here, surviving navigation.
   const ctx = useWebSocketContext();
@@ -152,6 +158,15 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus
     const text = command.trim();
     if (text.length === 0) return;
 
+    if (handleLocalCommand?.(text) === true) {
+      if (history[0] !== text) {
+        setHistory((prev) => [text, ...prev].slice(0, MAX_HISTORY));
+      }
+      ctx.appendMessage(wsPath, '> ' + text);
+      dispatch({ type: 'CLEAR_COMMAND' });
+      return;
+    }
+
     ctx.send(wsPath, text);
     if (history[0] !== text) {
       setHistory((prev) => [text, ...prev].slice(0, MAX_HISTORY));
@@ -167,7 +182,7 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus
     }
 
     dispatch({ type: 'CLEAR_COMMAND' });
-  }, [ctx, wsPath, phase, command, payload, history, setHistory]);
+  }, [ctx, wsPath, phase, command, payload, history, setHistory, handleLocalCommand]);
 
   // --- Public: keyboard handler (history navigation only) ---
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {

@@ -9,11 +9,14 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useGraphData } from '../hooks/useGraphData';
 import { useAutoGraphRefresh } from '../hooks/useAutoGraphRefresh';
-import { useAutoMarkdownPin } from '../hooks/useAutoMarkdownPin';
+import { useAutoHelpNavigate } from '../hooks/useAutoHelpNavigate';
+import { useSendToJsonPath } from '../hooks/useSendToJsonPath';
+import { useMockUploadModal } from '../hooks/useMockUploadModal';
 import { useLargePayloadDownload } from '../hooks/useLargePayloadDownload';
-import { useAutoMockUpload } from '../hooks/useAutoMockUpload';
 import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { useGraphSaveName } from '../hooks/useGraphSaveName';
+import { useSavedGraphWorkflow } from '../hooks/useSavedGraphWorkflow';
+import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
 import { buildNodeCommand } from '../clipboard/commandBuilder';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
@@ -23,8 +26,10 @@ import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
 import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
+import HelpBrowser from './HelpBrowser/HelpBrowser';
 import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateDialog';
-import { type PlaygroundConfig, PLAYGROUND_CONFIGS } from '../config/playgrounds';
+import { type PlaygroundConfig } from '../config/playgrounds';
+import { resolveBundledHelpTopic } from '../utils/localHelpCommand';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { useClipboardContext } from '../contexts/ClipboardContext';
 import { ProtocolBus } from '../protocol/bus';
@@ -38,7 +43,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -54,7 +59,7 @@ export default function Playground({ config }: PlaygroundProps) {
   // Using a separate useState means we never write cross-playground payloads
   // to localStorage. null = no override; the stored value is used instead.
   const [payloadOverride, setPayloadOverride] = useState<string | null>(() =>
-    ctx.takePendingPayload(wsPath)
+    ctx.peekPendingPayload(wsPath)
   );
 
   // Reactively consume a pending payload deposited by useLargePayloadDownload.
@@ -91,132 +96,137 @@ export default function Playground({ config }: PlaygroundProps) {
   const busRef = useRef(new ProtocolBus());
   const bus = busRef.current;
 
+  // Bundled help commands are handled locally — no WebSocket round-trip needed.
+  // Define before useWebSocket so it is in scope when the options object is evaluated.
+  const handleLocalCommand = useCallback((text: string): boolean => {
+    return resolveBundledHelpTopic(text, supportsHelp === true) !== null;
+  }, [supportsHelp]);
+
   // All WebSocket + console logic lives in the hook
-  const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus });
+  const ws = useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus, handleLocalCommand });
 
   const { classificationMap } = useProtocolKernel({
     messages: ws.messages, bus,
   });
 
-  // Pinned message state — stored as a message id (number) so two messages
-  // with identical text don't both appear pinned. null = no explicit pin.
-  const [pinnedMessageId, setPinnedMessageId] = useState<number | null>(null);
-
-  // Auto-last: most recently received non-JSON, non-graph-link message.
-  // Only computed when the Markdown Preview tab is enabled for this playground.
-  // Uses docs.response from classificationMap — stricter than the original
-  // isMarkdownCandidate check (excludes echoes, mock-upload invitations,
-  // upload-content-path messages, and large-payload messages).
-  const lastNonJsonMessage = useMemo<string | null>(() => {
-    if (!tabs.includes('preview')) return null;
-    for (let i = ws.messages.length - 1; i >= 0; i--) {
-      const msg = ws.messages[i];
-      const events = classificationMap.get(msg.id);
-      if (events?.some(e => e.kind === 'docs.response')) return msg.raw;
-    }
-    return null;
-  }, [ws.messages, tabs, classificationMap]);
-
-  // Resolve the pinned id back to its raw string for MarkdownPreview.
-  // pinnedMessageId wins; falls back to auto-last.
-  // Only computed when the Markdown Preview tab is enabled for this playground.
-  const resolvedPreviewMessage = useMemo<string | null>(() => {
-    if (!tabs.includes('preview')) return null;
-    if (pinnedMessageId !== null) {
-      return ws.messages.find(m => m.id === pinnedMessageId)?.raw ?? null;
-    }
-    return lastNonJsonMessage;
-  }, [pinnedMessageId, ws.messages, lastNonJsonMessage, tabs]);
-
-  // ── Graph state ──────────────────────────────────────────────────────────
+  // ── Graph state ────────────────────────────────────────────────────────────────────────
   // The API path extracted from the currently-pinned graph-link message.
-  const [pinnedGraphPath, setPinnedGraphPath] = useState<string | null>(null);
+  // Survives Playground remounts (SPA navigation between playground tabs)
+  // via a module-scoped Map, but resets on hard refresh / page load —
+  // matching the server session lifetime (WebSocket-bound).
+  const [pinnedGraphPath, setPinnedGraphPath] = usePinnedGraphPath(wsPath);
 
   // Fetch + parse graph data, auto-switch to Graph tab — logic lives in the hook.
-  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing, refetchGraph } = useGraphData(pinnedGraphPath, addToast, tabs[0], storageKeyTab);
+  const { graphData, setGraphData, rightTab, setRightTab, isRefreshing } = useGraphData(
+    pinnedGraphPath,
+    addToast,
+    tabs[0],
+    tabs,
+    storageKeyTab,
+  );
 
-  // ── Mock-upload modal state ───────────────────────────────────────────────
-  // Path extracted from the server's upload invitation.
-  // null = modal closed; non-null = modal open for that specific endpoint.
-  const [modalUploadPath, setModalUploadPath] = useState<string | null>(null);
-
-  // Capture the element that triggered the modal so focus can be restored on close.
-  const modalTriggerRef = useRef<HTMLElement | null>(null);
-
-  // POST paths of invitations that have been successfully fulfilled — drives ✅ badge.
-  const [successfulUploadPaths, setSuccessfulUploadPaths] = useState<Set<string>>(new Set());
+  // ── Mock-upload modal ────────────────────────────────────────────────────
+  const {
+    modalUploadPath, successfulUploadPaths,
+    handleOpenUploadModal, handleCloseUploadModal,
+    handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
+  } = useMockUploadModal({ bus, addToast });
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   useAutoGraphRefresh({
     bus,
     pinnedGraphPath,
     setPinnedGraphPath,
-    connected:          ws.connected,
-    refetchGraph,
-    sendRawText:        ws.sendRawText,
-    rightTab,
+    connected:   ws.connected,
+    sendRawText: ws.sendRawText,
     addToast,
   });
 
-  // ── Auto-pin Markdown Preview on help / describe responses ───────────────
-  // When the user sends a `help` or text-producing `describe` command, the
-  // first plain-text response is automatically pinned to the preview panel
-  // and the panel switches to the Developer Guides tab.
-  // This hook is a no-op when the playground config does not include 'preview'.
-  useAutoMarkdownPin({
+  // ── Session-bound graph state invalidation ───────────────────────────────
+  // Graph API paths are tied to the backend WebSocket session.  When the
+  // connection drops, any previously fetched graph data and its API path are
+  // invalid for the new session.  Clear both on a real connected→disconnected
+  // transition.  The guard ensures this does NOT fire on initial mount when
+  // the socket is still in 'idle' or 'connecting' phase.
+  const wasConnectedRef = useRef(false);
+
+  useEffect(() => {
+    if (wasConnectedRef.current && !ws.connected) {
+      setPinnedGraphPath(null);
+      setGraphData(null);
+    }
+    wasConnectedRef.current = ws.connected;
+  }, [ws.connected, setPinnedGraphPath, setGraphData]);
+
+  // ── Help panel state ────────────────────────────────────────────────────
+  // Persisted last-viewed help topic (empty string = root index).
+  const [activeHelpTopic, setActiveHelpTopic] = useLocalStorage<string>(
+    config.storageKeyHelpTopic ?? 'help-topic-fallback',
+    ''
+  );
+  const [helpOpen, setHelpOpen] = useLocalStorage<boolean>('help-panel-open', false);
+
+  // ── Help-hint popover (shows on every app load) ─────────────────────────
+  const [helpHintVisible, setHelpHintVisible] = useState(
+    () => !!supportsHelp && !helpOpen
+  );
+  const [helpHintFading, setHelpHintFading] = useState(false);
+  const helpHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismissHelpHint = useCallback(() => {
+    if (!helpHintVisible) return;
+    setHelpHintFading(true);
+    // Remove from DOM after the CSS fade transition completes.
+    helpHintTimerRef.current = setTimeout(() => setHelpHintVisible(false), 400);
+  }, [helpHintVisible]);
+
+  // Auto-dismiss after 3 seconds.
+  useEffect(() => {
+    if (!helpHintVisible || helpHintFading) return;
+    const id = setTimeout(dismissHelpHint, 3000);
+    return () => clearTimeout(id);
+  }, [helpHintVisible, helpHintFading, dismissHelpHint]);
+
+  // Dismiss immediately when the help panel opens during the hint window.
+  useEffect(() => {
+    if (helpOpen && helpHintVisible) dismissHelpHint();
+  }, [helpOpen, helpHintVisible, dismissHelpHint]);
+
+  // Cleanup on unmount.
+  useEffect(() => {
+    return () => { if (helpHintTimerRef.current) clearTimeout(helpHintTimerRef.current); };
+  }, []);
+
+  // Ctrl+` toggles the help panel (only for playgrounds that support it).
+  useEffect(() => {
+    if (!supportsHelp) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '`') {
+        e.preventDefault();
+        setHelpOpen((prev: boolean) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [supportsHelp, setHelpOpen]);
+
+  useAutoHelpNavigate({
     bus,
-    connected:          ws.connected,
-    setPinnedMessageId,
-    onAutoPin:          tabs.includes('preview')
-                          ? () => setRightTab('preview')
-                          : undefined,
+    setHelpTopic: setActiveHelpTopic,
+    onTabSwitch:  supportsHelp ? () => setHelpOpen(true) : () => {},
   });
 
   // ── Auto-download large payloads ──────────────────────────────────────────
   // When the server responds with a "Large payload (N) -> GET /api/inspect/…"
   // message (i.e. a namespace value that exceeds the 64 KB inline limit),
-  // this hook fetches the data from the provided endpoint and immediately
-  // triggers a browser file download — no extra user interaction required.
+  // this hook fetches the data from the provided endpoint and appends the
+  // result inline to the console as a collapsible JSON row — no extra user
+  // interaction required.
   useLargePayloadDownload({
     bus,
     connected:     ws.connected,
     appendMessage: ws.appendMessage,
     addToast,
-  });
-
-  // ── Mock-upload modal callbacks ───────────────────────────────────────────
-  const handleOpenUploadModal = useCallback((path: string) => {
-    // Capture the focused element before opening so we can restore focus on close.
-    modalTriggerRef.current = document.activeElement as HTMLElement;
-    setModalUploadPath(path);
-  }, []);
-
-  const handleCloseUploadModal = useCallback(() => {
-    setModalUploadPath(null);
-    // Restore focus to the element that triggered the modal open.
-    // setTimeout ensures the dialog is fully unmounted before focus() runs.
-    setTimeout(() => modalTriggerRef.current?.focus(), 0);
-  }, []);
-
-  const handleUploadSuccess = useCallback((_responseBody: string) => {
-    // _responseBody is available but intentionally not surfaced per spec §2.
-    setSuccessfulUploadPaths(prev => new Set([...prev, modalUploadPath!]));
-    setModalUploadPath(null);
-    setTimeout(() => modalTriggerRef.current?.focus(), 0);
-    addToast('Mock data uploaded successfully ✓', 'success');
-  }, [modalUploadPath, addToast]);
-
-  const handleUploadError = useCallback((errorMessage: string) => {
-    // Modal stays open — error is displayed inline inside the modal.
-    addToast(`Upload failed: ${errorMessage}`, 'error');
-  }, [addToast]);
-
-  // ── Auto-open modal when server sends upload invitation ───────────────────
-  useAutoMockUpload({
-    bus,
-    connected:   ws.connected,
-    onOpenModal: handleOpenUploadModal,
-    modalOpen:   modalUploadPath !== null,
   });
 
   // ── Clipboard integration ────────────────────────────────────────────────
@@ -286,140 +296,31 @@ export default function Playground({ config }: PlaygroundProps) {
     bus,
   );
 
-  // ── Pending graph export ──────────────────────────────────────────────────
-  // Tracks a save that is waiting for server confirmation.
-  // null = no pending save; string = the name being exported.
-  const pendingSaveRef = useRef<string | null>(null);
+  // ── Saved graph workflow ──────────────────────────────────────────────────
+  // Note: must be called AFTER useAutoGraphRefresh — both listen on graph.link
+  // and ProtocolBus fires listeners in insertion order.
+  const { handleSaveGraph, handleLoadGraph } = useSavedGraphWorkflow({
+    bus,
+    connected:    ws.connected,
+    sendRawText:  ws.sendRawText,
+    saveGraph:    savedGraphs.saveGraph,
+    setLastSavedName,
+    addToast,
+  });
 
-  // Save the current graph under the given name.
-  // When connected, the localStorage write and success toast are deferred
-  // until the server confirms the export (graph.link → success, lifecycle
-  // error → failure).  When disconnected, the bookmark is written
-  // optimistically so the user can reconnect and load it later.
-  const handleSaveGraph = useCallback((name: string) => {
-    setLastSavedName(name);
-    if (ws.connected) {
-      pendingSaveRef.current = name;
-      ws.sendRawText(`export graph as ${name}`);
-    } else {
-      savedGraphs.saveGraph(name);
-      addToast(`Graph saved as "${name}"`, 'success');
-    }
-  }, [savedGraphs.saveGraph, setLastSavedName, ws.connected, ws.sendRawText, addToast]);
-
-  // Confirm pending save: server responded with a graph-link after export.
-  useEffect(() => {
-    return bus.on('graph.link', () => {
-      if (pendingSaveRef.current === null) return;
-      const name = pendingSaveRef.current;
-      pendingSaveRef.current = null;
-      savedGraphs.saveGraph(name);
-      addToast(`Graph saved as "${name}"`, 'success');
-    });
-  }, [bus, savedGraphs.saveGraph, addToast]);
-
-  // Reject pending save: server responded with a plain-text error after export.
-  // The backend sends export errors as raw text (not JSON lifecycle events),
-  // which the classifier maps to docs.response.  Any docs.response while a
-  // save is pending means the export was rejected.
-  useEffect(() => {
-    return bus.on('docs.response', (event) => {
-      if (pendingSaveRef.current === null) return;
-      pendingSaveRef.current = null;
-      addToast(`Save failed: ${event.raw}`, 'error');
-    });
-  }, [bus, addToast]);
-
-  // Safety net: also handle JSON lifecycle errors in case future server
-  // versions send export errors as structured JSON.
-  useEffect(() => {
-    return bus.on('lifecycle', (event) => {
-      if (pendingSaveRef.current === null) return;
-      if (event.type !== 'error') return;
-      pendingSaveRef.current = null;
-      addToast(`Save failed: ${event.message}`, 'error');
-    });
-  }, [bus, addToast]);
-
-  // Clear pending save on disconnect so it doesn't linger.
-  useEffect(() => {
-    if (!ws.connected) {
-      pendingSaveRef.current = null;
-    }
-  }, [ws.connected]);
-
-  // Load a saved graph by sending `import graph from {name}` over the WebSocket.
-  // The backend reads {name}.json from its temp directory — the file that was
-  // written by the `export graph as {name}` command issued during save.
-  const handleLoadGraph = useCallback((name: string) => {
-    if (!ws.connected) return;
-    ws.sendRawText(`import graph from ${name}`);
-    addToast(`Importing graph "${name}"…`, 'info');
-  }, [ws.connected, ws.sendRawText, addToast]);
-
-  // When a message is pinned, decide whether it is a graph link or a Markdown message.
-  // Reads from classificationMap — no direct parser calls needed.
-  const handlePinMessage = useCallback((msg: { id: number; raw: string }) => {
+  // When a console graph-link row is clicked, load the referenced graph.
+  const handleGraphLinkMessage = useCallback((msg: { id: number; raw: string }) => {
     const events = classificationMap.get(msg.id);
     const graphLink = events?.find(e => e.kind === 'graph.link') as GraphLinkEvent | undefined;
     if (graphLink) {
       setPinnedGraphPath(graphLink.apiPath);
-      setPinnedMessageId(msg.id);
-    } else {
-      setPinnedMessageId(msg.id);
-      setPinnedGraphPath(null);
     }
   }, [classificationMap]);
 
-  // Send an inline JSON response to the JSON-Path playground payload editor.
-  // Mirrors the large-payload flow: navigate first, then deposit via context.
-  // If JSON-Path is not yet connected, auto-connect and defer the
-  // navigation + payload deposit until the socket reaches 'connected' phase.
-  const jsonPathConfig = PLAYGROUND_CONFIGS.find(c => c.tabs.includes('payload') && c.supportsUpload);
-
-  // Holds a pending deferred send triggered while JSON-Path was still connecting.
-  // Stored as a ref so the watching useEffect below can consume it without
-  // needing to be in the dependency array of handleSendToJsonPath.
-  const deferredSendRef = useRef<{ wsPath: string; json: string } | null>(null);
-
-  // Watch the JSON-Path slot phase; when it reaches 'connected' and there is a
-  // deferred send pending, execute it and clear the ref.
-  const jsonPathWsPath = jsonPathConfig?.wsPath;
-  useEffect(() => {
-    if (!jsonPathWsPath || !deferredSendRef.current) return;
-    const slot = ctx.getSlot(jsonPathWsPath);
-    if (slot.phase === 'connected') {
-      const { wsPath: targetPath, json } = deferredSendRef.current;
-      deferredSendRef.current = null;
-      ctx.setPendingPayload(targetPath, json);
-      navigate(jsonPathConfig!.path);
-      addToast('JSON loaded into JSON-Path editor ✓', 'success');
-    }
-  }, [jsonPathWsPath, ctx, navigate, addToast, jsonPathConfig,
-      // getSlot returns a new object reference when the slot changes, so
-      // reading it inside the effect (keyed on ctx) is sufficient — but we
-      // also need to re-run when the slot's phase changes.  ctx.getSlot is
-      // wrapped in useCallback(_, [slots]) so it changes whenever slots does,
-      // which is exactly what we want.
-     ]);
-
-  const handleSendToJsonPath = useCallback((json: string) => {
-    if (!jsonPathConfig) return;
-    const slot = ctx.getSlot(jsonPathConfig.wsPath);
-    if (slot.phase === 'connected') {
-      // Already connected — deposit immediately.
-      ctx.setPendingPayload(jsonPathConfig.wsPath, json);
-      navigate(jsonPathConfig.path);
-      addToast('JSON loaded into JSON-Path editor ✓', 'success');
-    } else {
-      // Not yet connected — arm a deferred send and auto-connect.
-      deferredSendRef.current = { wsPath: jsonPathConfig.wsPath, json };
-      if (slot.phase === 'idle') {
-        ctx.connect(jsonPathConfig.wsPath, addToast);
-      }
-      addToast('Connecting to JSON-Path Playground…', 'info');
-    }
-  }, [ctx, navigate, addToast, jsonPathConfig]);
+  // ── Cross-playground send to JSON-Path ──────────────────────────────────
+  const { handleSendToJsonPath } = useSendToJsonPath({
+    ctx, navigate, addToast, wsPath,
+  });
 
   // Responsive layout: stack panels vertically on narrow viewports
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -434,16 +335,15 @@ export default function Playground({ config }: PlaygroundProps) {
 
   const handleClearMessages = useCallback(() => {
     ws.clearMessages();
-    setPinnedMessageId(null);
     setPinnedGraphPath(null);
     setGraphData(null);
     // Reset mock-upload session state so ✅ badges clear with the console.
     // Modal upload path is NOT reset here — if the modal is open while the
     // user clears the console, it remains open for the current upload attempt.
-    setSuccessfulUploadPaths(new Set());
+    resetSuccessfulPaths();
     // Advance the untitled counter so the next saved graph gets a fresh name.
     resetSaveName();
-  }, [ws.clearMessages, setGraphData, resetSaveName]);
+  }, [ws.clearMessages, setGraphData, resetSuccessfulPaths, resetSaveName]);
 
   return (
     <div className={styles.wrapper}>
@@ -489,6 +389,27 @@ export default function Playground({ config }: PlaygroundProps) {
             </button>
           )}
           <Navigation addToast={addToast} />
+          {supportsHelp && (
+            <div className={styles.helpButtonWrapper}>
+              <button
+                className={`${styles.helpToggle}${helpHintVisible && !helpHintFading ? ` ${styles.helpTogglePulsing}` : ''}`}
+                onClick={() => setHelpOpen(prev => !prev)}
+                aria-label={helpOpen ? 'Close help panel' : 'Open help panel'}
+                aria-pressed={helpOpen}
+              >
+                ?
+              </button>
+              {helpHintVisible && (
+                <div
+                  className={`${styles.helpHint}${helpHintFading ? ` ${styles.helpHintFading}` : ''}`}
+                  onClick={dismissHelpHint}
+                  role="status"
+                >
+                  <kbd className={styles.helpHintKbd}>Ctrl + `</kbd> to toggle help
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -521,7 +442,7 @@ export default function Playground({ config }: PlaygroundProps) {
         defaultLayout={defaultLayout}
         onLayoutChanged={onLayoutChanged}
       >
-        <Panel defaultSize={clipboardOpen ? "50%" : "60%"} minSize="25%">
+        <Panel defaultSize={(helpOpen || clipboardOpen) ? "50%" : "60%"} minSize="25%">
           <LeftPanel
             messages={ws.messages}
             classificationMap={classificationMap}
@@ -535,16 +456,15 @@ export default function Playground({ config }: PlaygroundProps) {
             sendDisabled={!ws.connected || !ws.command.trim()}
             inputDisabled={!ws.connected}
             commandHistory={ws.history}
-            onPinMessage={handlePinMessage}
-            pinnedMessageId={pinnedMessageId}
+            onGraphLinkMessage={handleGraphLinkMessage}
             onCopyMessage={() => addToast('Copied to clipboard', 'success')}
-            onSendToJsonPath={jsonPathConfig && wsPath !== jsonPathConfig.wsPath ? handleSendToJsonPath : undefined}
+            onSendToJsonPath={handleSendToJsonPath}
             onUploadMockData={handleOpenUploadModal}
             successfulUploadPaths={successfulUploadPaths}
           />
         </Panel>
         <Separator className={styles.resizeHandle} aria-label="Resize panels" />
-        <Panel defaultSize={clipboardOpen ? "30%" : "40%"} minSize="20%">
+        <Panel defaultSize={helpOpen ? "50%" : clipboardOpen ? "30%" : "40%"} minSize="20%">
           <RightPanel
             tabs={tabs}
             payload={payload}
@@ -552,8 +472,6 @@ export default function Playground({ config }: PlaygroundProps) {
             validation={payloadValidation}
             onFormat={handleFormatPayload}
             onUpload={supportsUpload ? ws.uploadPayload : undefined}
-            previewMessage={resolvedPreviewMessage}
-            pinnedMessage={pinnedMessageId !== null ? 'pinned' : null}
             graphData={graphData}
             activeTab={rightTab}
             onTabChange={setRightTab}
@@ -562,6 +480,17 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
             isGraphRefreshing={isRefreshing}
             onClipNode={supportsClipboard ? handleClipNode : undefined}
+            helpPanel={supportsHelp && helpOpen ? (
+              (onToggleMaximize: () => void, isMaximized: boolean) => (
+                <HelpBrowser
+                  activeTopic={activeHelpTopic}
+                  onNavigate={setActiveHelpTopic}
+                  onClose={() => setHelpOpen(false)}
+                  onToggleMaximize={onToggleMaximize}
+                  isMaximized={isMaximized}
+                />
+              )
+            ) : undefined}
           />
         </Panel>
         {supportsClipboard && clipboardOpen && (

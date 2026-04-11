@@ -11,9 +11,7 @@ interface LeftPanelProps {
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
-  onPinMessage?:      (msg: { id: number; raw: string }) => void;
-  /** The id of the currently-pinned message, or null if nothing is pinned. */
-  pinnedMessageId?:   number | null;
+  onGraphLinkMessage?: (msg: { id: number; raw: string }) => void;
   /** Called after any per-message copy succeeds — use this to show a toast. */
   onCopyMessage?:     () => void;
   /** When provided, a "Send to JSON-Path" button appears on JSON messages. */
@@ -35,7 +33,7 @@ interface LeftPanelProps {
 
 export default function LeftPanel({
   messages, classificationMap, onCopy, onClear, consoleRef,
-  onPinMessage, pinnedMessageId, onCopyMessage, onSendToJsonPath,
+  onGraphLinkMessage, onCopyMessage, onSendToJsonPath,
   onUploadMockData, successfulUploadPaths,
   command, onCommandChange, onCommandKeyDown, onSend,
   sendDisabled, inputDisabled, commandHistory,
@@ -48,8 +46,7 @@ export default function LeftPanel({
         onCopy={onCopy}
         onClear={onClear}
         consoleRef={consoleRef}
-        onPinMessage={onPinMessage}
-        pinnedMessageId={pinnedMessageId}
+        onGraphLinkMessage={onGraphLinkMessage}
         onCopyMessage={onCopyMessage}
         onSendToJsonPath={onSendToJsonPath}
         onUploadMockData={onUploadMockData}

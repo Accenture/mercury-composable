@@ -39,13 +39,11 @@
   color: var(--primary-color);
   border-bottom-color: var(--primary-color);
 }
-
-.pinnedBadge {
+.tabBadge {
   font-size: 0.75rem;
   line-height: 1;
   margin-left: 0.25rem;
 }
-
 /* ── Tab bodies ─────────────────────────────────────────────────── */
 .tabBody {
   flex: 1 1 0;
@@ -58,4 +56,29 @@
 /* Hidden tab — stays mounted; hidden from view and from AT */
 .tabBodyHidden {
   display: none;
+}
+
+/* ── Vertical split group (tab content + help panel) ────────────── */
+.rightPanelGroup {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Horizontal drag handle between tab content and help panel ──── */
+.verticalResizeHandle {
+  height: 1px;
+  cursor: row-resize;
+  background: var(--border-color);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.verticalResizeHandle:hover {
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.verticalResizeHandle[data-separator="active"] {
+  background: rgba(37, 99, 235, 0.4);
 }
