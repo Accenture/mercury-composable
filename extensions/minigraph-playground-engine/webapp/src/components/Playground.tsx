@@ -54,8 +54,8 @@ export default function Playground({ config }: PlaygroundProps) {
   // Cross-playground payload transfer: when the user clicks ➡️ in the
   // Minigraph console to send a JSON result to JSON-Path, Playground.tsx
   // calls ctx.setPendingPayload() and navigates.  The receiving playground
-  // picks it up here at mount (useState initialiser) and also reactively via
-  // the effect below (if the playground is already mounted).
+  // peeks it here at mount (useState initialiser) and then consumes it
+  // reactively via the effect below (if the playground is already mounted).
   // Using a separate useState means we never write cross-playground payloads
   // to localStorage. null = no override; the stored value is used instead.
   const [payloadOverride, setPayloadOverride] = useState<string | null>(() =>
@@ -508,4 +508,3 @@ export default function Playground({ config }: PlaygroundProps) {
     </div>
   );
 }
-

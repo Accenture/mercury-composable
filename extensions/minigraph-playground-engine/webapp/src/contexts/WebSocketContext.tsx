@@ -381,6 +381,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     Record<string, string>
   >({});
 
+<<<<<<< HEAD
   const setPendingPayload = useCallback(
     (wsPath: string, payload: string | null) => {
       setPendingPayloads((prev) => {
@@ -390,6 +391,30 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           return next;
         }
         return { ...prev, [wsPath]: payload };
+=======
+  const setPendingPayload = useCallback((wsPath: string, payload: string | null) => {
+    setPendingPayloads(prev => {
+      if (payload === null) {
+        const next = { ...prev };
+        delete next[wsPath];
+        return next;
+      }
+      return { ...prev, [wsPath]: payload };
+    });
+  }, []);
+
+  const peekPendingPayload = useCallback((wsPath: string): string | null => {
+    return pendingPayloads[wsPath] ?? null;
+  }, [pendingPayloads]);
+
+  const takePendingPayload = useCallback((wsPath: string): string | null => {
+    const value = pendingPayloads[wsPath] ?? null;
+    if (value !== null) {
+      setPendingPayloads(prev => {
+        const next = { ...prev };
+        delete next[wsPath];
+        return next;
+>>>>>>> 8b36c0b9f806ceeaecc9c629769eb33c8c39a937
       });
     },
     [],
@@ -426,6 +451,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   );
 
   return (
+<<<<<<< HEAD
     <WebSocketContext.Provider
       value={{
         getSlot,
@@ -439,6 +465,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         takePendingPayload,
       }}
     >
+=======
+    <WebSocketContext.Provider value={{ getSlot, connect, disconnect, send, appendMessage, clearMessages, setPendingPayload, peekPendingPayload, takePendingPayload }}>
+>>>>>>> 8b36c0b9f806ceeaecc9c629769eb33c8c39a937
       {children}
     </WebSocketContext.Provider>
   );
