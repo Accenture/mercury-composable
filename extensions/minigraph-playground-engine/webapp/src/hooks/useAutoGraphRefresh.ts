@@ -1,16 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { type ProtocolBus } from '../protocol/bus';
 import { type ToastType } from './useToast';
-import { type RightTab } from '../components/RightPanel/RightPanel';
 
 export interface UseAutoGraphRefreshOptions {
   bus:                ProtocolBus;
   pinnedGraphPath:    string | null;
   setPinnedGraphPath: (path: string | null) => void;
   connected:          boolean;
-  refetchGraph:       () => void;
   sendRawText:        (text: string) => void;
-  rightTab:           RightTab;
   addToast:           (message: string, type?: ToastType) => void;
 }
 
@@ -23,9 +20,7 @@ export function useAutoGraphRefresh({
   pinnedGraphPath,
   setPinnedGraphPath,
   connected,
-  refetchGraph: _refetchGraph,
   sendRawText,
-  rightTab: _rightTab,
   addToast,
 }: UseAutoGraphRefreshOptions): void {
 

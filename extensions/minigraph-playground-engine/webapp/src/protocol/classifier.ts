@@ -10,6 +10,8 @@ import {
   isHelpOrDescribeCommand,
   extractImportGraphName,
   isMarkdownCandidate,
+  extractGraphExportSuccess,
+  detectGraphExportFailure,
 } from '../utils/messageParser';
 
 const KNOWN_LIFECYCLE_TYPES = new Set(['info', 'error', 'ping', 'welcome']);
@@ -113,6 +115,21 @@ export function classifyMessage(msgId: number, raw: string): ProtocolEvent[] {
     }
   }
 
+  // ── Rule 6a: Graph export success ─────────────────────────────────────────────
+  // Only fires when Rule 6 has already fired (matchedGraphLink === true).
+  // Provides the save-correlation event; Rule 6's graph.link coexists.
+  if (matchedGraphLink) {
+    const exportResult = extractGraphExportSuccess(raw);
+    if (exportResult) {
+      events.push({
+        ...base,
+        kind: 'graph.exported',
+        graphName: exportResult.graphName,
+        apiPath: exportResult.apiPath,
+      });
+    }
+  }
+
   // ── Rule 7: Graph mutation ────────────────────────────────────────────────
   const mutation = detectMutation(raw);
   if (mutation) {
@@ -150,6 +167,15 @@ export function classifyMessage(msgId: number, raw: string): ProtocolEvent[] {
       kind: 'command.importGraph',
       graphName,
     });
+  }
+
+  // ── Rule 11a: Graph export failure ────────────────────────────────────────
+  // Only for plain-text messages (not JSON, no graph-link) that match a
+  // known export-failure pattern.  Rule 11 (docs.response) still fires for
+  // the same message — both events coexist.
+  const exportFailure = detectGraphExportFailure(raw);
+  if (exportFailure) {
+    events.push({ ...base, kind: 'graph.export.failed', reason: exportFailure.reason });
   }
 
   // ── Rule 11: Markdown / docs response ─────────────────────────────────────

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { classifyMessage } from '../classifier';
 import graphMutations from './fixtures/graph-mutations.json';
 import graphLinks from './fixtures/graph-links.json';
+import exportGraph from './fixtures/export-graph.json';
 import largePayloads from './fixtures/large-payloads.json';
 import mockUploads from './fixtures/mock-uploads.json';
 import uploadContentPaths from './fixtures/upload-content-paths.json';
@@ -58,6 +59,7 @@ function runFixture(vectors: TestVector[]) {
 
 describe('classifier — graph mutations', () => runFixture(graphMutations));
 describe('classifier — graph links', () => runFixture(graphLinks));
+describe('classifier — export graph', () => runFixture(exportGraph));
 describe('classifier — large payloads', () => runFixture(largePayloads));
 describe('classifier — mock uploads', () => runFixture(mockUploads));
 describe('classifier — upload content paths', () => runFixture(uploadContentPaths));

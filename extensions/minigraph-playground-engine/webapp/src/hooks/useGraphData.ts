@@ -4,6 +4,22 @@ import { type ToastType } from './useToast';
 import { type RightTab } from '../components/RightPanel/RightPanel';
 import { useLocalStorage } from './useLocalStorage';
 
+export function normalizeRightTab(
+  value: unknown,
+  validTabs: readonly RightTab[],
+  fallbackTab: RightTab,
+): RightTab {
+  const safeFallback = validTabs.includes(fallbackTab)
+    ? fallbackTab
+    : validTabs[0] ?? 'graph';
+
+  if (typeof value === 'string' && validTabs.includes(value as RightTab)) {
+    return value as RightTab;
+  }
+
+  return safeFallback;
+}
+
 export interface UseGraphDataReturn {
   graphData:    MinigraphGraphData | null;
   setGraphData: React.Dispatch<React.SetStateAction<MinigraphGraphData | null>>;
@@ -40,6 +56,9 @@ export interface UseGraphDataReturn {
  * @param addToast         Toast callback from the parent's useToast hook.
  * @param initialTab       The tab to show when no persisted selection exists.
  *                         Should be the first entry in the playground's `tabs` config.
+ * @param validTabs        The set of tabs currently rendered for this playground.
+ *                         Used to normalize stale persisted values (e.g. a tab
+ *                         removed in a later UI version) before render.
  * @param storageKeyTab    localStorage key for persisting the selected tab across
  *                         navigation. Each playground supplies its own key so
  *                         selections are independent and survive page refreshes.
@@ -48,14 +67,37 @@ export function useGraphData(
   pinnedGraphPath: string | null,
   addToast: (message: string, type?: ToastType) => void,
   initialTab: RightTab,
+  validTabs: readonly RightTab[],
   storageKeyTab: string,
 ): UseGraphDataReturn {
   const [graphData, setGraphData] = useState<MinigraphGraphData | null>(null);
   // useLocalStorage re-reads from storage whenever `storageKeyTab` changes
   // (playground switch), so the correct persisted tab is restored immediately
   // without any additional synchronisation effect.
-  const [rightTab, setRightTab]   = useLocalStorage<RightTab>(storageKeyTab, initialTab);
+  const [storedRightTab, setStoredRightTab] = useLocalStorage<RightTab | string>(storageKeyTab, initialTab);
+  const rightTab = normalizeRightTab(storedRightTab, validTabs, initialTab);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const setRightTab = useCallback<React.Dispatch<React.SetStateAction<RightTab>>>(
+    (value) => {
+      setStoredRightTab((prev) => {
+        const normalizedPrev = normalizeRightTab(prev, validTabs, initialTab);
+        const nextValue = typeof value === 'function'
+          ? value(normalizedPrev)
+          : value;
+        return normalizeRightTab(nextValue, validTabs, initialTab);
+      });
+    },
+    [setStoredRightTab, validTabs, initialTab],
+  );
+
+  // Persist a normalized tab value back to localStorage so legacy entries
+  // like "preview" are migrated after the first render.
+  useEffect(() => {
+    if (storedRightTab !== rightTab) {
+      setStoredRightTab(rightTab);
+    }
+  }, [storedRightTab, rightTab, setStoredRightTab]);
 
   // Keep a ref in sync with the prop so that refetchGraph() (which has an
   // empty dep array) always reads the latest path rather than a stale closure.

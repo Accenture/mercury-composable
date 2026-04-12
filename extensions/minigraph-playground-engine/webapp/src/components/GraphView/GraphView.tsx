@@ -184,8 +184,8 @@ export default function GraphView({ graphData, onCopySuccess, onCopyError, onRen
               };
               return colorMap[node.type ?? ''] ?? '#6c7086';
             }}
-            maskColor="rgba(0,0,0,0.6)"
-            style={{ background: '#181825' }}
+            maskColor="rgba(0,0,0,0.3)"
+            style={{ background: '#fff' }}
           />
         </ReactFlow>
         {isRefreshing && (

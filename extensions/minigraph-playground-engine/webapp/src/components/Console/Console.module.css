@@ -91,40 +91,24 @@
   position: relative;
 }
 
-.consoleMessage:not(.consoleMessagePinnable):hover {
+.consoleMessage:not(.consoleMessageActivatable):hover {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Pinnable message row — pointer cursor + hover highlight */
-.consoleMessagePinnable {
+/* Activatable graph-link row — teal accent, pointer cursor */
+.consoleMessageActivatable {
   cursor: pointer;
 }
 
-.consoleMessagePinnable:hover {
-  background-color: rgba(37, 99, 235, 0.12);
-  outline: 1px solid rgba(37, 99, 235, 0.3);
-}
-
-.consoleMessagePinnable:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Pinned message row — persistent highlight */
-.consoleMessagePinned {
-  background-color: rgba(37, 99, 235, 0.18);
-  outline: 1px solid rgba(37, 99, 235, 0.5);
-}
-
-/* Graph-link message — teal accent instead of blue */
-.consoleMessageGraphLink.consoleMessagePinnable:hover {
+.consoleMessageActivatable:hover,
+.consoleMessageGraphLink.consoleMessageActivatable:hover {
   background-color: rgba(20, 184, 166, 0.12);
   outline: 1px solid rgba(20, 184, 166, 0.35);
 }
 
-.consoleMessageGraphLink.consoleMessagePinned {
-  background-color: rgba(20, 184, 166, 0.18);
-  outline: 1px solid rgba(20, 184, 166, 0.55);
+.consoleMessageActivatable:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 /* Large-payload download link — amber accent */

@@ -37,6 +37,14 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    fs: {
+      // Allow the dev server to serve files from the parent directory so that
+      // import.meta.glob in src/data/helpContent.ts can resolve
+      // ../../../src/main/resources/help/*.md at dev time.
+      // This restriction does not apply to production builds (Rollup resolves
+      // glob imports statically at build time with no path restrictions).
+      allow: ['..'],
+    },
     proxy: {
       // Proxy WebSocket connections to the Spring Boot backend
       '/ws': {

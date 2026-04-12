@@ -3,7 +3,6 @@ import { type ProtocolBus } from '../protocol/bus';
 
 export interface UseAutoMockUploadOptions {
   bus:         ProtocolBus;
-  connected:   boolean;
   onOpenModal: (uploadPath: string) => void;
   modalOpen:   boolean;
 }
@@ -14,7 +13,6 @@ export interface UseAutoMockUploadOptions {
  */
 export function useAutoMockUpload({
   bus,
-  connected: _connected,
   onOpenModal,
   modalOpen,
 }: UseAutoMockUploadOptions): void {

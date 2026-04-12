@@ -9,9 +9,7 @@ interface ConsoleProps {
   onCopy:             () => void;
   onClear:            () => void;
   consoleRef:         React.RefObject<HTMLDivElement | null>;
-  onPinMessage?:      (msg: { id: number; raw: string }) => void;
-  /** The id of the currently-pinned message, or null if nothing is pinned. */
-  pinnedMessageId?:   number | null;
+  onGraphLinkMessage?: (msg: { id: number; raw: string }) => void;
   /** Called after any per-message copy succeeds — use this to show a toast. */
   onCopyMessage?:     () => void;
   /** When provided, a "Send to JSON-Path" button appears on JSON messages. */
@@ -28,8 +26,7 @@ export default function Console({
   onCopy,
   onClear,
   consoleRef,
-  onPinMessage,
-  pinnedMessageId,
+  onGraphLinkMessage,
   onCopyMessage,
   onSendToJsonPath,
   onUploadMockData,
@@ -66,8 +63,7 @@ export default function Console({
               message={msg.raw}
               msgId={msg.id}
               classificationMap={classificationMap}
-              onPin={onPinMessage ? () => onPinMessage(msg) : undefined}
-              pinned={pinnedMessageId === msg.id}
+              onGraphLink={onGraphLinkMessage ? () => onGraphLinkMessage(msg) : undefined}
               onCopyMessage={onCopyMessage}
               onSendToJsonPath={onSendToJsonPath}
               onUploadMockData={onUploadMockData}
