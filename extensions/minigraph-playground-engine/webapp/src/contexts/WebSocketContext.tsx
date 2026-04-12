@@ -17,6 +17,7 @@ import {
   useReducer,
   useRef,
   useState,
+  useMemo,
   type ReactNode,
 } from "react";
 import {
@@ -425,20 +426,33 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     [slots],
   );
 
+  const value = useMemo(
+    () => ({
+      getSlot,
+      connect,
+      disconnect,
+      send,
+      appendMessage,
+      clearMessages,
+      setPendingPayload,
+      peekPendingPayload,
+      takePendingPayload,
+    }),
+    [
+      getSlot,
+      connect,
+      disconnect,
+      send,
+      appendMessage,
+      clearMessages,
+      setPendingPayload,
+      peekPendingPayload,
+      takePendingPayload,
+    ],
+  );
+
   return (
-    <WebSocketContext.Provider
-      value={{
-        getSlot,
-        connect,
-        disconnect,
-        send,
-        appendMessage,
-        clearMessages,
-        setPendingPayload,
-        peekPendingPayload,
-        takePendingPayload,
-      }}
-    >
+    <WebSocketContext.Provider value={value}>
       {children}
     </WebSocketContext.Provider>
   );
