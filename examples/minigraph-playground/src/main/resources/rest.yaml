@@ -4,6 +4,13 @@
 # for the original URL and path parameters
 #
 rest:
+  - service: "get.index.html"
+    methods: ['GET']
+    url: "/index.html"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+
   - service: "v1.get.ws.html"
     methods: ['GET']
     url: "/api/ws/{id}"

@@ -39,14 +39,15 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
     private static final String POST = "POST";
     private static final String DATE = "Date";
     private static final String WS_PREFIX = "/ws/";
+    private static final String INDEX_HTML = "/index.html";
     private static final String KEEP_ALIVE = "keep-alive";
     private static final String CONNECTION_HEADER = "Connection";
-    private final HttpRouter gateway;
+    private final HttpRouter router;
     private final ConcurrentMap<String, AsyncContextHolder> contexts;
 
-    public HttpRequestHandler(HttpRouter gateway) {
-        this.gateway = gateway;
-        this.contexts = gateway.getContexts();
+    public HttpRequestHandler(HttpRouter router) {
+        this.router = router;
+        this.contexts = router.getContexts();
     }
 
     @Override
@@ -67,8 +68,7 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
             holder.setAccept(acceptContent);
         }
         contexts.put(requestId, holder);
-        RoutingEntry re = RoutingEntry.getInstance();
-        AssignedRoute route = uri.startsWith(WS_PREFIX)? null : re.getRouteInfo(method, uri);
+        AssignedRoute route = getRoute(method, uri);
         int status = 200;
         String error = null;
         if (route == null) {
@@ -89,6 +89,13 @@ public class HttpRequestHandler implements Handler<HttpServerRequest> {
                 }
             }
         }
-        gateway.handleEvent(route, requestId, status, error);
+        router.handleEvent(route, requestId, status, error);
+    }
+
+    private AssignedRoute getRoute(String method, String uri) {
+        RoutingEntry re = RoutingEntry.getInstance();
+        AssignedRoute route = uri.startsWith(WS_PREFIX)? null : re.getRouteInfo(method, uri);
+        // rest.yaml may be configured to serve home page
+        return route == null && "/".equals(uri)? re.getRouteInfo(method, INDEX_HTML) : route;
     }
 }

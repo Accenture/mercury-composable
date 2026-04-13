@@ -66,6 +66,8 @@ public class HttpRouter {
     private static final CustomContentTypeResolver resolver = CustomContentTypeResolver.getInstance();
     private static final CryptoApi crypto = new CryptoApi();
     private static final SimpleXmlParser xmlReader = new SimpleXmlParser();
+    private static final Utility util = Utility.getInstance();
+    private static final SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
     private static final String HTTP_REQUEST = "http.request";
     private static final String AUTH_HANDLER = "http.auth.handler";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -97,7 +99,7 @@ public class HttpRouter {
     private static final int BUFFER_SIZE = 4 * 1024;
     private static final long FILTER_TIMEOUT = 10000;
     private static final byte[] NOTHING = new byte[0];
-    private static final String SIGNATURE = "/" + Utility.getInstance().getUuid();
+    private static final String SIGNATURE = "/" + util.getUuid();
     private static final File SIGNATURE_FOLDER = new File(SIGNATURE);
     private static final Path SIGNATURE_FOLDER_PATH = SIGNATURE_FOLDER.toPath();
     // requestId -> context
@@ -116,7 +118,6 @@ public class HttpRouter {
             if (!LOADED.get()) {
                 LOADED.set(true);
                 Platform platform = Platform.getInstance();
-                Utility util = Utility.getInstance();
                 AppConfigReader config = AppConfigReader.getInstance();
                 List<String> labels = util.split(config.getProperty("trace.http.header"), ", ");
                 if (labels.isEmpty()) {
@@ -164,10 +165,8 @@ public class HttpRouter {
     public void handleEvent(AssignedRoute route, String requestId, int status, String error) {
         AsyncContextHolder holder = contexts.get(requestId);
         if (holder != null) {
-            Utility util = Utility.getInstance();
             HttpServerRequest request = holder.request;
             String uri = util.getDecodedUri(request.path());
-            SimpleHttpUtility httpUtil = SimpleHttpUtility.getInstance();
             HttpServerResponse response = request.response();
             if (error != null) {
                 if (!(GET.equals(request.method().name()) && status == 404 &&
@@ -203,7 +202,6 @@ public class HttpRouter {
     @SuppressWarnings("rawtypes")
     private boolean handleFilter(String requestId, SimpleHttpFilter filter, String uri, EtagFile file, boolean noCache,
                                  HttpServerRequest request, HttpServerResponse response) {
-        Utility util = Utility.getInstance();
         EventEmitter po = EventEmitter.getInstance();
         if (po.exists(filter.service)) {
             try {
@@ -373,7 +371,7 @@ public class HttpRouter {
      */
     private EtagFile getStaticFile(String uriPath) {
         // trim trailing white space because the normalize() function does not allow that in Windows OS
-        List<String> parts = Utility.getInstance().split(uriPath.trim(), "/\\");
+        List<String> parts = util.split(uriPath.trim(), "/\\");
         StringBuilder sb = new StringBuilder();
         if (parts.isEmpty()) {
             sb.append('/');
@@ -419,28 +417,25 @@ public class HttpRouter {
     }
 
     private EtagFile getResourceFile(String relativePath) {
-        String resPath = resourceFolder + (relativePath.startsWith("/")? relativePath : "/" + relativePath);
-        Utility util = Utility.getInstance();
+        String resPath = resourceFolder + (relativePath.startsWith("/")? relativePath : "/%s".formatted(relativePath));
         InputStream in = this.getClass().getResourceAsStream(resPath);
         if (in != null) {
-            byte[] b = Utility.getInstance().stream2bytes(in);
+            byte[] b = util.stream2bytes(in);
             return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
         }
         return null;
     }
 
     private EtagFile getLocalFile(String relativePath) {
-        Utility util = Utility.getInstance();
         File f = new File(staticFolder, relativePath);
         if (f.exists() && !f.isDirectory()) {
-            byte[] b = Utility.getInstance().file2bytes(f);
+            byte[] b = util.file2bytes(f);
             return new EtagFile(util.bytes2hex(crypto.getSHA256(b)), b);
         }
         return null;
     }
 
     private void routeRequest(String requestId, AssignedRoute route, AsyncContextHolder holder) {
-        Utility util = Utility.getInstance();
         HttpServerRequest request = holder.request;
         String uri = util.getDecodedUri(request.path());
         String method = request.method().name();
@@ -511,7 +506,6 @@ public class HttpRouter {
         var complete = new AtomicBoolean(false);
         request.bodyHandler(block -> {
             var requestBody = new ByteArrayOutputStream();
-            var util = Utility.getInstance();
             byte[] b = block.getBytes(0, block.length());
             requestBody.write(b, 0, b.length);
             if (complete.get()) {
@@ -540,7 +534,6 @@ public class HttpRouter {
         var requestBody = new ByteArrayOutputStream();
         var rawXml = "true".equals(request.getHeader(X_RAW_XML));
         request.bodyHandler(block -> {
-            var util = Utility.getInstance();
             byte[] b = block.getBytes(0, block.length());
             requestBody.write(b, 0, b.length);
             if (complete.get()) {
@@ -565,8 +558,6 @@ public class HttpRouter {
         var requestBody = new ByteArrayOutputStream();
         var urlEncode = APPLICATION_FORM_URLENCODED.equals(contentType);
         request.bodyHandler(block -> {
-            var util = Utility.getInstance();
-            var httpUtil = SimpleHttpUtility.getInstance();
             byte[] b = block.getBytes(0, block.length());
             requestBody.write(b, 0, b.length);
             if (complete.get()) {
@@ -626,7 +617,6 @@ public class HttpRouter {
          * The "x-small-payload-as-bytes" header allows the system to
          * render variable size payload as a fix length content.
          */
-        var util = Utility.getInstance();
         var contentLen = util.str2int(request.getHeader(CONTENT_LEN));
         var noStream = "true".equals(request.getHeader(X_NO_STREAM));
         if (noStream || contentLen > 0) {
@@ -671,7 +661,6 @@ public class HttpRouter {
 
     private AsyncHttpRequest prepareHttpRequest(HttpServerRequest request, AssignedRoute route, String uri) {
         var method = request.method().name();
-        var httpUtil = SimpleHttpUtility.getInstance();
         var req = new AsyncHttpRequest();
         String queryString = request.query();
         if (queryString != null) {
@@ -794,7 +783,6 @@ public class HttpRouter {
     }
 
     public void sendRequestToService(HttpServerRequest request, HttpRequestEvent requestEvent) {
-        var httpUtil = SimpleHttpUtility.getInstance();
         var po = EventEmitter.getInstance();
         if (requestEvent.authService != null) {
             try {
@@ -880,14 +868,14 @@ public class HttpRouter {
         }
         if (result.isEmpty()) {
             result.add(getDefaultTraceIdLabel());
-            result.add(Utility.getInstance().getUuid());
+            result.add(util.getUuid());
         }
         return result;
     }
 
     private String getHeaderCase(String header) {
         var sb = new StringBuilder();
-        var parts = Utility.getInstance().split(header, "-");
+        var parts = util.split(header, "-");
         for (String p: parts) {
             sb.append(p.substring(0, 1).toUpperCase());
             if (p.length() > 1) {

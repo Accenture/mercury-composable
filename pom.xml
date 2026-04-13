@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.4.4</version>
+    <version>4.4.5</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -15,11 +15,11 @@
         <module>system/rest-spring-3</module>
         <module>system/rest-spring-4</module>
         <module>system/event-script-engine</module>
+        <module>system/minigraph-playground-engine</module>
         <module>system/mini-scheduler</module>
 
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>
-        <module>extensions/minigraph-playground-engine</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>

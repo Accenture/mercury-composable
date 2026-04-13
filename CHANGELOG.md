@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.5, 4/10/2026
+
+### Added
+
+1. For-each's "begin-End" section wrapper in graph.math and graph.js of MiniGraph playground engine
+2. conditional index.html home page processing for minigraph playground engine
+3. tutorial 6 to 9 in MiniGraph Playground
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Promote minigraph-playground-engine from "extensions" to "system"
+2. Support "OptionalService" annotation in FetcherFeature in MiniGraph playground
+3. OSS update: spring boot 4.0.5 and 3.5.13
+
+---
 ## Version 4.4.4, 4/7/2026
 
 ### Added
@@ -37,8 +56,6 @@ This is illustrated in the following input data mapping:
    # left-hand-side exists with null value
    - 'input.body.number -> model.null_is_false:boolean(null=false)'
 ```
-
-
 
 ---
 ## Version 4.4.3, 4/2/2026

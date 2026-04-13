@@ -5,13 +5,13 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>service-monitor</artifactId>
     <packaging>jar</packaging>
-    <version>4.4.4</version>
+    <version>4.4.5</version>
     <name>Presence monitor module</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.4</version>
+        <version>4.0.5</version>
         <relativePath/>
     </parent>
 
@@ -47,13 +47,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.4.4</version>
+            <version>4.4.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.4.4</version>
+            <version>4.4.5</version>
         </dependency>
 
         <dependency>
