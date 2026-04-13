@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="None" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Composable for Java</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "README.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#what-is-mercury-composable">What is Mercury Composable?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#build-from-source">Build from source</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#run-the-example-application">Run the example application</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#try-it-out">Try it out</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#how-it-works">How It Works</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#also-available-in-nodejs">Also Available in Node.js</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#key-concepts">Key Concepts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#license">License</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="guides/QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-11/">Active Knowledge Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/ARCHITECTURE/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/ANNOTATIONS-REFERENCE/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CONFIGURATION-REFERENCE/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="guides/TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="mercury-composable">Mercury Composable</h1>
+<p>A Java framework for building composable, event-driven applications from self-contained functions wired together by YAML-configured event flows.</p>
+<p><a href="https://github.com/Accenture/mercury-composable/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Accenture/mercury-composable" /></a> <a href="https://openjdk.org/projects/jdk/21/"><img alt="Java 21+" src="https://img.shields.io/badge/Java-21%2B-blue" /></a> <a href="https://github.com/Accenture/mercury-composable/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/Accenture/mercury-composable" /></a> <a href="https://github.com/Accenture/mercury-composable/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/Accenture/mercury-composable" /></a></p>
+<blockquote>
+<p><strong>New to Mercury Composable?</strong> Jump to the <a href="https://accenture.github.io/mercury-composable/guides/QUICKSTART/">Quickstart</a> to get a working app running in under 5 minutes.</p>
+</blockquote>
+<h2 id="what-is-mercury-composable">What is Mercury Composable?</h2>
+<p>Mercury Composable is a software development toolkit for building composable, event-driven Java applications.
+Each application is assembled from independent functions — plain Java classes with no direct knowledge of each
+other — that communicate exclusively through events. Event flows are defined in YAML configuration files, so
+orchestration logic is configuration rather than code. The framework uses Java 21 virtual threads throughout,
+making it suited for high-concurrency microservices and serverless deployments. Because each function is
+self-contained with immutable I/O, the design is optimized for both human developers and AI code assistants.</p>
+<h2 id="quick-start">Quick Start</h2>
+<p><strong><a href="https://accenture.github.io/mercury-composable/guides/QUICKSTART/">5-Minute Quickstart</a></strong>
+— Clone, build, and run your first composable app.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Java 21 or higher</li>
+<li>Maven 3.9.7 or higher</li>
+</ul>
+<h3 id="build-from-source">Build from source</h3>
+<pre><code class="language-shell">git clone https://github.com/Accenture/mercury-composable.git
+cd mercury-composable
+mvn clean install
+</code></pre>
+<h3 id="run-the-example-application">Run the example application</h3>
+<pre><code class="language-shell">cd examples/composable-example
+java -jar target/composable-example-4.3.69.jar
+</code></pre>
+<h3 id="try-it-out">Try it out</h3>
+<pre><code class="language-bash"># Create a profile
+curl -X POST http://127.0.0.1:8100/api/profile \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;Accept: application/json&quot; \
+  -d '{&quot;id&quot;: 100, &quot;name&quot;: &quot;Hello World&quot;, &quot;address&quot;: &quot;100 World Blvd&quot;, &quot;telephone&quot;: &quot;123-456-7890&quot;}'
+
+# Retrieve the profile
+curl http://127.0.0.1:8100/api/profile/100
+</code></pre>
+<h2 id="how-it-works">How It Works</h2>
+<p>A composable application is designed in 3 steps:</p>
+<ol>
+<li><strong>Describe</strong> your use case as an event flow diagram</li>
+<li><strong>Configure</strong> the event flow in a YAML file</li>
+<li><strong>Implement</strong> each function as a self-contained unit</li>
+</ol>
+<p>The YAML flow below defines a single-task "greetings" endpoint. The route name <code>greeting.demo</code> is the only
+connection between the flow configuration and the Java function:</p>
+<pre><code class="language-yaml">flow:
+  id: 'greetings'
+  description: 'Simplest flow'
+  ttl: 10s
+
+first.task: 'greeting.demo'
+
+tasks:
+  - input:
+      - 'input.path_parameter.user -&gt; user'
+    process: 'greeting.demo'
+    output:
+      - 'text(application/json) -&gt; output.header.content-type'
+      - 'result -&gt; output.body'
+    description: 'Hello World'
+    execution: end
+</code></pre>
+<p>The corresponding function reads its input, builds a response, and returns it:</p>
+<pre><code class="language-java">@PreLoad(route=&quot;greeting.demo&quot;, instances=10)
+public class Greetings implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers, Map&lt;String, Object&gt; input, int instance) {
+        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();
+        result.put(&quot;user&quot;, input.get(&quot;user&quot;));
+        result.put(&quot;message&quot;, &quot;Welcome&quot;);
+        result.put(&quot;time&quot;, new Date());
+        return result;
+    }
+}
+</code></pre>
+<h2 id="documentation">Documentation</h2>
+<p>Full documentation is available at <a href="https://accenture.github.io/mercury-composable/">https://accenture.github.io/mercury-composable/</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full Documentation</td>
+<td>https://accenture.github.io/mercury-composable/</td>
+</tr>
+<tr>
+<td>Architecture Overview</td>
+<td>https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/</td>
+</tr>
+<tr>
+<td>Methodology &amp; Principles</td>
+<td>https://accenture.github.io/mercury-composable/guides/METHODOLOGY/</td>
+</tr>
+<tr>
+<td>Getting Started Guide</td>
+<td>https://accenture.github.io/mercury-composable/guides/CHAPTER-1/</td>
+</tr>
+<tr>
+<td>Event Script Syntax</td>
+<td>https://accenture.github.io/mercury-composable/guides/CHAPTER-4/</td>
+</tr>
+<tr>
+<td>API Overview</td>
+<td>https://accenture.github.io/mercury-composable/guides/CHAPTER-9/</td>
+</tr>
+<tr>
+<td>Application Properties Reference</td>
+<td>https://accenture.github.io/mercury-composable/guides/APPENDIX-I/</td>
+</tr>
+</tbody>
+</table>
+<h2 id="also-available-in-nodejs">Also Available in Node.js</h2>
+<p>Mercury Composable is also available for Node.js. See
+<a href="https://github.com/Accenture/mercury-nodejs">mercury-nodejs</a> for the core library and
+<a href="https://github.com/Accenture/mercury-composable-examples">mercury-composable-examples</a> for usage examples.</p>
+<h2 id="key-concepts">Key Concepts</h2>
+<p><strong>Composable Function</strong> - A self-contained Java class implementing <code>LambdaFunction</code> or <code>TypedLambdaFunction</code>,
+registered under a named route, with no direct references to other functions.</p>
+<p><strong>Event Envelope</strong> - The immutable message container used for all inter-function communication; the body is
+MsgPack-serialized and headers are a <code>Map&lt;String, String&gt;</code>.</p>
+<p><strong>Event Flow / Event Script</strong> - A YAML configuration file that sequences named functions for a given
+transaction, replacing orchestration code with configuration.</p>
+<p><strong>Flow Adapter</strong> - An entry point that converts external requests (HTTP, Kafka, serverless events) into
+events and delivers them to the event manager.</p>
+<p><strong>Route Name</strong> - A string identifier used to register and address a function through the <code>Platform</code> registry
+and <code>PostOffice</code>.</p>
+<p><strong>State Machine</strong> - A per-transaction key-value store (referenced in flows as <code>model</code>) that holds
+intermediate results across the stateless functions in a flow.</p>
+<h2 id="contributing">Contributing</h2>
+<p>Contributions are welcome. Please read <a href="CONTRIBUTING/">CONTRIBUTING.md</a> before submitting a pull request,
+and note that all contributors are expected to follow the <a href="CODE_OF_CONDUCT/">CODE_OF_CONDUCT.md</a>.
+This project is licensed under the Apache 2.0 license.</p>
+<h2 id="license">License</h2>
+<p>This project is licensed under the <a href="https://github.com/Accenture/mercury-composable/blob/main/LICENSE">Apache License 2.0</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="guides/QUICKSTART/" class="btn btn-neutral float-right" title="Quickstart">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+      <span><a href="guides/QUICKSTART/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2026-04-13 05:08:50.639924+00:00
+-->
