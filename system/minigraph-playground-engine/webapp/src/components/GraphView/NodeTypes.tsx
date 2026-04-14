@@ -1,4 +1,5 @@
 import { Handle, Position, NodeResizer, type NodeProps, type Node } from '@xyflow/react';
+import type { CSSProperties } from 'react';
 import type { GraphNodeData } from '../../utils/graphTransformer';
 import styles from './NodeTypes.module.css';
 
@@ -23,6 +24,22 @@ const TYPE_META: Record<string, { icon: string; label: string }> = {
 
 function getMeta(nodeType: string) {
   return TYPE_META[nodeType] ?? { icon: '📦', label: nodeType };
+}
+
+const EDGE_HANDLE_STYLE: CSSProperties = {
+  width: 8,
+  height: 8,
+  border: 0,
+  background: 'transparent',
+  opacity: 0,
+  pointerEvents: 'none',
+};
+
+function edgeHandleStyle(offset: number): CSSProperties {
+  return {
+    ...EDGE_HANDLE_STYLE,
+    top: `calc(50% + ${offset}px)`,
+  };
 }
 
 // ─── Shared detail rows ───────────────────────────────────────────────────────
@@ -77,10 +94,19 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
   return (
     <>
       {/* Resize handles — visible only when the node is selected */}
-      <NodeResizer minWidth={180} minHeight={60} isVisible={selected} />
+      <NodeResizer minWidth={180} minHeight={data.minHeight} isVisible={selected} />
 
-      {/* Target handle (left) */}
-      <Handle type="target" position={Position.Left} isConnectable={isConnectable} />
+      {/* Target handles (left) — multiple hidden anchors let edges land a few pixels apart. */}
+      {data.targetHandles.map(({ id, offset }) => (
+        <Handle
+          key={id}
+          id={id}
+          type="target"
+          position={Position.Left}
+          isConnectable={isConnectable}
+          style={edgeHandleStyle(offset)}
+        />
+      ))}
 
       {/*
         * Content container — fills the React Flow wrapper (which carries the
@@ -99,8 +125,17 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
         </div>
       </div>
 
-      {/* Source handle (right) */}
-      <Handle type="source" position={Position.Right} isConnectable={isConnectable} />
+      {/* Source handles (right) — paired with target handles for best-effort edge spreading. */}
+      {data.sourceHandles.map(({ id, offset }) => (
+        <Handle
+          key={id}
+          id={id}
+          type="source"
+          position={Position.Right}
+          isConnectable={isConnectable}
+          style={edgeHandleStyle(offset)}
+        />
+      ))}
     </>
   );
 }
