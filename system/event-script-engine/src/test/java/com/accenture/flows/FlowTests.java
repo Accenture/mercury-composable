@@ -1873,5 +1873,7 @@ class FlowTests extends TestBase {
         assertNull(resultMap.get("number3"));
         // model key-value that does not exist would trigger removal of the RHS model variable
         assertFalse(resultMap.containsKey("removed"));
+        assertEquals(true, resultMap.get("null_is_true"));
+        assertEquals(false, resultMap.get("null_is_false"));
     }
 }

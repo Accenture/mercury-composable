@@ -26,6 +26,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         try {
             processRequest(event, headers.get(FLOW_ID));
         } catch (Exception e) {
-            log.error("Unable to process request - {}", e.getMessage());
+            log.error("Unable to process request", e);
             if (event.getReplyTo() != null && event.getCorrelationId() != null) {
                 EventEnvelope error = new EventEnvelope()
                         .setTo(event.getReplyTo()).setCorrelationId(event.getCorrelationId())
@@ -72,13 +73,12 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         if (template == null) {
             throw new IllegalArgumentException("Flow "+ flowId +" not found");
         }
-        var payload = getInput(event.getBody());
-        var ttl = payload.get(TTL) instanceof Number timeout? timeout : template.ttl;
-        payload.remove(TTL);
+        var payload = Utility.getInstance().deepCopy(getInput(event.getBody()));
+        var ttl = payload.get(TTL) instanceof Number timeout? timeout.longValue() : template.ttl;
         FlowInstance flowInstance = getFlowInstance(event, flowId, template, ttl);
         Flows.addFlowInstance(flowInstance);
         // Set the input event body into the flow dataset
-        flowInstance.dataset.put(INPUT, event.getBody());
+        flowInstance.dataset.put(INPUT, payload);
         // Execute the first task and use the unique flow instance as correlation ID during flow execution
         EventEmitter po = EventEmitter.getInstance();
         EventEnvelope firstTask = new EventEnvelope().setFrom(SERVICE_NAME)
@@ -92,7 +92,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         return payload instanceof Map? (Map<String, Object>) payload : Collections.emptyMap();
     }
 
-    private FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template, Number ttl) {
+    private FlowInstance getFlowInstance(EventEnvelope event, String flowId, Flow template, long ttl) {
         String cid = event.getCorrelationId();
         if (cid == null) {
             throw new IllegalArgumentException("Missing correlation ID for "+ flowId);
@@ -101,7 +101,7 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         // Save the original correlation-ID ("cid") from the calling party in a flow instance and
         // return this value to the calling party at the end of flow execution
         var parent = event.getHeader(PARENT);
-        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template, parent, ttl.longValue());
+        FlowInstance flowInstance = new FlowInstance(flowId, cid, replyTo, template, parent, ttl);
         // Optional distributed trace
         String traceId = event.getTraceId();
         String tracePath = event.getTracePath();

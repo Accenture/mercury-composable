@@ -5,7 +5,7 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>rest-spring-4</artifactId>
-    <version>4.4.3</version>
+    <version>4.4.6</version>
     <packaging>jar</packaging>
 
     <name>Pre-configured Spring Boot 4 module</name>
@@ -14,15 +14,16 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.4</version>
+        <version>4.0.5</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <tomcat.version>11.0.21</tomcat.version>
         <netty.version>4.2.12.Final</netty.version>
-        <log4j2.version>2.25.3</log4j2.version>
-        <kafka.version>4.1.1</kafka.version>
+        <log4j2.version>2.25.4</log4j2.version>
+        <kafka.version>4.2.0</kafka.version>
         <gson.version>2.13.2</gson.version>
         <java.version>21</java.version>
     </properties>
@@ -50,7 +51,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.4.3</version>
+            <version>4.4.6</version>
         </dependency>
 
         <dependency>

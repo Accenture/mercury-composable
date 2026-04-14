@@ -10,11 +10,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
 
 ---
+## Version 4.4.6, 4/15/2026
+
+### Added
+
+Tutorial 10 and 11
+
+### Removed
+
+N/A
+
+### Changed
+
+Merged latest UI features in MiniGraph Playground
+
+---
+## Version 4.4.5, 4/10/2026
+
+### Added
+
+1. For-each's "begin-End" section wrapper in graph.math and graph.js of MiniGraph playground engine
+2. conditional index.html home page processing for minigraph playground engine
+3. tutorial 6 to 9 in MiniGraph Playground
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Promote minigraph-playground-engine from "extensions" to "system"
+2. Support "OptionalService" annotation in FetcherFeature in MiniGraph playground
+3. OSS update: spring boot 4.0.5 and 3.5.13, log4j2 2.25.4, tomcat 10.1.54 and 11.0.21
+
+---
+## Version 4.4.4, 4/7/2026
+
+### Added
+
+Tutorial 6 of MiniGraph Playground
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Log stacktrace when EventScriptManager cannot process an event
+2. Bugfix for mapping null to boolean value for a model variable. Since version 4.4.1, a side effect
+   was introduced to disable "null to boolean" conversion when the left-hand-side key exists with
+   a null value.
+
+This release restores the original behavior for "null to boolean" conversion.
+This is illustrated in the following input data mapping:
+
+```
+- input:
+   # left-hand-side does not exist
+   - 'model.nothing -> model.null_is_true:boolean(null=true)'
+   # left-hand-side exists with null value
+   - 'input.body.number -> model.null_is_false:boolean(null=false)'
+```
+
+---
 ## Version 4.4.3, 4/2/2026
 
 ### Added
 
-Tutorials 2 and 3 of MiniGraph Playground
+Tutorials 2 to 5 of MiniGraph Playground
 
 ### Removed
 
@@ -22,7 +85,8 @@ Remove sample kafka.properties from main/resources folder in cloud-connector and
 
 ### Changed
 
-Improved MiniGraph's export root node name validation
+1. Improved MiniGraph's export root node name validation
+2. Updated documentation for Active Knowledge Graph (Chapter 4 of developer guide)
 
 ---
 ## Version 4.4.2, 3/31/2026
