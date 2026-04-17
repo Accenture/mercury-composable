@@ -1,4 +1,4 @@
-import type { Node, Edge } from '@xyflow/react';
+import { MarkerType, type Node, type Edge } from '@xyflow/react';
 import type { CSSProperties } from 'react';
 import type { MinigraphGraphData } from './graphTypes';
 
@@ -8,6 +8,14 @@ export interface GraphNodeData extends Record<string, unknown> {
   nodeType: string;   // primary type label, e.g. "Root"
   /** All properties from the MinigraphNode, passed through for rendering. */
   properties: Record<string, unknown>;
+  sourceHandles: GraphHandleData[];
+  targetHandles: GraphHandleData[];
+  minHeight: number;
+}
+
+export interface GraphHandleData {
+  id: string;
+  offset: number;
 }
 
 /** Data bag attached to every ReactFlow edge we create. */
@@ -72,6 +80,93 @@ const NODE_ACCENT: Record<string, string> = {
 };
 const UNKNOWN_ACCENT = '#6c7086';
 
+// ─── Edge styling constants ──────────────────────────────────────────────────
+// EDGE_STROKE: --text-muted (rgb 148 163 184) at 42% opacity — slate-400 tinted stroke
+// EDGE_LABEL_BG: references the --bg-secondary token directly so label badges
+//   automatically track any future token-level surface change.
+const EDGE_STROKE         = 'rgba(148, 163, 184, 0.42)';   // --text-muted at 42%
+const EDGE_LABEL_BG       = 'var(--bg-secondary)';          // token: --bg-secondary = #f8fafc
+const EDGE_HANDLE_GAP     = 24;   // px between adjacent handle anchors on the same side
+const EDGE_HANDLE_PADDING = 32;   // min px from node top/bottom to first/last handle
+
+// Semantic edge-type colors — intentional per-relation accent palette.
+// Matches the same amber/green/purple axis used by NODE_ACCENT above.
+const EDGE_FALLBACK_COLORS = [
+  '#0369a1',   // sky-700
+  '#15803d',   // green-700
+  '#b45309',   // amber-700
+  '#7e22ce',   // purple-700
+  '#b91c1c',   // red-700
+  '#0f766e',   // teal-700
+  '#c2410c',   // orange-700
+  '#a16207',   // yellow-700
+];
+
+// Named relation-type → accent color map.
+const EDGE_COLOR_BY_RELATION: Record<string, string> = {
+  fetch:        '#0369a1',   // sky-700
+  details:      '#0369a1',
+  'ext-call':   '#0369a1',
+  mapping:      '#b45309',   // amber-700
+  compute:      '#b45309',
+  calculate:    '#b45309',
+  evaluate:     '#b45309',
+  fork:         '#7e22ce',   // purple-700
+  join:         '#7e22ce',
+  one:          '#7e22ce',
+  two:          '#6d28d9',   // purple-800
+  three:        '#5b21b6',   // violet-800
+  more:         '#4c1d95',   // violet-900
+  done:         '#15803d',   // green-700
+  complete:     '#15803d',
+  finish:       '#15803d',
+  positive:     '#15803d',
+  negative:     '#b91c1c',   // red-700
+};
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function edgeColor(relationTypes: string[]): string {
+  if (relationTypes.length === 0) return EDGE_STROKE;
+  const primary = relationTypes[0].trim().toLowerCase();
+  const known = EDGE_COLOR_BY_RELATION[primary];
+  if (known) return known;
+  return EDGE_FALLBACK_COLORS[hashString(primary) % EDGE_FALLBACK_COLORS.length];
+}
+
+function edgeSourceHandleId(index: number): string {
+  return `source-${index}`;
+}
+
+function edgeTargetHandleId(index: number): string {
+  return `target-${index}`;
+}
+
+function edgeHandleOffset(index: number, total: number): number {
+  if (total <= 1) return 0;
+  if (total === 2) return index === 0 ? -EDGE_HANDLE_GAP : EDGE_HANDLE_GAP;
+  return (index - (total - 1) / 2) * EDGE_HANDLE_GAP;
+}
+
+function buildEdgeHandles(total: number, idForIndex: (index: number) => string): GraphHandleData[] {
+  return Array.from({ length: total }, (_, index) => ({
+    id: idForIndex(index),
+    offset: edgeHandleOffset(index, total),
+  }));
+}
+
+function nodeHeightForHandleCount(handleCount: number): number {
+  if (handleCount <= 1) return NODE_HEIGHT;
+  return Math.max(NODE_HEIGHT, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
+}
+
 function nodeStyle(nodeType: string): CSSProperties {
   const accent = NODE_ACCENT[nodeType] ?? UNKNOWN_ACCENT;
   return {
@@ -97,6 +192,7 @@ function nodeStyle(nodeType: string): CSSProperties {
 function computeLayout(
   nodes: MinigraphGraphData['nodes'],
   connections: MinigraphGraphData['connections'],
+  nodeHeights: Map<string, number>,
 ): Map<string, { x: number; y: number }> {
   // Build in-degree and adjacency maps
   const outEdges = new Map<string, string[]>();
@@ -147,15 +243,23 @@ function computeLayout(
     byLevel.get(level)!.push(alias);
   }
 
-  // Assign pixel positions
+  // Assign pixel positions — use per-node heights to avoid overlap when nodes
+  // are taller than NODE_HEIGHT due to many edge handles.
   const positions = new Map<string, { x: number; y: number }>();
   for (const [level, aliases] of byLevel) {
-    const totalHeight = aliases.length * NODE_HEIGHT + (aliases.length - 1) * ROW_GAP;
-    aliases.forEach((alias, idx) => {
+    const totalHeight = aliases.reduce(
+      (sum, alias) => sum + (nodeHeights.get(alias) ?? NODE_HEIGHT),
+      0,
+    ) + Math.max(0, aliases.length - 1) * ROW_GAP;
+
+    let cursorY = -totalHeight / 2;
+    aliases.forEach((alias) => {
+      const nodeHeight = nodeHeights.get(alias) ?? NODE_HEIGHT;
       positions.set(alias, {
         x: level * (NODE_WIDTH + COL_GAP),
-        y: idx * (NODE_HEIGHT + ROW_GAP) - totalHeight / 2,
+        y: cursorY,
       });
+      cursorY += nodeHeight + ROW_GAP;
     });
   }
 
@@ -169,39 +273,103 @@ function computeLayout(
 export function transformGraphData(
   data: MinigraphGraphData,
 ): { nodes: Node<GraphNodeData>[]; edges: Edge<GraphEdgeData>[] } {
-  const positions = computeLayout(data.nodes, data.connections ?? []);
+  const connections = data.connections ?? [];
 
-  const rfNodes: Node<GraphNodeData>[] = data.nodes.map(n => ({
-    id:       n.alias,
-    type:     n.types[0] ?? 'default',     // matches the nodeTypes key in GraphView
-    position: positions.get(n.alias) ?? { x: 0, y: 0 },
-    // width / height give the React Flow wrapper its initial size.
-    // NodeResizer will update these as the user drags a handle.
-    width:  NODE_WIDTH,
-    height: NODE_HEIGHT,
-    // style is applied directly to the React Flow wrapper element — since
-    // MinigraphNode renders as a Fragment there is no inner shell div, so
-    // this IS the visible node appearance.
-    style: nodeStyle(n.types[0] ?? 'unknown'),
-    data: {
-      alias:       n.alias,
-      nodeType:    n.types[0] ?? 'unknown',
-      properties:  n.properties,
-    },
-  }));
+  // Count outgoing/incoming connections per node to size handles.
+  const outgoingEdgeCounts = new Map<string, number>();
+  const incomingEdgeCounts = new Map<string, number>();
+  for (const conn of connections) {
+    outgoingEdgeCounts.set(conn.source, (outgoingEdgeCounts.get(conn.source) ?? 0) + 1);
+    incomingEdgeCounts.set(conn.target, (incomingEdgeCounts.get(conn.target) ?? 0) + 1);
+  }
 
-  // Flatten connections → edges (one edge per relation per connection)
+  // Compute per-node heights so nodes with many connections don't overlap.
+  const nodeHeights = new Map(
+    data.nodes.map(n => [
+      n.alias,
+      nodeHeightForHandleCount(Math.max(
+        outgoingEdgeCounts.get(n.alias) ?? 0,
+        incomingEdgeCounts.get(n.alias) ?? 0,
+      )),
+    ]),
+  );
+  const positions = computeLayout(data.nodes, connections, nodeHeights);
+
+  const rfNodes: Node<GraphNodeData>[] = data.nodes.map(n => {
+    const sourceHandleCount = outgoingEdgeCounts.get(n.alias) ?? 0;
+    const targetHandleCount = incomingEdgeCounts.get(n.alias) ?? 0;
+    const nodeHeight = nodeHeights.get(n.alias) ?? NODE_HEIGHT;
+
+    return {
+      id:       n.alias,
+      type:     n.types[0] ?? 'default',     // matches the nodeTypes key in GraphView
+      position: positions.get(n.alias) ?? { x: 0, y: 0 },
+      // width / height give the React Flow wrapper its initial size.
+      // NodeResizer will update these as the user drags a handle.
+      width:  NODE_WIDTH,
+      height: nodeHeight,
+      // style is applied directly to the React Flow wrapper element — since
+      // MinigraphNode renders as a Fragment there is no inner shell div, so
+      // this IS the visible node appearance.
+      style: nodeStyle(n.types[0] ?? 'unknown'),
+      data: {
+        alias:         n.alias,
+        nodeType:      n.types[0] ?? 'unknown',
+        properties:    n.properties,
+        sourceHandles: buildEdgeHandles(sourceHandleCount, edgeSourceHandleId),
+        targetHandles: buildEdgeHandles(targetHandleCount, edgeTargetHandleId),
+        minHeight:     nodeHeight,
+      },
+    };
+  });
+
+  const outgoingEdgeIndex = new Map<string, number>();
+  const incomingEdgeIndex = new Map<string, number>();
+
+  // Flatten connections → edges (one edge per connection with per-handle routing).
   const rfEdges: Edge<GraphEdgeData>[] = [];
-  for (const conn of data.connections ?? []) {
+  for (const [index, conn] of connections.entries()) {
     const relationTypes = conn.relations.map(r => r.type);
-    const edgeId = `${conn.source}__${conn.target}`;
+    const edgeId = `${conn.source}__${conn.target}__${index}`;
+    const labelColor = edgeColor(relationTypes);
+    const sourceEdgeIndex = outgoingEdgeIndex.get(conn.source) ?? 0;
+    const targetEdgeIndex = incomingEdgeIndex.get(conn.target) ?? 0;
+    outgoingEdgeIndex.set(conn.source, sourceEdgeIndex + 1);
+    incomingEdgeIndex.set(conn.target, targetEdgeIndex + 1);
+
     rfEdges.push({
-      id:     edgeId,
-      source: conn.source,
-      target: conn.target,
-      label:  relationTypes.join(', '),
-      type:   'smoothstep',
-      data:   { relationTypes },
+      id:           edgeId,
+      source:       conn.source,
+      target:       conn.target,
+      sourceHandle: edgeSourceHandleId(sourceEdgeIndex),
+      targetHandle: edgeTargetHandleId(targetEdgeIndex),
+      label:        relationTypes.join(', '),
+      type:         'bezier',
+      markerEnd: {
+        type:   MarkerType.ArrowClosed,
+        width:  16,
+        height: 16,
+        color:  EDGE_STROKE,
+      },
+      style: {
+        stroke:      EDGE_STROKE,
+        strokeWidth: 2,
+      },
+      labelStyle: {
+        fill:       labelColor,
+        fontSize:   10,
+        fontWeight: 700,
+      },
+      labelBgStyle: {
+        fill:        EDGE_LABEL_BG,
+        fillOpacity: 0.94,
+        // --text-primary (rgb 15 23 42) at 16% opacity — subtle label border
+        stroke:      'rgba(15, 23, 42, 0.16)',
+        strokeWidth: 1,
+      },
+      labelBgPadding:      [5, 2],
+      labelBgBorderRadius: 6,
+      data: { relationTypes },
     });
   }
 

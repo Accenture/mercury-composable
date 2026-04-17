@@ -24,9 +24,10 @@ import com.accenture.minigraph.models.GraphInstance;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
+import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +58,13 @@ public class GraphMath extends GraphLambdaFunction {
         }
         var result = executeNode(nodeName, graphInstance, forEach, statements);
         stateMachine.setElement(nodeName+DOT_DECISION, result);
-        return result;
+        var delay = stateMachine.getElement(nodeName+DOT_DELAY);
+        if (delay instanceof Long ms) {
+            return Mono.create(sink ->
+                    Platform.getInstance().getVertx().setTimer(ms, t -> sink.success(result)));
+        } else {
+            return result;
+        }
     }
 
     private String executeNode(String nodeName, GraphInstance graphInstance,
@@ -105,6 +112,7 @@ public class GraphMath extends GraphLambdaFunction {
     }
 
     private String executeStatements(String nodeName, List<String> entries, GraphInstance graphInstance) {
+        String jump = null;
         for (var entry : entries) {
             var block = entry.trim();
             var colon = block.indexOf(':');
@@ -118,19 +126,33 @@ public class GraphMath extends GraphLambdaFunction {
                     return decision;
                 }
             }
-            // guarantee that it is a single line
-            command = command.replace('\n', ' ');
-            if (COMPUTE_TAG.equals(tag)) {
-                compute(command, nodeName, graphInstance);
-            }
-            if (MAPPING_TAG.equals(tag)) {
-                handleDataMappingEntry(nodeName, command, graphInstance);
-            }
-            if (RESET_TAG.equals(tag)) {
-                resetNodes(command, graphInstance);
+            processCommands(tag, command, nodeName, graphInstance);
+            var next = getNext(tag, command);
+            if (next != null) {
+                jump = next;
             }
         }
-        return NEXT;
+        return jump == null? NEXT : jump;
+    }
+
+    private void processCommands(String tag, String command, String nodeName, GraphInstance graphInstance) {
+        // guarantee that it is a single line for all commands except IF-THEN-ELSE
+        command = command.replace('\n', ' ');
+        if (COMPUTE_TAG.equals(tag)) {
+            compute(command, nodeName, graphInstance);
+        }
+        if (MAPPING_TAG.equals(tag)) {
+            handleDataMappingEntry(nodeName, command, graphInstance);
+        }
+        if (RESET_TAG.equals(tag)) {
+            resetNodes(command, graphInstance);
+        }
+        if (DELAY_TAG.equals(tag)) {
+            var delay = util.str2long(command);
+            if (delay >= 0) {
+                graphInstance.stateMachine.setElement(nodeName + DOT_DELAY, delay);
+            }
+        }
     }
 
     private void compute(String command, String nodeName, GraphInstance graphInstance) {

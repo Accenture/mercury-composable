@@ -18,7 +18,6 @@
 
 package com.accenture.minigraph.skills;
 
-import com.accenture.minigraph.exception.FetchException;
 import com.accenture.minigraph.start.PlaygroundLoader;
 import com.accenture.minigraph.common.FeatureDef;
 import com.accenture.minigraph.common.GraphLambdaFunction;
@@ -59,9 +58,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var fetcher = getNode(nodeName, graphInstance.graph);
         if (!ROUTE.equals(fetcher.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
-        }
-        if ("true".equals(headers.get(LIVE))) {
-            stateMachine.setElement(nodeName + "." + LIVE, true);
         }
         // reset result to ensure execution is idempotent
         stateMachine.removeElement(nodeName + "." + RESULT);
@@ -145,7 +141,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         // clear temporary dataset
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
-        return NEXT;
+        return nextPath(stateMachine, fetcher);
     }
 
     @SuppressWarnings("unchecked")
@@ -161,7 +157,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
     }
 
     @SuppressWarnings("unchecked")
-    private Object executeProvidersWithForkJoin(PostOffice po, GraphInstance graphInstance, SimpleNode fetcher,
+    private String executeProvidersWithForkJoin(PostOffice po, GraphInstance graphInstance, SimpleNode fetcher,
                                                 List<SimpleNode> dictionaryNodes, int size)
             throws URISyntaxException, ExecutionException, InterruptedException {
         var graph = graphInstance.graph;
@@ -187,7 +183,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                     md.target = target;
                     md.method = String.valueOf(method);
                     md.inputs = getEntries(p.getProperty(INPUT));
-                    md.breakOnException = !CONTINUE.equalsIgnoreCase(String.valueOf(p.getProperty(ERROR)));
                 } else {
                     throw new IllegalArgumentException("Missing url or method in data provider " + p.getAlias());
                 }
@@ -207,7 +202,19 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         stateMachine.removeElement(nodeName + EACH);
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
-        return NEXT;
+        return nextPath(stateMachine, fetcher);
+    }
+
+    private String nextPath(MultiLevelMap stateMachine, SimpleNode fetcher) {
+        var nodeName = fetcher.getAlias();
+        var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
+        var resultError = stateMachine.getElement(nodeName + "." + ERROR);
+        var errorHandler = fetcher.getProperty(EXCEPTION);
+        if (processStatus instanceof Integer && resultError != null && errorHandler != null) {
+            return String.valueOf(errorHandler);
+        } else {
+            return NEXT;
+        }
     }
 
     private void pushHttpEventToStack(ProviderMetadata md, Deque<HttpEventEnvelope> stack,
@@ -277,9 +284,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                 md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
                 md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
                 md.stateMachine.setElement(OUTPUT_NAMESPACE+STATUS, response.getStatus());
-                var advice = md.stateMachine.exists(nodeName + "." + LIVE)?
-                        response.getError() : "ERROR: See output with 'inspect output'";
-                throw new FetchException(String.valueOf(advice));
             }
         } else {
             md.stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
@@ -372,7 +376,6 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             md.target = target;
             md.method = String.valueOf(method);
             md.inputs = getEntries(provider.getProperty(INPUT));
-            md.breakOnException = !CONTINUE.equalsIgnoreCase(String.valueOf(provider.getProperty(ERROR)));
             makeRegularHttpCall(md);
         } else {
             throw new IllegalArgumentException("Missing url or method in data provider "+provider.getAlias());
@@ -422,16 +425,13 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                 md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
                 md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
                 md.stateMachine.setElement(OUTPUT_NAMESPACE+STATUS, response.getStatus());
-                var advice = md.stateMachine.exists(nodeName + "." + LIVE)?
-                                    response.getError() : "ERROR: See output with 'inspect output'";
-                throw new FetchException(String.valueOf(advice));
             }
         } else {
             md.stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
+            // save request and response in cache of the current graph instance
+            md.stateMachine.setElement(CACHE_NAMESPACE + provider + "[]",
+                    Map.of(INPUT, params, OUTPUT, response.getBody()));
         }
-        // save request and response in cache of the current graph instance
-        md.stateMachine.setElement(CACHE_NAMESPACE + provider + "[]",
-                Map.of(INPUT, params, OUTPUT, response.getBody()));
     }
 
     private void loadFeatures(ProviderMetadata md) {
@@ -491,10 +491,10 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         final List<FeatureDef> before =  new ArrayList<>();
         final List<FeatureDef> after = new ArrayList<>();
         final List<String> features = new ArrayList<>();
+        final boolean breakOnException;
         HostUri target;
         String method;
         List<String> inputs;
-        boolean breakOnException = true;
 
         public ProviderMetadata(PostOffice po, SimpleNode fetcher, SimpleNode dd,
                                 SimpleNode provider, MultiLevelMap stateMachine, long timeout) {
@@ -504,6 +504,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             this.provider = provider;
             this.stateMachine = stateMachine;
             this.timeout = timeout;
+            this.breakOnException = fetcher.getProperty(EXCEPTION) == null;
         }
     }
 

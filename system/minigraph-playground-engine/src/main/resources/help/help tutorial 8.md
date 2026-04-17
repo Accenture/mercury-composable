@@ -56,9 +56,6 @@ Let's try some data mapping methods. Please enter the following:
 update node data-mapper
 with type Mapper
 with properties
-update node data-mapper
-with type Mapper
-with properties
 mapping[]=input.body.profile.name -> output.body.name
 mapping[]=$.input.body.profile.account[*].type -> model.type
 mapping[]=$.input.body.profile.account[*].id -> model.id

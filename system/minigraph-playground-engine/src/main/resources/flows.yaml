@@ -1,4 +1,5 @@
 flows:
   - 'graph-executor.yml'
+  - 'flow-11.yml'
 
 location: 'classpath:/flows/'

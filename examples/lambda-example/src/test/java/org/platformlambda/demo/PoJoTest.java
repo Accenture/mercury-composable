@@ -45,6 +45,7 @@ class PoJoTest extends TestBase {
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());
+        assertEquals("org.platformlambda.models.SamplePoJo", response.getType());
         SamplePoJo pojo = response.getBody(SamplePoJo.class);
         assertEquals(id, pojo.getId());
         assertEquals(name, pojo.getName());

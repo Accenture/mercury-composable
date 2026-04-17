@@ -14,29 +14,132 @@ What is a flow extension?
 -------------------------
 A flow extension is an event flow that is built to serve some logic that can be reused by a graph model.
 
-Create a node to use an extension
----------------------------------
-Enter the following to create an extension node. The skill is 'extension' and the extension is 'flow://my-flow'.
+Import graph model from Tutorial-10
+-----------------------------------
+In tutorial 10, you have created an extension in a main graph to call another graph.
 
-The input mapping sets the input parameter(s) to an extension which is also a graph model.
-The output mapping sets the result from the extension to the output payload.
+You will update the graph model in tutorial 10 to call a flow as an extension.
 
 ```
-create node extension
+> import graph from tutorial-10
+Graph exported to /tmp/graph/tutorial-11.json
+Described in /api/graph/model/tutorial-11/431-3
+```
+
+Edit the root node
+------------------
+Enter 'edit node root' and copy-n-paste the content into the inbox box. Change the name and purpose for
+tutorial 11.
+
+```
+update node root
+with type Root
+with properties
+name=tutorial-11
+purpose=Demonstrate the use of flow extension
+```
+
+Edit the extension node
+-----------------------
+Enter 'edit node extension' and copy-n-paste the content into the inbox box. Update the extension to "flow://flow-11"
+and change the input statements to pass "hello" and "message" as parameters. The flow protocol prefix tells the
+system to execute the flow with the identifier "flow-11".
+
+```
+update node extension
 with type Extension
 with properties
-skill=graph.extension
-extension=flow://my-flow
-input[]=input.body.person_id -> person_id
+extension=flow://flow-11
+input[]=input.body.hello -> hello
+input[]=input.body.message -> message
 output[]=result -> output.body
+skill=graph.extension
 ```
 
-*Note*: the flow://my-flow and the input parameters are placeholder examples.
+About flow 11
+-------------
+For your convenience, "flow-11" is preloaded. You can review the configuration files "flows.yaml" and "flow-11.yml"
+in the resources folder. The event flow "flow-11" is an echo program. The task "no.op" will echo everything from
+the input and pass it as output. Below is an extract of the event flow's first task.
 
-Using event flow as an extension is similar to using a graph model as an extension.
-The only difference is the use of the protocol prefix `flow://` followed by a flow-id.
+```yaml
+tasks:
+  - input:
+      # pass all input parameters as arguments
+      - 'input.body -> *'
+    process: 'no.op'
+    output:
+      - 'result -> output.body'
+    description: 'echo everything in the input payload'
+    execution: end
+```
 
-Since this is an advanced topic, model answer is not provided. You will try this as an exercise.
+Perform a dry-run
+-----------------
+To test the updated graph model, you can instantiate the graph with the two input "hello" and "message" as follows:
+
+```
+instantiate graph
+text(world) -> input.body.hello
+text(this is a good day) -> input.body.message
+```
+
+Then enter 'run' to execute the graph.
+
+```
+> start graph...
+Graph instance created. Loaded 2 mock entries, model.ttl = 30000 ms
+> run
+Walk to root
+Walk to extension
+Executed extension with skill graph.extension in 5.46 ms
+Walk to end
+{
+  "output": {
+    "body": {
+      "hello": "world",
+      "message": "this is a good day"
+    }
+  }
+}
+Graph traversal completed in 7 ms
+```
+
+You can also check the application log. Telemetry and tracing information are shown.
+
+```
+GraphExtension:202 - Call extension flow://flow-11, ttl=30000
+Telemetry:81 - {trace={path=/graph/playground, service=graph.extension...
+Telemetry:81 - {trace={path=/graph/playground, service=no.op...
+Telemetry:81 - {trace={path=/graph/playground, service=task.executor...
+Telemetry:81 - {trace={path=/graph/playground, service=event.script.manager...
+```
+
+This validates that the event flow instance for "flow-11" was executed by the graph instance for tutorial-11.
+
+Export the graph model
+----------------------
+Now you may save the graph model by exporting it.
+
+```
+> export graph as tutorial-11
+Graph exported to /tmp/graph/tutorial-11.json
+Described in /api/graph/model/tutorial-11/794-6
+```
+
+Deploy the graph model
+----------------------
+To deploy the graph model, copy "/tmp/graph/tutorial-11.json" to your application's `main/resources/graph` folder.
+You can then test the deployed model with a curl command.
+
+```
+curl -X POST http://127.0.0.1:8085/api/graph/tutorial-11 \
+  -H "Content-Type: application/json" \
+  -d '{ 
+    "hello": "world",
+    "message": "this is a good day"
+}'
+```
 
 Summary
 -------

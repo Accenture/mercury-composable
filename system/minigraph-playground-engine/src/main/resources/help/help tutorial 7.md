@@ -32,7 +32,7 @@ Create a data mapper node
 Let's try some data mapping methods. Please enter the following:
 
 ```
-update node data-mapper
+create node data-mapper
 with type Mapper
 with properties
 mapping[]=text(world) -> output.body.hello

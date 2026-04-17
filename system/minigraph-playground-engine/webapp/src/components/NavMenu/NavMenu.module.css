@@ -28,8 +28,8 @@
 }
 
 .trigger:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 /* ── Chevron ── */

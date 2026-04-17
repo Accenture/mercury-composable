@@ -41,6 +41,15 @@
     },
     {
       "types": [
+        "Island"
+      ],
+      "alias": "dictionary",
+      "properties": {
+        "skill": "graph.island"
+      }
+    },
+    {
+      "types": [
         "End"
       ],
       "alias": "end",
@@ -169,6 +178,56 @@
   ],
   "connections": [
     {
+      "source": "account-details",
+      "relations": [
+        {
+          "type": "provider",
+          "properties": {}
+        }
+      ],
+      "target": "account-details-provider"
+    },
+    {
+      "source": "dictionary",
+      "relations": [
+        {
+          "type": "data",
+          "properties": {}
+        }
+      ],
+      "target": "account-details"
+    },
+    {
+      "source": "dictionary",
+      "relations": [
+        {
+          "type": "data",
+          "properties": {}
+        }
+      ],
+      "target": "person-accounts"
+    },
+    {
+      "source": "dictionary",
+      "relations": [
+        {
+          "type": "data",
+          "properties": {}
+        }
+      ],
+      "target": "person-address"
+    },
+    {
+      "source": "dictionary",
+      "relations": [
+        {
+          "type": "data",
+          "properties": {}
+        }
+      ],
+      "target": "person-name"
+    },
+    {
       "source": "fetcher-2",
       "relations": [
         {
@@ -187,6 +246,46 @@
         }
       ],
       "target": "fetcher-2"
+    },
+    {
+      "source": "person-accounts",
+      "relations": [
+        {
+          "type": "provider",
+          "properties": {}
+        }
+      ],
+      "target": "mdm-profile"
+    },
+    {
+      "source": "person-address",
+      "relations": [
+        {
+          "type": "provider",
+          "properties": {}
+        }
+      ],
+      "target": "mdm-profile"
+    },
+    {
+      "source": "person-name",
+      "relations": [
+        {
+          "type": "provider",
+          "properties": {}
+        }
+      ],
+      "target": "mdm-profile"
+    },
+    {
+      "source": "root",
+      "relations": [
+        {
+          "type": "contains",
+          "properties": {}
+        }
+      ],
+      "target": "dictionary"
     },
     {
       "source": "root",

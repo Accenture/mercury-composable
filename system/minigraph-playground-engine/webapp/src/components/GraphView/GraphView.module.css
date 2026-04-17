@@ -98,9 +98,9 @@
 /* ── Node context menu ──────────────────────────────────────────────────── */
 
 .contextMenu {
-  background: var(--bg-primary, #fff);
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-md);
   z-index: 50;
   min-width: 160px;
@@ -121,10 +121,10 @@
 }
 
 .contextMenuItem:hover {
-  background: var(--autocomplete-highlight, rgba(37, 99, 235, 0.1));
+  background: var(--autocomplete-highlight);
 }
 
 .contextMenuItem:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
 }

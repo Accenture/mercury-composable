@@ -44,6 +44,7 @@ Optional properties
 ```
 for_each[]={map an array parameter for iterative API execution}
 concurrency={controls parallel API calls for an "iterative API request". Default 3, max 30}
+exception={exception-handler-node-name}
 ```
 
 Dictionary
@@ -128,6 +129,17 @@ output[]=result.person_address -> output.body.address
 - The "[]" syntax is used to create and append a list of one or more data mapping entries
 - The "->" signature indicates the direction of mapping where the left-hand-side is a source
   and right-hand-side is a target
+
+Custom error handling
+---------------------
+By default, when an API request fails, the system will abort the graph execution and return the error code
+and message to the caller.
+
+If you want to handle the exception in your graph model, you can set the node-name of the error-handler in
+the "exception" property to tell the system to traverse to the error-handler node.
+
+To handle an exception, the error-handler node should be a decision-making node using the graph.math or graph.js skill.
+It can evaluate the status code and error in the API fetcher node to determine the next step.
 
 Caution
 -------

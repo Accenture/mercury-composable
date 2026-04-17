@@ -21,6 +21,7 @@ package org.platformlambda.services;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.models.SamplePoJo;
 import org.slf4j.Logger;
@@ -40,13 +41,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * "Event-over-HTTP by configuration" feature from the rest-spring-example.
  */
 @PreLoad(route="hello.pojo, hello.pojo2", instances=10, isPrivate = false)
-public class HelloPoJo implements LambdaFunction {
+public class HelloPoJo implements TypedLambdaFunction<Object, SamplePoJo> {
     private static final Logger log = LoggerFactory.getLogger(HelloPoJo.class);
 
     private static final AtomicInteger counter = new AtomicInteger(0);
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws AppException {
+    public SamplePoJo handleEvent(Map<String, String> headers, Object input, int instance) throws AppException {
         String id = headers.get("id");
         if (id == null) {
             throw new IllegalArgumentException("Missing parameter 'id'");
@@ -60,7 +61,7 @@ public class HelloPoJo implements LambdaFunction {
             mock.setInstance(instance);
             mock.setOrigin(Platform.getInstance().getOrigin());
             mock.setSeq(counter.incrementAndGet());
-            log.info("Pojo delivered by instance #{}", instance);
+            log.info("PoJo delivered by instance #{}", instance);
             return mock;
         } else {
             throw new AppException(404, "Not found. Try id = 1");

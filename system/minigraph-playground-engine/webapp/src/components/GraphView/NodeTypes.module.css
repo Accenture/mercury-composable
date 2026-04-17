@@ -55,7 +55,7 @@
   font-size: 0.65rem;
   font-weight: 500;
   padding: 0.1rem 0.35rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   opacity: 0.85;
   background: color-mix(in srgb, var(--node-accent, #6c7086) 20%, transparent);
@@ -92,4 +92,19 @@
   white-space: normal;   /* wrap long text instead of truncating */
   flex: 1;
   min-width: 0;
+}
+
+/* ── Edge handle positioning ───────────────────────────────────────────────── */
+/*
+ * Hidden anchors rendered at computed vertical offsets so multiple edges
+ * from/to the same node land at different y-positions (spread).
+ * The `top` value is the only dynamic property and is set via `style` prop.
+ */
+.edgeHandle {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
 }

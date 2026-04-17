@@ -19,8 +19,8 @@
 package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
-import com.accenture.minigraph.exception.FetchException;
 import com.accenture.minigraph.models.GraphInstance;
+import com.accenture.minigraph.models.Visits;
 import com.accenture.minigraph.skills.GraphJoin;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.OptionalService;
@@ -31,6 +31,8 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +43,7 @@ import java.util.Map;
 @EventInterceptor
 @PreLoad(route = GraphTraveler.ROUTE, instances=300)
 public class GraphTraveler extends GraphLambdaFunction {
+    private static final Logger log = LoggerFactory.getLogger(GraphTraveler.class);
     public static final String ROUTE = "graph.traveler";
 
     @Override
@@ -101,6 +104,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (graphInstance != null) {
             var stateMachine = graphInstance.stateMachine;
             var target = stateMachine.getElement(nodeName + "." + TARGET);
+            // Unrecoverable error from the node itself
             if (response.hasError()) {
                 if (target != null) {
                     var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
@@ -112,29 +116,55 @@ public class GraphTraveler extends GraphLambdaFunction {
             var graph = graphInstance.graph;
             var node = graph.findNodeByAlias(nodeName);
             graphInstance.skillRun.put(nodeName, true);
+            checkFrequency(po, graphInstance, nodeName);
             // advise user that the node with skill has been executed
             var skill = node.getProperty(SKILL);
             var replyTo = graphInstance.getReplyTo();
             po.send(new EventEnvelope().setTo(replyTo).setBody("Executed " + nodeName + " with skill " + skill +
                     " in " +response.getExecutionTime() + " ms"));
-            // Skill handler can also set status and error in its node properties instead of throwing exception
+            // Skill handler would set status and error in its node properties
+            // e.g. the HTTP response status code to the API fetcher >= 400
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
-            if (processStatus instanceof Integer rc && resultError != null) {
+            var errorHandler = node.getProperty(EXCEPTION);
+            if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
                 var errorMap = getErrorMap(resultError, target);
                 var cid = graphInstance.getCorrelationId();
                 var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
                 po.send(error);
                 sendError(po, graphInstance, "Graph traversal aborted");
             } else if (!graphInstance.complete.get()) {
-                var endNode = graph.getEndNode();
-                if (endNode.getId().equals(node.getId())) {
-                    executionComplete(po, graphInstance);
-                } else {
-                    var next = String.valueOf(response.getBody());
-                    nextOrJump(po, graphInstance, node, next);
-                }
+                var next = String.valueOf(response.getBody());
+                decideNext(po, node, next, graphInstance);
             }
+        }
+    }
+
+    private void checkFrequency(PostOffice po, GraphInstance graphInstance, String nodeName) {
+        var frequency = graphInstance.hits.getOrDefault(nodeName, new Visits());
+        var now = System.currentTimeMillis();
+        var last = frequency.lastVisit.get();
+        if (now - last > getLoopInterval()) {
+            frequency.lastVisit.set(now);
+            frequency.hits.set(0);
+        }
+        var total = frequency.hits.incrementAndGet();
+        graphInstance.hits.put(nodeName, frequency);
+        if (total > getHighFrequency()) {
+            log.error("Looping detected - {} hits in {} ms for {} in {}",
+                    total, now - last, nodeName, graphInstance.graphId);
+            var response = new EventEnvelope().setBody("Node " + nodeName + " executed too frequently").setStatus(400);
+            handleErrorResponse(po, graphInstance, response);
+        }
+    }
+
+    private void decideNext(PostOffice po, SimpleNode node, String next, GraphInstance graphInstance) {
+        var graph = graphInstance.graph;
+        var endNode = graph.getEndNode();
+        if (endNode.getId().equals(node.getId())) {
+            executionComplete(po, graphInstance);
+        } else {
+            nextOrJump(po, graphInstance, node, next);
         }
     }
 
@@ -198,7 +228,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             var nodeName = node.getAlias();
             var compositeId = wsInstanceId + "@" + nodeName;
             po.send(new EventEnvelope().setTo(skill).setHeader(IN, wsInstanceId)
-                    .setHeader(LIVE, true).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
+                    .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
                     .setReplyTo(GraphTraveler.ROUTE).setCorrelationId(compositeId));
         } else {
             sendError(po, graphInstance, "Skill " + skill + " does not exist");
@@ -233,20 +263,9 @@ public class GraphTraveler extends GraphLambdaFunction {
 
     private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
         var out = graphInstance.getReplyTo();
-        var ex = response.getException();
-        if (ex instanceof FetchException) {
-            var stateMachine = graphInstance.stateMachine;
-            var status = stateMachine.getElement(OUTPUT_NAMESPACE+STATUS);
-            var rc = status instanceof Number number? number.intValue() : response.getStatus();
-            var body = stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
-            var error = new EventEnvelope().setTo(out).setStatus(rc).setCorrelationId(graphInstance.getCorrelationId());
-            error.setBody(body == null? response.getBody() : body);
-            po.send(error);
-        } else {
-            var error = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId())
-                                .setBody(response.getBody()).setStatus(response.getStatus());
-            po.send(error);
-        }
+        var error = new EventEnvelope().setTo(out).setCorrelationId(graphInstance.getCorrelationId())
+                                        .setBody(response.getBody()).setStatus(response.getStatus());
+        po.send(error);
         sendError(po, graphInstance, "Graph traversal aborted");
     }
 

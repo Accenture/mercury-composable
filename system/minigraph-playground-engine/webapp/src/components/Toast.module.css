@@ -14,9 +14,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: white;
+  background: var(--bg-primary);
   border-radius: var(--radius);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  box-shadow: var(--shadow-lg);
   cursor: pointer;
   animation: slideIn 0.3s ease;
   border-left: 4px solid;

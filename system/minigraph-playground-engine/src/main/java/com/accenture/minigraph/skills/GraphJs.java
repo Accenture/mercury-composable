@@ -32,7 +32,9 @@ import java.util.Map;
 
 import org.graalvm.polyglot.Context;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
+import reactor.core.publisher.Mono;
 
 /**
  * Since JavaScript uses Kernel resources, we must limit it to a small number less than 100
@@ -61,16 +63,27 @@ public class GraphJs extends GraphLambdaFunction {
         if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
-        var stateMachine = graphInstance.stateMachine;
         var forEach = getEntries(node.getProperty(FOR_EACH));
         var statements = getEntries(node.getProperty(STATEMENT));
         if (statements.isEmpty()) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have 'statement' entries");
         }
+        var result = getResult(nodeName, forEach, statements, graphInstance);
+        var delay = graphInstance.stateMachine.getElement(nodeName+DOT_DELAY);
+        if (delay instanceof Long ms) {
+            return Mono.create(sink ->
+                    Platform.getInstance().getVertx().setTimer(ms, t -> sink.success(result)));
+        } else {
+            return result;
+        }
+    }
+
+    private Object getResult(String nodeName, List<String> forEach, List<String> statements,
+                             GraphInstance graphInstance) {
         try (Context context = Context.create(JS)) {
             var result = executeNode(context, nodeName, graphInstance, forEach, statements);
             // save the decision so it can be reported in unit test or used in another evaluation node
-            stateMachine.setElement(nodeName+DOT_DECISION, result);
+            graphInstance.stateMachine.setElement(nodeName+DOT_DECISION, result);
             return result;
         }
     }
@@ -120,6 +133,7 @@ public class GraphJs extends GraphLambdaFunction {
     }
 
     private String executeStatements(Context context, String nodeName, List<String> entries, GraphInstance graphInstance) {
+        String jump = null;
         for (var entry : entries) {
             var block = entry.trim();
             var colon = block.indexOf(':');
@@ -133,19 +147,34 @@ public class GraphJs extends GraphLambdaFunction {
                     return decision;
                 }
             }
-            if (COMPUTE_TAG.equals(tag)) {
-                compute(context, command, nodeName, graphInstance);
-            }
-            if (MAPPING_TAG.equals(tag)) {
-                // guarantee that it is a single line
-                command = command.replace('\n', ' ');
-                handleDataMappingEntry(nodeName, command, graphInstance);
-            }
-            if (RESET_TAG.equals(tag)) {
-                resetNodes(command, graphInstance);
+            processCommands(context, tag, command, nodeName, graphInstance);
+            var next = getNext(tag, command);
+            if (next != null) {
+                jump = next;
             }
         }
-        return NEXT;
+        return jump == null? NEXT : jump;
+    }
+
+    private void processCommands(Context context, String tag, String command, String nodeName,
+                                 GraphInstance graphInstance) {
+        if (COMPUTE_TAG.equals(tag)) {
+            compute(context, command, nodeName, graphInstance);
+        }
+        // guarantee that it is a single line for all commands except IF-THEN-ELSE and COMPUTE
+        command = command.replace('\n', ' ');
+        if (MAPPING_TAG.equals(tag)) {
+            handleDataMappingEntry(nodeName, command, graphInstance);
+        }
+        if (RESET_TAG.equals(tag)) {
+            resetNodes(command, graphInstance);
+        }
+        if (DELAY_TAG.equals(tag)) {
+            var delay = util.str2long(command);
+            if (delay >= 0) {
+                graphInstance.stateMachine.setElement(nodeName + DOT_DELAY, delay);
+            }
+        }
     }
 
     private void compute(Context context, String command, String nodeName, GraphInstance graphInstance) {

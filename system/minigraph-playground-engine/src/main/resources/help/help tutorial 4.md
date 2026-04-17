@@ -78,7 +78,7 @@ Create a node to handle the negative case
 Let's create a node called "less-than" to handle the negative case from the decision node.
 
 ```
-update node less-than
+create node less-than
 with type Reject
 with properties
 mapping[]=text(a < b) -> output.body.message

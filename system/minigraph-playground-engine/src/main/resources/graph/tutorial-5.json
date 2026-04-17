@@ -2,6 +2,15 @@
   "nodes": [
     {
       "types": [
+        "Island"
+      ],
+      "alias": "dictionary",
+      "properties": {
+        "skill": "graph.island"
+      }
+    },
+    {
+      "types": [
         "End"
       ],
       "alias": "end",
@@ -122,6 +131,26 @@
   ],
   "connections": [
     {
+      "source": "dictionary",
+      "relations": [
+        {
+          "type": "data",
+          "properties": {}
+        }
+      ],
+      "target": "person-address"
+    },
+    {
+      "source": "dictionary",
+      "relations": [
+        {
+          "type": "data",
+          "properties": {}
+        }
+      ],
+      "target": "person-name"
+    },
+    {
       "source": "fetcher-1",
       "relations": [
         {
@@ -150,6 +179,36 @@
         }
       ],
       "target": "end"
+    },
+    {
+      "source": "person-address",
+      "relations": [
+        {
+          "type": "provider",
+          "properties": {}
+        }
+      ],
+      "target": "mdm-profile"
+    },
+    {
+      "source": "person-name",
+      "relations": [
+        {
+          "type": "provider",
+          "properties": {}
+        }
+      ],
+      "target": "mdm-profile"
+    },
+    {
+      "source": "root",
+      "relations": [
+        {
+          "type": "contains",
+          "properties": {}
+        }
+      ],
+      "target": "dictionary"
     },
     {
       "source": "root",

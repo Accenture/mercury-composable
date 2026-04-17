@@ -553,7 +553,7 @@ public class WorkerHandler {
     private float getExecTime(long begin) {
         float delta = (float) (System.nanoTime() - begin) / EventEmitter.ONE_MILLISECOND;
         // adjust precision to 3 decimal points
-        return Float.parseFloat(String.format("%.3f", Math.max(0.0f, delta)));
+        return Float.parseFloat(String.format(java.util.Locale.US, "%.3f", Math.max(0.0f, delta)));
     }
 
     private String simplifyCastError(Throwable ex) {

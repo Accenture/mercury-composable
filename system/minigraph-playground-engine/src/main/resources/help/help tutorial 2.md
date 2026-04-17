@@ -202,6 +202,8 @@ It will response with:
 }
 ```
 
+Summary
+-------
 In this session, you have completed the following exercise:
 
 1. deploy the graph model 'tutorial-1' and invoke the API that executes the graph model as an instance

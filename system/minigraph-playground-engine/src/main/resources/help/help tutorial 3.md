@@ -271,6 +271,58 @@ uses the configuration given in the data dictionary and data provider to make an
 
 For more details of the data dictionary method, you may enter "help data-dictionary".
 
+Create an island to hold data dictionary
+----------------------------------------
+The data dictionary and data provider nodes are not connected. To organize, you can create an "island" node
+to hold them.
+
+```
+create node dictionary
+with type Island
+with properties
+skill=graph.island
+```
+
+Then you can connect the data dictionary nodes and provider node to it.
+
+```
+> connect root to dictionary with contains
+node root connected to dictionary
+> connect dictionary to person-name with data
+node dictionary connected to person-name
+> connect dictionary to person-address with data
+node dictionary connected to person-address
+> connect person-name to mdm-profile with provider
+node person-name connected to mdm-profile
+> connect person-address to mdm-profile with provider
+node person-address connected to mdm-profile
+> list connections
+root -[contains]-> dictionary
+root -[fetch]-> fetcher
+dictionary -[data]-> person-address
+dictionary -[data]-> person-name
+person-address -[provider]-> mdm-profile
+person-name -[provider]-> mdm-profile
+fetcher -[complete]-> end
+```
+
+The purpose of an "island" node is to isolate sub-graph that does not require execution.
+The data dictionary and provider nodes hold configuration for the API fetcher.
+They are not executable by themselves.
+
+Connecting data dictionary and provider nodes helps to describe the relationships, but this is not mandatory.
+
+However, for data entities such as person, account and order, defining the directional connections with relationships
+is a best practice that we recommend. It is because data entities and relationships represent enterprise knowledge.
+
+To save the updated graph model, you should export it again.
+
+```
+> export graph as tutorial-3
+Graph exported to /tmp/graph/tutorial-3.json
+Described in /api/graph/model/tutorial-3/287-4
+```
+
 Deploy the graph model
 ----------------------
 To deploy, you may copy "/tmp/graph/tutorial-3.json" into your application's main/resources/graph folder and
@@ -318,3 +370,11 @@ are the same, the system will avoid making redundant API calls.
 
 Therefore, it is important to configure the data dictionary and provider correctly so that
 the system will efficiently fetch data.
+
+Summary
+-------
+In this session, you have configured data dictionary and data provider. You have defined an API fetcher
+node to use the data dictionary and data provider to fetch some data. You have deployed the graph model
+and made an API request using CURL command.
+
+You have also learnt how to organize data dictionary and provider nodes in an "island" (aka 'subgraph').

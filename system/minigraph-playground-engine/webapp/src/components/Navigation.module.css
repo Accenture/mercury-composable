@@ -30,11 +30,16 @@
   white-space: nowrap;
 }
 
-.menuItem:hover,
+.menuItem:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
 .menuItem:focus-visible {
   background: var(--primary-color);
   color: white;
-  outline: none;
+  outline: 2px solid var(--bg-primary);
+  outline-offset: -2px;
 }
 
 /* ── Tool row (combined nav + connect) ── */
@@ -74,10 +79,14 @@
   min-width: 0;
 }
 
-.toolLink:hover,
+.toolLink:hover {
+  background: var(--bg-secondary);
+}
+
 .toolLink:focus-visible {
   background: var(--bg-secondary);
-  outline: none;
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .toolLinkActive {

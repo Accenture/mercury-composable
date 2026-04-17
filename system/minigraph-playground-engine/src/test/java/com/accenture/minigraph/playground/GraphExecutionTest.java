@@ -26,29 +26,28 @@ import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
-import org.platformlambda.core.util.Utility;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class GraphExecutionTest {
-    private static final Utility util = Utility.getInstance();
-    private static final AtomicInteger PORT = new AtomicInteger(0);
+    private static final String ASYNC_HTTP_CLIENT = "async.http.request";
+    private static final long TIMEOUT = 8000;
     private static final String JS = "js";
     private static final String MATH = "math";
     private static final String CONVERT = "convert";
-    private static final long TIMEOUT = 8000;
+    private static String target;
 
     @BeforeAll
     static void setup() {
         AutoStart.main(new String[0]);
         var config = AppConfigReader.getInstance();
-        PORT.set(util.str2int(config.getProperty("rest.server.port", "8090")));
+        var port = config.getProperty("rest.server.port");
+        target = "http://localhost:" + port;
     }
 
     @Test
@@ -65,13 +64,12 @@ class GraphExecutionTest {
 
     @SuppressWarnings("unchecked")
     private void testGraphExecution(String graphId, String type) throws ExecutionException, InterruptedException {
-        var host = "http://127.0.0.1:" + PORT.get();
-        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(host);
+        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target);
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-Type", "application/json");
         request.setUrl("/api/graph/"+graphId).setBody(Map.of("person_id", 100));
         var po = PostOffice.trackable("unit.test", "100", "TEST /api/graph/hello");
-        var event = new EventEnvelope().setTo("async.http.request").setBody(request.toMap());
+        var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request.toMap());
         var response = po.request(event, TIMEOUT).get();
         assertInstanceOf(Map.class, response.getBody());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -99,18 +97,33 @@ class GraphExecutionTest {
     @SuppressWarnings("unchecked")
     @Test
     void testGraphException() throws ExecutionException, InterruptedException {
-        var host = "http://127.0.0.1:" + PORT.get();
-        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(host);
+        var request = new AsyncHttpRequest().setMethod("POST").setTargetHost(target);
         request.setHeader("Accept", "application/json");
         request.setHeader("Content-Type", "application/json");
         request.setUrl("/api/graph/helloworld").setBody(Map.of("person_id", 10));
         var po = PostOffice.trackable("unit.test", "100", "TEST /api/graph/helloworld");
-        var event = new EventEnvelope().setTo("async.http.request").setBody(request.toMap());
+        var event = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(request.toMap());
         var response = po.request(event, TIMEOUT).get();
         assertInstanceOf(Map.class, response.getBody());
         assertEquals(400, response.getStatus());
         var mm = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("error", mm.getElement("type"));
         assertEquals("Profile 10 not found", mm.getElement("message"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void unitTest1HappyPath() throws ExecutionException, InterruptedException {
+        var request = new AsyncHttpRequest();
+        request.setMethod("POST").setTargetHost(target).setUrl("/api/graph/unit-test-1");
+        request.setBody(Map.of("person_id", 100)).setHeader("Content-Type", "application/json");
+        var po = PostOffice.trackable("unit.test", "1000", "TEST /api/graph/unit-test-1");
+        var event = new EventEnvelope().setBody(request).setTo(ASYNC_HTTP_CLIENT);
+        var response = po.request(event, TIMEOUT).get();
+        assertInstanceOf(Map.class, response.getBody());
+        assertEquals(200, response.getStatus());
+        var map = (Map<String, Object>) response.getBody();
+        assertEquals("Peter", map.get("name"));
+        assertEquals("100 World Blvd", map.get("address"));
     }
 }

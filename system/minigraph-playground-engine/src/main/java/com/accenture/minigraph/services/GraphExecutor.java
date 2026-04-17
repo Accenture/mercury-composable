@@ -19,8 +19,8 @@
 package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
-import com.accenture.minigraph.exception.FetchException;
 import com.accenture.minigraph.models.GraphInstance;
+import com.accenture.minigraph.models.Visits;
 import com.accenture.minigraph.skills.GraphJoin;
 import com.accenture.models.FlowInstance;
 import com.accenture.models.Flows;
@@ -151,6 +151,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (graphInstance != null && flowInstance != null) {
             var stateMachine = graphInstance.stateMachine;
             var target = stateMachine.getElement(nodeName + "." + TARGET);
+            // Unrecoverable error from the node itself
             if (response.hasError()) {
                 if (target != null) {
                     var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
@@ -162,10 +163,14 @@ public class GraphExecutor extends GraphLambdaFunction {
             var graph = graphInstance.graph;
             var node = graph.findNodeByAlias(nodeName);
             graphInstance.skillRun.put(nodeName, true);
+            checkFrequency(po, graphInstance, nodeName);
             // Skill handler can also set status and error in its node properties instead of throwing exception
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
-            if (processStatus instanceof Integer rc && resultError != null) {
+            // Skill handler would set status and error in its node properties
+            // e.g. the HTTP response status code to the API fetcher >= 400
+            var errorHandler = node.getProperty(EXCEPTION);
+            if (processStatus instanceof Integer rc && resultError != null && errorHandler == null) {
                 var errorMap = getErrorMap(resultError, target);
                 var replyTo = graphInstance.getReplyTo();
                 var cid = graphInstance.getCorrelationId();
@@ -173,14 +178,37 @@ public class GraphExecutor extends GraphLambdaFunction {
                 po.send(error);
                 graphInstance.complete.set(true);
             } else if (!graphInstance.complete.get()) {
-                var endNode = graph.getEndNode();
-                if (endNode.getId().equals(node.getId())) {
-                    executionComplete(po, graphInstance);
-                } else {
-                    var next = String.valueOf(response.getBody());
-                    nextOrJump(po, graphInstance, node, next);
-                }
+                var next = String.valueOf(response.getBody());
+                decideNext(po, node, next, graphInstance);
             }
+        }
+    }
+
+    private void checkFrequency(PostOffice po, GraphInstance graphInstance, String nodeName) {
+        var frequency = graphInstance.hits.getOrDefault(nodeName, new Visits());
+        var now = System.currentTimeMillis();
+        var last = frequency.lastVisit.get();
+        if (now - last > getLoopInterval()) {
+            frequency.lastVisit.set(now);
+            frequency.hits.set(0);
+        }
+        var total = frequency.hits.incrementAndGet();
+        graphInstance.hits.put(nodeName, frequency);
+        if (total > getHighFrequency()) {
+            log.error("Looping detected - {} hits in {} ms for {} in {}",
+                    total, now - last, nodeName, graphInstance.graphId);
+            var response = new EventEnvelope().setBody("Node " + nodeName + " executed too frequently").setStatus(400);
+            handleErrorResponse(po, graphInstance, response);
+        }
+    }
+
+    private void decideNext(PostOffice po, SimpleNode node, String next, GraphInstance graphInstance) {
+        var graph = graphInstance.graph;
+        var endNode = graph.getEndNode();
+        if (endNode.getId().equals(node.getId())) {
+            executionComplete(po, graphInstance);
+        } else {
+            nextOrJump(po, graphInstance, node, next);
         }
     }
 
@@ -234,7 +262,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             var nodeName = node.getAlias();
             var compositeId = flowInstanceId + "@" + nodeName;
             po.send(new EventEnvelope().setTo(skill).setHeader(IN, flowInstanceId)
-                    .setHeader(LIVE, true).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
+                    .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
                     .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId));
         } else {
             sendError(po, graphInstance, "Skill " + skill + " does not exist");
@@ -284,28 +312,11 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
-        var ex = response.getException();
-        if (ex instanceof FetchException) {
-            var stateMachine = graphInstance.stateMachine;
-            var status = stateMachine.getElement(OUTPUT_NAMESPACE+STATUS);
-            var rc = status instanceof Number number? number.intValue() : response.getStatus();
-            var headers = stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
-            var body = stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
-            var error = new EventEnvelope().setTo(graphInstance.getReplyTo()).setStatus(rc)
-                    .setCorrelationId(graphInstance.getCorrelationId());
-            error.setBody(body == null? response.getBody() : body);
-            if (headers instanceof Map) {
-                error.setHeaders((Map<String, String>) headers);
-            }
-            po.send(error);
-        } else {
-            var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
-                    .setCorrelationId(graphInstance.getCorrelationId())
-                    .setBody(response.getBody()).setStatus(response.getStatus());
-            po.send(error);
-        }
+        var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
+                                        .setCorrelationId(graphInstance.getCorrelationId())
+                                        .setBody(response.getBody()).setStatus(response.getStatus());
+        po.send(error);
         graphInstance.complete.set(true);
     }
 

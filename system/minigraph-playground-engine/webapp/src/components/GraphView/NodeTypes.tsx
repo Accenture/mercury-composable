@@ -77,10 +77,20 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
   return (
     <>
       {/* Resize handles — visible only when the node is selected */}
-      <NodeResizer minWidth={180} minHeight={60} isVisible={selected} />
+      <NodeResizer minWidth={180} minHeight={data.minHeight} isVisible={selected} />
 
-      {/* Target handle (left) */}
-      <Handle type="target" position={Position.Left} isConnectable={isConnectable} />
+      {/* Target handles (left) — multiple hidden anchors let edges land a few pixels apart. */}
+      {data.targetHandles.map(({ id, offset }) => (
+        <Handle
+          key={id}
+          id={id}
+          type="target"
+          position={Position.Left}
+          isConnectable={isConnectable}
+          className={styles.edgeHandle}
+          style={{ top: `calc(50% + ${offset}px)` }}
+        />
+      ))}
 
       {/*
         * Content container — fills the React Flow wrapper (which carries the
@@ -99,8 +109,18 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
         </div>
       </div>
 
-      {/* Source handle (right) */}
-      <Handle type="source" position={Position.Right} isConnectable={isConnectable} />
+      {/* Source handles (right) — paired with target handles for best-effort edge spreading. */}
+      {data.sourceHandles.map(({ id, offset }) => (
+        <Handle
+          key={id}
+          id={id}
+          type="source"
+          position={Position.Right}
+          isConnectable={isConnectable}
+          className={styles.edgeHandle}
+          style={{ top: `calc(50% + ${offset}px)` }}
+        />
+      ))}
     </>
   );
 }

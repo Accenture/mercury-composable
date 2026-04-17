@@ -702,7 +702,7 @@ public class EventEnvelope {
      * @return event envelope
      */
     public EventEnvelope setExecutionTime(float milliseconds) {
-        this.executionTime = Math.max(0, Float.parseFloat(String.format("%.3f", milliseconds)));
+        this.executionTime = Math.max(0, Float.parseFloat(String.format(java.util.Locale.US, "%.3f", milliseconds)));
         return this;
     }
 
@@ -713,7 +713,7 @@ public class EventEnvelope {
      * @return event envelope
      */
     public EventEnvelope setRoundTrip(float milliseconds) {
-        this.roundTrip = Math.max(0, Float.parseFloat(String.format("%.3f", milliseconds)));
+        this.roundTrip = Math.max(0, Float.parseFloat(String.format(java.util.Locale.US, "%.3f", milliseconds)));
         return this;
     }
 

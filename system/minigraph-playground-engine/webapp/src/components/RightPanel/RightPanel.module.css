@@ -76,9 +76,9 @@
 }
 
 .verticalResizeHandle:hover {
-  background: rgba(37, 99, 235, 0.2);
+  background: var(--primary-20);
 }
 
 .verticalResizeHandle[data-separator="active"] {
-  background: rgba(37, 99, 235, 0.4);
+  background: var(--primary-40);
 }

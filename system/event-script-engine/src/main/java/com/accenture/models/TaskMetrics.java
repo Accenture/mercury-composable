@@ -32,7 +32,7 @@ public class TaskMetrics {
     public void complete() {
         float delta = (float) (System.nanoTime() - begin) / EventEmitter.ONE_MILLISECOND;
         // adjust precision to 3 decimal points
-        elapsed = Float.parseFloat(String.format("%.3f", Math.max(0.0f, delta)));
+        elapsed = Float.parseFloat(String.format(java.util.Locale.US, "%.3f", Math.max(0.0f, delta)));
     }
 
     public String getRoute() {

@@ -114,7 +114,7 @@
   top: calc(100% + 8px);
   right: 0;
   background: var(--bg-dark);
-  color: #e2e8f0;
+  color: var(--console-text);
   font-size: 0.8rem;
   font-weight: 500;
   padding: 0.4rem 0.65rem;
@@ -143,7 +143,7 @@
 
 .helpHintKbd {
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   padding: 0.1rem 0.3rem;
   font-family: inherit;
   font-size: 0.75rem;
@@ -159,10 +159,10 @@
 }
 
 .resizeHandle:hover {
-  background: rgba(37, 99, 235, 0.2);
+  background: var(--primary-20);
 }
 
 .resizeHandle[data-separator="active"] {
-  background: rgba(37, 99, 235, 0.4);
+  background: var(--primary-40);
 }
 

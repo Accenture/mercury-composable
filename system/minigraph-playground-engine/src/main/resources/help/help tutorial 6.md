@@ -235,6 +235,53 @@ If you want to change this value, set "concurrency" in "fetcher-2" to try.
 With concurrency of 3 and there are 5 accounts, the system will perform a batch of 3 and a batch of 2 API requests.
 When you changed the concurrency setting, you will see the batch size will be adjusted accordingly.
 
+Create an island to hold data dictionary
+----------------------------------------
+You will create an island node to organize the data dictionary and provider nodes.
+
+```
+create node dictionary
+with type Island
+with properties
+skill=graph.island
+```
+
+Then you can connect the data dictionary nodes and provider node to it.
+
+```
+> connect root to dictionary with contains
+node root connected to dictionary
+> connect dictionary to person-name with data
+node dictionary connected to person-name
+> connect dictionary to person-address with data
+node dictionary connected to person-address
+> connect dictionary to person-accounts with data
+node dictionary connected to person-accounts
+> connect person-name to mdm-profile with provider
+node person-name connected to mdm-profile
+> connect person-address to mdm-profile with provider
+node person-address connected to mdm-profile
+> connect person-accounts to mdm-profile with provider
+node person-accounts connected to mdm-profile
+> connect dictionary to account-details with data
+node dictionary connected to account-details
+> connect account-details to account-details-provider with data
+node account-details connected to account-details-provider
+> list connections
+root -[contains]-> dictionary
+root -[fetch]-> fetcher
+account-details -[provider]-> account-details-provider
+dictionary -[data]-> account-details
+dictionary -[data]-> person-accounts
+dictionary -[data]-> person-address
+dictionary -[data]-> person-name
+fetcher -[details]-> fetcher-2
+person-accounts -[provider]-> mdm-profile
+person-address -[provider]-> mdm-profile
+person-name -[provider]-> mdm-profile
+fetcher-2 -[complete]-> end
+```
+
 Export the graph model
 ----------------------
 You may save the graph model by exporting it.

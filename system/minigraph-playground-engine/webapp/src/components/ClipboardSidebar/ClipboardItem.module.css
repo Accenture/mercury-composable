@@ -68,7 +68,7 @@
 }
 
 .removeBtn:hover {
-  background: rgba(239, 68, 68, 0.08);
+  background: var(--danger-08);
   color: var(--danger-color);
   border-color: var(--danger-color);
 }
@@ -81,6 +81,6 @@
 .pasteBtn:focus-visible,
 .inspectBtn:focus-visible,
 .removeBtn:focus-visible {
-  box-shadow: var(--focus-ring);
-  outline: none;
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }

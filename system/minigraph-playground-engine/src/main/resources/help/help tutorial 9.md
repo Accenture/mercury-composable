@@ -218,6 +218,31 @@ compute -[finish]-> end
 Note that the module "addition" does not need to be connected because it is a reusable module. The node that executes
 it must be connected so that the graph executor can execute it when the graph traversal starts.
 
+Create an island to hold modules
+--------------------------------
+You will create an island node to organize one or more module nodes.
+
+```
+create node modules
+with type Island
+with properties
+skill=graph.island
+```
+
+Then you can connect the data dictionary nodes and provider node to it.
+
+```
+> connect root to modules with contains
+node root connected to modules
+> connect modules to addition with contains
+node modules connected to addition
+> list connections
+root -[calculate]-> compute
+root -[contains]-> modules
+modules -[contains]-> addition
+compute -[finish]-> end
+```
+
 Export the graph model
 ----------------------
 As a good practice, you may save the graph model by exporting it.
@@ -230,7 +255,7 @@ Described in /api/graph/model/tutorial-9/359-15
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-8.json" to your application's `main/resources/graph` folder.
+To deploy the graph model, copy "/tmp/graph/tutorial-9.json" to your application's `main/resources/graph` folder.
 You can then test the deployed model with a curl command.
 
 ```

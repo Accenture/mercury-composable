@@ -20,6 +20,7 @@ package com.accenture.minigraph.mock;
 
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.ConfigReader;
@@ -32,6 +33,9 @@ public class MdmProfile implements TypedLambdaFunction<AsyncHttpRequest, Object>
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+        if ("true".equals(input.getHeader("x-exception"))) {
+            throw new AppException(401, "simulated exception");
+        }
         final String personId;
         if (input.getMethod().equals("POST")) {
             if (input.getBody() instanceof Map<?, ?> map && map.containsKey("person_id")) {

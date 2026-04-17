@@ -199,4 +199,9 @@ help run
 help export
 ```
 
+Summary
+-------
+In this session, you have created the simplest graph model to return a "hello world" message when the graph
+API endpoint is called. You have exported the graph model and tested some help pages.
+
 Well done. Let's move on to "Tutorial 2".

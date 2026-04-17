@@ -20,7 +20,7 @@ rest:
     tracing: true
 
   - service: 'http.flow.adapter'
-    methods: ['POST']
+    methods: ['POST', 'GET']
     url: '/api/graph/{graph_id}'
     flow: 'graph-executor'
     timeout: 30s

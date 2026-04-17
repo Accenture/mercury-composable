@@ -49,12 +49,18 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.paletteToggle:hover,
+.paletteToggle:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
 .paletteToggle:focus-visible {
   background: var(--bg-secondary);
   border-color: var(--primary-color);
   color: var(--primary-color);
-  outline: none;
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .paletteToggleActive {
@@ -74,10 +80,10 @@
   width: 26rem;
   max-height: 22rem;
   overflow-y: scroll;
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-popover);
   padding: 0 0.75rem 0.5rem;
   /* Hidden until hovered or pinned open via click */
   opacity: 0;
@@ -100,12 +106,12 @@
 
 .popover::-webkit-scrollbar-track {
   background: var(--bg-secondary);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .popover::-webkit-scrollbar-thumb {
   background: var(--text-secondary);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .popover::-webkit-scrollbar-thumb:hover {
@@ -132,20 +138,24 @@
   gap: 0.75rem;
   padding: 0.25rem 0.35rem;
   margin: 0 -0.35rem;
-  border-radius: var(--radius-xs, 3px);
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: background 0.1s;
 }
 
-.popoverRow:hover,
+.popoverRow:hover {
+  background: var(--autocomplete-highlight);
+}
+
 .popoverRow:focus-visible {
-  background: var(--hover-bg, rgba(37, 99, 235, 0.07));
-  outline: none;
+  background: var(--autocomplete-highlight);
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .popoverKeyword {
   flex: 0 0 9.5rem;
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-family: var(--font-mono-code);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--primary-color);
@@ -163,7 +173,7 @@
 
 .popoverAlias {
   font-weight: bold;
-  font-family: Monospace;
+  font-family: var(--font-mono-code);
   opacity: 1;
 }
 
@@ -201,9 +211,9 @@
 }
 
 .textarea:focus {
-  outline: none;
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
   border-color: var(--input-focus-border);
-  box-shadow: var(--focus-ring);
 }
 
 .textarea:disabled {
@@ -244,7 +254,7 @@
   left: 0;
   right: 0;
   z-index: 200;
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);  /* shadow projects upward */
@@ -258,7 +268,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.25rem 0.75rem;
-  background: var(--bg-secondary, #f8fafc);
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   font-size: 0.65rem;
   font-weight: 600;
@@ -275,19 +285,19 @@
   gap: 0.25rem;
   padding: 0.45rem 0.75rem;
   cursor: pointer;
-  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-family: var(--font-mono-code);
   font-size: 0.85rem;
   color: var(--text-primary);
   transition: background 0.1s;
 }
 
 .dropupItem:hover {
-  background-color: var(--hover-bg, rgba(0, 0, 0, 0.04));
+  background-color: var(--hover-bg);
 }
 
 /* Driven by aria-selected so visual and semantic states are always in sync */
 .dropupItem[aria-selected="true"] {
-  background-color: var(--autocomplete-highlight, rgba(37, 99, 235, 0.1));
+  background-color: var(--autocomplete-highlight);
   color: var(--text-primary);  /* ensures readable text in dark-mode themes */
 }
 

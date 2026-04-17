@@ -64,3 +64,4 @@ Tutorials
 - help tutorial 9 (reusable 'modules')
 - help tutorial 10 (graph extension)
 - help tutorial 11 (flow extension)
+- help tutorial 12 (custom error handling)

@@ -12,7 +12,7 @@
 .label {
   font-size: 0.75rem;
   color: var(--text-secondary);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-mono-terminal);
 }
 
 .toolbarActions {
@@ -24,7 +24,7 @@
 .toolbarButton {
   background: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0.125rem 0.25rem;
   cursor: pointer;
   font-size: 0.75rem;

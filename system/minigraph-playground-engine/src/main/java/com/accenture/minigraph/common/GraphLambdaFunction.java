@@ -23,17 +23,16 @@ import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEnvelope, Object> {
-    private static final Logger log = LoggerFactory.getLogger(GraphLambdaFunction.class);
     protected static final ConcurrentMap<String, MiniGraph> graphModels = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
@@ -113,12 +112,12 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String SKILL = "skill";
     protected static final String SINK = ".sink";
     protected static final String RUN = "run";
-    protected static final String LIVE = "live";
     protected static final String TTL = "ttl";
     protected static final String MODEL_TTL = "model.ttl";
     protected static final String STATUS = "status";
     protected static final String HEADER = "header";
     protected static final String ERROR = "error";
+    protected static final String EXCEPTION = "exception";
     protected static final String CONTINUE = "continue";
     protected static final String INSTANTIATE = "instantiate";
     protected static final String DELETE = "delete";
@@ -135,11 +134,16 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String IF_TAG = "if:";
     protected static final String THEN_TAG = "then:";
     protected static final String ELSE_TAG = "else:";
+    protected static final String NEXT_TAG = "next:";
+    protected static final String DELAY_TAG = "delay:";
     protected static final String BEGIN = "begin";
     protected static final String INSPECT = "inspect";
     protected static final String DOT_DECISION = ".decision";
+    protected static final String DOT_DELAY = ".delay";
     private static final Set<String> RESERVED_PARAMETERS = Set.of(SKILL, MAPPING, STATEMENT, INPUT, OUTPUT, FEATURE,
-                                        EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE);
+                                    EXCEPTION, EXTENSION, STATUS, ERROR, DICTIONARY, FOR_EACH, CONCURRENCY, PURPOSE);
+    private static final AtomicLong loopInterval = new AtomicLong(-1);
+    private static final AtomicLong highFrequency = new AtomicLong(-1);
 
     protected GraphInstance getGraphInstance(String id) {
         var instance = graphInstances.get(id);
@@ -157,6 +161,26 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         } else {
             return node;
         }
+    }
+
+    protected long getLoopInterval() {
+        var interval = loopInterval.get();
+        if (interval <= 0) {
+            var config = AppConfigReader.getInstance();
+            interval = Math.max(100, util.str2long(config.getProperty("graph.max.loop.interval", "1000")));
+            loopInterval.set(interval);
+        }
+        return interval;
+    }
+
+    protected long getHighFrequency() {
+        var frequency = highFrequency.get();
+        if (frequency <= 0) {
+            var config = AppConfigReader.getInstance();
+            frequency = Math.max(2, util.str2long(config.getProperty("graph.node.high.frequency", "10")));
+            highFrequency.set(frequency);
+        }
+        return frequency;
     }
 
     protected boolean validGraphFileName(String str) {
@@ -293,7 +317,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected void resetNodes(String command, GraphInstance graphInstance) {
         var graph = graphInstance.graph;
         var stateMachine = graphInstance.stateMachine;
-        var nodes = util.split(command, ",; ");
+        var nodes = util.split(command, "[],; ");
         for (var name : nodes) {
             graphInstance.nodeSeen.remove(name);
             var node = graph.findNodeByAlias(name);
@@ -519,22 +543,25 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         var error = 0;
         for (var entry : statements) {
             var line = entry.trim().toLowerCase();
-            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG) || line.startsWith(RESET_TAG)) {
+            if (line.startsWith(IF_TAG) || line.startsWith(COMPUTE_TAG) ||
+                    line.startsWith(RESET_TAG) || line.startsWith(DELAY_TAG)) {
                 js++;
             } else if (line.startsWith(EXECUTE_TAG)) {
                 execute++;
                 js++;
-            } else if (!line.startsWith(MAPPING_TAG) && !line.equals(BEGIN) && !line.equals(END)) {
+            } else if (!line.startsWith(MAPPING_TAG) && !line.startsWith(NEXT_TAG) &&
+                    !line.equals(BEGIN) && !line.equals(END)) {
                 error++;
             }
         }
         if (js == 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must include 'IF:', 'COMPUTE:', 'EXECUTE:' or 'RESET:' statements");
+                    " must include 'IF:', 'COMPUTE:', 'EXECUTE:', 'RESET:' or 'DELAY:' statements");
         }
         if (error > 0) {
             throw new IllegalArgumentException(NODE_NAME + nodeName +
-                    " must use 'IF:', 'COMPUTE:', 'EXECUTE:', 'RESET:', 'MAPPING:', 'BEGIN' or 'END' keywords");
+                    " must use 'IF:', 'COMPUTE:', 'EXECUTE:', 'RESET:', " +
+                    "'MAPPING:', 'NEXT:', 'DELAY:', 'BEGIN' or 'END' keywords");
         }
         return execute;
     }
@@ -641,6 +668,16 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             }
         }
         return merged;
+    }
+
+    protected String getNext(String tag, String command) {
+        if (NEXT_TAG.equals(tag)) {
+            var names = util.split(command, " ,");
+            if (!names.isEmpty()) {
+                return names.getFirst();
+            }
+        }
+        return null;
     }
 
     private void mergeStatements(String route, String nodeName, String anotherNode,

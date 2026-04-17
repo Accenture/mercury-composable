@@ -7,10 +7,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> *Note*: Some version numbers may be skipped to align feature set with the Node.js version.
+---
+## Version 4.4.8, 4/16/2026
+
+### Added
+
+1. Added keywords "NEXT" and "DELAY" to graph.math and graph.js statement processing in MiniGraph
+2. Support of custom exception handler in MiniGraph
+3. Graph traversal loop detection
+4. Tutorial 12 and 13
+5. Unit tests to cover all tutorial 1 to 13
+
+### Removed
+
+The "live" parameter for "dry-run" of graph model is not longer relevant after code refactoring
+
+### Changed
+
+Streamlined graph.math, graph.js, graph.api.fetcher and graph.extension
 
 ---
-## Version 4.4.6, 4/15/2026
+## Version 4.4.7, 4/14/2026
+
+### Added
+
+Added Island node in tutorials
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Updated MiniGraph Playground UI with directional arrows to represent relationships
+2. Added Locale.US in the parsing of floating point numbers in telemetry to preserve behavior
+   for deployments in other geographies without overriding locale at JVM level
+
+---
+## Version 4.4.6, 4/13/2026
 
 ### Added
 

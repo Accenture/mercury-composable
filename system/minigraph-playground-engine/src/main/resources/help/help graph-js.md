@@ -39,8 +39,8 @@ statement[]=MAPPING: source -> target
 statement[]=EXECUTE: another-node
 ```
 
-A node cannot be executed twice
--------------------------------
+Node cannot be executed more than once
+--------------------------------------
 To avoid unintended looping, the system guarantees that a node, that has been "seen", is not executed again.
 
 The `reset` command clears the "seen" status and erases its result from the state machine. This is reserved
@@ -59,6 +59,8 @@ Optional properties
 for_each[]={map an array parameter for iterative statement execution}
 statement[]=BEGIN
 statement[]=END
+statement[]=NEXT: {next-node-name}
+statement[]=DELAY: {milliseconds}
 ```
 
 Execution
@@ -71,8 +73,8 @@ This process will override the natural graph traversal order and jump to a speci
 If the function returns "next" after evaluation of all statements, the natural graph traversal order
 will be preserved.
 
-Iterative Execution
--------------------
+Iterative Execution and Begin-End
+---------------------------------
 Using the optional `for_each` statement, you can tell the skill module to execute the statements iteratively.
 
 A "for_each" statement extracts the next array element from another array variable into a model variable.
@@ -91,6 +93,22 @@ When you have more than one JavaScript statement, a subsequent statement can use
 as its parameters.
 
 Each parameter is wrapped by a set of curly brackets.
+
+Override Graph Traversal
+------------------------
+Normally the next node is the one or more nodes that this node is connected to.
+If you want to tell system to jump to a specific "next-node", you can use the "NEXT:" syntax and put the name
+of the node to jump to.
+
+Deferred completion
+-------------------
+You can add an artificial delay to defer completion of the execution of this node. This is useful to simulate
+a slow service for performance test and to pause between retries.
+
+Next and Delay statements
+-------------------------
+It is a good practice to place the next or delay statement, if any, as last one in the block.
+However, the placement does not change the behavior because they will only be processed at the end.
 
 Limitation
 ----------

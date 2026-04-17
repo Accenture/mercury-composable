@@ -38,7 +38,7 @@
 }
 
 .clearBtn:hover {
-  background: rgba(239, 68, 68, 0.08);
+  background: var(--danger-08);
 }
 
 /* ── Item list (scrollable) ── */

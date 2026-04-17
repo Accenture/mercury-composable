@@ -203,6 +203,43 @@ If you check the application log, you will see the two fetchers are executed in 
            GET http://127.0.0.1:8085/api/mdm/profile/200, with [person_id], ttl=30000
 ```
 
+Create an island to hold data dictionary
+----------------------------------------
+Just like tutorial 3, you will create an island node to hold the data dictionary and provider nodes.
+
+```
+create node dictionary
+with type Island
+with properties
+skill=graph.island
+```
+
+Then you can connect the data dictionary nodes and provider node to it.
+
+```
+> connect root to dictionary with contains
+node root connected to dictionary
+> connect dictionary to person-name with data
+node dictionary connected to person-name
+> connect dictionary to person-address with data
+node dictionary connected to person-address
+> connect person-name to mdm-profile with provider
+node person-name connected to mdm-profile
+> connect person-address to mdm-profile with provider
+node person-address connected to mdm-profile
+> list connections
+root -[contains]-> dictionary
+root -[one]-> fetcher-1
+root -[two]-> fetcher-2
+dictionary -[data]-> person-address
+dictionary -[data]-> person-name
+fetcher-1 -[join]-> join
+fetcher-2 -[join]-> join
+person-address -[provider]-> mdm-profile
+person-name -[provider]-> mdm-profile
+join -[done]-> end
+```
+
 Export the graph model
 ----------------------
 You may save the graph model by exporting it.

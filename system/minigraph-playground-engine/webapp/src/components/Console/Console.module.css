@@ -30,7 +30,7 @@
 .controlButton {
     background: transparent;
     border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-sm);
     padding: 0.125rem 0.25rem;
     cursor: pointer;
     font-size: 1.125rem;
@@ -58,7 +58,7 @@
   flex: 1 1 auto;
   min-height: 150px;
   overflow-y: auto;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-mono-terminal);
   font-size: 0.875rem;
   font-weight: bold;
   line-height: 1.5;
@@ -84,7 +84,7 @@
   align-items: start;
   padding: 0.5rem;
   margin-bottom: 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   transition: background-color 0.15s;
   /* Establish a stacking context so the copy button can be positioned
      relative to this row without escaping the scroll container. */
@@ -113,16 +113,16 @@
 
 /* Large-payload download link — amber accent */
 .consoleMessageLargePayload {
-  background-color: rgba(245, 158, 11, 0.06);
-  outline: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: 4px;
+  background-color: var(--warning-06);
+  outline: 1px solid var(--warning-25);
+  border-radius: var(--radius-sm);
 }
 
 /* Mock-upload invitation row — amber accent (pairs with ⬇️ large-payload style) */
 .consoleMessageMockUpload {
-  background-color: rgba(245, 158, 11, 0.06);
-  outline: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: 4px;
+  background-color: var(--warning-06);
+  outline: 1px solid var(--warning-25);
+  border-radius: var(--radius-sm);
 }
 
 /* ── Upload-mock re-open button ───────────────────────────────────── */
@@ -135,11 +135,11 @@
   line-height: 1;
   align-self: start;
   font-weight: 600;
-  background-color: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 0.25rem;
+  background-color: var(--warning-10);
+  border: 1px solid var(--warning-30);
+  border-radius: var(--radius-sm);
   padding: 0.2rem 0.4rem;
-  color: rgba(245, 158, 11, 0.85);
+  color: var(--warning-85);
   opacity: 0;
   transition: opacity 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
@@ -151,14 +151,14 @@
 }
 
 .uploadMockButton:hover {
-  background-color: rgba(245, 158, 11, 0.2);
-  border-color: rgba(245, 158, 11, 0.6);
-  color: #fcd34d;
+  background-color: var(--warning-20);
+  border-color: var(--warning-60);
+  color: var(--warning-color);
 }
 
 .uploadMockButton:focus-visible {
   opacity: 1;
-  outline: 2px solid rgba(245, 158, 11, 0.8);
+  outline: 2px solid var(--warning-80);
   outline-offset: 2px;
 }
 
@@ -191,7 +191,7 @@
    */
   background-color: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0.2rem 0.4rem;
   color: rgba(255, 255, 255, 0.75);
 
@@ -224,7 +224,7 @@
  * in-row reinforcement only. */
 .copyButtonCopied {
   opacity: 1;
-  color: #86efac;
+  color: var(--code-text);
   border-color: rgba(134, 239, 172, 0.5);
 }
 
@@ -240,7 +240,7 @@
   font-weight: bold;
   background-color: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0.2rem 0.4rem;
   color: rgba(255, 255, 255, 0.75);
   opacity: 0;
@@ -256,12 +256,12 @@
 .sendToJsonPathButton:hover {
   background-color: rgba(34, 197, 94, 0.2);
   border-color: rgba(34, 197, 94, 0.6);
-  color: #86efac;
+  color: var(--code-text);
 }
 
 .sendToJsonPathButton:focus-visible {
   opacity: 1;
-  outline: 2px solid #22c55e;
+  outline: 2px solid var(--success-color);
   outline-offset: 2px;
 }
 
@@ -287,20 +287,20 @@
 }
 
 /* ── Message type colour overrides ─────────────────────────────── */
-.messageType-error .messageContent   { color: #fca5a5; }
-.messageType-info .messageContent    { color: #93c5fd; }
-.messageType-welcome .messageContent { color: #86efac; }
+.messageType-error .messageContent   { color: var(--error-text); }
+.messageType-info .messageContent    { color: var(--json-key); }
+.messageType-welcome .messageContent { color: var(--code-text); }
 
 /* ── JSON tree viewer ───────────────────────────────────────────── */
 .jsonViewWrapper {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-mono-terminal);
   font-size: 0.875rem;
   margin: 0.25rem 0;
 }
 
 .jsonContainer { background: transparent !important; padding: 0 !important; }
-.jsonLabel     { color: #93c5fd !important; }
-.jsonString    { color: #86efac !important; }
-.jsonNumber    { color: #fbbf24 !important; }
-.jsonBoolean   { color: #c084fc !important; }
-.jsonNull      { color: #94a3b8 !important; }
+.jsonLabel     { color: var(--json-key);    }
+.jsonString    { color: var(--json-string); }
+.jsonNumber    { color: var(--json-number); }
+.jsonBoolean   { color: var(--json-bool);   }
+.jsonNull      { color: var(--json-null);   }

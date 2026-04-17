@@ -36,6 +36,15 @@
     },
     {
       "types": [
+        "Island"
+      ],
+      "alias": "modules",
+      "properties": {
+        "skill": "graph.island"
+      }
+    },
+    {
+      "types": [
         "Root"
       ],
       "alias": "root",
@@ -57,6 +66,16 @@
       "target": "end"
     },
     {
+      "source": "modules",
+      "relations": [
+        {
+          "type": "contains",
+          "properties": {}
+        }
+      ],
+      "target": "addition"
+    },
+    {
       "source": "root",
       "relations": [
         {
@@ -65,6 +84,16 @@
         }
       ],
       "target": "compute"
+    },
+    {
+      "source": "root",
+      "relations": [
+        {
+          "type": "contains",
+          "properties": {}
+        }
+      ],
+      "target": "modules"
     }
   ]
 }

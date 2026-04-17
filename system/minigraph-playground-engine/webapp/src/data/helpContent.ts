@@ -67,10 +67,14 @@ export type HelpCategory = 'overview' | 'graph-model' | 'graph-skills' | 'instan
 
 /**
  * Display metadata for each category.
+ *
+ * `chipStripLabel` — if present, a non-interactive prefix label rendered
+ * inside the chip strip before the topic chips (e.g. "Chapters" for tutorials).
  */
 export interface HelpCategoryInfo {
-  id:    HelpCategory;
-  label: string;
+  id:             HelpCategory;
+  label:          string;
+  chipStripLabel?: string;
 }
 
 /**
@@ -83,7 +87,7 @@ export const HELP_CATEGORIES: ReadonlyArray<HelpCategoryInfo> = [
   { id: 'graph-model',    label: 'Graph Model' },
   { id: 'graph-skills',   label: 'Graph Skills' },
   { id: 'instance-model', label: 'Instance Model' },
-  { id: 'tutorials',      label: 'Tutorials' },
+  { id: 'tutorials',      label: 'Tutorials', chipStripLabel: 'Chapters' },
 ];
 
 /**
@@ -116,11 +120,30 @@ export function resolveCategory(key: string): HelpCategory {
 /**
  * Returns the ordered page sequence for a given category.
  * For 'overview', returns [''] (the single root page).
+ * For 'tutorials', returns topic keys in numeric order (1, 2 … 11).
  * For other categories, returns the alphabetically sorted topic keys.
  */
 export function getCategoryPages(categoryId: HelpCategory): ReadonlyArray<string> {
   if (categoryId === 'overview') return [''];
-  return HELP_TOPIC_KEYS.filter(key => resolveCategory(key) === categoryId);
+  const pages = HELP_TOPIC_KEYS.filter(key => resolveCategory(key) === categoryId);
+  if (categoryId === 'tutorials') {
+    return [...pages].sort((a, b) => {
+      const numA = parseInt(a.replace(/^tutorial\s+/, ''), 10);
+      const numB = parseInt(b.replace(/^tutorial\s+/, ''), 10);
+      return numA - numB;
+    });
+  }
+  return pages;
+}
+
+/**
+ * Returns the display label for a chip in the chip strip.
+ *
+ */
+export function getChipLabel(topic: string, category: HelpCategory): string {
+  if (topic === '') return 'Overview';
+  if (category === 'tutorials') return topic.replace(/^tutorial\s+/, '');
+  return topic;
 }
 
 /**

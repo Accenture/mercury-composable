@@ -191,7 +191,7 @@ Described in /api/graph/model/tutorial-10/286-8
 
 Deploy the graph model
 ----------------------
-To deploy the graph model, copy "/tmp/graph/tutorial-8.json" to your application's `main/resources/graph` folder.
+To deploy the graph model, copy "/tmp/graph/tutorial-10.json" to your application's `main/resources/graph` folder.
 You can then test the deployed model with a curl command.
 
 ```

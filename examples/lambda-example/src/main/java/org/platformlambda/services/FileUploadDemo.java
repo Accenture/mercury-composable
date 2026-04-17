@@ -16,11 +16,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @PreLoad(route="hello.upload")
-public class FileUploadDemo implements TypedLambdaFunction<AsyncHttpRequest, Object> {
+public class FileUploadDemo implements TypedLambdaFunction<AsyncHttpRequest, Mono<Object>> {
     private static final Logger log = LoggerFactory.getLogger(FileUploadDemo.class);
             
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+    public Mono<Object> handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         if (input.isValidStreams()) {
             // Multipart content may contain one or more files
             final List<String> streams = input.getStreamRoutes();

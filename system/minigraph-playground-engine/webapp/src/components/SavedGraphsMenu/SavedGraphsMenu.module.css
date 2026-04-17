@@ -12,7 +12,7 @@
 .hint {
   padding: 0.35rem 1rem 0.5rem;
   font-size: 0.7rem;
-  color: var(--warning-color, #f59e0b);
+  color: var(--warning-color);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -67,7 +67,7 @@
 .rowMeta {
   font-size: 0.68rem;
   color: var(--text-secondary);
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-mono-terminal);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -85,7 +85,7 @@
 .deleteBtn {
   background: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0.2rem 0.45rem;
   cursor: pointer;
   font-size: 0.72rem;
@@ -105,8 +105,8 @@
 }
 
 .deleteBtn:hover {
-  border-color: var(--error-color, #f87171);
-  color: var(--error-color, #f87171);
+  border-color: var(--error-color);
+  color: var(--error-color);
 }
 
 .loadBtn:focus-visible,

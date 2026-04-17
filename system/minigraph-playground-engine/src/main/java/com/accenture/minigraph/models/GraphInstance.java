@@ -35,6 +35,7 @@ public class GraphInstance {
     public final String graphId;
     public final MiniGraph graph = new MiniGraph();
     public final MultiLevelMap stateMachine = new MultiLevelMap();
+    public final ConcurrentMap<String, Visits> hits = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Boolean> nodeSeen = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Boolean> skillRun = new ConcurrentHashMap<>();
     public final AtomicBoolean complete = new AtomicBoolean(false);

@@ -68,8 +68,7 @@ class MultiPartFileUploadTest extends TestBase {
         req.setFileName(filename);
         req.setStreamRoute(streamId);
         // send the HTTP request using AsyncHttpClient's route "async.http.request"
-        EventEnvelope request = new EventEnvelope().setTo("async.http.request")
-                .setBody(req).setTrace("101", "UPLOAD /multipart/1").setFrom("unit.test");
+        EventEnvelope request = new EventEnvelope().setTo("async.http.request").setBody(req);
         EventEnvelope response = po.request(request, 8000).get();
         assert response != null;
         assertEquals(HashMap.class, response.getBody().getClass());

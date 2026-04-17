@@ -5,6 +5,7 @@ import {
   getHelpContent,
   resolveCategory,
   getCategoryPages,
+  getChipLabel,
   ORDERED_HELP_PAGES,
   HELP_CATEGORIES,
   type HelpCategory,
@@ -84,6 +85,12 @@ export default function HelpBrowser({ activeTopic, onNavigate, onClose, onToggle
   const activeCategory: HelpCategory = resolveCategory(activeTopic);
   const categoryPages = useMemo(() => getCategoryPages(activeCategory), [activeCategory]);
   const categoryTotal = categoryPages.length;
+
+  // Label rendered inside the chip strip before the topic chips (e.g. "Chapters").
+  const chipStripLabel = useMemo(
+    () => HELP_CATEGORIES.find(cat => cat.id === activeCategory)?.chipStripLabel ?? null,
+    [activeCategory]
+  );
 
   // Index within the GLOBAL page list (for cross-category scroll wrapping).
   const globalIndex = ORDERED_HELP_PAGES.indexOf(activeTopic);
@@ -173,9 +180,12 @@ export default function HelpBrowser({ activeTopic, onNavigate, onClose, onToggle
       {/* ── Scoped topic chips ──────────────────────────────────────── */}
       {categoryTotal > 1 && (
         <div className={styles.chipStrip} ref={chipStripRef}>
+          {chipStripLabel !== null && (
+            <span className={styles.chipStripLabel}>{chipStripLabel}</span>
+          )}
           {categoryPages.map(topic => {
             const isActive = topic === activeTopic;
-            const label    = topic === '' ? 'Overview' : topic;
+            const label    = getChipLabel(topic, activeCategory);
             return (
               <button
                 key={topic}

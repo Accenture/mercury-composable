@@ -56,9 +56,6 @@ public class GraphExtension extends GraphLambdaFunction {
         if (!ROUTE.equals(node.getProperty(SKILL))) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have skill - "+ROUTE);
         }
-        if ("true".equals(headers.get(LIVE))) {
-            stateMachine.setElement(nodeName + "." + LIVE, true);
-        }
         var graphId = node.getProperty(EXTENSION) instanceof String id? id : null;
         if (graphId == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have graph ID");
@@ -88,7 +85,7 @@ public class GraphExtension extends GraphLambdaFunction {
             }
         }
         callExtensionWithForkJoin(po, graphInstance, node, graphId, size);
-        return NEXT;
+        return nextPath(stateMachine, node);
     }
 
     @SuppressWarnings("unchecked")
@@ -160,15 +157,16 @@ public class GraphExtension extends GraphLambdaFunction {
                 log.info("Call extension {}, for each {}, parallel={}, ttl={}", extension,
                         parameterNames, batch.size(), timeout);
                 stateMachine.setElement(nodeName + "." + TARGET, extension);
-                doForkJoin(po, nodeName, stateMachine, batch, timeout);
+                doForkJoin(po, node, stateMachine, batch, timeout);
                 batch.clear();
             }
         }
     }
 
-    private void doForkJoin(PostOffice po, String nodeName, MultiLevelMap stateMachine,
+    private void doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
                             List<EventEnvelope> batch, long timeout)
                             throws ExecutionException, InterruptedException {
+        var nodeName = node.getAlias();
         var responses = po.request(batch, timeout, false).get();
         for (var response : responses) {
             stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
@@ -176,8 +174,7 @@ public class GraphExtension extends GraphLambdaFunction {
                 stateMachine.setElement(nodeName + "." + HEADER + "[]", response.getHeaders());
             }
             if (response.hasError()) {
-                stateMachine.setElement(nodeName + "." + ERROR, response.getError());
-                throw new IllegalArgumentException(String.valueOf(response.getError()));
+                setError(stateMachine, node, response);
             } else {
                 stateMachine.setElement(nodeName + "." + RESULT + "[]", response.getBody());
             }
@@ -230,14 +227,40 @@ public class GraphExtension extends GraphLambdaFunction {
                     stateMachine.setElement(nodeName + "." + HEADER, response.getHeaders());
                 }
                 if (response.hasError()) {
-                    stateMachine.setElement(nodeName + "." + ERROR, response.getError());
-                    sink.error(new IllegalArgumentException(String.valueOf(response.getError())));
+                    sink.success(setError(stateMachine, node, response));
                 } else {
                     stateMachine.setElement(nodeName + "." + RESULT, response.getBody());
                     var outputMapping = getEntries(node.getProperty(OUTPUT));
                     performFetcherOutputMapping(nodeName, stateMachine, outputMapping);
                     sink.success(NEXT);
                 }
+
         }));
+    }
+
+    private String setError(MultiLevelMap stateMachine, SimpleNode node, EventEnvelope response) {
+        var nodeName = node.getAlias();
+        stateMachine.setElement(nodeName + "." + ERROR, response.getError());
+        var errorHandler = node.getProperty(EXCEPTION);
+        if (errorHandler == null) {
+            stateMachine.setElement(OUTPUT_BODY, response.getBody());
+            stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
+            stateMachine.setElement(OUTPUT_NAMESPACE+STATUS, response.getStatus());
+            return NEXT;
+        } else {
+            return String.valueOf(errorHandler);
+        }
+    }
+
+    private String nextPath(MultiLevelMap stateMachine, SimpleNode fetcher) {
+        var nodeName = fetcher.getAlias();
+        var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
+        var resultError = stateMachine.getElement(nodeName + "." + ERROR);
+        var errorHandler = fetcher.getProperty(EXCEPTION);
+        if (processStatus instanceof Integer && resultError != null && errorHandler != null) {
+            return String.valueOf(errorHandler);
+        } else {
+            return NEXT;
+        }
     }
 }

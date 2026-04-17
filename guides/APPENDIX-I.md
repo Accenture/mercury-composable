@@ -38,7 +38,7 @@ precedence.
 | yaml.cron                                      | Config location                                                     | Scheduler   |
 | yaml.flow.automation                           | Config location. e.g. classpath:/flows.yaml                         | EventScript |
 | static.html.folder                             | classpath:/public/                                                  | Yes         |
-| spring.web.resources.static-locations          | (alias for static.html.folder)                                      | Yes*        |
+| spring.web.resources<br/>.static-locations     | (alias for static.html.folder)                                      | Yes*        |
 | spring.mvc.static-path-pattern                 | /**                                                                 | Yes*        |
 | show.env.variables                             | comma separated list of variable names                              | Optional    |
 | show.application.properties                    | comma separated list of property names                              | Optional    |
@@ -49,8 +49,8 @@ precedence.
 | trace.http.header                              | comma separated list.<br/>Default: "X-Trace-Id"                     | Optional    |
 | hsts.feature                                   | Default: true                                                       | Optional*   |
 | protect.info.endpoints                         | Default: false<br/>true to disable actuators                        | Optional*   |
-| application.feature.route.substitution         | Default: false                                                      | Optional    |
-| application.feature.topic.substitution         | Default: false                                                      | Optional    |
+| application.feature<br/>.route.substitution    | Default: false                                                      | Optional    |
+| application.feature<br/>.topic.substitution    | Default: false                                                      | Optional    |
 | kafka.replication.factor                       | 3                                                                   | Kafka       |
 | cloud.client.properties                        | e.g. classpath:/kafka.properties                                    | Connector   |
 | user.cloud.client.properties                   | e.g. classpath:/second-kafka.properties                             | Connector   |
@@ -75,8 +75,11 @@ precedence.
 | worker.instances.<br/>resilience.handler       | Maximum instances for `resilience.handler`<br/>(Default: 500)       | EventScript |
 | worker.instances.<br/>simple.exception.handler | Maximum instances for `simple.exception.handler`<br/>(Default: 250) | EventScript |
 | spring.boot.main                               | Default main class:<br/>org.platformlambda.rest.RestServer          | Optional*   |
-| oversize.http.response.header                  | Default false. Set response header size to 16 KB if true.           | Optional    |
-| serializer.null.transport                      | Default false. Set to true to enable transport.                     | Optional    |
+| oversize.http.response.header                  | Set response header size to 16 KB if true.<br/>Default=false        | Optional    |
+| serializer.null.transport                      | Set to true to enable transport.<br/>Default=false                  | Optional    |
+| graph.max.loop.interval                        | Interval to detect graph traversal loops.<br/>Default=1000          | Optional.   |
+| graph.node.high.frequency                      | Max visits for the same node per interval.<br/>Default=10           | Optional.   |
+
 
 *Note*: `oversize.http.response.header` should not be set. Use with caution due to potential security vulnerability.
 
