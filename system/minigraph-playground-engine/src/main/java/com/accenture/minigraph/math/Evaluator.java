@@ -16,7 +16,7 @@ public final class Evaluator {
         return v.asBoolean();
     }
 
-    private static Value evaluateValue(String expression, EvalContext ctx) {
+    public static Value evaluateValue(String expression, EvalContext ctx) {
         Parser parser = new Parser(expression, true /* strict JS '**' rule */);
         Expr ast = parser.parse();
         return eval(ast, ctx);

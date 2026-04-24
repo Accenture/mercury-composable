@@ -6,6 +6,7 @@ import org.jspecify.annotations.NonNull;
 public sealed interface Value permits NumberValue, BooleanValue, StringValue {
     double asDouble();
     boolean asBoolean();
+    String asString();
 
     static Value number(double d)   { return new NumberValue(d); }
     static Value bool(boolean b)    { return new BooleanValue(b); }
@@ -22,6 +23,11 @@ record NumberValue(double value) implements Value {
     @Override
     public boolean asBoolean() {
         return value != 0.0 && !Double.isNaN(value);
+    }
+
+    @Override
+    public String asString() {
+        return String.valueOf(value);
     }
 
     @NonNull
@@ -43,6 +49,11 @@ record BooleanValue(boolean value) implements Value {
         return value;
     }
 
+    @Override
+    public String asString() {
+        return String.valueOf(value);
+    }
+
     @NonNull
     @Override
     public String toString() {
@@ -62,6 +73,11 @@ record StringValue(String value) implements Value {
     public boolean asBoolean() {
         return value != null && !value.isEmpty();
     } // empty string is falsy
+
+    @Override
+    public String asString() {
+        return String.valueOf(value);   // null value is returned as "null"
+    }
 
     @NonNull
     @Override

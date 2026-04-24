@@ -58,12 +58,22 @@ and Integer uses 2 or 4 bytes).
 *Serialization of nested Map in a PoJo*: this is done using the GSON library. It is optimized
 for type matching. Integers are treated as Long numbers.
 
-If you want to enforce Integer or Long, please design a PoJo to fit your use case.
+If you want to enforce Integer or Long, please PoJo instead of untyped Map.
 
 However, floating point numbers (Float and Double) are rendered without type matching.
 
-For untyped numbers, you may use the convenient type conversion methods in the platform-core's
+For untyped numbers, you may also use the convenient type conversion methods in the platform-core's
 Utility class. For examples, util.str2int and util.str2long.
+
+Another approach is to use "Number.class" to extract integer or long value to avoid casting error.
+
+for example,
+```java
+if (kv instanceof Number n) {
+    long v1 = n.longValue();
+    int v2 = n.intValue();
+}
+```
 
 ## Input using Map or PoJo
 
@@ -90,7 +100,7 @@ For consistency, we have customized Spring Boot and Servlet serialization and ex
 
 ## Reactive Design
 
-Mercury uses the temporary local file system (`/tmp`) as an overflow area for events when the
+Mercury uses the temporary local file system (`/tmp/reactive`) as an overflow area for events when the
 consumer is slower than the producer. This event buffering design means that user application
 does not have to handle back-pressure logic directly.
 

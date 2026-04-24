@@ -25,6 +25,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.ByteBufFlux;
 import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.client.HttpClient;
@@ -54,6 +55,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -90,6 +92,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
     private static final String X_CONTENT_LENGTH = "x-content-length";
     private static final String USER_AGENT = "user-agent";
     private static final String USER_AGENT_NAME = "async-http-client";
+    private static final String BODY_TAG = "    body: ";
     private static final int DEFAULT_TTL_SECONDS = 30;  // 30 seconds
     /*
      * Some headers are ignored because they may interfere with the underlying HttpClient
@@ -464,28 +467,18 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 sb.append("    ").append(k).append(": ").append(v).append('\n'));
         Object body = request.getBody();
         if (body instanceof byte[] b) {
-            sb.append("    body: [").append(b.length).append(" bytes]\n");
+            sb.append(BODY_TAG+"[").append(b.length).append(" bytes]\n");
         } else if (body instanceof Map || body instanceof List) {
-            sb.append("    body: ")
+            sb.append(BODY_TAG)
               .append(SimpleMapper.getInstance().getMapper().writeValueAsString(body)).append('\n');
         } else if (body instanceof String text && !text.isEmpty()) {
-            sb.append("    body: ").append(text).append('\n');
+            sb.append(BODY_TAG).append(text).append('\n');
         }
-        log.debug(sb.toString());
-    }
-
-    private void logHttpResponse(EventEnvelope response, byte[] b) {
-        var sb = new StringBuilder();
-        sb.append("\n<<< ").append(response.getStatus()).append('\n');
-        response.getHeaders().forEach((k, v) ->
-                sb.append("    ").append(k).append(": ").append(v).append('\n'));
-        if (b != null && b.length > 0) {
-            sb.append("    body: ").append(Utility.getInstance().getUTF(b)).append('\n');
-        }
-        log.debug(sb.toString());
+        log.debug("{}", sb);
     }
 
     private class HttpResponseHandler {
+        private static final ExecutorService executor = Platform.getInstance().getVirtualThreadExecutor();
         private final Utility util = Utility.getInstance();
         private final CustomContentTypeResolver resolver = CustomContentTypeResolver.getInstance();
         private final EventEnvelope response = new EventEnvelope();
@@ -509,7 +502,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 var httpHeaders = httpResponse.responseHeaders();
                 httpHeaders.forEach(kv -> response.setHeader(kv.getKey(), kv.getValue()));
                 return buffer.asInputStream();
-            }).subscribe(stream -> {
+            }).subscribeOn(Schedulers.fromExecutor(executor)).subscribe(stream -> {
                 noContent.set(false);
                 if (input.getReplyTo() != null) {
                     String resContentType = resolver.getContentType(response.getHeader(CONTENT_TYPE));
@@ -622,6 +615,17 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             return  contentType != null && (
                     contentType.startsWith(APPLICATION_JSON) || contentType.startsWith(APPLICATION_XML) ||
                     contentType.startsWith(TEXT_PREFIX) || contentType.startsWith(APPLICATION_JAVASCRIPT));
+        }
+
+        private void logHttpResponse(EventEnvelope response, byte[] b) {
+            var sb = new StringBuilder();
+            sb.append("\n<<< ").append(response.getStatus()).append('\n');
+            response.getHeaders().forEach((k, v) ->
+                    sb.append("    ").append(k).append(": ").append(v).append('\n'));
+            if (b != null && b.length > 0) {
+                sb.append(BODY_TAG).append(Utility.getInstance().getUTF(b)).append('\n');
+            }
+            log.debug("{}", sb);
         }
     }
 }

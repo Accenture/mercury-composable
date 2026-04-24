@@ -7,6 +7,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class ExpressionEngineFullTest {
 
     @Test
+    void string_handling() {
+        ExpressionEngine engine = new ExpressionEngine();
+        assertEquals("3.0", engine.evaluateValue("10 % 3 + 2").asString());
+        assertEquals("true", engine.evaluateValue("10 > 3").asString());
+        assertEquals("hello world", engine.evaluateValue(" 'hello' + ' world' ").asString());
+    }
+
+    @Test
     void arithmetic_precedence_and_exponent_right_assoc() {
         ExpressionEngine engine = new ExpressionEngine();
         assertEquals(14.0, engine.evalNumber("2 + 3 * 4"), 1e-12);

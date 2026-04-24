@@ -5,7 +5,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>service-monitor</artifactId>
     <packaging>jar</packaging>
-    <version>4.4.8</version>
+    <version>4.4.9</version>
     <name>Presence monitor module</name>
 
     <parent>
@@ -37,7 +37,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.4</version>
+                <version>2025.0.5</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -48,13 +48,13 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>cloud-connector</artifactId>
-            <version>4.4.8</version>
+            <version>4.4.9</version>
         </dependency>
 
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.4.8</version>
+            <version>4.4.9</version>
         </dependency>
 
         <dependency>

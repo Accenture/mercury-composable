@@ -18,5 +18,9 @@ public final class ExpressionEngine {
         return Evaluator.evaluateBoolean(expr, ctx);
     }
 
+    public Value evaluateValue(String expr) {
+        return Evaluator.evaluateValue(expr, ctx);
+    }
+
     public EvalContext context() { return ctx; }
 }

@@ -5,7 +5,7 @@
 
     <groupId>org.platformlambda</groupId>
     <artifactId>minigraph-playground-engine</artifactId>
-    <version>4.4.8</version>
+    <version>4.4.9</version>
     <packaging>jar</packaging>
     <name>MiniGraph Playground Engine</name>
 
@@ -38,7 +38,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.4</version>
+                <version>2025.0.5</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -65,7 +65,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.4.8</version>
+            <version>4.4.9</version>
         </dependency>
 
         <dependency>
