@@ -58,7 +58,7 @@ and Integer uses 2 or 4 bytes).
 *Serialization of nested Map in a PoJo*: this is done using the GSON library. It is optimized
 for type matching. Integers are treated as Long numbers.
 
-If you want to enforce Integer or Long, please PoJo instead of untyped Map.
+If you want to enforce Integer or Long, please use PoJo instead of untyped Map.
 
 However, floating point numbers (Float and Double) are rendered without type matching.
 
