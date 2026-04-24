@@ -55,8 +55,8 @@ JSON. The serialization process is optimized for performance and payload size. A
 a small number that is declared as Long will be serialized as an Integer (Long uses 8 bytes
 and Integer uses 2 or 4 bytes).
 
-*Serialization of nested Map in a PoJo*: this is done using the GSON library. It is optimized
-for type matching. Integers are treated as Long numbers.
+*Serialization of PoJo to a Map*: this is done using the Google Gson library. It is optimized
+for type matching. To preserve precision, numbers (integer and long) are treated as `Long`.
 
 If you want to enforce Integer or Long, please use PoJo instead of untyped Map.
 
