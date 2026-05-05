@@ -35,6 +35,7 @@ import java.util.Map;
 public class GraphUserInterface implements LambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphUserInterface.class);
     private static final String GRAPH_COMMAND_SERVICE = GraphCommandService.ROUTE;
+    private static final String IN_SUFFIX = ".in";
     
     /**
      * This function will be rendered as a web-socket listener
@@ -67,6 +68,9 @@ public class GraphUserInterface implements LambdaFunction {
                     po.send(new EventEnvelope().setTo(GRAPH_COMMAND_SERVICE)
                                 .setBody(Map.of("in", route, "type", "open")));
                     log.info("Started {}, {}, ip={}, path={}, query={}, token={}", route, txPath, ip, path, query, token);
+                    // Surface session id to the client; inverse of id.replace('-','.')+".in" used by REST companion.
+                    String publicId = route.substring(0, route.length() - IN_SUFFIX.length()).replace('.', '-');
+                    po.send(txPath, Map.of("type", "session", "id", publicId));
                     break;
                 case WsEnvelope.CLOSE:
                     // the close event contains route and token for this websocket
