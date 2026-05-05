@@ -290,6 +290,40 @@ export function extractImportGraphName(raw: string): string | null {
  */
 export type MutationKind = 'node-mutation' | 'import-graph';
 
+export type CreateNodeTextResultStatus = 'accepted' | 'rejected' | 'error';
+
+export interface CreateNodeTextResult {
+  status: CreateNodeTextResultStatus;
+  alias: string | null;
+  message: string;
+}
+
+export const CREATE_NODE_CREATED_RE = /^node ([A-Za-z0-9_-]+) created$/;
+export const CREATE_NODE_ALREADY_EXISTS_RE = /^node ([A-Za-z0-9_-]+) already exists$/;
+export const ERROR_RE = /^ERROR: (.+)$/;
+
+export function parseCreateNodeTextResult(raw: string): CreateNodeTextResult | null {
+  const text = raw.trim();
+  if (text.startsWith('> ')) return null;
+
+  const created = text.match(CREATE_NODE_CREATED_RE);
+  if (created) {
+    return { status: 'accepted', alias: created[1], message: text };
+  }
+
+  const alreadyExists = text.match(CREATE_NODE_ALREADY_EXISTS_RE);
+  if (alreadyExists) {
+    return { status: 'rejected', alias: alreadyExists[1], message: text };
+  }
+
+  const error = text.match(ERROR_RE);
+  if (error) {
+    return { status: 'error', alias: null, message: text };
+  }
+
+  return null;
+}
+
 /**
  * Inspects a single raw WebSocket message string and returns whether it
  * represents a graph mutation that should trigger an auto-refresh.
@@ -338,4 +372,3 @@ export function detectMutation(raw: string): MutationKind | null {
 
   return null;
 }
-

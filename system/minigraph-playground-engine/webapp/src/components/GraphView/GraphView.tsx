@@ -18,6 +18,7 @@ import { transformGraphData, type GraphNodeData, type GraphEdgeData } from '../.
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
 import GraphToolbar from '../GraphToolbar/GraphToolbar';
+import GraphContextMenu from './GraphContextMenu';
 import styles from './GraphView.module.css';
 
 interface GraphViewProps {
@@ -33,12 +34,26 @@ interface GraphViewProps {
   isRefreshing?:   boolean;
   /** Callback for "Clip to Clipboard" from the node context menu. */
   onClipNode?:     (node: MinigraphNode, connections: MinigraphConnection[]) => void;
+  isConnected:     boolean;
+  supportsAuthoring?: boolean;
+  onCreateNode?:   (source: 'empty-graph' | 'pane-context-menu') => void;
 }
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
 const EMPTY_EDGES: Edge<GraphEdgeData>[]  = [];
 
-export default function GraphView({ graphData, graphName, onCopySuccess, onCopyError, onRenderError, isRefreshing = false, onClipNode }: GraphViewProps) {
+export default function GraphView({
+  graphData,
+  graphName,
+  onCopySuccess,
+  onCopyError,
+  onRenderError,
+  isRefreshing = false,
+  onClipNode,
+  isConnected,
+  supportsAuthoring = false,
+  onCreateNode,
+}: GraphViewProps) {
 
   // ── Context menu state ──────────────────────────────────────────────────
   const [contextMenu, setContextMenu] = useState<{
@@ -46,7 +61,9 @@ export default function GraphView({ graphData, graphName, onCopySuccess, onCopyE
     y: number;
     nodeAlias: string;
   } | null>(null);
+  const [paneMenu, setPaneMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const canCreateNode = Boolean(supportsAuthoring && onCreateNode && isConnected);
 
   // Dismiss context menu on outside click or Escape
   useEffect(() => {
@@ -69,6 +86,24 @@ export default function GraphView({ graphData, graphName, onCopySuccess, onCopyE
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [contextMenu]);
+
+  useEffect(() => {
+    if (!paneMenu) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPaneMenu(null);
+    };
+    const handleScrollOrResize = () => setPaneMenu(null);
+
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [paneMenu]);
 
   // Keep a stable ref so the useEffect below can fire the error callback without
   // needing onRenderError in the useMemo dependency array.
@@ -130,6 +165,21 @@ export default function GraphView({ graphData, graphName, onCopySuccess, onCopyE
         <span className={styles.emptyIcon}>🕸️</span>
         <span>No graph data yet.</span>
         <span>Run <strong>describe graph</strong> or <strong>export graph</strong> in the playground.</span>
+        {supportsAuthoring && onCreateNode && (
+          <>
+            <button
+              type="button"
+              className={styles.emptyCreateButton}
+              disabled={!isConnected}
+              onClick={() => onCreateNode('empty-graph')}
+            >
+              Create Node
+            </button>
+            {!isConnected && (
+              <span className={styles.emptyHint}>Connect WebSocket to create a node.</span>
+            )}
+          </>
+        )}
       </div>
     );
   }
@@ -161,11 +211,22 @@ export default function GraphView({ graphData, graphName, onCopySuccess, onCopyE
           // colorMode="dark" // enable for dark mode
           proOptions={{ hideAttribution: false }}
           onNodeContextMenu={(event, node) => {
-            if (!onClipNode) return;
             event.preventDefault();
+            event.stopPropagation();
+            setPaneMenu(null);
+            if (!onClipNode) return;
             setContextMenu({ x: event.clientX, y: event.clientY, nodeAlias: node.data.alias });
           }}
-          onPaneClick={() => setContextMenu(null)}
+          onPaneContextMenu={(event) => {
+            event.preventDefault();
+            if (!canCreateNode) return;
+            setContextMenu(null);
+            setPaneMenu({ x: event.clientX, y: event.clientY });
+          }}
+          onPaneClick={() => {
+            setContextMenu(null);
+            setPaneMenu(null);
+          }}
         >
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
           <Controls showInteractive={false} />
@@ -200,6 +261,14 @@ export default function GraphView({ graphData, graphName, onCopySuccess, onCopyE
             />
           </div>
         )}
+        <GraphContextMenu
+          open={paneMenu !== null}
+          x={paneMenu?.x ?? 0}
+          y={paneMenu?.y ?? 0}
+          canCreateNode={canCreateNode}
+          onCreateNode={() => onCreateNode?.('pane-context-menu')}
+          onClose={() => setPaneMenu(null)}
+        />
         {contextMenu && onClipNode && graphData && (
           <div
             ref={menuRef}

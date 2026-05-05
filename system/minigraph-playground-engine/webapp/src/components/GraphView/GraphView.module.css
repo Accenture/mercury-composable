@@ -37,6 +37,33 @@
   opacity: 0.4;
 }
 
+.emptyCreateButton {
+  appearance: none;
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.85rem;
+}
+
+.emptyCreateButton:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.emptyCreateButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.emptyHint {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 
 :global(.react-flow__node-default) {
   text-align: initial;

@@ -18,6 +18,7 @@ import { useGraphSaveName } from '../hooks/useGraphSaveName';
 import { useSavedGraphWorkflow } from '../hooks/useSavedGraphWorkflow';
 import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
 import { buildNodeCommand } from '../clipboard/commandBuilder';
+import { createGraphAuthoringExecutor } from '../graphActions/graphAuthoringExecutor';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
@@ -25,6 +26,8 @@ import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
+import GraphAuthoringModals from './GraphAuthoring/GraphAuthoringModals';
+import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
 import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
 import HelpBrowser from './HelpBrowser/HelpBrowser';
 import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateDialog';
@@ -43,7 +46,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, supportsAuthoring, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -299,11 +302,26 @@ export default function Playground({ config }: PlaygroundProps) {
   // ── Resolved graph display name ────────────────────────────────────────────
   // Priority: root node's "name" property (from graph data) → defaultName from
   // the save-name hook (lastSavedName → importedName → untitled-{n}).
-  const graphDisplayName = useMemo(() => {
+  const reliableGraphName = useMemo(() => {
     const rootNode = graphData?.nodes.find(n => n.types.includes('Root'));
     const rootName = typeof rootNode?.properties?.name === 'string' ? rootNode.properties.name : undefined;
-    return rootName ?? graphSaveName;
-  }, [graphData, graphSaveName]);
+    return rootName?.trim() ? rootName : null;
+  }, [graphData]);
+
+  const graphDisplayName = reliableGraphName ?? graphSaveName;
+
+  // ── Graph authoring ───────────────────────────────────────────────────────
+  const graphAuthoringExecutor = useMemo(
+    () => createGraphAuthoringExecutor(ws.sendRawText),
+    [ws.sendRawText],
+  );
+
+  const graphAuthoring = useGraphAuthoring({
+    bus,
+    connected: ws.connected,
+    graphData,
+    executor: graphAuthoringExecutor,
+  });
 
   // ── Saved graph workflow ──────────────────────────────────────────────────
   // Note: must be called AFTER useAutoGraphRefresh — both listen on graph.link
@@ -364,6 +382,16 @@ export default function Playground({ config }: PlaygroundProps) {
           onSuccess={handleUploadSuccess}
           onClose={handleCloseUploadModal}
           onError={handleUploadError}
+        />
+      )}
+
+      {supportsAuthoring && (
+        <GraphAuthoringModals
+          state={graphAuthoring.state}
+          validationErrors={graphAuthoring.validationErrors}
+          onDraftChange={graphAuthoring.updateDraft}
+          onSubmit={graphAuthoring.submit}
+          onClose={graphAuthoring.close}
         />
       )}
 
@@ -490,6 +518,9 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
             isGraphRefreshing={isRefreshing}
             onClipNode={supportsClipboard ? handleClipNode : undefined}
+            isConnected={ws.connected}
+            supportsAuthoring={supportsAuthoring}
+            onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser
