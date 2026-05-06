@@ -1,14 +1,14 @@
-# Epic 1 Spec v10: UI Node Creation For Minigraph Graph Surface
+# Epic 1 Spec: UI Node Creation For Minigraph Graph Surface
 
-**Status:** implementation-ready spec draft
+**Status:** final implementation spec
 
-**Decision:** implement UI-based create-node authoring as a frontend authoring layer over the existing Minigraph raw command path. v10 keeps the backend unchanged: validated UI draft -> legacy `create node` command text -> existing WebSocket command flow -> existing backend text result -> frontend best-effort result observation -> backend-sourced graph refresh.
+**Decision:** implement UI-based create-node authoring as a frontend authoring layer over the existing Minigraph raw command path. The backend remains unchanged: validated UI draft -> legacy `create node` command text -> existing WebSocket command flow -> existing backend text result -> frontend best-effort result observation -> backend-sourced graph refresh.
 
 ## 1. Product Requirement
 
 Minigraph users can create nodes without typing raw console commands.
 
-v10 supports two user-visible entry points:
+This feature supports two user-visible entry points:
 
 1. First node from no imported graph: when the Minigraph WebSocket is connected and the Graph tab has no loaded graph projection, the user can click `Create Node` in the Graph tab empty state.
 2. Additional node from an existing graph: when a graph is rendered, the user can right-click empty graph canvas and choose `Create Node` from a pane context menu.
@@ -153,13 +153,13 @@ Disconnect wording:
 
 Console interleaving rule:
 
-- v10 does not disable the left console while a modal submit is pending.
+- The left console remains enabled while a modal submit is pending.
 - Alias-matched created/rejected text is the only result treated as alias-specific.
 - Generic `ERROR: ...` has no command id or alias. While a create-node submit is pending, the hook must surface it only with cautious wording such as `Backend returned an error while this submit was pending: ...`; it must not say `node <alias> failed`.
 
 ## 3. Non-Goals
 
-v10 does not implement:
+This feature does not implement:
 
 - edit-node UI;
 - delete-node UI;
@@ -176,7 +176,7 @@ v10 does not implement:
 - replacement of the console command input;
 - authoring for JSON-Path playground.
 
-The design must leave a clean future path for edit/delete, but those actions are not in v10.
+The design must leave a clean future path for edit/delete, but those actions are outside the current scope.
 
 ## 4. Codebase Evidence
 
@@ -225,7 +225,7 @@ The classifier emits `graph.mutation` for existing raw mutation text: [classifie
 
 `WebSocketContext.send(...)` returns `false` unless the socket is open: [WebSocketContext.tsx:353](../src/contexts/WebSocketContext.tsx#L353).
 
-`useWebSocket.sendRawText(...)` currently ignores that boolean result: [useWebSocket.ts:306](../src/hooks/useWebSocket.ts#L306). v10 must make `sendRawText` return the boolean so authoring can surface send failure.
+`useWebSocket.sendRawText(...)` must return that boolean so authoring can surface send failure: [useWebSocket.ts:306](../src/hooks/useWebSocket.ts#L306).
 
 ### 4.6 Validation Source
 
@@ -288,7 +288,7 @@ GraphView create intent
 
 ### 6.3 Why Not REST CRUD
 
-A fresh project might add `POST /graph/nodes`. In this codebase, graph state is WebSocket-session-scoped. REST CRUD would require a new durable graph identity or a second session mapping. That is outside v10 and unnecessary for UI create-node entry points.
+A fresh project might add `POST /graph/nodes`. In this codebase, graph state is WebSocket-session-scoped. REST CRUD would require a new durable graph identity or a second session mapping. That is outside the current scope and unnecessary for UI create-node entry points.
 
 ## 7. Source Of Truth And Boundary Map
 
@@ -317,7 +317,7 @@ No frontend state is authoritative for node existence.
 | Browser -> backend | WebSocket string is the same raw command the console sends. |
 | `GraphUserInterface -> GraphCommandService` | Existing command event shape: `type`, `in`, `message`, `out`. |
 | Backend -> browser | Existing raw text: echo, created, already exists, `ERROR: ...`. |
-| Classifier -> ProtocolBus | Existing events remain; v10 adds frontend-only create-node text result event. |
+| Classifier -> ProtocolBus | Existing events remain; this feature adds a frontend-only create-node text result event. |
 | Trust boundary | Modal fields are untrusted. |
 
 ## 8. Contracts
@@ -437,7 +437,7 @@ export interface CreateNodeTextResultEvent extends ProtocolEventBase {
 
 `classifier.ts` emits this event from `parseCreateNodeTextResult(raw)`.
 
-A successful `node <alias> created` must still emit the existing `graph.mutation`. v10 adds an event; it does not replace mutation detection.
+A successful `node <alias> created` must still emit the existing `graph.mutation`. The create-node text result event is additive; it does not replace mutation detection.
 
 ### 8.6 Draft Persistence
 
@@ -556,7 +556,7 @@ Layout/CSS:
 - position the menu with `left: x` and `top: y` from the pane right-click `clientX/clientY`;
 - size the menu with viewport-safe constraints such as `width: min(240px, calc(100vw - 32px))`;
 - keep it above the graph canvas and below any modal/backdrop z-index;
-- do not center the pane context menu in v10; only the create-node modal is centered.
+- do not center the pane context menu; only the create-node modal is centered.
 
 ### 9.4 `NodeDialog`
 
@@ -571,7 +571,7 @@ Recommended defaults:
 - empty-graph source: alias `root`, node type `Root`;
 - pane-context-menu source: blank alias/type;
 
-These default field values are mandatory for the empty-state entry point so implementation stays deterministic. They are not forced values and do not bypass normal validation. Do not choose context-sensitive aliases such as `node-1` in v10.
+These default field values are mandatory for the empty-state entry point so implementation stays deterministic. They are not forced values and do not bypass normal validation. Do not choose context-sensitive aliases such as `node-1`.
 
 Modal behavior:
 
@@ -761,7 +761,7 @@ Rules:
 
 ### 10.3 Properties
 
-v10 supports flat scalar properties only.
+This feature supports flat scalar properties only.
 
 Property row rules:
 
@@ -839,7 +839,7 @@ The builder must have tests proving these inputs cannot create extra command lin
 
 Authorization:
 
-- v10 introduces no new authorization surface.
+- This feature introduces no new authorization surface.
 - The dev playground continues using current WebSocket session scope.
 - No cross-user or durable graph access is added.
 
@@ -852,7 +852,7 @@ Logging rule:
 
 ### 14.1 Debuggability
 
-Because v10 keeps raw text transport, there is no backend command id.
+Because authoring uses the existing raw text transport, there is no backend command id.
 
 Debug using:
 
@@ -877,7 +877,7 @@ Roll out behind `supportsAuthoring`.
 
 Release gates:
 
-- no backend file changes for v10;
+- no backend file changes;
 - console create/update/delete/import/export smoke still passes;
 - parser/classifier tests prove existing `graph.mutation` behavior remains;
 - empty-state create works with no imported graph while connected;
@@ -1070,7 +1070,7 @@ QA:
 Operator/support:
 
 - Debug by alias, source, send boolean, raw backend text, classifier event, and graph refresh result.
-- There is no backend correlation id in v10.
+- There is no backend correlation id.
 
 ## 19. Decision Log
 
@@ -1153,11 +1153,11 @@ Revisit if:
 **Step 6 - Contracts**
 
 - Boundary-crossing contracts: `NodeDraft`; raw `create node` command text; `CreateNodeTextResult`; `minigraph.createNode.textResult`; `supportsAuthoring`.
-- Shared constants / schema strategy: frontend parser regex constants and command builder/validation constants; no backend/frontend generated type sharing in v10.
+- Shared constants / schema strategy: frontend parser regex constants and command builder/validation constants; no backend/frontend generated type sharing in this feature.
 
 **Step 9 - Primitive fit and composition**
 
-- Under-use / over-use findings: structured backend correlation would be stronger but is out of v10 scope; ReactFlow pane event is the right primitive for canvas context menu; native/custom dialog must not own command lifecycle.
+- Under-use / over-use findings: structured backend correlation would be stronger but is outside the current scope; ReactFlow pane event is the right primitive for canvas context menu; native/custom dialog must not own command lifecycle.
 - Composed primitives: ReactFlow pane/node context-menu triggers, pointer-positioned custom menu, centered NodeDialog, WebSocket send boolean, timeout, ProtocolBus events, existing graph refresh.
 - Overlaps: pane vs node right-click; outside click vs menu click; Escape while sending; raw create result vs existing graph.mutation; timeout/result/disconnect race; late result after user edits draft.
 - Guardrails: separate menu state; opening one menu closes the other; alias result matching; close no-op while sending; timeout cleanup; stale pending submit cleared on edit.
@@ -1197,7 +1197,7 @@ Revisit if:
 
 - Implementation slices: protocol/transport; draft/validation/builder/hook; dialog UI; graph surface wiring.
 - Review questions / decision log:
-  - Do we accept best-effort alias/retained-command matching for v10?
+  - Do we accept best-effort alias/retained-command matching for this feature?
   - Do we accept no backend changes?
   - Do we accept timeout and disconnect while sending as unknown outcomes?
   - Do we accept flat scalar properties only?
@@ -1211,7 +1211,7 @@ Revisit if:
   - assumptions: WebSocket open creates empty graph, backend is authoritative, graphData may be stale, parser wording is exact, Minigraph-only authoring;
   - error/no-op feedback: disconnected open disabled, invalid input inline, send false inline, backend rejection inline, timeout unknown-outcome messaging, disconnect lock/refresh guidance, hard-refresh draft loss.
 - Cross-iteration regression:
-  - preserved v9 Plan B, ProtocolBus, backend-sourced refresh, no backend changes, console compatibility;
-  - strengthened v10 no-import first-node evidence using WebSocket open creating `MiniGraph`;
+  - preserved the frontend authoring layer, ProtocolBus, backend-sourced refresh, no backend changes, and console compatibility;
+  - strengthened no-import first-node evidence using WebSocket open creating `MiniGraph`;
   - strengthened pane context menu design using ReactFlow `onPaneContextMenu`;
-  - kept v9 rejection of structured backend protocol for current scope while documenting the future migration point.
+  - kept structured backend protocol out of the current scope while documenting the future migration point.
