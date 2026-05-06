@@ -28,7 +28,8 @@ is not registered in production.
 1. Open  ws://<host>/ws/graph/playground
 2. Read  first inbound frame: { "type": "session", "id": "ws-123456-7" }
 3. POST  /api/companion/{id}  with Content-Type: text/plain  and the command in the body
-4. Watch output appear on the WebSocket (HTTP response is just an ack)
+4. GET   /api/graph/session/{id}  when you want the current graph model as JSON
+5. Watch output appear on the WebSocket (HTTP response is just an ack)
 ```
 
 ### Request
@@ -78,6 +79,18 @@ curl -sS -X POST "http://localhost:8300/api/companion/${SESSION_ID}" \
 Output (the confirmation `"node root created"`) appears on the open
 WebSocket, not in the curl response.
 
+To check the current graph state for that same live session, use the
+live-session graph endpoint instead of sending `describe graph` just to fetch
+JSON:
+
+```bash
+curl -sS "http://localhost:8300/api/graph/session/${SESSION_ID}"
+```
+
+This returns the active graph model for the open Playground session as JSON.
+Use it when a script, test harness, or agent needs to inspect the current
+graph state directly.
+
 ---
 
 ## Command grammar (cheat sheet)
@@ -124,8 +137,9 @@ browser and the session id handy:
 >
 > Connect `root -> fetcher` with `fetch`, `fetcher -> mapper` with `map`,
 > `mapper -> end` with `done`. Then `instantiate graph` with
-> `int(42) -> input.body.person_id`, `run`, and `describe graph` so I can
-> see the result. If any command errors on the WebSocket, stop and ask
+> `int(42) -> input.body.person_id`, `run`, and then call
+> `GET /api/graph/session/{id}` to show me the current graph state. If any
+> command errors on the WebSocket, stop and ask
 > me before continuing.
 
 That prompt gives me enough to (a) build each node with the correct
