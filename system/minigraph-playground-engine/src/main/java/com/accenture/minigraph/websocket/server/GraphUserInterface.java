@@ -70,7 +70,8 @@ public class GraphUserInterface implements LambdaFunction {
                     log.info("Started {}, {}, ip={}, path={}, query={}, token={}", route, txPath, ip, path, query, token);
                     // Surface session id to the client; inverse of id.replace('-','.')+".in" used by REST companion.
                     String publicId = route.substring(0, route.length() - IN_SUFFIX.length()).replace('.', '-');
-                    po.send(txPath, Map.of("type", "session", "id", publicId));
+                    po.send(txPath, "session " + publicId + " started\n" +
+                            "Companion endpoint: /api/companion/" + publicId);
                     break;
                 case WsEnvelope.CLOSE:
                     // the close event contains route and token for this websocket

@@ -49,6 +49,7 @@ public class PostCompanionCommand implements TypedLambdaFunction<AsyncHttpReques
         if (!GraphCommandService.hasSession(id)) {
             throw new AppException(404, "No active session for id " + id);
         }
+        // Inverse of GraphUserInterface's public session id mapping.
         var route = id.replace('-', '.');
         var inRoute = route + ".in";
         var outRoute = route + ".out";
