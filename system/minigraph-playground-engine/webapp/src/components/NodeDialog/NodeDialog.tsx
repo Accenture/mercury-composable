@@ -102,7 +102,7 @@ export default function NodeDialog({
             onClick={onClose}
             disabled={sending}
           >
-            x
+            <span className={styles.buttonIcon} aria-hidden="true">ⓧ</span>
           </button>
         </header>
 
@@ -202,7 +202,7 @@ export default function NodeDialog({
                       disabled={controlsDisabled}
                       onClick={() => removeProperty(row.id)}
                     >
-                      x
+                      <span className={styles.buttonIcon} aria-hidden="true">ⓧ</span>
                     </button>
                   </div>
                 );

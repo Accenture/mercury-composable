@@ -52,9 +52,19 @@
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 auto;
-  height: 2rem;
+  font: inherit;
+  height: 2.25rem;
   justify-content: center;
-  width: 2rem;
+  line-height: 1;
+  padding: 0;
+  width: 2.25rem;
+}
+
+.buttonIcon {
+  display: block;
+  font-size: 1rem;
+  line-height: 1;
+  text-align: center;
 }
 
 .iconButton:hover:not(:disabled),
@@ -92,16 +102,19 @@
   color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: 500;
+  line-height: 1.25rem;
 }
 
 .input {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
+  box-sizing: border-box;
   color: var(--text-primary);
   font: inherit;
-  min-height: 2.25rem;
-  padding: 0.45rem 0.6rem;
+  height: 2.5rem;
+  line-height: 1.25rem;
+  padding: 0.5625rem 0.625rem;
   width: 100%;
 }
 
@@ -150,7 +163,11 @@
   align-items: flex-start;
   display: grid;
   gap: 0.625rem;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto;
+  grid-template-columns: 11rem minmax(0, 1fr) 2.25rem;
+}
+
+.removeButton {
+  margin-top: 1.5rem;
 }
 
 .message,
@@ -199,9 +216,11 @@
 .secondaryButton {
   appearance: none;
   border-radius: var(--radius-sm);
+  box-sizing: border-box;
   cursor: pointer;
   font-size: 0.875rem;
-  min-height: 2.25rem;
+  height: 2.25rem;
+  line-height: 1.25rem;
   padding: 0.45rem 0.8rem;
 }
 
@@ -234,7 +253,9 @@
 
 @media (max-width: 560px) {
   .propertyRow {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) 2.25rem;
+    padding-right: 2.75rem;
+    position: relative;
   }
 
   .propertyField {
@@ -242,8 +263,9 @@
   }
 
   .removeButton {
-    grid-column: 2;
-    grid-row: 1;
-    justify-self: end;
+    margin-top: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
   }
 }
