@@ -8,10 +8,7 @@ import styles from './ClipboardItem.module.css';
 
 interface ClipboardItemProps {
   item: ClipboardItemRecord;
-  connected: boolean;
-  onPasteToInput: (item: ClipboardItemRecord) => void;
   onRemove: (itemId: string) => void;
-  onInspect: (item: ClipboardItemRecord) => void;
   onOpenMenu: (itemId: string, x: number, y: number) => void;
   onCloseMenu: () => void;
 }
@@ -19,7 +16,6 @@ interface ClipboardItemProps {
 export function ClipboardItem({
   item,
   onRemove,
-  onInspect,
   onOpenMenu,
   onCloseMenu,
 }: ClipboardItemProps) {

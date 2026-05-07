@@ -7,7 +7,7 @@ interface ClipboardItemContextMenuProps {
   y: number;
   canPasteToInput: boolean;
   onPasteToInput: () => void;
-  onDescribe: () => void;
+  onInspect: () => void;
   onClose: () => void;
 }
 
@@ -25,7 +25,7 @@ export function ClipboardItemContextMenu({
   y,
   canPasteToInput,
   onPasteToInput,
-  onDescribe,
+  onInspect,
   onClose,
 }: ClipboardItemContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -107,9 +107,9 @@ export function ClipboardItemContextMenu({
         role="menuitem"
         type="button"
         className={styles.menuItem}
-        onClick={onDescribe}
+        onClick={onInspect}
       >
-        Describe
+        Inspect
       </button>
     </div>
   );

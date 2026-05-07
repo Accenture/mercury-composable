@@ -98,10 +98,7 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
             <ClipboardItem
               key={item.id}
               item={item}
-              connected={connected}
-              onPasteToInput={onPasteToInput}
               onRemove={handleRemove}
-              onInspect={handleInspect}
               onOpenMenu={handleOpenItemMenu}
               onCloseMenu={handleCloseItemMenu}
             />
@@ -113,7 +110,7 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
       {inspectItem && (
         <div className={styles.inspectPanel}>
           <div className={styles.inspectHeader}>
-            <span>Describe node {inspectItem.node.alias}</span>
+            <span>Inspect node {inspectItem.node.alias}</span>
             <button
               className={styles.inspectClose}
               onClick={() => setInspectItem(null)}
@@ -138,7 +135,7 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
           y={activeItemMenu.y}
           canPasteToInput={connected}
           onPasteToInput={() => handlePasteToInputFromMenu(activeMenuItem)}
-          onDescribe={() => handleInspect(activeMenuItem)}
+          onInspect={() => handleInspect(activeMenuItem)}
           onClose={handleCloseItemMenu}
         />
       )}
