@@ -1,69 +1,92 @@
 import type { ClipboardItemRecord } from '../../clipboard/db';
+import { writeClipboardItemDragData } from '../../clipboard/dnd';
+import CloseIcon from '../../icons/CloseIcon.svg?react';
+import { MinigraphNodeBody } from '../GraphView/MinigraphNodeBody';
+import { getMinigraphNodeShellStyle } from '../../utils/minigraphNodeTheme';
 import { formatRelativeTime } from '../../utils/timeFormat';
 import styles from './ClipboardItem.module.css';
 
 interface ClipboardItemProps {
   item: ClipboardItemRecord;
   connected: boolean;
-  onPaste: (item: ClipboardItemRecord) => void;
-  onRemove: () => void;
-  onInspect: () => void;
+  onPasteToInput: (item: ClipboardItemRecord) => void;
+  onRemove: (itemId: string) => void;
+  onInspect: (item: ClipboardItemRecord) => void;
+  onOpenMenu: (itemId: string, x: number, y: number) => void;
+  onCloseMenu: () => void;
 }
 
-export function ClipboardItem({ item, connected, onPaste, onRemove, onInspect }: ClipboardItemProps) {
-  const { node, connections, clippedAt, sourceLabel } = item;
-  const primaryType = node.types[0] ?? '—';
-  const skill = node.properties.skill ?? '—';
+export function ClipboardItem({
+  item,
+  onRemove,
+  onInspect,
+  onOpenMenu,
+  onCloseMenu,
+}: ClipboardItemProps) {
+  const { node, clippedAt, sourceLabel } = item;
 
-  // Truncated props summary
-  const propKeys = Object.entries(node.properties)
-    .filter(([k]) => k !== 'skill')
-    .map(([k, v]) => {
-      const val = typeof v === 'string' ? v : JSON.stringify(v);
-      return `${k}=${val && val.length > 30 ? val.slice(0, 30) + '…' : val}`;
-    });
-  const propsSummary = propKeys.length > 0 ? propKeys.join(', ') : '—';
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>) => {
+    onCloseMenu();
+    writeClipboardItemDragData(event.dataTransfer, item.id);
+  };
 
-  // Connection counts
-  const outgoing = connections.filter(c => c.source === node.alias).length;
-  const incoming = connections.filter(c => c.target === node.alias).length;
-  const connSummary = `${connections.length} (${outgoing} out, ${incoming} in)`;
+  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    onOpenMenu(item.id, event.clientX, event.clientY);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+      event.preventDefault();
+      const rect = event.currentTarget.getBoundingClientRect();
+      onOpenMenu(item.id, Math.round(rect.left + 8), Math.round(rect.top + 8));
+    }
+  };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.alias}>{node.alias}</div>
-      <div className={styles.meta}>Type: {primaryType}</div>
-      <div className={styles.meta}>Skill: {skill}</div>
-      <div className={styles.meta} title={propsSummary}>
-        <span className={styles.propsLine}>Props: {propsSummary}</span>
-      </div>
-      <div className={styles.meta}>Connections: {connSummary}</div>
-      <div className={styles.timestamp}>
-        Clipped {formatRelativeTime(clippedAt)} from {sourceLabel}
-      </div>
-      <div className={styles.actions}>
+    <div className={styles.item}>
+      <div className={styles.previewFrame}>
         <button
-          className={styles.pasteBtn}
-          onClick={() => onPaste(item)}
-          disabled={!connected}
-          aria-label={`Paste node ${node.alias}`}
-        >
-          Paste
-        </button>
-        <button
-          className={styles.inspectBtn}
-          onClick={onInspect}
-          aria-label={`Inspect node ${node.alias}`}
-        >
-          Describe
-        </button>
-        <button
-          className={styles.removeBtn}
-          onClick={onRemove}
+          type="button"
+          className={styles.removeChrome}
+          draggable={false}
           aria-label={`Remove node ${node.alias} from clipboard`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCloseMenu();
+            onRemove(item.id);
+          }}
         >
-          Remove
+          <CloseIcon className={styles.removeIcon} aria-hidden="true" focusable="false" />
         </button>
+
+        <div
+          className={styles.preview}
+          role="group"
+          draggable={true}
+          onDragStart={handleDragStart}
+          onContextMenu={handleContextMenu}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          aria-label={`Drag node ${node.alias} into the graph to paste`}
+        >
+          <div
+            className={styles.previewShell}
+            style={getMinigraphNodeShellStyle(node.types[0] ?? 'unknown')}
+          >
+            <MinigraphNodeBody
+              alias={node.alias}
+              nodeType={node.types[0] ?? 'unknown'}
+              properties={node.properties}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.metaBlock}>
+        <div className={styles.timestamp}>
+          Clipped {formatRelativeTime(clippedAt)} from {sourceLabel}
+        </div>
       </div>
     </div>
   );

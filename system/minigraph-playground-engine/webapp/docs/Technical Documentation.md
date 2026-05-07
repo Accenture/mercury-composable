@@ -2,7 +2,7 @@
 
 **Audience:** Engineers inheriting or maintaining this webapp  
 **Branch:** `feature/playground`  
-**Last updated:** April 16, 2026
+**Last updated:** May 7, 2026
 
 > **Note on line-number citations:** All `[Lxx]` anchors in this document are approximate and reflect the state of the codebase at the last documentation update. The codebase continues to grow; use the cited symbols and function names to locate code rather than relying on line numbers literally.
 
@@ -28,6 +28,7 @@
    - 3.13 [Save-Name Management](#313-save-name-management)
    - 3.14 [Protocol Kernel (Centralized Message Classification)](#314-protocol-kernel-centralized-message-classification)
    - 3.15 [Clipboard Panel](#315-clipboard-panel)
+   - 3.16 [UI Node Authoring (Create Node)](#316-ui-node-authoring-create-node)
 4. [Repository Layout](#4-repository-layout)
 5. [Architecture Overview](#5-architecture-overview)
 6. [Layer-by-Layer Walkthrough](#6-layer-by-layer-walkthrough)
@@ -43,6 +44,7 @@
    - 6.10 [Utilities](#610-utilities)
    - 6.11 [Navigation Bar](#611-navigation-bar)
    - 6.12 [Saved Graphs](#612-saved-graphs)
+   - 6.13 [Graph Authoring Layer](#613-graph-authoring-layer)
 7. [Key Engineering Decisions](#7-key-engineering-decisions)
 8. [Data & Message Flows](#8-data--message-flows)
    - 8.1 [User Sends a Command](#81-user-sends-a-command)
@@ -52,6 +54,7 @@
    - 8.5 [REST Upload Handshake](#85-rest-upload-handshake)
    - 8.6 [Mock-Data Upload Flow](#86-mock-data-upload-flow)
    - 8.7 [Save-Name Lifecycle](#87-save-name-lifecycle)
+   - 8.8 [Create Node UI Flow](#88-create-node-ui-flow)
 9. [State Ownership Map](#9-state-ownership-map)
 10. [Build, Dev & Deploy](#10-build-dev--deploy)
 11. [Extending the App](#11-extending-the-app)
@@ -77,6 +80,7 @@ The UI offers:
 - **Large payload handling** — payloads exceeding 64 KB are automatically fetched via REST and displayed inline
 - **Mock-data upload modal** — when the server responds to a command with an upload invitation, a modal dialog opens automatically so the user can paste, drag-and-drop, or browse a JSON file and POST it to the provided endpoint
 - **Clipboard panel** — a resizable sidebar (Minigraph only) for clipping nodes from the graph and pasting their create/update command templates into the console input; persisted in IndexedDB and synchronised across open tabs via BroadcastChannel
+- **UI node authoring** — Minigraph-only create-node workflow with an empty-graph entry point and a graph-pane context menu entry point; the modal serialises form values into the same raw text command grammar used by the console
 
 The built output (`dist/`) is copied into the Java application's `src/main/resources/public/` directory and served as a static SPA by the same Spring Boot server that provides the WebSocket and REST endpoints.
 
@@ -147,8 +151,8 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 - `src/components/Console/ConsoleMessage.tsx` [L98–L170](../src/components/Console/ConsoleMessage.tsx#L98) — JSX: `<JsonView>` for JSON, plain `<span>` for text, copy button, ➡️ send-to-JSON-Path button
 - `src/components/Console/ConsoleMessage.tsx` [L42–L47](../src/components/Console/ConsoleMessage.tsx#L42) — `events` looked up from `classificationMap.get(msgId)`; `isGraphLink` / `isLargePayload` / `isMockUpload` derived via `events.some(e => e.kind === ...)` instead of direct parser calls
 - `src/hooks/useWebSocket.ts` [L145–L167](../src/hooks/useWebSocket.ts#L145) — `sendCommand()`: sends text, pushes to history, handles special `load` command
-- `src/hooks/useWebSocket.ts` [L168–L191](../src/hooks/useWebSocket.ts#L168) — `handleKeyDown()`: ↑/↓ history navigation with draft-save/restore (`ENTER_HISTORY` / `EXIT_HISTORY` / `SET_HISTORY_INDEX` reducer actions)
-- `src/hooks/useWebSocket.ts` [L14–L32](../src/hooks/useWebSocket.ts#L14) — `LocalState` + `LocalAction` types; `draftCommand` field saves in-progress input on first ↑ press
+- `src/hooks/useWebSocket.ts` [L168–L191](../src/hooks/useWebSocket.ts#L168) — `handleKeyDown()`: ↑/↓ history navigation with in-progress command save/restore (`ENTER_HISTORY` / `EXIT_HISTORY` / `SET_HISTORY_INDEX` reducer actions)
+- `src/hooks/useWebSocket.ts` [L14–L32](../src/hooks/useWebSocket.ts#L14) — `LocalState` + `LocalAction` types; local command state saves in-progress input on first ↑ press
 - `src/hooks/useHistoryAutocomplete.ts` — `useHistoryAutocomplete(history, command)`: pure filtering + dedup in a single `useMemo`; returns `suggestions`, `isOpen`, `activeIndex`, `navigate`, `accept`, `onTab`, `dismiss`, `onCommandChange`
 - `src/components/CommandInput/CommandInput.tsx` [L5](../src/components/CommandInput/CommandInput.tsx#L5) — imports `useHistoryAutocomplete`; [L43–L71](../src/components/CommandInput/CommandInput.tsx#L43) — command palette open/close + outside-click handler; [L62](../src/components/CommandInput/CommandInput.tsx#L62) — auto-grow `useEffect` (always rows=1, height derived from `scrollHeight`); [L82–L175](../src/components/CommandInput/CommandInput.tsx#L82) — `handleKeyDown`: Tab → accept suggestion; Enter → accept or send; Escape → dismiss dropup; ↑/↓ → navigate dropup or history
 - `src/utils/commandSuggestions.ts` — `QuickstartEntry` now has `template: string` (text inserted on palette click) and optional `multiline?: boolean` (informational metadata indicating a multi-line command)
@@ -357,17 +361,17 @@ This architecture eliminates O(hooks × messages) repeated parsing and provides 
 
 | File | Purpose | Lines |
 |---|---|---|
-| `src/protocol/events.ts` | 12-kind discriminated union type (`ProtocolEvent`) | 113 |
-| `src/protocol/classifier.ts` | Pure `classifyMessage(msgId, raw)` → `ProtocolEvent[]` (12 rules) | 181 |
+| `src/protocol/events.ts` | Discriminated union type (`ProtocolEvent`) for graph, upload, docs, create-node, and lifecycle messages | 136 |
+| `src/protocol/classifier.ts` | Pure `classifyMessage(msgId, raw)` → `ProtocolEvent[]` rule pipeline | 220 |
 | `src/protocol/bus.ts` | `ProtocolBus` — lightweight typed event emitter (~45 lines) | 45 |
 | `src/protocol/useProtocolKernel.ts` | React hook: watermark + classify + memoised map + bus emission | 73 |
 | `src/protocol/index.ts` | Barrel re-export | 18 |
 
-**Event kinds:** `graph.link`, `graph.mutation`, `payload.large`, `upload.invitation`, `upload.contentPath`, `command.echo`, `command.helpOrDescribe`, `command.importGraph`, `docs.response`, `json.response`, `lifecycle`, `unclassified`.
+**Event kinds:** `graph.link`, `graph.mutation`, `minigraph.createNode.textResult`, `graph.exported`, `graph.export.failed`, `payload.large`, `upload.invitation`, `upload.contentPath`, `command.echo`, `command.helpOrDescribe`, `command.importGraph`, `docs.response`, `json.response`, `lifecycle`, `unclassified`.
 
 **Key code locations:**
 - `src/protocol/events.ts` [L103](../src/protocol/events.ts#L103) — `export type ProtocolEvent` discriminated union
-- `src/protocol/classifier.ts` [L27](../src/protocol/classifier.ts#L27) — `export function classifyMessage(msgId, raw)`: returns an array (one message may match multiple rules, e.g. a graph-link that is also a mutation response)
+- `src/protocol/classifier.ts` [L27](../src/protocol/classifier.ts#L27) — `export function classifyMessage(msgId, raw)`: returns an array (one message may match multiple rules, e.g. a create-node success is both `graph.mutation` and `minigraph.createNode.textResult`)
 - `src/protocol/bus.ts` [L16](../src/protocol/bus.ts#L16) — `export class ProtocolBus`: `on(kind, handler)` returns an unsubscribe function; `emit(event)` fires all registered handlers for that `event.kind`; `clear()` removes all listeners
 - `src/protocol/useProtocolKernel.ts` [L33](../src/protocol/useProtocolKernel.ts#L33) — hook entry; [L40](../src/protocol/useProtocolKernel.ts#L40) — watermark init effect; [L47](../src/protocol/useProtocolKernel.ts#L47) — `classificationMap = useMemo(...)` over the full messages array; [L56](../src/protocol/useProtocolKernel.ts#L56) — watermark-gated bus emission effect
 - `src/components/Playground.tsx` [L88](../src/components/Playground.tsx#L88) — `busRef = useRef(new ProtocolBus())`; [L94](../src/components/Playground.tsx#L94) — `useProtocolKernel({ messages, bus })`
@@ -405,6 +409,49 @@ The Minigraph playground includes a resizable **Clipboard** sidebar (enabled whe
 
 ---
 
+### 3.16 UI Node Authoring (Create Node)
+The Minigraph playground exposes a UI path for creating nodes without requiring the user to hand-write the `create node ...` command. The feature is enabled by `supportsAuthoring: true` in the Minigraph playground config and is not mounted for JSON-Path.
+
+**Entry points:**
+- **Empty graph state** — when no graph data is loaded or the loaded graph has no nodes, the Graph tab shows a "Create Node" button. This opens the modal with `alias = root` and `nodeType = Root` as editable starting values.
+- **Existing graph pane** — right-clicking empty space in the ReactFlow pane opens a pointer-positioned context menu with "Create Node". This opens the same modal with blank alias/type fields.
+
+**Authoring model:**
+- The modal edits create-node form state: `alias`, optional `nodeType`, flat single-line property rows, and the source entry point.
+- Frontend validation checks the supported authoring surface before any raw text is sent: alias required, token format, reserved aliases, duplicate alias against the current graph snapshot, property key requirements, single-line property values, and final command size.
+- On submit, `buildCreateNodeCommand()` serialises the form values into the backend's existing multiline command grammar:
+
+```text
+create node {alias}
+with type {nodeType}
+with properties
+key=value
+```
+
+There is deliberately no JSON command payload. The command sent over WebSocket is raw text, identical in shape to a console-entered command.
+
+**Result handling:**
+- The modal does not optimistically mutate `graphData`.
+- `useGraphAuthoring` sends through `GraphAuthoringExecutor`, which delegates to `useWebSocket.sendRawText()`. This avoids adding the command to console history or echoing an extra local command row.
+- The Protocol Kernel classifies backend text results into `minigraph.createNode.textResult` events using `parseCreateNodeTextResult()`.
+- Accepted result (`"node {alias} created"`) closes the modal. Rejected duplicate result (`"node {alias} already exists"`) and generic `ERROR: ...` responses keep the modal open and show the backend message.
+- A 10-second timeout returns the modal to editing with an "outcome unknown" message; disconnect while open locks the fields and asks the user to refresh/check the graph before retrying.
+
+**Key code locations:**
+- `src/config/playgrounds.ts` — `supportsAuthoring: true` enables the feature for Minigraph only
+- `src/components/Playground.tsx` — creates `GraphAuthoringExecutor`, owns `useGraphAuthoring`, renders `GraphAuthoringModals`, and threads `onCreateNode` to `RightPanel`
+- `src/components/RightPanel/RightPanel.tsx` — forwards `supportsAuthoring`, `isConnected`, and `onCreateNode` to `GraphView`
+- `src/components/GraphView/GraphView.tsx` — renders the empty-state create button and the pane context-menu trigger
+- `src/components/GraphView/GraphContextMenu.tsx` — pointer-positioned menu for pane-level graph actions
+- `src/components/GraphAuthoring/useGraphAuthoring.ts` — create-node lifecycle state machine, validation invocation, submit timer, ProtocolBus result correlation, and disconnect handling
+- `src/components/GraphAuthoring/GraphAuthoringModals.tsx` — maps hook state to modal props
+- `src/components/NodeDialog/NodeDialog.tsx` — presentational modal for editing the create-node form
+- `src/graphActions/*` — pure form types, row helpers, validation, command builder, and executor adapter
+- `src/utils/messageParser.ts` — `parseCreateNodeTextResult()`
+- `src/protocol/classifier.ts` / `src/protocol/events.ts` — `minigraph.createNode.textResult` event
+
+---
+
 ## 4. Repository Layout
 
 ```
@@ -435,8 +482,8 @@ webapp/
 │   │   ├── useHistoryAutocomplete.ts  # History-based autocomplete for CommandInput dropup
 │   │   └── useAutocomplete.ts    # Template-based autocomplete (dormant — not currently wired to CommandInput)
 │   ├── protocol/                  # ★ Protocol Kernel — centralised message classification
-│   │   ├── events.ts             # ProtocolEvent discriminated union (14 event kinds incl. graph.exported, graph.export.failed)
-│   │   ├── classifier.ts         # classifyMessage() pure function (12 rules)
+│   │   ├── events.ts             # ProtocolEvent discriminated union (incl. create-node, graph export, upload events)
+│   │   ├── classifier.ts         # classifyMessage() pure function
 │   │   ├── bus.ts                # ProtocolBus typed event emitter
 │   │   ├── useProtocolKernel.ts  # React hook: watermark + classify + map + emit
 │   │   ├── index.ts              # Barrel re-export
@@ -444,6 +491,13 @@ webapp/
 │   │       ├── classifier.test.ts  # Golden transcript tests
 │   │       ├── bus.test.ts         # Bus unit tests
 │   │       └── fixtures/           # 12 JSON fixture files covering all event kinds
+│   ├── graphActions/              # ★ Create-node authoring helpers (form state → validation → raw command)
+│   │   ├── graphAuthoringExecutor.ts # Adapter boundary over useWebSocket.sendRawText()
+│   │   ├── minigraphCommandBuilder.ts# Serialises form state to multiline create-node command text
+│   │   ├── nodeAuthoringTypes.ts  # Create-node form / PropertyRow / source types
+│   │   ├── propertyRows.ts        # Default form values + property row id helpers
+│   │   ├── validation.ts          # Frontend validation for supported authoring surface
+│   │   └── __tests__/
 │   ├── clipboard/                 # ★ Clipboard module (IndexedDB + BroadcastChannel)
 │   │   ├── db.ts                 # IndexedDB schema + CRUD helpers
 │   │   ├── channel.ts            # BroadcastChannel wrapper for cross-tab sync
@@ -461,18 +515,23 @@ webapp/
 │   │   ├── RightPanel/           # Tab switcher (payload/preview/graph/graph-data)
 │   │   ├── Console/              # Message list + ConsoleMessage renderer
 │   │   ├── CommandInput/         # Text input + send button
-│   │   ├── GraphView/            # ReactFlow canvas + NodeTypes + ErrorBoundary
+│   │   ├── GraphAuthoring/       # Create-node lifecycle hook wrapper + modal mount
+│   │   ├── GraphView/            # ReactFlow canvas + NodeTypes + context menus + ErrorBoundary
 │   │   ├── GraphDataView/        # Raw JSON viewer for graph model
 │   │   ├── GraphToolbar/         # Graph name display + copy toolbar for graph panel
 │   │   ├── GraphSaveButton/      # Inline save-form button in header
 │   │   ├── SavedGraphsMenu/      # Dropdown list of saved graph bookmarks
-│   │   │   ├── MockUploadModal/      # Modal dialog for mock-data JSON upload
+│   │   ├── MockUploadModal/      # Modal dialog for mock-data JSON upload
+│   │   ├── NodeDialog/           # Create-node modal (presentational form editor)
 │   │   ├── ClipboardSidebar/     # Resizable clipboard panel (ClipboardSidebar + ClipboardItem + ClipboardDuplicateDialog)
 │   │   ├── HelpBrowser/          # Bundled help panel renderer (react-markdown)
 │   │   ├── PayloadEditor/        # Textarea + validation + SampleButtons
 │   │   └── NavMenu/              # Generic accessible dropdown menu
+│   ├── icons/
+│   │   ├── CloseIcon.svg         # Local SVG imported via ?react for close/delete controls
+│   │   └── TerminalPromptIcon.svg
 │   └── utils/
-│       ├── messageParser.ts      # ★ Message classification & pattern matching (extractGraphExportSuccess, detectGraphExportFailure)
+│       ├── messageParser.ts      # ★ Message classification & pattern matching (incl. create-node text results)
 │       ├── localHelpCommand.ts   # resolveBundledHelpTopic — pure local-help resolver
 │       ├── graphTransformer.ts   # Backend JSON → ReactFlow nodes + edges (BFS layout, cycle detection, orphan segregation, back-edge routing)
 │       ├── graphTypes.ts         # TypeScript interfaces + type guard
@@ -527,6 +586,7 @@ Each Playground instance:
   ├── useSavedGraphs        ← localStorage bookmark CRUD
   ├── useGraphSaveName      ← bus: command.importGraph → save-form pre-fill name
   ├── useClipboardContext   ← IndexedDB items + clipNode + confirmReplace
+  ├── useGraphAuthoring     ← create-node modal lifecycle + raw command submit + result correlation
   │
   ├── LeftPanel
   │   ├── Console           ← message list (ConsoleMessage per row)
@@ -535,11 +595,12 @@ Each Playground instance:
   │
   ├── RightPanel (tabbed: payload / graph / graph-data; receives graphName)
   │   ├── PayloadEditor     ← textarea + validation (JSON-Path only)
-  │   ├── GraphView         ← ReactFlow canvas (receives graphName; onClipNode wired when supportsClipboard)
+  │   ├── GraphView         ← ReactFlow canvas (receives graphName; clip/create-node context actions)
   │   ├── GraphDataView     ← raw JSON tree of graph model (receives graphName)
   │   └── HelpBrowser       ← bundled help panel (resizable overlay — not a tab)
   │
   ├── MockUploadModal       ← native <dialog>; JSON paste / drop / browse; POST
+  ├── GraphAuthoringModals  ← create-node modal mount (NodeDialog)
   │
   └── ClipboardSidebar      ← conditional third panel (only when supportsClipboard && clipboardOpen)
 
@@ -554,6 +615,7 @@ Each Playground instance:
                                     ├── useLargePayloadDownload.on('payload.large')
                                     ├── useAutoMockUpload.on('upload.invitation')
                                     ├── useGraphSaveName.on('command.importGraph')
+                                    ├── useGraphAuthoring.on('minigraph.createNode.textResult')
                                     └── useWebSocket.on('upload.contentPath')  [when bus provided]
 ```
 
@@ -591,6 +653,9 @@ interface PlaygroundConfig {
   storageKeySavedGraphs?: string;  // present → enables saved-graph bookmarks
   supportsUpload?:       boolean;  // present → enables REST upload handshake
   supportsClipboard?:    boolean;  // true → enables node clip/paste sidebar (Minigraph only)
+  supportsHelp?:         boolean;  // true → enables bundled help panel
+  supportsAuthoring?:    boolean;  // true → enables create-node UI authoring (Minigraph only)
+  storageKeyHelpTopic?:  string;   // localStorage key for the last help topic
   tabs:                  RightTab[]; // ordered list of right-panel tabs to show
 }
 ```
@@ -608,6 +673,8 @@ The file also exports shared runtime constants used across the app:
 The file also exports `SAMPLE_DATA: Record<string, string>` — a set of quick-load JSON/XML payloads for the `PayloadEditor`. Key format: `"<type>_<label>"` where the type prefix (`json` or `xml`) groups buttons by row and the label becomes button text (underscores become spaces). Adding a new entry causes a new button to appear automatically in the `PayloadEditor`.
 
 > **Maintainer tip:** To add a new playground, add one object to `PLAYGROUND_CONFIGS`. The route, nav link, connection dot, localStorage namespace, and right-panel tabs are all derived automatically.
+
+`supportsAuthoring` should be enabled only for a backend that accepts the Minigraph multiline command grammar. The UI authoring layer does not define a new protocol; it serialises to raw command text and sends it through the existing WebSocket command path.
 
 ---
 
@@ -644,10 +711,10 @@ A thin delegation layer that reads its slot from the context and adds purely loc
 
 - **Command input + history** via a local `useReducer` (not shared — intentionally resets on remount)
 - **Auto-scroll** via a `consoleRef` and a `useEffect` watching `messages`
-- **History navigation** with ↑/↓ arrow key handling; saves and restores the in-progress draft when entering/exiting history mode
+- **History navigation** with ↑/↓ arrow key handling; saves and restores the in-progress command when entering/exiting history mode
 - **`sendCommand()`**: sends the command, pushes to history, and — for the special `load` command — also sends the payload as a second WebSocket message
 - **Two-step upload handshake**: a `pendingUploadRef` is armed by `uploadPayload()` ([L272](../src/hooks/useWebSocket.ts#L272)). When a `ProtocolBus` is provided via the optional `bus?` prop ([L40](../src/hooks/useWebSocket.ts#L40)), the hook subscribes to `upload.contentPath` events ([L194](../src/hooks/useWebSocket.ts#L194)) for responsive detection. Otherwise, a legacy `useEffect` watches messages for the `extractUploadPath` pattern ([L230](../src/hooks/useWebSocket.ts#L230)) and fires the `fetch` POST.
-- **`sendRawText(text)`** ([L286](../src/hooks/useWebSocket.ts#L286)): sends without echoing to history, used by automation hooks for silent commands like `describe graph`
+- **`sendRawText(text)`** ([L286](../src/hooks/useWebSocket.ts#L286)): sends without echoing to history. Used by automation hooks for silent commands like `describe graph` and by the create-node authoring executor for modal-submitted raw command text. Returns `false` when the socket is not open, allowing callers to keep their UI state instead of assuming the send succeeded.
 
 ---
 
@@ -674,6 +741,7 @@ Key responsibilities:
 | Modal trigger element | `useRef<HTMLElement \| null>(null)` — captures `document.activeElement` before open; `.focus()` restored on close via `setTimeout` |
 | Successful upload paths | `useState<Set<string>>(new Set())` — keyed by POST path; drives ✅ badge on invitation rows; session-only (cleared with `clearMessages`) |
 | Graph display name | `graphDisplayName = useMemo(...)` — resolves root node's `name` property → `graphSaveName` fallback; threaded as `graphName` prop to `RightPanel` → `GraphView` / `GraphDataView` → `GraphToolbar` |
+| Graph authoring | `createGraphAuthoringExecutor(ws.sendRawText)` + `useGraphAuthoring({ bus, connected, graphData, executor })`; modal state rendered through `GraphAuthoringModals`; `openCreateNode` threaded to `RightPanel` → `GraphView` |
 | Graph save-form name | `useGraphSaveName(storageKey, bus)` — provides `defaultName`, `setLastSavedName`, `resetName`; see §3.13 |
 | Deferred graph export | `pendingSaveRef = useRef<PendingSave | null>(null)` where `PendingSave = { graphName, timeoutId }` — armed when connected save is sent; confirmed by `graph.exported` (name-matched), rejected by `graph.export.failed`, timeout (10 s), or disconnect |
 | Deferred JSON-Path send | `pendingJsonTransferRef = useRef<{ wsPath, json } | null>(null)` — last-write-wins mailbox; overwritten on each send while JSON-Path is `'connecting'`; consumed by a `useEffect` watching the slot once `phase === 'connected'` |
@@ -719,7 +787,9 @@ Key responsibilities:
 
 `useGraphData` normalizes the persisted tab value against the current `tabs` array before `RightPanel` renders. This prevents legacy localStorage entries from older UI versions from blanking the panel after a tab is removed. Example: an old Minigraph value of `preview` is migrated to `graph` because Minigraph now exposes only `graph` and `graph-data`.
 
-The four possible tabs:
+When `supportsAuthoring` is enabled, `RightPanel` forwards `isConnected` and `onCreateNode` into `GraphView`. The right panel does not own authoring state; it only passes the graph-tab affordance down to the renderer.
+
+The three possible tabs:
 
 | Tab key | Component | When shown |
 |---|---|---|
@@ -791,6 +861,18 @@ Displays a resolved `graphName` prop prominently (falls back to "Untitled"). Nod
 
 When `onClipNode` is wired (i.e. `supportsClipboard` is true in the playground config), right-clicking a node opens a context menu with a "Clip to Clipboard" option. This calls `onClipNode(node, connections)` which is threaded from `Playground.tsx` → `RightPanel` → `GraphView`.
 
+#### `src/components/GraphView/GraphView.tsx` — Create-node entry points
+
+When `supportsAuthoring`, `onCreateNode`, and `isConnected` are all truthy, the graph view exposes create-node actions:
+- Empty graph: the empty state renders a "Create Node" button. Clicking it calls `onCreateNode('empty-graph')`.
+- Existing graph: right-clicking the pane calls `onPaneContextMenu`, records `event.clientX` / `event.clientY`, and opens `GraphContextMenu` at the pointer location. Clicking "Create Node" calls `onCreateNode('pane-context-menu')`.
+
+The node context menu remains reserved for clipboard actions. Pane-level create-node and node-level clipboard clipping are separate menus so a right-click on a node never accidentally opens a create-node flow.
+
+#### `src/components/GraphView/GraphContextMenu.tsx`
+
+A lightweight, pointer-positioned menu for graph-pane actions. It focuses its first item on open, closes on outside pointer down or Escape, and does not trap focus. It is intentionally not centered like a modal; the `x`/`y` coordinates come from the user’s right-click.
+
 #### `src/components/GraphView/GraphViewErrorBoundary.tsx`
 
 A class-based error boundary that resets when its `key` prop changes. `GraphView` passes a `boundaryKey` derived from `graphData.nodes.map(n => n.alias)` — a corrected graph after a previous render failure renders cleanly without a page reload.
@@ -803,13 +885,13 @@ This layer centralises message classification so that hooks subscribe to typed e
 
 #### `src/protocol/events.ts` — Event type definitions
 
-A 12-kind discriminated union type `ProtocolEvent`. Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize`, `apiPath`, and `filename` — the last path segment of `apiPath` with `.json` appended, reserved for a future download action). `ProtocolEventKind` is the union of all `kind` string literals.
+A discriminated union type `ProtocolEvent`. Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize`, `apiPath`, and `filename` — the last path segment of `apiPath` with `.json` appended, reserved for a future download action). Create-node result correlation uses `CreateNodeTextResultEvent` with `kind: 'minigraph.createNode.textResult'`, `status`, `alias`, and the raw backend message. `ProtocolEventKind` is the union of all `kind` string literals.
 
 #### `src/protocol/classifier.ts` — Pure classification function
 
-`classifyMessage(msgId: number, raw: string): ProtocolEvent[]` ([L27](../src/protocol/classifier.ts#L27)) returns an **array** because a single message may match multiple rules (e.g. a graph-link that is also a mutation response). The 12 rules are applied in order; Rule 12 (`unclassified` at [L175](../src/protocol/classifier.ts#L175)) fires only when no other rule matched.
+`classifyMessage(msgId: number, raw: string): ProtocolEvent[]` ([L27](../src/protocol/classifier.ts#L27)) returns an **array** because a single message may match multiple rules (e.g. `"node root created"` is both a `graph.mutation` and a `minigraph.createNode.textResult`). The fallback `unclassified` rule fires only when no other rule matched.
 
-The classifier delegates to `messageParser.ts` predicates (`extractGraphApiPath`, `extractLargePayloadLink`, `extractMockUploadPath`, `extractUploadPath`, `isHelpOrDescribeCommand`, `detectMutation`, `extractImportGraphName`, `isGraphLinkMessage`, `isMarkdownCandidate`, `tryParseJSON`) — it adds no new parsing logic, only orchestrates existing parsers into a single classification pass.
+The classifier delegates to `messageParser.ts` predicates (`extractGraphApiPath`, `extractLargePayloadLink`, `extractMockUploadPath`, `extractUploadPath`, `isHelpOrDescribeCommand`, `detectMutation`, `parseCreateNodeTextResult`, `extractImportGraphName`, `isGraphLinkMessage`, `isMarkdownCandidate`, `tryParseJSON`) — it adds no new parsing logic, only orchestrates existing parsers into a single classification pass.
 
 #### `src/protocol/bus.ts` — Typed event emitter
 
@@ -896,6 +978,7 @@ The low-level classification engine for WebSocket messages. These functions are 
 | `isMockUploadMessage(raw)` | True for `"You may upload … -> POST /api/mock/..."` upload invitations |
 | `isHelpOrDescribeCommand(raw)` | True for `"> help ..."` and `"> describe <non-graph>"` echoes |
 | `detectMutation(raw)` | Returns `'node-mutation'`, `'import-graph'`, or `null` |
+| `parseCreateNodeTextResult(raw)` | Parses create-node backend text into `{status, alias, message}` for modal result correlation |
 | `extractGraphApiPath(raw)` | Regex extracts `/api/graph/model/{id}` |
 | `extractUploadPath(raw)` | Regex extracts `/api/json/content/{id}` (JSON-Path upload handshake) |
 | `extractMockUploadPath(raw)` | Regex extracts `/api/mock/{id}` from the mock-upload invitation |
@@ -904,7 +987,7 @@ The low-level classification engine for WebSocket messages. These functions are 
 **`detectMutation` matching rules** (important to understand for maintenance):
 
 ```
-'import-graph'   if lower includes 'graph model imported as draft'
+'import-graph'   if lower includes the backend import-graph success phrase
 'node-mutation'  if lower includes ' -> ' AND 'removed'         (connection delete)
 'node-mutation'  if lower.startsWith('node ') AND:
                     includes ' created'
@@ -1030,6 +1113,54 @@ See §3.13 for the full feature description and all code locations.
 
 ---
 
+### 6.13 Graph Authoring Layer
+
+The create-node UI is split into a pure domain layer, a lifecycle hook, and presentational components.
+
+#### `src/graphActions/*` — Pure authoring helpers
+
+This folder is intentionally independent of React. It contains:
+- `nodeAuthoringTypes.ts` — create-node form model, `PropertyRow`, and the source union (`'empty-graph' | 'pane-context-menu'`)
+- `propertyRows.ts` — deterministic default form values and row IDs used only for React rendering/error keys
+- `validation.ts` — frontend validation for the supported authoring surface; keeps the token rules aligned with backend name validation and checks final command size against `MAX_BUFFER`
+- `minigraphCommandBuilder.ts` — serialises valid form values into raw multiline Minigraph command text
+- `graphAuthoringExecutor.ts` — a thin interface and production adapter over `sendRawText`
+
+The builder is the single serialisation boundary. UI components should never concatenate the backend command directly.
+
+#### `src/components/GraphAuthoring/useGraphAuthoring.ts`
+
+Owns the create-node state machine:
+- `closed`
+- `open/editing`
+- `open/sending`
+
+It keeps the current form values, validation errors, the pending submit metadata (`alias`, `command`, `sentAt`), the backend/server message, and a `connectionLost` flag. It validates before building, builds before sending, and sends through `GraphAuthoringExecutor.execute(command)`.
+
+Result matching is best-effort and text-based: the hook subscribes to `bus.on('minigraph.createNode.textResult')` and matches accepted/rejected events by alias. This works because the backend already returns stable text responses for create-node outcomes:
+- `node {alias} created` → accepted
+- `node {alias} already exists` → rejected
+- `ERROR: ...` → error while a submit is pending
+
+The hook does not mutate `graphData` directly. Graph refresh is delegated to the existing auto-refresh path, because the accepted backend message also classifies as `graph.mutation`.
+
+Disconnect handling: a connected→disconnected transition clears the pending timer, keeps the dialog mounted, disables all fields, and shows a refresh/check-graph message.
+
+#### `src/components/NodeDialog/NodeDialog.tsx`
+
+A presentational modal that edits the create-node form and delegates submit/close/change intents upward. Important UI details:
+- The modal uses a fixed overlay element, not a native `<dialog>`, so pointer events are absorbed before underlying `react-resizable-panels` handles can drag.
+- Escape and backdrop click close only while not sending.
+- When a property row is added, focus moves to the new row's key input.
+- Remove-property and close controls use a local `CloseIcon.svg` imported through `?react`; CSS controls the hover/focus states, not the SVG itself.
+- When `lockReason === 'disconnected'`, all editable controls are disabled and the dialog shows the connection-lost message from the hook.
+
+#### `src/components/GraphAuthoring/GraphAuthoringModals.tsx`
+
+The mount adapter between hook state and modal props. It converts hook state into the modal's `lockReason` (`'sending'`, `'disconnected'`, or `null`) and returns `null` when the authoring state is closed.
+
+---
+
 ## 7. Key Engineering Decisions
 
 ### 7.1 WebSocket Context Above the Router
@@ -1130,7 +1261,21 @@ The hook has two distinct code paths:
 
 **Classify-once, emit-to-many:** Because `classifyMessage` is a pure function and `useProtocolKernel` classifies each message exactly once, all downstream hooks receive the same event objects. This prevents subtle bugs where two hooks would classify the same message differently (e.g. due to regex flag differences or parser updates that landed in one hook but not another).
 
-**Ref-wrapping for stable subscriptions:** Automation hooks read mutable state through refs (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, `onAutoPinRef`) so their bus subscription callbacks never close over stale values. This is critical because the `bus.on()` subscription runs only once (the bus reference never changes), so the callback must be able to read current state without being a React dependency.
+**Ref-wrapping for stable subscriptions:** Automation hooks read mutable state through refs (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, callback refs) so their bus subscription callbacks never close over stale values. This is critical because the `bus.on()` subscription runs only once (the bus reference never changes), so the callback must be able to read current state without being a React dependency.
+
+---
+
+### 7.12 Create-Node UI Uses the Existing Raw Command Protocol
+
+**Decision:** The create-node UI serialises form state into the existing multiline Minigraph command grammar and sends it with `sendRawText()`. It does not introduce a JSON command API.
+
+**Why:** The backend already owns command semantics in `GraphCommandService`. Reusing the command grammar keeps the UI authoring path behaviorally aligned with the console path and avoids a second protocol that would need separate backend validation, parsing, and error handling.
+
+**Single serialization boundary:** `minigraphCommandBuilder.ts` is the only file that turns form state into raw command text. `NodeDialog` edits form values only; `useGraphAuthoring` validates and calls the builder; the executor sends the final string.
+
+**No optimistic graph mutation:** The frontend waits for the backend text result and lets `useAutoGraphRefresh` fetch the updated graph after the accepted response classifies as `graph.mutation`. This avoids trying to locally mirror backend graph rules.
+
+**Custom overlay instead of native dialog:** `NodeDialog` uses a fixed overlay element to absorb pointer events before underlying `react-resizable-panels` handles can drag. A native `<dialog>` backdrop was not sufficient for this interaction in the existing panel layout.
 
 ---
 
@@ -1331,6 +1476,84 @@ WS echo: "> import graph from other-graph"
 
 ---
 
+### 8.8 Create Node UI Flow
+
+```
+Entry point A: empty graph state
+  GraphView renders "Create Node"
+  → user clicks button
+  → onCreateNode('empty-graph')
+  → useGraphAuthoring.openCreateNode()
+      create default form values for 'empty-graph'
+        alias = "root"
+        nodeType = "Root"
+        properties = [empty row]
+
+Entry point B: existing graph pane
+  User right-clicks empty ReactFlow pane
+  → GraphView.onPaneContextMenu(event)
+      event.preventDefault()
+      setPaneMenu({ x: event.clientX, y: event.clientY })
+  → GraphContextMenu renders at pointer position
+  → user clicks "Create Node"
+  → onCreateNode('pane-context-menu')
+  → useGraphAuthoring.openCreateNode()
+      create default form values for 'pane-context-menu'
+        alias = ""
+        nodeType = ""
+        properties = [empty row]
+
+User edits modal fields
+  → NodeDialog reports the updated form values
+  → useGraphAuthoring stores the latest form values
+      clears validation errors and server message
+
+User clicks Create Node
+  → useGraphAuthoring.submit()
+      validate form values with current graph data
+        checks alias, node type, flat property rows, duplicate alias, command budget
+      buildCreateNodeCommand(formValues)
+        create node {alias}
+        with type {nodeType}
+        with properties
+        key=value
+      executor.execute(command)
+        → ws.sendRawText(command)
+        → ctx.send(wsPath, command)
+      state.phase = "sending"
+      pendingSubmit = { alias, command, sentAt }
+      start 10 s timeout
+
+Backend response arrives over WebSocket
+  → WebSocketContext dispatches MESSAGE_RECEIVED
+  → useProtocolKernel.classifyMessage()
+      "node root created"
+        → graph.mutation
+        → minigraph.createNode.textResult { status: "accepted", alias: "root" }
+
+Accepted result
+  → useGraphAuthoring bus handler matches alias
+  → clear timeout
+  → close modal
+  → useAutoGraphRefresh sees graph.mutation
+  → sends silent "describe graph"
+  → graph.link response updates pinnedGraphPath
+  → useGraphData fetches and renders the updated graph
+
+Rejected/error result
+  → useGraphAuthoring clears pendingSubmit
+  → state.phase = "editing"
+  → serverMessage shown in NodeDialog
+  → user can edit and resubmit
+
+Disconnect while modal is open
+  → useGraphAuthoring detects connected → disconnected
+  → clear timeout
+  → connectionLost = true
+  → all fields/buttons disabled except close/cancel
+  → message tells the user to refresh/check graph before trying again
+```
+
 ## 9. State Ownership Map
 
 | State | Owner | Persistence | Notes |
@@ -1354,6 +1577,10 @@ WS echo: "> import graph from other-graph"
 | `clipboardOpen` | `useLocalStorage` in `Playground` | `localStorage` | Key `'clipboard-sidebar-open'`; persists sidebar open/closed state |
 | Duplicate dialog state | `useState` in `Playground` | Memory only | `null` = closed; non-null = `{ pendingItem, existingItem }` |
 | Graph display name | `useMemo` in `Playground` | Memory only | Derived: root node `name` property → `graphSaveName` fallback; threaded as `graphName` prop |
+| Graph authoring state | `useState` in `useGraphAuthoring` | Memory only | Closed/open modal state, form values, phase, pending submit, server message, connection-lost flag |
+| Graph authoring validation errors | `useState` in `useGraphAuthoring` | Memory only | Field-keyed errors; cleared on form edit and accepted submit |
+| Graph authoring submit timer | `useRef` in `useGraphAuthoring` | Memory only | 10-second timeout while a create-node submit is pending |
+| Property row focus refs | `useRef` in `NodeDialog` | Memory only | Focuses the new key input after Add Property; not persisted or sent |
 | Graph data | `useState` in `useGraphData` | Memory only | |
 | Right panel tab | `useLocalStorage` in `useGraphData` | `localStorage` | Keyed per playground; normalized against the current `tabs` array before render so removed legacy values are migrated to a valid tab |
 | Is refreshing | `useState` in `useGraphData` | Memory only | |
@@ -1461,6 +1688,17 @@ The Protocol Kernel's `classifier.ts` calls `detectMutation()` internally, so no
 5. Add golden transcript test cases in `src/protocol/__tests__/classifier.test.ts`
 6. Subscribe to the new event kind in the appropriate hook via `bus.on('new.kind', handler)`
 
+### Extend the create-node UI surface
+
+1. Add the new field to the create-node form model in `src/graphActions/nodeAuthoringTypes.ts`
+2. Initialise it in the default form-value helper in `propertyRows.ts`
+3. Add frontend validation in `validation.ts`
+4. Update `buildCreateNodeCommand()` in `minigraphCommandBuilder.ts` to serialise it into the backend's accepted command grammar
+5. Render/edit the field in `NodeDialog.tsx`
+6. Add or update `graphActions/__tests__` coverage for validation and command serialization
+
+Do not add backend-command string concatenation inside `NodeDialog` or `useGraphAuthoring`; keep `minigraphCommandBuilder.ts` as the single serialization boundary.
+
 ---
 
 ## 12. Pitfalls & Gotchas
@@ -1478,7 +1716,7 @@ The ring buffer drops old messages. Always identify pinned/processed messages by
 Without this guard, `"Graph instance created"` and `"Root node created because..."` trigger false-positive auto-refreshes. Do not remove the prefix check. See §3.5 and §6.10.
 
 ### P5 — `sendRawText` must be used for silent commands, not `sendCommand`
-`sendCommand` pushes to history and echoes the command — the echo would trigger `useAutoHelpNavigate`'s `describe` guard and open the help panel unexpectedly. `sendRawText` bypasses all that. See §7.5.
+`sendCommand` pushes to history and echoes the command — the echo would trigger `useAutoHelpNavigate`'s `describe` guard and open the help panel unexpectedly. `sendRawText` bypasses all that. Create-node UI authoring also uses `sendRawText`; keep checking its boolean return so the modal can remain open when the socket is unavailable. See §7.5 and §7.12.
 
 ### P6 — The centralised watermark in `useProtocolKernel` must initialise before the emission effect
 The watermark init effect ([L40](../src/protocol/useProtocolKernel.ts#L40)) must run *before* the bus emission effect ([L56](../src/protocol/useProtocolKernel.ts#L56)) at mount. React guarantees effects in a component run in declaration order on the first render, so declaring the watermark init first works. Merging them into a single effect would process historical messages as new events. See §7.4.
@@ -1502,12 +1740,21 @@ The upload invitation is plain text, so `isMarkdownCandidate` returns `true` for
 The `docs.response` classification rule in `classifier.ts` ([L155](../src/protocol/classifier.ts#L155)) excludes echoes, graph-links, mock-upload invitations, large-payload notices, JSON responses, and lifecycle messages. If a new message type is added that is plain text, it must also be excluded from `docs.response` to prevent it from being stolen as an auto-pin target. See §6.8 and §6.9.
 
 ### P13 — Bus subscription callbacks must read mutable state through refs
-Because `bus.on()` registers a callback only once (the bus `useRef` identity never changes), any React state read inside the callback would be stale after subsequent renders. All automation hooks use ref-wrapping (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, `onAutoPinRef`) to access current values. Adding a new bus subscriber that reads state directly from closure will produce stale-closure bugs. See §7.11.
+Because `bus.on()` registers a callback only once (the bus `useRef` identity never changes), any React state read inside the callback would be stale after subsequent renders. All automation hooks use ref-wrapping (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, callback refs) to access current values. Adding a new bus subscriber that reads state directly from closure will produce stale-closure bugs. See §7.11.
 
 ### P14 — `classificationMap` identity changes on every new message
 The `classificationMap` is a `useMemo` that re-derives when `messages` changes. Components that receive it as a prop will see a new `Map` reference on every new WebSocket message. This is intentional — React Compiler handles memoisation — but avoid using `classificationMap` as a `useEffect` dependency without wrapping the effect in additional guards, as it will fire on every message.
 
 ### P15 — Never allow saves while disconnected
 `useSavedGraphs` stores only the graph **name**, not the graph data. A bookmark without a matching server-side `{name}.json` export file cannot be loaded — `import graph from {name}` will fail after reconnect. `useSavedGraphWorkflow.handleSaveGraph` guards against disconnected calls with an early-return error toast; `GraphSaveButton` enforces `disabled={disabled || !connected}` at the UI level. If you add any new path that calls `saveGraph(name)` directly, ensure the caller is always connected first. See §3.10 and §6.12.
+
+### P16 — Keep create-node serialization out of UI components
+`NodeDialog` must stay a typed form editor. If a future field is added, update the form model, validation, and `buildCreateNodeCommand()` together. String-building command text in JSX or in event handlers will bypass validation, command-size checks, and tests. See §6.13 and §7.12.
+
+### P17 — Create-node result matching is text-based and alias-scoped
+`useGraphAuthoring` closes the modal only when a `minigraph.createNode.textResult` accepted/rejected event matches the pending alias. If backend success/error wording changes, update `parseCreateNodeTextResult()` and its classifier tests. Do not make the hook infer success from graph refresh alone; graph refresh is a downstream side effect, not submit confirmation. See §3.16 and §8.8.
+
+### P18 — The create-node modal must block panel resizing underneath
+The fixed overlay's `onPointerDown` prevents underlying `react-resizable-panels` handles from receiving drag gestures while the modal is open. If the modal structure changes, verify that resize handles under the overlay cannot move. See §6.13.
 
 ---

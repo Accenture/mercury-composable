@@ -22,6 +22,13 @@ export interface GraphMutationEvent extends ProtocolEventBase {
   mutationType: 'node-mutation' | 'import-graph';
 }
 
+export interface CreateNodeTextResultEvent extends ProtocolEventBase {
+  kind: 'minigraph.createNode.textResult';
+  status: 'accepted' | 'rejected' | 'error';
+  alias: string | null;
+  message: string;
+}
+
 export interface LargePayloadEvent extends ProtocolEventBase {
   kind: 'payload.large';
   apiPath: string;
@@ -111,6 +118,7 @@ export interface UnclassifiedEvent extends ProtocolEventBase {
 export type ProtocolEvent =
   | GraphLinkEvent
   | GraphMutationEvent
+  | CreateNodeTextResultEvent
   | GraphExportedEvent
   | GraphExportFailedEvent
   | LargePayloadEvent
