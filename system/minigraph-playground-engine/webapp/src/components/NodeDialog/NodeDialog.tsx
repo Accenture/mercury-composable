@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { NodeDraft } from '../../graphActions/nodeAuthoringTypes';
 import { createPropertyRow } from '../../graphActions/propertyRows';
 import { getValidationErrorKeyForProperty } from '../../graphActions/validation';
+import CloseIcon from '../../icons/CloseIcon.svg?react';
 import styles from './NodeDialog.module.css';
 
 interface NodeDialogProps {
@@ -29,38 +30,54 @@ export default function NodeDialog({
   onSubmit,
   onClose,
 }: NodeDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const aliasRef = useRef<HTMLInputElement>(null);
+  const propertyKeyRefs = useRef(new Map<string, HTMLInputElement>());
+  const pendingFocusPropertyIdRef = useRef<string | null>(null);
   const sending = phase === 'sending';
   const disconnected = lockReason === 'disconnected';
   const controlsDisabled = sending || disconnected;
 
-  // Native dialog gives us modal focus behavior; the hook still controls whether
-  // Escape/backdrop close is allowed for the current phase.
+  // The overlay is a real fixed element, not a native dialog backdrop, so it
+  // reliably absorbs pointer events before underlying resize handles can drag.
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      aliasRef.current?.focus();
-    }
-    return () => {
-      if (dialog.open) dialog.close();
+    if (!open) return;
+    aliasRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      if (!sending) onClose();
     };
-  }, [open]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, open, sending]);
 
-  const handleCancel = useCallback((event: React.SyntheticEvent<HTMLDialogElement>) => {
+  useEffect(() => {
+    const rowId = pendingFocusPropertyIdRef.current;
+    if (!rowId) return;
+
+    const input = propertyKeyRefs.current.get(rowId);
+    if (!input) return;
+
+    input.focus();
+    pendingFocusPropertyIdRef.current = null;
+  }, [draft.properties]);
+
+  const handleOverlayPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleOverlayClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (!sending) onClose();
   }, [onClose, sending]);
 
-  // Backdrop clicks target the <dialog> element itself. Inner panel clicks are
-  // stopped below so normal form interaction never closes the modal.
-  const handleBackdropClick = useCallback((event: React.MouseEvent<HTMLDialogElement>) => {
-    if (event.target === dialogRef.current && !sending) {
-      onClose();
-    }
-  }, [onClose, sending]);
+  const stopPanelPointer = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  }, []);
 
   const updateDraft = useCallback((patch: Partial<NodeDraft>) => {
     onDraftChange({ ...draft, ...patch });
@@ -73,6 +90,15 @@ export default function NodeDialog({
     });
   }, [draft, onDraftChange]);
 
+  const addProperty = useCallback(() => {
+    const nextRow = createPropertyRow();
+    pendingFocusPropertyIdRef.current = nextRow.id;
+    onDraftChange({
+      ...draft,
+      properties: [...draft.properties, nextRow],
+    });
+  }, [draft, onDraftChange]);
+
   const removeProperty = useCallback((rowId: string) => {
     const nextRows = draft.properties.filter((row) => row.id !== rowId);
     onDraftChange({
@@ -81,16 +107,22 @@ export default function NodeDialog({
     });
   }, [draft, onDraftChange]);
 
+  if (!open) return null;
+
   return (
-    <dialog
-      ref={dialogRef}
-      className={styles.dialog}
-      aria-modal="true"
-      aria-labelledby="node-dialog-title"
-      onCancel={handleCancel}
-      onClick={handleBackdropClick}
+    <div
+      className={styles.overlay}
+      onPointerDown={handleOverlayPointerDown}
+      onClick={handleOverlayClick}
     >
-      <div className={styles.panel} onClick={(event) => event.stopPropagation()}>
+      <div
+        className={styles.panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="node-dialog-title"
+        onPointerDown={stopPanelPointer}
+        onClick={(event) => event.stopPropagation()}
+      >
         <header className={styles.header}>
           <div>
             <h2 id="node-dialog-title" className={styles.title}>Create Node</h2>
@@ -102,7 +134,7 @@ export default function NodeDialog({
             onClick={onClose}
             disabled={sending}
           >
-            <span className={styles.buttonIcon} aria-hidden="true">ⓧ</span>
+            <CloseIcon className={styles.buttonIcon} aria-hidden="true" focusable="false" />
           </button>
         </header>
 
@@ -157,14 +189,6 @@ export default function NodeDialog({
           <section className={styles.properties} aria-labelledby="node-properties-title">
             <div className={styles.propertiesHeader}>
               <h3 id="node-properties-title" className={styles.sectionTitle}>Properties</h3>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                disabled={controlsDisabled}
-                onClick={() => updateDraft({ properties: [...draft.properties, createPropertyRow()] })}
-              >
-                Add Property
-              </button>
             </div>
 
             <div className={styles.propertyRows}>
@@ -176,6 +200,13 @@ export default function NodeDialog({
                     <label className={styles.propertyField}>
                       <span className={styles.label}>Key</span>
                       <input
+                        ref={(element) => {
+                          if (element) {
+                            propertyKeyRefs.current.set(row.id, element);
+                          } else {
+                            propertyKeyRefs.current.delete(row.id);
+                          }
+                        }}
                         className={styles.input}
                         value={row.key}
                         disabled={controlsDisabled}
@@ -202,11 +233,22 @@ export default function NodeDialog({
                       disabled={controlsDisabled}
                       onClick={() => removeProperty(row.id)}
                     >
-                      <span className={styles.buttonIcon} aria-hidden="true">ⓧ</span>
+                      <CloseIcon className={styles.buttonIcon} aria-hidden="true" focusable="false" />
                     </button>
                   </div>
                 );
               })}
+            </div>
+            <div className={styles.propertyActions}>
+              <button
+                type="button"
+                className={`${styles.secondaryButton} ${styles.addPropertyButton}`}
+                disabled={controlsDisabled}
+                onClick={addProperty}
+              >
+                <span aria-hidden="true">+</span>
+                <span>Add Property</span>
+              </button>
             </div>
           </section>
         </div>
@@ -230,6 +272,6 @@ export default function NodeDialog({
           </button>
         </footer>
       </div>
-    </dialog>
+    </div>
   );
 }
