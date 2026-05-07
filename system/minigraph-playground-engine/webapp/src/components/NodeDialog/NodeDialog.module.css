@@ -196,6 +196,16 @@
 }
 
 .properties {
+  --property-action-size: 2rem;
+  --property-field-gap: 0.25rem;
+  --property-label-line: 1.25rem;
+  --property-input-action-half-delta: 0.25rem;
+  --property-remove-offset: calc(
+    var(--property-label-line) +
+    var(--property-field-gap) +
+    var(--property-input-action-half-delta)
+  );
+
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
@@ -223,7 +233,7 @@
 .propertyActions {
   display: grid;
   gap: 0.625rem;
-  grid-template-columns: 11rem minmax(0, 1fr) 2rem;
+  grid-template-columns: 11rem minmax(0, 1fr) var(--property-action-size);
   padding-top: 0.125rem;
 }
 
@@ -231,11 +241,11 @@
   align-items: flex-start;
   display: grid;
   gap: 0.625rem;
-  grid-template-columns: 11rem minmax(0, 1fr) 2rem;
+  grid-template-columns: 11rem minmax(0, 1fr) var(--property-action-size);
 }
 
 .removeButton {
-  margin-top: 1.5rem;
+  margin-top: var(--property-remove-offset);
 }
 
 .message,
@@ -337,7 +347,7 @@
 
 @media (max-width: 560px) {
   .propertyRow {
-    grid-template-columns: minmax(0, 1fr) 2rem;
+    grid-template-columns: minmax(0, 1fr) var(--property-action-size);
     padding-right: 2.5rem;
     position: relative;
   }
@@ -350,7 +360,7 @@
     margin-top: 0;
     position: absolute;
     right: 0;
-    top: 0;
+    top: var(--property-remove-offset);
   }
 
   .propertyActions {
