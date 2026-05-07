@@ -63,27 +63,51 @@
   justify-content: center;
   line-height: 1;
   padding: 0;
-  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+  position: relative;
+  transition: color 0.12s ease;
   width: 2rem;
+}
+
+.iconButton::before,
+.removeButton::before {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  content: "";
+  height: 1.625rem;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  width: 1.625rem;
 }
 
 .buttonIcon {
   display: block;
   flex: 0 0 auto;
   height: 0.875rem;
+  position: relative;
   width: 0.875rem;
+  z-index: 1;
 }
 
 .iconButton:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
   color: var(--text-primary);
 }
 
+.iconButton:hover:not(:disabled)::before {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
 .iconButton:active:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.iconButton:active:not(:disabled)::before {
   background: var(--border-color);
   border-color: var(--border-color);
-  color: var(--text-primary);
 }
 
 .iconButton:focus-visible {
@@ -92,13 +116,16 @@
 }
 
 .removeButton:hover:not(:disabled) {
+  color: var(--danger-color);
+}
+
+.removeButton:hover:not(:disabled)::before {
   background: var(--danger-08);
   border-color: var(--danger-30);
-  color: var(--danger-color);
   box-shadow: 0 0 0 2px var(--danger-08);
 }
 
-.removeButton:active:not(:disabled) {
+.removeButton:active:not(:disabled)::before {
   background: var(--danger-30);
   border-color: var(--danger-color);
 }
