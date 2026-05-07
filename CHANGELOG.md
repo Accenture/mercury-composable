@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.4.10, 5/7/2026
+
+### Added
+
+Default configuration files of presence.properties and kafka.properties in kafka-connector
+so that connector can start when user application does not provide them.
+
+### Removed
+
+N/A
+
+### Changed
+
+OSS update - spring boot version 3.5.14 and 4.0.6
+
+---
 ## Version 4.4.9, 4/24/2026
 
 ### Added
