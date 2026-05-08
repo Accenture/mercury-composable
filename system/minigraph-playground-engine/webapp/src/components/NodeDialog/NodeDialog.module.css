@@ -31,6 +31,13 @@
   width: min(520px, calc(100vw - 32px));
 }
 
+.form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .header {
   align-items: center;
   border-bottom: 1px solid var(--border-color);

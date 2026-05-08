@@ -79,6 +79,12 @@ export default function NodeDialog({
     event.stopPropagation();
   }, []);
 
+  const handleFormSubmit = useCallback((event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (controlsDisabled) return;
+    onSubmit();
+  }, [controlsDisabled, onSubmit]);
+
   const updateDraft = useCallback((patch: Partial<NodeDraft>) => {
     onDraftChange({ ...draft, ...patch });
   }, [draft, onDraftChange]);
@@ -138,139 +144,140 @@ export default function NodeDialog({
           </button>
         </header>
 
-        <div className={styles.body}>
-          {serverMessage && !disconnected && (
-            <div className={styles.message} role="status">
-              {serverMessage}
-            </div>
-          )}
-          {validationErrors.command && (
-            <div className={styles.errorMessage} role="alert">
-              {validationErrors.command}
-            </div>
-          )}
-          {disconnected && (
-            <div className={styles.warningMessage} role="status">
-              {serverMessage ?? 'Connection disconnected. Refresh the page and create the node again after the app reconnects.'}
-            </div>
-          )}
-
-          <label className={styles.field}>
-            <span className={styles.label}>Alias</span>
-            <input
-              ref={aliasRef}
-              className={styles.input}
-              value={draft.alias}
-              disabled={controlsDisabled}
-              aria-invalid={Boolean(validationErrors.alias)}
-              aria-describedby={validationErrors.alias ? 'node-alias-error' : undefined}
-              onChange={(event) => updateDraft({ alias: event.target.value })}
-            />
-            {validationErrors.alias && (
-              <span id="node-alias-error" className={styles.errorText}>{validationErrors.alias}</span>
+        <form className={styles.form} onSubmit={handleFormSubmit}>
+          <div className={styles.body}>
+            {serverMessage && !disconnected && (
+              <div className={styles.message} role="status">
+                {serverMessage}
+              </div>
             )}
-          </label>
-
-          <label className={styles.field}>
-            <span className={styles.label}>Node Type</span>
-            <input
-              className={styles.input}
-              value={draft.nodeType}
-              disabled={controlsDisabled}
-              aria-invalid={Boolean(validationErrors.nodeType)}
-              aria-describedby={validationErrors.nodeType ? 'node-type-error' : undefined}
-              onChange={(event) => updateDraft({ nodeType: event.target.value })}
-            />
-            {validationErrors.nodeType && (
-              <span id="node-type-error" className={styles.errorText}>{validationErrors.nodeType}</span>
+            {validationErrors.command && (
+              <div className={styles.errorMessage} role="alert">
+                {validationErrors.command}
+              </div>
             )}
-          </label>
+            {disconnected && (
+              <div className={styles.warningMessage} role="status">
+                {serverMessage ?? 'Connection disconnected. Refresh the page and create the node again after the app reconnects.'}
+              </div>
+            )}
 
-          <section className={styles.properties} aria-labelledby="node-properties-title">
-            <div className={styles.propertiesHeader}>
-              <h3 id="node-properties-title" className={styles.sectionTitle}>Properties</h3>
-            </div>
-
-            <div className={styles.propertyRows}>
-              {draft.properties.map((row) => {
-                const keyError = validationErrors[getValidationErrorKeyForProperty(row.id, 'key')];
-                const valueError = validationErrors[getValidationErrorKeyForProperty(row.id, 'value')];
-                return (
-                  <div key={row.id} className={styles.propertyRow}>
-                    <label className={styles.propertyField}>
-                      <span className={styles.label}>Key</span>
-                      <input
-                        ref={(element) => {
-                          if (element) {
-                            propertyKeyRefs.current.set(row.id, element);
-                          } else {
-                            propertyKeyRefs.current.delete(row.id);
-                          }
-                        }}
-                        className={styles.input}
-                        value={row.key}
-                        disabled={controlsDisabled}
-                        aria-invalid={Boolean(keyError)}
-                        onChange={(event) => updateProperty(row.id, { key: event.target.value })}
-                      />
-                      {keyError && <span className={styles.errorText}>{keyError}</span>}
-                    </label>
-                    <label className={styles.propertyField}>
-                      <span className={styles.label}>Value</span>
-                      <input
-                        className={styles.input}
-                        value={row.value}
-                        disabled={controlsDisabled}
-                        aria-invalid={Boolean(valueError)}
-                        onChange={(event) => updateProperty(row.id, { value: event.target.value })}
-                      />
-                      {valueError && <span className={styles.errorText}>{valueError}</span>}
-                    </label>
-                    <button
-                      type="button"
-                      className={styles.removeButton}
-                      aria-label="Remove property"
-                      disabled={controlsDisabled}
-                      onClick={() => removeProperty(row.id)}
-                    >
-                      <CloseIcon className={styles.buttonIcon} aria-hidden="true" focusable="false" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            <div className={styles.propertyActions}>
-              <button
-                type="button"
-                className={`${styles.secondaryButton} ${styles.addPropertyButton}`}
+            <label className={styles.field}>
+              <span className={styles.label}>Alias</span>
+              <input
+                ref={aliasRef}
+                className={styles.input}
+                value={draft.alias}
                 disabled={controlsDisabled}
-                onClick={addProperty}
-              >
-                <span aria-hidden="true">+</span>
-                <span>Add Property</span>
-              </button>
-            </div>
-          </section>
-        </div>
+                aria-invalid={Boolean(validationErrors.alias)}
+                aria-describedby={validationErrors.alias ? 'node-alias-error' : undefined}
+                onChange={(event) => updateDraft({ alias: event.target.value })}
+              />
+              {validationErrors.alias && (
+                <span id="node-alias-error" className={styles.errorText}>{validationErrors.alias}</span>
+              )}
+            </label>
 
-        <footer className={styles.footer}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={onClose}
-            disabled={sending}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={styles.primaryButton}
-            disabled={controlsDisabled}
-            onClick={onSubmit}
-          >
-            {sending ? 'Creating...' : 'Create Node'}
-          </button>
-        </footer>
+            <label className={styles.field}>
+              <span className={styles.label}>Node Type</span>
+              <input
+                className={styles.input}
+                value={draft.nodeType}
+                disabled={controlsDisabled}
+                aria-invalid={Boolean(validationErrors.nodeType)}
+                aria-describedby={validationErrors.nodeType ? 'node-type-error' : undefined}
+                onChange={(event) => updateDraft({ nodeType: event.target.value })}
+              />
+              {validationErrors.nodeType && (
+                <span id="node-type-error" className={styles.errorText}>{validationErrors.nodeType}</span>
+              )}
+            </label>
+
+            <section className={styles.properties} aria-labelledby="node-properties-title">
+              <div className={styles.propertiesHeader}>
+                <h3 id="node-properties-title" className={styles.sectionTitle}>Properties</h3>
+              </div>
+
+              <div className={styles.propertyRows}>
+                {draft.properties.map((row) => {
+                  const keyError = validationErrors[getValidationErrorKeyForProperty(row.id, 'key')];
+                  const valueError = validationErrors[getValidationErrorKeyForProperty(row.id, 'value')];
+                  return (
+                    <div key={row.id} className={styles.propertyRow}>
+                      <label className={styles.propertyField}>
+                        <span className={styles.label}>Key</span>
+                        <input
+                          ref={(element) => {
+                            if (element) {
+                              propertyKeyRefs.current.set(row.id, element);
+                            } else {
+                              propertyKeyRefs.current.delete(row.id);
+                            }
+                          }}
+                          className={styles.input}
+                          value={row.key}
+                          disabled={controlsDisabled}
+                          aria-invalid={Boolean(keyError)}
+                          onChange={(event) => updateProperty(row.id, { key: event.target.value })}
+                        />
+                        {keyError && <span className={styles.errorText}>{keyError}</span>}
+                      </label>
+                      <label className={styles.propertyField}>
+                        <span className={styles.label}>Value</span>
+                        <input
+                          className={styles.input}
+                          value={row.value}
+                          disabled={controlsDisabled}
+                          aria-invalid={Boolean(valueError)}
+                          onChange={(event) => updateProperty(row.id, { value: event.target.value })}
+                        />
+                        {valueError && <span className={styles.errorText}>{valueError}</span>}
+                      </label>
+                      <button
+                        type="button"
+                        className={styles.removeButton}
+                        aria-label="Remove property"
+                        disabled={controlsDisabled}
+                        onClick={() => removeProperty(row.id)}
+                      >
+                        <CloseIcon className={styles.buttonIcon} aria-hidden="true" focusable="false" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className={styles.propertyActions}>
+                <button
+                  type="button"
+                  className={`${styles.secondaryButton} ${styles.addPropertyButton}`}
+                  disabled={controlsDisabled}
+                  onClick={addProperty}
+                >
+                  <span aria-hidden="true">+</span>
+                  <span>Add Property</span>
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <footer className={styles.footer}>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={onClose}
+              disabled={sending}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={controlsDisabled}
+            >
+              {sending ? 'Creating...' : 'Create Node'}
+            </button>
+          </footer>
+        </form>
       </div>
     </div>
   );
