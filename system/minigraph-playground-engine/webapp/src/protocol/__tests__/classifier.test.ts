@@ -104,4 +104,27 @@ describe('classifier — invariants', () => {
     expect(kinds).toContain('json.response');
     expect(kinds).not.toContain('lifecycle');
   });
+
+  it('emits create-node text result without replacing graph.mutation', () => {
+    const events = classifyMessage(1, 'node root created');
+    const kinds = events.map(e => e.kind);
+    expect(kinds).toContain('minigraph.createNode.textResult');
+    expect(kinds).toContain('graph.mutation');
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.createNode.textResult',
+      status: 'accepted',
+      alias: 'root',
+      message: 'node root created',
+    }));
+  });
+
+  it('emits duplicate create-node text result as rejected', () => {
+    const events = classifyMessage(1, 'node root already exists');
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.createNode.textResult',
+      status: 'rejected',
+      alias: 'root',
+      message: 'node root already exists',
+    }));
+  });
 });

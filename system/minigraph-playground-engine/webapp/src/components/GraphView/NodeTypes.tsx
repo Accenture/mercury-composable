@@ -1,66 +1,10 @@
 import { Handle, Position, NodeResizer, type NodeProps, type Node } from '@xyflow/react';
 import type { GraphNodeData } from '../../utils/graphTransformer';
+import { MinigraphNodeBody } from './MinigraphNodeBody';
 import styles from './NodeTypes.module.css';
 
 /** ReactFlow Node type for minigraph nodes. */
 export type MinigraphRFNode = Node<GraphNodeData>;
-
-// ─── Per-type metadata ────────────────────────────────────────────────────────
-const TYPE_META: Record<string, { icon: string; label: string }> = {
-  Root:        { icon: '🚀', label: 'Root'         },
-  End:         { icon: '🏁', label: 'End'          },
-  Fetcher:     { icon: '🌐', label: 'Fetcher'      },
-  mapper:      { icon: '🗺️', label: 'Mapper'       },
-  Math:        { icon: '🔢', label: 'Math'         },
-  JavaScript:  { icon: '📜', label: 'JavaScript'   },
-  Provider:    { icon: '🔌', label: 'Provider'     },
-  Dictionary:  { icon: '📖', label: 'Dictionary'   },
-  Join:        { icon: '🔀', label: 'Join'         },
-  Extension:   { icon: '🧩', label: 'Extension'    },
-  Island:      { icon: '🏝️', label: 'Island'       },
-  Decision:    { icon: '❓', label: 'Decision'     },
-};
-
-function getMeta(nodeType: string) {
-  return TYPE_META[nodeType] ?? { icon: '📦', label: nodeType };
-}
-
-// ─── Shared detail rows ───────────────────────────────────────────────────────
-
-/** Render a single key=value row. */
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className={styles.row}>
-      <span className={styles.label}>{label}</span>
-      <span className={styles.value} title={value}>{value}</span>
-    </div>
-  );
-}
-
-/** Render all properties generically. Arrays get one row per element. */
-function PropertyRows({ properties }: { properties: Record<string, unknown> }) {
-  const entries = Object.entries(properties).filter(
-    ([, v]) => v !== undefined && v !== null,
-  );
-  if (entries.length === 0) return null;
-
-  return (
-    <>
-      {entries.map(([key, value]) => {
-        if (Array.isArray(value)) {
-          return value.map((item, i) => {
-            const str = typeof item === 'string' ? item : JSON.stringify(item);
-            return (
-              <Row key={`${key}-${i}`} label={i === 0 ? key : ''} value={str} />
-            );
-          });
-        }
-        const str = typeof value === 'string' ? value : JSON.stringify(value);
-        return <Row key={key} label={key} value={str} />;
-      })}
-    </>
-  );
-}
 
 // ─── Resizable node ───────────────────────────────────────────────────────────
 //
@@ -73,7 +17,6 @@ function PropertyRows({ properties }: { properties: Record<string, unknown> }) {
 //     needed (initialWidth/initialHeight tricks, CSS overrides for
 //     .react-flow__node-default, overflow:visible hacks, etc.).
 function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFNode>) {
-  const meta = getMeta(data.nodeType);
   return (
     <>
       {/* Resize handles — visible only when the node is selected */}
@@ -110,17 +53,11 @@ function MinigraphNode({ data, isConnectable, selected }: NodeProps<MinigraphRFN
         * border/background via node.style) and clips its own overflow.
         * width/height:100% make it track the wrapper when the user resizes.
         */}
-      <div className={styles.content}>
-        <div className={styles.header}>
-          <span className={styles.icon}>{meta.icon}</span>
-          <span className={styles.alias}>{data.alias}</span>
-          <span className={styles.badge}>{meta.label}</span>
-        </div>
-
-        <div className={styles.body}>
-          <PropertyRows properties={data.properties} />
-        </div>
-      </div>
+      <MinigraphNodeBody
+        alias={data.alias}
+        nodeType={data.nodeType}
+        properties={data.properties}
+      />
 
       {/* Source handles (right) — paired with target handles for best-effort edge spreading. */}
       {data.sourceHandles.map(({ id, offset }) => (

@@ -61,7 +61,7 @@ export interface UseWebSocketReturn {
   copyMessages:     () => void;
   clearMessages:    () => void;
   uploadPayload:    () => void;
-  sendRawText:      (text: string) => void;
+  sendRawText:      (text: string) => boolean;
   /** Append a local-only message to this slot's console (no WebSocket round-trip). */
   appendMessage:    (raw: string) => void;
   /** Ordered command history for this playground slot (newest-first). */
@@ -303,9 +303,9 @@ export function useWebSocket({ wsPath, storageKeyHistory, payload, addToast, bus
   // --- Public: send raw text directly over the WebSocket without echoing to the console ---
   // Unlike sendCommand(), this bypasses the command-echo and history logic.
   // Used by useAutoGraphRefresh to silently send "describe graph" after a mutation.
-  const sendRawText = useCallback((text: string) => {
-    if (phase !== 'connected') return;
-    ctx.send(wsPath, text);
+  const sendRawText = useCallback((text: string): boolean => {
+    if (phase !== 'connected') return false;
+    return ctx.send(wsPath, text);
   }, [ctx, wsPath, phase]);
 
   // --- Console helpers ---

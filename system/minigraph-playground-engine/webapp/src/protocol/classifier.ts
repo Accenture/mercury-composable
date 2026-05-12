@@ -12,6 +12,7 @@ import {
   isMarkdownCandidate,
   extractGraphExportSuccess,
   detectGraphExportFailure,
+  parseCreateNodeTextResult,
 } from '../utils/messageParser';
 
 const KNOWN_LIFECYCLE_TYPES = new Set(['info', 'error', 'ping', 'welcome']);
@@ -137,6 +138,18 @@ export function classifyMessage(msgId: number, raw: string): ProtocolEvent[] {
       ...base,
       kind: 'graph.mutation',
       mutationType: mutation,
+    });
+  }
+
+  // ── Rule 7a: Minigraph create-node text result ────────────────────────────
+  const createNodeResult = parseCreateNodeTextResult(raw);
+  if (createNodeResult) {
+    events.push({
+      ...base,
+      kind: 'minigraph.createNode.textResult',
+      status: createNodeResult.status,
+      alias: createNodeResult.alias,
+      message: createNodeResult.message,
     });
   }
 

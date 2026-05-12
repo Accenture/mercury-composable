@@ -17,7 +17,8 @@ import { useSavedGraphs } from '../hooks/useSavedGraphs';
 import { useGraphSaveName } from '../hooks/useGraphSaveName';
 import { useSavedGraphWorkflow } from '../hooks/useSavedGraphWorkflow';
 import { usePinnedGraphPath } from '../hooks/usePinnedGraphPath';
-import { buildNodeCommand } from '../clipboard/commandBuilder';
+import { buildClipboardPastePlan } from '../clipboard/paste';
+import { createGraphAuthoringExecutor } from '../graphActions/graphAuthoringExecutor';
 import { ToastContainer } from './Toast';
 import Navigation from './Navigation';
 import GraphSaveButton from './GraphSaveButton/GraphSaveButton';
@@ -25,6 +26,8 @@ import SavedGraphsMenu from './SavedGraphsMenu/SavedGraphsMenu';
 import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import { MockUploadModal } from './MockUploadModal/MockUploadModal';
+import GraphAuthoringModals from './GraphAuthoring/GraphAuthoringModals';
+import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
 import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
 import HelpBrowser from './HelpBrowser/HelpBrowser';
 import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateDialog';
@@ -43,7 +46,7 @@ interface PlaygroundProps {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, tabs } = config;
+  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, supportsAuthoring, tabs } = config;
 
   const navigate = useNavigate();
 
@@ -240,12 +243,26 @@ export default function Playground({ config }: PlaygroundProps) {
   } | null>(null);
 
   const handlePasteToInput = useCallback((item: ClipboardItemRecord) => {
-    const existsLocally = graphData?.nodes.some(n => n.alias === item.node.alias) ?? false;
-    const verb = existsLocally ? 'update' : 'create';
-    const command = buildNodeCommand(verb, item.node);
-    ws.setCommand(command);
-    addToast(`${verb === 'create' ? 'Create' : 'Update'} command for "${item.node.alias}" pasted to input`, 'info');
+    const plan = buildClipboardPastePlan(item, graphData);
+    ws.setCommand(plan.command);
+    addToast(`${plan.verb === 'create' ? 'Create' : 'Update'} command for "${item.node.alias}" pasted to input`, 'info');
   }, [graphData, ws.setCommand, addToast]);
+
+  const handleClipboardDrop = useCallback((itemId: string) => {
+    const item = clipboardCtx.items.find(entry => entry.id === itemId);
+    if (!item) {
+      addToast('Clipboard item is no longer available. It may have been removed in another tab.', 'error');
+      return;
+    }
+
+    const plan = buildClipboardPastePlan(item, graphData);
+    if (!ws.sendRawText(plan.command)) {
+      addToast('Could not send clipboard paste command because the WebSocket is not open.', 'error');
+      return;
+    }
+
+    addToast(`Clipboard node "${item.node.alias}" sent as ${plan.verb}. Waiting for backend response.`, 'info');
+  }, [clipboardCtx.items, graphData, ws.sendRawText, addToast]);
 
   const handleClipNode = useCallback(async (
     node: MinigraphNode,
@@ -299,11 +316,26 @@ export default function Playground({ config }: PlaygroundProps) {
   // ── Resolved graph display name ────────────────────────────────────────────
   // Priority: root node's "name" property (from graph data) → defaultName from
   // the save-name hook (lastSavedName → importedName → untitled-{n}).
-  const graphDisplayName = useMemo(() => {
+  const reliableGraphName = useMemo(() => {
     const rootNode = graphData?.nodes.find(n => n.types.includes('Root'));
     const rootName = typeof rootNode?.properties?.name === 'string' ? rootNode.properties.name : undefined;
-    return rootName ?? graphSaveName;
-  }, [graphData, graphSaveName]);
+    return rootName?.trim() ? rootName : null;
+  }, [graphData]);
+
+  const graphDisplayName = reliableGraphName ?? graphSaveName;
+
+  // ── Graph authoring ───────────────────────────────────────────────────────
+  const graphAuthoringExecutor = useMemo(
+    () => createGraphAuthoringExecutor(ws.sendRawText),
+    [ws.sendRawText],
+  );
+
+  const graphAuthoring = useGraphAuthoring({
+    bus,
+    connected: ws.connected,
+    graphData,
+    executor: graphAuthoringExecutor,
+  });
 
   // ── Saved graph workflow ──────────────────────────────────────────────────
   // Note: must be called AFTER useAutoGraphRefresh — both listen on graph.link
@@ -367,6 +399,16 @@ export default function Playground({ config }: PlaygroundProps) {
         />
       )}
 
+      {supportsAuthoring && (
+        <GraphAuthoringModals
+          state={graphAuthoring.state}
+          validationErrors={graphAuthoring.validationErrors}
+          onDraftChange={graphAuthoring.updateDraft}
+          onSubmit={graphAuthoring.submit}
+          onClose={graphAuthoring.close}
+        />
+      )}
+
       <header className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
         <div className={styles.headerActions}>
@@ -391,10 +433,10 @@ export default function Playground({ config }: PlaygroundProps) {
             <button
               className={styles.clipboardToggle}
               onClick={() => setClipboardOpen(prev => !prev)}
-              aria-label={clipboardOpen ? 'Close clipboard sidebar' : 'Open clipboard sidebar'}
+              aria-label={clipboardOpen ? 'Close workspace sidebar' : 'Open workspace sidebar'}
               aria-pressed={clipboardOpen}
             >
-              Clipboard{clipboardCtx.items.length > 0 ? ` (${clipboardCtx.items.length})` : ''}
+              Workspace{clipboardCtx.items.length > 0 ? ` (${clipboardCtx.items.length})` : ''}
             </button>
           )}
           <Navigation addToast={addToast} />
@@ -490,6 +532,10 @@ export default function Playground({ config }: PlaygroundProps) {
             onGraphDataCopyError={() => addToast('Copy failed', 'error')}
             isGraphRefreshing={isRefreshing}
             onClipNode={supportsClipboard ? handleClipNode : undefined}
+            onClipboardDrop={supportsClipboard ? handleClipboardDrop : undefined}
+            isConnected={ws.connected}
+            supportsAuthoring={supportsAuthoring}
+            onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser
@@ -509,7 +555,7 @@ export default function Playground({ config }: PlaygroundProps) {
             <Panel defaultSize="20%" minSize="10%" maxSize="40%">
               <ClipboardSidebar
                 connected={ws.connected}
-                onPaste={handlePasteToInput}
+                onPasteToInput={handlePasteToInput}
               />
             </Panel>
           </>

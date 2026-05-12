@@ -31,6 +31,10 @@ interface RightPanelProps {
   isGraphRefreshing?:      boolean;
   /** Callback for "Clip to Clipboard" from the node context menu in GraphView. */
   onClipNode?:             (node: MinigraphNode, connections: MinigraphConnection[]) => void;
+  onClipboardDrop?:        (itemId: string) => void;
+  isConnected:             boolean;
+  supportsAuthoring?:      boolean;
+  onCreateNode?:           (source: 'empty-graph' | 'pane-context-menu') => void;
   /**
    * When provided and non-null, the right panel renders a vertical split:
    * top = tab content, bottom = help panel.  Accepts either a plain ReactNode
@@ -63,6 +67,10 @@ export default function RightPanel({
   onGraphDataCopyError,
   isGraphRefreshing,
   onClipNode,
+  onClipboardDrop,
+  isConnected,
+  supportsAuthoring,
+  onCreateNode,
   helpPanel,
 }: RightPanelProps) {
   const uid              = useId();
@@ -138,15 +146,21 @@ export default function RightPanel({
           tabIndex={activeTab === 'graph' ? 0 : -1}
           className={`${styles.tabBody}${activeTab !== 'graph' ? ` ${styles.tabBodyHidden}` : ''}`}
         >
-          <GraphView
-            graphData={graphData}
-            graphName={graphName}
-            onRenderError={onGraphRenderError}
-            isRefreshing={isGraphRefreshing}
-            onCopySuccess={onGraphDataCopySuccess}
-            onCopyError={onGraphDataCopyError}
-            onClipNode={onClipNode}
-          />
+          <div className={styles.graphContent}>
+            <GraphView
+              graphData={graphData}
+              graphName={graphName}
+              onRenderError={onGraphRenderError}
+              isRefreshing={isGraphRefreshing}
+              onCopySuccess={onGraphDataCopySuccess}
+              onCopyError={onGraphDataCopyError}
+              onClipNode={onClipNode}
+              onClipboardDrop={onClipboardDrop}
+              isConnected={isConnected}
+              supportsAuthoring={supportsAuthoring}
+              onCreateNode={onCreateNode}
+            />
+          </div>
         </div>
       )}
 

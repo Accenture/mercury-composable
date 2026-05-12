@@ -1,6 +1,6 @@
 import { MarkerType, type Node, type Edge } from '@xyflow/react';
-import type { CSSProperties } from 'react';
 import type { MinigraphGraphData } from './graphTypes';
+import { getMinigraphNodeShellStyle } from './minigraphNodeTheme';
 
 /** Data bag attached to every ReactFlow node we create. */
 export interface GraphNodeData extends Record<string, unknown> {
@@ -39,52 +39,6 @@ const ROW_GAP            = 60;   // vertical gap between nodes stacked in the sa
 const COL_GAP            = 120;  // horizontal gap between columns (levels)
 const SECTION_GAP        = 120;  // vertical gap between main flow and first segregated row
 const SEGREGATED_ROW_GAP = 80;   // vertical gap between successive segregated rows
-
-// ─── Per-type visual style ───────────────────────────────────────────────────
-// Because MinigraphNode renders as a React Fragment (no wrapper <div>),
-// the React Flow wrapper element IS the visible shell.  We apply its visual
-// style via `node.style` so NodeResizer can resize it directly — the exact
-// pattern shown in https://reactflow.dev/examples/nodes/node-resizer.
-//
-// Per-type accent colours are passed as the CSS custom property --node-accent.
-// The component's CSS module reads that variable for the header background,
-// badge colours, and border — keeping the component itself colour-agnostic and
-// following the CSS-variables theming approach described in the React Flow
-// theming guide: https://reactflow.dev/learn/customization/theming
-const BASE_NODE_STYLE: CSSProperties = {
-  boxSizing:    'border-box',
-  borderRadius: '8px',
-  borderWidth:  '1.5px',
-  borderStyle:  'solid',
-  background:   'var(--bg-secondary, #1e1e2e)',
-  color:        'var(--text-primary, #cdd6f4)',
-  fontSize:     '0.75rem',
-  boxShadow:    '0 2px 8px rgba(0,0,0,0.45)',
-  // overflow:visible so NodeResizer handles (absolutely positioned outside the
-  // wrapper bounds) are not clipped — clipping them is what prevents resizing.
-  overflow:     'visible',
-  // Reset the 10px padding React Flow's built-in stylesheet injects on
-  // .react-flow__node-default / -output / -group.
-  padding:      0,
-};
-
-// Accent colours per node type.  Only the accent value differs between types;
-// everything else is shared via BASE_NODE_STYLE.
-const NODE_ACCENT: Record<string, string> = {
-  Root:        '#15803d',   // green-700
-  End:         '#dc2626',   // red-600
-  Fetcher:     '#2563eb',   // blue-600
-  mapper:      '#ea580c',   // orange-600
-  Math:        '#a16207',   // yellow-700
-  JavaScript:  '#7e22ce',   // purple-700
-  Provider:    '#be185d',   // pink-700
-  Dictionary:  '#0e7490',   // cyan-700
-  Join:        '#65a30d',   // lime-700
-  Extension:   '#4338ca',   // indigo-700
-  Island:      '#475569',   // slate-600
-  Decision:    '#b45309',   // amber-700
-};
-const UNKNOWN_ACCENT = '#6c7086';
 
 // ─── Edge styling constants ──────────────────────────────────────────────────
 // EDGE_STROKE: --text-muted (rgb 148 163 184) at 42% opacity — slate-400 tinted stroke
@@ -173,17 +127,6 @@ function edgeHandleOffset(index: number, total: number): number {
 function nodeHeightForHandleCount(handleCount: number): number {
   if (handleCount <= 1) return NODE_HEIGHT;
   return Math.max(NODE_HEIGHT, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
-}
-
-function nodeStyle(nodeType: string): CSSProperties {
-  const accent = NODE_ACCENT[nodeType] ?? UNKNOWN_ACCENT;
-  return {
-    ...BASE_NODE_STYLE,
-    borderColor: accent,
-    // Expose the accent as a CSS custom property so the CSS module can theme
-    // the header, badge, and any other child elements without touching JS.
-    ['--node-accent' as string]: accent,
-  };
 }
 
 // ─── Layout node classification ─────────────────────────────────────────────
@@ -587,7 +530,7 @@ export function transformGraphData(
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
       width:  NODE_WIDTH,
       height: nodeHeight,
-      style: nodeStyle(n.types[0] ?? 'unknown'),
+      style: getMinigraphNodeShellStyle(n.types[0] ?? 'unknown'),
       data: {
         alias:         n.alias,
         nodeType:      n.types[0] ?? 'unknown',

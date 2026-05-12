@@ -45,6 +45,7 @@ export interface PlaygroundConfig {
   supportsUpload?:       boolean;    // true when the backend supports POST /api/json/content/{id} upload
   supportsClipboard?:    boolean;    // true when clip/paste features are enabled (Minigraph only)
   supportsHelp?:         boolean;    // true when the help panel is available (Minigraph only)
+  supportsAuthoring?:    boolean;    // true when UI graph authoring is enabled (Minigraph only)
   /**
    * localStorage key for the last-viewed help topic.
    * Only used when the playground includes the 'help' tab.
@@ -89,6 +90,7 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     storageKeyHelpTopic: 'minigraph-help-topic',
     supportsClipboard: true,
     supportsHelp: true,
+    supportsAuthoring: true,
     // Minigraph works with graph commands and text responses; it has no payload input.
     tabs: ['graph', 'graph-data'],
   },

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useClipboardContext } from '../../contexts/ClipboardContext';
 import type { ClipboardItemRecord } from '../../clipboard/db';
 import { ClipboardItem } from './ClipboardItem';
+import { ClipboardItemContextMenu } from './ClipboardItemContextMenu';
 import { ClipboardEmptyState } from './ClipboardEmptyState';
 import styles from './ClipboardSidebar.module.css';
 import { JsonView, darkStyles } from 'react-json-view-lite';
@@ -9,22 +10,78 @@ import 'react-json-view-lite/dist/index.css';
 
 interface ClipboardSidebarProps {
   connected: boolean;
-  onPaste: (item: ClipboardItemRecord) => void;
+  onPasteToInput: (item: ClipboardItemRecord) => void;
 }
 
-export default function ClipboardSidebar({ connected, onPaste }: ClipboardSidebarProps) {
+type ActiveClipboardMenuState = {
+  itemId: string;
+  x: number;
+  y: number;
+};
+
+export default function ClipboardSidebar({ connected, onPasteToInput }: ClipboardSidebarProps) {
   const clipboardCtx = useClipboardContext();
   const [inspectItem, setInspectItem] = useState<ClipboardItemRecord | null>(null);
+  const [activeItemMenu, setActiveItemMenu] = useState<ActiveClipboardMenuState | null>(null);
+
+  const handleOpenItemMenu = (itemId: string, x: number, y: number) => {
+    setActiveItemMenu({ itemId, x, y });
+  };
+
+  const handleCloseItemMenu = () => {
+    setActiveItemMenu(null);
+  };
+
+  const handlePasteToInputFromMenu = (item: ClipboardItemRecord) => {
+    handleCloseItemMenu();
+    onPasteToInput(item);
+  };
+
+  const handleInspect = (item: ClipboardItemRecord) => {
+    handleCloseItemMenu();
+    setInspectItem(current => (current?.id === item.id ? null : item));
+  };
+
+  const handleRemove = (itemId: string) => {
+    handleCloseItemMenu();
+    setInspectItem(current => (current?.id === itemId ? null : current));
+    void clipboardCtx.removeItem(itemId);
+  };
+
+  const handleClearAll = () => {
+    handleCloseItemMenu();
+    setInspectItem(null);
+    void clipboardCtx.clearAll();
+  };
+
+  useEffect(() => {
+    const itemIds = new Set(clipboardCtx.items.map(item => item.id));
+
+    if (activeItemMenu && !itemIds.has(activeItemMenu.itemId)) {
+      setActiveItemMenu(null);
+    }
+
+    if (inspectItem && !itemIds.has(inspectItem.id)) {
+      setInspectItem(null);
+    }
+  }, [clipboardCtx.items, activeItemMenu, inspectItem]);
+
+  const activeMenuItem = useMemo(
+    () => (activeItemMenu
+      ? clipboardCtx.items.find(item => item.id === activeItemMenu.itemId) ?? null
+      : null),
+    [activeItemMenu, clipboardCtx.items],
+  );
 
   return (
     <div className={styles.sidebar}>
       <div className={styles.header}>
-        <span className={styles.headerTitle}>Clipboard</span>
+        <span className={styles.headerTitle}>Workspace</span>
         {clipboardCtx.items.length > 0 && (
           <button
             className={styles.clearBtn}
-            onClick={() => clipboardCtx.clearAll()}
-            aria-label="Clear all clipboard items"
+            onClick={handleClearAll}
+            aria-label="Clear all workspace items"
           >
             Clear
           </button>
@@ -41,10 +98,9 @@ export default function ClipboardSidebar({ connected, onPaste }: ClipboardSideba
             <ClipboardItem
               key={item.id}
               item={item}
-              connected={connected}
-              onPaste={onPaste}
-              onRemove={() => clipboardCtx.removeItem(item.id)}
-              onInspect={() => setInspectItem(inspectItem?.id === item.id ? null : item)}
+              onRemove={handleRemove}
+              onOpenMenu={handleOpenItemMenu}
+              onCloseMenu={handleCloseItemMenu}
             />
           ))
         )}
@@ -54,7 +110,7 @@ export default function ClipboardSidebar({ connected, onPaste }: ClipboardSideba
       {inspectItem && (
         <div className={styles.inspectPanel}>
           <div className={styles.inspectHeader}>
-            <span>Describe node {inspectItem.node.alias}</span>
+            <span>Inspect node {inspectItem.node.alias}</span>
             <button
               className={styles.inspectClose}
               onClick={() => setInspectItem(null)}
@@ -70,6 +126,18 @@ export default function ClipboardSidebar({ connected, onPaste }: ClipboardSideba
             />
           </div>
         </div>
+      )}
+
+      {activeItemMenu && activeMenuItem && (
+        <ClipboardItemContextMenu
+          open={true}
+          x={activeItemMenu.x}
+          y={activeItemMenu.y}
+          canPasteToInput={connected}
+          onPasteToInput={() => handlePasteToInputFromMenu(activeMenuItem)}
+          onInspect={() => handleInspect(activeMenuItem)}
+          onClose={handleCloseItemMenu}
+        />
       )}
     </div>
   );
