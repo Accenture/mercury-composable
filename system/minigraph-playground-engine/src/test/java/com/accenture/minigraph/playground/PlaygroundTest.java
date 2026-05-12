@@ -357,6 +357,7 @@ class PlaygroundTest {
         request2.setPathParameter("id", wsInstance).setPathParameter("key", "input");
         var event2 = new EventEnvelope().setTo("async.http.request").setBody(request2.toMap());
         var response2 = po.request(event2, 8000).get();
+        assertEquals(200, response2.getStatus());
         log.info("Inspect endpoint response - {}", response2.getBody());
         var request3 = new AsyncHttpRequest();
         request3.setTargetHost("http://127.0.0.1:" + port).setUrl("/api/graph/model/{graph_id}/{sequence}");
@@ -364,7 +365,17 @@ class PlaygroundTest {
         request3.setPathParameter("graph_id", "hello").setPathParameter("sequence", "1");
         var event3 = new EventEnvelope().setTo("async.http.request").setBody(request3.toMap());
         var response3 = po.request(event3, 8000).get();
+        assertEquals(200, response3.getStatus());
         var text = String.valueOf(response3.getBody());
         log.info("Describe graph endpoint response - {} characters", text.length());
+        var request4 = new AsyncHttpRequest();
+        request4.setTargetHost("http://127.0.0.1:" + port).setUrl("/api/graph/session/{id}");
+        request4.setHeader("accept", "application/json").setMethod("GET");
+        request4.setPathParameter("id", wsInstance);
+        var event4 = new EventEnvelope().setTo("async.http.request").setBody(request4.toMap());
+        var response4 = po.request(event4, 8000).get();
+        assertEquals(200, response4.getStatus());
+        assertInstanceOf(Map.class, response4.getBody());
+        log.info("Live graph endpoint response - {}", response4.getBody());
     }
 }

@@ -232,6 +232,17 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
+    public static Object downloadGraph(String id) {
+        var inRoute = id.replace('-', '.') + ".in";
+        var graph = graphModels.get(inRoute);
+        return graph == null ? null : graph.exportGraph();
+    }
+
+    public static boolean hasSession(String id) {
+        var inRoute = id.replace('-', '.') + ".in";
+        return graphModels.containsKey(inRoute);
+    }
+
     private void handleRunCommand(String inRoute, String outRoute) {
         var cid = util.getUuid();
         var po = PostOffice.trackable("minigraph.playground", cid, "/graph/playground");

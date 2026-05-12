@@ -160,7 +160,7 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 ---
 
 ### 3.4 Graph Visualisation
-- Fetched via REST (`GET /api/graph/model/{id}`) after the server emits a graph-link in the WebSocket stream
+- Fetched via REST (`GET /api/graph/model/{graph_id}/{sequence}`) after the server emits a graph-link in the WebSocket stream
 - Rendered with **ReactFlow**: nodes are colour-coded by type (`Root`, `End`, `Fetcher`, `mapper`, `Math`, `JavaScript`, `Provider`, `Dictionary`, `Join`, `Extension`, `Island`, `Decision`), edges show relation labels
 - Nodes are **resizable** (NodeResizer) and can be re-arranged interactively
 - A **minimap** provides navigation for large graphs
@@ -169,11 +169,24 @@ Switching between the Minigraph and JSON-Path playgrounds does **not** close eit
 - **Orphan node segregation** — nodes not participating in any connection are classified by type and placed in horizontal rows below the main flow: Dictionary → Provider → Module → Entity → unknown catch-all
 - **Cycle detection & back-edge routing** — cycles in the graph are detected via iterative DFS; back-edges (edges pointing from a deeper level to a shallower one) are excluded from BFS level assignment so the layout doesn't loop infinitely. Back-edges are still rendered: they exit from the **left** side of the source node and enter the **right** side of the target node (the reverse of forward edges), producing a natural backward-arcing bezier curve. Handles on each side are sorted by peer y-position and interleaved (forward + back-edge) to prevent crossing
 
+**Live-session REST shortcut**
+
+The backend also exposes `GET /api/graph/session/{id}` for the active WebSocket session id. This returns the same exported graph structure directly from the in-memory session model, without issuing `describe graph`, without writing a temp file, and without depending on a graph-link message.
+
+This endpoint is additive. The current frontend graph-loading flow still depends on the file-backed graph-link contract:
+- the server emits `/api/graph/model/{graph_id}/{sequence}` from `describe graph`
+- the frontend extracts only `/api/graph/model/...` links and pins that path for graph loading
+
+So `/api/graph/session/{id}` is currently a backend shortcut for direct consumers, not a replacement for the existing WebSocket-driven graph refresh flow.
+
 **Key code locations:**
 - `src/utils/graphTypes.ts` [L1–L47](../src/utils/graphTypes.ts#L1) — `MinigraphGraphData`, `MinigraphNode`, `MinigraphConnection` types + `isMinigraphGraphData()` type guard
 - `src/hooks/useGraphData.ts` [L7–L20](../src/hooks/useGraphData.ts#L7) — `normalizeRightTab()`: validates the persisted tab value against the current playground's `tabs` list and migrates stale entries (for example legacy `"preview"`) to a safe fallback before render
 - `src/hooks/useGraphData.ts` [L66–L144](../src/hooks/useGraphData.ts#L66) — normalized right-tab state + initial-load path: reads `storedRightTab` from localStorage, derives a safe `rightTab`, writes the normalized value back when migration is needed, then `fetch(pinnedGraphPath)` → `setGraphData(json)` → `setRightTab('graph')`; clears `graphData` to `null` on path change
 - `src/hooks/useGraphData.ts` [L149–L189](../src/hooks/useGraphData.ts#L149) — `refetchGraph()`: overlay-mode re-fetch; does NOT clear `graphData` (stale graph stays visible), sets `isRefreshing = true`
+- `../../src/main/java/com/accenture/minigraph/services/GraphCommandService.java` [L234–L238](../../src/main/java/com/accenture/minigraph/services/GraphCommandService.java#L234) — `downloadGraph(id)`: resolves the public session id to the in-memory `inRoute` and returns `graph.exportGraph()`
+- `../../src/main/java/com/accenture/minigraph/rest/GetLiveGraph.java` [L34–L47](../../src/main/java/com/accenture/minigraph/rest/GetLiveGraph.java#L34) — thin REST adapter for `GET /api/graph/session/{id}`
+- `../../src/main/resources/rest.yaml` [L31–L43](../../src/main/resources/rest.yaml#L31) — REST route definitions for both the existing file-backed graph model endpoint and the new live-session endpoint
 - `src/utils/graphTransformer.ts` — `NODE_ACCENT` colour map + `nodeStyle()` applying `--node-accent` CSS custom property
 - `src/utils/graphTransformer.ts` — `classifyNode()`: classifies each node into a `LayoutCategory` — connected nodes always go to `'flow'`; orphaned nodes are segregated into `'Dictionary'`, `'Provider'`, `'Module'`, `'Entity'`, or `'__unknown__'`
 - `src/utils/graphTransformer.ts` — `computeLayout()`: BFS topological layout with DFS cycle detection and segregated rows for orphan nodes; returns `{ positions, levelOf }`
