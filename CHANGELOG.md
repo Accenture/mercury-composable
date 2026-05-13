@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-Default configuration files of presence.properties and kafka.properties in kafka-connector
-so that connector can start when user application does not provide them.
+1. Companion endpoint for MiniGraph-Playground-Engine to support use of an AI assistant to collaborate with user
+2. Default configuration files of presence.properties and kafka.properties in kafka-connector
+   so that connector can start when user application does not provide them.
 
 ### Removed
 
