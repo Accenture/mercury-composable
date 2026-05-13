@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/CONFIGURATION-REFERENCE/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Configuration Reference - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Configuration Reference";
+        var mkdocs_page_input_path = "guides/CONFIGURATION-REFERENCE.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/CONFIGURATION-REFERENCE/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-11/">Active Knowledge Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ARCHITECTURE/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Configuration Reference</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#application-identity">Application Identity</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#server">Server</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#rest-automation">REST Automation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#event-script-flow-engine">Event Script / Flow Engine</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#component-scanning-startup">Component Scanning &amp; Startup</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#threading-performance">Threading &amp; Performance</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#http-client">HTTP Client</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#distributed-tracing-observability">Distributed Tracing &amp; Observability</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#health-actuators">Health &amp; Actuators</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#spring-boot-integration">Spring Boot Integration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#service-mesh-cloud-connector">Service Mesh / Cloud Connector</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#core-connector">Core Connector</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#kafka-topic-management">Kafka Topic Management</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#scheduler">Scheduler</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#postgresql-reactive-postgres-extension">PostgreSQL (reactive-postgres extension)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serialization-content-types">Serialization &amp; Content Types</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#data-storage">Data Storage</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#complete-example">Complete Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../FLOW-SCHEMA-REFERENCE/">Flow Configuration Schema</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Configuration Reference</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="configuration-reference">Configuration Reference</h1>
+<p><em>Reference: All application.properties and application.yml configuration keys for Mercury Composable.</em></p>
+<p>Mercury Composable applications are configured through <code>application.properties</code> (or the
+equivalent <code>application.yml</code>). This page is the exhaustive reference for every configuration
+key supported by the framework and its optional modules.</p>
+<p>Properties are set in <code>src/main/resources/application.properties</code> and can be overridden via
+environment variables or JVM system properties (<code>-Dkey=value</code>) using Spring Boot's standard
+property resolution order. When both <code>application.properties</code> and <code>application.yml</code> are
+present, <code>.properties</code> takes precedence.</p>
+<blockquote>
+<p><strong>Tip</strong>: In <code>application.yml</code>, dots in property names become nested YAML keys.
+For example, <code>rest.server.port=8100</code> becomes:
+<code>yaml
+rest:
+  server:
+    port: 8100</code></p>
+</blockquote>
+<hr />
+<h2 id="application-identity">Application Identity</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application.name</code></td>
+<td><code>String</code></td>
+<td><code>application</code></td>
+<td>Human-readable service name shown in the <code>/info</code> actuator response. Falls back to <code>spring.application.name</code> if set.</td>
+</tr>
+<tr>
+<td><code>info.app.version</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Application version string (e.g. <code>1.2.3</code>) shown in the <code>/info</code> actuator response.</td>
+</tr>
+<tr>
+<td><code>info.app.description</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Application description shown in the <code>/info</code> actuator response.</td>
+</tr>
+<tr>
+<td><code>spring.application.name</code></td>
+<td><code>String</code></td>
+<td><code>application</code></td>
+<td>Standard Spring Boot application name; used as a fallback for <code>application.name</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="server">Server</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api.origin</code></td>
+<td><code>String</code></td>
+<td><code>*</code></td>
+<td>Value for the <code>Access-Control-Allow-Origin</code> CORS response header.</td>
+</tr>
+<tr>
+<td><code>hsts.feature</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Enable the <code>Strict-Transport-Security</code> response header (HSTS).</td>
+</tr>
+<tr>
+<td><code>oversize.http.response.header</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Allow HTTP response headers up to 16 KB (default limit is 8 KB).</td>
+</tr>
+<tr>
+<td><code>rest.server.port</code></td>
+<td><code>int</code></td>
+<td><code>8085</code></td>
+<td>Listening port for the built-in reactive HTTP server.</td>
+</tr>
+<tr>
+<td><code>rest.server.ssl-enabled</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enable TLS on the reactive HTTP server. Requires <code>rest.server.ssl.cert</code> and <code>rest.server.ssl.key</code>.</td>
+</tr>
+<tr>
+<td><code>rest.server.ssl.cert</code></td>
+<td><code>String</code> (path)</td>
+<td>—</td>
+<td>Path to a PEM-format X.509 certificate. Use <code>classpath://</code> or <code>file://</code> prefix. Required when <code>rest.server.ssl-enabled=true</code>.</td>
+</tr>
+<tr>
+<td><code>rest.server.ssl.key</code></td>
+<td><code>String</code> (path)</td>
+<td>—</td>
+<td>Path to a PEM-format private key. Use <code>classpath://</code> or <code>file://</code> prefix. Required when <code>rest.server.ssl-enabled=true</code>.</td>
+</tr>
+<tr>
+<td><code>server.port</code></td>
+<td><code>int</code></td>
+<td><code>8085</code></td>
+<td>Fallback listening port used when <code>rest.server.port</code> is not set; also the Tomcat port under Spring Boot.</td>
+</tr>
+<tr>
+<td><code>websocket.binary.size</code></td>
+<td><code>int</code></td>
+<td><em>(framework default)</em></td>
+<td>Maximum WebSocket binary message size in bytes.</td>
+</tr>
+<tr>
+<td><code>websocket.idle.timeout</code></td>
+<td><code>int</code></td>
+<td><code>60</code></td>
+<td>WebSocket idle connection timeout in minutes.</td>
+</tr>
+<tr>
+<td><code>websocket.server.port</code></td>
+<td><code>int</code></td>
+<td><em>(same as <code>rest.server.port</code>)</em></td>
+<td>Listening port for WebSocket connections. Defaults to <code>rest.server.port</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="rest-automation">REST Automation</h2>
+<p>REST Automation enables declarative HTTP endpoint mapping via a YAML configuration file.
+Set <code>rest.automation=true</code> and provide a <code>yaml.rest.automation</code> path to activate it. See
+<a href="../CHAPTER-3/">REST Automation</a> for the full endpoint configuration syntax.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rest.automation</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enable the REST Automation engine.</td>
+</tr>
+<tr>
+<td><code>spring.mvc.static-path-pattern</code></td>
+<td><code>String</code></td>
+<td><code>/**</code></td>
+<td>URL pattern for serving static resources (Spring MVC).</td>
+</tr>
+<tr>
+<td><code>spring.web.resources.static-locations</code></td>
+<td><code>String</code> (path)</td>
+<td>—</td>
+<td>Spring Boot alias for <code>static.html.folder</code>; checked as a fallback.</td>
+</tr>
+<tr>
+<td><code>static-content.filter.exclusion</code></td>
+<td><code>String</code> (comma-sep)</td>
+<td>—</td>
+<td>URL paths excluded from the static content filter.</td>
+</tr>
+<tr>
+<td><code>static-content.filter.path</code></td>
+<td><code>String</code> (comma-sep)</td>
+<td>—</td>
+<td>URL prefixes that the static content filter applies to.</td>
+</tr>
+<tr>
+<td><code>static-content.filter.service</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Route name of a function that pre-processes matching static content requests.</td>
+</tr>
+<tr>
+<td><code>static-content.no-cache-pages</code></td>
+<td><code>String</code> (comma-sep)</td>
+<td>—</td>
+<td>URL paths served with <code>Cache-Control: no-cache</code>.</td>
+</tr>
+<tr>
+<td><code>static.html.folder</code></td>
+<td><code>String</code> (path)</td>
+<td><code>classpath:/public</code></td>
+<td>Location of static web content (HTML, CSS, JS, images).</td>
+</tr>
+<tr>
+<td><code>yaml.rest.automation</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>classpath:/rest.yaml</code></td>
+<td>Location(s) of REST endpoint configuration file(s). Multiple files are merged.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="event-script-flow-engine">Event Script / Flow Engine</h2>
+<p>Flow configuration files are compiled at startup. Each file lists one or more flow definitions
+identified by <code>flow.id</code>. Multiple comma-separated paths are merged. See
+<a href="../CHAPTER-4/">Event Script Syntax</a> for the full DSL reference.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max.model.array.size</code></td>
+<td><code>int</code></td>
+<td><code>1000</code></td>
+<td>Maximum array index size for dynamic list variables in event script data models.</td>
+</tr>
+<tr>
+<td><code>yaml.event.over.http</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>classpath:/event-over-http.yaml</code></td>
+<td>Location(s) of the event-over-HTTP target mapping configuration.</td>
+</tr>
+<tr>
+<td><code>yaml.flow.automation</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>classpath:/flows.yaml</code></td>
+<td>Location(s) of Event Script flow definition files.</td>
+</tr>
+<tr>
+<td><code>yaml.journal</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>classpath:/journal.yaml</code></td>
+<td>Location(s) of the journal configuration (lists routes whose messages are recorded).</td>
+</tr>
+<tr>
+<td><code>yaml.multicast</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>classpath:/multicast.yaml</code></td>
+<td>Location(s) of the multicast route configuration.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="component-scanning-startup">Component Scanning &amp; Startup</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>modules.autostart</code></td>
+<td><code>String</code> (comma-sep or YAML list)</td>
+<td>—</td>
+<td>Route names or <code>flow://&lt;flow-id&gt;</code> identifiers to activate at startup without an inbound request.</td>
+</tr>
+<tr>
+<td><code>spring.component.scan</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Package for Spring Boot component scanning; used alongside <code>web.component.scan</code> when running with <code>rest-spring-3</code>.</td>
+</tr>
+<tr>
+<td><code>web.component.scan</code></td>
+<td><code>String</code> (comma-sep packages)</td>
+<td>—</td>
+<td>Java packages to scan for <code>@PreLoad</code>, <code>@MainApplication</code>, <code>@BeforeApplication</code>, and <code>@WebSocketService</code> annotations.</td>
+</tr>
+<tr>
+<td><code>yaml.preload.override</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td>—</td>
+<td>YAML file(s) that override <code>@PreLoad</code> annotation settings (route name, instance count) without recompiling.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="threading-performance">Threading &amp; Performance</h2>
+<p>By default all functions run on Java 21 virtual threads. Use <code>@KernelThreadRunner</code> to pin a
+function to the kernel thread pool for blocking-I/O operations that are incompatible with
+virtual threads.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deferred.commit.log</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Defer write commits in the ElasticQueue overflow buffer. For unit-test use only — do not set in production.</td>
+</tr>
+<tr>
+<td><code>kernel.thread.pool</code></td>
+<td><code>int</code></td>
+<td><code>100</code></td>
+<td>Size of the kernel thread pool for <code>@KernelThreadRunner</code> functions. Maximum 200.</td>
+</tr>
+<tr>
+<td><code>worker.instances.&lt;route&gt;</code></td>
+<td><code>int</code></td>
+<td><em>(from <code>@PreLoad</code>)</em></td>
+<td>Override the concurrency instance count for any named route at startup. Example: <code>worker.instances.my.service=50</code>.</td>
+</tr>
+<tr>
+<td><code>worker.instances.no.op</code></td>
+<td><code>int</code></td>
+<td><code>500</code></td>
+<td>Instance count for the built-in <code>no.op</code> placeholder function.</td>
+</tr>
+<tr>
+<td><code>worker.instances.resilience.handler</code></td>
+<td><code>int</code></td>
+<td><code>500</code></td>
+<td>Instance count for the built-in <code>resilience.handler</code>.</td>
+</tr>
+<tr>
+<td><code>worker.instances.simple.exception.handler</code></td>
+<td><code>int</code></td>
+<td><code>250</code></td>
+<td>Instance count for the built-in <code>simple.exception.handler</code>.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>The <code>worker.instances.&lt;route&gt;</code> pattern accepts any registered route name with dots preserved:
+<code>worker.instances.v1.get.profile=100</code>.</p>
+</blockquote>
+<hr />
+<h2 id="http-client">HTTP Client</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>async.http.temp</code></td>
+<td><code>String</code> (path)</td>
+<td><code>/tmp/async-http-temp</code></td>
+<td>Temporary folder used to buffer large async HTTP response bodies.</td>
+</tr>
+<tr>
+<td><code>http.client.connection.timeout</code></td>
+<td><code>int</code> (ms)</td>
+<td><code>5000</code></td>
+<td>Connection timeout in milliseconds for the built-in async HTTP client.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="distributed-tracing-observability">Distributed Tracing &amp; Observability</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>distributed.trace.processor</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Route name of a user function that receives all distributed trace entries for forwarding to a telemetry backend.</td>
+</tr>
+<tr>
+<td><code>show.application.properties</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Application property keys to expose via the <code>/env</code> actuator endpoint.</td>
+</tr>
+<tr>
+<td><code>show.env.variables</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Environment variable names to expose via the <code>/env</code> actuator endpoint.</td>
+</tr>
+<tr>
+<td><code>skip.rpc.tracing</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td><code>async.http.request</code></td>
+<td>Route names excluded from distributed trace recording.</td>
+</tr>
+<tr>
+<td><code>stack.trace.transport.size</code></td>
+<td><code>int</code></td>
+<td><code>10</code></td>
+<td>Maximum stack-trace lines embedded in an <code>EventEnvelope</code> when an exception occurs.</td>
+</tr>
+<tr>
+<td><code>trace.http.header</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td><code>X-Trace-Id</code></td>
+<td>HTTP request header(s) carrying a trace ID. The first entry is also used as the outbound trace header.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="health-actuators">Health &amp; Actuators</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mandatory.health.dependencies</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Route names of health-check functions that must all report healthy for <code>/health</code> to return HTTP 200.</td>
+</tr>
+<tr>
+<td><code>optional.health.dependencies</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Route names of health-check functions whose failure is reported but does not fail <code>/health</code>.</td>
+</tr>
+<tr>
+<td><code>protect.info.endpoints</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>When <code>true</code>, the <code>/info</code>, <code>/routes</code>, <code>/lib</code>, and <code>/env</code> endpoints require an <code>X-App-Instance</code> header.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="spring-boot-integration">Spring Boot Integration</h2>
+<p>These properties are relevant only when using the <code>rest-spring-3</code> module.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>spring.boot.main</code></td>
+<td><code>String</code></td>
+<td><code>org.platformlambda.rest.RestServer</code></td>
+<td>Main class for the Spring Boot application. Override to use a custom entry point.</td>
+</tr>
+<tr>
+<td><code>spring.profiles.active</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Active Spring profiles; enables profile-specific config files (e.g. <code>application-prod.properties</code>).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="service-mesh-cloud-connector">Service Mesh / Cloud Connector</h2>
+<p>The service mesh is provided by the optional <code>connectors</code> modules. Set <code>cloud.connector=kafka</code>
+to enable inter-instance routing through Kafka. See <a href="../CHAPTER-8/">Minimalist Service Mesh</a>
+for a setup walkthrough.</p>
+<h3 id="core-connector">Core Connector</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application.feature.route.substitution</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enable the route substitution feature to redirect one route name to another at runtime.</td>
+</tr>
+<tr>
+<td><code>cloud.client.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/kafka.properties, classpath:/kafka.properties</code></td>
+<td>Location(s) of the Kafka client properties file.</td>
+</tr>
+<tr>
+<td><code>cloud.connector</code></td>
+<td><code>String</code></td>
+<td><code>none</code></td>
+<td>Cloud connector type. <code>none</code> disables the service mesh; <code>kafka</code> enables the Kafka connector.</td>
+</tr>
+<tr>
+<td><code>cloud.services</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Additional cloud services to register at startup.</td>
+</tr>
+<tr>
+<td><code>route.substitution</code></td>
+<td><code>String</code> (comma-sep <code>a:b</code> pairs)</td>
+<td>—</td>
+<td>Inline route substitutions where <code>b</code> replaces <code>a</code>. Example: <code>old.route:new.route</code>.</td>
+</tr>
+<tr>
+<td><code>user.cloud.client.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/second-kafka.properties, classpath:/second-kafka.properties</code></td>
+<td>Location(s) of a second Kafka client properties file for dual-cluster deployments.</td>
+</tr>
+<tr>
+<td><code>yaml.route.substitution</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td>—</td>
+<td>YAML file(s) defining route substitution mappings.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="kafka-topic-management">Kafka Topic Management</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>app.partitions.per.topic</code></td>
+<td><code>int</code></td>
+<td><code>32</code></td>
+<td>Maximum Kafka partitions per application topic.</td>
+</tr>
+<tr>
+<td><code>app.topic.prefix</code></td>
+<td><code>String</code></td>
+<td><code>multiplex</code></td>
+<td>Prefix for auto-generated application Kafka topics.</td>
+</tr>
+<tr>
+<td><code>application.feature.topic.substitution</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enable topic substitution for pre-allocated Kafka topics.</td>
+</tr>
+<tr>
+<td><code>closed.user.group</code></td>
+<td><code>int</code></td>
+<td><code>1</code></td>
+<td>Closed user group number for this instance (must be between 1 and <code>max.closed.user.groups</code>).</td>
+</tr>
+<tr>
+<td><code>default.app.group.id</code></td>
+<td><code>String</code></td>
+<td><code>appGroup</code></td>
+<td>Default Kafka consumer group ID for application instances.</td>
+</tr>
+<tr>
+<td><code>default.monitor.group.id</code></td>
+<td><code>String</code></td>
+<td><code>monitorGroup</code></td>
+<td>Kafka consumer group ID for presence monitor instances.</td>
+</tr>
+<tr>
+<td><code>kafka.replication.factor</code></td>
+<td><code>int</code></td>
+<td><code>3</code></td>
+<td>Replication factor for auto-created Kafka topics.</td>
+</tr>
+<tr>
+<td><code>max.closed.user.groups</code></td>
+<td><code>int</code></td>
+<td><code>10</code></td>
+<td>Number of closed user groups (range 3–30).</td>
+</tr>
+<tr>
+<td><code>max.virtual.topics</code></td>
+<td><code>int</code></td>
+<td><code>288</code></td>
+<td>Maximum number of virtual topics (= partitions × topic count).</td>
+</tr>
+<tr>
+<td><code>monitor.topic</code></td>
+<td><code>String</code></td>
+<td><code>service.monitor</code></td>
+<td>Kafka topic name for presence monitoring signals.</td>
+</tr>
+<tr>
+<td><code>presence.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/presence.properties, classpath:/presence.properties</code></td>
+<td>Kafka connection properties for the presence monitor.</td>
+</tr>
+<tr>
+<td><code>service.monitor</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>When <code>true</code>, this instance acts as a presence monitor rather than a regular service node.</td>
+</tr>
+<tr>
+<td><code>yaml.topic.substitution</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/topic-substitution.yaml, classpath:/topic-substitution.yaml</code></td>
+<td>YAML file(s) defining topic substitution mappings.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="scheduler">Scheduler</h2>
+<p>These properties are used by the optional <code>mini-scheduler</code> module.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deferred.start</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Defer scheduler startup until triggered manually, e.g. to wait for leader election.</td>
+</tr>
+<tr>
+<td><code>leader.election</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Enable leader election so that only one instance in a cluster runs each scheduled job.</td>
+</tr>
+<tr>
+<td><code>yaml.cron</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>classpath:/cron.yaml</code></td>
+<td>Location(s) of the cron job definition file(s). Multiple files are merged.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="postgresql-reactive-postgres-extension">PostgreSQL (<code>reactive-postgres</code> extension)</h2>
+<p>These properties configure the optional <code>reactive-postgres</code> extension. <code>postgres.host</code>,
+<code>postgres.port</code>, <code>postgres.user</code>, and <code>postgres.password</code> are <strong>required</strong> when the extension
+is on the classpath.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>logging.level.io.r2dbc.postgresql.PARAM</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>R2DBC parameter logging level (e.g. <code>DEBUG</code>). <strong>Never set in production</strong> — exposes parameter values and may leak PII.</td>
+</tr>
+<tr>
+<td><code>logging.level.io.r2dbc.postgresql.QUERY</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>R2DBC query logging level (e.g. <code>DEBUG</code>). <strong>Never set in production</strong> — exposes SQL queries.</td>
+</tr>
+<tr>
+<td><code>postgres.connection.pool</code></td>
+<td><code>int</code></td>
+<td><code>20</code></td>
+<td>R2DBC connection pool size (minimum 5).</td>
+</tr>
+<tr>
+<td><code>postgres.database</code></td>
+<td><code>String</code></td>
+<td><code>postgres</code></td>
+<td>PostgreSQL database name.</td>
+</tr>
+<tr>
+<td><code>postgres.host</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>PostgreSQL server hostname or IP. <strong>Required.</strong></td>
+</tr>
+<tr>
+<td><code>postgres.password</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>PostgreSQL password. <strong>Required.</strong> Supports <code>${ENV_VAR}</code> substitution.</td>
+</tr>
+<tr>
+<td><code>postgres.port</code></td>
+<td><code>int</code></td>
+<td>—</td>
+<td>PostgreSQL server port. <strong>Required.</strong></td>
+</tr>
+<tr>
+<td><code>postgres.repository.scan</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>Java package(s) to scan for Spring Data R2DBC repositories. <strong>Required.</strong></td>
+</tr>
+<tr>
+<td><code>postgres.ssl</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Enable SSL/TLS for the PostgreSQL connection.</td>
+</tr>
+<tr>
+<td><code>postgres.user</code></td>
+<td><code>String</code></td>
+<td>—</td>
+<td>PostgreSQL username. <strong>Required.</strong> Supports <code>${ENV_VAR}</code> substitution.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="serialization-content-types">Serialization &amp; Content Types</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>custom.content.types</code></td>
+<td><code>String</code> (comma-sep list)</td>
+<td>—</td>
+<td>Content-type resolver rules in <code>vendor-type -&gt; canonical-type</code> format. Example: <code>application/vnd.acme+json -&gt; application/json</code>.</td>
+</tr>
+<tr>
+<td><code>mime.types</code></td>
+<td>Map (YAML only)</td>
+<td>—</td>
+<td>Map of file extension to MIME type. Example: <code>mime.types.svg: image/svg+xml</code>.</td>
+</tr>
+<tr>
+<td><code>snake.case.serialization</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>When <code>true</code>, JSON output uses <code>snake_case</code> field names instead of <code>camelCase</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="data-storage">Data Storage</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>running.in.cloud</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>When <code>false</code>, a per-instance subdirectory is created under <code>transient.data.store</code>. When <code>true</code>, the path is used as-is (for ephemeral containers).</td>
+</tr>
+<tr>
+<td><code>transient.data.store</code></td>
+<td><code>String</code> (path)</td>
+<td><code>/tmp/reactive</code></td>
+<td>Base directory for the ElasticQueue overflow buffer that absorbs event bursts when consumers are slower than producers.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="complete-example">Complete Example</h2>
+<p>A typical <code>src/main/resources/application.properties</code> for a REST-serving composable
+application. This covers the properties most developers will need to configure.</p>
+<pre><code class="language-properties">#
+# Mercury Composable — Example application.properties
+#
+
+# --- Application Identity ---
+application.name=my-service
+info.app.version=1.0.0
+info.app.description=My composable microservice
+
+# --- Server ---
+rest.server.port=8100
+
+# --- REST Automation ---
+rest.automation=true
+yaml.rest.automation=classpath:/rest.yaml
+static.html.folder=classpath:/public
+
+# --- Event Script / Flows ---
+yaml.flow.automation=classpath:/flows.yaml
+
+# --- Component Scanning ---
+web.component.scan=com.example.myapp
+
+# --- Threading ---
+# Increase only if many @KernelThreadRunner functions are used.
+kernel.thread.pool=100
+
+# --- HTTP Client ---
+http.client.connection.timeout=5000
+
+# --- Distributed Tracing ---
+# List headers in preference order; first entry is also used as the outbound header.
+trace.http.header=X-Trace-Id
+
+# --- Health ---
+# List health-check routes that must all pass for /health to return 200.
+# Add cloud.connector.health when cloud.connector != none.
+# mandatory.health.dependencies=cloud.connector.health
+
+# --- Actuators ---
+protect.info.endpoints=false
+
+# --- Serialization ---
+snake.case.serialization=false
+
+# --- Logging ---
+log.format=text
+
+# --- Cloud Connector (uncomment for service mesh) ---
+# cloud.connector=kafka
+# cloud.client.properties=file:/tmp/config/kafka.properties,classpath:/kafka.properties
+</code></pre>
+<hr />
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="../CHAPTER-3/">REST Automation</a> — declarative REST endpoint configuration syntax</li>
+<li><a href="../CHAPTER-4/">Event Script Syntax</a> — flow YAML configuration syntax</li>
+<li><a href="../APPENDIX-III/">Actuators &amp; HTTP Client</a> — built-in actuator endpoint reference</li>
+<li><a href="../APPENDIX-I/">Application Properties (Appendix I)</a> — original property reference</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../ANNOTATIONS-REFERENCE/" class="btn btn-neutral float-left" title="Annotations Reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../EVENT-ENVELOPE-REFERENCE/" class="btn btn-neutral float-right" title="Event Envelope Reference">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../ANNOTATIONS-REFERENCE/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../EVENT-ENVELOPE-REFERENCE/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

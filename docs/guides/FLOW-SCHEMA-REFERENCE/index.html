@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/accenture/mercury-composable/guides/FLOW-SCHEMA-REFERENCE/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Flow Configuration Schema - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Flow Configuration Schema";
+        var mkdocs_page_input_path = "guides/FLOW-SCHEMA-REFERENCE.md";
+        var mkdocs_page_url = "/accenture/mercury-composable/guides/FLOW-SCHEMA-REFERENCE/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../QUICKSTART/">Quickstart</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Tutorials</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-1/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Guides</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-3/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-5/">Build, Test and Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-6/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-7/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-8/">Minimalist Service Mesh</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-10/">Minimalist Property Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-11/">Active Knowledge Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Concepts</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../METHODOLOGY/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ARCHITECTURE/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../COMPOSABLE-DESIGN/">Composable Design</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-2/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/DESIGN-NOTES/">Design Notes</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CONFIGURATION-REFERENCE/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../EVENT-ENVELOPE-REFERENCE/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Flow Configuration Schema</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#flow-list-file-flowsyaml">Flow list file (flows.yaml)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#flow-level-fields">Flow-level fields</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#task-level-fields">Task-level fields</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-types">Execution types</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#sequential">sequential</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parallel">parallel</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fork">fork</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#decision">decision</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#response">response</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#end">end</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sink">sink</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pipeline">pipeline</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#data-mapping-syntax">Data mapping syntax</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#whole-object-mapping">Whole-object mapping (*)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#three-part-mapping">Three-part mapping</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#type-conversion-suffixes">Type conversion suffixes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#input-namespaces-lhs-of-input-mappings">Input namespaces (LHS of input mappings)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#function-result-sources-lhs-of-output-mappings">Function result sources (LHS of output mappings)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#output-destinations-rhs-of-output-mappings">Output destinations (RHS of output mappings)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#constant-types-lhs-sources">Constant types (LHS sources)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#jsonpath-expressions">JSONPath expressions</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#http-input-dataset">HTTP input dataset</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pipeline-configuration">Pipeline configuration</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#for-loop">For loop</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#while-loop">While loop</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#loop-conditions">Loop conditions</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#subflows">Subflows</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#exception-handling">Exception handling</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#flow-level-exception-handler">Flow-level exception handler</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#task-level-exception-handler">Task-level exception handler</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#built-in-resilience-handler">Built-in resilience handler</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#plugin-functions-f-prefix">Plugin functions (f: prefix)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#arithmetic">Arithmetic</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#logical-and-comparison">Logical and comparison</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#type-conversion">Type conversion</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#string-operations">String operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#collection-operations">Collection operations</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#generators">Generators</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#external-state-machine">External state machine</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#built-in-special-variables">Built-in special variables</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#built-in-service-routes">Built-in service routes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#complete-annotated-example">Complete annotated example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-4/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CHAPTER-9/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-I/">Application Properties</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-II/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../APPENDIX-III/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG/">Release Notes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../TABLE-OF-CONTENTS/">Table of Contents</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING/">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../CODE_OF_CONDUCT/">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../INCLUSIVITY/">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Flow Configuration Schema</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="flow-configuration-schema-reference">Flow Configuration Schema Reference</h1>
+<p><em>Reference: Complete field-level reference for Mercury Composable Event Script flow configuration YAML files.</em></p>
+<blockquote>
+<p><strong>Note</strong>: Due to the dynamic nature of data mapping expressions, a formal JSON Schema is
+not provided. Validation of flow configurations is performed at compile time by the Mercury
+flow engine.</p>
+</blockquote>
+<p>This page documents every field, namespace, and syntax element available in flow
+configuration files. For a tutorial-style introduction with worked examples, see
+<a href="../CHAPTER-4/">Event Script Syntax</a>. For the <code>@PreLoad</code> annotation used to register
+task functions, see the <a href="../ANNOTATIONS-REFERENCE/">Annotations Reference</a>.</p>
+<hr />
+<h2 id="flow-list-file-flowsyaml">Flow list file (<code>flows.yaml</code>)</h2>
+<p>The flow list file is an index that tells the engine which flow configuration files to load.
+It is identified by the <code>yaml.flow.automation</code> application property.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flows</code></td>
+<td>list of strings</td>
+<td>Yes</td>
+<td>File names of individual flow configuration YAML files to load.</td>
+</tr>
+<tr>
+<td><code>location</code></td>
+<td>string</td>
+<td>No</td>
+<td>Base directory for resolving file names. Default: resources folder root. Example: <code>classpath:/flows/</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Multiple flow list files can be specified as a comma-separated list:</p>
+<pre><code class="language-yaml"># application.properties
+yaml.flow.automation=classpath:/flows.yaml, classpath:/more-flows.yaml
+</code></pre>
+<p>Example <code>flows.yaml</code>:</p>
+<pre><code class="language-yaml">location: 'classpath:/flows/'
+flows:
+  - 'get-profile.yml'
+  - 'create-profile.yml'
+  - 'delete-profile.yml'
+</code></pre>
+<hr />
+<h2 id="flow-level-fields">Flow-level fields</h2>
+<p>These fields appear at the root of every individual flow configuration file.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flow.id</code></td>
+<td>string</td>
+<td><strong>Yes</strong></td>
+<td>Unique identifier for this flow. Referenced by REST config (<code>flow</code> field in <code>rest.yaml</code>) and subflow calls (<code>flow://flow-id</code>). Must be unique across all loaded flows.</td>
+</tr>
+<tr>
+<td><code>flow.description</code></td>
+<td>string</td>
+<td><strong>Yes</strong></td>
+<td>Human-readable description of the flow's purpose. Validated at compile time.</td>
+</tr>
+<tr>
+<td><code>flow.ttl</code></td>
+<td>duration</td>
+<td><strong>Yes</strong></td>
+<td>Maximum wall-clock time for the flow to complete. Minimum 1 second. Accepted units: <code>s</code> (seconds), <code>m</code> (minutes), <code>h</code> (hours). Example: <code>30s</code>.</td>
+</tr>
+<tr>
+<td><code>flow.exception</code></td>
+<td>string</td>
+<td>No</td>
+<td>Route name of the global exception handler function for this flow. Receives the error dataset when any task throws an unhandled exception.</td>
+</tr>
+<tr>
+<td><code>first.task</code></td>
+<td>string</td>
+<td><strong>Yes</strong></td>
+<td>Route name (or task <code>name</code>) of the first task to execute when the flow starts.</td>
+</tr>
+<tr>
+<td><code>external.state.machine</code></td>
+<td>string</td>
+<td>Conditional</td>
+<td>Route name (or <code>flow://flow-id</code>) of an external state machine service. <strong>Required</strong> when any task uses the <code>ext:</code> output namespace.</td>
+</tr>
+<tr>
+<td><code>tasks</code></td>
+<td>list</td>
+<td><strong>Yes</strong></td>
+<td>Ordered list of task definitions. See <a href="#task-level-fields">Task-level fields</a>.</td>
+</tr>
+</tbody>
+</table>
+<p>Minimal valid flow:</p>
+<pre><code class="language-yaml">flow:
+  id: 'my-flow'
+  description: 'Example flow'
+  ttl: 30s
+  exception: 'v1.exception.handler'
+
+first.task: 'step.one'
+
+tasks:
+  - input:
+      - 'input.body -&gt; *'
+    process: 'my.service'
+    description: 'Call my service'
+    output:
+      - 'result -&gt; output.body'
+    execution: end
+</code></pre>
+<hr />
+<h2 id="task-level-fields">Task-level fields</h2>
+<p>Each entry in the <code>tasks</code> list defines a step in the flow.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>Conditional</td>
+<td>value of <code>process</code></td>
+<td>Unique task identifier within this flow. <strong>Required</strong> when the same <code>process</code> route is used more than once; otherwise the <code>process</code> value is used as the name.</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td><strong>Yes</strong></td>
+<td>—</td>
+<td>Human-readable description of what this task does. Validated at compile time.</td>
+</tr>
+<tr>
+<td><code>input</code></td>
+<td>list of strings</td>
+<td><strong>Yes</strong></td>
+<td>—</td>
+<td>Input data mapping rules. Use <code>[]</code> for no input. See <a href="#data-mapping-syntax">Data mapping syntax</a>.</td>
+</tr>
+<tr>
+<td><code>output</code></td>
+<td>list of strings</td>
+<td><strong>Yes</strong></td>
+<td>—</td>
+<td>Output data mapping rules. Use <code>[]</code> for no output. See <a href="#data-mapping-syntax">Data mapping syntax</a>.</td>
+</tr>
+<tr>
+<td><code>process</code></td>
+<td>string</td>
+<td>Conditional</td>
+<td>—</td>
+<td>Route name of the composable function to call, or <code>flow://flow-id</code> to invoke a subflow. Either <code>name</code> or <code>process</code> must be present.</td>
+</tr>
+<tr>
+<td><code>execution</code></td>
+<td>string</td>
+<td><strong>Yes</strong></td>
+<td>—</td>
+<td>Task execution type. See <a href="#execution-types">Execution types</a>.</td>
+</tr>
+<tr>
+<td><code>next</code></td>
+<td>list of strings</td>
+<td>Conditional</td>
+<td>—</td>
+<td>Route name(s) of subsequent task(s). Required for <code>sequential</code>, <code>parallel</code>, <code>fork</code>, <code>pipeline</code>. Not used for <code>end</code> or <code>sink</code>. Decision tasks: first entry = <code>false</code>/<code>1</code>, second = <code>true</code>/<code>2</code>, etc.</td>
+</tr>
+<tr>
+<td><code>exception</code></td>
+<td>string</td>
+<td>No</td>
+<td><em>(flow exception)</em></td>
+<td>Route name of a task-level exception handler. Overrides <code>flow.exception</code> for this task only.</td>
+</tr>
+<tr>
+<td><code>delay</code></td>
+<td>string or int</td>
+<td>No</td>
+<td>—</td>
+<td>Delay before this task executes. Integer = milliseconds; string = model variable path (e.g. <code>model.wait_ms</code>). Must be less than <code>flow.ttl</code>.</td>
+</tr>
+<tr>
+<td><code>pipeline</code></td>
+<td>list of strings</td>
+<td>Conditional</td>
+<td>—</td>
+<td>Ordered list of task route names. <strong>Required</strong> when <code>execution</code> is <code>pipeline</code>.</td>
+</tr>
+<tr>
+<td><code>loop</code></td>
+<td>object</td>
+<td>No</td>
+<td>—</td>
+<td>Loop configuration for pipeline tasks. See <a href="#pipeline-configuration">Pipeline configuration</a>.</td>
+</tr>
+<tr>
+<td><code>join</code></td>
+<td>string</td>
+<td>Conditional</td>
+<td>—</td>
+<td>Name of the task that collects fork results. <strong>Required</strong> when <code>execution</code> is <code>fork</code>.</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>string</td>
+<td>No</td>
+<td>—</td>
+<td>Model variable path (e.g. <code>model.items</code>) containing a list to iterate over in a dynamic fork. The fork creates one branch per list item.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>name</code>, <code>process</code>, and <code>description</code> are validated: task name must not be empty, and
+<code>description</code> must not be blank.</p>
+</blockquote>
+<hr />
+<h2 id="execution-types">Execution types</h2>
+<h3 id="sequential"><code>sequential</code></h3>
+<p>Executes the function and then passes control to exactly one next task.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code> (exactly 1 entry)</td>
+<td><code>delay</code>, <code>exception</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- name: 'step.one'
+  input:
+    - 'input.body -&gt; *'
+  process: 'v1.my.service'
+  description: 'Process the request body'
+  output:
+    - 'result -&gt; model.data'
+  execution: sequential
+  next:
+    - 'step.two'
+</code></pre>
+<hr />
+<h3 id="parallel"><code>parallel</code></h3>
+<p>Fans out to multiple next tasks concurrently. Each task receives the same model state. There
+is no join point — all branches run independently to their own <code>end</code> or <code>sink</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code> (2+ entries)</td>
+<td><code>delay</code>, <code>exception</code></td>
+<td><code>join</code>, <code>pipeline</code>, <code>loop</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- input:
+    - 'model.data -&gt; *'
+  process: 'v1.router'
+  description: 'Fan out to parallel handlers'
+  output: []
+  execution: parallel
+  next:
+    - 'handler.a'
+    - 'handler.b'
+    - 'handler.c'
+</code></pre>
+<hr />
+<h3 id="fork"><code>fork</code></h3>
+<p>Fork-and-join pattern. All <code>next</code> tasks run concurrently; execution resumes at the <code>join</code>
+task once all branches complete. Also supports iterating over a list via the <code>source</code> field.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code> (1+ entries), <code>join</code></td>
+<td><code>source</code>, <code>delay</code>, <code>exception</code></td>
+<td><code>pipeline</code>, <code>loop</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- input: []
+  process: 'no.op'
+  description: 'Fork into parallel branches'
+  output: []
+  execution: fork
+  next:
+    - 'branch.a'
+    - 'branch.b'
+  join: 'collect.results'
+</code></pre>
+<p><strong>Dynamic fork</strong> — iterates over a model list (<code>source</code>). Must have exactly one <code>next</code> task.
+Inside that task, <code>model.&lt;source&gt;.ITEM</code> holds the current item and <code>model.&lt;source&gt;.INDEX</code>
+holds the zero-based index:</p>
+<pre><code class="language-yaml">- input: []
+  process: 'no.op'
+  description: 'Fork over list items'
+  output: []
+  execution: fork
+  source: 'model.items'
+  next:
+    - 'process.item'
+  join: 'collect.results'
+
+- name: 'process.item'
+  input:
+    - 'model.items.ITEM -&gt; item'
+    - 'model.items.INDEX -&gt; idx'
+  process: 'v1.item.processor'
+  description: 'Process one list item'
+  output: []
+  execution: sink
+</code></pre>
+<hr />
+<h3 id="decision"><code>decision</code></h3>
+<p>Branches to one of the <code>next</code> tasks based on a value mapped to <code>decision</code> in the output.</p>
+<ul>
+<li><strong>Boolean decision</strong>: <code>false</code> routes to <code>next[0]</code>, <code>true</code> routes to <code>next[1]</code>.</li>
+<li><strong>Numeric decision</strong>: integer <code>1</code> routes to <code>next[0]</code>, <code>2</code> to <code>next[1]</code>, etc.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code> (2+ entries)</td>
+<td><code>delay</code>, <code>exception</code></td>
+<td><code>join</code>, <code>pipeline</code>, <code>loop</code>, <code>source</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- name: 'check.status'
+  input:
+    - 'model.status_code -&gt; status'
+  process: 'v1.status.checker'
+  description: 'Decide next step based on status'
+  output:
+    - 'result -&gt; decision'
+  execution: decision
+  next:
+    - 'handle.failure'
+    - 'handle.success'
+</code></pre>
+<p>The decision value <code>false</code> or <code>1</code> routes to <code>handle.failure</code>; <code>true</code> or <code>2</code> routes to
+<code>handle.success</code>.</p>
+<hr />
+<h3 id="response"><code>response</code></h3>
+<p>Sends an HTTP response to the caller immediately, then continues executing subsequent tasks
+asynchronously. Useful for long-running background processing after acknowledging a request.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code> (exactly 1 entry)</td>
+<td><code>delay</code>, <code>exception</code></td>
+<td><code>join</code>, <code>pipeline</code>, <code>loop</code>, <code>source</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- input:
+    - 'input.body -&gt; *'
+  process: 'v1.create.record'
+  description: 'Create record and respond immediately'
+  output:
+    - 'result -&gt; output.body'
+    - 'int(201) -&gt; output.status'
+  execution: response
+  next:
+    - 'v1.send.notification'
+</code></pre>
+<hr />
+<h3 id="end"><code>end</code></h3>
+<p>Terminates the flow. Any output mappings set the final HTTP response.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>—</td>
+<td><code>delay</code>, <code>exception</code></td>
+<td><code>next</code>, <code>join</code>, <code>pipeline</code>, <code>loop</code>, <code>source</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- input:
+    - 'model.profile -&gt; *'
+  process: 'v1.get.profile'
+  description: 'Fetch and return the profile'
+  output:
+    - 'text(application/json) -&gt; output.header.content-type'
+    - 'result -&gt; output.body'
+  execution: end
+</code></pre>
+<hr />
+<h3 id="sink"><code>sink</code></h3>
+<p>A terminal task with no outbound connection. Used as a branch endpoint in <code>parallel</code> or
+<code>fork</code> patterns. No response is sent.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>—</td>
+<td><code>delay</code>, <code>exception</code></td>
+<td><code>next</code>, <code>join</code>, <code>pipeline</code>, <code>loop</code>, <code>source</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- name: 'persist.audit'
+  input:
+    - 'model.event -&gt; payload'
+  process: 'v1.audit.writer'
+  description: 'Persist audit record (fire and forget)'
+  output: []
+  execution: sink
+</code></pre>
+<hr />
+<h3 id="pipeline"><code>pipeline</code></h3>
+<p>Executes the tasks listed in <code>pipeline</code> sequentially within this task's context, then passes
+control to the single <code>next</code> task. Supports optional <code>for</code> and <code>while</code> loop control. See
+<a href="#pipeline-configuration">Pipeline configuration</a> for loop syntax.</p>
+<table>
+<thead>
+<tr>
+<th>Required</th>
+<th>Optional</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next</code> (exactly 1 entry), <code>pipeline</code></td>
+<td><code>loop</code>, <code>delay</code>, <code>exception</code></td>
+<td><code>join</code>, <code>source</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">- input:
+    - 'int(0) -&gt; model.n'
+    - 'int(5) -&gt; model.limit'
+  process: 'no.op'
+  description: 'Run pipeline loop'
+  output: []
+  execution: pipeline
+  loop:
+    statement: 'for (model.n = 0; model.n &lt; model.limit; model.n++)'
+  pipeline:
+    - 'step.a'
+    - 'step.b'
+  next:
+    - 'step.final'
+</code></pre>
+<hr />
+<h2 id="data-mapping-syntax">Data mapping syntax</h2>
+<p>Every <code>input</code> and <code>output</code> entry is a mapping rule string in the form:</p>
+<pre><code>'source -&gt; destination'
+</code></pre>
+<p>The <code>-&gt;</code> operator assigns the value of <code>source</code> to <code>destination</code>. Source and destination
+must be different.</p>
+<h3 id="whole-object-mapping">Whole-object mapping (<code>*</code>)</h3>
+<p>Use <code>*</code> as the destination to pass the entire source object as the function's input body:</p>
+<pre><code class="language-yaml">input:
+  - 'input.body -&gt; *'
+  - 'text(json) -&gt; header.type'  # additional input headers; must come BEFORE *
+</code></pre>
+<blockquote>
+<p><code>'* -&gt; *'</code> passes the entire model as input. <code>'* -&gt; *'</code> in output copies function result
+directly to the output body.</p>
+</blockquote>
+<h3 id="three-part-mapping">Three-part mapping</h3>
+<p>A three-part rule decomposes into two rules at compile time:</p>
+<pre><code>'LHS -&gt; model.var -&gt; RHS'
+</code></pre>
+<p>is equivalent to:</p>
+<pre><code>'LHS -&gt; model.var'
+'model.var -&gt; RHS'
+</code></pre>
+<p>Useful for applying a type conversion and storing the intermediate value:</p>
+<pre><code class="language-yaml">- 'boolean(true) -&gt; !model.bool -&gt; negate_value'
+# compiled as:
+# - 'boolean(true) -&gt; model.bool:!'
+# - 'model.bool -&gt; negate_value'
+</code></pre>
+<h3 id="type-conversion-suffixes">Type conversion suffixes</h3>
+<p>Append <code>:qualifier</code> to any source reference to convert the value before mapping:</p>
+<table>
+<thead>
+<tr>
+<th>Suffix</th>
+<th>Converts to</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:text</code></td>
+<td>String</td>
+<td><code>model.count:text -&gt; label</code></td>
+</tr>
+<tr>
+<td><code>:int</code></td>
+<td>int</td>
+<td><code>model.str:int -&gt; count</code></td>
+</tr>
+<tr>
+<td><code>:long</code></td>
+<td>long</td>
+<td><code>model.str:long -&gt; ts</code></td>
+</tr>
+<tr>
+<td><code>:float</code></td>
+<td>float</td>
+<td><code>model.str:float -&gt; price</code></td>
+</tr>
+<tr>
+<td><code>:double</code></td>
+<td>double</td>
+<td><code>model.str:double -&gt; ratio</code></td>
+</tr>
+<tr>
+<td><code>:boolean</code></td>
+<td>boolean</td>
+<td><code>model.str:boolean -&gt; flag</code></td>
+</tr>
+<tr>
+<td><code>:binary</code></td>
+<td>byte[]</td>
+<td><code>model.text:binary -&gt; bytes</code></td>
+</tr>
+<tr>
+<td><code>:b64</code></td>
+<td>Base64 string</td>
+<td><code>model.bytes:b64 -&gt; encoded</code></td>
+</tr>
+<tr>
+<td><code>:!</code></td>
+<td>negated boolean</td>
+<td><code>model.flag:! -&gt; inverted</code></td>
+</tr>
+<tr>
+<td><code>:uuid</code></td>
+<td>UUID string</td>
+<td><code>model.none:uuid -&gt; id</code></td>
+</tr>
+<tr>
+<td><code>:length</code></td>
+<td>int (size)</td>
+<td><code>model.list:length -&gt; count</code></td>
+</tr>
+<tr>
+<td><code>:substring(start)</code></td>
+<td>String</td>
+<td><code>model.text:substring(6) -&gt; tail</code></td>
+</tr>
+<tr>
+<td><code>:substring(start, end)</code></td>
+<td>String</td>
+<td><code>model.text:substring(0, 5) -&gt; head</code></td>
+</tr>
+<tr>
+<td><code>:concat(args...)</code></td>
+<td>String</td>
+<td><code>model.a:concat(text( ), model.b) -&gt; full</code></td>
+</tr>
+<tr>
+<td><code>:and(model.key)</code></td>
+<td>boolean</td>
+<td><code>model.p:and(model.q) -&gt; both</code></td>
+</tr>
+<tr>
+<td><code>:or(model.key)</code></td>
+<td>boolean</td>
+<td><code>model.p:or(model.q) -&gt; either</code></td>
+</tr>
+<tr>
+<td><code>:boolean(value=true)</code></td>
+<td>boolean</td>
+<td><code>model.str:boolean(yes=true) -&gt; flag</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>model.none</code> is the built-in null constant. Any mapping from <code>model.none</code> clears the destination.</p>
+</blockquote>
+<hr />
+<h3 id="input-namespaces-lhs-of-input-mappings">Input namespaces (LHS of <code>input</code> mappings)</h3>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input</code></td>
+<td>Entire HTTP input dataset as a map</td>
+<td><code>input -&gt; *</code></td>
+</tr>
+<tr>
+<td><code>input.body</code></td>
+<td>Parsed request body (JSON → Map, text → String)</td>
+<td><code>input.body -&gt; *</code></td>
+</tr>
+<tr>
+<td><code>input.body.&lt;field&gt;</code></td>
+<td>Specific field from the request body</td>
+<td><code>input.body.user_id -&gt; id</code></td>
+</tr>
+<tr>
+<td><code>input.header</code></td>
+<td>All request headers (lowercase keys)</td>
+<td><code>input.header -&gt; headers</code></td>
+</tr>
+<tr>
+<td><code>input.header.&lt;name&gt;</code></td>
+<td>Specific request header</td>
+<td><code>input.header.authorization -&gt; token</code></td>
+</tr>
+<tr>
+<td><code>input.query</code></td>
+<td>All query parameters</td>
+<td><code>input.query -&gt; params</code></td>
+</tr>
+<tr>
+<td><code>input.query.&lt;name&gt;</code></td>
+<td>Specific query parameter</td>
+<td><code>input.query.page -&gt; page</code></td>
+</tr>
+<tr>
+<td><code>input.path_parameter.&lt;name&gt;</code></td>
+<td>URL path parameter</td>
+<td><code>input.path_parameter.id -&gt; id</code></td>
+</tr>
+<tr>
+<td><code>input.cookie.&lt;name&gt;</code></td>
+<td>HTTP cookie value</td>
+<td><code>input.cookie.session -&gt; session</code></td>
+</tr>
+<tr>
+<td><code>input.method</code></td>
+<td>HTTP method string</td>
+<td><code>input.method -&gt; method</code></td>
+</tr>
+<tr>
+<td><code>input.ip</code></td>
+<td>Remote IP address</td>
+<td><code>input.ip -&gt; client_ip</code></td>
+</tr>
+<tr>
+<td><code>input.stream</code></td>
+<td>Input stream route ID (file uploads)</td>
+<td><code>input.stream -&gt; stream_id</code></td>
+</tr>
+<tr>
+<td><code>input.filename</code></td>
+<td>Filename (multipart uploads)</td>
+<td><code>input.filename -&gt; name</code></td>
+</tr>
+<tr>
+<td><code>input.session.&lt;key&gt;</code></td>
+<td>Authenticated session value</td>
+<td><code>input.session.user_id -&gt; uid</code></td>
+</tr>
+<tr>
+<td><code>input.uri</code></td>
+<td>Request URI path</td>
+<td><code>input.uri -&gt; uri</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;</code></td>
+<td>State machine variable for this flow</td>
+<td><code>model.profile -&gt; *</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;.&lt;field&gt;</code></td>
+<td>Nested field in a state variable</td>
+<td><code>model.user.name -&gt; name</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;[n]</code></td>
+<td>Indexed element of a list</td>
+<td><code>model.items[0] -&gt; first</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;[model.n]</code></td>
+<td>Dynamically-indexed element</td>
+<td><code>model.items[model.n] -&gt; item</code></td>
+</tr>
+<tr>
+<td><code>model.parent.&lt;key&gt;</code></td>
+<td>Parent flow's state machine (in subflows)</td>
+<td><code>model.parent.token -&gt; token</code></td>
+</tr>
+<tr>
+<td><code>model.root.&lt;key&gt;</code></td>
+<td>Alias for <code>model.parent.&lt;key&gt;</code></td>
+<td><code>model.root.user -&gt; user</code></td>
+</tr>
+<tr>
+<td><code>model.none</code></td>
+<td>Null constant (clears the destination)</td>
+<td><code>model.none -&gt; model.old_key</code></td>
+</tr>
+<tr>
+<td><code>model.trace</code></td>
+<td>Current distributed trace ID</td>
+<td><code>model.trace -&gt; trace_id</code></td>
+</tr>
+<tr>
+<td><code>model.flow</code></td>
+<td>Current flow instance ID</td>
+<td><code>model.flow -&gt; flow_id</code></td>
+</tr>
+<tr>
+<td><code>model.instance</code></td>
+<td>Alternate alias for flow instance ID</td>
+<td><code>model.instance -&gt; instance</code></td>
+</tr>
+<tr>
+<td><code>model.{model.pointer}</code></td>
+<td>Dynamic model key (resolved at runtime)</td>
+<td><code>model.{model.pointer} -&gt; value</code></td>
+</tr>
+<tr>
+<td><code>error.task</code></td>
+<td>Route name of the task that threw (exception handlers)</td>
+<td><code>error.task -&gt; failed_task</code></td>
+</tr>
+<tr>
+<td><code>error.status</code></td>
+<td>HTTP status code of the error</td>
+<td><code>error.status -&gt; status</code></td>
+</tr>
+<tr>
+<td><code>error.message</code></td>
+<td>Error message string</td>
+<td><code>error.message -&gt; message</code></td>
+</tr>
+<tr>
+<td><code>error.stack</code></td>
+<td>Stack trace (if available)</td>
+<td><code>error.stack -&gt; stack</code></td>
+</tr>
+<tr>
+<td><code>$.path</code></td>
+<td>JSONPath expression</td>
+<td><code>$.input.body.list[*].id -&gt; ids</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="function-result-sources-lhs-of-output-mappings">Function result sources (LHS of <code>output</code> mappings)</h3>
+<p>These namespaces are only valid on the left-hand side of <code>output</code> mapping rules.</p>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>result</code></td>
+<td>Entire function return value</td>
+<td><code>result -&gt; output.body</code></td>
+</tr>
+<tr>
+<td><code>result.&lt;field&gt;</code></td>
+<td>Specific field from return value</td>
+<td><code>result.count -&gt; model.n</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>HTTP status code from <code>EventEnvelope</code></td>
+<td><code>status -&gt; output.status</code></td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td>All response headers from <code>EventEnvelope</code></td>
+<td><code>header -&gt; output.header</code></td>
+</tr>
+<tr>
+<td><code>header.&lt;name&gt;</code></td>
+<td>Specific response header</td>
+<td><code>header.x-trace -&gt; model.trace</code></td>
+</tr>
+<tr>
+<td><code>datatype</code></td>
+<td>Fully-qualified class name of the result</td>
+<td><code>datatype -&gt; output.header.x-type</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;</code></td>
+<td>Current state machine variable</td>
+<td><code>model.cached -&gt; output.body</code></td>
+</tr>
+<tr>
+<td><code>input</code></td>
+<td>Pass-through of the task's input</td>
+<td><code>input -&gt; model.saved</code></td>
+</tr>
+<tr>
+<td><code>input.&lt;field&gt;</code></td>
+<td>Specific field from task input</td>
+<td><code>input.id -&gt; model.id</code></td>
+</tr>
+<tr>
+<td><code>$.path</code></td>
+<td>JSONPath expression on the result</td>
+<td><code>$.result.items[*].id -&gt; ids</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="output-destinations-rhs-of-output-mappings">Output destinations (RHS of <code>output</code> mappings)</h3>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>output.body</code></td>
+<td>HTTP response body</td>
+<td><code>result -&gt; output.body</code></td>
+</tr>
+<tr>
+<td><code>output.body.&lt;field&gt;</code></td>
+<td>Set a specific field in the response body</td>
+<td><code>model.name -&gt; output.body.user</code></td>
+</tr>
+<tr>
+<td><code>output.header.&lt;name&gt;</code></td>
+<td>Set an HTTP response header</td>
+<td><code>text(application/json) -&gt; output.header.content-type</code></td>
+</tr>
+<tr>
+<td><code>output.header</code></td>
+<td>Set the entire header map</td>
+<td><code>header -&gt; output.header</code></td>
+</tr>
+<tr>
+<td><code>output.status</code></td>
+<td>Set the HTTP response status code (integer)</td>
+<td><code>int(201) -&gt; output.status</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;</code></td>
+<td>Store in flow's state machine</td>
+<td><code>result -&gt; model.profile</code></td>
+</tr>
+<tr>
+<td><code>model.&lt;key&gt;[]</code></td>
+<td>Append to a list in the state machine</td>
+<td><code>result.id -&gt; model.id_list[]</code></td>
+</tr>
+<tr>
+<td><code>model.parent.&lt;key&gt;</code></td>
+<td>Store in parent flow's state machine</td>
+<td><code>result -&gt; model.parent.child_result</code></td>
+</tr>
+<tr>
+<td><code>decision</code></td>
+<td>Set the decision value (decision tasks only)</td>
+<td><code>result -&gt; decision</code></td>
+</tr>
+<tr>
+<td><code>file(&lt;path&gt;)</code></td>
+<td>Write to a file at the given path</td>
+<td><code>result -&gt; file(/tmp/output.json)</code></td>
+</tr>
+<tr>
+<td><code>file(append:&lt;path&gt;)</code></td>
+<td>Append to a file</td>
+<td><code>text(line) -&gt; file(append:/tmp/log.txt)</code></td>
+</tr>
+<tr>
+<td><code>ext:&lt;key&gt;</code></td>
+<td>Write to external state machine</td>
+<td><code>result -&gt; ext:/session/data</code></td>
+</tr>
+<tr>
+<td><code>ext:append</code></td>
+<td>Append to external state machine list</td>
+<td><code>result.item -&gt; ext:append</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="constant-types-lhs-sources">Constant types (LHS sources)</h3>
+<p>Use these functions on the left-hand side of any input mapping to inject a literal value.</p>
+<table>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Java type</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text(value)</code></td>
+<td><code>String</code></td>
+<td><code>text(application/json) -&gt; output.header.content-type</code></td>
+</tr>
+<tr>
+<td><code>text(Bearer {model.token})</code></td>
+<td><code>String</code> with interpolation</td>
+<td><code>text(Bearer {model.token}) -&gt; headers.Authorization</code></td>
+</tr>
+<tr>
+<td><code>int(value)</code></td>
+<td><code>int</code></td>
+<td><code>int(201) -&gt; output.status</code></td>
+</tr>
+<tr>
+<td><code>long(value)</code></td>
+<td><code>long</code></td>
+<td><code>long(9223372036854775807) -&gt; max</code></td>
+</tr>
+<tr>
+<td><code>float(value)</code></td>
+<td><code>float</code></td>
+<td><code>float(3.14) -&gt; pi</code></td>
+</tr>
+<tr>
+<td><code>double(value)</code></td>
+<td><code>double</code></td>
+<td><code>double(3.14159265) -&gt; pi</code></td>
+</tr>
+<tr>
+<td><code>boolean(value)</code></td>
+<td><code>boolean</code></td>
+<td><code>boolean(true) -&gt; enabled</code></td>
+</tr>
+<tr>
+<td><code>map(k=v, k2=v2, ...)</code></td>
+<td><code>Map&lt;String,String&gt;</code></td>
+<td><code>map(type=json, ver=2) -&gt; config</code></td>
+</tr>
+<tr>
+<td><code>map(app.config.key)</code></td>
+<td><code>Map</code> (from config)</td>
+<td><code>map(my.config.section) -&gt; settings</code></td>
+</tr>
+<tr>
+<td><code>file(text:&lt;path&gt;)</code></td>
+<td><code>String</code></td>
+<td><code>file(text:/tmp/template.txt) -&gt; template</code></td>
+</tr>
+<tr>
+<td><code>file(json:&lt;path&gt;)</code></td>
+<td><code>Map</code> or <code>List</code></td>
+<td><code>file(json:/tmp/config.json) -&gt; config</code></td>
+</tr>
+<tr>
+<td><code>file(binary:&lt;path&gt;)</code></td>
+<td><code>byte[]</code></td>
+<td><code>file(binary:/tmp/image.png) -&gt; bytes</code></td>
+</tr>
+<tr>
+<td><code>classpath(text:&lt;path&gt;)</code></td>
+<td><code>String</code></td>
+<td><code>classpath(text:templates/email.txt) -&gt; body</code></td>
+</tr>
+<tr>
+<td><code>classpath(json:&lt;path&gt;)</code></td>
+<td><code>Map</code> or <code>List</code></td>
+<td><code>classpath(json:defaults.json) -&gt; defaults</code></td>
+</tr>
+<tr>
+<td><code>classpath(binary:&lt;path&gt;)</code></td>
+<td><code>byte[]</code></td>
+<td><code>classpath(binary:certs/key.der) -&gt; cert</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Template interpolation in <code>text()</code></strong>: <code>{model.key}</code> is replaced at runtime with the
+current value of <code>model.key</code>. Also supports <code>${ENV_VAR}</code> for environment variables and
+<code>${app.property}</code> for application properties.</p>
+</blockquote>
+<hr />
+<h3 id="jsonpath-expressions">JSONPath expressions</h3>
+<p>Use <code>$.</code> to apply a JSONPath expression to the input or result:</p>
+<pre><code class="language-yaml">input:
+  - '$.input.body.users[*].id -&gt; user_ids'   # Wildcard generates map of lists
+
+output:
+  - '$.result.items[*].name -&gt; model.names'
+</code></pre>
+<blockquote>
+<p>Wildcard searches (e.g. <code>[*]</code>) generate a <code>Map&lt;String, List&gt;</code> keyed by the last path
+segment. Use <code>f:listOfMap()</code> to normalize this into a <code>List&lt;Map&gt;</code>.</p>
+</blockquote>
+<hr />
+<h2 id="http-input-dataset">HTTP input dataset</h2>
+<p>When a flow is triggered by an HTTP request, the following fields are available under the
+<code>input.</code> namespace:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td>String</td>
+<td>HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS)</td>
+</tr>
+<tr>
+<td><code>uri</code></td>
+<td>String</td>
+<td>Request URI path</td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td>Map</td>
+<td>Request headers (lowercase keys)</td>
+</tr>
+<tr>
+<td><code>cookie</code></td>
+<td>Map</td>
+<td>HTTP cookies (lowercase keys)</td>
+</tr>
+<tr>
+<td><code>path_parameter</code></td>
+<td>Map</td>
+<td>URL path parameters (as defined in <code>rest.yaml</code>)</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td>Map</td>
+<td>Query string parameters (lowercase keys)</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>Map / Object</td>
+<td>Parsed request body; JSON → Map, text → String</td>
+</tr>
+<tr>
+<td><code>stream</code></td>
+<td>String</td>
+<td>Stream route ID for file upload or large body streaming</td>
+</tr>
+<tr>
+<td><code>ip</code></td>
+<td>String</td>
+<td>Remote IP address</td>
+</tr>
+<tr>
+<td><code>filename</code></td>
+<td>String</td>
+<td>Original filename (multipart file upload)</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>Map</td>
+<td>Session key-values set by an authentication function</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="pipeline-configuration">Pipeline configuration</h2>
+<p>The <code>loop</code> sub-object controls iteration for <code>pipeline</code> tasks.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>loop.statement</code></td>
+<td>string</td>
+<td><strong>Yes</strong> (if <code>loop</code> present)</td>
+<td>Loop control statement. Must be <code>for (...)</code> or <code>while (...)</code>.</td>
+</tr>
+<tr>
+<td><code>loop.condition</code></td>
+<td>string or list</td>
+<td>No</td>
+<td>Break or continue condition(s). One or more <code>if (model.key) break\|continue</code> strings.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="for-loop">For loop</h3>
+<pre><code>for (&lt;init&gt;; &lt;comparator&gt;; &lt;sequencer&gt;)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Syntax</th>
+<th>Operators</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>init (optional)</td>
+<td><code>model.var = &lt;integer&gt;</code></td>
+<td>assignment</td>
+</tr>
+<tr>
+<td>comparator</td>
+<td><code>model.var &lt; model.max</code></td>
+<td><code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code></td>
+</tr>
+<tr>
+<td>sequencer</td>
+<td><code>model.var++</code> or <code>model.var--</code></td>
+<td><code>++</code>, <code>--</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml">loop:
+  statement: 'for (model.n = 0; model.n &lt; model.limit; model.n++)'
+  condition:
+    - 'if (model.quit) break'
+    - 'if (model.skip) continue'
+pipeline:
+  - 'step.a'
+  - 'step.b'
+</code></pre>
+<h3 id="while-loop">While loop</h3>
+<pre><code>while (model.key)
+</code></pre>
+<p>The loop continues while <code>model.key</code> is truthy. <code>model.key</code> must be a simple model variable
+(no operators).</p>
+<pre><code class="language-yaml">loop:
+  statement: 'while (model.running)'
+  condition: 'if (model.abort) break'
+pipeline:
+  - 'step.a'
+  - 'step.b'
+</code></pre>
+<h3 id="loop-conditions">Loop conditions</h3>
+<p>Each condition has the form <code>if (model.key) break</code> or <code>if (model.key) continue</code>. Multiple
+conditions can be a YAML list. Conditions are evaluated before each pipeline iteration.</p>
+<hr />
+<h2 id="subflows">Subflows</h2>
+<p>A task can invoke another flow as a subroutine using the <code>flow://</code> protocol in <code>process</code>:</p>
+<pre><code class="language-yaml">- name: 'call.sub.flow'
+  input:
+    - 'model.data -&gt; input.body'
+    - 'model.token -&gt; input.header.authorization'
+  process: 'flow://child-flow-id'
+  description: 'Delegate to child flow'
+  output:
+    - 'result -&gt; model.child_result'
+  execution: sequential
+  next:
+    - 'next.step'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Syntax</td>
+<td><code>process: 'flow://flow-id'</code></td>
+</tr>
+<tr>
+<td>Input</td>
+<td>Data is mapped into <code>input.body</code> and <code>input.header.*</code> of the child flow</td>
+</tr>
+<tr>
+<td>Output</td>
+<td>The child flow's final <code>output.body</code> is available as <code>result</code> in the parent</td>
+</tr>
+<tr>
+<td>Shared state</td>
+<td>Parent state accessible via <code>model.parent.&lt;key&gt;</code> or <code>model.root.&lt;key&gt;</code> in child tasks</td>
+</tr>
+<tr>
+<td>TTL</td>
+<td>The parent flow's remaining TTL governs the subflow; no separate TTL applies</td>
+</tr>
+<tr>
+<td>Nesting</td>
+<td>Subflows can themselves call subflows</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>When the task name is omitted and <code>process</code> is a <code>flow://</code> URI, the flow ID becomes the
+task name.</p>
+</blockquote>
+<hr />
+<h2 id="exception-handling">Exception handling</h2>
+<h3 id="flow-level-exception-handler">Flow-level exception handler</h3>
+<p>Declared with <code>flow.exception</code>. Catches any unhandled exception from any task in the flow.
+The error dataset is available through the <code>error.*</code> namespace.</p>
+<pre><code class="language-yaml">flow:
+  id: 'my-flow'
+  description: 'My flow'
+  ttl: 30s
+  exception: 'v1.exception.handler'
+
+# ... other fields ...
+
+tasks:
+  # ... other tasks ...
+
+  - input:
+      - 'error.status -&gt; status'
+      - 'error.message -&gt; message'
+      - 'error.stack -&gt; stack'
+      - 'error.task -&gt; failed_task'
+    process: 'v1.exception.handler'
+    description: 'Handle flow-level exceptions'
+    output:
+      - 'result.status -&gt; output.status'
+      - 'result -&gt; output.body'
+    execution: end
+</code></pre>
+<h3 id="task-level-exception-handler">Task-level exception handler</h3>
+<p>Declared with the <code>exception</code> field on an individual task. Overrides the flow-level handler
+for that task only.</p>
+<pre><code class="language-yaml">- name: 'risky.task'
+  input:
+    - 'model.payload -&gt; *'
+  process: 'v1.risky.service'
+  description: 'Risky operation with its own error handler'
+  output:
+    - 'result -&gt; model.result'
+  execution: sequential
+  exception: 'v1.task.exception.handler'
+  next:
+    - 'next.step'
+</code></pre>
+<h3 id="built-in-resilience-handler">Built-in resilience handler</h3>
+<p>The <code>resilience.handler</code> function implements retry-with-backoff. Use it as a task-level
+exception handler combined with a <code>decision</code> execution type:</p>
+<pre><code class="language-yaml">- name: 'my.task'
+  process: 'v1.service'
+  description: 'Service call with retry'
+  output:
+    - 'result -&gt; model.result'
+  execution: end
+  exception: 'resilience.handler'
+
+- input:
+    - 'error.status -&gt; status'
+    - 'error.message -&gt; message'
+    - 'model.attempt -&gt; attempt'
+    - 'int(3) -&gt; max_attempts'
+  process: 'resilience.handler'
+  description: 'Retry decision'
+  output:
+    - 'result.attempt -&gt; model.attempt'
+    - 'result.decision -&gt; decision'
+  execution: decision
+  next:
+    - 'my.task | @retry'
+    - 'abort.handler'
+</code></pre>
+<p>The <code>@retry</code> keyword in a <code>next</code> entry re-executes the original task. The <code>|</code> pipe operator
+provides a fallback task name if <code>@retry</code> is not triggered.</p>
+<hr />
+<h2 id="plugin-functions-f-prefix">Plugin functions (<code>f:</code> prefix)</h2>
+<p>Plugins are used on the <strong>left-hand side</strong> of input mapping rules. They compute a value from
+their arguments and place it at the destination.</p>
+<p>Syntax: <code>f:&lt;name&gt;(arg1, arg2, ...) -&gt; destination</code></p>
+<p>Arguments can be model variables, constant types, or nested plugin calls.</p>
+<h3 id="arithmetic">Arithmetic</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:add(a, b, ...)</code></td>
+<td>Sum of arguments</td>
+<td><code>f:add(model.x, model.y) -&gt; sum</code></td>
+</tr>
+<tr>
+<td><code>f:subtract(a, b, ...)</code></td>
+<td><code>a</code> minus remaining args</td>
+<td><code>f:subtract(model.total, model.fee) -&gt; net</code></td>
+</tr>
+<tr>
+<td><code>f:multiply(a, b)</code></td>
+<td>Product</td>
+<td><code>f:multiply(model.price, model.qty) -&gt; total</code></td>
+</tr>
+<tr>
+<td><code>f:div(a, b)</code></td>
+<td>Division (<code>a / b</code>)</td>
+<td><code>f:div(model.total, model.n) -&gt; avg</code></td>
+</tr>
+<tr>
+<td><code>f:modulus(a, b)</code></td>
+<td>Remainder (<code>a % b</code>)</td>
+<td><code>f:modulus(model.n, int(2)) -&gt; rem</code></td>
+</tr>
+<tr>
+<td><code>f:increment(a)</code></td>
+<td><code>a + 1</code></td>
+<td><code>f:increment(model.count) -&gt; next_count</code></td>
+</tr>
+<tr>
+<td><code>f:decrement(a)</code></td>
+<td><code>a - 1</code></td>
+<td><code>f:decrement(model.count) -&gt; prev_count</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="logical-and-comparison">Logical and comparison</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:eq(a, b)</code></td>
+<td><code>a == b</code> → boolean</td>
+<td><code>f:eq(model.status, text(ok)) -&gt; is_ok</code></td>
+</tr>
+<tr>
+<td><code>f:gt(a, b)</code></td>
+<td><code>a &gt; b</code> → boolean</td>
+<td><code>f:gt(model.n, int(10)) -&gt; over_limit</code></td>
+</tr>
+<tr>
+<td><code>f:lt(a, b)</code></td>
+<td><code>a &lt; b</code> → boolean</td>
+<td><code>f:lt(model.n, int(0)) -&gt; negative</code></td>
+</tr>
+<tr>
+<td><code>f:and(a, b, ...)</code></td>
+<td>Logical AND</td>
+<td><code>f:and(model.ready, model.valid) -&gt; ok</code></td>
+</tr>
+<tr>
+<td><code>f:or(a, b, ...)</code></td>
+<td>Logical OR</td>
+<td><code>f:or(model.err1, model.err2) -&gt; has_error</code></td>
+</tr>
+<tr>
+<td><code>f:not(a)</code></td>
+<td>Logical NOT</td>
+<td><code>f:not(model.flag) -&gt; inverted</code></td>
+</tr>
+<tr>
+<td><code>f:ternary(cond, a, b)</code></td>
+<td><code>cond ? a : b</code></td>
+<td><code>f:ternary(model.ok, text(pass), text(fail)) -&gt; label</code></td>
+</tr>
+<tr>
+<td><code>f:isNull(a)</code></td>
+<td><code>a == null</code> → boolean</td>
+<td><code>f:isNull(model.opt) -&gt; is_missing</code></td>
+</tr>
+<tr>
+<td><code>f:notNull(a)</code></td>
+<td><code>a != null</code> → boolean</td>
+<td><code>f:notNull(model.opt) -&gt; is_present</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="type-conversion">Type conversion</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:text(a)</code></td>
+<td>Convert to String</td>
+<td><code>f:text(model.n) -&gt; label</code></td>
+</tr>
+<tr>
+<td><code>f:int(a)</code></td>
+<td>Convert to int</td>
+<td><code>f:int(model.str) -&gt; count</code></td>
+</tr>
+<tr>
+<td><code>f:long(a)</code></td>
+<td>Convert to long</td>
+<td><code>f:long(model.str) -&gt; ts</code></td>
+</tr>
+<tr>
+<td><code>f:float(a)</code></td>
+<td>Convert to float</td>
+<td><code>f:float(model.str) -&gt; price</code></td>
+</tr>
+<tr>
+<td><code>f:double(a)</code></td>
+<td>Convert to double</td>
+<td><code>f:double(model.str) -&gt; ratio</code></td>
+</tr>
+<tr>
+<td><code>f:boolean(a)</code></td>
+<td>Convert to boolean</td>
+<td><code>f:boolean(model.str) -&gt; flag</code></td>
+</tr>
+<tr>
+<td><code>f:binary(a)</code></td>
+<td>Convert to byte[]</td>
+<td><code>f:binary(model.text) -&gt; bytes</code></td>
+</tr>
+<tr>
+<td><code>f:b64(a)</code></td>
+<td>Base64 encode/decode</td>
+<td><code>f:b64(model.bytes) -&gt; encoded</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="string-operations">String operations</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:concat(a, b, ...)</code></td>
+<td>Concatenate strings</td>
+<td><code>f:concat(model.first, text( ), model.last) -&gt; name</code></td>
+</tr>
+<tr>
+<td><code>f:substring(str, start)</code></td>
+<td>Substring from start</td>
+<td><code>f:substring(model.text, int(6)) -&gt; tail</code></td>
+</tr>
+<tr>
+<td><code>f:substring(str, start, end)</code></td>
+<td>Substring range</td>
+<td><code>f:substring(model.text, int(0), int(5)) -&gt; head</code></td>
+</tr>
+<tr>
+<td><code>f:length(a)</code></td>
+<td>Length of string or list</td>
+<td><code>f:length(model.items) -&gt; count</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="collection-operations">Collection operations</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:listOfMap(a)</code></td>
+<td>Normalize JSONPath wildcard result (<code>Map&lt;String,List&gt;</code>) to <code>List&lt;Map&gt;</code></td>
+<td><code>f:listOfMap(model.rows) -&gt; rows</code></td>
+</tr>
+<tr>
+<td><code>f:updateListOfMap(list, extra)</code></td>
+<td>Merge additional fields into each map in the list</td>
+<td><code>f:updateListOfMap(model.rows, model.extra) -&gt; augmented</code></td>
+</tr>
+<tr>
+<td><code>f:removeKey(map, key)</code></td>
+<td>Remove a key from a map or each map in a list</td>
+<td><code>f:removeKey(model.obj, text(secret)) -&gt; clean</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="generators">Generators</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f:uuid()</code></td>
+<td>Generate a random UUID string</td>
+<td><code>f:uuid() -&gt; id</code></td>
+</tr>
+<tr>
+<td><code>f:dateTime()</code></td>
+<td>Current date-time (ISO-8601)</td>
+<td><code>f:dateTime() -&gt; now</code></td>
+</tr>
+<tr>
+<td><code>f:date(format)</code></td>
+<td>Formatted date string</td>
+<td><code>f:date(text(yyyy-MM-dd)) -&gt; today</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Plugins are validated at compile time. They may only use classes from <code>java.lang</code>,
+<code>java.util</code>, <code>java.math</code>, <code>java.time</code>, and Mercury framework packages.</p>
+</blockquote>
+<hr />
+<h2 id="external-state-machine">External state machine</h2>
+<p>When <code>external.state.machine</code> is declared at the flow level, tasks can read from and write to
+a separate service that manages cross-flow or cross-instance state.</p>
+<p>The <code>ext:</code> namespace is used in output mappings to write to the external state machine.
+To read from it, invoke the external state machine service directly via a <code>sequential</code> task.</p>
+<pre><code class="language-yaml">flow:
+  id: 'session-flow'
+  description: 'Flow with external session store'
+  ttl: 30s
+  external.state.machine: 'v1.session.store'
+
+# ...
+
+  # Write to external state machine
+  - input:
+      - 'input.path_parameter.user -&gt; ext:/session/user'
+      - 'input.body -&gt; ext:/session/payload'
+      - 'model.none -&gt; ext:/session/old_key'        # delete key
+    process: 'no.op'
+    description: 'Persist session data'
+    output: []
+    execution: sequential
+    next:
+      - 'next.step'
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Syntax</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value -&gt; ext:&lt;key&gt;</code></td>
+<td>Write value to external state at <code>&lt;key&gt;</code></td>
+</tr>
+<tr>
+<td><code>model.none -&gt; ext:&lt;key&gt;</code></td>
+<td>Delete <code>&lt;key&gt;</code> from external state</td>
+</tr>
+<tr>
+<td><code>result -&gt; ext:append</code></td>
+<td>Append to a list in the external state</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>external.state.machine</code> can be a service route (<code>v1.session.store</code>) or a subflow
+(<code>flow://session-flow</code>).</p>
+</blockquote>
+<hr />
+<h2 id="built-in-special-variables">Built-in special variables</h2>
+<p>These <code>model.*</code> variables are set by the framework automatically.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model.trace</code></td>
+<td>Current distributed trace ID</td>
+</tr>
+<tr>
+<td><code>model.flow</code></td>
+<td>Unique ID of this flow instance</td>
+</tr>
+<tr>
+<td><code>model.instance</code></td>
+<td>Alias for <code>model.flow</code></td>
+</tr>
+<tr>
+<td><code>model.none</code></td>
+<td>Always <code>null</code>; use to clear model keys or delete file/ext destinations</td>
+</tr>
+<tr>
+<td><code>model.&lt;source&gt;.ITEM</code></td>
+<td>Current item in a dynamic fork iteration</td>
+</tr>
+<tr>
+<td><code>model.&lt;source&gt;.INDEX</code></td>
+<td>Zero-based index in a dynamic fork iteration</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="built-in-service-routes">Built-in service routes</h2>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>no.op</code></td>
+<td>No-operation function; passes input through unchanged. Useful as a routing-only task.</td>
+</tr>
+<tr>
+<td><code>resilience.handler</code></td>
+<td>Built-in retry-with-backoff handler. Use as <code>exception:</code> on a task.</td>
+</tr>
+<tr>
+<td><code>simple.exception.handler</code></td>
+<td>Default exception handler; returns error details as HTTP response.</td>
+</tr>
+<tr>
+<td><code>async.http.request</code></td>
+<td>Built-in HTTP client. Set <code>url</code>, <code>method</code>, <code>body</code>, <code>headers.*</code>, <code>parameters.query.*</code> as input.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="complete-annotated-example">Complete annotated example</h2>
+<p>A realistic flow that creates a user profile, responds immediately, then asynchronously
+encrypts sensitive fields.</p>
+<pre><code class="language-yaml"># Flow-level metadata
+flow:
+  id: 'create-profile'
+  description: 'Create a new user profile and encrypt sensitive fields'
+  ttl: 30s                               # Total time budget for the flow
+  exception: 'v1.exception.handler'      # Catches any unhandled task exception
+
+first.task: 'v1.create.profile'          # Entry point
+
+tasks:
+
+  # Step 1: Store the profile
+  - input:
+      - 'input.body -&gt; *'                # Map the entire request body as function input
+    process: 'v1.create.profile'
+    description: 'Persist the new profile to the data store'
+    output:
+      - 'result -&gt; model.profile'        # Store result in flow state machine
+    execution: response                  # Send HTTP response immediately, then continue
+    output:
+      - 'result -&gt; output.body'
+      - 'int(201) -&gt; output.status'
+      - 'text(application/json) -&gt; output.header.content-type'
+    next:
+      - 'v1.encrypt.fields'              # Continue asynchronously
+
+  # Step 2: Encrypt sensitive fields (runs after response is sent)
+  - input:
+      - 'model.profile -&gt; *'             # Pass stored profile as function input
+    process: 'v1.encrypt.fields'
+    description: 'Encrypt address and telephone in the persisted record'
+    output:
+      - 'result -&gt; model.encrypted'
+    execution: sequential
+    next:
+      - 'v1.save.encrypted'
+
+  # Step 3: Save the encrypted profile
+  - input:
+      - 'model.encrypted -&gt; *'
+    process: 'v1.save.encrypted'
+    description: 'Persist the encrypted profile back to the data store'
+    output: []
+    execution: end                       # Terminate the flow; no response (already sent)
+
+  # Exception handler task (referenced by flow.exception)
+  - input:
+      - 'error.status -&gt; status'         # HTTP status from the thrown exception
+      - 'error.message -&gt; message'       # Error message
+      - 'error.stack -&gt; stack'           # Stack trace
+      - 'error.task -&gt; failed_task'      # Which task failed
+    process: 'v1.exception.handler'
+    description: 'Return a structured error response'
+    output:
+      - 'result.status -&gt; output.status'
+      - 'result -&gt; output.body'
+    execution: end
+</code></pre>
+<hr />
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../CHAPTER-4/">Event Script Syntax</a> — tutorial-style walkthrough with worked examples</li>
+<li><a href="../CHAPTER-3/">REST Automation</a> — <code>rest.yaml</code> configuration for HTTP endpoint routing</li>
+<li><a href="../CONFIGURATION-REFERENCE/">Configuration Reference</a> — <code>application.properties</code> keys
+  including <code>yaml.flow.automation</code></li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../EVENT-ENVELOPE-REFERENCE/" class="btn btn-neutral float-left" title="Event Envelope Reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../CHAPTER-4/" class="btn btn-neutral float-right" title="Event Script Syntax">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../EVENT-ENVELOPE-REFERENCE/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../CHAPTER-4/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
