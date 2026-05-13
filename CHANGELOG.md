@@ -22,7 +22,7 @@ N/A
 
 ### Changed
 
-OSS update - spring boot version 3.5.14 and 4.0.6
+OSS update - spring boot version 3.5.14 and 4.0.6, netty version 4.2.13.Final, tomcat 10.1.55 and 11.0.22
 
 ---
 ## Version 4.4.9, 4/24/2026
