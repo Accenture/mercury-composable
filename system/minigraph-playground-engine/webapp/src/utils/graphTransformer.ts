@@ -37,6 +37,7 @@ const NODE_WIDTH  = 240;
 const NODE_HEIGHT = 100; // rough estimate; ResizeObserver will correct it post-mount
 const ROW_GAP            = 60;   // vertical gap between nodes stacked in the same column
 const COL_GAP            = 120;  // horizontal gap between columns (levels)
+const COMPONENT_GAP      = 360;  // horizontal gap between independent flow trees
 const SECTION_GAP        = 120;  // vertical gap between main flow and first segregated row
 const SEGREGATED_ROW_GAP = 80;   // vertical gap between successive segregated rows
 
@@ -146,7 +147,7 @@ const MODULE_SKILLS = new Set(['graph.math', 'graph.js']);
 const SEGREGATED_ROW_ORDER: readonly string[] = [
   'Dictionary',   // data extraction contracts from API responses
   'Provider',     // reusable API endpoint configurations
-    'Module',       // reusable computation blocks (EXECUTE keyword)
+  'Module',       // reusable computation blocks (EXECUTE keyword)
   'Entity',       // skill-less data-holder nodes (business domain objects)
 ];
 
@@ -154,6 +155,52 @@ const SEGREGATED_ROW_ORDER: readonly string[] = [
 // Layout categories returned by classifyNode.  'flow' nodes participate in the
 // main BFS layout; all other categories are placed in segregated rows below.
 type LayoutCategory = 'flow' | 'Dictionary' | 'Provider' | 'Entity' | 'Module' | '__unknown__';
+type MinigraphNodeModel = MinigraphGraphData['nodes'][number];
+
+interface FlowComponent {
+  aliases: string[];
+  nodes: MinigraphNodeModel[];
+  hasRoot: boolean;
+  hasEnd: boolean;
+  sortKey: string;
+}
+
+const FLOW_COMPONENT_LAYOUT_ORDER = {
+  ROOT_TREE: 0,
+  DEFAULT_TREE: 1,
+  END_TREE: 2,
+} as const;
+
+// Root-like nodes define the primary execution tree. When several disconnected
+// flow trees exist, this component is anchored first so graph reading starts on
+// the left from the graph entry point.
+function isRootLikeNode(node: MinigraphNodeModel): boolean {
+  return node.alias.toLowerCase() === 'root' ||
+    node.types.includes('Root') ||
+    node.types.includes('entry_point');
+}
+
+// End-like nodes are terminal-only branches in some imported models. Ranking
+// their component last keeps those completion/error branches on the right.
+function isEndLikeNode(node: MinigraphNodeModel): boolean {
+  return node.alias.toLowerCase() === 'end' || node.types.includes('End');
+}
+
+// Keep component ordering policy centralized: root tree first, ordinary trees
+// next, terminal/end tree last. The numeric values are only sort ranks.
+function getFlowComponentRank(component: FlowComponent): number {
+  if (component.hasRoot) return FLOW_COMPONENT_LAYOUT_ORDER.ROOT_TREE;
+  if (component.hasEnd) return FLOW_COMPONENT_LAYOUT_ORDER.END_TREE;
+  return FLOW_COMPONENT_LAYOUT_ORDER.DEFAULT_TREE;
+}
+
+// Sort disconnected flow trees before assigning global columns. Components with
+// the same semantic rank use their first alias for deterministic visual order.
+function compareFlowComponents(a: FlowComponent, b: FlowComponent): number {
+  const rankDiff = getFlowComponentRank(a) - getFlowComponentRank(b);
+  if (rankDiff !== 0) return rankDiff;
+  return a.sortKey.localeCompare(b.sortKey);
+}
 
 /**
  * Classify a node into its layout category.
@@ -195,15 +242,20 @@ function classifyNode(
  *  1. Classify every node via classifyNode (uses type, skill, and connection
  *     participation — see its JSDoc for the full priority chain).
  *     Partition into "flow" vs segregated categories.
- *  2. Assign flow nodes a "level" (column) via BFS from root seeds.
- *  3. Within each level, stack flow nodes vertically, centred at y = 0.
- *  4. Compute the bounding box of the main flow, then place each segregated
+ *  2. Split flow nodes into connected components so independent trees do not
+ *     collapse into one shared column set.
+ *  3. Sort components left-to-right: root component first, end-only component
+ *     last, all other components alphabetically in the middle.
+ *  4. Assign each component its own BFS "level" columns from root-like or
+ *     in-degree-zero seeds. Within each local level, stack nodes vertically,
+ *     centred at y = 0.
+ *  5. Compute the bounding box of the main flow, then place each segregated
  *     category in its own horizontal row below it, left-aligned with the flow.
  *
  * Segregated row order: Dictionary → Provider → Module → Entity → __unknown__.
  *
- * If no root is found (no entry_point and no flow node lacking incoming edges)
- * all flow nodes are placed on level 0 so the graph is still renderable.
+ * If a component has no natural seed (no root-like, entry_point, or in-degree
+ * zero node), its first alias is used so cyclic components remain renderable.
  */
 function computeLayout(
   nodes: MinigraphGraphData['nodes'],
@@ -231,13 +283,16 @@ function computeLayout(
     else segregatedNodes.push(n);
   }
 
-  // ── Step 2: BFS layout for flow nodes ─────────────────────────────────────
+  // ── Step 2: Build directed/undirected flow adjacency ──────────────────────
   const flowAliases = new Set(flowNodes.map(n => n.alias));
+  const nodeByAlias = new Map(flowNodes.map(n => [n.alias, n]));
   const outEdges    = new Map<string, string[]>();
+  const undirectedEdges = new Map<string, Set<string>>();
   const inDegree    = new Map<string, number>();
 
   for (const n of flowNodes) {
     outEdges.set(n.alias, []);
+    undirectedEdges.set(n.alias, new Set());
     inDegree.set(n.alias, 0);
   }
 
@@ -246,15 +301,19 @@ function computeLayout(
     // segregated nodes do not influence BFS level assignment.
     if (!flowAliases.has(conn.source) || !flowAliases.has(conn.target)) continue;
     outEdges.get(conn.source)?.push(conn.target);
+    undirectedEdges.get(conn.source)?.add(conn.target);
+    undirectedEdges.get(conn.target)?.add(conn.source);
     inDegree.set(conn.target, (inDegree.get(conn.target) ?? 0) + 1);
   }
 
-  // Seeds: flow nodes with in-degree 0, or explicitly typed as entry_point
-  const seeds = flowNodes
-    .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point'))
+  // Seeds: flow nodes with in-degree 0, or explicitly typed as entry_point.
+  // These are used for cycle detection only. Each component chooses its own
+  // seeds again during placement.
+  const allSeeds = flowNodes
+    .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point') || isRootLikeNode(n))
     .map(n => n.alias);
 
-  // ── Cycle detection: find back-edges via iterative DFS ────────────────
+  // ── Cycle detection: find back-edges via iterative DFS ────────────────────
   // Back-edges (edges pointing to an ancestor in the DFS tree) cause the
   // BFS level-assignment loop below to run forever — each node in a cycle
   // endlessly re-enqueues the other with ever-increasing levels.  We detect
@@ -293,65 +352,139 @@ function computeLayout(
       }
     }
 
-    // Prefer starting from seeds so the DFS tree mirrors the BFS flow
-    for (const s of seeds) dfsFrom(s);
+    // Prefer starting from seeds so the DFS tree mirrors the BFS flow.
+    for (const s of allSeeds) dfsFrom(s);
     for (const n of flowNodes) dfsFrom(n.alias);
   }
 
-  const levelOf = new Map<string, number>();
-  const queue: string[] = [...seeds];
-  seeds.forEach(s => levelOf.set(s, 0));
+  // ── Step 3: Connected components for independent flow trees ───────────────
+  const components: FlowComponent[] = [];
+  const seen = new Set<string>();
 
-  // BFS to assign levels
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    const currentLevel = levelOf.get(current) ?? 0;
-    for (const neighbor of outEdges.get(current) ?? []) {
-      // Skip back-edges — they create cycles and are excluded from layout
-      // assignment but are still rendered as visual edges in the output.
-      if (backEdges.has(`${current}\t${neighbor}`)) continue;
-      // Only advance the level; never move a node to a shallower level
-      if (!levelOf.has(neighbor) || levelOf.get(neighbor)! <= currentLevel) {
-        levelOf.set(neighbor, currentLevel + 1);
-        queue.push(neighbor);
+  for (const start of Array.from(flowAliases).sort()) {
+    if (seen.has(start)) continue;
+
+    const aliases: string[] = [];
+    const stack = [start];
+    seen.add(start);
+
+    while (stack.length > 0) {
+      const alias = stack.pop()!;
+      aliases.push(alias);
+      for (const neighbor of undirectedEdges.get(alias) ?? []) {
+        if (seen.has(neighbor)) continue;
+        seen.add(neighbor);
+        stack.push(neighbor);
       }
     }
-  }
 
-  // Flow nodes that BFS never visited (disconnected) go to the last level + 1
-  const maxLevel = levelOf.size > 0 ? Math.max(...levelOf.values()) : 0;
-  for (const n of flowNodes) {
-    if (!levelOf.has(n.alias)) levelOf.set(n.alias, maxLevel + 1);
-  }
+    aliases.sort();
+    const componentNodes = aliases
+      .map(alias => nodeByAlias.get(alias))
+      .filter((node): node is MinigraphNodeModel => Boolean(node));
 
-  // Group flow nodes by level
-  const byLevel = new Map<number, string[]>();
-  for (const [alias, level] of levelOf) {
-    if (!byLevel.has(level)) byLevel.set(level, []);
-    byLevel.get(level)!.push(alias);
-  }
-
-  // Assign pixel positions for the main flow — centred at y = 0 per column.
-  // Per-node heights prevent overlap when nodes are taller than NODE_HEIGHT.
-  const positions = new Map<string, { x: number; y: number }>();
-  for (const [level, aliases] of byLevel) {
-    const totalHeight = aliases.reduce(
-      (sum, alias) => sum + (nodeHeights.get(alias) ?? NODE_HEIGHT),
-      0,
-    ) + Math.max(0, aliases.length - 1) * ROW_GAP;
-
-    let cursorY = -totalHeight / 2;
-    aliases.forEach((alias) => {
-      const nodeHeight = nodeHeights.get(alias) ?? NODE_HEIGHT;
-      positions.set(alias, {
-        x: level * (NODE_WIDTH + COL_GAP),
-        y: cursorY,
-      });
-      cursorY += nodeHeight + ROW_GAP;
+    components.push({
+      aliases,
+      nodes: componentNodes,
+      hasRoot: componentNodes.some(isRootLikeNode),
+      hasEnd: componentNodes.some(isEndLikeNode),
+      sortKey: aliases[0] ?? '',
     });
   }
 
-  // ── Step 3: Bounding box of the main flow ──────────────────────────────────
+  components.sort(compareFlowComponents);
+
+  // ── Step 4: BFS layout for each component, placed left-to-right ───────────
+  const levelOf = new Map<string, number>();
+  const positions = new Map<string, { x: number; y: number }>();
+  let componentLevelOffset = 0;
+  let componentXOffset = 0;
+
+  for (const component of components) {
+    const componentAliases = new Set(component.aliases);
+    const componentSeeds = component.nodes
+      .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point') || isRootLikeNode(n))
+      .map(n => n.alias)
+      .sort();
+
+    // Cyclic components may have no natural in-degree-zero node. Seed from the
+    // first alias so they remain renderable instead of collapsing into orphans.
+    if (componentSeeds.length === 0 && component.aliases.length > 0) {
+      componentSeeds.push(component.aliases[0]);
+    }
+
+    const localLevelOf = new Map<string, number>();
+    const queue: string[] = [...componentSeeds];
+    componentSeeds.forEach(seed => localLevelOf.set(seed, 0));
+
+    // BFS to assign local levels within the component. This preserves the
+    // original left-to-right topological flow, but prevents independent trees
+    // from sharing the same column set.
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const currentLevel = localLevelOf.get(current) ?? 0;
+      for (const neighbor of outEdges.get(current) ?? []) {
+        // Skip cross-component edges defensively; components were built from
+        // the same flow adjacency, so this should only guard stale input.
+        if (!componentAliases.has(neighbor)) continue;
+        // Skip back-edges — they create cycles and are excluded from layout
+        // assignment but are still rendered as visual edges in the output.
+        if (backEdges.has(`${current}\t${neighbor}`)) continue;
+        // Only advance the level; never move a node to a shallower level.
+        if (!localLevelOf.has(neighbor) || localLevelOf.get(neighbor)! <= currentLevel) {
+          localLevelOf.set(neighbor, currentLevel + 1);
+          queue.push(neighbor);
+        }
+      }
+    }
+
+    // Flow nodes that BFS never visited stay in this component and move to the
+    // last local level + 1. This keeps cyclic or disconnected-within-component
+    // data renderable instead of dropping nodes from the layout.
+    const maxLocalLevel = localLevelOf.size > 0 ? Math.max(...localLevelOf.values()) : 0;
+    for (const alias of component.aliases) {
+      if (!localLevelOf.has(alias)) localLevelOf.set(alias, maxLocalLevel + 1);
+    }
+
+    const byLocalLevel = new Map<number, string[]>();
+    for (const [alias, level] of localLevelOf) {
+      if (!byLocalLevel.has(level)) byLocalLevel.set(level, []);
+      byLocalLevel.get(level)!.push(alias);
+    }
+
+    // Assign pixel positions for this component's flow — centred at y = 0 per
+    // local column. Per-node heights prevent overlap when nodes are taller than
+    // NODE_HEIGHT. componentXOffset gives each independent tree a fixed pixel
+    // gap from the previous tree instead of tying tree spacing to column count.
+    let componentMaxX = componentXOffset;
+    for (const [localLevel, aliases] of [...byLocalLevel].sort(([a], [b]) => a - b)) {
+      const sortedAliases = aliases.slice().sort();
+      const totalHeight = sortedAliases.reduce(
+        (sum, alias) => sum + (nodeHeights.get(alias) ?? NODE_HEIGHT),
+        0,
+      ) + Math.max(0, sortedAliases.length - 1) * ROW_GAP;
+
+      let cursorY = -totalHeight / 2;
+      const globalLevel = componentLevelOffset + localLevel;
+      const x = componentXOffset + localLevel * (NODE_WIDTH + COL_GAP);
+      componentMaxX = Math.max(componentMaxX, x);
+      sortedAliases.forEach((alias) => {
+        const nodeHeight = nodeHeights.get(alias) ?? NODE_HEIGHT;
+        levelOf.set(alias, globalLevel);
+        positions.set(alias, {
+          x,
+          y: cursorY,
+        });
+        cursorY += nodeHeight + ROW_GAP;
+      });
+    }
+
+    const componentMaxLevel = localLevelOf.size > 0 ? Math.max(...localLevelOf.values()) : 0;
+    componentLevelOffset += componentMaxLevel + 1;
+    componentXOffset = componentMaxX + NODE_WIDTH + COMPONENT_GAP;
+  }
+
+  // ── Step 5: Bounding box of the main flow ─────────────────────────────────
   // Used to anchor the vertical start of the segregated rows.
   let mainMaxY = 0;
   for (const [alias, pos] of positions) {
@@ -360,7 +493,7 @@ function computeLayout(
   // If there are no flow nodes at all, start at y = 0 with no section gap.
   let nextRowY = mainMaxY + (positions.size > 0 ? SECTION_GAP : 0);
 
-  // ── Step 4: Segregated rows ────────────────────────────────────────────────
+  // ── Step 6: Segregated rows ───────────────────────────────────────────────
   // Group segregated nodes by their layout category (already computed in Step 1).
   const groupMap = new Map<string, string[]>();
   for (const key of SEGREGATED_ROW_ORDER) groupMap.set(key, []);
