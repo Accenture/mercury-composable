@@ -44,7 +44,7 @@
   {
     "name": "node mutation IS also docs.response (intentional — not in exclusion set)",
     "raw": "Node my-node created",
-    "expectedKinds": ["graph.mutation", "docs.response"],
-    "expectedLength": 2
+    "expectedKinds": ["graph.mutation", "minigraph.nodeAction.textResult", "minigraph.createNode.textResult", "docs.response"],
+    "expectedLength": 4
   }
 ]

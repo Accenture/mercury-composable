@@ -35,6 +35,8 @@ interface RightPanelProps {
   isConnected:             boolean;
   supportsAuthoring?:      boolean;
   onCreateNode?:           (source: 'empty-graph' | 'pane-context-menu') => void;
+  onEditNode?:             (node: MinigraphNode) => void;
+  onDeleteNode?:           (node: MinigraphNode) => void;
   /**
    * When provided and non-null, the right panel renders a vertical split:
    * top = tab content, bottom = help panel.  Accepts either a plain ReactNode
@@ -71,6 +73,8 @@ export default function RightPanel({
   isConnected,
   supportsAuthoring,
   onCreateNode,
+  onEditNode,
+  onDeleteNode,
   helpPanel,
 }: RightPanelProps) {
   const uid              = useId();
@@ -159,6 +163,8 @@ export default function RightPanel({
               isConnected={isConnected}
               supportsAuthoring={supportsAuthoring}
               onCreateNode={onCreateNode}
+              onEditNode={onEditNode}
+              onDeleteNode={onDeleteNode}
             />
           </div>
         </div>

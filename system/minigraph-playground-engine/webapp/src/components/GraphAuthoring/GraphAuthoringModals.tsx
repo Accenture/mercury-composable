@@ -29,6 +29,8 @@ export default function GraphAuthoringModals({
   return (
     <NodeDialog
       open
+      mode={state.action === 'edit-node' ? 'edit' : 'create'}
+      aliasReadOnly={state.action === 'edit-node'}
       draft={state.draft}
       phase={state.phase}
       lockReason={lockReason}

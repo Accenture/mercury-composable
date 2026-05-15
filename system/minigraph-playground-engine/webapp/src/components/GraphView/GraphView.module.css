@@ -153,37 +153,3 @@
 @keyframes graphRefreshSpin {
   to { transform: rotate(360deg); }
 }
-
-/* ── Node context menu ──────────────────────────────────────────────────── */
-
-.contextMenu {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md);
-  z-index: 50;
-  min-width: 160px;
-  padding: 0.25rem 0;
-}
-
-.contextMenuItem {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 0.8125rem;
-  color: var(--text-primary, #0f172a);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.contextMenuItem:hover {
-  background: var(--autocomplete-highlight);
-}
-
-.contextMenuItem:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: -2px;
-}

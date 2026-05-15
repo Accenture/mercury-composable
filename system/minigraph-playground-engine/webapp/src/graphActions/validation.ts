@@ -6,6 +6,7 @@ import type { NodeDraft, NodeDraftValidationErrors } from './nodeAuthoringTypes'
 // The backend remains authoritative; this only blocks obviously invalid drafts
 // before they can become raw command text.
 export const NODE_NAME_RE = /^[A-Za-z0-9_-]+$/;
+const PROPERTY_PATH_SEGMENT_RE = /^[A-Za-z0-9_-]+(?:\[(?:0|[1-9]\d*)\])*$/;
 
 // Mirrors MiniGraph's reserved alias list so the modal can show immediate field
 // feedback instead of relying on a later generic backend ERROR response.
@@ -24,6 +25,8 @@ export const RESERVED_ALIASES = new Set([
 
 export interface NodeDraftValidationOptions {
   graphData?: MinigraphGraphData | null;
+  mode?: 'create' | 'edit';
+  originalAlias?: string | null;
 }
 
 export interface NodeDraftValidationResult {
@@ -35,25 +38,43 @@ export function getValidationErrorKeyForProperty(rowId: string, field: 'key' | '
   return `properties.${rowId}.${field}`;
 }
 
-// Validate the supported authoring surface: alias, optional node type, and flat
-// single-line scalar properties. Duplicate aliases from graphData are advisory
+export function isValidPropertyPath(path: string): boolean {
+  return path.split('.').every((segment) => PROPERTY_PATH_SEGMENT_RE.test(segment));
+}
+
+function isValidPropertyKey(key: string, mode: 'create' | 'edit'): boolean {
+  return mode === 'edit' ? isValidPropertyPath(key) : NODE_NAME_RE.test(key);
+}
+
+// Validate the supported authoring surface: alias, optional node type, and
+// command-safe property rows. Duplicate aliases from graphData are advisory
 // because graphData is a staleable frontend projection.
 export function validateNodeDraft(
   draft: NodeDraft,
   options: NodeDraftValidationOptions = {},
 ): NodeDraftValidationResult {
   const errors: NodeDraftValidationErrors = {};
+  const mode = options.mode ?? 'create';
   const alias = draft.alias.trim();
+  const originalAlias = options.originalAlias?.trim() ?? '';
   const nodeType = draft.nodeType.trim();
 
-  if (!alias) {
-    errors.alias = 'Alias is required.';
-  } else if (!NODE_NAME_RE.test(alias)) {
-    errors.alias = 'Use only letters, numbers, underscore, and hyphen.';
-  } else if (RESERVED_ALIASES.has(alias.toLowerCase())) {
-    errors.alias = `"${alias}" is reserved.`;
-  } else if (options.graphData?.nodes.some((node) => node.alias.toLowerCase() === alias.toLowerCase())) {
-    errors.alias = `Node "${alias}" already exists in the current graph.`;
+  if (mode === 'edit') {
+    if (!originalAlias) {
+      errors.alias = 'Original alias is required.';
+    } else if (!NODE_NAME_RE.test(originalAlias)) {
+      errors.alias = 'Use only letters, numbers, underscore, and hyphen.';
+    }
+  } else {
+    if (!alias) {
+      errors.alias = 'Alias is required.';
+    } else if (!NODE_NAME_RE.test(alias)) {
+      errors.alias = 'Use only letters, numbers, underscore, and hyphen.';
+    } else if (RESERVED_ALIASES.has(alias.toLowerCase())) {
+      errors.alias = `"${alias}" is reserved.`;
+    } else if (options.graphData?.nodes.some((node) => node.alias.toLowerCase() === alias.toLowerCase())) {
+      errors.alias = `Node "${alias}" already exists in the current graph.`;
+    }
   }
 
   if (nodeType && !NODE_NAME_RE.test(nodeType)) {
@@ -67,15 +88,39 @@ export function validateNodeDraft(
 
     if (!key && value) {
       errors[getValidationErrorKeyForProperty(row.id, 'key')] = 'Property key is required when value is present.';
-    } else if (!NODE_NAME_RE.test(key)) {
-      errors[getValidationErrorKeyForProperty(row.id, 'key')] = 'Use only letters, numbers, underscore, and hyphen.';
+    } else if (!isValidPropertyKey(key, mode)) {
+      errors[getValidationErrorKeyForProperty(row.id, 'key')] = mode === 'edit'
+        ? 'Use a property name or dot/bracket path, for example mapping[0] or config.value.'
+        : 'Use only letters, numbers, underscore, and hyphen.';
     }
 
-    if (value.includes('\r') || value.includes('\n')) {
+    if (mode === 'create' && (value.includes('\r') || value.includes('\n'))) {
       errors[getValidationErrorKeyForProperty(row.id, 'value')] = 'Property value must be a single line.';
     } else if (value.includes("'''")) {
       errors[getValidationErrorKeyForProperty(row.id, 'value')] = "Property value cannot contain '''.";
     }
+  }
+
+  return { valid: Object.keys(errors).length === 0, errors };
+}
+
+export interface DeleteNodeValidationOptions {
+  graphData?: MinigraphGraphData | null;
+}
+
+export function validateDeleteNodeAlias(
+  aliasInput: string,
+  options: DeleteNodeValidationOptions = {},
+): NodeDraftValidationResult {
+  const errors: NodeDraftValidationErrors = {};
+  const alias = aliasInput.trim();
+
+  if (!alias) {
+    errors.alias = 'Alias is required.';
+  } else if (!NODE_NAME_RE.test(alias)) {
+    errors.alias = 'Use only letters, numbers, underscore, and hyphen.';
+  } else if (options.graphData && !options.graphData.nodes.some((node) => node.alias.toLowerCase() === alias.toLowerCase())) {
+    errors.alias = `Node "${alias}" is no longer available in the current graph.`;
   }
 
   return { valid: Object.keys(errors).length === 0, errors };

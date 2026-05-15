@@ -12,7 +12,7 @@ import {
   isMarkdownCandidate,
   extractGraphExportSuccess,
   detectGraphExportFailure,
-  parseCreateNodeTextResult,
+  parseNodeActionTextResult,
 } from '../utils/messageParser';
 
 const KNOWN_LIFECYCLE_TYPES = new Set(['info', 'error', 'ping', 'welcome']);
@@ -141,15 +141,30 @@ export function classifyMessage(msgId: number, raw: string): ProtocolEvent[] {
     });
   }
 
-  // ── Rule 7a: Minigraph create-node text result ────────────────────────────
-  const createNodeResult = parseCreateNodeTextResult(raw);
-  if (createNodeResult) {
+  // ── Rule 7a: Minigraph node-action text result ────────────────────────────
+  const nodeActionResult = parseNodeActionTextResult(raw);
+  if (nodeActionResult) {
+    events.push({
+      ...base,
+      kind: 'minigraph.nodeAction.textResult',
+      status: nodeActionResult.status,
+      action: nodeActionResult.action,
+      alias: nodeActionResult.alias,
+      message: nodeActionResult.message,
+    });
+  }
+
+  // ── Rule 7b: Backward-compatible create-node text result ─────────────────
+  if (
+    nodeActionResult &&
+    (nodeActionResult.action === 'create-node' || nodeActionResult.status === 'error')
+  ) {
     events.push({
       ...base,
       kind: 'minigraph.createNode.textResult',
-      status: createNodeResult.status,
-      alias: createNodeResult.alias,
-      message: createNodeResult.message,
+      status: nodeActionResult.status,
+      alias: nodeActionResult.alias,
+      message: nodeActionResult.message,
     });
   }
 

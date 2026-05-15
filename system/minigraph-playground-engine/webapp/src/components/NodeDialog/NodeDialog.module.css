@@ -186,6 +186,14 @@
   width: 100%;
 }
 
+.textarea {
+  height: auto;
+  min-height: 2.5rem;
+  overflow-y: auto;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
 .input:focus {
   border-color: var(--input-focus-border);
   outline: 2px solid var(--primary-color);

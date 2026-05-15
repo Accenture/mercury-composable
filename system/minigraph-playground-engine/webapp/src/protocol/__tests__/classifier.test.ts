@@ -108,8 +108,16 @@ describe('classifier — invariants', () => {
   it('emits create-node text result without replacing graph.mutation', () => {
     const events = classifyMessage(1, 'node root created');
     const kinds = events.map(e => e.kind);
+    expect(kinds).toContain('minigraph.nodeAction.textResult');
     expect(kinds).toContain('minigraph.createNode.textResult');
     expect(kinds).toContain('graph.mutation');
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.nodeAction.textResult',
+      status: 'accepted',
+      action: 'create-node',
+      alias: 'root',
+      message: 'node root created',
+    }));
     expect(events).toContainEqual(expect.objectContaining({
       kind: 'minigraph.createNode.textResult',
       status: 'accepted',
@@ -121,10 +129,50 @@ describe('classifier — invariants', () => {
   it('emits duplicate create-node text result as rejected', () => {
     const events = classifyMessage(1, 'node root already exists');
     expect(events).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.nodeAction.textResult',
+      status: 'rejected',
+      action: 'create-node',
+      alias: 'root',
+      message: 'node root already exists',
+    }));
+    expect(events).toContainEqual(expect.objectContaining({
       kind: 'minigraph.createNode.textResult',
       status: 'rejected',
       alias: 'root',
       message: 'node root already exists',
+    }));
+  });
+
+  it('emits edit/delete node-action text results without create compatibility events', () => {
+    const updated = classifyMessage(1, 'node root updated');
+    expect(updated).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.nodeAction.textResult',
+      status: 'accepted',
+      action: 'edit-node',
+      alias: 'root',
+      message: 'node root updated',
+    }));
+    expect(updated.map(e => e.kind)).not.toContain('minigraph.createNode.textResult');
+
+    const deleted = classifyMessage(1, 'node root deleted');
+    expect(deleted).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.nodeAction.textResult',
+      status: 'accepted',
+      action: 'delete-node',
+      alias: 'root',
+      message: 'node root deleted',
+    }));
+    expect(deleted.map(e => e.kind)).not.toContain('minigraph.createNode.textResult');
+  });
+
+  it('emits not-found node-action text result as rejected', () => {
+    const events = classifyMessage(1, 'node root not found');
+    expect(events).toContainEqual(expect.objectContaining({
+      kind: 'minigraph.nodeAction.textResult',
+      status: 'rejected',
+      action: null,
+      alias: 'root',
+      message: 'node root not found',
     }));
   });
 });

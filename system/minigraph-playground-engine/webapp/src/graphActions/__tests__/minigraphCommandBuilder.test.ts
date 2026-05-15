@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCreateNodeCommand } from '../minigraphCommandBuilder';
+import { buildCreateNodeCommand, buildDeleteNodeCommand, buildUpdateNodeCommand } from '../minigraphCommandBuilder';
 import type { NodeDraft } from '../nodeAuthoringTypes';
 
 function draft(overrides: Partial<NodeDraft> = {}): NodeDraft {
@@ -71,5 +71,66 @@ describe('buildCreateNodeCommand', () => {
     expect(() => buildCreateNodeCommand(draft({
       properties: [{ id: 'p1', key: 'name', value: "'''demo" }],
     }))).toThrow();
+  });
+});
+
+describe('buildUpdateNodeCommand', () => {
+  it('emits backend update-node command text against the original alias', () => {
+    expect(buildUpdateNodeCommand(draft({
+      alias: 'display-only',
+      nodeType: 'Fetcher',
+      properties: [{ id: 'p1', key: 'name', value: 'updated' }],
+      source: 'edit-node',
+    }), 'root')).toBe([
+      'update node root',
+      'with type Fetcher',
+      'with properties',
+      'name=updated',
+    ].join('\n'));
+  });
+
+  it('omits node type and properties when blank', () => {
+    expect(buildUpdateNodeCommand(draft({
+      nodeType: ' ',
+      properties: [{ id: 'p1', key: ' ', value: ' ' }],
+      source: 'edit-node',
+    }), 'root')).toBe('update node root');
+  });
+
+  it('rejects invalid original aliases before serialization', () => {
+    expect(() => buildUpdateNodeCommand(draft({ source: 'edit-node' }), 'root\nwith properties')).toThrow();
+  });
+
+  it('emits flattened path keys and multiline values for edit mode', () => {
+    expect(buildUpdateNodeCommand(draft({
+      nodeType: 'Evaluator',
+      properties: [
+        { id: 'p1', key: 'mapping[0]', value: 'text(hello) -> output.body' },
+        { id: 'p2', key: 'statement[0]', value: 'IF: true\nTHEN: next' },
+      ],
+      source: 'edit-node',
+    }), 'root')).toBe([
+      'update node root',
+      'with type Evaluator',
+      'with properties',
+      'mapping[0]=text(hello) -> output.body',
+      "statement[0]='''",
+      'IF: true\nTHEN: next',
+      "'''",
+    ].join('\n'));
+  });
+});
+
+describe('buildDeleteNodeCommand', () => {
+  it('emits backend delete-node command text', () => {
+    expect(buildDeleteNodeCommand('root')).toBe('delete node root');
+  });
+
+  it('trims alias input', () => {
+    expect(buildDeleteNodeCommand('  root  ')).toBe('delete node root');
+  });
+
+  it('rejects invalid aliases before serialization', () => {
+    expect(() => buildDeleteNodeCommand('root\nwith properties')).toThrow();
   });
 });

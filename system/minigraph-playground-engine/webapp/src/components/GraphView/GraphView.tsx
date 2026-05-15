@@ -20,6 +20,7 @@ import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
 import GraphToolbar from '../GraphToolbar/GraphToolbar';
 import GraphContextMenu from './GraphContextMenu';
+import NodeContextMenu from './NodeContextMenu';
 import styles from './GraphView.module.css';
 
 interface GraphViewProps {
@@ -39,6 +40,8 @@ interface GraphViewProps {
   isConnected:     boolean;
   supportsAuthoring?: boolean;
   onCreateNode?:   (source: 'empty-graph' | 'pane-context-menu') => void;
+  onEditNode?:     (node: MinigraphNode) => void;
+  onDeleteNode?:   (node: MinigraphNode) => void;
 }
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
@@ -56,6 +59,8 @@ export default function GraphView({
   isConnected,
   supportsAuthoring = false,
   onCreateNode,
+  onEditNode,
+  onDeleteNode,
 }: GraphViewProps) {
 
   // ── Context menu state ──────────────────────────────────────────────────
@@ -66,37 +71,18 @@ export default function GraphView({
   } | null>(null);
   const [paneMenu, setPaneMenu] = useState<{ x: number; y: number } | null>(null);
   const [clipboardDragActive, setClipboardDragActive] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const clipboardDragDepthRef = useRef(0);
   const canCreateNode = Boolean(supportsAuthoring && onCreateNode && isConnected);
+  const canClipNode = Boolean(onClipNode);
+  const canEditNode = Boolean(supportsAuthoring && onEditNode && isConnected);
+  const canDeleteNode = Boolean(supportsAuthoring && onDeleteNode && isConnected);
+  const canOpenNodeContextMenu = canClipNode || canEditNode || canDeleteNode;
   const canAcceptClipboardDrop = Boolean(onClipboardDrop && isConnected);
 
   const resetClipboardDragState = useCallback(() => {
     clipboardDragDepthRef.current = 0;
     setClipboardDragActive(false);
   }, []);
-
-  // Dismiss context menu on outside click or Escape
-  useEffect(() => {
-    if (!contextMenu) return;
-
-    const handleDismiss = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as globalThis.Node)) {
-        setContextMenu(null);
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setContextMenu(null);
-    };
-
-    document.addEventListener('mousedown', handleDismiss);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleDismiss);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [contextMenu]);
 
   useEffect(() => {
     if (!paneMenu) return;
@@ -212,6 +198,9 @@ export default function GraphView({
   };
 
   const hasGraphData = Boolean(graphData && graphData.nodes.length > 0);
+  const contextNode = contextMenu && graphData
+    ? findNodeByAlias(graphData, contextMenu.nodeAlias)
+    : null;
 
   if (transformError) {
     return (
@@ -264,7 +253,7 @@ export default function GraphView({
                 event.preventDefault();
                 event.stopPropagation();
                 setPaneMenu(null);
-                if (!onClipNode) return;
+                if (!canOpenNodeContextMenu) return;
                 setContextMenu({ x: event.clientX, y: event.clientY, nodeAlias: node.data.alias });
               }}
               onPaneContextMenu={(event) => {
@@ -349,30 +338,29 @@ export default function GraphView({
             onCreateNode={() => onCreateNode?.('pane-context-menu')}
             onClose={() => setPaneMenu(null)}
           />
-          {contextMenu && onClipNode && graphData && (
-            <div
-              ref={menuRef}
-              className={styles.contextMenu}
-              style={{ position: 'fixed', top: contextMenu.y, left: contextMenu.x }}
-              role="menu"
-            >
-              <button
-                role="menuitem"
-                autoFocus
-                className={styles.contextMenuItem}
-                onClick={() => {
-                  const node = findNodeByAlias(graphData, contextMenu.nodeAlias);
-                  if (node) {
-                    const connections = extractDirectConnections(graphData, contextMenu.nodeAlias);
-                    onClipNode(node, connections);
-                  }
-                  setContextMenu(null);
-                }}
-              >
-                Clip to Clipboard
-              </button>
-            </div>
-          )}
+          <NodeContextMenu
+            open={contextMenu !== null && contextNode !== null && canOpenNodeContextMenu}
+            x={contextMenu?.x ?? 0}
+            y={contextMenu?.y ?? 0}
+            nodeAlias={contextMenu?.nodeAlias ?? ''}
+            canClipNode={canClipNode && contextNode !== null}
+            canEditNode={canEditNode && contextNode !== null}
+            canDeleteNode={canDeleteNode && contextNode !== null}
+            onClipNode={() => {
+              if (!contextNode || !graphData) return;
+              const connections = extractDirectConnections(graphData, contextNode.alias);
+              onClipNode?.(contextNode, connections);
+            }}
+            onEditNode={() => {
+              if (!contextNode) return;
+              onEditNode?.(contextNode);
+            }}
+            onDeleteNode={() => {
+              if (!contextNode) return;
+              onDeleteNode?.(contextNode);
+            }}
+            onClose={() => setContextMenu(null)}
+          />
         </div>
       </div>
     </GraphViewErrorBoundary>

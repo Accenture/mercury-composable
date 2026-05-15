@@ -335,6 +335,7 @@ export default function Playground({ config }: PlaygroundProps) {
     connected: ws.connected,
     graphData,
     executor: graphAuthoringExecutor,
+    onUserMessage: addToast,
   });
 
   // ── Saved graph workflow ──────────────────────────────────────────────────
@@ -536,6 +537,8 @@ export default function Playground({ config }: PlaygroundProps) {
             isConnected={ws.connected}
             supportsAuthoring={supportsAuthoring}
             onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
+            onEditNode={supportsAuthoring ? graphAuthoring.openEditNode : undefined}
+            onDeleteNode={supportsAuthoring ? graphAuthoring.deleteNode : undefined}
             helpPanel={supportsHelp && helpOpen ? (
               (onToggleMaximize: () => void, isMaximized: boolean) => (
                 <HelpBrowser
