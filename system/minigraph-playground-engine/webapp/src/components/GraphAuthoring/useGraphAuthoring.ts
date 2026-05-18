@@ -11,17 +11,17 @@ import {
 } from '../../graphActions/minigraphCommandBuilder';
 import type {
   NodeAction,
-  NodeDraft,
-  NodeDraftSource,
-  NodeDraftValidationErrors,
+  NodeFormState,
+  NodeFormSource,
+  NodeFormValidationErrors,
 } from '../../graphActions/nodeAuthoringTypes';
-import { createDefaultNodeDraft, createEditNodeDraft } from '../../graphActions/propertyRows';
-import { validateDeleteNodeAlias, validateNodeDraft } from '../../graphActions/validation';
+import { createDefaultNodeFormState, createEditNodeFormState } from '../../graphActions/propertyRows';
+import { validateDeleteNodeAlias, validateNodeFormState } from '../../graphActions/validation';
 
 export const DEFAULT_AUTHORING_TIMEOUT_MS = 10_000;
 
 type EditableNodeAction = Extract<NodeAction, 'create-node' | 'edit-node'>;
-type CreateNodeDraftSource = Exclude<NodeDraftSource, 'edit-node'>;
+type CreateNodeFormSource = Exclude<NodeFormSource, 'edit-node'>;
 type UserMessageType = 'info' | 'success' | 'error';
 
 export type AuthoringState =
@@ -34,7 +34,7 @@ export type AuthoringState =
       status: 'open';
       action: EditableNodeAction;
       phase: 'editing' | 'sending';
-      draft: NodeDraft;
+      formState: NodeFormState;
       originalAlias: string | null;
       pendingSubmit: PendingNodeActionSubmit | null;
       serverMessage: string | null;
@@ -60,17 +60,17 @@ export interface UseGraphAuthoringOptions {
 
 export interface UseGraphAuthoringReturn {
   state: AuthoringState;
-  validationErrors: NodeDraftValidationErrors;
-  openCreateNode: (source: CreateNodeDraftSource) => void;
+  validationErrors: NodeFormValidationErrors;
+  openCreateNode: (source: CreateNodeFormSource) => void;
   openEditNode: (node: MinigraphNode) => void;
   deleteNode: (node: MinigraphNode) => void;
-  updateDraft: (draft: NodeDraft) => void;
+  updateFormState: (formState: NodeFormState) => void;
   submit: () => void;
   close: () => void;
 }
 
 const PENDING_ACTION_MESSAGE = 'A node action is already pending. Wait for it to finish before starting another.';
-const CREATE_SEND_FAILURE_MESSAGE = 'Could not send the create-node command because the WebSocket is not open. The draft was preserved in this dialog.';
+const CREATE_SEND_FAILURE_MESSAGE = 'Could not send the create-node command because the WebSocket is not open. The form values remain in this dialog.';
 const EDIT_SEND_FAILURE_MESSAGE = 'Could not send the edit-node command because the WebSocket is not open. Your changes remain in this dialog.';
 const DELETE_SEND_FAILURE_MESSAGE = 'Could not send the delete-node command because the WebSocket is not open.';
 const NODE_UNAVAILABLE_MESSAGE = 'This node is no longer available in the current graph.';
@@ -120,7 +120,7 @@ function eventMatchesPendingAction(
   return event.action === null || event.action === pending.action;
 }
 
-// Owns the complete node-authoring lifecycle: draft state, validation,
+// Owns the complete node-authoring lifecycle: form state, validation,
 // raw-command send, text-result matching, timeout handling, and disconnect
 // handling. UI components call this hook instead of sending commands or
 // interpreting backend text themselves.
@@ -134,7 +134,7 @@ export function useGraphAuthoring({
   onUserMessage,
 }: UseGraphAuthoringOptions): UseGraphAuthoringReturn {
   const [state, setState] = useState<AuthoringState>(CLOSED_STATE);
-  const [validationErrors, setValidationErrors] = useState<NodeDraftValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<NodeFormValidationErrors>({});
 
   const stateRef = useRef(state);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,7 +144,7 @@ export function useGraphAuthoring({
   const onUserMessageRef = useRef(onUserMessage);
 
   // ProtocolBus and timers can fire after render, so callbacks read refs for
-  // the latest state/context without re-subscribing on every draft keystroke.
+  // the latest state/context without re-subscribing on every form keystroke.
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { graphDataRef.current = graphData; }, [graphData]);
   useEffect(() => { onAcceptedRef.current = onAccepted; }, [onAccepted]);
@@ -188,20 +188,20 @@ export function useGraphAuthoring({
     }, timeoutMs);
   }, [clearPendingTimer, notifyUser, setAuthoringState, timeoutMs]);
 
-  const openCreateNode = useCallback((source: CreateNodeDraftSource) => {
+  const openCreateNode = useCallback((source: CreateNodeFormSource) => {
     if (!connected) return;
     if (getPendingSubmit(stateRef.current)) {
       notifyUser(PENDING_ACTION_MESSAGE, 'error');
       return;
     }
 
-    const draft = createDefaultNodeDraft(source);
+    const formState = createDefaultNodeFormState(source);
     setValidationErrors({});
     setAuthoringState({
       status: 'open',
       action: 'create-node',
       phase: 'editing',
-      draft,
+      formState,
       originalAlias: null,
       pendingSubmit: null,
       serverMessage: null,
@@ -225,8 +225,8 @@ export function useGraphAuthoring({
       return;
     }
 
-    const conversion = createEditNodeDraft(currentNode);
-    if (!conversion.valid || !conversion.draft) {
+    const conversion = createEditNodeFormState(currentNode);
+    if (!conversion.valid || !conversion.formState) {
       notifyUser(conversion.message ?? 'This node cannot be edited in the UI.', 'error');
       return;
     }
@@ -236,7 +236,7 @@ export function useGraphAuthoring({
       status: 'open',
       action: 'edit-node',
       phase: 'editing',
-      draft: conversion.draft,
+      formState: conversion.formState,
       originalAlias: currentNode.alias,
       pendingSubmit: null,
       serverMessage: null,
@@ -285,7 +285,7 @@ export function useGraphAuthoring({
     startSubmitTimer();
   }, [connected, executor, notifyUser, setAuthoringState, startSubmitTimer]);
 
-  const updateDraft = useCallback((draft: NodeDraft) => {
+  const updateFormState = useCallback((formState: NodeFormState) => {
     const current = stateRef.current;
     if (current.status !== 'open') return;
     if (current.phase === 'sending' || current.connectionLost) return;
@@ -293,7 +293,7 @@ export function useGraphAuthoring({
     setValidationErrors({});
     setAuthoringState({
       ...current,
-      draft,
+      formState,
       pendingSubmit: null,
       serverMessage: null,
       connectionLost: false,
@@ -315,8 +315,8 @@ export function useGraphAuthoring({
       return;
     }
 
-    const validation = validateNodeDraft(
-      current.draft,
+    const validation = validateNodeFormState(
+      current.formState,
       action === 'edit-node'
         ? { mode: 'edit', originalAlias: current.originalAlias }
         : { graphData: graphDataRef.current },
@@ -331,10 +331,10 @@ export function useGraphAuthoring({
     try {
       if (action === 'edit-node') {
         pendingAlias = current.originalAlias?.trim() ?? '';
-        command = buildUpdateNodeCommand(current.draft, pendingAlias);
+        command = buildUpdateNodeCommand(current.formState, pendingAlias);
       } else {
-        pendingAlias = current.draft.alias.trim();
-        command = buildCreateNodeCommand(current.draft);
+        pendingAlias = current.formState.alias.trim();
+        command = buildCreateNodeCommand(current.formState);
       }
     } catch (err) {
       setValidationErrors({ command: err instanceof Error ? err.message : String(err) });
@@ -455,7 +455,7 @@ export function useGraphAuthoring({
     openCreateNode,
     openEditNode,
     deleteNode,
-    updateDraft,
+    updateFormState,
     submit,
     close,
   };

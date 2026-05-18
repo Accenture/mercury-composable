@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeDraft } from '../../graphActions/nodeAuthoringTypes';
+import type { NodeFormState } from '../../graphActions/nodeAuthoringTypes';
 import { createPropertyRow } from '../../graphActions/propertyRows';
 import { getValidationErrorKeyForProperty } from '../../graphActions/validation';
 import CloseIcon from '../../icons/CloseIcon.svg?react';
@@ -9,12 +9,12 @@ interface NodeDialogProps {
   open: boolean;
   mode: 'create' | 'edit';
   aliasReadOnly: boolean;
-  draft: NodeDraft;
+  formState: NodeFormState;
   phase: 'editing' | 'sending';
   lockReason: null | 'sending' | 'disconnected';
   serverMessage: string | null;
   validationErrors: Record<string, string>;
-  onDraftChange: (draft: NodeDraft) => void;
+  onFormStateChange: (formState: NodeFormState) => void;
   onSubmit: () => void;
   onClose: () => void;
 }
@@ -30,18 +30,18 @@ function estimateTextareaRows(value: string): number {
   return Math.min(Math.max(rows, MIN_TEXTAREA_ROWS), MAX_TEXTAREA_ROWS);
 }
 
-// Presentational modal only. It edits a NodeDraft and reports submit/close
+// Presentational modal only. It edits a NodeFormState and reports submit/close
 // intents upward; useGraphAuthoring owns validation, transport, and result handling.
 export default function NodeDialog({
   open,
   mode,
   aliasReadOnly,
-  draft,
+  formState,
   phase,
   lockReason,
   serverMessage,
   validationErrors,
-  onDraftChange,
+  onFormStateChange,
   onSubmit,
   onClose,
 }: NodeDialogProps) {
@@ -90,7 +90,7 @@ export default function NodeDialog({
 
     input.focus();
     pendingFocusPropertyIdRef.current = null;
-  }, [draft.properties]);
+  }, [formState.properties]);
 
   const handleOverlayPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -113,33 +113,33 @@ export default function NodeDialog({
     onSubmit();
   }, [controlsDisabled, onSubmit]);
 
-  const updateDraft = useCallback((patch: Partial<NodeDraft>) => {
-    onDraftChange({ ...draft, ...patch });
-  }, [draft, onDraftChange]);
+  const updateFormState = useCallback((patch: Partial<NodeFormState>) => {
+    onFormStateChange({ ...formState, ...patch });
+  }, [formState, onFormStateChange]);
 
   const updateProperty = useCallback((rowId: string, patch: { key?: string; value?: string }) => {
-    onDraftChange({
-      ...draft,
-      properties: draft.properties.map((row) => row.id === rowId ? { ...row, ...patch } : row),
+    onFormStateChange({
+      ...formState,
+      properties: formState.properties.map((row) => row.id === rowId ? { ...row, ...patch } : row),
     });
-  }, [draft, onDraftChange]);
+  }, [formState, onFormStateChange]);
 
   const addProperty = useCallback(() => {
     const nextRow = createPropertyRow();
     pendingFocusPropertyIdRef.current = nextRow.id;
-    onDraftChange({
-      ...draft,
-      properties: [...draft.properties, nextRow],
+    onFormStateChange({
+      ...formState,
+      properties: [...formState.properties, nextRow],
     });
-  }, [draft, onDraftChange]);
+  }, [formState, onFormStateChange]);
 
   const removeProperty = useCallback((rowId: string) => {
-    const nextRows = draft.properties.filter((row) => row.id !== rowId);
-    onDraftChange({
-      ...draft,
+    const nextRows = formState.properties.filter((row) => row.id !== rowId);
+    onFormStateChange({
+      ...formState,
       properties: nextRows.length > 0 ? nextRows : [createPropertyRow()],
     });
-  }, [draft, onDraftChange]);
+  }, [formState, onFormStateChange]);
 
   if (!open) return null;
 
@@ -195,12 +195,12 @@ export default function NodeDialog({
               <input
                 ref={aliasRef}
                 className={styles.input}
-                value={draft.alias}
+                value={formState.alias}
                 disabled={controlsDisabled}
                 readOnly={aliasReadOnly}
                 aria-invalid={Boolean(validationErrors.alias)}
                 aria-describedby={validationErrors.alias ? 'node-alias-error' : undefined}
-                onChange={(event) => updateDraft({ alias: event.target.value })}
+                onChange={(event) => updateFormState({ alias: event.target.value })}
               />
               {validationErrors.alias && (
                 <span id="node-alias-error" className={styles.errorText}>{validationErrors.alias}</span>
@@ -212,11 +212,11 @@ export default function NodeDialog({
               <input
                 ref={nodeTypeRef}
                 className={styles.input}
-                value={draft.nodeType}
+                value={formState.nodeType}
                 disabled={controlsDisabled}
                 aria-invalid={Boolean(validationErrors.nodeType)}
                 aria-describedby={validationErrors.nodeType ? 'node-type-error' : undefined}
-                onChange={(event) => updateDraft({ nodeType: event.target.value })}
+                onChange={(event) => updateFormState({ nodeType: event.target.value })}
               />
               {validationErrors.nodeType && (
                 <span id="node-type-error" className={styles.errorText}>{validationErrors.nodeType}</span>
@@ -229,7 +229,7 @@ export default function NodeDialog({
               </div>
 
               <div className={styles.propertyRows}>
-                {draft.properties.map((row) => {
+                {formState.properties.map((row) => {
                   const keyError = validationErrors[getValidationErrorKeyForProperty(row.id, 'key')];
                   const valueError = validationErrors[getValidationErrorKeyForProperty(row.id, 'value')];
                   const valueRows = estimateTextareaRows(row.value);

@@ -1,11 +1,11 @@
 import NodeDialog from '../NodeDialog/NodeDialog';
-import type { NodeDraft } from '../../graphActions/nodeAuthoringTypes';
+import type { NodeFormState } from '../../graphActions/nodeAuthoringTypes';
 import type { AuthoringState } from './useGraphAuthoring';
 
 interface GraphAuthoringModalsProps {
   state: AuthoringState;
   validationErrors: Record<string, string>;
-  onDraftChange: (draft: NodeDraft) => void;
+  onFormStateChange: (formState: NodeFormState) => void;
   onSubmit: () => void;
   onClose: () => void;
 }
@@ -13,7 +13,7 @@ interface GraphAuthoringModalsProps {
 export default function GraphAuthoringModals({
   state,
   validationErrors,
-  onDraftChange,
+  onFormStateChange,
   onSubmit,
   onClose,
 }: GraphAuthoringModalsProps) {
@@ -31,12 +31,12 @@ export default function GraphAuthoringModals({
       open
       mode={state.action === 'edit-node' ? 'edit' : 'create'}
       aliasReadOnly={state.action === 'edit-node'}
-      draft={state.draft}
+      formState={state.formState}
       phase={state.phase}
       lockReason={lockReason}
       serverMessage={state.serverMessage}
       validationErrors={validationErrors}
-      onDraftChange={onDraftChange}
+      onFormStateChange={onFormStateChange}
       onSubmit={onSubmit}
       onClose={onClose}
     />

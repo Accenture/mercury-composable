@@ -1,10 +1,10 @@
 import { MAX_BUFFER } from '../config/playgrounds';
 import type { MinigraphGraphData } from '../utils/graphTypes';
-import type { NodeDraft, NodeDraftValidationErrors } from './nodeAuthoringTypes';
+import type { NodeFormState, NodeFormValidationErrors } from './nodeAuthoringTypes';
 
 // Keep this token rule aligned with GraphProperties.validateName on the backend.
-// The backend remains authoritative; this only blocks obviously invalid drafts
-// before they can become raw command text.
+// The backend remains authoritative; this only blocks obviously invalid form
+// input before it can become raw command text.
 export const NODE_NAME_RE = /^[A-Za-z0-9_-]+$/;
 const PROPERTY_PATH_SEGMENT_RE = /^[A-Za-z0-9_-]+(?:\[(?:0|[1-9]\d*)\])*$/;
 
@@ -23,15 +23,15 @@ export const RESERVED_ALIASES = new Set([
   'error',
 ]);
 
-export interface NodeDraftValidationOptions {
+export interface NodeFormValidationOptions {
   graphData?: MinigraphGraphData | null;
   mode?: 'create' | 'edit';
   originalAlias?: string | null;
 }
 
-export interface NodeDraftValidationResult {
+export interface NodeFormValidationResult {
   valid: boolean;
-  errors: NodeDraftValidationErrors;
+  errors: NodeFormValidationErrors;
 }
 
 export function getValidationErrorKeyForProperty(rowId: string, field: 'key' | 'value'): string {
@@ -49,15 +49,15 @@ function isValidPropertyKey(key: string, mode: 'create' | 'edit'): boolean {
 // Validate the supported authoring surface: alias, optional node type, and
 // command-safe property rows. Duplicate aliases from graphData are advisory
 // because graphData is a staleable frontend projection.
-export function validateNodeDraft(
-  draft: NodeDraft,
-  options: NodeDraftValidationOptions = {},
-): NodeDraftValidationResult {
-  const errors: NodeDraftValidationErrors = {};
+export function validateNodeFormState(
+  formState: NodeFormState,
+  options: NodeFormValidationOptions = {},
+): NodeFormValidationResult {
+  const errors: NodeFormValidationErrors = {};
   const mode = options.mode ?? 'create';
-  const alias = draft.alias.trim();
+  const alias = formState.alias.trim();
   const originalAlias = options.originalAlias?.trim() ?? '';
-  const nodeType = draft.nodeType.trim();
+  const nodeType = formState.nodeType.trim();
 
   if (mode === 'edit') {
     if (!originalAlias) {
@@ -81,7 +81,7 @@ export function validateNodeDraft(
     errors.nodeType = 'Use only letters, numbers, underscore, and hyphen.';
   }
 
-  for (const row of draft.properties) {
+  for (const row of formState.properties) {
     const key = row.key.trim();
     const value = row.value.trim();
     if (!key && !value) continue;
@@ -111,8 +111,8 @@ export interface DeleteNodeValidationOptions {
 export function validateDeleteNodeAlias(
   aliasInput: string,
   options: DeleteNodeValidationOptions = {},
-): NodeDraftValidationResult {
-  const errors: NodeDraftValidationErrors = {};
+): NodeFormValidationResult {
+  const errors: NodeFormValidationErrors = {};
   const alias = aliasInput.trim();
 
   if (!alias) {
@@ -128,7 +128,7 @@ export function validateDeleteNodeAlias(
 
 // The command budget belongs to the WebSocket command path, so size is checked
 // after serialization rather than estimating from individual fields.
-export function validateCommandSize(commandText: string): NodeDraftValidationResult {
+export function validateCommandSize(commandText: string): NodeFormValidationResult {
   if (commandText.length <= MAX_BUFFER) return { valid: true, errors: {} };
   return {
     valid: false,

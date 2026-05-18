@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildCreateNodeCommand, buildDeleteNodeCommand, buildUpdateNodeCommand } from '../minigraphCommandBuilder';
-import type { NodeDraft } from '../nodeAuthoringTypes';
+import type { NodeFormState } from '../nodeAuthoringTypes';
 
-function draft(overrides: Partial<NodeDraft> = {}): NodeDraft {
+function formState(overrides: Partial<NodeFormState> = {}): NodeFormState {
   return {
     alias: 'root',
     nodeType: 'Root',
@@ -17,7 +17,7 @@ function draft(overrides: Partial<NodeDraft> = {}): NodeDraft {
 
 describe('buildCreateNodeCommand', () => {
   it('emits backend create-node command text without trailing newline', () => {
-    expect(buildCreateNodeCommand(draft())).toBe([
+    expect(buildCreateNodeCommand(formState())).toBe([
       'create node root',
       'with type Root',
       'with properties',
@@ -26,14 +26,14 @@ describe('buildCreateNodeCommand', () => {
   });
 
   it('omits node type and properties when blank', () => {
-    expect(buildCreateNodeCommand(draft({
+    expect(buildCreateNodeCommand(formState({
       nodeType: '  ',
       properties: [{ id: 'p1', key: ' ', value: ' ' }],
     }))).toBe('create node root');
   });
 
   it('preserves property row order and allows blank values', () => {
-    expect(buildCreateNodeCommand(draft({
+    expect(buildCreateNodeCommand(formState({
       properties: [
         { id: 'p1', key: 'first', value: 'one' },
         { id: 'p2', key: 'second', value: '' },
@@ -48,27 +48,27 @@ describe('buildCreateNodeCommand', () => {
   });
 
   it('rejects alias line injection before serialization', () => {
-    expect(() => buildCreateNodeCommand(draft({ alias: 'root\nwith properties' }))).toThrow();
+    expect(() => buildCreateNodeCommand(formState({ alias: 'root\nwith properties' }))).toThrow();
   });
 
   it('rejects node type line injection before serialization', () => {
-    expect(() => buildCreateNodeCommand(draft({ nodeType: 'Root\rwith properties' }))).toThrow();
+    expect(() => buildCreateNodeCommand(formState({ nodeType: 'Root\rwith properties' }))).toThrow();
   });
 
   it('rejects property keys containing equals before serialization', () => {
-    expect(() => buildCreateNodeCommand(draft({
+    expect(() => buildCreateNodeCommand(formState({
       properties: [{ id: 'p1', key: 'bad=key', value: 'value' }],
     }))).toThrow();
   });
 
   it('rejects property value newline injection', () => {
-    expect(() => buildCreateNodeCommand(draft({
+    expect(() => buildCreateNodeCommand(formState({
       properties: [{ id: 'p1', key: 'name', value: 'demo\nwith properties' }],
     }))).toThrow();
   });
 
   it('rejects multiline property delimiters', () => {
-    expect(() => buildCreateNodeCommand(draft({
+    expect(() => buildCreateNodeCommand(formState({
       properties: [{ id: 'p1', key: 'name', value: "'''demo" }],
     }))).toThrow();
   });
@@ -76,7 +76,7 @@ describe('buildCreateNodeCommand', () => {
 
 describe('buildUpdateNodeCommand', () => {
   it('emits backend update-node command text against the original alias', () => {
-    expect(buildUpdateNodeCommand(draft({
+    expect(buildUpdateNodeCommand(formState({
       alias: 'display-only',
       nodeType: 'Fetcher',
       properties: [{ id: 'p1', key: 'name', value: 'updated' }],
@@ -90,7 +90,7 @@ describe('buildUpdateNodeCommand', () => {
   });
 
   it('omits node type and properties when blank', () => {
-    expect(buildUpdateNodeCommand(draft({
+    expect(buildUpdateNodeCommand(formState({
       nodeType: ' ',
       properties: [{ id: 'p1', key: ' ', value: ' ' }],
       source: 'edit-node',
@@ -98,11 +98,11 @@ describe('buildUpdateNodeCommand', () => {
   });
 
   it('rejects invalid original aliases before serialization', () => {
-    expect(() => buildUpdateNodeCommand(draft({ source: 'edit-node' }), 'root\nwith properties')).toThrow();
+    expect(() => buildUpdateNodeCommand(formState({ source: 'edit-node' }), 'root\nwith properties')).toThrow();
   });
 
   it('emits flattened path keys and multiline values for edit mode', () => {
-    expect(buildUpdateNodeCommand(draft({
+    expect(buildUpdateNodeCommand(formState({
       nodeType: 'Evaluator',
       properties: [
         { id: 'p1', key: 'mapping[0]', value: 'text(hello) -> output.body' },

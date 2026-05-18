@@ -1,6 +1,6 @@
 import type { MinigraphNode } from '../utils/graphTypes';
 import { isValidPropertyPath, NODE_NAME_RE } from './validation';
-import type { NodeDraft, NodeDraftConversionResult, NodeDraftSource, PropertyRow } from './nodeAuthoringTypes';
+import type { NodeFormState, NodeFormConversionResult, NodeFormSource, PropertyRow } from './nodeAuthoringTypes';
 
 let rowCounter = 0;
 
@@ -13,7 +13,7 @@ export function createPropertyRow(key = '', value = ''): PropertyRow {
 
 // First-node authoring uses deterministic defaults. They are starting values
 // only; normal validation still runs after the user edits or submits.
-export function createDefaultNodeDraft(source: NodeDraftSource): NodeDraft {
+export function createDefaultNodeFormState(source: NodeFormSource): NodeFormState {
   return {
     alias: source === 'empty-graph' ? 'root' : '',
     nodeType: source === 'empty-graph' ? 'Root' : '',
@@ -57,26 +57,26 @@ function flattenPropertyValue(path: string, value: unknown, rows: PropertyRow[])
 // Converts the rendered graph node into the flat path/value rows consumed by
 // the backend update command. Arrays and nested objects use the same path
 // grammar emitted by the console `edit node` command, e.g. mapping[0] or a.b.
-export function createEditNodeDraft(node: MinigraphNode): NodeDraftConversionResult {
+export function createEditNodeFormState(node: MinigraphNode): NodeFormConversionResult {
   if (!NODE_NAME_RE.test(node.alias)) {
-    return { valid: false, draft: null, message: UNSUPPORTED_EDIT_NODE_MESSAGE };
+    return { valid: false, formState: null, message: UNSUPPORTED_EDIT_NODE_MESSAGE };
   }
 
   if (node.types.length > 1) {
-    return { valid: false, draft: null, message: UNSUPPORTED_EDIT_NODE_MESSAGE };
+    return { valid: false, formState: null, message: UNSUPPORTED_EDIT_NODE_MESSAGE };
   }
 
   const propertyEntries = Object.entries(node.properties);
   const properties: PropertyRow[] = [];
   for (const [key, value] of propertyEntries) {
     if (!flattenPropertyValue(key, value, properties)) {
-      return { valid: false, draft: null, message: UNSUPPORTED_EDIT_NODE_MESSAGE };
+      return { valid: false, formState: null, message: UNSUPPORTED_EDIT_NODE_MESSAGE };
     }
   }
 
   return {
     valid: true,
-    draft: {
+    formState: {
       alias: node.alias,
       nodeType: node.types[0] ?? '',
       properties: properties.length > 0 ? properties : [createPropertyRow()],

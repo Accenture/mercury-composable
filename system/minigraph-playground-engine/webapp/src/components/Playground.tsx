@@ -404,7 +404,7 @@ export default function Playground({ config }: PlaygroundProps) {
         <GraphAuthoringModals
           state={graphAuthoring.state}
           validationErrors={graphAuthoring.validationErrors}
-          onDraftChange={graphAuthoring.updateDraft}
+          onFormStateChange={graphAuthoring.updateFormState}
           onSubmit={graphAuthoring.submit}
           onClose={graphAuthoring.close}
         />

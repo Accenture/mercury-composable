@@ -1,8 +1,8 @@
-import type { NodeDraft } from './nodeAuthoringTypes';
-import { validateCommandSize, validateDeleteNodeAlias, validateNodeDraft, type DeleteNodeValidationOptions } from './validation';
+import type { NodeFormState } from './nodeAuthoringTypes';
+import { validateCommandSize, validateDeleteNodeAlias, validateNodeFormState, type DeleteNodeValidationOptions } from './validation';
 
-function getSerializablePropertyRows(draft: NodeDraft, preserveValue = false) {
-  return draft.properties
+function getSerializablePropertyRows(formState: NodeFormState, preserveValue = false) {
+  return formState.properties
     .map((row) => ({
       key: row.key.trim(),
       value: preserveValue ? row.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n') : row.value.trim(),
@@ -28,18 +28,18 @@ function appendSerializedProperty(lines: string[], key: string, value: string): 
   lines.push(`${key}=${value}`);
 }
 
-// Single serialization boundary for create-node UI authoring. Callers pass a
-// typed draft; only this builder is allowed to produce backend raw command text
-// so validation and injection guards stay centralized.
-export function buildCreateNodeCommand(draft: NodeDraft): string {
-  const validation = validateNodeDraft(draft);
+// Single serialization boundary for node UI authoring. Callers pass typed form
+// state; only this builder is allowed to produce backend raw command text so
+// validation and injection guards stay centralized.
+export function buildCreateNodeCommand(formState: NodeFormState): string {
+  const validation = validateNodeFormState(formState);
   if (!validation.valid) {
-    throw new Error(Object.values(validation.errors)[0] ?? 'Invalid node draft.');
+    throw new Error(Object.values(validation.errors)[0] ?? 'Invalid node form state.');
   }
 
-  const alias = draft.alias.trim();
-  const nodeType = draft.nodeType.trim();
-  const propertyRows = getSerializablePropertyRows(draft);
+  const alias = formState.alias.trim();
+  const nodeType = formState.nodeType.trim();
+  const propertyRows = getSerializablePropertyRows(formState);
 
   // Match the existing multiline command grammar consumed by
   // GraphCommandService.handleMultiLineCommand.
@@ -60,15 +60,15 @@ export function buildCreateNodeCommand(draft: NodeDraft): string {
   return command;
 }
 
-export function buildUpdateNodeCommand(draft: NodeDraft, originalAliasInput: string): string {
+export function buildUpdateNodeCommand(formState: NodeFormState, originalAliasInput: string): string {
   const originalAlias = originalAliasInput.trim();
-  const validation = validateNodeDraft(draft, { mode: 'edit', originalAlias });
+  const validation = validateNodeFormState(formState, { mode: 'edit', originalAlias });
   if (!validation.valid) {
-    throw new Error(Object.values(validation.errors)[0] ?? 'Invalid node draft.');
+    throw new Error(Object.values(validation.errors)[0] ?? 'Invalid node form state.');
   }
 
-  const nodeType = draft.nodeType.trim();
-  const propertyRows = getSerializablePropertyRows(draft, true);
+  const nodeType = formState.nodeType.trim();
+  const propertyRows = getSerializablePropertyRows(formState, true);
 
   const lines = [`update node ${originalAlias}`];
   if (nodeType) {
