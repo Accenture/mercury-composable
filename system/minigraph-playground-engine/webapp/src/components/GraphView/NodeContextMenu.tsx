@@ -151,7 +151,7 @@ export default function NodeContextMenu({
                 onClose();
               }}
             >
-              Clip to Clipboard
+              Clip to Workspace
             </button>
           )}
           {canEditNode && (

@@ -34,7 +34,7 @@ interface GraphViewProps {
   onRenderError?:  (message: string) => void;
   /** When true, renders a semi-transparent overlay with a spinner to indicate a background re-fetch. */
   isRefreshing?:   boolean;
-  /** Callback for "Clip to Clipboard" from the node context menu. */
+  /** Callback for "Clip to Workspace" from the node context menu. */
   onClipNode?:     (node: MinigraphNode, connections: MinigraphConnection[]) => void;
   onClipboardDrop?: (itemId: string) => void;
   isConnected:     boolean;

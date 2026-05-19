@@ -276,7 +276,7 @@ export default function Playground({ config }: PlaygroundProps) {
 
       switch (result.status) {
         case 'added':
-          addToast(`Node "${node.alias}" clipped to clipboard`, 'success');
+          addToast(`Node "${node.alias}" clipped to workspace`, 'success');
           break;
         case 'duplicate':
           setDuplicateDialogState({
