@@ -291,6 +291,8 @@ export function extractImportGraphName(raw: string): string | null {
 export type MutationKind = 'node-mutation' | 'import-graph';
 
 export type CreateNodeTextResultStatus = 'accepted' | 'rejected' | 'error';
+export type NodeActionTextResultStatus = 'accepted' | 'rejected' | 'error';
+export type NodeActionTextResultAction = 'create-node' | 'edit-node' | 'delete-node' | null;
 
 export interface CreateNodeTextResult {
   status: CreateNodeTextResultStatus;
@@ -298,27 +300,62 @@ export interface CreateNodeTextResult {
   message: string;
 }
 
-export const CREATE_NODE_CREATED_RE = /^node ([A-Za-z0-9_-]+) created$/;
-export const CREATE_NODE_ALREADY_EXISTS_RE = /^node ([A-Za-z0-9_-]+) already exists$/;
+export interface NodeActionTextResult {
+  status: NodeActionTextResultStatus;
+  action: NodeActionTextResultAction;
+  alias: string | null;
+  message: string;
+}
+
+export const NODE_CREATED_RE = /^node ([A-Za-z0-9_-]+) created$/i;
+export const NODE_ALREADY_EXISTS_RE = /^node ([A-Za-z0-9_-]+) already exists$/i;
+export const NODE_UPDATED_RE = /^node ([A-Za-z0-9_-]+) updated$/i;
+export const NODE_DELETED_RE = /^node ([A-Za-z0-9_-]+) deleted$/i;
+export const NODE_NOT_FOUND_RE = /^node ([A-Za-z0-9_-]+) not found$/i;
 export const ERROR_RE = /^ERROR: (.+)$/;
 
-export function parseCreateNodeTextResult(raw: string): CreateNodeTextResult | null {
+export function parseNodeActionTextResult(raw: string): NodeActionTextResult | null {
   const text = raw.trim();
   if (text.startsWith('> ')) return null;
 
-  const created = text.match(CREATE_NODE_CREATED_RE);
+  const created = text.match(NODE_CREATED_RE);
   if (created) {
-    return { status: 'accepted', alias: created[1], message: text };
+    return { status: 'accepted', action: 'create-node', alias: created[1], message: text };
   }
 
-  const alreadyExists = text.match(CREATE_NODE_ALREADY_EXISTS_RE);
+  const alreadyExists = text.match(NODE_ALREADY_EXISTS_RE);
   if (alreadyExists) {
-    return { status: 'rejected', alias: alreadyExists[1], message: text };
+    return { status: 'rejected', action: 'create-node', alias: alreadyExists[1], message: text };
+  }
+
+  const updated = text.match(NODE_UPDATED_RE);
+  if (updated) {
+    return { status: 'accepted', action: 'edit-node', alias: updated[1], message: text };
+  }
+
+  const deleted = text.match(NODE_DELETED_RE);
+  if (deleted) {
+    return { status: 'accepted', action: 'delete-node', alias: deleted[1], message: text };
+  }
+
+  const notFound = text.match(NODE_NOT_FOUND_RE);
+  if (notFound) {
+    return { status: 'rejected', action: null, alias: notFound[1], message: text };
   }
 
   const error = text.match(ERROR_RE);
   if (error) {
-    return { status: 'error', alias: null, message: text };
+    return { status: 'error', action: null, alias: null, message: text };
+  }
+
+  return null;
+}
+
+export function parseCreateNodeTextResult(raw: string): CreateNodeTextResult | null {
+  const result = parseNodeActionTextResult(raw);
+  if (!result) return null;
+  if (result.action === 'create-node' || result.status === 'error') {
+    return { status: result.status, alias: result.alias, message: result.message };
   }
 
   return null;

@@ -29,6 +29,14 @@ export interface CreateNodeTextResultEvent extends ProtocolEventBase {
   message: string;
 }
 
+export interface NodeActionTextResultEvent extends ProtocolEventBase {
+  kind: 'minigraph.nodeAction.textResult';
+  status: 'accepted' | 'rejected' | 'error';
+  action: 'create-node' | 'edit-node' | 'delete-node' | null;
+  alias: string | null;
+  message: string;
+}
+
 export interface LargePayloadEvent extends ProtocolEventBase {
   kind: 'payload.large';
   apiPath: string;
@@ -119,6 +127,7 @@ export type ProtocolEvent =
   | GraphLinkEvent
   | GraphMutationEvent
   | CreateNodeTextResultEvent
+  | NodeActionTextResultEvent
   | GraphExportedEvent
   | GraphExportFailedEvent
   | LargePayloadEvent

@@ -1,4 +1,5 @@
-export type NodeDraftSource = 'empty-graph' | 'pane-context-menu';
+export type NodeFormSource = 'empty-graph' | 'pane-context-menu' | 'edit-node';
+export type NodeAction = 'create-node' | 'edit-node' | 'delete-node';
 
 export interface PropertyRow {
   id: string;
@@ -6,11 +7,17 @@ export interface PropertyRow {
   value: string;
 }
 
-export interface NodeDraft {
+export interface NodeFormState {
   alias: string;
   nodeType: string;
   properties: PropertyRow[];
-  source: NodeDraftSource;
+  source: NodeFormSource;
 }
 
-export type NodeDraftValidationErrors = Record<string, string>;
+export type NodeFormValidationErrors = Record<string, string>;
+
+export interface NodeFormConversionResult {
+  valid: boolean;
+  formState: NodeFormState | null;
+  message: string | null;
+}
