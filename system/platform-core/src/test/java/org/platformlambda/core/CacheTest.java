@@ -35,7 +35,6 @@ class CacheTest {
         assertEquals(1000L, expiry);
         var defaultMaxItems = cache1.getMaxItems();
         assertEquals(2000L, defaultMaxItems);
-
         var collection = ManagedCache.getCacheCollection();
         assertTrue(collection.containsKey("hello.world"));
         assertInstanceOf(ManagedCache.class, collection.get("hello.world"));
