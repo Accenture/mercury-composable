@@ -22,7 +22,8 @@ N/A
 
 ### Changed
 
-Update MiniGraph tutorial 5 with correct CURL command example
+1. Update MiniGraph tutorial 5 with correct CURL command example
+2. Replace Google Guava Cache with Cafferine Cache
 
 ---
 ## Version 4.4.10, 5/7/2026

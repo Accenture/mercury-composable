@@ -26,15 +26,28 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CacheTest {
     // note that the cache expiry has a minimum value of 1000 ms
-    private static final ManagedCache cache1 = ManagedCache.createCache("hello.world", 1000, 100);
+    private static final ManagedCache cache1 = ManagedCache.createCache("hello.world", 1000);
     private static final SimpleCache cache2 = SimpleCache.createCache("simple.cache", 500);
 
     @Test
     void cacheBehavior() throws InterruptedException {
+        var expiry = cache1.getExpiry();
+        assertEquals(1000L, expiry);
+        var defaultMaxItems = cache1.getMaxItems();
+        assertEquals(2000L, defaultMaxItems);
+
+        var collection = ManagedCache.getCacheCollection();
+        assertTrue(collection.containsKey("hello.world"));
+        assertInstanceOf(ManagedCache.class, collection.get("hello.world"));
+        var now = System.currentTimeMillis();
         String key = "key1";
         String data = "hello";
         cache1.put(key, data);
+        var lastWrite = cache1.getLastWrite();
+        assertTrue(lastWrite >= now);
         Object o = cache1.get(key);
+        var lastRead = cache1.getLastRead();
+        assertTrue(lastRead >= now);
         assertEquals(data, o);
         long n = cache1.size();
         assertEquals(1, n);
@@ -49,6 +62,8 @@ class CacheTest {
         assertFalse(cache1.exists(key));
         cache1.cleanUp();
         cache1.clear();
+        var lastReset = cache1.getLastReset();
+        assertTrue(lastReset >= now);
     }
 
     /**
