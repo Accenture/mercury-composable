@@ -161,7 +161,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             }
             var cached = cachedMessage.get(inRoute);
             if (command.equals(cached)) {
-                log.info("Duplicated message - {} for {}", command, inRoute);
+                log.debug("Duplicated message - {} for {}", command, inRoute);
                 return;
             }
             cachedMessage.put(inRoute, command);
