@@ -72,6 +72,11 @@ export function useAutoGraphRefresh({
         return;
       }
 
+      // Arm gate immediately: a graph.link forwarded by the primary during
+      // the debounce window must be accepted before this session sends its
+      // own describe graph.
+      waitingForDescribeRef.current = true;
+
       // node-mutation → debounce
       if (debounceTimerRef.current !== null) {
         clearTimeout(debounceTimerRef.current);
@@ -79,7 +84,7 @@ export function useAutoGraphRefresh({
       debounceTimerRef.current = setTimeout(() => {
         debounceTimerRef.current = null;
         if (!connectedRef.current) return;
-        waitingForDescribeRef.current = true;
+        waitingForDescribeRef.current = true; // re-arm: may have been reset by an early forwarded graph.link
         sendRawTextRef.current('describe graph');
         addToast(
           pinnedGraphPathRef.current !== null
@@ -90,6 +95,18 @@ export function useAutoGraphRefresh({
       }, 300);
     });
   }, [bus, addToast]);
+
+  // Subscribe to session.reset (session restarted — clear stale graph view)
+  useEffect(() => {
+    return bus.on('session.reset', () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      waitingForDescribeRef.current = false;
+      setPinnedGraphPath(null);
+    });
+  }, [bus, setPinnedGraphPath]);
 
   // Cleanup debounce on unmount
   useEffect(() => {

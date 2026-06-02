@@ -15,6 +15,8 @@ import {
   parseNodeActionTextResult,
 } from '../utils/messageParser';
 
+export const SESSION_RESTARTED_MSG = 'Session restarted';
+
 const KNOWN_LIFECYCLE_TYPES = new Set(['info', 'error', 'ping', 'welcome']);
 
 /**
@@ -166,6 +168,11 @@ export function classifyMessage(msgId: number, raw: string): ProtocolEvent[] {
       alias: nodeActionResult.alias,
       message: nodeActionResult.message,
     });
+  }
+
+  // ── Rule 7c: Session reset ────────────────────────────────────────────────
+  if (raw === SESSION_RESTARTED_MSG) {
+    events.push({ ...base, kind: 'session.reset' });
   }
 
   // ── Rule 8: Command echo (starts with "> ") ──────────────────────────────

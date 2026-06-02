@@ -119,7 +119,10 @@ export function useGraphData(
   // the network level (not just guarded by a flag) when the path changes or
   // the component unmounts.
   useEffect(() => {
-    if (!pinnedGraphPath) return;
+    if (!pinnedGraphPath) {
+      setGraphData(null);
+      return;
+    }
 
     const controller = new AbortController();
     setGraphData(null); // clear stale data while the new fetch is in-flight
