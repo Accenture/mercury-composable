@@ -100,6 +100,9 @@ public class GraphCommandService extends GraphLambdaFunction {
             this.deployedGraphLocation = DEFAULT_DEPLOY_DIR;
         }
         log.info("Deployed graph model folder (location.graph.deployed) - {}", this.deployedGraphLocation);
+        // initial housekeeping to remove expired temp graph from previous session
+        housekeeping();
+        // schedule housekeeping for ongoing clean up of expired temp graphs
         Platform.getInstance().getVertx().setPeriodic(10000, l -> housekeeping());
     }
 
