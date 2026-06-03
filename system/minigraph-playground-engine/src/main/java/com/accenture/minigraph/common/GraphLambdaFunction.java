@@ -19,6 +19,7 @@
 package com.accenture.minigraph.common;
 
 import com.accenture.minigraph.models.GraphInstance;
+import com.accenture.minigraph.models.GraphSession;
 import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.*;
@@ -33,6 +34,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEnvelope, Object> {
+    protected static final ConcurrentMap<String, GraphSession> sessions = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, MiniGraph> graphModels = new ConcurrentHashMap<>();
     protected static final ConcurrentMap<String, GraphInstance> graphInstances = new ConcurrentHashMap<>();
     protected static final DataMappingHelper helper = DataMappingHelper.getInstance();
@@ -46,7 +48,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String TARGET = "target";
     protected static final String OPEN = "open";
     protected static final String CLOSE = "close";
+    protected static final String SESSION = "session";
+    protected static final String MESSAGE = "message";
     protected static final String COMMAND = "command";
+    protected static final String FORWARDED = "forwarded";
     protected static final String UNTYPED = "untyped";
     protected static final String NAME = "name";
     protected static final String ROOT = "root";
@@ -92,7 +97,6 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String OUTPUT_NAMESPACE = "output.";
     protected static final String OUTPUT_BODY = "output.body";
     protected static final String OUTPUT_ARRAY = "output[";
-    protected static final String MESSAGE = "message";
     protected static final String TYPE = "type";
     protected static final String HELP_PREFIX = "/help/";
     protected static final String MARKDOWN_EXT = ".md";

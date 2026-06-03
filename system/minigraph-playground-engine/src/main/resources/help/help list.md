@@ -5,10 +5,14 @@ respectively.
 
 Syntax
 ------
+List all nodes
+--------------
 ```
 list nodes
 ```
 
+List all connections
+--------------------
 ```
 list connections
 ```

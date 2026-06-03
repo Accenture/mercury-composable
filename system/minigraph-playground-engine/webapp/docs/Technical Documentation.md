@@ -2,7 +2,7 @@
 
 **Audience:** Engineers inheriting or maintaining this webapp  
 **Branch:** `feature/playground`  
-**Last updated:** May 7, 2026
+**Last updated:** June 1, 2026
 
 > **Note on line-number citations:** All `[Lxx]` anchors in this document are approximate and reflect the state of the codebase at the last documentation update. The codebase continues to grow; use the cited symbols and function names to locate code rather than relying on line numbers literally.
 
@@ -203,20 +203,24 @@ So `/api/graph/session/{id}` is currently a backend shortcut for direct consumer
 ### 3.5 Auto-Graph Refresh
 After any graph-mutating command (`create node`, `delete node`, `connect`, etc.), the graph automatically re-fetches and re-renders without user interaction. If no graph was previously loaded, the app issues `describe graph` silently, receives the graph-link, and opens the Graph tab automatically. This is debounced at 300 ms to collapse rapid-fire commands.
 
-The hook subscribes to `graph.mutation` and `graph.link` events on the `ProtocolBus` — it no longer scans the raw message array directly.
+The hook subscribes to `graph.mutation`, `graph.link`, and `session.reset` events on the `ProtocolBus` — it no longer scans the raw message array directly.
 
 Each mutation also emits a toast notification visible in the playground's toast stack:
 - `import-graph` mutation → `'Graph imported — refreshing view…'` (immediate, no debounce)
 - `node-mutation` with an existing graph → `'Graph updated — refreshing…'` (after debounce)
 - `node-mutation` with no graph yet → `'Graph updated — opening Graph tab…'` (after debounce)
 
+**Collaborative session gate-arm timing.** In a collaborative session the backend forwards the primary's `describe graph` response (as a `graph.link`) to all subscribers immediately after the primary processes it. This forwarded response can arrive at a subscriber's client during the 300 ms debounce window — before the subscriber would normally arm `waitingForDescribeRef`. To accept this forwarded link, `waitingForDescribeRef` is set to `true` at **mutation-detection time** (synchronously, before the debounce timer starts), not only inside the debounce callback. The assignment inside the callback is kept as a re-arm for the case where an early forwarded `graph.link` was already accepted and reset the gate to `false` before the debounce fired.
+
+**Session reset handling.** When the user runs `session reset`, the backend sends `"Session restarted"`. The classifier emits a `session.reset` event (Rule 7c). The hook's `session.reset` handler cancels any in-flight debounce, resets `waitingForDescribeRef`, and calls `setPinnedGraphPath(null)`. Because `useGraphData` clears `graphData` when `pinnedGraphPath` becomes null, the GraphView is immediately cleared.
+
 **Key code locations:**
 - `src/utils/messageParser.ts` [L279–L306](../src/utils/messageParser.ts#L279) — `detectMutation()`: classifies a raw message as `'node-mutation'`, `'import-graph'`, or `null`; includes the critical `startsWith('node ')` prefix guard
-- `src/protocol/classifier.ts` [L116–L122](../src/protocol/classifier.ts#L116) — Rule 7: calls `detectMutation()` and emits `graph.mutation` event
+- `src/protocol/classifier.ts` — Rule 7: calls `detectMutation()` and emits `graph.mutation` event; Rule 7c: emits `session.reset` for `"Session restarted"` via `SESSION_RESTARTED_MSG` constant
 - `src/hooks/useAutoGraphRefresh.ts` [L32–L36](../src/hooks/useAutoGraphRefresh.ts#L32) — five key refs: `debounceTimerRef`, `waitingForDescribeRef`, `pinnedGraphPathRef`, `connectedRef`, `sendRawTextRef`
 - `src/hooks/useAutoGraphRefresh.ts` [L44–L53](../src/hooks/useAutoGraphRefresh.ts#L44) — disconnect guard: clears `waitingForDescribeRef` and cancels any pending debounce on socket close
 - `src/hooks/useAutoGraphRefresh.ts` [L55–L64](../src/hooks/useAutoGraphRefresh.ts#L55) — `bus.on('graph.link')`: consumes pending graph-link when `waitingForDescribeRef` is true → calls `setPinnedGraphPath(event.apiPath)`
-- `src/hooks/useAutoGraphRefresh.ts` [L65–L96](../src/hooks/useAutoGraphRefresh.ts#L65) — `bus.on('graph.mutation')`: fires immediate `describe graph` for `import-graph`; debounced (300 ms) for `node-mutation`
+- `src/hooks/useAutoGraphRefresh.ts` [L65–L110](../src/hooks/useAutoGraphRefresh.ts#L65) — `bus.on('graph.mutation')`: arms `waitingForDescribeRef` immediately at mutation-detection time; fires immediate `describe graph` for `import-graph`; debounced (300 ms) for `node-mutation`, with re-arm inside the timeout; `bus.on('session.reset')`: clears debounce, resets gate, calls `setPinnedGraphPath(null)`
 - `src/hooks/useWebSocket.ts` [L286](../src/hooks/useWebSocket.ts#L286) — `sendRawText()`: sends without echoing to console or history (used exclusively by automation hooks)
 
 ---
@@ -374,13 +378,13 @@ This architecture eliminates O(hooks × messages) repeated parsing and provides 
 
 | File | Purpose | Lines |
 |---|---|---|
-| `src/protocol/events.ts` | Discriminated union type (`ProtocolEvent`) for graph, upload, docs, create-node, and lifecycle messages | 136 |
-| `src/protocol/classifier.ts` | Pure `classifyMessage(msgId, raw)` → `ProtocolEvent[]` rule pipeline | 220 |
+| `src/protocol/events.ts` | Discriminated union type (`ProtocolEvent`) for graph, upload, docs, create-node, lifecycle, and session-reset messages | ~151 |
+| `src/protocol/classifier.ts` | Pure `classifyMessage(msgId, raw)` → `ProtocolEvent[]` rule pipeline | ~243 |
 | `src/protocol/bus.ts` | `ProtocolBus` — lightweight typed event emitter (~45 lines) | 45 |
 | `src/protocol/useProtocolKernel.ts` | React hook: watermark + classify + memoised map + bus emission | 73 |
 | `src/protocol/index.ts` | Barrel re-export | 18 |
 
-**Event kinds:** `graph.link`, `graph.mutation`, `minigraph.createNode.textResult`, `graph.exported`, `graph.export.failed`, `payload.large`, `upload.invitation`, `upload.contentPath`, `command.echo`, `command.helpOrDescribe`, `command.importGraph`, `docs.response`, `json.response`, `lifecycle`, `unclassified`.
+**Event kinds:** `graph.link`, `graph.mutation`, `minigraph.createNode.textResult`, `graph.exported`, `graph.export.failed`, `payload.large`, `upload.invitation`, `upload.contentPath`, `command.echo`, `command.helpOrDescribe`, `command.importGraph`, `docs.response`, `json.response`, `lifecycle`, `session.reset`, `unclassified`.
 
 **Key code locations:**
 - `src/protocol/events.ts` [L103](../src/protocol/events.ts#L103) — `export type ProtocolEvent` discriminated union
@@ -591,7 +595,7 @@ Each Playground instance:
   ├── useWebSocket          ← command input + history + WS actions (handleLocalCommand for local help)
   ├── useProtocolKernel     ← classifies messages once → ProtocolBus + classificationMap
   ├── useGraphData          ← REST fetch + graph state
-  ├── useAutoGraphRefresh   ← bus: graph.link + graph.mutation → silent describe graph + toast
+  ├── useAutoGraphRefresh   ← bus: graph.link + graph.mutation + session.reset → silent describe graph + toast; clears graph on reset
   ├── useAutoHelpNavigate   ← bus: command.helpOrDescribe → auto-open help panel
   ├── useSavedGraphWorkflow ← bus: graph.exported / graph.export.failed → export-domain save correlation
   ├── useLargePayloadDownload ← bus: payload.large → REST fetch → console (inline)
@@ -622,7 +626,7 @@ Each Playground instance:
                               ├── classificationMap (Map<msgId, ProtocolEvent[]>)
                               │     └── ConsoleMessage reads at render time
                               └── ProtocolBus.emit(event)
-                                    ├── useAutoGraphRefresh.on('graph.link' | 'graph.mutation')
+                                    ├── useAutoGraphRefresh.on('graph.link' | 'graph.mutation' | 'session.reset')
                                     ├── useAutoHelpNavigate.on('command.helpOrDescribe')
                                     ├── useSavedGraphWorkflow.on('graph.exported' | 'graph.export.failed')
                                     ├── useLargePayloadDownload.on('payload.large')
@@ -898,13 +902,13 @@ This layer centralises message classification so that hooks subscribe to typed e
 
 #### `src/protocol/events.ts` — Event type definitions
 
-A discriminated union type `ProtocolEvent`. Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize`, `apiPath`, and `filename` — the last path segment of `apiPath` with `.json` appended, reserved for a future download action). Create-node result correlation uses `CreateNodeTextResultEvent` with `kind: 'minigraph.createNode.textResult'`, `status`, `alias`, and the raw backend message. `ProtocolEventKind` is the union of all `kind` string literals.
+A discriminated union type `ProtocolEvent`. Each variant carries a `kind` tag, the originating `msgId`, plus kind-specific payloads (e.g. `GraphLinkEvent` includes `apiPath`; `LargePayloadEvent` includes `byteSize`, `apiPath`, and `filename` — the last path segment of `apiPath` with `.json` appended, reserved for a future download action). Create-node result correlation uses `CreateNodeTextResultEvent` with `kind: 'minigraph.createNode.textResult'`, `status`, `alias`, and the raw backend message. Session lifecycle uses `SessionResetEvent` with `kind: 'session.reset'` — emitted when the backend sends `"Session restarted"` after a `session reset` command. `ProtocolEventKind` is automatically derived as `ProtocolEvent['kind']` — adding a new variant to the union automatically updates the kind set.
 
 #### `src/protocol/classifier.ts` — Pure classification function
 
 `classifyMessage(msgId: number, raw: string): ProtocolEvent[]` ([L27](../src/protocol/classifier.ts#L27)) returns an **array** because a single message may match multiple rules (e.g. `"node root created"` is both a `graph.mutation` and a `minigraph.createNode.textResult`). The fallback `unclassified` rule fires only when no other rule matched.
 
-The classifier delegates to `messageParser.ts` predicates (`extractGraphApiPath`, `extractLargePayloadLink`, `extractMockUploadPath`, `extractUploadPath`, `isHelpOrDescribeCommand`, `detectMutation`, `parseCreateNodeTextResult`, `extractImportGraphName`, `isGraphLinkMessage`, `isMarkdownCandidate`, `tryParseJSON`) — it adds no new parsing logic, only orchestrates existing parsers into a single classification pass.
+The classifier delegates to `messageParser.ts` predicates (`extractGraphApiPath`, `extractLargePayloadLink`, `extractMockUploadPath`, `extractUploadPath`, `isHelpOrDescribeCommand`, `detectMutation`, `parseCreateNodeTextResult`, `extractImportGraphName`, `isGraphLinkMessage`, `isMarkdownCandidate`, `tryParseJSON`) — it adds no new parsing logic, only orchestrates existing parsers into a single classification pass. The module-level constant `SESSION_RESTARTED_MSG = 'Session restarted'` is the single source of truth for the session-reset wire string used by Rule 7c; both the classifier and its tests import from this constant.
 
 #### `src/protocol/bus.ts` — Typed event emitter
 
@@ -945,11 +949,14 @@ Because `bus` is a stable `useRef` object, the subscription effect runs only onc
 
 Subscribes to:
 - `bus.on('graph.link')` — when `waitingForDescribeRef` is true, consumes the graph path and calls `setPinnedGraphPath`
-- `bus.on('graph.mutation')` — arms a 300 ms debounce timer; on fire, sends `describe graph` silently and emits an `addToast` notification to indicate the refresh in progress
+- `bus.on('graph.mutation')` — arms `waitingForDescribeRef` **immediately at mutation-detection time** (before the debounce timer starts), then arms a 300 ms debounce timer; when the timer fires it re-arms `waitingForDescribeRef` (in case an early forwarded `graph.link` accepted and reset the gate before the debounce fired), sends `describe graph` silently, and emits an `addToast` notification
+- `bus.on('session.reset')` — cancels any in-flight debounce, resets `waitingForDescribeRef` to false, and calls `setPinnedGraphPath(null)` to clear the stale graph view
+
+**Why gate-arm timing matters in collaborative sessions:** the backend forwards the primary's `describe graph` response to all subscriber sessions. This forwarded `graph.link` arrives during the 300 ms debounce window — before the subscriber's debounce fires and before the gate would previously have been armed. The immediate arm ensures the forwarded link is accepted. The re-arm inside the debounce callback handles the inverse: if the forwarded link arrived early and already consumed the gate, the debounce re-arms it so the session's own `describe graph` response is also accepted.
 
 **Stale-closure fix**: `pinnedGraphPath` is read via `pinnedGraphPathRef` inside the debounce timer callback — if it were read directly from closure it would be stale after subsequent renders. Same pattern for `connectedRef` and `sendRawTextRef`.
 
-**`refetchGraph` is accepted but unused**: the hook's interface accepts `refetchGraph` (passed through from `useGraphData`) but stores it as `_refetchGraph` — the underscore convention signals it is received for interface symmetry but intentionally not called. Auto-refresh always works by sending `describe graph` via `sendRawText`, which triggers `setPinnedGraphPath` via the bus, which then triggers the **initial-load** path in `useGraphData` (graph clears to `null`, re-fetches without an overlay spinner). The overlay-spinner path (`refetchGraph`) is only triggered imperatively by direct user actions, not by auto-refresh.
+**Auto-refresh always uses the initial-load path**: the hook sends `describe graph` via `sendRawText`, which triggers a new graph-link event and updates `pinnedGraphPath`. This triggers the **initial-load** path in `useGraphData` (graph clears to `null`, re-fetches). The overlay-spinner path (`refetchGraph`) is only triggered imperatively by direct user actions, not by auto-refresh.
 
 Disconnect cleanup: when `connected` flips to false, pending debounce timers are cleared and `waitingForDescribeRef` is reset.
 
@@ -1233,7 +1240,7 @@ The mount adapter between hook state and modal props. It converts hook state int
 
 The hook has two distinct code paths:
 
-- **Initial-load path** (triggered by `pinnedGraphPath` changing): clears `graphData` to `null` (clean loading state for new graphs), auto-switches the tab to `'graph'` on success. Uses a `useEffect`-managed `AbortController`.
+- **Initial-load path** (triggered by `pinnedGraphPath` changing): if `pinnedGraphPath` is non-null, clears `graphData` to `null` (clean loading state for new graphs), fetches, and auto-switches the tab to `'graph'` on success. If `pinnedGraphPath` changes to `null` (e.g. on session reset), `graphData` is also set to `null` immediately — the invariant is "no pinned path means no graph data." Uses a `useEffect`-managed `AbortController`.
 - **Auto-refresh path** (triggered by `refetchGraph()` call): does *not* clear `graphData` (stale graph stays visible under a spinner overlay), does *not* switch the tab (user is not interrupted). Uses a `useCallback`-stable imperative function with its own abort ref.
 
 **Why separate paths?** A first-time load of a new graph needs visual loading feedback and should switch context to the Graph tab. A background refresh should be invisible to the user — just a spinner on the existing graph.
@@ -1336,11 +1343,12 @@ User sends "create node foo" → ws.sendCommand()
 Server echoes "> create node foo"   — ignored by classifier (command.echo kind)
 Server responds "Node foo created"  — classifier emits graph.mutation event
   → useAutoGraphRefresh.on('graph.mutation'):
+      waitingForDescribeRef = true  ← armed immediately at mutation-detection time
       arms 300 ms debounce timer
   → (300 ms passes, no further mutations)
+  → waitingForDescribeRef = true  ← re-armed inside debounce callback
   → addToast('Graph updated — refreshing…')          [or '…opening Graph tab…' if no graph yet]
   → sendRawTextRef.current('describe graph')   — silent, no history entry
-  → waitingForDescribeRef = true
 
 Server emits graph-link "Graph described in /api/graph/model/ws-123-2"
   → classifier emits graph.link event
@@ -1580,7 +1588,7 @@ Disconnect while modal is open
 | Payload text | `useLocalStorage` in `Playground` | `localStorage` | Keyed per playground |
 | Payload override (large) | `useState` in `Playground` | Memory only | Never written to localStorage |
 | Pinned message id | `useState` in `Playground` | Memory only | |
-| Pinned graph path | `useState` in `Playground` | Memory only | |
+| Pinned graph path | `usePinnedGraphPath` hook (module-scope `Map` + `useState`) | Memory only (survives remount, resets on page reload) | Cleared on disconnect (Playground.tsx effect) and on `session.reset` (useAutoGraphRefresh handler) |
 | Modal upload path | `useState` in `Playground` | Memory only | `null` = closed; non-null = modal open |
 | Modal trigger element | `useRef` in `Playground` | Memory only | Captures active element before open for focus restore |
 | Successful upload paths | `useState` in `Playground` | Memory only | `Set<string>`; cleared on `clearMessages` |
@@ -1694,12 +1702,11 @@ The Protocol Kernel's `classifier.ts` calls `detectMutation()` internally, so no
 
 ### Add a new message type to the Protocol Kernel
 
-1. Add a new event variant to the `ProtocolEvent` union in `src/protocol/events.ts`
-2. Add the corresponding `kind` string literal to `ProtocolEventKind`
-3. Add a classification rule in `src/protocol/classifier.ts` (before Rule 12, the unclassified fallback)
-4. Add a test fixture JSON file in `src/protocol/__tests__/fixtures/`
-5. Add golden transcript test cases in `src/protocol/__tests__/classifier.test.ts`
-6. Subscribe to the new event kind in the appropriate hook via `bus.on('new.kind', handler)`
+1. Add a new event variant to the `ProtocolEvent` union in `src/protocol/events.ts`. `ProtocolEventKind` is `ProtocolEvent['kind']` — it updates automatically; no separate step needed.
+2. Add a classification rule in `src/protocol/classifier.ts` (before Rule 12, the unclassified fallback). If the rule matches a static string, export a constant for the wire value from `classifier.ts` so tests import the same string.
+3. Add a test fixture JSON file in `src/protocol/__tests__/fixtures/`
+4. Add golden transcript test cases in `src/protocol/__tests__/classifier.test.ts`
+5. Subscribe to the new event kind in the appropriate hook via `bus.on('new.kind', handler)`
 
 ### Extend the create-node UI surface
 
@@ -1750,7 +1757,9 @@ If the backend sends a node whose `types[0]` value is not a key in the `nodeType
 The upload invitation is plain text, so `isMarkdownCandidate` returns `true` for it. Without the `&& !isMockUpload && !isLargePayload` guard in the `isPinnable` derivation in `ConsoleMessage.tsx` ([L51](../src/components/Console/ConsoleMessage.tsx#L51)), the row would receive `role="button"` and `onClick` *alongside* the "⬆️ Upload JSON…" re-open button — creating nested interactive elements that violate WCAG. Always keep both exclusions. See §3.12 and §6.5.
 
 ### P12 — `docs.response` classifier rule must exclude all non-docs message types
-The `docs.response` classification rule in `classifier.ts` ([L155](../src/protocol/classifier.ts#L155)) excludes echoes, graph-links, mock-upload invitations, large-payload notices, JSON responses, and lifecycle messages. If a new message type is added that is plain text, it must also be excluded from `docs.response` to prevent it from being stolen as an auto-pin target. See §6.8 and §6.9.
+The `docs.response` classification rule in `classifier.ts` excludes echoes, graph-links, mock-upload invitations, large-payload notices, JSON responses, and lifecycle messages. If a new message type is added that is plain text, it must also be excluded from `docs.response` to prevent it from being stolen as an auto-pin target. See §6.8 and §6.9.
+
+> **Note on coexistence:** the `session.reset` event (Rule 7c) and `docs.response` (Rule 11) intentionally fire together for the `"Session restarted"` message — the console still renders it as text, and the hook receives the `session.reset` event to act on it. This dual-event pattern is consistent with how `graph.mutation` and `minigraph.createNode.textResult` coexist for the same message.
 
 ### P13 — Bus subscription callbacks must read mutable state through refs
 Because `bus.on()` registers a callback only once (the bus `useRef` identity never changes), any React state read inside the callback would be stale after subsequent renders. All automation hooks use ref-wrapping (`connectedRef`, `sendRawTextRef`, `pinnedGraphPathRef`, callback refs) to access current values. Adding a new bus subscriber that reads state directly from closure will produce stale-closure bugs. See §7.11.

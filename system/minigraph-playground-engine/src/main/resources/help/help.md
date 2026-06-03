@@ -31,6 +31,7 @@ For graph model
 - help import (graph or node)
 - help describe (graph, node, connection or skill)
 - help data-dictionary
+- help session (display, subscribe or reset session)
 
 For instance model
 ------------------

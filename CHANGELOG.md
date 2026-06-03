@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.4.11, 5/29/2026
+
+### Added
+
+1. Enhanced collaboration feature for user/user and user/AI such that a user can subscribe
+   to another user's session. Both users can use AI to assist creation/update of a graph model.
+2. Housekeeper for MiniGraph Playground to clean up expired temporary graphs.
+
+### Removed
+
+N/A
+
+### Changed
+
+1. Update MiniGraph tutorial 5 with correct CURL command example
+2. Replace Google Guava Cache with Cafferine Cache
+
+---
 ## Version 4.4.10, 5/7/2026
 
 ### Added
