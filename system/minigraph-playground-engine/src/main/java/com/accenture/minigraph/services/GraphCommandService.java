@@ -471,7 +471,9 @@ public class GraphCommandService extends GraphLambdaFunction {
         if (targetGraph.isEmpty()) {
             // copy graph from source
             if (!sourceGraph.isEmpty()) {
-                targetGraph.importGraph(sourceGraph.exportGraph());
+                var sourceGraphData = sourceGraph.exportGraph();
+                targetGraph.importGraph(sourceGraphData);
+                populateSubscriberGraph(target, outRoute, sourceGraphData);
             }
             direct = false;
         } else {
@@ -485,6 +487,19 @@ public class GraphCommandService extends GraphLambdaFunction {
         po.send(new EventEnvelope().setTo(targetOutRoute).setBody(sourceId + " subscribed to your session"));
         if (!sourceGraph.isEmpty()) {
             touchNode(po, sourceGraph, inRoute, outRoute, direct);
+        }
+    }
+
+    private void populateSubscriberGraph(GraphSession target, String outRoute, Map<String, Object> sourceGraphData) {
+        var subscribers = target.getSubscribers();
+        for (var subscriber : subscribers) {
+            if (!subscriber.equals(outRoute)) {
+                var subscriberInRoute = GraphSession.getInRoute(subscriber);
+                var subscriberGraph = graphModels.get(subscriberInRoute);
+                if (subscriberGraph != null) {
+                    subscriberGraph.importGraph(sourceGraphData);
+                }
+            }
         }
     }
 
