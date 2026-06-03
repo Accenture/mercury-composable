@@ -93,6 +93,22 @@ public class MiniGraph {
     }
 
     /**
+     * Count the number of nodes in a graph
+     * @return node count
+     */
+    public int getNodeCount() {
+        return nodeCount.get();
+    }
+
+    /**
+     * Test if a graph is empty
+     * @return true if empty
+     */
+    public boolean isEmpty() {
+        return nodeCount.get() == 0;
+    }
+
+    /**
      * Print the graph as a JSON string
      *
      * @return json text

@@ -56,6 +56,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String OUTCOME = "outcome";
     private static final String PLAYGROUND = "playground";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
+    private static final String SESSION_TAG = "Session ";
     private static final long EXPIRY = 20 * 1000L;
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
@@ -365,12 +366,23 @@ public class GraphCommandService extends GraphLambdaFunction {
         var me = sessions.get(inRoute);
         if (words.size() == 1) {
             showSession(po, me, outRoute);
-        } else if (words.size() > 1 && words.get(1).equalsIgnoreCase("reset")) {
-            resetSession(po, me, outRoute);
-            // create a new session
-            sessions.put(inRoute, new GraphSession(inRoute));
-            graphModels.put(inRoute, new MiniGraph());
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Session restarted"));
+        } else if (words.size() == 2) {
+            if (words.get(1).equalsIgnoreCase("reset")) {
+                resetSession(po, me, outRoute);
+                // create a new session
+                sessions.put(inRoute, new GraphSession(inRoute));
+                graphModels.put(inRoute, new MiniGraph());
+                po.send(new EventEnvelope().setTo(outRoute).setBody("Session restarted"));
+            } else if (words.get(1).equalsIgnoreCase("unsubscribe")) {
+                if (me.isPrimary()) {
+                    po.send(new EventEnvelope().setTo(outRoute).setBody("Nothing to unsubscribe"));
+                } else {
+                    var targetId = me.getTargetId();
+                    unsubscribeSession(po, me, outRoute);
+                    me.setTargetId(me.getSessionId());
+                    po.send(new EventEnvelope().setTo(outRoute).setBody("Session unsubscribed from " + targetId));
+                }
+            }
         } else if (words.size() > 2 && words.get(1).equalsIgnoreCase("subscribe")) {
             subscribeSession(po, me, inRoute, outRoute, words.get(2));
         } else {
@@ -382,7 +394,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var sourceId = me.getSessionId();
         var sessionStarted = util.getLocalTimestamp(me.startTime);
         var status = new StringBuilder();
-        status.append("Session ").append(sourceId).append(" started since ").append(sessionStarted).append("\n");
+        status.append(SESSION_TAG).append(sourceId).append(" started since ").append(sessionStarted).append("\n");
         if (!me.isPrimary()) {
             status.append("subscribed to ").append(me.getTargetId()).append("\n");
         }
@@ -402,19 +414,23 @@ public class GraphCommandService extends GraphLambdaFunction {
                     if (target != null) {
                         target.setTargetId(targetId);
                         po.send(new EventEnvelope().setTo(subscriberOutRoute).setBody(
-                                "Session " + me.getSessionId()+ " has closed"));
+                                SESSION_TAG + me.getSessionId()+ " has closed"));
                     }
                 }
             }
         } else {
-            var targetId = me.getTargetId();
-            var target = sessions.get(GraphSession.getInRoute(targetId));
-            if (target != null && target.hasSubscriber(outRoute)) {
-                target.unsubscribe(outRoute);
-                var targetOutRoute = GraphSession.getOutRoute(targetId);
-                po.send(new EventEnvelope().setTo(targetOutRoute).setBody(me.getSessionId()+
-                        " unsubscribed from your session"));
-            }
+            unsubscribeSession(po, me, outRoute);
+        }
+    }
+
+    private void unsubscribeSession(PostOffice po, GraphSession me, String outRoute) {
+        var targetId = me.getTargetId();
+        var target = sessions.get(GraphSession.getInRoute(targetId));
+        if (target != null && target.hasSubscriber(outRoute)) {
+            target.unsubscribe(outRoute);
+            var targetOutRoute = GraphSession.getOutRoute(targetId);
+            po.send(new EventEnvelope().setTo(targetOutRoute).setBody(me.getSessionId()+
+                    " unsubscribed from your session"));
         }
     }
 
@@ -428,29 +444,51 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
         var target = sessions.get(GraphSession.getInRoute(sessionId));
         if (target == null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Session "+sessionId+" not found"));
+            po.send(new EventEnvelope().setTo(outRoute).setBody(SESSION_TAG+sessionId+" not found"));
         } else {
             if (target.isPrimary()) {
                 var sourceId = me.getSessionId();
                 var targetId = target.getSessionId();
-                var targetInRoute = GraphSession.getInRoute(targetId);
-                var targetOutRoute = GraphSession.getOutRoute(targetId);
-                me.setTargetId(targetId);
-                target.subscribe(outRoute);
-                // copy graph from target
-                var sourceGraph = graphModels.get(inRoute);
-                var targetGraph = graphModels.get(targetInRoute);
-                sourceGraph.importGraph(targetGraph.exportGraph());
-                po.send(new EventEnvelope().setTo(outRoute).setBody("Subscribed to "+sessionId));
-                po.send(new EventEnvelope().setTo(targetOutRoute).setBody(sourceId+" subscribed to your session"));
-                touchNode(po, sourceGraph, inRoute, outRoute);
+                if (sourceId.equals(targetId)) {
+                    po.send(new EventEnvelope().setTo(outRoute).setBody("You cannot subscribe to yourself"));
+                } else {
+                    synchronizeGraph(po, me, target, inRoute, outRoute);
+                }
             } else {
                 po.send(new EventEnvelope().setTo(outRoute).setBody(sessionId+" is not a primary session"));
             }
         }
     }
 
-    private void touchNode(PostOffice po, MiniGraph graph, String inRoute, String outRoute) {
+    private void synchronizeGraph(PostOffice po, GraphSession me, GraphSession target, String inRoute, String outRoute) {
+        var sourceId = me.getSessionId();
+        var targetId = target.getSessionId();
+        var targetInRoute = GraphSession.getInRoute(targetId);
+        var targetOutRoute = GraphSession.getOutRoute(targetId);
+        var sourceGraph = graphModels.get(inRoute);
+        var targetGraph = graphModels.get(targetInRoute);
+        final boolean direct;
+        if (targetGraph.isEmpty()) {
+            // copy graph from source
+            if (!sourceGraph.isEmpty()) {
+                targetGraph.importGraph(sourceGraph.exportGraph());
+            }
+            direct = false;
+        } else {
+            // copy graph from target
+            direct = true;
+            sourceGraph.importGraph(targetGraph.exportGraph());
+        }
+        me.setTargetId(targetId);
+        target.subscribe(outRoute);
+        po.send(new EventEnvelope().setTo(outRoute).setBody("Subscribed to " + targetId));
+        po.send(new EventEnvelope().setTo(targetOutRoute).setBody(sourceId + " subscribed to your session"));
+        if (!sourceGraph.isEmpty()) {
+            touchNode(po, sourceGraph, inRoute, outRoute, direct);
+        }
+    }
+
+    private void touchNode(PostOffice po, MiniGraph graph, String inRoute, String outRoute, boolean direct) {
         var root = graph.findNodeByAlias(ROOT);
         SimpleNode alternate = null;
         if (root == null) {
@@ -459,13 +497,17 @@ public class GraphCommandService extends GraphLambdaFunction {
                 alternate = nodes.getFirst();
             }
         }
+        // update or create a node to force the UI to populate the graph view
         var touch = root == null? alternate : root;
         if (touch != null) {
-            // update a node to force the UI to populate the graph
+            // update an existing node
             var command = constructNodeUpdateCommand(touch);
             po.send(new EventEnvelope().setTo(inRoute).setBody(command));
-            var directMessage = Map.of(TYPE, COMMAND, IN, inRoute, OUT, outRoute, MESSAGE, command, FORWARDED, true);
-            po.send(new EventEnvelope().setTo(ROUTE).setBody(directMessage));
+            var message = util.deepCopy(Map.of(TYPE, COMMAND, IN, inRoute, OUT, outRoute, MESSAGE, command));
+            if (direct) {
+                message.put(FORWARDED, true);
+            }
+            po.send(new EventEnvelope().setTo(ROUTE).setBody(message));
         }
     }
 

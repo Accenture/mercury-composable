@@ -206,9 +206,11 @@ class GraphTest {
     @Test
     void directionalTest() {
         var graph = new MiniGraph();
+        assertTrue(graph.isEmpty());
         assertEquals(Utility.getInstance().getUuid().length(), graph.getId().length());
         var nodeA = graph.createNode("A", "transaction");
         var nodeB = graph.createNode("B", "data");
+        assertEquals(2, graph.getNodeCount());
         var c1 = graph.connect("A", "B");
         var r1 = c1.addRelation("demo1");
         r1.addProperty("hello", "world");
