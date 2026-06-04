@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @PreLoad(route = GraphCommandService.ROUTE, instances=50)
 public class GraphCommandService extends GraphLambdaFunction {
     public static final String ROUTE = "graph.command.service";
+    public static final String SINGLETON_COMMAND_HANDLER = "graph.command.singleton";
     private static final Logger log = LoggerFactory.getLogger(GraphCommandService.class);
     private static final ManagedCache cachedMessage = ManagedCache.createCache("last.ws.message", 1000);
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
@@ -103,7 +104,10 @@ public class GraphCommandService extends GraphLambdaFunction {
         // initial housekeeping to remove expired temp graph from previous session
         housekeeping();
         // schedule housekeeping for ongoing clean up of expired temp graphs
-        Platform.getInstance().getVertx().setPeriodic(10000, l -> housekeeping());
+        var platform = Platform.getInstance();
+        platform.getVertx().setPeriodic(10000, l -> housekeeping());
+        // create a singleton version of this composable function for orderly execution of requests from AI companion
+        platform.registerPrivate(SINGLETON_COMMAND_HANDLER, this, 1);
     }
 
     @SuppressWarnings("unchecked")

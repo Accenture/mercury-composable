@@ -53,14 +53,16 @@ public class PostCompanionCommand implements TypedLambdaFunction<AsyncHttpReques
         var route = id.replace('-', '.');
         var inRoute = route + ".in";
         var outRoute = route + ".out";
+        // use the singleton version of the GraphCommandService to eliminate chance of racing condition
         var po = new PostOffice(headers, instance);
         po.send(new EventEnvelope()
-                .setTo(GraphCommandService.ROUTE)
+                .setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
                 .setBody(Map.of(
                         "type", "command",
                         "in", inRoute,
                         "out", outRoute,
                         "message", command)));
+        // immediately inform caller that the request has been accepted for orderly execution
         return new EventEnvelope()
                 .setHeader("Content-Type", "application/json")
                 .setBody(Map.of(
