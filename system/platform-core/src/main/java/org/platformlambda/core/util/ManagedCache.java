@@ -15,11 +15,12 @@
     limitations under the License.
 
  */
-
 package org.platformlambda.core.util;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+// CAFFEINE: replaced Guava imports
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import org.platformlambda.core.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ManagedCache {
+
     private static final Logger log = LoggerFactory.getLogger(ManagedCache.class);
 
     private static final long DEFAULT_MAX_ITEMS = 2000L;
@@ -40,10 +42,12 @@ public class ManagedCache {
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     private static final AtomicBoolean NOT_RUNNING = new AtomicBoolean(true);
     private static final long HOUSEKEEPING_INTERVAL = 10 * 60 * 1000L; // 10 minutes
+
     private final String name;
     private final long expiry;
     private final long maxItems;
-    private final Cache<String, Object> cache;
+    private final Cache<String, Object> cache;   // CAFFEINE: type is now com.github.benmanes.caffeine.cache.Cache
+
     private long lastWrite = 0;
     private long lastRead = 0;
     private long lastReset = System.currentTimeMillis();
@@ -68,7 +72,7 @@ public class ManagedCache {
     /**
      * Obtain a ManagedCache instance
      *
-     * @param name of cache store
+     * @param name     of cache store
      * @param expiryMs in milliseconds
      * @return cache instance
      */
@@ -79,7 +83,7 @@ public class ManagedCache {
     /**
      * Obtain a ManagedCache instance
      *
-     * @param name of cache store
+     * @param name     of cache store
      * @param expiryMs in milliseconds
      * @param maxItems maximum number of cached objects
      * @return cache instance
@@ -92,8 +96,13 @@ public class ManagedCache {
                 return managedCache;
             }
             long expiryTimer = Math.max(expiryMs, MIN_EXPIRY);
-            Cache<String, Object> cache = CacheBuilder.newBuilder().maximumSize(maxItems).expireAfterWrite(expiryTimer, TimeUnit.MILLISECONDS).build();
-            // create cache
+
+            // CAFFEINE: Caffeine.newBuilder() replaces CacheBuilder.newBuilder()
+            Cache<String, Object> cache = Caffeine.newBuilder()
+                    .maximumSize(maxItems)
+                    .expireAfterWrite(expiryTimer, TimeUnit.MILLISECONDS)
+                    .build();
+
             managedCache = new ManagedCache(cache, name, expiryTimer, maxItems);
             COLLECTION.put(name, managedCache);
             String timer = Utility.getInstance().elapsedTime(expiryTimer);
@@ -163,7 +172,10 @@ public class ManagedCache {
     }
 
     public long size() {
-        return cache.size();
+        // CAFFEINE: cache.size() → cache.estimatedSize()
+        // Caffeine returns an estimate to avoid locking the concurrent structure.
+        // For a cache, this is semantically equivalent and more performant.
+        return cache.estimatedSize();
     }
 
     public ConcurrentMap<String, Object> getMap() {

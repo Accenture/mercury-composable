@@ -21,7 +21,7 @@
     "react-json-view-lite": "^2.5.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.6.5",
-    "react-router-dom": "^7.0.0",
+    "react-router-dom": "^7.16.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
@@ -33,6 +33,6 @@
     "typescript": "^5.9.3",
     "vite": "^6.4.2",
     "vite-plugin-svgr": "^4.5.0",
-    "vitest": "^3.1.1"
+    "vitest": "^4.1.0"
   }
 }

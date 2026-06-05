@@ -259,7 +259,8 @@ You can then test the deployed model with a curl command.
 curl -X POST http://127.0.0.1:8085/api/graph/tutorial-5 \
   -H "Content-Type: application/json" \
   -d '{
-    "person_id": 100
+    "person1": 100,
+    "person2": 200
   }'
 ```
 

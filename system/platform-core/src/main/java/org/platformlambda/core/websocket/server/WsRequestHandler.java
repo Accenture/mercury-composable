@@ -171,7 +171,8 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
         private IdleCheck() {
             final AppConfigReader config = AppConfigReader.getInstance();
             final Utility util = Utility.getInstance();
-            timeout = Math.min(30, util.str2int(config.getProperty("websocket.idle.timeout", "60")));
+            // min 10 seconds, default 60 seconds
+            timeout = Math.max(10, util.str2int(config.getProperty("websocket.idle.timeout", "60")));
             expiry = timeout * 1000L;
             String timer = util.elapsedTime(expiry);
             log.info("Websocket server idle expiry {}", timer);

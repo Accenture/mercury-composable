@@ -121,6 +121,10 @@ export interface UnclassifiedEvent extends ProtocolEventBase {
   kind: 'unclassified';
 }
 
+export interface SessionResetEvent extends ProtocolEventBase {
+  kind: 'session.reset';
+}
+
 // ── Discriminated union ────────────────────────────────────────────────────
 
 export type ProtocolEvent =
@@ -139,7 +143,8 @@ export type ProtocolEvent =
   | DocsResponseEvent
   | JsonResponseEvent
   | LifecycleEvent
-  | UnclassifiedEvent;
+  | UnclassifiedEvent
+  | SessionResetEvent;
 
 /** The `kind` string literal union — all possible discriminator values. */
 export type ProtocolEventKind = ProtocolEvent['kind'];
