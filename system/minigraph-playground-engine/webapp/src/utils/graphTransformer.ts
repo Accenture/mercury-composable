@@ -1,7 +1,7 @@
 import { MarkerType, type Node, type Edge } from '@xyflow/react';
 import type { MinigraphGraphData } from './graphTypes';
 import { getMinigraphNodeShellStyle } from './minigraphNodeTheme';
-
+ 
 /** Data bag attached to every ReactFlow node we create. */
 export interface GraphNodeData extends Record<string, unknown> {
   alias: string;
@@ -16,17 +16,17 @@ export interface GraphNodeData extends Record<string, unknown> {
   backTargetHandles: GraphHandleData[];
   minHeight: number;
 }
-
+ 
 export interface GraphHandleData {
   id: string;
   offset: number;
 }
-
+ 
 /** Data bag attached to every ReactFlow edge we create. */
 export interface GraphEdgeData extends Record<string, unknown> {
   relationTypes: string[];   // e.g. ["fetch"]
 }
-
+ 
 // ─── Layout constants ────────────────────────────────────────────────────────
 // NODE_WIDTH / NODE_HEIGHT drive column/row spacing in the layout pass.
 // They are also used as the initial `width`/`height` on each node so React
@@ -40,7 +40,7 @@ const COL_GAP            = 120;  // horizontal gap between columns (levels)
 const COMPONENT_GAP      = 360;  // horizontal gap between independent flow trees
 const SECTION_GAP        = 120;  // vertical gap between main flow and first segregated row
 const SEGREGATED_ROW_GAP = 80;   // vertical gap between successive segregated rows
-
+ 
 // ─── Edge styling constants ──────────────────────────────────────────────────
 // EDGE_STROKE: --text-muted (rgb 148 163 184) at 42% opacity — slate-400 tinted stroke
 // EDGE_LABEL_BG: references the --bg-secondary token directly so label badges
@@ -49,7 +49,7 @@ const EDGE_STROKE         = 'rgba(148, 163, 184, 0.42)';   // --text-muted at 42
 const EDGE_LABEL_BG       = 'var(--bg-secondary)';          // token: --bg-secondary = #f8fafc
 const EDGE_HANDLE_GAP     = 24;   // px between adjacent handle anchors on the same side
 const EDGE_HANDLE_PADDING = 32;   // min px from node top/bottom to first/last handle
-
+ 
 // Semantic edge-type colors — intentional per-relation accent palette.
 // Matches the same amber/green/purple axis used by NODE_ACCENT above.
 const EDGE_FALLBACK_COLORS = [
@@ -62,7 +62,7 @@ const EDGE_FALLBACK_COLORS = [
   '#c2410c',   // orange-700
   '#a16207',   // yellow-700
 ];
-
+ 
 // Named relation-type → accent color map.
 const EDGE_COLOR_BY_RELATION: Record<string, string> = {
   fetch:        '#0369a1',   // sky-700
@@ -84,7 +84,7 @@ const EDGE_COLOR_BY_RELATION: Record<string, string> = {
   positive:     '#15803d',
   negative:     '#b91c1c',   // red-700
 };
-
+ 
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -93,7 +93,7 @@ function hashString(value: string): number {
   }
   return Math.abs(hash);
 }
-
+ 
 function edgeColor(relationTypes: string[]): string {
   if (relationTypes.length === 0) return EDGE_STROKE;
   const primary = relationTypes[0].trim().toLowerCase();
@@ -101,35 +101,35 @@ function edgeColor(relationTypes: string[]): string {
   if (known) return known;
   return EDGE_FALLBACK_COLORS[hashString(primary) % EDGE_FALLBACK_COLORS.length];
 }
-
+ 
 function edgeSourceHandleId(index: number): string {
   return `source-${index}`;
 }
-
+ 
 function edgeTargetHandleId(index: number): string {
   return `target-${index}`;
 }
-
+ 
 function backEdgeSourceHandleId(index: number): string {
   return `back-source-${index}`;
 }
-
+ 
 function backEdgeTargetHandleId(index: number): string {
   return `back-target-${index}`;
 }
-
+ 
 function edgeHandleOffset(index: number, total: number): number {
   if (total <= 1) return 0;
   if (total === 2) return index === 0 ? -EDGE_HANDLE_GAP : EDGE_HANDLE_GAP;
   return (index - (total - 1) / 2) * EDGE_HANDLE_GAP;
 }
-
-
+ 
+ 
 function nodeHeightForHandleCount(handleCount: number): number {
   if (handleCount <= 1) return NODE_HEIGHT;
   return Math.max(NODE_HEIGHT, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
 }
-
+ 
 // ─── Layout node classification ─────────────────────────────────────────────
 // Nodes are classified into one of several layout categories that determine
 // where they appear in the rendered graph.  The classification uses BOTH the
@@ -143,20 +143,20 @@ function nodeHeightForHandleCount(handleCount: number): number {
 // category gets its own horizontal row below the main flow.  Any node that does
 // not match a named category falls into a trailing '__unknown__' catch-all row.
 const MODULE_SKILLS = new Set(['graph.math', 'graph.js']);
-
+ 
 const SEGREGATED_ROW_ORDER: readonly string[] = [
   'Dictionary',   // data extraction contracts from API responses
   'Provider',     // reusable API endpoint configurations
   'Module',       // reusable computation blocks (EXECUTE keyword)
   'Entity',       // skill-less data-holder nodes (business domain objects)
 ];
-
+ 
 // ─── Node classification ────────────────────────────────────────────────────
 // Layout categories returned by classifyNode.  'flow' nodes participate in the
 // main BFS layout; all other categories are placed in segregated rows below.
 type LayoutCategory = 'flow' | 'Dictionary' | 'Provider' | 'Entity' | 'Module' | '__unknown__';
 type MinigraphNodeModel = MinigraphGraphData['nodes'][number];
-
+ 
 interface FlowComponent {
   aliases: string[];
   nodes: MinigraphNodeModel[];
@@ -164,13 +164,13 @@ interface FlowComponent {
   hasEnd: boolean;
   sortKey: string;
 }
-
+ 
 const FLOW_COMPONENT_LAYOUT_ORDER = {
   ROOT_TREE: 0,
   DEFAULT_TREE: 1,
   END_TREE: 2,
 } as const;
-
+ 
 // Root-like nodes define the primary execution tree. When several disconnected
 // flow trees exist, this component is anchored first so graph reading starts on
 // the left from the graph entry point.
@@ -179,13 +179,13 @@ function isRootLikeNode(node: MinigraphNodeModel): boolean {
     node.types.includes('Root') ||
     node.types.includes('entry_point');
 }
-
+ 
 // End-like nodes are terminal-only branches in some imported models. Ranking
 // their component last keeps those completion/error branches on the right.
 function isEndLikeNode(node: MinigraphNodeModel): boolean {
   return node.alias.toLowerCase() === 'end' || node.types.includes('End');
 }
-
+ 
 // Keep component ordering policy centralized: root tree first, ordinary trees
 // next, terminal/end tree last. The numeric values are only sort ranks.
 function getFlowComponentRank(component: FlowComponent): number {
@@ -193,7 +193,7 @@ function getFlowComponentRank(component: FlowComponent): number {
   if (component.hasEnd) return FLOW_COMPONENT_LAYOUT_ORDER.END_TREE;
   return FLOW_COMPONENT_LAYOUT_ORDER.DEFAULT_TREE;
 }
-
+ 
 // Sort disconnected flow trees before assigning global columns. Components with
 // the same semantic rank use their first alias for deterministic visual order.
 function compareFlowComponents(a: FlowComponent, b: FlowComponent): number {
@@ -201,7 +201,7 @@ function compareFlowComponents(a: FlowComponent, b: FlowComponent): number {
   if (rankDiff !== 0) return rankDiff;
   return a.sortKey.localeCompare(b.sortKey);
 }
-
+ 
 /**
  * Classify a node into its layout category.
  *
@@ -223,18 +223,18 @@ function classifyNode(
 ): LayoutCategory {
   const isConnected = connectedAliases.has(node.alias);
   if (isConnected) return 'flow';
-
+ 
   const pt    = node.types[0] ?? '';
   const skill = typeof node.properties.skill === 'string' ? node.properties.skill : undefined;
-
+ 
   if (pt === 'Dictionary') return 'Dictionary';
   if (pt === 'Provider')   return 'Provider';
   if (skill && MODULE_SKILLS.has(skill)) return 'Module';
   if (!skill) return 'Entity';
-
+ 
   return '__unknown__';
 }
-
+ 
 /**
  * Left-to-right topological layout with row segregation for non-flow nodes.
  *
@@ -270,32 +270,32 @@ function computeLayout(
     connectedAliases.add(conn.source);
     connectedAliases.add(conn.target);
   }
-
+ 
   const flowNodes:       MinigraphGraphData['nodes'] = [];
   const segregatedNodes: MinigraphGraphData['nodes'] = [];
   // Cache each node's category so we don't classify twice.
   const categoryOf = new Map<string, LayoutCategory>();
-
+ 
   for (const n of nodes) {
     const cat = classifyNode(n, connectedAliases);
     categoryOf.set(n.alias, cat);
     if (cat === 'flow') flowNodes.push(n);
     else segregatedNodes.push(n);
   }
-
+ 
   // ── Step 2: Build directed/undirected flow adjacency ──────────────────────
   const flowAliases = new Set(flowNodes.map(n => n.alias));
   const nodeByAlias = new Map(flowNodes.map(n => [n.alias, n]));
   const outEdges    = new Map<string, string[]>();
   const undirectedEdges = new Map<string, Set<string>>();
   const inDegree    = new Map<string, number>();
-
+ 
   for (const n of flowNodes) {
     outEdges.set(n.alias, []);
     undirectedEdges.set(n.alias, new Set());
     inDegree.set(n.alias, 0);
   }
-
+ 
   for (const conn of connections ?? []) {
     // Only count edges entirely within the flow set so that connections to/from
     // segregated nodes do not influence BFS level assignment.
@@ -305,14 +305,14 @@ function computeLayout(
     undirectedEdges.get(conn.target)?.add(conn.source);
     inDegree.set(conn.target, (inDegree.get(conn.target) ?? 0) + 1);
   }
-
+ 
   // Seeds: flow nodes with in-degree 0, or explicitly typed as entry_point.
   // These are used for cycle detection only. Each component chooses its own
   // seeds again during placement.
   const allSeeds = flowNodes
     .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point') || isRootLikeNode(n))
     .map(n => n.alias);
-
+ 
   // ── Cycle detection: find back-edges via iterative DFS ────────────────────
   // Back-edges (edges pointing to an ancestor in the DFS tree) cause the
   // BFS level-assignment loop below to run forever — each node in a cycle
@@ -324,22 +324,22 @@ function computeLayout(
     const WHITE = 0, GRAY = 1, BLACK = 2;
     const color = new Map<string, number>();
     for (const n of flowNodes) color.set(n.alias, WHITE);
-
+ 
     function dfsFrom(root: string) {
       if (color.get(root) !== WHITE) return;
       color.set(root, GRAY);
       const stack: { node: string; childIdx: number }[] = [{ node: root, childIdx: 0 }];
-
+ 
       while (stack.length > 0) {
         const frame = stack[stack.length - 1];
         const neighbors = outEdges.get(frame.node) ?? [];
-
+ 
         if (frame.childIdx >= neighbors.length) {
           color.set(frame.node, BLACK);
           stack.pop();
           continue;
         }
-
+ 
         const neighbor = neighbors[frame.childIdx++];
         const nc = color.get(neighbor);
         if (nc === GRAY) {
@@ -351,23 +351,23 @@ function computeLayout(
         // BLACK → cross or forward edge, safe to ignore
       }
     }
-
+ 
     // Prefer starting from seeds so the DFS tree mirrors the BFS flow.
     for (const s of allSeeds) dfsFrom(s);
     for (const n of flowNodes) dfsFrom(n.alias);
   }
-
+ 
   // ── Step 3: Connected components for independent flow trees ───────────────
   const components: FlowComponent[] = [];
   const seen = new Set<string>();
-
+ 
   for (const start of Array.from(flowAliases).sort()) {
     if (seen.has(start)) continue;
-
+ 
     const aliases: string[] = [];
     const stack = [start];
     seen.add(start);
-
+ 
     while (stack.length > 0) {
       const alias = stack.pop()!;
       aliases.push(alias);
@@ -377,12 +377,12 @@ function computeLayout(
         stack.push(neighbor);
       }
     }
-
+ 
     aliases.sort();
     const componentNodes = aliases
       .map(alias => nodeByAlias.get(alias))
       .filter((node): node is MinigraphNodeModel => Boolean(node));
-
+ 
     components.push({
       aliases,
       nodes: componentNodes,
@@ -391,32 +391,32 @@ function computeLayout(
       sortKey: aliases[0] ?? '',
     });
   }
-
+ 
   components.sort(compareFlowComponents);
-
+ 
   // ── Step 4: BFS layout for each component, placed left-to-right ───────────
   const levelOf = new Map<string, number>();
   const positions = new Map<string, { x: number; y: number }>();
   let componentLevelOffset = 0;
   let componentXOffset = 0;
-
+ 
   for (const component of components) {
     const componentAliases = new Set(component.aliases);
     const componentSeeds = component.nodes
       .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point') || isRootLikeNode(n))
       .map(n => n.alias)
       .sort();
-
+ 
     // Cyclic components may have no natural in-degree-zero node. Seed from the
     // first alias so they remain renderable instead of collapsing into orphans.
     if (componentSeeds.length === 0 && component.aliases.length > 0) {
       componentSeeds.push(component.aliases[0]);
     }
-
+ 
     const localLevelOf = new Map<string, number>();
     const queue: string[] = [...componentSeeds];
     componentSeeds.forEach(seed => localLevelOf.set(seed, 0));
-
+ 
     // BFS to assign local levels within the component. This preserves the
     // original left-to-right topological flow, but prevents independent trees
     // from sharing the same column set.
@@ -437,7 +437,7 @@ function computeLayout(
         }
       }
     }
-
+ 
     // Flow nodes that BFS never visited stay in this component and move to the
     // last local level + 1. This keeps cyclic or disconnected-within-component
     // data renderable instead of dropping nodes from the layout.
@@ -445,30 +445,143 @@ function computeLayout(
     for (const alias of component.aliases) {
       if (!localLevelOf.has(alias)) localLevelOf.set(alias, maxLocalLevel + 1);
     }
-
-    const byLocalLevel = new Map<number, string[]>();
-    for (const [alias, level] of localLevelOf) {
-      if (!byLocalLevel.has(level)) byLocalLevel.set(level, []);
-      byLocalLevel.get(level)!.push(alias);
+ 
+    // ── Sink-seed promotion ────────────────────────────────────────────────
+    // In-degree-0 nodes that only target deep nodes (e.g. an error-handler that
+    // only routes back to a fetcher, or a fallback that only converges into a
+    // join) get pulled forward to sit next to their successors instead of
+    // floating at level 0. Without this, fan-out from root has to skip past
+    // unrelated seeds and edges crisscross visually.
+    const componentSucc = new Map<string, string[]>();
+    const componentPred = new Map<string, string[]>();
+    for (const a of component.aliases) {
+      componentSucc.set(a, []);
+      componentPred.set(a, []);
     }
-
-    // Assign pixel positions for this component's flow — centred at y = 0 per
-    // local column. Per-node heights prevent overlap when nodes are taller than
-    // NODE_HEIGHT. componentXOffset gives each independent tree a fixed pixel
-    // gap from the previous tree instead of tying tree spacing to column count.
+    for (const conn of connections ?? []) {
+      if (!componentAliases.has(conn.source) || !componentAliases.has(conn.target)) continue;
+      componentSucc.get(conn.source)!.push(conn.target);
+      componentPred.get(conn.target)!.push(conn.source);
+    }
+    for (const seedAlias of componentSeeds) {
+      // Skip the canonical entry point — root must remain at level 0.
+      const seedNode = nodeByAlias.get(seedAlias);
+      if (seedNode && isRootLikeNode(seedNode)) continue;
+      const succLevels = (componentSucc.get(seedAlias) ?? [])
+        .map(s => localLevelOf.get(s))
+        .filter((n): n is number => n !== undefined);
+      if (succLevels.length === 0) continue;
+      const targetLevel = Math.min(...succLevels) - 1;
+      if (targetLevel > (localLevelOf.get(seedAlias) ?? 0)) {
+        localLevelOf.set(seedAlias, targetLevel);
+      }
+    }
+ 
+    // ── Sugiyama barycenter ordering ───────────────────────────────────────
+    // Decide *slot within column* using iterative barycenter sweeps. The level
+    // assignment from BFS already chose the column; this step chooses the
+    // vertical order within each column to minimise edge crossings. Forward
+    // and backward sweeps converge in a few iterations for graphs of any size.
+    const orderByLevel = new Map<number, string[]>();
+    for (const [alias, level] of localLevelOf) {
+      if (!orderByLevel.has(level)) orderByLevel.set(level, []);
+      orderByLevel.get(level)!.push(alias);
+    }
+    // Initial deterministic order — alphabetical — so the algorithm is stable
+    // across runs even when no neighbours influence ordering.
+    for (const arr of orderByLevel.values()) arr.sort();
+ 
+    const sortedLevels = [...orderByLevel.keys()].sort((a, b) => a - b);
+    const slotOf = new Map<string, number>();
+    const refreshSlots = () => {
+      for (const arr of orderByLevel.values()) {
+        arr.forEach((alias, idx) => slotOf.set(alias, idx));
+      }
+    };
+    refreshSlots();
+ 
+    // Sort one level by barycenter of `neighbors`. Nodes with no neighbours on
+    // the reference side keep their current slot so isolated nodes do not
+    // drift to the top during sweeps.
+    //
+    // Strategy selection per column:
+    //   - Mean (arithmetic average) is the textbook Sugiyama default.
+    //   - Median is more robust against outlier predecessors and gives a
+    //     3-approximation of optimal vs 4 for mean (Eades and Wormald, 1994).
+    //   - For wide columns (>= MEDIAN_THRESHOLD nodes) we use median because
+    //     a single far-flung neighbour can otherwise drag the average and
+    //     produce avoidable crossings. For narrower columns mean works well
+    //     and reacts more smoothly to incremental ordering changes.
+    const MEDIAN_THRESHOLD = 8;
+    const median = (sorted: number[]): number => {
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+    };
+    const sortByBarycenter = (
+      level: number,
+      neighborsOf: Map<string, string[]>,
+    ) => {
+      const arr = orderByLevel.get(level)!;
+      const useMedian = arr.length >= MEDIAN_THRESHOLD;
+      const bary = new Map<string, number>();
+      for (const a of arr) {
+        const ns = (neighborsOf.get(a) ?? [])
+          .map(n => slotOf.get(n))
+          .filter((s): s is number => s !== undefined);
+        if (ns.length === 0) {
+          bary.set(a, slotOf.get(a) ?? 0);
+          continue;
+        }
+        if (useMedian) {
+          bary.set(a, median(ns.slice().sort((x, y) => x - y)));
+        } else {
+          bary.set(a, ns.reduce((s, v) => s + v, 0) / ns.length);
+        }
+      }
+      arr.sort((a, b) => {
+        const diff = bary.get(a)! - bary.get(b)!;
+        if (diff !== 0) return diff;
+        return a.localeCompare(b);
+      });
+    };
+ 
+    // Four sweeps is the textbook default and is more than enough for graphs
+    // of typical playground size. Each sweep is O(E) so this is cheap.
+    const SWEEP_ITERATIONS = 4;
+    for (let iter = 0; iter < SWEEP_ITERATIONS; iter++) {
+      // Forward: order each level by predecessors (left-to-right pass).
+      for (let i = 1; i < sortedLevels.length; i++) {
+        sortByBarycenter(sortedLevels[i], componentPred);
+      }
+      refreshSlots();
+      // Backward: order each level by successors (right-to-left pass).
+      for (let i = sortedLevels.length - 2; i >= 0; i--) {
+        sortByBarycenter(sortedLevels[i], componentSucc);
+      }
+      refreshSlots();
+    }
+ 
+    // ── Pixel placement ────────────────────────────────────────────────────
+    // Same math as before, but operating on the barycenter-optimised order
+    // rather than alphabetical. Centred at y = 0 per local column. Per-node
+    // heights prevent overlap when nodes are taller than NODE_HEIGHT.
+    // componentXOffset gives each independent tree a fixed pixel gap from
+    // the previous tree instead of tying tree spacing to column count.
     let componentMaxX = componentXOffset;
-    for (const [localLevel, aliases] of [...byLocalLevel].sort(([a], [b]) => a - b)) {
-      const sortedAliases = aliases.slice().sort();
-      const totalHeight = sortedAliases.reduce(
+    for (const localLevel of sortedLevels) {
+      const ordered = orderByLevel.get(localLevel)!;
+      const totalHeight = ordered.reduce(
         (sum, alias) => sum + (nodeHeights.get(alias) ?? NODE_HEIGHT),
         0,
-      ) + Math.max(0, sortedAliases.length - 1) * ROW_GAP;
-
+      ) + Math.max(0, ordered.length - 1) * ROW_GAP;
+ 
       let cursorY = -totalHeight / 2;
       const globalLevel = componentLevelOffset + localLevel;
       const x = componentXOffset + localLevel * (NODE_WIDTH + COL_GAP);
       componentMaxX = Math.max(componentMaxX, x);
-      sortedAliases.forEach((alias) => {
+      ordered.forEach((alias) => {
         const nodeHeight = nodeHeights.get(alias) ?? NODE_HEIGHT;
         levelOf.set(alias, globalLevel);
         positions.set(alias, {
@@ -478,12 +591,12 @@ function computeLayout(
         cursorY += nodeHeight + ROW_GAP;
       });
     }
-
+ 
     const componentMaxLevel = localLevelOf.size > 0 ? Math.max(...localLevelOf.values()) : 0;
     componentLevelOffset += componentMaxLevel + 1;
     componentXOffset = componentMaxX + NODE_WIDTH + COMPONENT_GAP;
   }
-
+ 
   // ── Step 5: Bounding box of the main flow ─────────────────────────────────
   // Used to anchor the vertical start of the segregated rows.
   let mainMaxY = 0;
@@ -492,41 +605,41 @@ function computeLayout(
   }
   // If there are no flow nodes at all, start at y = 0 with no section gap.
   let nextRowY = mainMaxY + (positions.size > 0 ? SECTION_GAP : 0);
-
+ 
   // ── Step 6: Segregated rows ───────────────────────────────────────────────
   // Group segregated nodes by their layout category (already computed in Step 1).
   const groupMap = new Map<string, string[]>();
   for (const key of SEGREGATED_ROW_ORDER) groupMap.set(key, []);
   groupMap.set('__unknown__', []);
-
+ 
   for (const n of segregatedNodes) {
     const cat = categoryOf.get(n.alias) as Exclude<LayoutCategory, 'flow'>;
     groupMap.get(cat)!.push(n.alias);
   }
-
+ 
   for (const key of [...SEGREGATED_ROW_ORDER, '__unknown__']) {
     const aliases = (groupMap.get(key) ?? []).slice().sort(); // alphabetical for visual stability
     if (aliases.length === 0) continue;
-
+ 
     const startX = 0; // left-align segregated rows with the main flow
     const rowHeight = aliases.reduce(
       (max, alias) => Math.max(max, nodeHeights.get(alias) ?? NODE_HEIGHT),
       0,
     );
-
+ 
     aliases.forEach((alias, i) => {
       positions.set(alias, {
         x: startX + i * (NODE_WIDTH + COL_GAP),
         y: nextRowY,
       });
     });
-
+ 
     nextRowY += rowHeight + SEGREGATED_ROW_GAP;
   }
-
+ 
   return { positions, levelOf };
 }
-
+ 
 /**
  * Converts a MinigraphGraphData object into the ReactFlow `nodes` + `edges`
  * arrays ready to be passed to `<ReactFlow>`.
@@ -535,7 +648,7 @@ export function transformGraphData(
   data: MinigraphGraphData,
 ): { nodes: Node<GraphNodeData>[]; edges: Edge<GraphEdgeData>[] } {
   const connections = data.connections ?? [];
-
+ 
   // ── Approximate node heights for layout ────────────────────────────────────
   // Count total outgoing/incoming to get rough handle counts.  The layout only
   // needs heights for vertical stacking; accurate per-side counts come later
@@ -546,7 +659,7 @@ export function transformGraphData(
     totalOutgoing.set(conn.source, (totalOutgoing.get(conn.source) ?? 0) + 1);
     totalIncoming.set(conn.target, (totalIncoming.get(conn.target) ?? 0) + 1);
   }
-
+ 
   const approxNodeHeights = new Map(
     data.nodes.map(n => [
       n.alias,
@@ -557,7 +670,7 @@ export function transformGraphData(
     ]),
   );
   const { positions, levelOf } = computeLayout(data.nodes, connections, approxNodeHeights);
-
+ 
   // ── Classify connections as forward or backward ───────────────────────────
   // A back-edge goes from a deeper (or equal) level to a shallower level.
   // These edges exit from the LEFT side of the source and enter the RIGHT
@@ -571,7 +684,7 @@ export function transformGraphData(
       backEdgeIndices.add(i);
     }
   }
-
+ 
   // ── Collect per-node, per-side connections sorted by peer y-position ─────
   // Sorting handles by the y-position of the connected peer node prevents
   // crossing: connections to a higher peer get a higher handle slot, and
@@ -584,17 +697,17 @@ export function transformGraphData(
   // whether the connection is a back-edge.  After sorting we walk the
   // entries to build handle arrays and a connectionIndex → handleId map
   // used when constructing ReactFlow edges.
-
+ 
   interface SideEntry { connIndex: number; peerAlias: string; isBack: boolean }
-
+ 
   const rightSide = new Map<string, SideEntry[]>(); // source (fwd out) + back-target (back in)
   const leftSide  = new Map<string, SideEntry[]>(); // target (fwd in)  + back-source (back out)
-
+ 
   for (const n of data.nodes) {
     rightSide.set(n.alias, []);
     leftSide.set(n.alias, []);
   }
-
+ 
   for (const [i, conn] of connections.entries()) {
     if (backEdgeIndices.has(i)) {
       // Back-edge: source exits LEFT, target enters RIGHT
@@ -606,21 +719,21 @@ export function transformGraphData(
       leftSide.get(conn.target)!.push({ connIndex: i, peerAlias: conn.source, isBack: false });
     }
   }
-
+ 
   // Sort each side by peer y-position so handle order matches spatial layout.
   const peerY = (alias: string) => positions.get(alias)?.y ?? 0;
   for (const entries of rightSide.values()) entries.sort((a, b) => peerY(a.peerAlias) - peerY(b.peerAlias));
   for (const entries of leftSide.values())  entries.sort((a, b) => peerY(a.peerAlias) - peerY(b.peerAlias));
-
+ 
   // Maps from connection index → handle ID, populated during node building.
   const connSourceHandle = new Map<number, string>();
   const connTargetHandle = new Map<number, string>();
-
+ 
   const rfNodes: Node<GraphNodeData>[] = data.nodes.map(n => {
     const right = rightSide.get(n.alias) ?? [];
     const left  = leftSide.get(n.alias) ?? [];
     const nodeHeight = nodeHeightForHandleCount(Math.max(right.length, left.length));
-
+ 
     // ── Right side: interleaved source + back-target handles ──
     const sourceHandles:     GraphHandleData[] = [];
     const backTargetHandles: GraphHandleData[] = [];
@@ -638,7 +751,7 @@ export function transformGraphData(
         connSourceHandle.set(entry.connIndex, id);
       }
     }
-
+ 
     // ── Left side: interleaved target + back-source handles ──
     const targetHandles:     GraphHandleData[] = [];
     const backSourceHandles: GraphHandleData[] = [];
@@ -656,7 +769,7 @@ export function transformGraphData(
         connTargetHandle.set(entry.connIndex, id);
       }
     }
-
+ 
     return {
       id:       n.alias,
       type:     n.types[0] ?? 'default',
@@ -676,14 +789,14 @@ export function transformGraphData(
       },
     };
   });
-
+ 
   // ── Build edges using the pre-computed handle mappings ─────────────────────
   const rfEdges: Edge<GraphEdgeData>[] = [];
   for (const [index, conn] of connections.entries()) {
     const relationTypes = conn.relations.map(r => r.type);
     const edgeId = `${conn.source}__${conn.target}__${index}`;
     const labelColor = edgeColor(relationTypes);
-
+ 
     rfEdges.push({
       id:           edgeId,
       source:       conn.source,
@@ -718,6 +831,6 @@ export function transformGraphData(
       data: { relationTypes },
     });
   }
-
+ 
   return { nodes: rfNodes, edges: rfEdges };
 }
