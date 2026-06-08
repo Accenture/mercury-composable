@@ -30,7 +30,7 @@ Output:
 
 - Design-ready graph brief using the schema in [requirements-gathering.md](./requirements-gathering.md#design-ready-brief-template).
 
-Gate:
+Gate summary; full gate in [requirements-gathering.md](./requirements-gathering.md):
 
 - The embedded requirements gate must pass before `/design` begins.
 - No open question may block requirements or design.
@@ -40,6 +40,8 @@ Gate:
 
 Essence: convert the design-ready graph brief into graph architecture.
 
+Canonical spec: [graph-design.md](./graph-design.md).
+
 Input:
 
 - Design-ready graph brief from `/requirements`.
@@ -48,7 +50,7 @@ Output:
 
 - Graph design specification. This should define node responsibilities, skills, edges, mappings, state paths, control-flow choices, error/fallback choices, and test inspection points.
 
-Gate:
+Gate summary; full gate in [graph-design.md](./graph-design.md):
 
 - Every requirement maps to a design element or an explicit open question.
 - Every executable behavior has an implementation strategy.
@@ -69,7 +71,7 @@ Output:
 - Draft or exported graph JSON.
 - Build log with verification notes.
 
-Gate:
+Provisional gate summary until a canonical `/build` spec exists:
 
 - Commands are sent one at a time.
 - Every create, update, delete, and connect operation is verified before the next mutation.
@@ -92,7 +94,7 @@ Output:
 
 - Test report with scenario results, state inspection notes, defects, and accepted limitations.
 
-Gate:
+Provisional gate summary until a canonical `/test` spec exists:
 
 - Happy path passes.
 - Required failure and edge scenarios pass.
