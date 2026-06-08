@@ -30,3 +30,6 @@ project
 .idea
 .history
 *.iml
+
+# AI infrastructure
+.kiro/
