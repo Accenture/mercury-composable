@@ -392,6 +392,8 @@ The assistant must run the gate before advancing. If any required gate item fail
 
 The gate consolidates the quality checks from Steps R1-R10. Do not maintain a separate, divergent checklist; if a gate item and a step quality check disagree, fix the step and gate together.
 
+`gate_result.status` records only whether `/design` may begin. It is `pass` when nothing blocks requirements or design, even if build or deploy blockers remain. Record those remaining blockers under `gate_result.carried_blockers` with their mock-and-proceed plans. Never set `status: blocked` for a build- or deploy-only blocker — that is the mock-and-proceed case, and it is design-ready.
+
 ### Gate A - Scope Boundary
 
 Every meaningful concern is classified:
@@ -569,8 +571,13 @@ open_questions:
     closure_plan: "{how it will be answered or mocked}"
 
 gate_result:
+  # status reflects ONLY whether /design may begin:
+  #   pass    = no open question blocks requirements or design
+  #             (build/deploy items may remain, listed under carried_blockers)
+  #   blocked = at least one open question blocks requirements or design
   status: "pass | blocked"
-  blockers: []
+  blockers: []          # items blocking requirements or design; MUST be empty when status is pass
+  carried_blockers: []  # build/deploy blockers carried forward, each with a mock-and-proceed plan
 ```
 
 ## Final Completion Rule
@@ -580,7 +587,7 @@ gate_result:
 1. The design-ready graph brief exists.
 2. The embedded gate passes.
 3. No open question blocks requirements or design.
-4. Build/deploy blockers have explicit mock-and-proceed plans where applicable.
+4. Build/deploy blockers have explicit mock-and-proceed plans where applicable, recorded under `gate_result.carried_blockers`.
 5. The assistant can state, in plain language, what `/design` must satisfy.
 
 If any of these are false, stay in `/requirements`.

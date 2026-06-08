@@ -268,8 +268,9 @@ open_questions:
     closure_plan: "Design parallel fan-out; set conservative concurrency during build until source owners confirm."
 
 gate_result:
-  status: "blocked"
-  blockers:
-    - "OQ-002 blocks final build concurrency settings."
-    - "OQ-001 blocks deploy."
+  status: "pass"
+  blockers: []
+  carried_blockers:
+    - "OQ-002 (build): conservative concurrency until source owners confirm limits."
+    - "OQ-001 (deploy): upstream auth feature mocked; replace before deploy."
 ```

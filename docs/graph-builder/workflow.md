@@ -4,17 +4,9 @@ Status: top-level phase index.
 
 Purpose: define the graph development lifecycle and the boundaries between phase specs. This file is intentionally thin. Detailed behavior belongs in each phase document.
 
-## Canonical Document Set
+## Document Set
 
-| Document | Status | Role |
-|---|---|---|
-| [workflow.md](./workflow.md) | Canonical index | Names the lifecycle and artifact chain. |
-| [requirements-gathering.md](./requirements-gathering.md) | Canonical phase spec | Defines `/requirements` and the design-ready graph brief schema. |
-| [minigraph-syntax.md](./minigraph-syntax.md) | Canonical syntax reference | Defines Companion API command grammar and build-time command constraints. |
-| [requirements-recalibration-assessment.md](./requirements-recalibration-assessment.md) | Rationale note | Explains why `/requirements` was recalibrated. |
-| [examples/customer-360-requirements-brief.md](./examples/customer-360-requirements-brief.md) | Example | Shows a filled `/requirements` brief using the canonical schema. |
-
-Working notes under `system/minigraph-playground-engine/notes/` are scratchpads. They may explain how the workflow evolved, but they are not canonical phase contracts.
+This file owns the lifecycle and the boundaries between phases. For the document catalog — which documents are canonical, which are support, and which are scratchpad — see [README.md](./README.md).
 
 ## Lifecycle
 
