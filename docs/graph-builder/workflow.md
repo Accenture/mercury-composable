@@ -61,6 +61,8 @@ Gate summary; full gate in [graph-design.md](./graph-design.md):
 
 Essence: lower the design into executable MiniGraph commands and verify the live graph incrementally.
 
+Canonical spec: [build.md](./build.md).
+
 Input:
 
 - Graph design specification from `/design`.
@@ -71,7 +73,7 @@ Output:
 - Draft or exported graph JSON.
 - Build log with verification notes.
 
-Provisional gate summary until a canonical `/build` spec exists:
+Gate summary; full gate in [build.md](./build.md):
 
 - Commands are sent one at a time.
 - Every create, update, delete, and connect operation is verified before the next mutation.
@@ -84,6 +86,8 @@ Command grammar and verification details belong in [minigraph-syntax.md](./minig
 
 Essence: prove runtime behavior through execution and state inspection.
 
+Canonical spec: [test.md](./test.md).
+
 Input:
 
 - Built graph artifacts from `/build`.
@@ -94,7 +98,7 @@ Output:
 
 - Test report with scenario results, state inspection notes, defects, and accepted limitations.
 
-Provisional gate summary until a canonical `/test` spec exists:
+Gate summary; full gate in [test.md](./test.md):
 
 - Happy path passes.
 - Required failure and edge scenarios pass.

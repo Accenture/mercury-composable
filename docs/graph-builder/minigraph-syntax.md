@@ -165,7 +165,7 @@ Format: `source -> target`
 - `model.{path}` — state machine
 - `{node-alias}.result.{path}` — node computation result
 - `text({literal})` / `int({n})` / `long({n})` / `float({n})` / `double({n})` / `boolean(true|false)` — constants (no `number()`)
-- `model.none` — null initializer (use before array append) *(asserted, untested — cf. `model.zero`, which was found undefined)*
+- `model.none` — null initializer (use before array append); **verified** to resolve to null (used as a mapping source the target is skipped — a genuine null, unlike the undefined `model.zero`)
 - `response.{path}` — raw API response (in Dictionary output only)
 
 ### Targets
@@ -190,7 +190,7 @@ Format: `source -> target`
 | `f:listOfMap(model.{path})` | Convert parallel arrays to list of maps |
 | `f:removeKey(source, text(key))` | Remove key from objects in list |
 
-> **Verification status:** `f:defaultValue` is **verified** (source present → source; source null → fallback). The other functions are documented from the engine help surface and are **not yet execution-tested** — treat as asserted.
+> **Verification status:** all functions in this table are **execution-verified**: `f:defaultValue` (present→source / null→fallback), `f:now` (epoch ms + local timestamp), `f:parseDate` (`yyyy-MM-dd; ms` → epoch ms), `f:uuid`, `f:text` (int→string), `f:includes`, `f:concat`, `f:listOfMap` (parallel arrays under a model path → list of maps), `f:removeKey` (drops a key from each map in a list).
 
 ### Null Checking
 
@@ -253,11 +253,15 @@ statement[]=MAPPING: source -> target
 
 ### EXECUTE / RESET / NEXT / DELAY
 ```
-statement[]=EXECUTE: another-node
-statement[]=RESET: node-to-reset
-statement[]=NEXT: specific-node
-statement[]=DELAY: milliseconds
+statement[]=EXECUTE: another-evaluator   # merge that evaluator's statements into THIS node and run them here
+statement[]=RESET: node-to-reset         # clear a node's traversal state so it can run again (loops)
+statement[]=NEXT: specific-node          # override traversal: jump to this node
+statement[]=DELAY: milliseconds          # pause this node's completion
 ```
+- **`EXECUTE`** (verified) merges another *evaluator's* `statement` list into the current node and runs them in the current node's context — a merged `COMPUTE` lands under `{this-node}.result.*`, **not** the source node's, and the source node is not traversed. It does not run a mapper.
+- **`NEXT`** (verified) jumps traversal to the named node (overrides natural edges; the target needs no inbound edge).
+- **`DELAY`** (verified) pauses the node's completion by the given milliseconds.
+- **`RESET`** (source-verified) clears the named node(s) — `GraphMath.resetNodes` removes them from the `nodeSeen` set — so a bounded loop can re-traverse them; always pair with an `IF` exit condition. The runtime does enforce a tight-loop guard (source-verified): `GraphExecutor`/`GraphTraveler.checkFrequency` aborts with `400 "executed too frequently"` when a node is hit more than `graph.node.high.frequency` (default 10) times within `graph.max.loop.interval` (default 1000ms) — a backstop, not a substitute for the exit condition.
 
 ### BEGIN / END (iterative block)
 ```
@@ -266,7 +270,7 @@ statement[]=...statements to iterate...
 statement[]=END
 ```
 
-> **Verification status:** the dogfood exercised only `IF/THEN/ELSE`, `COMPUTE`, and inline `MAPPING:`. `EXECUTE`, `RESET`, `NEXT`, `DELAY`, and `BEGIN/END` are documented from the engine help surface and are **not yet execution-tested**.
+> **Verification status:** `IF/THEN/ELSE`, `COMPUTE`, inline `MAPPING:`, `NEXT`, `DELAY`, and `EXECUTE` are **execution-verified**. `RESET` and `BEGIN/END` are **source-verified** (read from `GraphMath` / `GraphLambdaFunction`): `RESET` clears nodes for loops; `BEGIN/END` bound which statements iterate under `for_each` (and `for_each` itself is execution-verified).
 
 ---
 
@@ -291,13 +295,14 @@ input[]=model.account_id -> account_id
 
 - Left side must resolve to a list; right side must be a `model.*` path. One iteration per list item (verified: 3 ids → 3 calls).
 - `concurrency={n}` parallelizes iterations (verified: iterations complete out of order).
-- **Output aggregation:** `output[]=result.x -> model.collected[]` appends **once per iteration**, producing a nested array. To flatten parallel arrays into a clean list, `f:listOfMap(model.{path})` is the **likely** idiom (suggested by the engine help surface; **not yet verified**).
+- **Output aggregation:** `output[]=result.x -> model.collected[]` appends **once per iteration**, producing a nested array. To flatten parallel arrays under a model path into a clean list, use `f:listOfMap(model.{path})` (verified: parallel arrays → list of maps).
 
-### extension (verified, with caveat)
+### extension (verified)
 
 `extension={graph-id}` or `extension=flow://{flow-id}` selects the target for `graph.extension`; a single call requires at least one `input[]` mapping.
 
-- The target resolves from the **deployed-graph registry**, which is **not** the `export`/`import` name store — an `export graph as X` snapshot is **not** callable as `extension=X` (it returns `"not found"`, status `400`). Deploy/register the sub-graph to call it.
+- **Success path (verified):** a deployed target returns its `output.body` as `{node}.result` with `{node}.status = 200`; an `output[]=result -> …` mapping then routes it. (Confirmed by calling the shipped `tutorial-1` → `result = "hello world"`, status 200.)
+- **Target resolution (source-verified):** the target loads from the **deployed-graph location** — config `location.graph.deployed`, default `classpath:/graph/{id}.json`, **read-only**. This is a *different* store from `export`/`import`, which use `location.graph.temp` (default `file:/tmp/graph`). So `export graph as X` makes `X` importable but **not** callable as `extension=X` (→ `"not found"`, `400`). To make a graph extension-callable, deploy its JSON to the deployed location; a `classpath:` location requires a rebuild/restart — the Companion API cannot deploy at runtime.
 - On failure, the error and status are copied to `{node}.status`/`.error` and to `output.body`.
 
 ---

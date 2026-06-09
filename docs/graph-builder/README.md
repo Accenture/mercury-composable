@@ -11,6 +11,8 @@ Purpose: identify which graph-builder documents are canonical, which are support
 | [workflow.md](./workflow.md) | Canonical overview | Defines the four phase boundaries and points to phase specs. |
 | [requirements-gathering.md](./requirements-gathering.md) | Canonical phase spec | Defines `/requirements` and the design-ready graph brief schema. |
 | [graph-design.md](./graph-design.md) | Canonical phase spec | Defines `/design` and the graph design specification schema. |
+| [build.md](./build.md) | Canonical phase spec | Defines `/build` — lowering a design into verified MiniGraph commands. |
+| [test.md](./test.md) | Canonical phase spec | Defines `/test` — proving runtime behavior via execution and state inspection. |
 | [minigraph-syntax.md](./minigraph-syntax.md) | Canonical syntax reference | Defines Companion API command syntax and graph authoring mechanics. |
 | [companion.mjs](./companion.mjs) | Canonical helper | Executes and verifies Companion API commands. |
 
@@ -45,6 +47,7 @@ Process, working, and rationale docs are advisory, not authoritative over conten
 |---|---|---|
 | [requirements-recalibration-assessment.md](./requirements-recalibration-assessment.md) | Rationale | Explains why `/requirements` was recalibrated. |
 | [examples/customer-360-requirements-brief.md](./examples/customer-360-requirements-brief.md) | Example | Shows a filled design-ready graph brief using the canonical schema. |
+| [examples/customer-360-design-spec.md](./examples/customer-360-design-spec.md) | Example | Shows the matching `/design` artifact — completes the brief→design requirement-ID round-trip. |
 | [improvement-plan.md](./improvement-plan.md) | Working plan | Prioritized P0–P5 plan with decision gates (incl. mandatory Gate 0 freshness). |
 | [worklog.md](./worklog.md) | Working log | Append-only record of work performed. |
 | [evidence/dogfood-customer-360.md](./evidence/dogfood-customer-360.md) | Evidence | P0 dogfood claim matrix — execution verdicts against the live engine. |

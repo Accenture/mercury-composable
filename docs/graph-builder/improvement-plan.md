@@ -3,7 +3,7 @@
 Status: active (under execution).
 Owner: maintainer of `docs/graph-builder/` — set an explicit owner before others execute against it.
 Lifecycle: archive when P0–P5 close; supersede with a new dated plan rather than silently rewriting history.
-Assessed against: commit `6cdacc1b` ("design phase WIP"), working tree on branch `feature/companion-skill-framework`.
+Assessed against: commit `14f84348` ("improvment plan written and perform P0-3"), working tree on branch `feature/companion-skill-framework`. P0–P3 are now committed; P4 & P5 pending.
 Date: 2026-06-08.
 
 This plan is grounded in a multi-pass review of the graph-builder doc set. It is written to be reviewable **without the originating conversation** — the current state is captured below with file references, and re-verification commands are included at the end so the snapshot can be re-grounded when it goes stale. If any "Verified current state" row no longer matches the tree, re-run the checks before trusting the rest.
@@ -24,7 +24,7 @@ A rollback reset tracked files to HEAD and removed the untracked second-round ar
 | `companion.mjs` | **Aligned (2026-06-08)** — recognizes `session reset`; phantom bare `reset` removed | worklog W11 |
 | `check-docs.mjs` | Removed by rollback | absent |
 | `examples/customer-360-design-spec.md` | Removed by rollback | absent |
-| `/build`, `/test` phase specs | Never written; provisional gates only | [workflow.md:74-103](./workflow.md#L74-L103) |
+| `build.md` / `test.md` phase specs | **P5 CLOSED (2026-06-08)** — canonical `/build` + `/test` specs; reviewed/fixed (W22), re-checked SHIP (W23), validated by a no-context follow-along build+test with gaps fixed (W24) | worklog W21–W24 |
 
 ---
 
@@ -67,7 +67,7 @@ Every item below landed in `minigraph-syntax.md` / `companion.mjs`, each backed 
 - Reconcile the two primitive tables (graph-design's Source-Verified Primitives vs minigraph-syntax's Node Types) — one canonical, the other links to it.
 - **Why:** no precedence rule and a real `Decision` term collision exist today. **Cost:** low (lean prose). **Done when:** README states precedence + glossary, and only one primitive table is authoritative. **Timing:** parallel with P0.
 
-### P3 — Traceability spine *(keep the invariant, drop the machinery)* — ✅ CLOSED 2026-06-08 (W17 applied · W18 fixed · W19 simplified · W20 confirmed SHIP); ⚠ round-trip not yet *demonstrated* — no design-spec example exists (carried as debt)
+### P3 — Traceability spine *(keep the invariant, drop the machinery)* — ✅ CLOSED 2026-06-08 (W17 applied · W18 fixed · W19 simplified · W20 confirmed SHIP · W26 round-trip demonstrated); design-spec example regenerated, all 11 brief IDs traced bidirectionally
 Reinstate requirement IDs as a **convention**: a catalog in the brief + `requirement_ids` in the design template, so "every requirement maps to a design element" becomes auditable.
 - **Structured carried-blockers** (folded from the separate plan): replace string-only carried blockers with objects — `{ id, question_id, blocks, mock_used, replacement_required_before, closure_plan }` — so the design gate's "no build blocker remains carried at pass" is checkable rather than narrative.
 - **Cost:** low. **Done when:** the convention is in both phase specs, the worked examples trace bidirectionally, and carried blockers use the structured shape. At most one lightweight check, with prefixes *derived* from the catalog. **Timing:** after P0/P2.
@@ -77,7 +77,7 @@ Reinstate requirement IDs as a **convention**: a catalog in the brief + `require
 A small probe that *executes* the load-bearing engine claims, or runs the built `customer-360` in CI as an executable example.
 - **Why:** the deep fix for the trust boundary. **Cost:** high — needs engine in CI, fixtures, and a `/build` spec. **Done when:** the probe **detects a deliberately injected drift** (assert the catch, not merely that a job *can* fail), and failures map to specific doc locations. **Timing:** after P0 is routine and `/build` exists. (See Calibration Log — timing downgraded from "now.")
 
-### P5 — Write `/build` and `/test` specs
+### P5 — Write `/build` and `/test` specs — ✅ CLOSED 2026-06-08 (W21 written · W22 reviewed/fixed · W23 re-checked SHIP · W24 follow-along validated + gaps fixed); optional second confirming run remains
 The actual hole. P0 will largely draft `/build`; `companion.mjs`'s verify-after-mutation protocol is its spine.
 - **Cost:** medium. **Done when:** both phases have canonical specs replacing the provisional gates in [workflow.md](./workflow.md), **and two independent runs can follow each spec without extra guidance** (the reproducibility bar). **Timing:** `/build` alongside/after P0; `/test` after.
 

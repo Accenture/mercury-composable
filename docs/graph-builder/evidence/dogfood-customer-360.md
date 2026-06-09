@@ -107,6 +107,28 @@ An independent reviewer (fresh agent, no authoring context) re-tested two claims
 | 40 | `f:defaultValue(source, fallback)` | source present → source (`REAL-VALUE`); source null → fallback (`FB-absent`) | **keep** — the prescribed null-skip remedy is real (was previously documented but untested) |
 | 41 | `with type` on skill nodes | **optional / cosmetic** — omitting it stores `types: ["untyped"]` and the node runs; `skill` drives behavior | **add** — document; type is load-bearing only for `Root`/`End`/no-skill nodes |
 
+## Follow-along validation (round 6 — P5 spec dogfood)
+
+A no-context agent built and tested a small `classify-score` graph by following only `build.md` / `test.md`. Two engine facts surfaced:
+
+| # | Asserted claim | Observed behavior | Verdict |
+|---|---|---|---|
+| 42 | Seeding a *missing* required input | a bare `instantiate graph` with **no** seed lines yields a live empty `input.body: {}` (not a `404`) — companion's instance check passes | **add** — documents how to seed missing-input test scenarios (now in test.md) |
+| 43 | `export` persistence over the REST driver | confirmed only via an in-place `session reset` + `import graph from {name}` (node count returns); the REST driver cannot mint a scratch session, so the round-trip clears and restores the live graph | **add** — corrects build.md's export-verification step (the scratch-session phrasing was not executable) |
+| 44 | `graph.extension` **success** path (closes the claim-39 partial) | a parent calling deployed `tutorial-1` got `call-tut.result="hello world"`, `status=200`, `target=tutorial-1`; `output[]=result -> output.body.sub_result` applied. **Why claim 39 failed:** target resolves from `location.graph.deployed` (default `classpath:/graph/{id}.json`, read-only) — a different store from `export`/`import` (`location.graph.temp`, `/tmp/graph`). Only deployed graphs (shipped tutorials) are callable; `app.env` defaults to `dev`, so `tutorial-*` targets are allowed. | **verified** — success path works; export-name is not deployable at runtime via the Companion API |
+
+## Verification-debt clearing (round 7)
+
+Dogfooded the previously asserted-but-untested surface:
+
+| # | Asserted claim | Observed behavior | Verdict |
+|---|---|---|---|
+| 45 | Function table beyond `f:defaultValue` | `f:now` (epoch ms `1780979431097` + local `2026-06-09 00:30:31.098`), `f:parseDate("2026-01-15", yyyy-MM-dd; ms)` → `1768453200000`, `f:uuid` → a UUID, `f:text(int 42)` → `"42"`, `f:includes("hello","ell")` → `true`, `f:concat("foo","bar")` → `"foobar"`, `f:listOfMap(model.cols)` (parallel `name[]`/`age[]`) → `[{name,age},…]`, `f:removeKey(list,"age")` → maps with `age` dropped | **verified** |
+| 46 | `model.none` | resolves to null — used as a mapping source, the target is skipped (genuine null, unlike undefined `model.zero`) | **verified** |
+| 47 | `graph.math` verbs `NEXT` / `DELAY` / `COMPUTE` | `NEXT: dest` jumped to the named node; `DELAY: 50` completed; `COMPUTE: marker -> 1 + 1` → `result.marker=2` | **verified** |
+| 48 | `EXECUTE` statement | **corrects the doc**: it **merges another evaluator's statements into the current node** and runs them here — `EXECUTE: eval-a` (whose `COMPUTE` doubles) produced `driver.result.doubled=42`; `eval-a` itself was never traversed. Not "run a node"; does not run a mapper. | **verified + corrected** |
+| 49 | `RESET` / `BEGIN`-`END` | source-verified (read `GraphMath.resetNodes` + `GraphLambdaFunction` iteration handling): `RESET` clears nodes for bounded loops; `BEGIN/END` bound which statements iterate under `for_each`. Not separately executed. | **source-verified** |
+
 ## Immediate doc implications (for P1 — ✅ applied 2026-06-08, W11/W12)
 
 - **graph.math / graph.js halt silently on a bad/unresolved expression.** Remove the `!= null` "direct null check" bullet; document null detection via `:boolean(null=true)` in a **mapper**, then branch. Document the working `graph.js` state-access idiom (`$.model.x.length` does not work).
