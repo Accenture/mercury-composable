@@ -469,6 +469,25 @@ Poor mock candidates:
 
 Those usually block requirements or design.
 
+## Requirement IDs
+
+Every design-relevant obligation in the brief gets a stable **requirement ID** so `/design` can trace each requirement to a design element without re-deriving it. IDs identify *obligations*, not implementation nodes — one requirement may later be satisfied by several design elements. Capture the obligations `/design` must trace; this is not a completeness checklist of every sentence in the brief.
+
+Use a category prefix + zero-padded number:
+
+| Prefix | Obligation kind |
+|---|---|
+| `INV` | Invocation / input contract |
+| `OUT` | Output contract |
+| `SRC` | Source / dependency |
+| `MAP` | Mapping / data movement |
+| `FLOW` | Control flow (sequence, parallel, join, branch) |
+| `FAIL` | Failure / degraded behavior |
+| `NFR` | Non-functional constraint |
+| `TEST` | Test / acceptance scenario |
+
+Record them in the `requirements` block of the brief (schema below). `/design` should echo each `id` under `requirement_traceability`, and its gate (see [graph-design.md](./graph-design.md)) requires every requirement to map to at least one design element (node, edge, state path, source-plan item, or failure-plan item) — any unavailable real dependency carried as an explicit blocker. This is a convention, not machinery — keep it lightweight; do not rebuild a string-matching doc checker around it. *(A filled design-spec example does not yet exist, so the brief → design round-trip is not yet demonstrated end-to-end.)*
+
 ## Design-Ready Brief Template
 
 This template is the canonical `/requirements` output schema. Scratchpad notes and planning docs must reference this schema instead of restating their own variant.
@@ -478,6 +497,12 @@ graph:
   name: "{working-graph-name}"
   purpose: "{one-sentence behavior, without node names}"
   workflow_category: "read | write | enrichment | validation | routing | orchestration | composition | other"
+
+requirements:
+  - id: "INV-001"
+    statement: "{design-relevant obligation, one line, without node names}"
+    source_category: "user-answer | artifact | source-observed | assumption | mock"
+    source_note: "{short trace}"
 
 invocation:
   trigger: "http | graph | flow | scheduler | other"
@@ -577,7 +602,9 @@ gate_result:
   #   blocked = at least one open question blocks requirements or design
   status: "pass | blocked"
   blockers: []          # items blocking requirements or design; MUST be empty when status is pass
-  carried_blockers: []  # build/deploy blockers carried forward, each with a mock-and-proceed plan
+  carried_blockers:     # build/deploy blockers carried forward; the referenced open question already holds `blocks` and `closure_plan`
+    - question_id: "OQ-001"
+      mock_used: "{placeholder value or shape standing in}"
 ```
 
 ## Final Completion Rule
@@ -589,6 +616,7 @@ gate_result:
 3. No open question blocks requirements or design.
 4. Build/deploy blockers have explicit mock-and-proceed plans where applicable, recorded under `gate_result.carried_blockers`.
 5. The assistant can state, in plain language, what `/design` must satisfy.
+6. The obligations `/design` must trace are captured as requirement IDs in the `requirements` catalog.
 
 If any of these are false, stay in `/requirements`.
 

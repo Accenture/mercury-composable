@@ -90,6 +90,8 @@ Design implication: use no-skill nodes for static configuration/catalog data whe
 
 ## Source-Verified Primitives
 
+This table is design-*selection* guidance — when to reach for each primitive. The canonical enumeration of node types and their skills lives in [minigraph-syntax.md](./minigraph-syntax.md#node-types); defer to it for the authoritative type/skill list (see the precedence rule in [README.md](./README.md#authority-and-precedence)).
+
 | Primitive | Use when | Required design choices | Source-checked notes |
 |---|---|---|---|
 | No-skill node | You need a structural waypoint or a static state namespace. | Alias, type/purpose, properties, incoming/outgoing edges. | Traversal continues through forward links. Properties initialize under the node alias. |
