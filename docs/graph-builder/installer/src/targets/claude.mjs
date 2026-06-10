@@ -12,8 +12,8 @@ export function claudeWrapper({ phase, idx, total, sections, specFile }) {
   const lines = [
     "---",
     `name: ${name}`,
-    `description: ${description}`,
-    `argument-hint: ${phase.argumentHint}`,
+    `description: ${JSON.stringify(description)}`,
+    `argument-hint: ${JSON.stringify(phase.argumentHint)}`,
     "disable-model-invocation: true",
     "---",
     "",
