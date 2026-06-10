@@ -19,6 +19,14 @@
  * "VERIFICATION FAILED" — there is no flag to bypass it. Author one command at
  * a time and let each verify before sending the next.
  *
+ * For `create node` / `update node`, presence is NOT enough: a malformed
+ * property line (e.g. an un-'''-wrapped IF/THEN/ELSE) is "accepted" but makes
+ * the engine drop the whole property block, leaving a hollow node that the
+ * presence check passes. So `send` also parses the sent `with properties` block
+ * and asserts each statement[]/mapping[]/input[]/output[]/etc. entry actually
+ * landed on the stored node — hard-failing when a key or list entry was dropped,
+ * warning when an entry is present but not verbatim (engine normalization).
+ *
  * RUNTIME VERIFICATION (the other half): `instantiate` and `run` are not CRUD,
  * so the structural check above does not apply — yet they fail silently too
  * (e.g. a rejected seed line drops the whole instance, after which every inspect
@@ -138,6 +146,86 @@ const emit = (res) => {
 };
 
 /**
+ * Normalize a property value for comparison. The engine stores a '''-wrapped
+ * multi-line statement as one string with inner lines \n-joined and trimmed
+ * (verified: probe session ws-697490-4), so collapse all whitespace runs to a
+ * single space and trim — this matches the engine's stored form for the
+ * documented statement/mapping shapes without false-failing on layout.
+ */
+const normVal = (v) => String(v).replace(/\s+/g, ' ').trim();
+
+/**
+ * Parse the `with properties` block of a create/update node command into the
+ * entries the engine should have stored. Mirrors engine storage: a `key[]='''`
+ * block becomes ONE value with its inner lines \n-joined and trimmed; a
+ * single-line `key=value` / `key[]=value` is taken verbatim. Lines that don't
+ * match the property grammar are skipped (never a false-fail). Returns a
+ * Map<key, { list, values: string[] }> or null if there is no properties block.
+ */
+const parseSentProperties = (command) => {
+  const lines = command.split('\n');
+  const start = lines.findIndex((l) => l.trim().toLowerCase() === 'with properties');
+  if (start === -1) return null;
+  const props = new Map();
+  for (let i = start + 1; i < lines.length; i++) {
+    const m = lines[i].match(/^([A-Za-z_][\w.-]*)(\[\])?=(.*)$/);
+    if (!m) continue;
+    const [, key, listMark, rest] = m;
+    let value;
+    if (rest.trim() === "'''") {
+      // multi-line block: consume raw lines until a lone closing '''
+      const buf = [];
+      let j = i + 1;
+      for (; j < lines.length && lines[j].trim() !== "'''"; j++) buf.push(lines[j]);
+      value = buf.join('\n').trim();
+      i = j; // skip past the closing '''
+    } else {
+      value = rest.trim();
+    }
+    if (!props.has(key)) props.set(key, { list: Boolean(listMark), values: [] });
+    const entry = props.get(key);
+    if (listMark) entry.list = true;
+    entry.values.push(value);
+  }
+  return props.size ? props : null;
+};
+
+/**
+ * Verify the properties a create/update actually applied to the stored node.
+ * A malformed property line (e.g. an un-'''-wrapped THEN:) makes the engine
+ * abort the whole property block, leaving the node present but its properties
+ * dropped (verified: probe session ws-697490-4) — which the node-present check
+ * alone misses. Hard-fail signals a genuine drop (key absent, or a list shorter
+ * than sent); warn-only on a present-but-non-verbatim entry, since that is more
+ * likely engine normalization than a real loss.
+ */
+const checkProps = (node, expectProps) => {
+  const live = (node && node.properties) || {};
+  const failures = [];
+  const warnings = [];
+  for (const [key, { list, values }] of expectProps) {
+    const liveVal = live[key];
+    if (liveVal === undefined || liveVal === null) {
+      failures.push(`"${key}" was sent but is ABSENT from the stored node`);
+      continue;
+    }
+    if (!list) continue; // single value present is enough; don't value-compare (avoids false-fail)
+    const liveArr = Array.isArray(liveVal) ? liveVal : [liveVal];
+    if (liveArr.length < values.length) {
+      failures.push(`"${key}[]" sent ${values.length} entr${values.length === 1 ? 'y' : 'ies'} but only ${liveArr.length} stored — some were dropped`);
+      continue;
+    }
+    const liveNorm = liveArr.map(normVal);
+    for (const v of values) {
+      if (!liveNorm.includes(normVal(v))) {
+        warnings.push(`"${key}[]" entry not found verbatim (count matches — likely engine normalization): ${JSON.stringify(v).slice(0, 90)}`);
+      }
+    }
+  }
+  return { failures, warnings };
+};
+
+/**
  * Inspect the first line of a command and return the structural assertion that
  * proves it landed — or null for non-mutating commands (describe / list / run /
  * instantiate / inspect / seen / export / help), which produce no structural
@@ -151,7 +239,7 @@ const planVerification = (command) => {
   switch (verb) {
     case 'create':
     case 'update':
-      if (noun === 'node') return { kind: 'node-present', node: t[2], desc: `node "${t[2]}" present` };
+      if (noun === 'node') return { kind: 'node-present', node: t[2], desc: `node "${t[2]}" present`, expectProps: parseSentProperties(command) };
       return null;
     case 'import':
       if (noun === 'node') return { kind: 'node-present', node: t[2], desc: `node "${t[2]}" imported` };
@@ -211,7 +299,27 @@ const verifyMutation = async (plan, { host, sessionId }) => {
       1,
     );
   }
-  console.error(`✓ verified: ${plan.desc}  (live graph: ${summary})`);
+  // Beyond structural presence: confirm the sent properties (statement[], mapping[], …)
+  // actually applied. A malformed property line is "accepted" but drops the block.
+  let propNote = '';
+  if (plan.expectProps) {
+    const node = (graph.nodes ?? []).find((n) => n.alias === plan.node);
+    const { failures, warnings } = checkProps(node, plan.expectProps);
+    for (const w of warnings) console.error(`  ⚠ ${w}`);
+    if (failures.length) {
+      fail(
+        `VERIFICATION FAILED — node "${plan.node}" is present but its properties did NOT all apply:\n  - ` +
+          failures.join('\n  - ') +
+          `\nThe POST returned "accepted", but the engine rejected a property line — a malformed line aborts the ` +
+          `whole property block (e.g. an un-'''-wrapped IF/THEN/ELSE). Check the WebSocket console for the exact ` +
+          `ERROR, fix the command, and re-send.`,
+        1,
+      );
+    }
+    const n = plan.expectProps.size;
+    propNote = `, ${n} propert${n === 1 ? 'y' : 'ies'} applied`;
+  }
+  console.error(`✓ verified: ${plan.desc}${propNote}  (live graph: ${summary})`);
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

@@ -101,11 +101,13 @@ This table is design-*selection* guidance — when to reach for each primitive. 
 | `graph.js` | You need JavaScript object/array/scalar computation beyond `graph.math`. | Statements, result keys, branch targets, optional `for_each`, justification for using JS. | Heavier runtime than math. Supports JavaScript compute and truthy branching. Mapping/next alone is rejected. |
 | `graph.join` | You need fan-in after parallel natural traversal. | All upstream edges that must complete, downstream edge. | Returns `next` only when all backward-linked predecessors are complete; otherwise returns `.sink`. |
 | `graph.island` | You need a reachable node to stop traversal or a catalog/config node that must not execute downstream. | Alias, purpose, inbound edge if reachable, data held by properties if any. | Always returns `.sink`; source does not validate a `skill` property in the handler, but design should still set `skill=graph.island` for clarity and build consistency. |
-| `graph.extension` | You need to call another graph or an Event Script flow. | Extension target, input mappings, output handling, optional `for_each`, `concurrency`, `exception`. | Target is a graph ID or `flow://{flow_id}`. Single-call mode requires input mappings. Output is optional if another node consumes `{extension_node}.result`. |
+| `graph.extension` | You need to call another graph or an Event Script flow. | Extension target, input mappings, output handling, optional `for_each`, `concurrency`, `exception`. | Target is a graph ID or `flow://{flow_id}`. Single-call mode requires input mappings. Output is optional if another node consumes `{extension_node}.result`. **Build/deploy constraint:** the target resolves only from the read-only *deployed* location ([minigraph-syntax.md](./minigraph-syntax.md#extension-verified)); the Companion API **cannot deploy a target at runtime**, so a *custom* sub-graph is not callable in a normal build. Only choose `graph.extension` when the target is already deployed (e.g. a shipped tutorial); otherwise compose with island-backed fetchers instead. This is a `blocks: build` constraint — surface it in the gate. |
 
 ## Design Patterns
 
 These are reusable patterns, not mandatory topologies.
+
+> **Runnable exemplars:** [patterns/README.md](./patterns/README.md) maps each intent below to the smallest *verified, runnable* graph that exhibits it (the shipped tutorials, de-domained), plus the one pattern they don't cover — [per-item failure isolation](./patterns/per-item-isolation.md). Prefer composing from a verified exemplar (its build/runtime constraints travel with it) over assembling a primitive from the table above for the first time.
 
 ### Linear Transform
 
@@ -326,6 +328,8 @@ These inspection points become `/test` inputs and should be precise enough to av
 ### D11. Run The Design Gate
 
 Before handing off to `/build`, present the proposed graph shape and load-bearing tradeoffs to the user or reviewer, then evaluate the design gate and record the result in the artifact.
+
+**Verify-the-design norm.** When the design introduces a primitive or composition the **requirements brief did not name** — i.e. a `/design`-originated choice the requirements gate never reviewed — run [`/graph-verify`](./verify.md) on the *design* before `/build`, not only on the requirements brief. The requirements verify cannot have caught a build-time constraint of a primitive that requirements never mentioned. The cost of skipping this is concrete: a design can pass this gate, choose a primitive that is valid in principle but unbuildable in the target environment (e.g. `graph.extension` with a custom, undeployed target — see the primitives table), and only fail deep into `/build`. A fresh-context reviewer asked "prove this design can be built and run on the live engine" reproduces each new primitive's build/deploy preconditions against the engine and surfaces the wall before any node is created. This is a norm, not a hard gate — but if you skip it for a design-introduced primitive, say so and why.
 
 ## Graph Design Specification Template
 

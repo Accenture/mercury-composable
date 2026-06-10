@@ -209,6 +209,12 @@ ELSE: handle-null
 '''
 ```
 
+> **Coerce the flag — the selector is asymmetric (verified, session ws-697490-4).** `:boolean(null=true)` writes `true` when the source is null but writes **nothing** when it is present (not `false`). So on the present-value path `model.is_field_null` is *absent*, and a downstream `IF: {model.is_field_null} == false` then references an unresolved value and **halts the node** (see the IF-halt rule below). Coerce it to a real boolean in the **same mapper**, right after the null-detect line:
+> ```
+> mapping[]=model.field:boolean(null=true) -> model.is_field_null
+> mapping[]=f:defaultValue(model.is_field_null, boolean(false)) -> model.is_field_null
+> ```
+
 ### JSONPath
 - `$.model.array[*]` — all elements (use in graph.js COMPUTE)
 - `$.input.body.list[?(@ == {value})]` — filter by value
@@ -239,6 +245,8 @@ ELSE: target-node-alias | next
 - Named target = override traversal to that node (the target need not have a natural inbound edge — verified)
 - Operators: `==`, `!=`, `>`, `<`, `>=`, `<=`, `&&`, `||`
 - **An `IF` halts the node silently if it references a value that does not resolve** (verified) — including a bare `{x} != null` when `x` is absent. There is no working bare null-check; detect null with the mapper pattern under [Null Checking](#null-checking), then branch on the resulting boolean.
+- **Use bare literals in expressions, not `int()`/`text()` (verified, session ws-697490-4).** The `int()` / `text()` / `boolean()` constants are for **seeds and mappings**, not IF/COMPUTE expressions. `IF: {model.x} == int(1)` substitutes to `0 == int(1)`, and the evaluator tries to **call `int` as a function** → `Attempting to call a non-function` → the run **aborts** (the error appears only on the WebSocket console, not the POST response). Write `IF: {model.x} == 1`, and `== 'value'` for strings.
+- **`next` fans out to ALL natural outgoing edges (verified, session ws-697490-4).** A return of `next` — from `ELSE: next`, `THEN: next`, or a statement-less skill node — traverses **every** natural outgoing edge, exactly like a no-skill fan-out node (probe: a decision with edges to both `a` and `b` ran *both*). So a decision meant to continue to **one** node must have **exactly one** natural outgoing edge; route the alternatives as **named jump targets** (`THEN: x`), which need no inbound edge — and must **not** *also* carry a natural edge, or `next` will traverse them too. (This caused an early-completion bug: a loop head wired naturally to both its loop body and its exit node fanned `next` into the exit, completing the graph after one item.)
 
 ### COMPUTE
 ```
@@ -270,6 +278,7 @@ statement[]=DELAY: milliseconds          # pause this node's completion
 - **`NEXT`** (verified) jumps traversal to the named node (overrides natural edges; the target needs no inbound edge).
 - **`DELAY`** (verified) pauses the node's completion by the given milliseconds.
 - **`RESET`** (source-verified) clears the named node(s) — `GraphMath.resetNodes` removes them from the `nodeSeen` set — so a bounded loop can re-traverse them; always pair with an `IF` exit condition. The runtime does enforce a tight-loop guard (source-verified): `GraphExecutor`/`GraphTraveler.checkFrequency` aborts with `400 "executed too frequently"` when a node is hit more than `graph.node.high.frequency` (default 10) times within `graph.max.loop.interval` (default 1000ms) — a backstop, not a substitute for the exit condition.
+- **A loop must RESET its own re-entry head, not just the body (verified).** A non-join node runs **once** unless reset, so `NEXT`-ing back to an already-walked decision head does nothing — the loop runs exactly one pass and silently stops. Put the head in its **own** `RESET` list: a loop head `L` that re-runs body node `B` uses `RESET: B, L` — it resets *itself* as well as the body; omitting `L` freezes the loop after one pass. Reset every node on the cycle you intend to re-traverse, the head included.
 
 ### BEGIN / END (iterative block)
 ```
@@ -429,10 +438,11 @@ There is no REST equivalent for `seen` (traversal path) — that is WebSocket-on
 **This rule is non-negotiable. It cannot be batched, deferred, or skipped.**
 
 1. **One mutating command (`create` / `update` / `delete` / `connect` / `import`), then verify, then the next.** Do not send several CRUD commands and verify once at the end — a failure in command 2 silently corrupts everything built on top of it.
-2. **`"status":"accepted"` is NOT success.** The POST is asynchronous and returns `accepted` even for a malformed or no-op command (e.g. `connect a to b` where `b` does not exist — the engine accepts it and quietly drops it). The only proof a command took effect is to **re-fetch `GET /api/graph/session/{session-id}` and confirm the expected node/connection is present** (or absent, for a delete).
-3. **If verification fails, stop and fix that command before sending anything else.** Never continue against an unverified graph.
+2. **`"status":"accepted"` is NOT success.** The POST is asynchronous and returns `accepted` even for a malformed or no-op command (e.g. `connect a to b` where `b` does not exist — the engine accepts it and quietly drops it). Proof a command took effect is to **re-fetch `GET /api/graph/session/{session-id}`** and confirm the change landed.
+3. **For `create node` / `update node`, presence is necessary but NOT sufficient.** A malformed property line (e.g. an un-`'''`-wrapped `IF/THEN/ELSE`) is *accepted* but makes the engine **abort the entire property block** — the node is created, yet `properties` is empty (verified: probe session ws-697490-4). So confirming "the node exists" passes a hollow node. Re-fetch and confirm the **sent properties actually applied**: each `statement[]`/`mapping[]`/`input[]`/`output[]`/… entry is present on the stored node (a `'''` block is stored as one string with inner lines `\n`-joined and trimmed; single lines verbatim). The error itself goes only to the WebSocket console, never the POST response — so the re-fetch is the only HTTP-visible signal.
+4. **If verification fails, stop and fix that command before sending anything else.** Never continue against an unverified graph.
 
-The `companion.mjs send` helper (below) enforces this automatically — after any mutating command it re-fetches the live graph, asserts the change landed, and exits non-zero with `VERIFICATION FAILED` if it did not. There is no flag to turn this off. Always send mutating commands through it rather than hand-rolling `curl`/`fetch`, which would skip the check.
+The `companion.mjs send` helper (below) enforces all of this automatically — after any mutating command it re-fetches the live graph, asserts the change landed (including, for node create/update, that each sent property entry applied — `VERIFICATION FAILED … properties did NOT all apply` on a dropped entry), and exits non-zero if it did not. There is no flag to turn this off. Always send mutating commands through it rather than hand-rolling `curl`/`fetch`, which would skip the check.
 
 ### MANDATORY: verify the runtime after `instantiate` and `run`
 
