@@ -33,3 +33,4 @@ project
 
 # AI infrastructure
 .kiro/
+.claude/

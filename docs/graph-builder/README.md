@@ -2,7 +2,9 @@
 
 Status: document-system index.
 
-> **Picking up this work?** Read [HANDOFF.md](./HANDOFF.md) first — the distilled state, disciplines, and failure modes. Then [worklog.md](./worklog.md) for the detailed record.
+> **Picking up this work?** [worklog.md](./worklog.md) has the detailed record of work.
+>
+> **Installing the workflow as `/` commands?** See [install-commands.md](./install-commands.md) — point your agent at it and it self-installs thin pointer commands (each just references the canonical doc) in its own native format.
 
 Purpose: identify which graph-builder documents are canonical, which are support files, and how they relate.
 
@@ -29,7 +31,7 @@ When documents disagree, resolve in this order (higher wins):
 4. **[graph-design.md](./graph-design.md)** — owns `/design` primitive *selection*, topology obligations, and the design gate. Its **Source-Verified Primitives** table is selection guidance and defers to minigraph-syntax's Node Types for the authoritative type/skill list.
 5. **[workflow.md](./workflow.md)** — owns phase order and boundaries only.
 
-Process, working, and rationale docs are advisory, not authoritative over content: [adversarial-review-checklist.md](../adversarial-review-checklist.md) governs *how* reviews run; [improvement-plan.md](./improvement-plan.md), [worklog.md](./worklog.md), and [requirements-recalibration-assessment.md](./requirements-recalibration-assessment.md) are records/rationale, not specs. If a lower-priority doc is stale, fix it — do not carry two interpretations forward.
+Process, working, and rationale docs are advisory, not authoritative over content: [adversarial-review-checklist.md](../adversarial-review-checklist.md) governs *how* reviews run; [worklog.md](./worklog.md) is a record, not a spec. If a lower-priority doc is stale, fix it — do not carry two interpretations forward.
 
 ## Terminology
 
@@ -48,11 +50,9 @@ Process, working, and rationale docs are advisory, not authoritative over conten
 
 | Document | Status | Role |
 |---|---|---|
-| [requirements-recalibration-assessment.md](./requirements-recalibration-assessment.md) | Rationale | Explains why `/requirements` was recalibrated. |
+| [install-commands.md](./install-commands.md) | Installer | Agent self-install of the workflow as thin pointer `/` commands, in the agent's own native format. |
 | [examples/customer-360-requirements-brief.md](./examples/customer-360-requirements-brief.md) | Example | Shows a filled design-ready graph brief using the canonical schema. |
 | [examples/customer-360-design-spec.md](./examples/customer-360-design-spec.md) | Example | Shows the matching `/design` artifact — completes the brief→design requirement-ID round-trip. |
-| [improvement-plan.md](./improvement-plan.md) | Working plan | Prioritized P0–P5 plan with decision gates (incl. mandatory Gate 0 freshness). |
-| [distribution-plan.md](./distribution-plan.md) | Working plan | D0–D5 plan to package the four phases as installable commands for Claude Code, Copilot, Codex, and Kiro (agent-agnostic). |
 | [worklog.md](./worklog.md) | Working log | Append-only record of work performed. |
 | [evidence/dogfood-customer-360.md](./evidence/dogfood-customer-360.md) | Evidence | P0 dogfood claim matrix — execution verdicts against the live engine. |
 
