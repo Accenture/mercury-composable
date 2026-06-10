@@ -1,6 +1,6 @@
 ---
 name: graph-design
-description: Graph-builder workflow phase 2/4 — Convert a design-ready brief into a buildable MiniGraph architecture (user-invoked).
+description: "Graph-builder workflow phase 2/4 — Convert a design-ready brief into a buildable MiniGraph architecture (user-invoked)."
 argument-hint: "[path to the requirements brief]"
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ Convert a design-ready brief into a buildable MiniGraph architecture: node respo
 
 **Invocation.** Run after /graph-requirements passes its gate. Consumes the brief; produces the graph design spec that /graph-build lowers into commands.
 
-**Canonical spec (authoritative).** Full detail and precedence live in [`.graph-builder/graph-design.md`](.graph-builder/graph-design.md); defer to it on any conflict. The step checklist and gate below are lifted verbatim from that spec — this wrapper is not a second source of truth.
+**Canonical spec (authoritative).** Full detail and precedence live in [`.graph-builder/graph-design.md`](.graph-builder/graph-design.md); defer to it on any conflict. The section(s) below are lifted verbatim from that spec — this wrapper is not a second source of truth.
 
 **Command names.** The spec text below names the phases `/requirements`, `/design`, `/build`, `/test`; in this installation they are `/graph-requirements`, `/graph-design`, `/graph-build`, `/graph-test`.
 

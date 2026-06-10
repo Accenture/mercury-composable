@@ -2,6 +2,8 @@
 
 Status: document-system index.
 
+> **Picking up this work?** Read [HANDOFF.md](./HANDOFF.md) first — the distilled state, disciplines, and failure modes. Then [worklog.md](./worklog.md) for the detailed record.
+
 Purpose: identify which graph-builder documents are canonical, which are support files, and how they relate.
 
 ## Canonical Documents
@@ -13,6 +15,7 @@ Purpose: identify which graph-builder documents are canonical, which are support
 | [graph-design.md](./graph-design.md) | Canonical phase spec | Defines `/design` and the graph design specification schema. |
 | [build.md](./build.md) | Canonical phase spec | Defines `/build` — lowering a design into verified MiniGraph commands. |
 | [test.md](./test.md) | Canonical phase spec | Defines `/test` — proving runtime behavior via execution and state inspection. |
+| [verify.md](./verify.md) | Canonical spec (optional, cross-cutting) | Defines `/graph-verify <target> [--report]` — an on-demand adversarial verification + quality review of any artifact from any phase; spawns a fresh-context reviewer and judges *quality/trustworthiness*, not just conformance. Optional; no pipeline gate. |
 | [minigraph-syntax.md](./minigraph-syntax.md) | Canonical syntax reference | Defines Companion API command syntax and graph authoring mechanics. |
 | [companion.mjs](./companion.mjs) | Canonical helper | Executes and verifies Companion API commands. |
 

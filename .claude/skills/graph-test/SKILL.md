@@ -11,7 +11,7 @@ Prove a built graph's runtime behavior: run each required scenario, assert the o
 
 **Prerequisites.** This phase drives a live MiniGraph engine via `companion.mjs`: it needs Node >=20, a reachable `MINIGRAPH_HOST` (default `localhost:8085`), and — for `/graph-test` — the stub-server pattern for mocked sources. (`/graph-requirements` and `/graph-design` need none of this.)
 
-**Canonical spec (authoritative).** Full detail and precedence live in [`.graph-builder/test.md`](.graph-builder/test.md); defer to it on any conflict. The step checklist and gate below are lifted verbatim from that spec — this wrapper is not a second source of truth.
+**Canonical spec (authoritative).** Full detail and precedence live in [`.graph-builder/test.md`](.graph-builder/test.md); defer to it on any conflict. The section(s) below are lifted verbatim from that spec — this wrapper is not a second source of truth.
 
 **Command names.** The spec text below names the phases `/requirements`, `/design`, `/build`, `/test`; in this installation they are `/graph-requirements`, `/graph-design`, `/graph-build`, `/graph-test`.
 

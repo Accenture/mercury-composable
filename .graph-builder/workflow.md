@@ -12,9 +12,12 @@ This file owns the lifecycle and the boundaries between phases. For the document
 
 ```text
 1. /requirements -> 2. /design -> 3. /build -> 4. /test -> deploy
+
+   (optional, any time)  /graph-verify <target> [--report]
+                         adversarial verification + quality review of any artifact above
 ```
 
-Each phase produces an artifact consumed by the next phase. A later phase should not rediscover the core obligations of an earlier phase.
+Each phase produces an artifact consumed by the next phase. A later phase should not rediscover the core obligations of an earlier phase. `/graph-verify` is **not** a stage in this line — it is an optional, on-demand review runnable against any artifact from any phase (see below).
 
 ## Phase 1 - `/requirements`
 
@@ -105,6 +108,27 @@ Gate summary; full gate in [test.md](./test.md):
 - Output contract is satisfied.
 - Important state transitions are confirmed.
 - Remaining risks are explicit.
+
+## Optional Cross-Cutting Step - `/graph-verify`
+
+Not a pipeline stage. An **optional, on-demand adversarial verification + quality review** the operator may run **at any time, against any artifact from any phase** (or an external contribution, or the live graph). It spawns a fresh-context subagent to reproduce the artifact's load-bearing claims against ground truth (the live engine + source) and returns an honest quality verdict — *is this good and trustworthy?*, not merely *does it conform?*
+
+Canonical spec: [verify.md](./verify.md).
+
+Invocation (the arguments are first-class features of the step, documented here and in [verify.md](./verify.md) — not only in the installer/skill wrapper):
+
+```text
+/graph-verify <target> [--report [path]]
+```
+
+- **`<target>`** (required) — what to judge: a file path (a brief / design spec / build log / test report / a doc), a live engine **session id**, or a specific **claim**.
+- **`--report [path]`** (optional) — *additionally* persist a structured record (for audit / handoff), optionally to `path`. **Default: no artifact is written** — the deliverable is a candid, human-facing quality verdict in prose. The record backs the verdict; it never replaces it.
+
+Output:
+
+- A **candid quality verdict** (prose): bottom-line-first, evidence-backed, "wrong" kept separate from "missing," confidence + the one fact that would change the call. Confirmed defects are routed to the owning phase. The structured report is emitted **only** when `--report` is passed.
+
+Optional by design — it has **no gate that blocks the pipeline**. It complements the per-phase gates (which prove conformance, cheaply, every run) by judging correctness-against-reality and fitness for purpose, on demand. Keep it proportional (scalpel, not turnstile) — see the closing note in [verify.md](./verify.md).
 
 ## Deployment Boundary
 

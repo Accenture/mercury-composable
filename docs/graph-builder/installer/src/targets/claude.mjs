@@ -3,10 +3,15 @@
 // Body = hand-authored framing + the verbatim-lifted spec sections + a link to
 // the authoritative canonical spec under `.graph-builder/`.
 
-export function claudeWrapper({ phase, idx, total, sections, specFile }) {
+const DEFAULT_ENGINE_PREREQ =
+  "**Prerequisites.** This phase drives a live MiniGraph engine via `companion.mjs`: it needs Node >=20, a reachable `MINIGRAPH_HOST` (default `localhost:8085`), and — for `/graph-test` — the stub-server pattern for mocked sources. (`/graph-requirements` and `/graph-design` need none of this.)";
+
+export function claudeWrapper({ phase, idx, total, numbered, bodySections, specFile }) {
   const name = `graph-${phase.phase}`;
   const shortPurpose = phase.purpose.split(/[:.]/)[0].trim();
-  const description = `Graph-builder workflow phase ${idx + 1}/${total} — ${shortPurpose} (user-invoked).`;
+  const description = numbered
+    ? `Graph-builder workflow phase ${idx + 1}/${total} — ${shortPurpose} (user-invoked).`
+    : `Graph-builder optional cross-cutting step — ${shortPurpose} (user-invoked).`;
   const specLink = `.graph-builder/${specFile}`;
 
   const lines = [
@@ -23,23 +28,27 @@ export function claudeWrapper({ phase, idx, total, sections, specFile }) {
     "",
   ];
 
-  if (phase.engine) {
+  // Prerequisites: an explicit per-command block overrides; else the default
+  // engine text when the phase touches the engine; else nothing.
+  const prereq = phase.prerequisites ?? (phase.engine ? DEFAULT_ENGINE_PREREQ : null);
+  if (prereq) lines.push(prereq, "");
+
+  lines.push(
+    `**Canonical spec (authoritative).** Full detail and precedence live in [\`${specLink}\`](${specLink}); defer to it on any conflict. The section(s) below are lifted verbatim from that spec — this wrapper is not a second source of truth.`,
+    ""
+  );
+
+  // The pipeline-phase renaming note only applies to the numbered phases.
+  if (numbered) {
     lines.push(
-      "**Prerequisites.** This phase drives a live MiniGraph engine via `companion.mjs`: it needs Node >=20, a reachable `MINIGRAPH_HOST` (default `localhost:8085`), and — for `/graph-test` — the stub-server pattern for mocked sources. (`/graph-requirements` and `/graph-design` need none of this.)",
+      "**Command names.** The spec text below names the phases `/requirements`, `/design`, `/build`, `/test`; in this installation they are `/graph-requirements`, `/graph-design`, `/graph-build`, `/graph-test`.",
       ""
     );
   }
 
-  lines.push(
-    `**Canonical spec (authoritative).** Full detail and precedence live in [\`${specLink}\`](${specLink}); defer to it on any conflict. The step checklist and gate below are lifted verbatim from that spec — this wrapper is not a second source of truth.`,
-    "",
-    "**Command names.** The spec text below names the phases `/requirements`, `/design`, `/build`, `/test`; in this installation they are `/graph-requirements`, `/graph-design`, `/graph-build`, `/graph-test`.",
-    "",
-    sections.stepChecklist,
-    "",
-    sections.gate,
-    ""
-  );
+  for (const section of bodySections) {
+    lines.push(section, "");
+  }
 
   return { relPath: `.claude/skills/${name}/SKILL.md`, content: lines.join("\n") };
 }

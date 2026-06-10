@@ -9,7 +9,7 @@ Turn rough intent into a design-ready MiniGraph brief: gather the behavior, cont
 
 **Invocation.** Run when starting a new graph or a substantive change to one. Produces the design-ready brief that /graph-design consumes. You do not need to know nodes, skills, or commands — this phase gathers obligations, not syntax.
 
-**Canonical spec (authoritative).** Full detail and precedence live in [`.graph-builder/requirements-gathering.md`](.graph-builder/requirements-gathering.md); defer to it on any conflict. The step checklist and gate below are lifted verbatim from that spec — this wrapper is not a second source of truth.
+**Canonical spec (authoritative).** Full detail and precedence live in [`.graph-builder/requirements-gathering.md`](.graph-builder/requirements-gathering.md); defer to it on any conflict. The section(s) below are lifted verbatim from that spec — this wrapper is not a second source of truth.
 
 **Command names.** The spec text below names the phases `/requirements`, `/design`, `/build`, `/test`; in this installation they are `/graph-requirements`, `/graph-design`, `/graph-build`, `/graph-test`.
 

@@ -38,3 +38,40 @@ export function extractPhaseBody(specMarkdown) {
     gate: extractSection(specMarkdown, "## Gate"),
   };
 }
+
+// Marker an optional/cross-cutting spec uses to self-designate a wrapper-body
+// section. Placed on its own line immediately above the section heading.
+export const WRAPPER_MARKER = "<!-- wrapper-body -->";
+
+/**
+ * Extract the wrapper body of an optional command spec: every section the spec
+ * marks with `WRAPPER_MARKER` (on the line above its heading), lifted verbatim
+ * by the same heading-scoped rule and returned in document order. The marker
+ * selects *which* sections; the lift is still verbatim of the named heading, so
+ * the body cannot say something the spec doesn't. Throws if a marker is not
+ * immediately followed (ignoring blanks) by a heading, or if none are found —
+ * a malformed/absent marker set is a spec-conformance bug, not silent output.
+ */
+export function extractMarkedBody(specMarkdown) {
+  const lines = specMarkdown.split("\n");
+  const headings = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim() !== WRAPPER_MARKER) continue;
+    let j = i + 1;
+    while (j < lines.length && lines[j].trim() === "") j++;
+    if (j >= lines.length || !/^#{1,6}\s/.test(lines[j])) {
+      throw new Error(
+        `${WRAPPER_MARKER} at line ${i + 1} is not immediately above a heading`
+      );
+    }
+    headings.push(lines[j].trim());
+  }
+  if (headings.length === 0) {
+    throw new Error(`no ${WRAPPER_MARKER} markers found`);
+  }
+  // Lift from a marker-stripped copy so a marker (which sits at the tail of the
+  // preceding section, before the next heading) never leaks into the body.
+  // Removing the marker lines restores the spec's original prose verbatim.
+  const cleaned = lines.filter((l) => l.trim() !== WRAPPER_MARKER).join("\n");
+  return headings.map((h) => extractSection(cleaned, h));
+}

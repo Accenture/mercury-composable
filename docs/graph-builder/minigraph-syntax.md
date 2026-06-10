@@ -90,6 +90,7 @@ inspect {variable_name}
 seen
 execute {node-name}
 ```
+- **`inspect` serves containers only — a `404` on a dotted leaf does NOT mean the node halted.** The inspect endpoint (`rest/InspectStateMachine.java:47-51`) returns the value **only if it is a `Map` or a `List`**; any scalar leaf (string, number, boolean) yields `404 "Not found"` by design. So `inspect enrich.result` returns the map `{ "x": 15 }`, but `inspect enrich.result.x` (a number) returns `404` **even though the value exists**. Always read the parent container, not the scalar leaf. To tell a genuine silent-halt apart from this artifact: inspect the **container** — a result key *missing from the container map* is a real halt; a `404` on the dotted scalar path under a present container is just this endpoint behavior.
 
 ### import / export
 ```
@@ -245,6 +246,13 @@ statement[]=COMPUTE: variable -> expression
 ```
 - Result stored as `{node-alias}.result.variable`
 - Route via MAPPING: `statement[]=MAPPING: node.result.variable -> model.target`
+- The right-hand side is evaluated as JavaScript (`graph.js`) after `{path}` substitution. **Multi-line COMPUTE works**: in `GraphJs.compute` (`skills/GraphJs.java:180-195`) the statement text is passed to `context.eval(JS, text)` with its newlines intact; the `command.replace('\n',' ')` flatten in `processCommands` (`GraphJs.java:161-165`) runs *after* `compute()` and on a separate copy, so it never touches a COMPUTE expression. A COMPUTE may therefore be written on one physical line or wrapped across several lines with `'''` — both reach the JS engine identically. Complex IIFEs (nested object literals, `.filter`/`.reduce`) are ordinary JavaScript and evaluate normally.
+
+#### `{path}` substitution rule (source: `GraphLambdaFunction.substituteVarIfAny`/`replaceWithParameter`, lines 208-261)
+Substitution scans the right-hand side for `{…}` groups (`Utility.extractSegments`/`findEndBracket`, `Utility.java:1316-1356`) and resolves each group's inner text as a state-machine path **only when that text contains no colon, newline, tab, or carriage return** (the guard at `GraphLambdaFunction.java:238`). If it contains any of those, the engine assumes the braces are a JavaScript function body or a JSON object and leaves the whole group **verbatim**. Scanning is **innermost-first** (`extractSegments` walks right-to-left via `lastIndexOf`), so:
+- A plain `{model.x}` resolves wherever it sits — inline, or nested inside an object literal or IIFE body — because the inner ref is found and substituted before any enclosing brace is examined.
+- An object literal such as `{tag: {model.x}}` keeps its outer braces (their inner text holds a `:`) as a JS object while the inner `{model.x}` still resolves.
+- **Footgun:** a lone `{path}` that shares its braces with a colon/newline (e.g. `{model.x : 0}`) hits the line-238 guard and is left verbatim; `eval` then receives a literal `{…}`, which is invalid JavaScript, and the node **halts silently** — the same failure mode as any unresolved/bad `graph.js` expression. Keep each `{path}` ref in its own clean braces.
 
 ### MAPPING (inline)
 ```
