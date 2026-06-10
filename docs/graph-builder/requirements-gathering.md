@@ -92,6 +92,22 @@ The assistant must maintain a running distinction between:
 
 The assistant should not ask the user to choose implementation details prematurely. For example, prefer "what data should be returned if the risk lookup fails?" over "should this be a `graph.math` fallback node?"
 
+## Step checklist
+
+Terse form of the Operating Protocol; each step is detailed in its `R#` section. Gather adaptively and out of order — the brief is incomplete until every step is satisfied or explicitly blocked.
+
+- **R1** Name the outcome — purpose, caller, success definition, workflow category.
+- **R2** Define the invocation contract — required/optional inputs, paths, sample payloads, missing-input rule.
+- **R3** Define the output contract — mandatory/optional fields, error + degraded shapes.
+- **R4** Build the state contract — `model.*`, node-local, constants, opaque pass-through.
+- **R5** Inventory sources and capabilities — kind, request/response contract, auth, parallelism, mock.
+- **R6** Capture mapping rules — input→model, source→model, model→output, derived/defaulted/repeated.
+- **R7** Discover control flow — sequence, parallel, joins, decisions, per-item behavior.
+- **R8** Define failure and degraded behavior for every meaningful dependency failure.
+- **R9** Capture non-functional constraints — latency, concurrency, cache, TTL, security, observability.
+- **R10** Define test scenarios — happy path, missing input, empty source, dependency failure, fallback, branch.
+- **R11** Lock the requirements gate (see [Gate](#gate)) — decide whether `/design` may begin.
+
 ## Step R1 - Name The Outcome
 
 Goal: understand the user-visible purpose before any graph structure is proposed.
@@ -382,7 +398,9 @@ Quality check:
 
 - Every acceptance scenario is executable or can be made executable with mocks.
 
-## Step R11 - Lock The Requirements Gate
+## Gate
+
+Step R11 — Lock the requirements gate.
 
 Goal: decide whether `/requirements` is complete and `/design` may begin.
 

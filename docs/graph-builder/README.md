@@ -49,6 +49,7 @@ Process, working, and rationale docs are advisory, not authoritative over conten
 | [examples/customer-360-requirements-brief.md](./examples/customer-360-requirements-brief.md) | Example | Shows a filled design-ready graph brief using the canonical schema. |
 | [examples/customer-360-design-spec.md](./examples/customer-360-design-spec.md) | Example | Shows the matching `/design` artifact — completes the brief→design requirement-ID round-trip. |
 | [improvement-plan.md](./improvement-plan.md) | Working plan | Prioritized P0–P5 plan with decision gates (incl. mandatory Gate 0 freshness). |
+| [distribution-plan.md](./distribution-plan.md) | Working plan | D0–D5 plan to package the four phases as installable commands for Claude Code, Copilot, Codex, and Kiro (agent-agnostic). |
 | [worklog.md](./worklog.md) | Working log | Append-only record of work performed. |
 | [evidence/dogfood-customer-360.md](./evidence/dogfood-customer-360.md) | Evidence | P0 dogfood claim matrix — execution verdicts against the live engine. |
 

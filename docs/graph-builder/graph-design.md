@@ -436,6 +436,22 @@ graph_design_spec:
     carried_blockers: []  # deploy blockers carried forward, each with a mock-and-proceed plan
 ```
 
+## Step checklist
+
+Terse form of the Operating Protocol above; each step is detailed in its `D#` section.
+
+- **D1** Accept or reject the brief — `gate_result.status` allows `/design`; build blockers mocked, deploy blockers carried.
+- **D2** Restate the graph obligation — a checksum against the brief, not a new requirements pass.
+- **D3** Choose the smallest graph shape that satisfies the obligations; name why.
+- **D4** Build the node inventory — alias, responsibility, skill, reads/writes, neighbors, requirements satisfied.
+- **D5** Assign a skill primitive (or no-skill) to every executable node, with a reason.
+- **D6** Design state and mappings — every target path has exactly one owner.
+- **D7** Design source/provider clusters — providers, dictionaries, extensions, flows, mocks.
+- **D8** Design edges and control flow — natural edges, jumps, exception targets, joins, sinks, loop exits.
+- **D9** Design failure and fallback behavior for each source and composition boundary.
+- **D10** Design test inspection points for `/test`.
+- **D11** Run the design gate (below) and record the result in the artifact.
+
 ## Gate
 
 `/design` passes only when:
