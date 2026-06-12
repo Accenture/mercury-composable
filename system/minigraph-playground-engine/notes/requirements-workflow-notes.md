@@ -1,8 +1,8 @@
 # MiniGraph Requirements Workflow Notes
 
-Status: superseded scratchpad. The canonical `/requirements` contract now lives in `docs/graph-builder/requirements-gathering.md`.
+Status: superseded scratchpad. The canonical `/requirements` contract now lives in `llms/graph-builder/requirements-gathering.md`.
 
-Scope rule: this note records how the `/requirements` workflow evolved. Do not use the brief shape below as an implementation contract; it has been superseded by the canonical design-ready graph brief schema in `docs/graph-builder/requirements-gathering.md`.
+Scope rule: this note records how the `/requirements` workflow evolved. Do not use the brief shape below as an implementation contract; it has been superseded by the canonical design-ready graph brief schema in `llms/graph-builder/requirements-gathering.md`.
 
 ## Core Idea
 
@@ -236,7 +236,7 @@ Capture:
 
 ## Design-Ready Brief Shape
 
-Superseded. The schema was removed from this scratchpad to avoid contract drift. Use `docs/graph-builder/requirements-gathering.md#design-ready-brief-template`.
+Superseded. The schema was removed from this scratchpad to avoid contract drift. Use `llms/graph-builder/requirements-gathering.md#design-ready-brief-template`.
 
 ## Conversation Style For `/requirements`
 

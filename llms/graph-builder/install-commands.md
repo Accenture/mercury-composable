@@ -2,9 +2,9 @@
 
 Status: the installer. This is the whole mechanism — there is no script to run.
 
-> **How to use this:** point your coding agent at this file — e.g. *"Read `docs/graph-builder/install-commands.md` and install the graph-builder commands."* The agent creates the slash commands itself, in **its own native format**. Then start a fresh session so it picks them up.
+> **How to use this:** point your coding agent at this file — e.g. *"Read `llms/graph-builder/install-commands.md` and install the graph-builder commands."* The agent creates the slash commands itself, in **its own native format**. Then start a fresh session so it picks them up.
 
-**Scope:** this repository only. The commands reference `docs/graph-builder/*.md` by repo-root-relative path and assume the agent is working inside this repo (or a checkout of it). They are not designed to be copied into an unrelated project.
+**Scope:** this repository only. The commands reference `llms/graph-builder/*.md` by repo-root-relative path and assume the agent is working inside this repo (or a checkout of it). They are not designed to be copied into an unrelated project.
 
 ---
 
@@ -20,12 +20,12 @@ One command per canonical doc. The doc is authoritative; the command just points
 
 | Command | Canonical doc (source of truth) | Purpose | Argument hint |
 |---|---|---|---|
-| `/graph-requirements` | `docs/graph-builder/requirements-gathering.md` | Phase 1 — turn rough intent into a design-ready brief | `[optional: intent notes, a sample request/response, or a generated artifact]` |
-| `/graph-design` | `docs/graph-builder/graph-design.md` | Phase 2 — turn the brief into a buildable architecture | `[path to the requirements brief]` |
-| `/graph-build` | `docs/graph-builder/build.md` | Phase 3 — lower the design into verified MiniGraph commands | `[path to the design spec]` |
-| `/graph-test` | `docs/graph-builder/test.md` | Phase 4 — prove runtime behavior by execution + inspection | `[graph name, or path to the build log]` |
-| `/graph-verify` | `docs/graph-builder/verify.md` | Optional, any time — adversarial quality review of any artifact | `<target> [--report [path]]` |
-| `/graph-builder` | `docs/graph-builder/README.md` | Overview — the doc index, precedence, and terminology (start here) | _(none)_ |
+| `/graph-requirements` | `llms/graph-builder/requirements-gathering.md` | Phase 1 — turn rough intent into a design-ready brief | `[optional: intent notes, a sample request/response, or a generated artifact]` |
+| `/graph-design` | `llms/graph-builder/graph-design.md` | Phase 2 — turn the brief into a buildable architecture | `[path to the requirements brief]` |
+| `/graph-build` | `llms/graph-builder/build.md` | Phase 3 — lower the design into verified MiniGraph commands | `[path to the design spec]` |
+| `/graph-test` | `llms/graph-builder/test.md` | Phase 4 — prove runtime behavior by execution + inspection | `[graph name, or path to the build log]` |
+| `/graph-verify` | `llms/graph-builder/verify.md` | Optional, any time — adversarial quality review of any artifact | `<target> [--report [path]]` |
+| `/graph-builder` | `llms/graph-builder/README.md` | Overview — the doc index, precedence, and terminology (start here) | _(none)_ |
 
 `/graph-requirements → /graph-design → /graph-build → /graph-test` is the linear pipeline. `/graph-verify` is optional and runs against any artifact at any time. `/graph-builder` is orientation.
 
@@ -53,7 +53,7 @@ Worked example — `/graph-requirements`:
 ```
 Run the graph-builder requirements phase (Phase 1 of 4).
 
-**Source of truth:** open and follow `docs/graph-builder/requirements-gathering.md`
+**Source of truth:** open and follow `llms/graph-builder/requirements-gathering.md`
 in full — it is authoritative for every step, gate, and schema. This command is
 only a launcher: read the doc now, do not work from memory of it, and if this
 text and the doc ever disagree, the doc wins.
@@ -98,7 +98,7 @@ disable-model-invocation: true
 
 Run the graph-builder requirements phase (Phase 1 of 4).
 
-**Source of truth:** open and follow `docs/graph-builder/requirements-gathering.md`
+**Source of truth:** open and follow `llms/graph-builder/requirements-gathering.md`
 in full — it is authoritative for every step, gate, and schema. This command is
 only a launcher: read the doc now, do not work from memory of it, and if this
 text and the doc ever disagree, the doc wins.

@@ -1,9 +1,9 @@
 # Adversarial Evaluation Checklist
 
 Version: 1.2 (2026-06-08)
-Owner: maintainer of `docs/graph-builder/` — set an explicit owner before this governs other contributors.
+Owner: maintainer of `llms/graph-builder/` — set an explicit owner before this governs other contributors.
 Authority: a *process* doc. Advisory over content/spec docs; subordinate to engine source and to the graph-builder phase specs' own gates. It governs *how* a review is run, not *what* a spec must contain.
-Amendments: incident-driven changes go through the Update Protocol (logged in the Incident Log); deliberate amendments are recorded in the project work log (`docs/graph-builder/worklog.md`). Adding or removing a gate, an output-contract item, or a policy section is a structural change and bumps the version.
+Amendments: incident-driven changes go through the Update Protocol (logged in the Incident Log); deliberate amendments are recorded in the project work log (`llms/graph-builder/worklog.md`). Adding or removing a gate, an output-contract item, or a policy section is a structural change and bumps the version.
 
 ## What this is and how to use it
 
@@ -108,7 +108,7 @@ Incident entry shape:
 
 ## Incident Log
 
-### Incident 0001 — 2026-06-08 — docs/graph-builder/check-docs.mjs
+### Incident 0001 — 2026-06-08 — llms/graph-builder/check-docs.mjs
 - Emitted: "documentation as a typed system … a strong, durable pattern," while scoring a set of edits as a clean checklist of ✅s against my own prior recommendations.
 - Mechanism: A (grading my own advice) + B (presence/internal-consistency taken as proxy for worth) + D (approval laundered through abstractions: "typed system," "foreign keys") + asymmetric scrutiny (all criticism aimed at the missing engine boundary, none at the file in hand).
 - Visible tell: a compliance table mapping edits to my recommendations; approving abstractions; every critique pointed at what was *absent* rather than what was *present*. The human had to ask "isn't a JS file checking docs rigid and tactical?" — a Gate B question I never raised.
@@ -116,7 +116,7 @@ Incident entry shape:
 - Catch added: founding incident — seeded Gates A, B, C, D, F.
 - Regression: Gate B forces the "should it exist / cheapest alternative" question; Gate C's deletion budget forces a weakest-first cut that surfaces the regression-pins (`includes('model.zero')` etc.) and the example-as-required-file miss; Gate A strips the self-grading frame; Gate D bans "typed system / durable pattern" as unbacked.
 
-### Incident 0002 — 2026-06-08 — docs/graph-builder/improvement-plan-separate.md
+### Incident 0002 — 2026-06-08 — llms/graph-builder/improvement-plan-separate.md
 - Emitted: not a sycophantic *phrase* this time but a sycophantic *structure* — a document that ran Gates A–F thoroughly in its own self-review, recorded its own kill-findings ("process inflation," "parallel truth surfaces," deletion-budget item "remove Plan G entirely," Gate B's "likely overkill" for a single owner), and then shipped the full 7-plan structure with none of those findings applied and no override stated. The risk was that a reviewer (me) would accept the *presence* of a thorough self-review as evidence of quality — the meta-version of presence-as-proxy.
 - Mechanism: **G (new) — review-as-alibi.** Distinct from A–F: those make the evaluation honest; none of them require the honest findings to *act on* the artifact. A self-review can pass A–F completely and still change nothing.
 - Visible tell: every gate and kill-finding in the self-review ends without a disposition line; the artifact is identical before and after its own review; the deletion budget recommends removals that remain fully present in the text.

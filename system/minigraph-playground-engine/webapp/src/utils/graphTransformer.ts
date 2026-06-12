@@ -1,57 +1,61 @@
-import { MarkerType, type Node, type Edge } from '@xyflow/react';
+import { MarkerType, Position, type Node, type Edge } from '@xyflow/react';
+import ELK from 'elkjs/lib/elk.bundled.js';
+import type { ElkNode, ElkExtendedEdge, ElkPoint, LayoutOptions } from 'elkjs/lib/elk-api';
 import type { MinigraphGraphData } from './graphTypes';
 import { getMinigraphNodeShellStyle } from './minigraphNodeTheme';
- 
+
 /** Data bag attached to every ReactFlow node we create. */
 export interface GraphNodeData extends Record<string, unknown> {
   alias: string;
   nodeType: string;   // primary type label, e.g. "Root"
   /** All properties from the MinigraphNode, passed through for rendering. */
   properties: Record<string, unknown>;
-  sourceHandles: GraphHandleData[];
-  targetHandles: GraphHandleData[];
-  /** Back-edge source handles — rendered on the LEFT side (outgoing back-edges from this node). */
-  backSourceHandles: GraphHandleData[];
-  /** Back-edge target handles — rendered on the RIGHT side (incoming back-edges to this node). */
-  backTargetHandles: GraphHandleData[];
+  /** Estimated content height — the NodeResizer floor so a node can't shrink
+   *  below the height the layout reserved for it. */
   minHeight: number;
 }
- 
-export interface GraphHandleData {
-  id: string;
-  offset: number;
-}
- 
+
 /** Data bag attached to every ReactFlow edge we create. */
 export interface GraphEdgeData extends Record<string, unknown> {
   relationTypes: string[];   // e.g. ["fetch"]
+  /** Routed polyline computed by ELK (start → bend points → end), in flow
+   *  coordinates. Absent for edges ELK did not lay out (segregated/cross
+   *  edges), which fall back to a smoothstep path in the edge component. */
+  points?: ElkPoint[];
+  /** Source/target node top-left positions at layout time. Used by the edge
+   *  component to warp the ELK polyline by each endpoint's live drag delta so
+   *  the routed path follows the nodes when they are moved. */
+  sourceLayout?: { x: number; y: number };
+  targetLayout?: { x: number; y: number };
 }
- 
+
 // ─── Layout constants ────────────────────────────────────────────────────────
-// NODE_WIDTH / NODE_HEIGHT drive column/row spacing in the layout pass.
-// They are also used as the initial `width`/`height` on each node so React
-// Flow's wrapper has a reasonable size from the very first render.  After
-// mount React Flow's own ResizeObserver measures the real DOM dimensions and
-// updates accordingly, keeping NodeResizer in sync.
+// NODE_WIDTH is the fixed node width handed to ELK and used as the initial
+// React Flow wrapper width.  Heights are estimated per node from their content
+// (see estimateNodeHeight) so ELK reserves roughly the right vertical space;
+// React Flow's ResizeObserver measures the real DOM size after mount and keeps
+// NodeResizer in sync.
 const NODE_WIDTH  = 240;
-const NODE_HEIGHT = 100; // rough estimate; ResizeObserver will correct it post-mount
-const ROW_GAP            = 60;   // vertical gap between nodes stacked in the same column
-const COL_GAP            = 120;  // horizontal gap between columns (levels)
-const COMPONENT_GAP      = 360;  // horizontal gap between independent flow trees
-const SECTION_GAP        = 120;  // vertical gap between main flow and first segregated row
+const NODE_HEIGHT = 80;   // minimum / fallback node height
+
+// Per-node height estimate inputs (mirror NodeTypes.module.css spacing).
+const NODE_HEADER_H     = 34;   // header row (icon + alias + badge)
+const NODE_BODY_PAD     = 10;   // body vertical padding
+const NODE_ROW_H        = 26;   // one property row
+const MAX_ESTIMATE_ROWS = 8;    // cap so a huge mapping array doesn't balloon layout
+
+const COL_GAP            = 120;  // horizontal gap between nodes within a segregated row
+const SECTION_GAP        = 120;  // vertical gap between the ELK flow and the first segregated row
 const SEGREGATED_ROW_GAP = 80;   // vertical gap between successive segregated rows
- 
+
 // ─── Edge styling constants ──────────────────────────────────────────────────
 // EDGE_STROKE: --text-muted (rgb 148 163 184) at 42% opacity — slate-400 tinted stroke
 // EDGE_LABEL_BG: references the --bg-secondary token directly so label badges
 //   automatically track any future token-level surface change.
-const EDGE_STROKE         = 'rgba(148, 163, 184, 0.42)';   // --text-muted at 42%
-const EDGE_LABEL_BG       = 'var(--bg-secondary)';          // token: --bg-secondary = #f8fafc
-const EDGE_HANDLE_GAP     = 24;   // px between adjacent handle anchors on the same side
-const EDGE_HANDLE_PADDING = 32;   // min px from node top/bottom to first/last handle
- 
+const EDGE_STROKE   = 'rgba(148, 163, 184, 0.42)';   // --text-muted at 42%
+const EDGE_LABEL_BG = 'var(--bg-secondary)';          // token: --bg-secondary = #f8fafc
+
 // Semantic edge-type colors — intentional per-relation accent palette.
-// Matches the same amber/green/purple axis used by NODE_ACCENT above.
 const EDGE_FALLBACK_COLORS = [
   '#0369a1',   // sky-700
   '#15803d',   // green-700
@@ -62,7 +66,7 @@ const EDGE_FALLBACK_COLORS = [
   '#c2410c',   // orange-700
   '#a16207',   // yellow-700
 ];
- 
+
 // Named relation-type → accent color map.
 const EDGE_COLOR_BY_RELATION: Record<string, string> = {
   fetch:        '#0369a1',   // sky-700
@@ -82,9 +86,12 @@ const EDGE_COLOR_BY_RELATION: Record<string, string> = {
   complete:     '#15803d',
   finish:       '#15803d',
   positive:     '#15803d',
+  then:         '#15803d',   // derived Evaluator THEN branch — taken path
   negative:     '#b91c1c',   // red-700
+  else:         '#b45309',   // derived Evaluator ELSE branch — amber
+  exception:    '#b91c1c',   // derived Fetcher exception branch — red
 };
- 
+
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -93,7 +100,7 @@ function hashString(value: string): number {
   }
   return Math.abs(hash);
 }
- 
+
 function edgeColor(relationTypes: string[]): string {
   if (relationTypes.length === 0) return EDGE_STROKE;
   const primary = relationTypes[0].trim().toLowerCase();
@@ -101,117 +108,77 @@ function edgeColor(relationTypes: string[]): string {
   if (known) return known;
   return EDGE_FALLBACK_COLORS[hashString(primary) % EDGE_FALLBACK_COLORS.length];
 }
- 
-function edgeSourceHandleId(index: number): string {
-  return `source-${index}`;
+
+// ─── Node height estimate ─────────────────────────────────────────────────────
+// ELK needs each node's size up front.  We approximate the rendered height from
+// the property rows MinigraphNodeBody will draw (one row per scalar property,
+// one per array element), mirroring the CSS spacing.  The real size is measured
+// by React Flow after mount; this only needs to be close enough that the layout
+// reserves sensible vertical space.
+function estimateNodeHeight(node: MinigraphGraphData['nodes'][number]): number {
+  let rows = 0;
+  for (const value of Object.values(node.properties)) {
+    if (value === undefined || value === null) continue;
+    rows += Array.isArray(value) ? Math.max(1, value.length) : 1;
+  }
+  rows = Math.min(rows, MAX_ESTIMATE_ROWS);
+  return Math.max(NODE_HEIGHT, NODE_HEADER_H + NODE_BODY_PAD + rows * NODE_ROW_H);
 }
- 
-function edgeTargetHandleId(index: number): string {
-  return `target-${index}`;
-}
- 
-function backEdgeSourceHandleId(index: number): string {
-  return `back-source-${index}`;
-}
- 
-function backEdgeTargetHandleId(index: number): string {
-  return `back-target-${index}`;
-}
- 
-function edgeHandleOffset(index: number, total: number): number {
-  if (total <= 1) return 0;
-  if (total === 2) return index === 0 ? -EDGE_HANDLE_GAP : EDGE_HANDLE_GAP;
-  return (index - (total - 1) / 2) * EDGE_HANDLE_GAP;
-}
- 
- 
-function nodeHeightForHandleCount(handleCount: number): number {
-  if (handleCount <= 1) return NODE_HEIGHT;
-  return Math.max(NODE_HEIGHT, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
-}
- 
+
 // ─── Layout node classification ─────────────────────────────────────────────
 // Nodes are classified into one of several layout categories that determine
-// where they appear in the rendered graph.  The classification uses BOTH the
-// node's primary type AND its runtime properties (skill, connections).
+// where they appear in the rendered graph.  'flow' nodes are laid out by ELK;
+// every other category is placed in its own horizontal row below the flow.
 //
-// MODULE_SKILLS — skill values that identify "module" nodes.  A node with one
-// of these skills that participates in zero graph connections is a reusable
-// computation block invoked via the EXECUTE keyword rather than graph traversal.
-//
-// SEGREGATED_ROW_ORDER — the ordered list of non-flow layout categories.  Each
-// category gets its own horizontal row below the main flow.  Any node that does
-// not match a named category falls into a trailing '__unknown__' catch-all row.
+// MODULE_SKILLS — skill values that identify "module" nodes: reusable
+// computation blocks invoked via the EXECUTE keyword rather than graph traversal.
 const MODULE_SKILLS = new Set(['graph.math', 'graph.js']);
- 
+
+// SEGREGATED_ROW_ORDER — the ordered list of non-flow layout categories.  Each
+// gets its own horizontal row below the ELK flow.  Anything unmatched falls into
+// a trailing '__unknown__' catch-all row.
 const SEGREGATED_ROW_ORDER: readonly string[] = [
   'Dictionary',   // data extraction contracts from API responses
   'Provider',     // reusable API endpoint configurations
   'Module',       // reusable computation blocks (EXECUTE keyword)
   'Entity',       // skill-less data-holder nodes (business domain objects)
 ];
- 
-// ─── Node classification ────────────────────────────────────────────────────
-// Layout categories returned by classifyNode.  'flow' nodes participate in the
-// main BFS layout; all other categories are placed in segregated rows below.
+
 type LayoutCategory = 'flow' | 'Dictionary' | 'Provider' | 'Entity' | 'Module' | '__unknown__';
 type MinigraphNodeModel = MinigraphGraphData['nodes'][number];
- 
-interface FlowComponent {
-  aliases: string[];
-  nodes: MinigraphNodeModel[];
-  hasRoot: boolean;
-  hasEnd: boolean;
-  sortKey: string;
-}
- 
-const FLOW_COMPONENT_LAYOUT_ORDER = {
-  ROOT_TREE: 0,
-  DEFAULT_TREE: 1,
-  END_TREE: 2,
-} as const;
- 
-// Root-like nodes define the primary execution tree. When several disconnected
-// flow trees exist, this component is anchored first so graph reading starts on
-// the left from the graph entry point.
+
+// Root-like nodes define the primary execution tree; used only as a model-order
+// hint so ELK tends to anchor them on the left.
 function isRootLikeNode(node: MinigraphNodeModel): boolean {
   return node.alias.toLowerCase() === 'root' ||
     node.types.includes('Root') ||
     node.types.includes('entry_point');
 }
- 
-// End-like nodes are terminal-only branches in some imported models. Ranking
-// their component last keeps those completion/error branches on the right.
+
+// End-like nodes are terminal branches; ranked last so they tend to the right.
 function isEndLikeNode(node: MinigraphNodeModel): boolean {
   return node.alias.toLowerCase() === 'end' || node.types.includes('End');
 }
- 
-// Keep component ordering policy centralized: root tree first, ordinary trees
-// next, terminal/end tree last. The numeric values are only sort ranks.
-function getFlowComponentRank(component: FlowComponent): number {
-  if (component.hasRoot) return FLOW_COMPONENT_LAYOUT_ORDER.ROOT_TREE;
-  if (component.hasEnd) return FLOW_COMPONENT_LAYOUT_ORDER.END_TREE;
-  return FLOW_COMPONENT_LAYOUT_ORDER.DEFAULT_TREE;
+
+// Model-order rank: root first, end last, everything else in the middle. ELK's
+// considerModelOrder uses input order within and across components, so feeding
+// nodes in this order biases the entry point to the left and terminals right.
+function modelOrderRank(node: MinigraphNodeModel): number {
+  if (isRootLikeNode(node)) return 0;
+  if (isEndLikeNode(node)) return 2;
+  return 1;
 }
- 
-// Sort disconnected flow trees before assigning global columns. Components with
-// the same semantic rank use their first alias for deterministic visual order.
-function compareFlowComponents(a: FlowComponent, b: FlowComponent): number {
-  const rankDiff = getFlowComponentRank(a) - getFlowComponentRank(b);
-  if (rankDiff !== 0) return rankDiff;
-  return a.sortKey.localeCompare(b.sortKey);
-}
- 
+
 /**
  * Classify a node into its layout category.
  *
- * Connected nodes always participate in the main left-to-right BFS flow,
- * matching the original layout behaviour.  Only orphaned (unconnected)
- * nodes are segregated into categorised rows below the flow.
+ * Dictionary and Provider nodes are ALWAYS segregated by type.  Every other
+ * connected node participates in the main ELK flow; the remaining orphans fall
+ * into categorised rows below it.
  *
  * Priority order (first match wins):
- *  1. Connected — participates in at least one edge → flow.
- *  2. Dictionary / Provider — orphaned type-based segregation.
+ *  1. Dictionary / Provider — type-based segregation, always.
+ *  2. Connected — participates in at least one edge → main flow.
  *  3. Module — has a compute skill (graph.math / graph.js) with no
  *     connections.  Reusable computation blocks invoked via EXECUTE.
  *  4. Entity — no skill property; a passive data-holder node.
@@ -221,590 +188,326 @@ function classifyNode(
   node: MinigraphGraphData['nodes'][number],
   connectedAliases: Set<string>,
 ): LayoutCategory {
-  const isConnected = connectedAliases.has(node.alias);
-  if (isConnected) return 'flow';
- 
-  const pt    = node.types[0] ?? '';
-  const skill = typeof node.properties.skill === 'string' ? node.properties.skill : undefined;
- 
+  const pt = node.types[0] ?? '';
   if (pt === 'Dictionary') return 'Dictionary';
   if (pt === 'Provider')   return 'Provider';
+
+  if (connectedAliases.has(node.alias)) return 'flow';
+
+  const skill = typeof node.properties.skill === 'string' ? node.properties.skill : undefined;
   if (skill && MODULE_SKILLS.has(skill)) return 'Module';
   if (!skill) return 'Entity';
- 
+
   return '__unknown__';
 }
- 
+
+// ─── ELK ──────────────────────────────────────────────────────────────────────
+// Single ELK instance, reused across layouts. elk.bundled.js inlines its web
+// worker, so construction is cheap and runs entirely in the browser.
+const elk = new ELK();
+
+// Layered (Sugiyama) layout, flowing left-to-right with orthogonal edge routing.
+// ELK handles layering, crossing minimisation, coordinate assignment, cycle
+// breaking (back-edges are reversed internally) and component separation — all
+// the work the previous hand-rolled algorithm did, plus the edge routes.
+const ELK_LAYOUT_OPTIONS: LayoutOptions = {
+  'elk.algorithm': 'layered',
+  'elk.direction': 'RIGHT',
+  'elk.edgeRouting': 'ORTHOGONAL',
+  'elk.layered.spacing.nodeNodeBetweenLayers': '120',
+  'elk.spacing.nodeNode': '60',
+  'elk.spacing.edgeNode': '24',
+  'elk.spacing.edgeEdge': '16',
+  'elk.layered.spacing.edgeNodeBetweenLayers': '24',
+  'elk.separateConnectedComponents': 'true',
+  'elk.spacing.componentComponent': '120',
+  // Honour the input order (root first, end last) when breaking ties so the
+  // entry point anchors on the left and terminals trail to the right.
+  'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+  'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
+};
+
 /**
- * Left-to-right topological layout with row segregation for non-flow nodes.
- *
- * Strategy:
- *  1. Classify every node via classifyNode (uses type, skill, and connection
- *     participation — see its JSDoc for the full priority chain).
- *     Partition into "flow" vs segregated categories.
- *  2. Split flow nodes into connected components so independent trees do not
- *     collapse into one shared column set.
- *  3. Sort components left-to-right: root component first, end-only component
- *     last, all other components alphabetically in the middle.
- *  4. Assign each component its own BFS "level" columns from root-like or
- *     in-degree-zero seeds. Within each local level, stack nodes vertically,
- *     centred at y = 0.
- *  5. Compute the bounding box of the main flow, then place each segregated
- *     category in its own horizontal row below it, left-aligned with the flow.
- *
- * Segregated row order: Dictionary → Provider → Module → Entity → __unknown__.
- *
- * If a component has no natural seed (no root-like, entry_point, or in-degree
- * zero node), its first alias is used so cyclic components remain renderable.
+ * Run ELK over the connected flow nodes.  Returns node top-left positions and,
+ * per laid-out connection index, the routed polyline (start → bends → end) in
+ * flow coordinates.  Segregated nodes are placed separately by the caller.
  */
-function computeLayout(
+async function layoutFlowWithElk(
+  flowNodes: MinigraphNodeModel[],
+  connections: MinigraphGraphData['connections'],
+  flowAliases: Set<string>,
+  heights: Map<string, number>,
+): Promise<{
+  positions: Map<string, { x: number; y: number }>;
+  edgePoints: Map<number, ElkPoint[]>;
+}> {
+  const positions = new Map<string, { x: number; y: number }>();
+  const edgePoints = new Map<number, ElkPoint[]>();
+  if (flowNodes.length === 0) return { positions, edgePoints };
+
+  // Feed nodes in model order (root → middle → end) so ELK's model-order
+  // tie-breaking biases the entry point left and terminals right.
+  const orderedNodes = [...flowNodes].sort(
+    (a, b) => modelOrderRank(a) - modelOrderRank(b) || a.alias.localeCompare(b.alias),
+  );
+  const children: ElkNode[] = orderedNodes.map(n => ({
+    id: n.alias,
+    width: NODE_WIDTH,
+    height: heights.get(n.alias) ?? NODE_HEIGHT,
+  }));
+
+  // Only edges entirely within the flow set are laid out by ELK; edges touching
+  // segregated nodes are routed by the edge component's fallback path. Map each
+  // ELK edge id back to its connection index so we can attach the route later.
+  const edges: ElkExtendedEdge[] = [];
+  const connByElkId = new Map<string, number>();
+  connections.forEach((conn, index) => {
+    if (conn.source === conn.target) return;
+    if (!flowAliases.has(conn.source) || !flowAliases.has(conn.target)) return;
+    const id = `e${index}`;
+    edges.push({ id, sources: [conn.source], targets: [conn.target] });
+    connByElkId.set(id, index);
+  });
+
+  const layout = await elk.layout({
+    id: 'root',
+    layoutOptions: ELK_LAYOUT_OPTIONS,
+    children,
+    edges,
+  });
+
+  for (const child of layout.children ?? []) {
+    positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 });
+  }
+  for (const edge of layout.edges ?? []) {
+    const index = connByElkId.get(edge.id);
+    if (index === undefined) continue;
+    const section = edge.sections?.[0];
+    if (!section) continue;
+    edgePoints.set(index, [
+      section.startPoint,
+      ...(section.bendPoints ?? []),
+      section.endPoint,
+    ]);
+  }
+
+  return { positions, edgePoints };
+}
+
+// Pulls the `next` keyword out of THEN/ELSE branches: it means "fall through to
+// the node already wired by the explicit execute/ask edge", so it is not a new
+// edge of its own.
+const BRANCH_TARGET_RE = /\b(THEN|ELSE)\s*:\s*([A-Za-z0-9_-]+)/g;
+
+/**
+ * Derive the branch edges the graph encodes inside node properties but omits
+ * from the `connections` array, so the layout sees the real control flow:
+ *
+ *  - Evaluator `statement` lines of the form `THEN: <alias>` / `ELSE: <alias>`
+ *    (the `next` keyword is skipped — it reuses the explicit execute/ask edge).
+ *  - Fetcher `exception: <alias>` — the error-handler branch.
+ *
+ * Without these, the targeted decision / shape / error nodes have no incoming
+ * edge, so the layout treats them as roots and has to guess their column.
+ * Each derived edge is tagged `properties.derived` so it can be rendered
+ * distinctly (dashed, branch-coloured) and deduped against explicit edges.
+ */
+function deriveImplicitConnections(
   nodes: MinigraphGraphData['nodes'],
   connections: MinigraphGraphData['connections'],
-  nodeHeights: Map<string, number>,
-): { positions: Map<string, { x: number; y: number }>; levelOf: Map<string, number> } {
-  // ── Step 1: Classify & partition ──────────────────────────────────────────
-  // Build the set of aliases that participate in at least one connection so
-  // classifyNode can distinguish modules (disconnected) from flow nodes.
-  const connectedAliases = new Set<string>();
-  for (const conn of connections ?? []) {
-    connectedAliases.add(conn.source);
-    connectedAliases.add(conn.target);
-  }
- 
-  const flowNodes:       MinigraphGraphData['nodes'] = [];
-  const segregatedNodes: MinigraphGraphData['nodes'] = [];
-  // Cache each node's category so we don't classify twice.
-  const categoryOf = new Map<string, LayoutCategory>();
- 
+): MinigraphGraphData['connections'] {
+  const aliases = new Set(nodes.map(n => n.alias));
+  const seen = new Set(connections.map(c => `${c.source}\t${c.target}`));
+  const derived: MinigraphGraphData['connections'] = [];
+
+  const add = (source: string, target: string, type: string) => {
+    if (target === 'next' || !aliases.has(target) || source === target) return;
+    const key = `${source}\t${target}`;
+    if (seen.has(key)) return;          // already an explicit edge — don't duplicate
+    seen.add(key);
+    derived.push({ source, target, relations: [{ type, properties: { derived: true } }] });
+  };
+
   for (const n of nodes) {
-    const cat = classifyNode(n, connectedAliases);
-    categoryOf.set(n.alias, cat);
-    if (cat === 'flow') flowNodes.push(n);
-    else segregatedNodes.push(n);
-  }
- 
-  // ── Step 2: Build directed/undirected flow adjacency ──────────────────────
-  const flowAliases = new Set(flowNodes.map(n => n.alias));
-  const nodeByAlias = new Map(flowNodes.map(n => [n.alias, n]));
-  const outEdges    = new Map<string, string[]>();
-  const undirectedEdges = new Map<string, Set<string>>();
-  const inDegree    = new Map<string, number>();
- 
-  for (const n of flowNodes) {
-    outEdges.set(n.alias, []);
-    undirectedEdges.set(n.alias, new Set());
-    inDegree.set(n.alias, 0);
-  }
- 
-  for (const conn of connections ?? []) {
-    // Only count edges entirely within the flow set so that connections to/from
-    // segregated nodes do not influence BFS level assignment.
-    if (!flowAliases.has(conn.source) || !flowAliases.has(conn.target)) continue;
-    outEdges.get(conn.source)?.push(conn.target);
-    undirectedEdges.get(conn.source)?.add(conn.target);
-    undirectedEdges.get(conn.target)?.add(conn.source);
-    inDegree.set(conn.target, (inDegree.get(conn.target) ?? 0) + 1);
-  }
- 
-  // Seeds: flow nodes with in-degree 0, or explicitly typed as entry_point.
-  // These are used for cycle detection only. Each component chooses its own
-  // seeds again during placement.
-  const allSeeds = flowNodes
-    .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point') || isRootLikeNode(n))
-    .map(n => n.alias);
- 
-  // ── Cycle detection: find back-edges via iterative DFS ────────────────────
-  // Back-edges (edges pointing to an ancestor in the DFS tree) cause the
-  // BFS level-assignment loop below to run forever — each node in a cycle
-  // endlessly re-enqueues the other with ever-increasing levels.  We detect
-  // them here and exclude them from BFS so cycles are broken for layout
-  // purposes.  The edges are still rendered in the final ReactFlow output.
-  const backEdges = new Set<string>();
-  {
-    const WHITE = 0, GRAY = 1, BLACK = 2;
-    const color = new Map<string, number>();
-    for (const n of flowNodes) color.set(n.alias, WHITE);
- 
-    function dfsFrom(root: string) {
-      if (color.get(root) !== WHITE) return;
-      color.set(root, GRAY);
-      const stack: { node: string; childIdx: number }[] = [{ node: root, childIdx: 0 }];
- 
-      while (stack.length > 0) {
-        const frame = stack[stack.length - 1];
-        const neighbors = outEdges.get(frame.node) ?? [];
- 
-        if (frame.childIdx >= neighbors.length) {
-          color.set(frame.node, BLACK);
-          stack.pop();
-          continue;
-        }
- 
-        const neighbor = neighbors[frame.childIdx++];
-        const nc = color.get(neighbor);
-        if (nc === GRAY) {
-          backEdges.add(`${frame.node}\t${neighbor}`);
-        } else if (nc === WHITE) {
-          color.set(neighbor, GRAY);
-          stack.push({ node: neighbor, childIdx: 0 });
-        }
-        // BLACK → cross or forward edge, safe to ignore
-      }
-    }
- 
-    // Prefer starting from seeds so the DFS tree mirrors the BFS flow.
-    for (const s of allSeeds) dfsFrom(s);
-    for (const n of flowNodes) dfsFrom(n.alias);
-  }
- 
-  // ── Step 3: Connected components for independent flow trees ───────────────
-  const components: FlowComponent[] = [];
-  const seen = new Set<string>();
- 
-  for (const start of Array.from(flowAliases).sort()) {
-    if (seen.has(start)) continue;
- 
-    const aliases: string[] = [];
-    const stack = [start];
-    seen.add(start);
- 
-    while (stack.length > 0) {
-      const alias = stack.pop()!;
-      aliases.push(alias);
-      for (const neighbor of undirectedEdges.get(alias) ?? []) {
-        if (seen.has(neighbor)) continue;
-        seen.add(neighbor);
-        stack.push(neighbor);
-      }
-    }
- 
-    aliases.sort();
-    const componentNodes = aliases
-      .map(alias => nodeByAlias.get(alias))
-      .filter((node): node is MinigraphNodeModel => Boolean(node));
- 
-    components.push({
-      aliases,
-      nodes: componentNodes,
-      hasRoot: componentNodes.some(isRootLikeNode),
-      hasEnd: componentNodes.some(isEndLikeNode),
-      sortKey: aliases[0] ?? '',
-    });
-  }
- 
-  components.sort(compareFlowComponents);
- 
-  // ── Step 4: BFS layout for each component, placed left-to-right ───────────
-  const levelOf = new Map<string, number>();
-  const positions = new Map<string, { x: number; y: number }>();
-  let componentLevelOffset = 0;
-  let componentXOffset = 0;
- 
-  for (const component of components) {
-    const componentAliases = new Set(component.aliases);
-    const componentSeeds = component.nodes
-      .filter(n => inDegree.get(n.alias) === 0 || n.types.includes('entry_point') || isRootLikeNode(n))
-      .map(n => n.alias)
-      .sort();
- 
-    // Cyclic components may have no natural in-degree-zero node. Seed from the
-    // first alias so they remain renderable instead of collapsing into orphans.
-    if (componentSeeds.length === 0 && component.aliases.length > 0) {
-      componentSeeds.push(component.aliases[0]);
-    }
- 
-    const localLevelOf = new Map<string, number>();
-    const queue: string[] = [...componentSeeds];
-    componentSeeds.forEach(seed => localLevelOf.set(seed, 0));
- 
-    // BFS to assign local levels within the component. This preserves the
-    // original left-to-right topological flow, but prevents independent trees
-    // from sharing the same column set.
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      const currentLevel = localLevelOf.get(current) ?? 0;
-      for (const neighbor of outEdges.get(current) ?? []) {
-        // Skip cross-component edges defensively; components were built from
-        // the same flow adjacency, so this should only guard stale input.
-        if (!componentAliases.has(neighbor)) continue;
-        // Skip back-edges — they create cycles and are excluded from layout
-        // assignment but are still rendered as visual edges in the output.
-        if (backEdges.has(`${current}\t${neighbor}`)) continue;
-        // Only advance the level; never move a node to a shallower level.
-        if (!localLevelOf.has(neighbor) || localLevelOf.get(neighbor)! <= currentLevel) {
-          localLevelOf.set(neighbor, currentLevel + 1);
-          queue.push(neighbor);
+    const props = n.properties as Record<string, unknown>;
+
+    const statements = props.statement;
+    if (Array.isArray(statements)) {
+      for (const line of statements) {
+        if (typeof line !== 'string') continue;
+        for (const m of line.matchAll(BRANCH_TARGET_RE)) {
+          add(n.alias, m[2], m[1].toLowerCase()); // 'then' | 'else'
         }
       }
     }
- 
-    // Flow nodes that BFS never visited stay in this component and move to the
-    // last local level + 1. This keeps cyclic or disconnected-within-component
-    // data renderable instead of dropping nodes from the layout.
-    const maxLocalLevel = localLevelOf.size > 0 ? Math.max(...localLevelOf.values()) : 0;
-    for (const alias of component.aliases) {
-      if (!localLevelOf.has(alias)) localLevelOf.set(alias, maxLocalLevel + 1);
+
+    const exception = props.exception;
+    if (typeof exception === 'string' && exception.length > 0) {
+      add(n.alias, exception, 'exception');
     }
- 
-    // ── Sink-seed promotion ────────────────────────────────────────────────
-    // In-degree-0 nodes that only target deep nodes (e.g. an error-handler that
-    // only routes back to a fetcher, or a fallback that only converges into a
-    // join) get pulled forward to sit next to their successors instead of
-    // floating at level 0. Without this, fan-out from root has to skip past
-    // unrelated seeds and edges crisscross visually.
-    const componentSucc = new Map<string, string[]>();
-    const componentPred = new Map<string, string[]>();
-    for (const a of component.aliases) {
-      componentSucc.set(a, []);
-      componentPred.set(a, []);
-    }
-    for (const conn of connections ?? []) {
-      if (!componentAliases.has(conn.source) || !componentAliases.has(conn.target)) continue;
-      componentSucc.get(conn.source)!.push(conn.target);
-      componentPred.get(conn.target)!.push(conn.source);
-    }
-    for (const seedAlias of componentSeeds) {
-      // Skip the canonical entry point — root must remain at level 0.
-      const seedNode = nodeByAlias.get(seedAlias);
-      if (seedNode && isRootLikeNode(seedNode)) continue;
-      const succLevels = (componentSucc.get(seedAlias) ?? [])
-        .map(s => localLevelOf.get(s))
-        .filter((n): n is number => n !== undefined);
-      if (succLevels.length === 0) continue;
-      const targetLevel = Math.min(...succLevels) - 1;
-      if (targetLevel > (localLevelOf.get(seedAlias) ?? 0)) {
-        localLevelOf.set(seedAlias, targetLevel);
-      }
-    }
- 
-    // ── Sugiyama barycenter ordering ───────────────────────────────────────
-    // Decide *slot within column* using iterative barycenter sweeps. The level
-    // assignment from BFS already chose the column; this step chooses the
-    // vertical order within each column to minimise edge crossings. Forward
-    // and backward sweeps converge in a few iterations for graphs of any size.
-    const orderByLevel = new Map<number, string[]>();
-    for (const [alias, level] of localLevelOf) {
-      if (!orderByLevel.has(level)) orderByLevel.set(level, []);
-      orderByLevel.get(level)!.push(alias);
-    }
-    // Initial deterministic order — alphabetical — so the algorithm is stable
-    // across runs even when no neighbours influence ordering.
-    for (const arr of orderByLevel.values()) arr.sort();
- 
-    const sortedLevels = [...orderByLevel.keys()].sort((a, b) => a - b);
-    const slotOf = new Map<string, number>();
-    const refreshSlots = () => {
-      for (const arr of orderByLevel.values()) {
-        arr.forEach((alias, idx) => slotOf.set(alias, idx));
-      }
-    };
-    refreshSlots();
- 
-    // Sort one level by barycenter of `neighbors`. Nodes with no neighbours on
-    // the reference side keep their current slot so isolated nodes do not
-    // drift to the top during sweeps.
-    //
-    // Strategy selection per column:
-    //   - Mean (arithmetic average) is the textbook Sugiyama default.
-    //   - Median is more robust against outlier predecessors and gives a
-    //     3-approximation of optimal vs 4 for mean (Eades and Wormald, 1994).
-    //   - For wide columns (>= MEDIAN_THRESHOLD nodes) we use median because
-    //     a single far-flung neighbour can otherwise drag the average and
-    //     produce avoidable crossings. For narrower columns mean works well
-    //     and reacts more smoothly to incremental ordering changes.
-    const MEDIAN_THRESHOLD = 8;
-    const median = (sorted: number[]): number => {
-      const mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 === 0
-        ? (sorted[mid - 1] + sorted[mid]) / 2
-        : sorted[mid];
-    };
-    const sortByBarycenter = (
-      level: number,
-      neighborsOf: Map<string, string[]>,
-    ) => {
-      const arr = orderByLevel.get(level)!;
-      const useMedian = arr.length >= MEDIAN_THRESHOLD;
-      const bary = new Map<string, number>();
-      for (const a of arr) {
-        const ns = (neighborsOf.get(a) ?? [])
-          .map(n => slotOf.get(n))
-          .filter((s): s is number => s !== undefined);
-        if (ns.length === 0) {
-          bary.set(a, slotOf.get(a) ?? 0);
-          continue;
-        }
-        if (useMedian) {
-          bary.set(a, median(ns.slice().sort((x, y) => x - y)));
-        } else {
-          bary.set(a, ns.reduce((s, v) => s + v, 0) / ns.length);
-        }
-      }
-      arr.sort((a, b) => {
-        const diff = bary.get(a)! - bary.get(b)!;
-        if (diff !== 0) return diff;
-        return a.localeCompare(b);
-      });
-    };
- 
-    // Four sweeps is the textbook default and is more than enough for graphs
-    // of typical playground size. Each sweep is O(E) so this is cheap.
-    const SWEEP_ITERATIONS = 4;
-    for (let iter = 0; iter < SWEEP_ITERATIONS; iter++) {
-      // Forward: order each level by predecessors (left-to-right pass).
-      for (let i = 1; i < sortedLevels.length; i++) {
-        sortByBarycenter(sortedLevels[i], componentPred);
-      }
-      refreshSlots();
-      // Backward: order each level by successors (right-to-left pass).
-      for (let i = sortedLevels.length - 2; i >= 0; i--) {
-        sortByBarycenter(sortedLevels[i], componentSucc);
-      }
-      refreshSlots();
-    }
- 
-    // ── Pixel placement ────────────────────────────────────────────────────
-    // Same math as before, but operating on the barycenter-optimised order
-    // rather than alphabetical. Centred at y = 0 per local column. Per-node
-    // heights prevent overlap when nodes are taller than NODE_HEIGHT.
-    // componentXOffset gives each independent tree a fixed pixel gap from
-    // the previous tree instead of tying tree spacing to column count.
-    let componentMaxX = componentXOffset;
-    for (const localLevel of sortedLevels) {
-      const ordered = orderByLevel.get(localLevel)!;
-      const totalHeight = ordered.reduce(
-        (sum, alias) => sum + (nodeHeights.get(alias) ?? NODE_HEIGHT),
-        0,
-      ) + Math.max(0, ordered.length - 1) * ROW_GAP;
- 
-      let cursorY = -totalHeight / 2;
-      const globalLevel = componentLevelOffset + localLevel;
-      const x = componentXOffset + localLevel * (NODE_WIDTH + COL_GAP);
-      componentMaxX = Math.max(componentMaxX, x);
-      ordered.forEach((alias) => {
-        const nodeHeight = nodeHeights.get(alias) ?? NODE_HEIGHT;
-        levelOf.set(alias, globalLevel);
-        positions.set(alias, {
-          x,
-          y: cursorY,
-        });
-        cursorY += nodeHeight + ROW_GAP;
-      });
-    }
- 
-    const componentMaxLevel = localLevelOf.size > 0 ? Math.max(...localLevelOf.values()) : 0;
-    componentLevelOffset += componentMaxLevel + 1;
-    componentXOffset = componentMaxX + NODE_WIDTH + COMPONENT_GAP;
   }
- 
-  // ── Step 5: Bounding box of the main flow ─────────────────────────────────
-  // Used to anchor the vertical start of the segregated rows.
-  let mainMaxY = 0;
-  for (const [alias, pos] of positions) {
-    mainMaxY = Math.max(mainMaxY, pos.y + (nodeHeights.get(alias) ?? NODE_HEIGHT));
-  }
-  // If there are no flow nodes at all, start at y = 0 with no section gap.
-  let nextRowY = mainMaxY + (positions.size > 0 ? SECTION_GAP : 0);
- 
-  // ── Step 6: Segregated rows ───────────────────────────────────────────────
-  // Group segregated nodes by their layout category (already computed in Step 1).
-  const groupMap = new Map<string, string[]>();
-  for (const key of SEGREGATED_ROW_ORDER) groupMap.set(key, []);
-  groupMap.set('__unknown__', []);
- 
-  for (const n of segregatedNodes) {
-    const cat = categoryOf.get(n.alias) as Exclude<LayoutCategory, 'flow'>;
-    groupMap.get(cat)!.push(n.alias);
-  }
- 
-  for (const key of [...SEGREGATED_ROW_ORDER, '__unknown__']) {
-    const aliases = (groupMap.get(key) ?? []).slice().sort(); // alphabetical for visual stability
-    if (aliases.length === 0) continue;
- 
-    const startX = 0; // left-align segregated rows with the main flow
-    const rowHeight = aliases.reduce(
-      (max, alias) => Math.max(max, nodeHeights.get(alias) ?? NODE_HEIGHT),
-      0,
-    );
- 
-    aliases.forEach((alias, i) => {
-      positions.set(alias, {
-        x: startX + i * (NODE_WIDTH + COL_GAP),
-        y: nextRowY,
-      });
-    });
- 
-    nextRowY += rowHeight + SEGREGATED_ROW_GAP;
-  }
- 
-  return { positions, levelOf };
+
+  return derived;
 }
- 
+
 /**
  * Converts a MinigraphGraphData object into the ReactFlow `nodes` + `edges`
  * arrays ready to be passed to `<ReactFlow>`.
+ *
+ * Layout is delegated to ELK (elkjs): the connected "flow" nodes are laid out
+ * by ELK's layered algorithm with orthogonal edge routing, and the segregated
+ * category nodes (Dictionary / Provider / Module / Entity) are placed in their
+ * own rows below the ELK bounding box.  Because ELK runs asynchronously this
+ * function returns a Promise.
  */
-export function transformGraphData(
+export async function transformGraphData(
   data: MinigraphGraphData,
-): { nodes: Node<GraphNodeData>[]; edges: Edge<GraphEdgeData>[] } {
-  const connections = data.connections ?? [];
- 
-  // ── Approximate node heights for layout ────────────────────────────────────
-  // Count total outgoing/incoming to get rough handle counts.  The layout only
-  // needs heights for vertical stacking; accurate per-side counts come later
-  // once we know which edges are back-edges.
-  const totalOutgoing = new Map<string, number>();
-  const totalIncoming = new Map<string, number>();
+): Promise<{ nodes: Node<GraphNodeData>[]; edges: Edge<GraphEdgeData>[] }> {
+  // Merge the explicit connections with the branch edges encoded in node
+  // properties so layout and rendering both operate on the real control flow.
+  const explicitConnections = data.connections ?? [];
+  const connections = [
+    ...explicitConnections,
+    ...deriveImplicitConnections(data.nodes, explicitConnections),
+  ];
+
+  // ── Classify & partition ────────────────────────────────────────────────
+  const connectedAliases = new Set<string>();
   for (const conn of connections) {
-    totalOutgoing.set(conn.source, (totalOutgoing.get(conn.source) ?? 0) + 1);
-    totalIncoming.set(conn.target, (totalIncoming.get(conn.target) ?? 0) + 1);
+    connectedAliases.add(conn.source);
+    connectedAliases.add(conn.target);
   }
- 
-  const approxNodeHeights = new Map(
-    data.nodes.map(n => [
-      n.alias,
-      nodeHeightForHandleCount(Math.max(
-        totalOutgoing.get(n.alias) ?? 0,
-        totalIncoming.get(n.alias) ?? 0,
-      )),
-    ]),
-  );
-  const { positions, levelOf } = computeLayout(data.nodes, connections, approxNodeHeights);
- 
-  // ── Classify connections as forward or backward ───────────────────────────
-  // A back-edge goes from a deeper (or equal) level to a shallower level.
-  // These edges exit from the LEFT side of the source and enter the RIGHT
-  // side of the target — the reverse of forward edges — so the bezier curve
-  // arcs naturally backward.
-  const backEdgeIndices = new Set<number>();
-  for (const [i, conn] of connections.entries()) {
-    const srcLevel = levelOf.get(conn.source);
-    const tgtLevel = levelOf.get(conn.target);
-    if (srcLevel !== undefined && tgtLevel !== undefined && srcLevel >= tgtLevel) {
-      backEdgeIndices.add(i);
-    }
-  }
- 
-  // ── Collect per-node, per-side connections sorted by peer y-position ─────
-  // Sorting handles by the y-position of the connected peer node prevents
-  // crossing: connections to a higher peer get a higher handle slot, and
-  // connections to a lower peer get a lower slot.  Forward and back-edge
-  // handles are interleaved within the sorted order rather than grouped
-  // separately, so a node that has both a forward edge and a retry to the
-  // same peer gets adjacent handles for both.
-  //
-  // Each side entry records the connection index, the peer alias, and
-  // whether the connection is a back-edge.  After sorting we walk the
-  // entries to build handle arrays and a connectionIndex → handleId map
-  // used when constructing ReactFlow edges.
- 
-  interface SideEntry { connIndex: number; peerAlias: string; isBack: boolean }
- 
-  const rightSide = new Map<string, SideEntry[]>(); // source (fwd out) + back-target (back in)
-  const leftSide  = new Map<string, SideEntry[]>(); // target (fwd in)  + back-source (back out)
- 
+
+  const categoryOf = new Map<string, LayoutCategory>();
+  const flowAliases = new Set<string>();
+  const flowNodes: MinigraphNodeModel[] = [];
   for (const n of data.nodes) {
-    rightSide.set(n.alias, []);
-    leftSide.set(n.alias, []);
-  }
- 
-  for (const [i, conn] of connections.entries()) {
-    if (backEdgeIndices.has(i)) {
-      // Back-edge: source exits LEFT, target enters RIGHT
-      leftSide.get(conn.source)!.push({ connIndex: i, peerAlias: conn.target, isBack: true });
-      rightSide.get(conn.target)!.push({ connIndex: i, peerAlias: conn.source, isBack: true });
-    } else {
-      // Forward: source exits RIGHT, target enters LEFT
-      rightSide.get(conn.source)!.push({ connIndex: i, peerAlias: conn.target, isBack: false });
-      leftSide.get(conn.target)!.push({ connIndex: i, peerAlias: conn.source, isBack: false });
+    const cat = classifyNode(n, connectedAliases);
+    categoryOf.set(n.alias, cat);
+    if (cat === 'flow') {
+      flowAliases.add(n.alias);
+      flowNodes.push(n);
     }
   }
- 
-  // Sort each side by peer y-position so handle order matches spatial layout.
-  const peerY = (alias: string) => positions.get(alias)?.y ?? 0;
-  for (const entries of rightSide.values()) entries.sort((a, b) => peerY(a.peerAlias) - peerY(b.peerAlias));
-  for (const entries of leftSide.values())  entries.sort((a, b) => peerY(a.peerAlias) - peerY(b.peerAlias));
- 
-  // Maps from connection index → handle ID, populated during node building.
-  const connSourceHandle = new Map<number, string>();
-  const connTargetHandle = new Map<number, string>();
- 
+
+  // ── Node height estimates (used by ELK and as the resize floor) ───────────
+  const heights = new Map(data.nodes.map(n => [n.alias, estimateNodeHeight(n)]));
+
+  // ── ELK layout of the connected flow ──────────────────────────────────────
+  const { positions, edgePoints } = await layoutFlowWithElk(
+    flowNodes,
+    connections,
+    flowAliases,
+    heights,
+  );
+
+  // ── Segregated rows, stacked below the ELK bounding box ───────────────────
+  // Anchor the rows at the flow's left edge and just below its lowest node.
+  let flowMinX = Number.POSITIVE_INFINITY;
+  let flowMaxY = 0;
+  for (const [alias, pos] of positions) {
+    flowMinX = Math.min(flowMinX, pos.x);
+    flowMaxY = Math.max(flowMaxY, pos.y + (heights.get(alias) ?? NODE_HEIGHT));
+  }
+  const rowStartX = Number.isFinite(flowMinX) ? flowMinX : 0;
+  let nextRowY = positions.size > 0 ? flowMaxY + SECTION_GAP : 0;
+
+  const groupMap = new Map<string, string[]>();
+  for (const key of SEGREGATED_ROW_ORDER) groupMap.set(key, []);
+  groupMap.set('__unknown__', []);
+  for (const n of data.nodes) {
+    const cat = categoryOf.get(n.alias)!;
+    if (cat === 'flow') continue;
+    groupMap.get(cat)!.push(n.alias);
+  }
+
+  for (const key of [...SEGREGATED_ROW_ORDER, '__unknown__']) {
+    const aliases = (groupMap.get(key) ?? []).slice().sort(); // alphabetical for stability
+    if (aliases.length === 0) continue;
+
+    const rowHeight = aliases.reduce(
+      (max, alias) => Math.max(max, heights.get(alias) ?? NODE_HEIGHT),
+      0,
+    );
+    aliases.forEach((alias, i) => {
+      positions.set(alias, {
+        x: rowStartX + i * (NODE_WIDTH + COL_GAP),
+        y: nextRowY,
+      });
+    });
+    nextRowY += rowHeight + SEGREGATED_ROW_GAP;
+  }
+
+  // ── Build ReactFlow nodes ─────────────────────────────────────────────────
+  // ELK owns routing now, so each node carries a single source handle (right)
+  // and a single target handle (left); the rendered edge path comes from ELK,
+  // not from the handle geometry.
   const rfNodes: Node<GraphNodeData>[] = data.nodes.map(n => {
-    const right = rightSide.get(n.alias) ?? [];
-    const left  = leftSide.get(n.alias) ?? [];
-    const nodeHeight = nodeHeightForHandleCount(Math.max(right.length, left.length));
- 
-    // ── Right side: interleaved source + back-target handles ──
-    const sourceHandles:     GraphHandleData[] = [];
-    const backTargetHandles: GraphHandleData[] = [];
-    let srcIdx = 0, btIdx = 0;
-    for (let i = 0; i < right.length; i++) {
-      const entry = right[i];
-      const offset = edgeHandleOffset(i, right.length);
-      if (entry.isBack) {
-        const id = backEdgeTargetHandleId(btIdx++);
-        backTargetHandles.push({ id, offset });
-        connTargetHandle.set(entry.connIndex, id);
-      } else {
-        const id = edgeSourceHandleId(srcIdx++);
-        sourceHandles.push({ id, offset });
-        connSourceHandle.set(entry.connIndex, id);
-      }
-    }
- 
-    // ── Left side: interleaved target + back-source handles ──
-    const targetHandles:     GraphHandleData[] = [];
-    const backSourceHandles: GraphHandleData[] = [];
-    let tgtIdx = 0, bsIdx = 0;
-    for (let i = 0; i < left.length; i++) {
-      const entry = left[i];
-      const offset = edgeHandleOffset(i, left.length);
-      if (entry.isBack) {
-        const id = backEdgeSourceHandleId(bsIdx++);
-        backSourceHandles.push({ id, offset });
-        connSourceHandle.set(entry.connIndex, id);
-      } else {
-        const id = edgeTargetHandleId(tgtIdx++);
-        targetHandles.push({ id, offset });
-        connTargetHandle.set(entry.connIndex, id);
-      }
-    }
- 
+    const nodeType = n.types[0] ?? 'unknown';
+    const minHeight = heights.get(n.alias) ?? NODE_HEIGHT;
     return {
       id:       n.alias,
       type:     n.types[0] ?? 'default',
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
       width:  NODE_WIDTH,
-      height: nodeHeight,
-      style: getMinigraphNodeShellStyle(n.types[0] ?? 'unknown'),
+      height: minHeight,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      style: getMinigraphNodeShellStyle(nodeType),
       data: {
-        alias:         n.alias,
-        nodeType:      n.types[0] ?? 'unknown',
-        properties:    n.properties,
-        sourceHandles,
-        targetHandles,
-        backSourceHandles,
-        backTargetHandles,
-        minHeight:     nodeHeight,
+        alias:      n.alias,
+        nodeType,
+        properties: n.properties,
+        minHeight,
       },
     };
   });
- 
-  // ── Build edges using the pre-computed handle mappings ─────────────────────
-  const rfEdges: Edge<GraphEdgeData>[] = [];
-  for (const [index, conn] of connections.entries()) {
+
+  // ── Build ReactFlow edges ─────────────────────────────────────────────────
+  // The 'elk' custom edge draws ELK's routed polyline when `data.points` is
+  // present and falls back to a smoothstep path otherwise.
+  //
+  // Handle assignment: pick the source/target anchor side that matches the
+  // connection's geometry so the smoothstep fallback (used for segregated /
+  // cross edges and for any node the user drags) routes cleanly. Vertical links
+  // — e.g. a Provider stacked directly under its Dictionary — drop bottom→top
+  // instead of bending out the right and back into the left. React Flow derives
+  // sourcePosition/targetPosition from the chosen handle, so no extra wiring is
+  // needed. ELK-routed edges ignore the handle (their path comes from ELK).
+  const HALF_W = NODE_WIDTH / 2;
+  const centerOf = (alias: string) => {
+    const p = positions.get(alias) ?? { x: 0, y: 0 };
+    const h = heights.get(alias) ?? NODE_HEIGHT;
+    return { x: p.x + HALF_W, y: p.y + h / 2 };
+  };
+  const pickHandles = (source: string, target: string): { sourceHandle: string; targetHandle: string } => {
+    const s = centerOf(source);
+    const t = centerOf(target);
+    const dx = t.x - s.x;
+    const dy = t.y - s.y;
+    if (Math.abs(dy) > Math.abs(dx)) {
+      return dy >= 0
+        ? { sourceHandle: 's-bottom', targetHandle: 't-top' }
+        : { sourceHandle: 's-top',    targetHandle: 't-bottom' };
+    }
+    return dx >= 0
+      ? { sourceHandle: 's-right', targetHandle: 't-left' }
+      : { sourceHandle: 's-left',  targetHandle: 't-right' };
+  };
+
+  const rfEdges: Edge<GraphEdgeData>[] = connections.map((conn, index) => {
     const relationTypes = conn.relations.map(r => r.type);
-    const edgeId = `${conn.source}__${conn.target}__${index}`;
     const labelColor = edgeColor(relationTypes);
- 
-    rfEdges.push({
-      id:           edgeId,
+    const points = edgePoints.get(index);
+    const { sourceHandle, targetHandle } = pickHandles(conn.source, conn.target);
+    return {
+      id:           `${conn.source}__${conn.target}__${index}`,
       source:       conn.source,
       target:       conn.target,
-      sourceHandle: connSourceHandle.get(index)!,
-      targetHandle: connTargetHandle.get(index)!,
+      sourceHandle,
+      targetHandle,
+      type:         'elk',
       label:        relationTypes.join(', '),
-      type:         'bezier',
       markerEnd: {
         type:   MarkerType.ArrowClosed,
         width:  16,
@@ -828,9 +531,16 @@ export function transformGraphData(
       },
       labelBgPadding:      [5, 2],
       labelBgBorderRadius: 6,
-      data: { relationTypes },
-    });
-  }
- 
+      data: {
+        relationTypes,
+        points,
+        // Only ELK-routed edges need warp anchors; fallback edges already use
+        // live handle coords via getSmoothStepPath.
+        sourceLayout: points ? positions.get(conn.source) : undefined,
+        targetLayout: points ? positions.get(conn.target) : undefined,
+      },
+    };
+  });
+
   return { nodes: rfNodes, edges: rfEdges };
 }

@@ -31,7 +31,7 @@ When documents disagree, resolve in this order (higher wins):
 4. **[graph-design.md](./graph-design.md)** — owns `/design` primitive *selection*, topology obligations, and the design gate. Its **Source-Verified Primitives** table is selection guidance and defers to minigraph-syntax's Node Types for the authoritative type/skill list.
 5. **[workflow.md](./workflow.md)** — owns phase order and boundaries only.
 
-Process, working, and rationale docs are advisory, not authoritative over content: [adversarial-review-checklist.md](../adversarial-review-checklist.md) governs *how* reviews run; [worklog.md](./worklog.md) is a record, not a spec. If a lower-priority doc is stale, fix it — do not carry two interpretations forward.
+Process, working, and rationale docs are advisory, not authoritative over content: [adversarial-review-checklist.md](./adversarial-review-checklist.md) governs *how* reviews run; [worklog.md](./worklog.md) is a record, not a spec. If a lower-priority doc is stale, fix it — do not carry two interpretations forward.
 
 ## Terminology
 

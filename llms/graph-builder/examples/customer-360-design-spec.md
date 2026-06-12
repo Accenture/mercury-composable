@@ -15,7 +15,7 @@ graph_design_spec:
     selected_shape: "fan-out-join"
 
   source_brief:
-    requirements_artifact: "docs/graph-builder/examples/customer-360-requirements-brief.md"
+    requirements_artifact: "llms/graph-builder/examples/customer-360-requirements-brief.md"
     requirements_gate_status: "pass"
     requirements_carried_blockers:
       - { question_id: "OQ-002", mock_used: "conservative concurrency (e.g. 3) until source owners confirm limits" }
@@ -264,7 +264,7 @@ graph_design_spec:
       - "Risk branch joins through risk-complete; do NOT wire risk-fallback or fetch-risk directly as additional join predecessors (the join deadlock hazard is verified)."
       - "No for_each is used; if source owners later require per-item calls, add model.* for_each paths + concurrency."
     source_help_mismatches: []
-    syntax_reference: "docs/graph-builder/minigraph-syntax.md"
+    syntax_reference: "llms/graph-builder/minigraph-syntax.md"
 
   decisions:
     - { id: "D-01", decision: "Use fan-out-join: four independent lookups from one person_id.", source_category: "tradeoff", source_note: "Lower latency than sequential; single output-shaping point." }

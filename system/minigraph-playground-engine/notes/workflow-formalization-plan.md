@@ -1,8 +1,8 @@
 # MiniGraph Workflow Formalization Plan
 
-Status: planning scratchpad. Canonical phase boundaries now live in `docs/graph-builder/workflow.md`; the canonical `/requirements` phase spec lives in `docs/graph-builder/requirements-gathering.md`.
+Status: planning scratchpad. Canonical phase boundaries now live in `llms/graph-builder/workflow.md`; the canonical `/requirements` phase spec lives in `llms/graph-builder/requirements-gathering.md`.
 
-Scope rule: this plan records the workflow direction and should not restate phase schemas. When this plan conflicts with canonical docs under `docs/graph-builder/`, the canonical docs win.
+Scope rule: this plan records the workflow direction and should not restate phase schemas. When this plan conflicts with canonical docs under `llms/graph-builder/`, the canonical docs win.
 
 ## Goal
 
@@ -48,10 +48,10 @@ Output artifact:
 
 Completion criteria:
 
-- The embedded `/requirements` gate in `docs/graph-builder/requirements-gathering.md` passes.
+- The embedded `/requirements` gate in `llms/graph-builder/requirements-gathering.md` passes.
 - No open question blocks requirements or design.
 - Build/deploy blockers have explicit mock-and-proceed plans where applicable.
-- The brief uses the canonical schema from `docs/graph-builder/requirements-gathering.md`.
+- The brief uses the canonical schema from `llms/graph-builder/requirements-gathering.md`.
 
 ## Phase 2: Graph Design
 
@@ -216,4 +216,4 @@ Each phase should also keep source-category traceability for decisions, assumpti
 2. Create a small example that moves from `/requirements` brief to `/design` spec.
 3. Create a command generation checklist for `/build`.
 4. Create a runtime verification checklist for `/test`.
-5. Write canonical `/design`, `/build`, and `/test` phase specs using the common skeleton in `docs/graph-builder/workflow.md`.
+5. Write canonical `/design`, `/build`, and `/test` phase specs using the common skeleton in `llms/graph-builder/workflow.md`.

@@ -6,13 +6,14 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   BackgroundVariant,
   type Edge,
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { nodeTypes } from './NodeTypes';
+import { nodeTypes, edgeTypes } from './NodeTypes';
 import { GraphViewErrorBoundary } from './GraphViewErrorBoundary';
 import { transformGraphData, type GraphNodeData, type GraphEdgeData } from '../../utils/graphTransformer';
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
@@ -46,6 +47,20 @@ interface GraphViewProps {
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
 const EMPTY_EDGES: Edge<GraphEdgeData>[]  = [];
+
+/**
+ * Refits the viewport whenever a new ELK layout is applied. Lives inside
+ * <ReactFlow> so it can use the flow instance; keyed on `version` (bumped only
+ * when a fresh layout lands) so panning/dragging never triggers a refit.
+ */
+function FitOnLayout({ version }: { version: number }) {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    if (version === 0) return;
+    void fitView({ padding: 0.25 });
+  }, [version, fitView]);
+  return null;
+}
 
 export default function GraphView({
   graphData,
@@ -119,22 +134,45 @@ export default function GraphView({
   const onRenderErrorRef = useRef(onRenderError);
   useEffect(() => { onRenderErrorRef.current = onRenderError; }, [onRenderError]);
 
-  const { nodes: initialNodes, edges: initialEdges, transformError } = useMemo(() => {
-    if (!graphData) return { nodes: EMPTY_NODES, edges: EMPTY_EDGES, transformError: null };
-    try {
-      const result = transformGraphData(graphData);
-      return { ...result, transformError: null };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      // Do NOT fire side-effects (toasts, setState) inside useMemo — useMemo must
-      // be pure.  The error message is surfaced via state and picked up by the
-      // useEffect below, which fires the callback safely after the render cycle.
-      return { nodes: EMPTY_NODES, edges: EMPTY_EDGES, transformError: message };
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<GraphNodeData>>(EMPTY_NODES);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<GraphEdgeData>>(EMPTY_EDGES);
+  const [transformError, setTransformError] = useState<string | null>(null);
+  // Bumped each time a fresh ELK layout lands, so FitOnLayout refits only then.
+  const [layoutVersion, setLayoutVersion] = useState(0);
+
+  // Run the ELK-backed transform whenever the upstream graphData changes.
+  // transformGraphData is async (ELK runs the layout), so this lives in an
+  // effect with a stale-result guard: if graphData changes again before the
+  // layout resolves, the in-flight result is discarded.
+  useEffect(() => {
+    if (!graphData) {
+      setNodes(EMPTY_NODES);
+      setEdges(EMPTY_EDGES);
+      setTransformError(null);
+      return;
     }
-  }, [graphData]);
+
+    let cancelled = false;
+    transformGraphData(graphData)
+      .then(({ nodes: nextNodes, edges: nextEdges }) => {
+        if (cancelled) return;
+        setNodes(nextNodes);
+        setEdges(nextEdges);
+        setTransformError(null);
+        setLayoutVersion(v => v + 1);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : String(err);
+        setNodes(EMPTY_NODES);
+        setEdges(EMPTY_EDGES);
+        setTransformError(message);
+      });
+
+    return () => { cancelled = true; };
+  }, [graphData, setNodes, setEdges]);
 
   // Fire the render-error callback whenever the transform produces a new error.
-  // A useEffect is the correct place for side-effects that react to derived state.
   // The ref ensures the callback is always current without adding it to the dep array.
   useEffect(() => {
     if (transformError) {
@@ -148,15 +186,6 @@ export default function GraphView({
     () => graphData ? JSON.stringify(graphData.nodes.map(n => n.alias)) : 'empty',
     [graphData],
   );
-
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<GraphNodeData>>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<GraphEdgeData>>(initialEdges);
-
-  // Re-sync whenever the upstream graphData changes
-  useEffect(() => {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const handleClipboardDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
     if (!canAcceptClipboardDrop) return;
@@ -243,6 +272,7 @@ export default function GraphView({
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               fitView
               fitViewOptions={{ padding: 0.25 }}
               minZoom={0.2}
@@ -267,6 +297,7 @@ export default function GraphView({
                 setPaneMenu(null);
               }}
             >
+              <FitOnLayout version={layoutVersion} />
               <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
               <Controls showInteractive={false} />
               <MiniMap

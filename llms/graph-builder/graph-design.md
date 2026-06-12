@@ -417,7 +417,7 @@ graph_design_spec:
   build_handoff:
     command_sensitive_notes: []
     source_help_mismatches: []
-    syntax_reference: "docs/graph-builder/minigraph-syntax.md"
+    syntax_reference: "llms/graph-builder/minigraph-syntax.md"
 
   decisions:
     - id: "D-01"
