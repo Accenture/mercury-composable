@@ -3,20 +3,28 @@ site_url: https://accenture.github.io/mercury-composable/
 docs_dir: docs
 nav:
   - Home: index.md
-  - Quickstart: guides/QUICKSTART.md
 
-  - Tutorials:
+  - Part I · Orientation:
+    - Quickstart: guides/QUICKSTART.md
     - Getting Started: guides/CHAPTER-1.md
 
-  - Guides:
+  - Part II · Event-driven foundation:
+    - Architecture Overview: guides/ARCHITECTURE.md
+    - Methodology: guides/METHODOLOGY.md
+    - Function Execution Strategies: guides/CHAPTER-2.md
     - REST Automation: guides/CHAPTER-3.md
-    - Build, Test and Deploy: guides/CHAPTER-5.md
-    - Spring Boot Integration: guides/CHAPTER-6.md
-    - Event over HTTP: guides/CHAPTER-7.md
-    - Minimalist Service Mesh: guides/CHAPTER-8.md
-    - Minimalist Property Graph: guides/CHAPTER-10.md
+    - REST grammar: guides/rest-automation/rest-grammar.md
+    - REST AI agent guide: guides/rest-automation/ai-agent-guide.md
 
-  - Knowledge Graph as Application:
+  - Part III · Composable orchestration:
+    - Event Script Syntax: guides/CHAPTER-4.md
+    - Flow grammar: guides/event-script/flow-grammar.md
+    - Flow AI agent guide: guides/event-script/ai-agent-guide.md
+    - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
+    - Build, Test & Deploy: guides/CHAPTER-5.md
+    - Composable Design: guides/COMPOSABLE-DESIGN.md
+
+  - Part IV · Knowledge Graph as Application:
     - Overview: guides/knowledge-graph/index.md
     - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
     - Built-in skills reference: guides/knowledge-graph/skills-reference.md
@@ -24,32 +32,22 @@ nav:
     - AI agent guide: guides/knowledge-graph/ai-agent-guide.md
     - Composing the layers: guides/knowledge-graph/composing-the-layers.md
     - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
+    - Minimalist Property Graph: guides/CHAPTER-10.md
 
-  - Event Script:
-    - Flow grammar: guides/event-script/flow-grammar.md
-    - AI agent guide: guides/event-script/ai-agent-guide.md
+  - Part V · Operate & integrate:
+    - Spring Boot Integration: guides/CHAPTER-6.md
+    - Event over HTTP: guides/CHAPTER-7.md
+    - Minimalist Service Mesh: guides/CHAPTER-8.md
 
-  - REST automation:
-    - REST grammar: guides/rest-automation/rest-grammar.md
-    - AI agent guide: guides/rest-automation/ai-agent-guide.md
-
-  - Concepts:
-    - Methodology: guides/METHODOLOGY.md
-    - Architecture Overview: guides/ARCHITECTURE.md
-    - Composable Design: guides/COMPOSABLE-DESIGN.md
-    - Function Execution Strategies: guides/CHAPTER-2.md
-    - Design Notes: arch-decisions/DESIGN-NOTES.md
-
-  - Reference:
+  - Part VI · Reference:
+    - API Overview: guides/CHAPTER-9.md
     - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
     - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
     - Event Envelope Reference: guides/EVENT-ENVELOPE-REFERENCE.md
-    - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
-    - Event Script Syntax: guides/CHAPTER-4.md
-    - API Overview: guides/CHAPTER-9.md
     - Application Properties: guides/APPENDIX-I.md
     - Reserved Names & Headers: guides/APPENDIX-II.md
     - Actuators & HTTP Client: guides/APPENDIX-III.md
+    - Design Notes: arch-decisions/DESIGN-NOTES.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
     - Table of Contents: guides/TABLE-OF-CONTENTS.md
 

@@ -1,6 +1,15 @@
-# Introduction
+---
+title: Getting Started
+summary: Build and run a composable application from zero to a working REST API — the example app,
+  flows, functions, and how a request flows through the framework.
+layer: orientation
+audience: [developer]
+keywords: [getting started, tutorial, composable, example app, rest, flows, functions]
+---
 
-*Tutorial: Build and run a composable application from zero to working REST API.*
+# Getting Started
+
+*Tutorial: Build and run a composable application from zero to a working REST API.*
 
 Mercury Composable is a software development toolkit for writing composable applications.
 
@@ -172,7 +181,7 @@ To run it from the command line, you may do this:
 
 ```shell
 cd sandbox/mercury-composable/examples/composable-example
-java -jar target/composable-example-4.2.0.jar
+java -jar target/composable-example-4.4.11.jar
 ```
 
 If you run the application from the IDE, you may execute the "main" method in the `MainApp` class under the
