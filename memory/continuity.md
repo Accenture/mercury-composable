@@ -124,9 +124,11 @@
   redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).
   (5) Added the MiniGraph **DSL spec layer** for deterministic AI generation (see `docs-dsl-spec`)
   + the docs CI gate; fresh-agent-validated. (6) Event Script DSL spec added + fresh-agent-validated
-  (2 passes); REST automation spec added + 2-pass-validated — **all 3 DSLs done**. (7) Remaining in
-  the rewrite: finish Part IV (refine spine opener, retire CH-11 behind a redirect, migrate+refresh
-  lower-layer chapters Parts I–III, V–VI).*
+  (2 passes); REST automation spec added + 2-pass-validated — **all 3 DSLs done**. (7) Spine opener
+  (`docs/index.md`) refined into the paradigm story + CHAPTER-11 retired behind an mkdocs redirect
+  (`mkdocs-redirects` added to plugins + CI; `/guides/CHAPTER-11/` → `/guides/knowledge-graph/`; in-docs
+  refs repointed). **Remaining: migrate+refresh the lower-layer chapters into Parts I–III, V–VI** —
+  the last piece of the rewrite.*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
