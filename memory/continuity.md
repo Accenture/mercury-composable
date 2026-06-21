@@ -102,7 +102,11 @@
   AI map; the doc PATTERN (frontmatter, At-a-glance, narrative, stable anchors, honest
   built-vs-roadmap) is **accepted** by Eric Law 2026-06-20. Next: deeper Part IV chapters
   (build-a-graph walkthrough, 7-skills reference, layer-integration how-to, Playground & companion),
-  then spine refinement, then retire CH-11 behind a redirect. Lower-layer chapters migrate+refresh later.*
+  then spine refinement, then retire CH-11 behind a redirect. Lower-layer chapters migrate+refresh later.
+  (4) Part IV chapters written + committed (overview, build-your-first-graph, skills-reference,
+  composing-the-layers, playground-and-companion — all code-true, mkdocs --strict green); sent to
+  Eric for batch review. Remaining: refine spine opener (`docs/index.md`), retire CH-11 behind a
+  redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
