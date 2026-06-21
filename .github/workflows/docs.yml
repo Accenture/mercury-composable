@@ -9,17 +9,19 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
-      - 'scripts/check-minigraph-grammar.py'
+      - 'scripts/**'
       - 'system/minigraph-playground-engine/src/main/resources/help/**'
       - 'system/minigraph-playground-engine/src/main/java/com/accenture/minigraph/skills/**'
+      - 'system/event-script-engine/src/main/java/com/accenture/automation/**'
       - '.github/workflows/docs.yml'
   pull_request:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
-      - 'scripts/check-minigraph-grammar.py'
+      - 'scripts/**'
       - 'system/minigraph-playground-engine/src/main/resources/help/**'
       - 'system/minigraph-playground-engine/src/main/java/com/accenture/minigraph/skills/**'
+      - 'system/event-script-engine/src/main/java/com/accenture/automation/**'
       - '.github/workflows/docs.yml'
 
 jobs:
@@ -34,5 +36,7 @@ jobs:
         run: pip install mkdocs
       - name: Check MiniGraph grammar spec is in sync (anti-drift)
         run: python3 scripts/check-minigraph-grammar.py
+      - name: Check Event Script grammar spec is in sync (anti-drift)
+        run: python3 scripts/check-event-script-grammar.py
       - name: Build docs (strict)
         run: mkdocs build --strict

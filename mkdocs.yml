@@ -26,6 +26,10 @@ nav:
     - Composing the layers: guides/knowledge-graph/composing-the-layers.md
     - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
 
+  - Event Script:
+    - Flow grammar: guides/event-script/flow-grammar.md
+    - AI agent guide: guides/event-script/ai-agent-guide.md
+
   - Concepts:
     - Methodology: guides/METHODOLOGY.md
     - Architecture Overview: guides/ARCHITECTURE.md
