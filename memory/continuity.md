@@ -87,7 +87,10 @@
   it flags drive doc fixes. Done for MiniGraph (`docs/guides/knowledge-graph/command-reference.md`,
   `minigraph-commands.json`, `ai-agent-guide.md`, `scripts/check-minigraph-grammar.py`,
   `.github/workflows/docs.yml`); 2 fresh-agent passes closed config-node-wiring, `response.*`, and
-  type-casing gaps. Extend the pattern to Event Script + REST automation next.
+  type-casing gaps. **Event Script** spec added too (`docs/guides/event-script/`,
+  `scripts/check-event-script-grammar.py`; drift-checks against `CompileFlows.EXECUTION_TYPES`),
+  fresh-agent-validated over 2 passes (closed whole-result capture, bare input-body target,
+  name/next resolution). **REST automation** is the remaining DSL.
   <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 
 ## Conventions
@@ -117,7 +120,8 @@
   Eric for batch review. Remaining: refine spine opener (`docs/index.md`), retire CH-11 behind a
   redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).
   (5) Added the MiniGraph **DSL spec layer** for deterministic AI generation (see `docs-dsl-spec`)
-  + the docs CI gate; fresh-agent-validated. Apply the same spec pattern to Event Script + REST.*
+  + the docs CI gate; fresh-agent-validated. (6) Event Script DSL spec added + fresh-agent-validated
+  (2 passes); **REST automation remaining**. Then finish Part IV (spine, retire CH-11, lower layers).*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
