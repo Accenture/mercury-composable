@@ -80,6 +80,15 @@
   Approved by Eric Law 2026-06-20 (3 forks confirmed). Lower-layer chapters (CH 1–9) are sound —
   migrate + refresh, don't rewrite from scratch.
   <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+- Each DSL gets a deterministic **spec layer for AI agents**: a rule-based grammar reference +
+  a machine-readable catalog (JSON) + an AI-agent guide (endpoint contract + pre-send checklist) +
+  a CI **drift test** keeping the spec in sync with the shipped help + engine routes. **Validation
+  method:** a clean-context fresh AI agent must build from the spec docs ALONE (no source); the gaps
+  it flags drive doc fixes. Done for MiniGraph (`docs/guides/knowledge-graph/command-reference.md`,
+  `minigraph-commands.json`, `ai-agent-guide.md`, `scripts/check-minigraph-grammar.py`,
+  `.github/workflows/docs.yml`); 2 fresh-agent passes closed config-node-wiring, `response.*`, and
+  type-casing gaps. Extend the pattern to Event Script + REST automation next.
+  <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 
 ## Conventions
 
@@ -106,7 +115,9 @@
   (4) Part IV chapters written + committed (overview, build-your-first-graph, skills-reference,
   composing-the-layers, playground-and-companion — all code-true, mkdocs --strict green); sent to
   Eric for batch review. Remaining: refine spine opener (`docs/index.md`), retire CH-11 behind a
-  redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).*
+  redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).
+  (5) Added the MiniGraph **DSL spec layer** for deterministic AI generation (see `docs-dsl-spec`)
+  + the docs CI gate; fresh-agent-validated. Apply the same spec pattern to Event Script + REST.*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
@@ -117,10 +128,11 @@
 
 ## Open Threads
 
-- [ ] No CI builds the docs site — the mkdocs config was broken-as-committed (no `docs_dir`,
+- [x] No CI builds the docs site — the mkdocs config was broken-as-committed (no `docs_dir`,
   defaulted to absent `./docs`) and no workflow caught it (`.github/workflows/` builds Maven only).
   Now fixed on this branch; add a CI step running `mkdocs build --strict` so future doc breakages
-  fail the build.
+  fail the build. **Done 2026-06-20:** `.github/workflows/docs.yml` runs `mkdocs build --strict`
+  + the grammar drift check on docs/spec/help changes.
   <!-- id: thread-ci-docs-build | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 
 ## User Preferences
