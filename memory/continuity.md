@@ -68,6 +68,18 @@
   CODE_OF_CONDUCT/INCLUSIVITY) stay at repo root as external nav links; `docs/index.md`
   is the site Home. Verified by `mkdocs build --strict` (exit 0).
   <!-- id: docs-dir-layout | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+- Documentation rewrite (the Design for `bp-docs-ai-human-rewrite`) = a **structural, layered
+  re-architecture** into Parts I–VI ascending the layers, centering **"Knowledge Graph as
+  application"** (Part IV, mostly new — the current CHAPTER-11 is a glossy stub). **Dual design:**
+  human narrative spine (why-before-how, story arc) + AI direct-discovery (`docs/llms.txt` map,
+  per-doc YAML frontmatter `summary/layer/audience/keywords/related`, consistent heading taxonomy,
+  stable anchors, "At a glance" blocks). **Semantic slug URLs** + mkdocs `redirects` for the old
+  `/guides/CHAPTER-N/` links (webapp + help tutorials reference those absolutely). **Process:** build
+  new chapters alongside old → per-layer sign-off → retire superseded docs (APPENDIX-I,
+  old CHAPTER-11) + fix nav/cross-links/baked URLs. First iteration = spine opener + Part IV.
+  Approved by Eric Law 2026-06-20 (3 forks confirmed). Lower-layer chapters (CH 1–9) are sound —
+  migrate + refresh, don't rewrite from scratch.
+  <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 
 ## Conventions
 
@@ -83,10 +95,14 @@
 
 - [ ] (blueprint) **Rewrite the documentation to be AI- and human-friendly** — the
   user-facing surface is the Active Knowledge Graph. **This is the first iteration.** → serves: vision-mercury-composable
-  *Progress (2026-06-20): structural prerequisite landed — docs consolidated into `docs/` and the
-  mkdocs build fixed (see `docs-dir-layout`). Pilot scope = restructure CHAPTER-10/11 (+ companion)
-  for retrieval: self-contained sections, consistent headings, stable anchors, frontmatter +
-  sidecar `llms.txt`. Content rewrite still pending.*
+  *Progress (2026-06-20): (1) structural prerequisite landed — docs consolidated into `docs/`,
+  mkdocs build fixed (see `docs-dir-layout`). (2) Design approved — the layered re-architecture
+  in `docs-rewrite-architecture`. (3) Part IV opener `guides/knowledge-graph/index.md` written
+  (code-true, grounded in the live MiniGraph engine + shipped help tutorials) + `docs/llms.txt`
+  AI map; the doc PATTERN (frontmatter, At-a-glance, narrative, stable anchors, honest
+  built-vs-roadmap) is **accepted** by Eric Law 2026-06-20. Next: deeper Part IV chapters
+  (build-a-graph walkthrough, 7-skills reference, layer-integration how-to, Playground & companion),
+  then spine refinement, then retire CH-11 behind a redirect. Lower-layer chapters migrate+refresh later.*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable

@@ -1,0 +1,47 @@
+# Mercury Composable
+
+> A Java framework for building composable, event-driven applications from self-contained
+> functions wired by YAML event flows. Functions couple only through named routes and event
+> envelopes, so orchestration is configuration, not code. It runs on Java 21 virtual threads
+> (synchronous RPC performs like reactive) and ascends three layers: an event-driven core
+> (Platform Core), composable orchestration (Event Script), and a semantic layer where an
+> Active Knowledge Graph *is* the application.
+
+> This file is the machine-readable map of the documentation, organized by layer, to help an
+> AI agent (or a human) jump directly to the right page. It is maintained alongside a
+> documentation rewrite in progress; pages marked (legacy) are being superseded.
+
+## Start here
+- [Home](https://accenture.github.io/mercury-composable/): the three-layer model and where to go next.
+- [Quickstart](https://accenture.github.io/mercury-composable/guides/QUICKSTART/): a working app in five minutes.
+- [Getting Started](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/): build and run the composable example; flows, functions, and REST.
+
+## Layer 1 — Event-driven foundation (Platform Core)
+- [Architecture Overview](https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/): layers, components, the in-memory event bus, threading, core APIs.
+- [Methodology](https://accenture.github.io/mercury-composable/guides/METHODOLOGY/): the four composable design principles.
+- [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/CHAPTER-2/): virtual vs. kernel threads, Mono/Flux.
+- [REST Automation](https://accenture.github.io/mercury-composable/guides/CHAPTER-3/): declare HTTP endpoints via rest.yaml, no controllers.
+
+## Layer 2 — Composable orchestration (Event Script)
+- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/): the flow DSL — structure, task types, data mapping.
+- [Flow Configuration Schema](https://accenture.github.io/mercury-composable/guides/FLOW-SCHEMA-REFERENCE/): precise flow YAML field reference.
+- [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/CHAPTER-5/): entry point, unit tests, packaging.
+
+## Layer 3 — Knowledge Graph as Application (semantic)
+- [Knowledge Graph as Application](https://accenture.github.io/mercury-composable/guides/knowledge-graph/): the paradigm, execution model, node model, built-in skills, layer integration, Playground & AI companion, and maturity.
+- [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/CHAPTER-10/): the in-memory property-graph data model and API the layer builds on.
+- [Active Knowledge Graph (legacy)](https://accenture.github.io/mercury-composable/guides/CHAPTER-11/): outdated executive summary — superseded by the chapter above.
+
+## Operate & integrate
+- [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/CHAPTER-6/): run Mercury as a Spring Boot 3/4 app.
+- [Event over HTTP](https://accenture.github.io/mercury-composable/guides/CHAPTER-7/): cross-instance event communication.
+- [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/CHAPTER-8/): Kafka-based service discovery and routing.
+
+## Reference
+- [API Overview](https://accenture.github.io/mercury-composable/guides/CHAPTER-9/): PostOffice, Platform, EventEnvelope, configuration APIs.
+- [Annotations Reference](https://accenture.github.io/mercury-composable/guides/ANNOTATIONS-REFERENCE/): @PreLoad, @MainApplication, and the rest.
+- [Configuration Reference](https://accenture.github.io/mercury-composable/guides/CONFIGURATION-REFERENCE/): application.properties / application.yml keys.
+- [Event Envelope Reference](https://accenture.github.io/mercury-composable/guides/EVENT-ENVELOPE-REFERENCE/): the EventEnvelope and PostOffice API.
+- [Reserved Names & Headers](https://accenture.github.io/mercury-composable/guides/APPENDIX-II/): system-reserved routes and headers.
+- [Actuators & HTTP Client](https://accenture.github.io/mercury-composable/guides/APPENDIX-III/): built-in actuator endpoints and the AsyncHttpRequest API.
+- [Design Notes](https://accenture.github.io/mercury-composable/arch-decisions/DESIGN-NOTES/): architecture decision records and rationale.
