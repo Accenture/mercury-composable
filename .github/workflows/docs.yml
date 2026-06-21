@@ -13,6 +13,7 @@ on:
       - 'system/minigraph-playground-engine/src/main/resources/help/**'
       - 'system/minigraph-playground-engine/src/main/java/com/accenture/minigraph/skills/**'
       - 'system/event-script-engine/src/main/java/com/accenture/automation/**'
+      - 'system/platform-core/src/main/java/org/platformlambda/automation/**'
       - '.github/workflows/docs.yml'
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - 'system/minigraph-playground-engine/src/main/resources/help/**'
       - 'system/minigraph-playground-engine/src/main/java/com/accenture/minigraph/skills/**'
       - 'system/event-script-engine/src/main/java/com/accenture/automation/**'
+      - 'system/platform-core/src/main/java/org/platformlambda/automation/**'
       - '.github/workflows/docs.yml'
 
 jobs:
@@ -38,5 +40,7 @@ jobs:
         run: python3 scripts/check-minigraph-grammar.py
       - name: Check Event Script grammar spec is in sync (anti-drift)
         run: python3 scripts/check-event-script-grammar.py
+      - name: Check REST automation grammar spec is in sync (anti-drift)
+        run: python3 scripts/check-rest-automation-grammar.py
       - name: Build docs (strict)
         run: mkdocs build --strict

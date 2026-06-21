@@ -30,6 +30,10 @@ nav:
     - Flow grammar: guides/event-script/flow-grammar.md
     - AI agent guide: guides/event-script/ai-agent-guide.md
 
+  - REST automation:
+    - REST grammar: guides/rest-automation/rest-grammar.md
+    - AI agent guide: guides/rest-automation/ai-agent-guide.md
+
   - Concepts:
     - Methodology: guides/METHODOLOGY.md
     - Architecture Overview: guides/ARCHITECTURE.md
