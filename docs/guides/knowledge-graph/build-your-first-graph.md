@@ -187,7 +187,7 @@ You built behavior with one skill. The graph becomes genuinely *active* when nod
 - `graph.api.fetcher` — call external APIs declaratively via data-dictionary and provider nodes.
 - `graph.extension` — delegate to a sub-graph or an Event Script flow.
 
-Each of these gets a worked example in the **built-in skills reference** (next in this Part).
+Each of these gets a worked example in the [built-in skills reference](skills-reference.md).
 
 ## See also {#see-also}
 

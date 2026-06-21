@@ -20,6 +20,9 @@ nav:
   - Knowledge Graph as Application:
     - Overview: guides/knowledge-graph/index.md
     - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
+    - Built-in skills reference: guides/knowledge-graph/skills-reference.md
+    - Composing the layers: guides/knowledge-graph/composing-the-layers.md
+    - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
 
   - Concepts:
     - Methodology: guides/METHODOLOGY.md

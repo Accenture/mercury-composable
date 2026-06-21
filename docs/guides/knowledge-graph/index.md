@@ -114,8 +114,9 @@ Seven skills ship with the engine. Each is a composable function on a `graph.*` 
 | `graph.join` | Synchronization barrier — proceeds only once all upstream paths complete |
 | `graph.island` | Mark an isolated sub-graph (pauses traversal); useful while building |
 
-> Per-skill syntax, parameters, and worked examples get their own reference chapter in this Part.
-> Until then, the Playground's `describe skill {name}` and `help {skill}` pages are authoritative.
+> Per-skill syntax, parameters, and worked examples are in the
+> [Built-in skills reference](skills-reference.md); in the Playground, `describe skill {name}`
+> prints the same content.
 
 ## Composing with the lower layers {#layer-integration}
 
@@ -161,6 +162,9 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 ## See also {#see-also}
 
 - [Build your first Active Knowledge Graph](build-your-first-graph.md) — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.
+- [Built-in skills reference](skills-reference.md) — the seven `graph.*` skills with syntax and worked examples.
+- [Composing the layers](composing-the-layers.md) — external APIs, sub-graph/flow extension, and REST exposure.
+- [Playground & AI companion](playground-and-companion.md) — the interactive workbench and user–AI collaboration.
 - [Minimalist Property Graph](../CHAPTER-10.md) — the underlying graph data structures and API.
 - [Event Script Syntax](../CHAPTER-4.md) — the composable flow DSL that `graph.extension` delegates to.
 - [Home](../../index.md) — Mercury's three-layer model and where this layer fits.
