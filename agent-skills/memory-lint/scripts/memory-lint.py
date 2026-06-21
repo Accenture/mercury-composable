@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+"""memory-lint — deterministic integrity checks for an agent-memory repo.
+
+Removes the LLM from the decay arithmetic. It counts session files and verifies
+archival / tiers / supersession against *observable evidence* — the agent judges
+meaning, this script does the counting. Pure Python 3 stdlib; no dependencies.
+
+Usage:
+    python3 memory-lint.py [--root PATH] [--strict]
+
+Exit: 0 = clean (no errors), 1 = integrity error(s) (or warnings under --strict),
+2 = could not locate the memory/ layer.
+"""
+import glob
+import os
+import re
+import sys
+
+ID_RE = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)+")
+# Footers are single-line HTML comments. Bind the field span to one line
+# ([^\n], and no re.S) so an *unclosed* footer (a stray "<!-- id: foo | ..." with
+# no closing "-->") can't let .*? swallow the rest of the file up to a "-->"
+# elsewhere — that would silently misparse fields (wrong tier/superseded ⇒ wrong
+# decay counts) with no error raised. The verifier must not be fooled by malformed input.
+FOOTER_RE = re.compile(r"<!--\s*id:\s*([a-z0-9-]+)\s*\|([^\n]*?)-->")
+
+
+def find_root(start):
+    for cand in (start, os.getcwd(), os.path.dirname(os.path.abspath(__file__))):
+        if not cand:
+            continue
+        d = os.path.abspath(cand)
+        while True:
+            if os.path.isfile(os.path.join(d, "memory", "continuity.md")):
+                return d
+            parent = os.path.dirname(d)
+            if parent == d:
+                break
+            d = parent
+    return None
+
+
+def read_text(path):
+    return open(path, encoding="utf-8").read()
+
+
+def parse_footers(text):
+    out = {}
+    for m in FOOTER_RE.finditer(text):
+        fields = {}
+        for part in m.group(2).split("|"):
+            if ":" in part:
+                k, _, v = part.partition(":")
+                fields[k.strip()] = v.strip()
+        out[m.group(1)] = fields
+    return out
+
+
+def pinned_open_threads(text):
+    """ids whose nearest preceding list bullet is an unchecked '- [ ]' (never decay)."""
+    pinned = set()
+    state = None  # None, "open", "done"
+    indent_level = 0
+
+    for ln in text.split("\n"):
+        st = ln.lstrip()
+        if not st:
+            continue
+
+        current_indent = len(ln) - len(st)
+
+        if st.startswith("- [ ]"):
+            state = "open"
+            indent_level = current_indent
+        elif st.startswith(("- [x]", "- [X]")):
+            state = "done"
+            indent_level = current_indent
+        elif st.startswith(("- ", "* ")):
+            # Only reset state if this bullet is at the same or higher level than the parent open thread
+            if state is not None and current_indent <= indent_level:
+                state = None
+
+        m = re.search(r"<!--\s*id:\s*([a-z0-9-]+)", ln)
+        if m and state == "open":
+            pinned.add(m.group(1))
+    return pinned
+
+
+def memref_ids(text):
+    # Anchor the heading to the start of a line. A session log may *quote* the
+    # string "## Memory References" inline in prose (e.g. while describing this
+    # very check); an un-anchored find() would match that mention and scoop a
+    # neighbouring section's ids into the references set — a false "over-archived"
+    # positive. Match only a real heading line, and bound at the next one.
+    m = re.search(r"(?m)^## +Memory References[ \t]*$", text)
+    if m is None:
+        return set()
+    block = text[m.end():]
+    nxt = re.search(r"(?m)^## +\S", block)
+    if nxt is not None:
+        block = block[: nxt.start()]
+    return set(ID_RE.findall(block))
+
+
+def load_windows(root):
+    w = {"working_window": 3, "active_window": 8, "archive_window": 20}
+    p = os.path.join(root, "memory", "decay-policy.md")
+    if os.path.isfile(p):
+        t = read_text(p)
+        for k in w:
+            m = re.search(rf"{k}\s*:\s*(\d+)", t)
+            if m:
+                w[k] = int(m.group(1))
+    return w
+
+
+def parse_args(args):
+    strict = "--strict" in args
+    root_arg = None
+    for i, a in enumerate(args):
+        if a == "--root" and i + 1 < len(args):
+            root_arg = args[i + 1]
+    return strict, root_arg
+
+
+def load_repo(root):
+    """Read the memory/ layer. Returns (cont, pinned, arch, extra, sessions, refs)."""
+    mem = os.path.join(root, "memory")
+    cont_text = read_text(os.path.join(mem, "continuity.md"))
+    cont = parse_footers(cont_text)
+    pinned = pinned_open_threads(cont_text)
+
+    archive_text = ""
+    for f in glob.glob(os.path.join(mem, "archive", "*.md")):
+        if os.path.basename(f).upper().startswith("INDEX"):
+            continue
+        archive_text += read_text(f) + "\n"
+    arch = parse_footers(archive_text)
+
+    # Extra footers from other memory/*.md files (e.g. vision.md) — used only for
+    # supersession link resolution in check_dangling; not counted as cont/arch facts.
+    _skip = {"continuity.md", "decay-policy.md"}
+    extra_text = ""
+    for name in sorted(os.listdir(mem)):
+        if not name.endswith(".md") or name in _skip:
+            continue
+        fp = os.path.join(mem, name)
+        if os.path.isfile(fp):
+            extra_text += read_text(fp) + "\n"
+    extra = parse_footers(extra_text)
+
+    sessions = sorted(glob.glob(os.path.join(mem, "sessions", "*.md")))
+    refs = [memref_ids(read_text(s)) for s in sessions]
+    return cont, pinned, arch, extra, sessions, refs
+
+
+def make_sslu(refs):
+    """sessions_since_last_used: how many sessions back a fact was last referenced."""
+    def sslu(fid):
+        last = -1
+        for i, ids in enumerate(refs):
+            if fid in ids:
+                last = i
+        return None if last == -1 else len(refs) - 1 - last
+    return sslu
+
+
+def check_duplicates(cont, arch):
+    # (1) a fact must live in exactly one place
+    return [
+        f"[both] {fid} is in BOTH continuity.md and the archive"
+        for fid in sorted(set(cont) & set(arch))
+    ]
+
+
+def check_over_archived(arch, sslu, aw):
+    # (2) the decay miscount guard: archived-as-faded but still referenced in-window
+    out = []
+    for fid, fields in arch.items():
+        if "superseded-by" in fields or fields.get("tier") == "superseded":
+            continue  # superseded archives on truth-state, not recency
+        s = sslu(fid)
+        if s is not None and s <= aw:
+            out.append(
+                f"[over-archived] {fid} archived as faded but last referenced {s} "
+                f"session(s) ago (<= archive_window {aw}) — reactivate it"
+            )
+    return out
+
+
+def check_overdue(cont, pinned, sslu, aw):
+    # (3) advisory: continuity fact overdue for archival
+    #     (core, superseded, and pinned unchecked open threads never decay)
+    out = []
+    for fid, fields in cont.items():
+        if fields.get("tier") in ("core", "superseded") or fid in pinned:
+            continue
+        s = sslu(fid)
+        if s is not None and s > aw:
+            out.append(f"[overdue] {fid} sslu {s} > archive_window {aw} — review may archive it")
+    return out
+
+
+def check_dangling(allf):
+    # (4) supersession links resolve
+    out = []
+    for fid, fields in allf.items():
+        for key in ("superseded-by", "supersedes"):
+            tgt = fields.get(key)
+            if tgt and tgt not in allf:
+                out.append(f"[dangling] {fid} {key} {tgt}, which has no footer anywhere")
+    return out
+
+
+def report(cont, arch, sessions, acw, aw, warns, errors, strict):
+    print(
+        f"memory-lint: {len(cont)} continuity facts, {len(arch)} archived, "
+        f"{len(sessions)} sessions; windows active={acw} archive={aw}"
+    )
+    for line in warns:
+        print("WARN  " + line)
+    for line in errors:
+        print("ERROR " + line)
+    if errors:
+        print(f"FAIL: {len(errors)} error(s), {len(warns)} warning(s)")
+        return 1
+    if warns and strict:
+        print(f"FAIL (strict): {len(warns)} warning(s)")
+        return 1
+    print(f"OK: 0 errors, {len(warns)} warning(s)")
+    return 0
+
+
+def main():
+    strict, root_arg = parse_args(sys.argv[1:])
+    root = find_root(root_arg or os.getcwd())
+    if not root:
+        print("memory-lint: could not find memory/continuity.md", file=sys.stderr)
+        return 2
+
+    cont, pinned, arch, extra, sessions, refs = load_repo(root)
+    w = load_windows(root)
+    aw, acw = w["archive_window"], w["active_window"]
+    sslu = make_sslu(refs)
+
+    errors = check_duplicates(cont, arch) + check_over_archived(arch, sslu, aw)
+    warns = check_overdue(cont, pinned, sslu, aw) + check_dangling({**cont, **arch, **extra})
+
+    return report(cont, arch, sessions, acw, aw, warns, errors, strict)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
