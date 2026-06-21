@@ -1,24 +1,52 @@
+---
+title: Mercury Composable
+summary: A Java framework for building composable, event-driven backend applications — and,
+  increasingly, Active Knowledge Graphs you evolve by editing a model rather than rewriting code.
+audience: [developer, architect, business, ai-agent]
+keywords: [composable, event-driven, active knowledge graph, semantic application, event script, ai collaboration]
+---
+
 # Mercury Composable for Java
 
-Mercury Composable is a Java framework for building **composable, event-driven
-applications** from self-contained functions wired by YAML-configured event flows.
-Functions have no direct knowledge of each other — all coupling is through named routes
-and event envelopes, so orchestration is *configuration, not code*. It runs on Java 21
-virtual threads, so sequential synchronous RPC performs on par with reactive code.
+Mercury Composable lets you build backend applications as **composable, event-driven systems** —
+and, increasingly, as **Active Knowledge Graphs** you evolve by *editing a model* rather than
+rewriting code. Functions are fully decoupled — they know each other only by route name, wired
+through event envelopes — so orchestration is **configuration, not code**. It runs on Java 21
+virtual threads, so straightforward synchronous code performs on par with reactive.
 
-> **New here?** Start with the **[5-Minute Quickstart](guides/QUICKSTART.md)**, then read
+> **New here?** Start with the **[5-Minute Quickstart](guides/QUICKSTART.md)**, then
 > **[Getting Started](guides/CHAPTER-1.md)**.
 
-## Three ways to build
+## A layered ascent
 
-Mercury offers a layered ascent — each layer builds on the one beneath it, and you can
-mix them in a single application:
+Mercury grew in three layers. Each builds on the one beneath it, and you can mix them in a single
+application — drop down a layer exactly where you need more control, and no further.
 
-| Layer | Technology | What you write | Start here |
-|:------|:-----------|:---------------|:-----------|
-| **Event-driven** | Platform Core | Decoupled functions, addressed by route name | [Function Execution Strategies](guides/CHAPTER-2.md) |
-| **Composable** | Event Script | YAML event flows (~50% config, 50% code) | [Event Script Syntax](guides/CHAPTER-4.md) |
-| **Semantic** | Active Knowledge Graph | Graph models that *execute* — zero code | [Active Knowledge Graph](guides/CHAPTER-11.md) |
+| Layer | You express behavior as… | What you write | Start here |
+|:------|:--------------------------|:---------------|:-----------|
+| **Event-driven** — Platform Core | decoupled functions reacting to events | Java functions, addressed by route name | [Function Execution Strategies](guides/CHAPTER-2.md) |
+| **Composable** — Event Script | YAML flows that choreograph functions | ~50% config, 50% code | [Event Script Syntax](guides/CHAPTER-4.md) |
+| **Semantic** — Active Knowledge Graph | a graph whose nodes *execute* during traversal | a model — little or no code | [Knowledge Graph as Application](guides/knowledge-graph/index.md) |
+
+## Knowledge Graph as application
+
+The newest layer is a paradigm shift: model business intent, enterprise knowledge, and system
+behavior as **one executable [Active Knowledge Graph](guides/knowledge-graph/index.md)**. Behavior
+runs as the graph is traversed, so changing what a system *does* means refining the model,
+certifying it, and deploying the updated model — not rewriting and redeploying code. Humans and AI
+companions co-author the same model.
+
+## Building with an AI agent
+
+Mercury's DSLs ship **agent-ready specifications** — a rule-based grammar plus a machine-readable
+catalog — so an AI agent can generate correct artifacts *deterministically*, without inferring from
+examples or reading engine source:
+
+- [MiniGraph commands](guides/knowledge-graph/ai-agent-guide.md) — build graphs via the companion endpoint.
+- [Event Script flows](guides/event-script/ai-agent-guide.md) — author flow YAML.
+- [REST automation](guides/rest-automation/ai-agent-guide.md) — author `rest.yaml` endpoints.
+
+A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 
 ## Explore the docs
 
@@ -26,8 +54,9 @@ mix them in a single application:
 - **Guides** — [REST Automation](guides/CHAPTER-3.md) · [Build, Test & Deploy](guides/CHAPTER-5.md) ·
   [Spring Boot Integration](guides/CHAPTER-6.md) · [Event over HTTP](guides/CHAPTER-7.md) ·
   [Service Mesh](guides/CHAPTER-8.md)
-- **Knowledge Graph** — [Minimalist Property Graph](guides/CHAPTER-10.md) ·
-  [Active Knowledge Graph](guides/CHAPTER-11.md)
+- **Knowledge Graph** — [Knowledge Graph as Application](guides/knowledge-graph/index.md) ·
+  [Build your first graph](guides/knowledge-graph/build-your-first-graph.md) ·
+  [Minimalist Property Graph](guides/CHAPTER-10.md)
 - **Concepts** — [Methodology](guides/METHODOLOGY.md) · [Architecture Overview](guides/ARCHITECTURE.md) ·
   [Composable Design](guides/COMPOSABLE-DESIGN.md) · [Design Notes](arch-decisions/DESIGN-NOTES.md)
 - **Reference** — [Annotations](guides/ANNOTATIONS-REFERENCE.md) ·

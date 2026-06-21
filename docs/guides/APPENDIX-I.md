@@ -408,6 +408,6 @@ X-Raw-Xml=true
 
 <br/>
 
-|          Chapter-11           |                   Home                    |                 Appendix-II                  |
+|        Knowledge Graph        |                   Home                    |                 Appendix-II                  |
 |:-----------------------------:|:-----------------------------------------:|:--------------------------------------------:|
-| [Active-Graph](CHAPTER-11.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Reserved names and headers](APPENDIX-II.md) |
+| [Knowledge Graph](knowledge-graph/index.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Reserved names and headers](APPENDIX-II.md) |

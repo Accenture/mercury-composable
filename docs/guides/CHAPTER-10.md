@@ -231,7 +231,7 @@ It is recommended that you limit the number of nodes to less than 750.
 
 This is the default graph model size for the MiniGraph Playground which
 is an interactive graph designer's workbench and a graph execution engine.
-For details, please refer to [Active Knowledge Graph](CHAPTER-11.md).
+For details, please refer to [Knowledge Graph as Application](knowledge-graph/index.md).
 
 While the typical use case is real-time computation or decision making,
 MiniGraph may be used to model general business use cases without writing
@@ -268,6 +268,6 @@ automatically.
 
 <br/>
 
-|            Chapter-9            |                   Home                    |          CHAPTER-11           |
-|:-------------------------------:|:-----------------------------------------:|:-----------------------------:|
-| [API Overview](CHAPTER-9.md)    | [Table of Contents](TABLE-OF-CONTENTS.md) | [Active-Graph](CHAPTER-11.md) |
+|            Chapter-9            |                   Home                    |             Knowledge Graph              |
+|:-------------------------------:|:-----------------------------------------:|:----------------------------------------:|
+| [API Overview](CHAPTER-9.md)    | [Table of Contents](TABLE-OF-CONTENTS.md) | [Knowledge Graph](knowledge-graph/index.md) |

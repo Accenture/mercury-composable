@@ -30,7 +30,6 @@
 ## Layer 3 — Knowledge Graph as Application (semantic)
 - [Knowledge Graph as Application](https://accenture.github.io/mercury-composable/guides/knowledge-graph/): the paradigm, execution model, node model, built-in skills, layer integration, Playground & AI companion, and maturity.
 - [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/CHAPTER-10/): the in-memory property-graph data model and API the layer builds on.
-- [Active Knowledge Graph (legacy)](https://accenture.github.io/mercury-composable/guides/CHAPTER-11/): outdated executive summary — superseded by the chapter above.
 
 ## Operate & integrate
 - [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/CHAPTER-6/): run Mercury as a Spring Boot 3/4 app.
