@@ -90,7 +90,10 @@
   type-casing gaps. **Event Script** spec added too (`docs/guides/event-script/`,
   `scripts/check-event-script-grammar.py`; drift-checks against `CompileFlows.EXECUTION_TYPES`),
   fresh-agent-validated over 2 passes (closed whole-result capture, bare input-body target,
-  name/next resolution). **REST automation** is the remaining DSL.
+  name/next resolution). **REST automation** spec added too (`docs/guides/rest-automation/`,
+  `scripts/check-rest-automation-grammar.py`; drift-checks against `RoutingEntry.VALID_METHODS`),
+  fresh-agent-validated. **All 3 DSLs (MiniGraph, Event Script, REST) now have the deterministic
+  spec kit + CI drift test.**
   <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 
 ## Conventions
@@ -121,7 +124,9 @@
   redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).
   (5) Added the MiniGraph **DSL spec layer** for deterministic AI generation (see `docs-dsl-spec`)
   + the docs CI gate; fresh-agent-validated. (6) Event Script DSL spec added + fresh-agent-validated
-  (2 passes); **REST automation remaining**. Then finish Part IV (spine, retire CH-11, lower layers).*
+  (2 passes); REST automation spec added + 2-pass-validated — **all 3 DSLs done**. (7) Remaining in
+  the rewrite: finish Part IV (refine spine opener, retire CH-11 behind a redirect, migrate+refresh
+  lower-layer chapters Parts I–III, V–VI).*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
