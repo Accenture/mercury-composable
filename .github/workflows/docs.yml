@@ -1,0 +1,38 @@
+name: docs
+
+# Build the documentation site strictly and verify the MiniGraph command-grammar spec
+# stays in sync with the engine's shipped help + source. Runs only when docs, the spec,
+# the grammar checker, or the MiniGraph help/skills change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'scripts/check-minigraph-grammar.py'
+      - 'system/minigraph-playground-engine/src/main/resources/help/**'
+      - 'system/minigraph-playground-engine/src/main/java/com/accenture/minigraph/skills/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'scripts/check-minigraph-grammar.py'
+      - 'system/minigraph-playground-engine/src/main/resources/help/**'
+      - 'system/minigraph-playground-engine/src/main/java/com/accenture/minigraph/skills/**'
+      - '.github/workflows/docs.yml'
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install MkDocs
+        run: pip install mkdocs
+      - name: Check MiniGraph grammar spec is in sync (anti-drift)
+        run: python3 scripts/check-minigraph-grammar.py
+      - name: Build docs (strict)
+        run: mkdocs build --strict

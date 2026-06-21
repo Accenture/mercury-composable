@@ -47,6 +47,10 @@ input[]=person_id -> path_parameter.id
 ```
 
 Provider input targets map into the HTTP request: `header.*`, `query.*`, `path_parameter.*`, `body.*`.
+A URL token like `{id}` is filled from `path_parameter.id` (matched by name). Note the two `input[]`
+forms: in a **Dictionary**, a bare `input[]=person_id` *declares* a required input parameter (the
+fetcher supplies its value); in a **Provider**, `input[]=source -> target` is a *mapping* into the
+request.
 
 **Data dictionary** — name an attribute, point it at a provider, and map the response into `result`:
 
@@ -77,6 +81,15 @@ output[]=result.address -> output.body.address
 Because two dictionary items here share one provider and the same `person_id`, the engine
 **deduplicates** them into a single HTTP call. (The shipped *Tutorial 3* is the clean end-to-end
 version of this example.)
+
+**Config nodes are referenced, not connected.** The fetcher wires in Dictionary and Provider nodes
+*by name* (`dictionary[]=`, `provider=`), so they need **no** `connect` lines and are exempt from
+the no-orphans rule — they're configuration, not part of the traversal. You may optionally group
+them under a `graph.island` node for visualization (Tutorial 3 shows this), but it is not required.
+
+In a Dictionary's `output[]`, the source namespace `response.*` is the **provider's raw HTTP
+response body**, mapped into the dictionary's `result.*` set; the fetcher's `output[]` then maps
+that `result.*` into `output.*` (or `model.*`).
 
 ## Delegating down: graph.extension {#extension}
 

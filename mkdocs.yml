@@ -21,6 +21,8 @@ nav:
     - Overview: guides/knowledge-graph/index.md
     - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
     - Built-in skills reference: guides/knowledge-graph/skills-reference.md
+    - MiniGraph command grammar: guides/knowledge-graph/command-reference.md
+    - AI agent guide: guides/knowledge-graph/ai-agent-guide.md
     - Composing the layers: guides/knowledge-graph/composing-the-layers.md
     - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
 
