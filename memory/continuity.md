@@ -127,8 +127,13 @@
   (2 passes); REST automation spec added + 2-pass-validated — **all 3 DSLs done**. (7) Spine opener
   (`docs/index.md`) refined into the paradigm story + CHAPTER-11 retired behind an mkdocs redirect
   (`mkdocs-redirects` added to plugins + CI; `/guides/CHAPTER-11/` → `/guides/knowledge-graph/`; in-docs
-  refs repointed). **Remaining: migrate+refresh the lower-layer chapters into Parts I–III, V–VI** —
-  the last piece of the rewrite.*
+  refs repointed). (8) Lower-layer migration **started**: the whole nav is restructured into the
+  **Part I–VI skeleton** (DSL spec docs integrated into their layers), and Part I (Getting Started /
+  CHAPTER-1) refreshed (frontmatter, H1, jar version). **Pending user decision** (pinged): the
+  per-chapter pattern depth (At-a-glance + See-also footer replacing the legacy prev/next nav tables)
+  and the **slug question** — keep stable `/guides/CHAPTER-N/` URLs vs. rename to semantic slugs
+  (high cross-link churn; ~10 inbound links per chapter via the interlinked bottom-nav tables). Then
+  roll through Parts II/III/V/VI; retire APPENDIX-I (superseded by CONFIGURATION-REFERENCE).*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
