@@ -17,7 +17,9 @@ nav:
     - Minimalist Property Graph: guides/CHAPTER-10.md
     - Active Knowledge Graph: guides/CHAPTER-11.md
 
-  - Knowledge Graph as Application: guides/knowledge-graph/index.md
+  - Knowledge Graph as Application:
+    - Overview: guides/knowledge-graph/index.md
+    - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
 
   - Concepts:
     - Methodology: guides/METHODOLOGY.md

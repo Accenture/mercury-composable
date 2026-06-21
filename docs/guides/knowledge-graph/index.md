@@ -160,6 +160,7 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 
 ## See also {#see-also}
 
+- [Build your first Active Knowledge Graph](build-your-first-graph.md) — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.
 - [Minimalist Property Graph](../CHAPTER-10.md) — the underlying graph data structures and API.
 - [Event Script Syntax](../CHAPTER-4.md) — the composable flow DSL that `graph.extension` delegates to.
 - [Home](../../index.md) — Mercury's three-layer model and where this layer fits.
