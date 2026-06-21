@@ -46,4 +46,4 @@ Precise, exhaustive lookup material.
 - [Application Properties](APPENDIX-I.md) — Complete listing of application.properties and application.yml configuration keys.
 - [Reserved Names & Headers](APPENDIX-II.md) — System-reserved route names and HTTP headers that must not be overridden.
 - [Actuators & HTTP Client](APPENDIX-III.md) — Built-in actuator endpoints, the AsyncHttpRequest API, and utility services.
-- [Release Notes](../CHANGELOG.md) — Version history and notable changes by release.
+- [Release Notes](https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md) — Version history and notable changes by release.

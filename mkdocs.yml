@@ -1,7 +1,8 @@
 site_name: Composable for Java
-site_url: https://github.com/accenture/mercury-composable
+site_url: https://accenture.github.io/mercury-composable/
+docs_dir: docs
 nav:
-  - Home: README.md
+  - Home: index.md
   - Quickstart: guides/QUICKSTART.md
 
   - Tutorials:
@@ -33,12 +34,12 @@ nav:
     - Application Properties: guides/APPENDIX-I.md
     - Reserved Names & Headers: guides/APPENDIX-II.md
     - Actuators & HTTP Client: guides/APPENDIX-III.md
-    - Release Notes: CHANGELOG.md
+    - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
     - Table of Contents: guides/TABLE-OF-CONTENTS.md
 
-  - Contributing: CONTRIBUTING.md
-  - Code of Conduct: CODE_OF_CONDUCT.md
-  - Inclusivity: INCLUSIVITY.md
+  - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
+  - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md
+  - Inclusivity: https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md
 plugins:
   - search:
       lang: en
