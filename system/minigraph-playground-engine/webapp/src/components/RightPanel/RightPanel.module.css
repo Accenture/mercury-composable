@@ -53,6 +53,10 @@
   flex-direction: column;
 }
 
+.tabBody:focus-visible {
+  outline: none;
+}
+
 /* Hidden tab — stays mounted; hidden from view and from AT */
 .tabBodyHidden {
   display: none;

@@ -56,6 +56,7 @@ interface GraphViewProps {
 
 const EMPTY_NODES: Node<GraphNodeData>[]  = [];
 const EMPTY_EDGES: Edge<GraphEdgeData>[]  = [];
+const NODE_MULTI_SELECTION_KEYS = ['Shift', 'Control', 'Meta'];
 
 function sameAliasSelection(current: string[], next: string[]): boolean {
   return current.length === next.length
@@ -330,7 +331,7 @@ export default function GraphView({
               minZoom={0.2}
               maxZoom={2.5}
               selectionKeyCode="Shift"
-              multiSelectionKeyCode="Shift"
+              multiSelectionKeyCode={NODE_MULTI_SELECTION_KEYS}
               selectionOnDrag={false}
               selectionMode={SelectionMode.Partial}
               // colorMode="dark" // enable for dark mode

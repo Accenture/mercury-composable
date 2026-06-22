@@ -19,7 +19,7 @@ export default function GraphMultiSelectTip({
       role="status"
     >
       <button type="button" className={styles.tipButton} onClick={onDismiss}>
-        Multi-select: Shift + click nodes, or Shift + drag on the canvas.
+        Multi-select: Shift/Ctrl/Cmd + click nodes, or Shift + drag on the canvas.
       </button>
     </div>
   );
