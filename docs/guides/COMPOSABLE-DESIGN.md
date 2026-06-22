@@ -1,3 +1,12 @@
+---
+title: Composable Design
+summary: An essay on composable design patterns — self-contained functions and event-driven
+  communication — and their benefits over tightly coupled code.
+layer: concepts
+audience: [architect, developer]
+keywords: [composable design, patterns, decoupling, event-driven, maintainability]
+---
+
 # Conquer Complexity: Embrace Composable Design
 
 *Concepts: Essay on composable design patterns and their benefits for maintainability and scalability.*
@@ -65,3 +74,9 @@ By embracing the principles of self-contained functions and event-driven communi
 write code that is a joy to work with.
 
 > *Source*: This article was summarized from composable technology papers using AI in January 2025
+
+## See also
+
+- [Methodology](METHODOLOGY.md) — the four composable principles, formalized.
+- [Architecture Overview](ARCHITECTURE.md) — the technical model behind the patterns.
+- [Getting Started](getting-started.md) — composable design in a working app.

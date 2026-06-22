@@ -51,7 +51,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 ## Explore the docs
 
 - **Quickstart & tutorials** — [Quickstart](guides/QUICKSTART.md) · [Getting Started](guides/getting-started.md)
-- **Guides** — [REST Automation](guides/rest-automation/index.md) · [Build, Test & Deploy](guides/CHAPTER-5.md) ·
+- **Guides** — [REST Automation](guides/rest-automation/index.md) · [Build, Test & Deploy](guides/build-test-deploy.md) ·
   [Spring Boot Integration](guides/spring-boot.md) · [Event over HTTP](guides/event-over-http.md) ·
   [Service Mesh](guides/service-mesh.md)
 - **Knowledge Graph** — [Knowledge Graph as Application](guides/knowledge-graph/index.md) ·
@@ -61,7 +61,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
   [Composable Design](guides/COMPOSABLE-DESIGN.md) · [Design Notes](arch-decisions/DESIGN-NOTES.md)
 - **Reference** — [Annotations](guides/ANNOTATIONS-REFERENCE.md) ·
   [Configuration](guides/CONFIGURATION-REFERENCE.md) · [Event Envelope](guides/EVENT-ENVELOPE-REFERENCE.md) ·
-  [Flow Schema](guides/FLOW-SCHEMA-REFERENCE.md) · [API Overview](guides/CHAPTER-9.md) ·
+  [Flow Schema](guides/FLOW-SCHEMA-REFERENCE.md) · [API Overview](guides/api-overview.md) ·
   [Full Table of Contents](guides/TABLE-OF-CONTENTS.md)
 
 ## Project

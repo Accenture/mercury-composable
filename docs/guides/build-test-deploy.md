@@ -1,6 +1,21 @@
+---
+title: Build, Test & Deploy
+summary: Structure your application entry point, write unit tests, and package a composable app for
+  deployment.
+layer: composable
+audience: [developer]
+keywords: [build, test, deploy, packaging, unit test, maven, entry point, MainApplication]
+---
+
 # Build, Test and Deploy
 
 *Guide: How to structure, test, and package a composable application for deployment.*
+
+> **At a glance**
+>
+> - **What** — structure the app entry point (`@MainApplication` / `AutoStart`), unit-test functions
+>   and flows, and package for deployment.
+> - **For** developers taking a composable app from code to a running artifact.
 
 The first step in writing an application is to create an entry point for your application.
 
@@ -506,8 +521,8 @@ and all system overheads. It may look like this when you configure "log.format=j
   }
 }
 ```
-<br/>
+## See also
 
-|              Chapter-4              |                   Home                    |          Chapter-6          |
-|:-----------------------------------:|:-----------------------------------------:|:---------------------------:|
-| [Event Script Syntax](event-script/index.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](spring-boot.md) |
+- [Event Script Syntax](event-script/index.md) — write the flows you'll test and deploy.
+- [Spring Boot Integration](spring-boot.md) — package as a Spring Boot app.
+- [API Overview](api-overview.md) — the APIs your tests exercise.

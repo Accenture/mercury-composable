@@ -1,3 +1,11 @@
+---
+title: Reserved Names & Headers
+summary: System-reserved route names and HTTP headers that must not be overridden.
+layer: reference
+audience: [developer, reference]
+keywords: [reserved names, reserved headers, routes, system, reference]
+---
+
 # Reserved names
 
 *Reference: System-reserved route names and HTTP headers that must not be overridden.*
@@ -59,7 +67,7 @@ The following optional route names will be detected by the system for additional
 The `additional.info` function, if implemented, will be invoked from the "/info" endpoint and its response
 will be merged into the "/info" response.
 
-For `distributed.trace.forwarder` and `transaction.journal.recorder`, please refer to [Build, Test and Deploy](CHAPTER-5.md)
+For `distributed.trace.forwarder` and `transaction.journal.recorder`, please refer to [Build, Test and Deploy](build-test-deploy.md)
 for details.
 
 ## No-op function
@@ -117,8 +125,7 @@ trace.http.header=X-Correlation-Id, X-Trace-Id
 ## Transient data store
 
 The system uses a temp folder in "/tmp/reactive" for event streaming.
-<br/>
+## See also
 
-|                 Appendix-I                 |                   Home                    |                    Appendix-III                    |
-|:------------------------------------------:|:-----------------------------------------:|:--------------------------------------------------:|
-| [Application Configuration](APPENDIX-I.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Actuators, HTTP client and More](APPENDIX-III.md) |
+- [Configuration Reference](CONFIGURATION-REFERENCE.md) — all configuration keys.
+- [Actuators & HTTP Client](APPENDIX-III.md) — built-in endpoints and utilities.

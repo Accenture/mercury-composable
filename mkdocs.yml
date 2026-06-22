@@ -21,7 +21,7 @@ nav:
     - Flow grammar: guides/event-script/flow-grammar.md
     - Flow AI agent guide: guides/event-script/ai-agent-guide.md
     - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
-    - Build, Test & Deploy: guides/CHAPTER-5.md
+    - Build, Test & Deploy: guides/build-test-deploy.md
     - Composable Design: guides/COMPOSABLE-DESIGN.md
 
   - Part IV · Knowledge Graph as Application:
@@ -40,11 +40,10 @@ nav:
     - Minimalist Service Mesh: guides/service-mesh.md
 
   - Part VI · Reference:
-    - API Overview: guides/CHAPTER-9.md
+    - API Overview: guides/api-overview.md
     - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
     - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
     - Event Envelope Reference: guides/EVENT-ENVELOPE-REFERENCE.md
-    - Application Properties: guides/APPENDIX-I.md
     - Reserved Names & Headers: guides/APPENDIX-II.md
     - Actuators & HTTP Client: guides/APPENDIX-III.md
     - Design Notes: arch-decisions/DESIGN-NOTES.md
@@ -64,6 +63,9 @@ plugins:
         'guides/CHAPTER-2.md': 'guides/function-execution.md'
         'guides/CHAPTER-3.md': 'guides/rest-automation/index.md'
         'guides/CHAPTER-4.md': 'guides/event-script/index.md'
+        'guides/CHAPTER-5.md': 'guides/build-test-deploy.md'
+        'guides/CHAPTER-9.md': 'guides/api-overview.md'
+        'guides/APPENDIX-I.md': 'guides/CONFIGURATION-REFERENCE.md'
         'guides/CHAPTER-6.md': 'guides/spring-boot.md'
         'guides/CHAPTER-7.md': 'guides/event-over-http.md'
         'guides/CHAPTER-8.md': 'guides/service-mesh.md'

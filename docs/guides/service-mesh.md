@@ -373,5 +373,5 @@ The presence monitor is using the "presence" feature in websocket, thus we call 
 ## See also
 
 - [Event over HTTP](event-over-http.md) — cross-instance event communication.
-- [API Overview](CHAPTER-9.md) — the PostOffice / Platform APIs.
+- [API Overview](api-overview.md) — the PostOffice / Platform APIs.
 - [Configuration Reference](CONFIGURATION-REFERENCE.md) — connector and presence-monitor settings.

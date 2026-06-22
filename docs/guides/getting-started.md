@@ -516,7 +516,7 @@ For example, just an "Import" statement of another function would create tight c
 even when using reactive or event-driven programming styles.
 
 However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core
-APIs to do event-driven programming. API overview will be covered in [API Overview](CHAPTER-9.md).
+APIs to do event-driven programming. API overview will be covered in [API Overview](api-overview.md).
 ## See also
 
 - [Quickstart](QUICKSTART.md) — the five-minute version of this tutorial.

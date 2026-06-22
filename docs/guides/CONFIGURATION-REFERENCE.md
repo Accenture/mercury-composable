@@ -1,3 +1,11 @@
+---
+title: Configuration Reference
+summary: Exhaustive listing of application.properties / application.yml configuration keys.
+layer: reference
+audience: [developer, reference]
+keywords: [configuration, application.properties, application.yml, settings, reference]
+---
+
 # Configuration Reference
 
 *Reference: All application.properties and application.yml configuration keys for Mercury Composable.*
@@ -316,4 +324,3 @@ log.format=text
 - [REST Automation](rest-automation/index.md) — declarative REST endpoint configuration syntax
 - [Event Script Syntax](event-script/index.md) — flow YAML configuration syntax
 - [Actuators & HTTP Client](APPENDIX-III.md) — built-in actuator endpoint reference
-- [Application Properties (Appendix I)](APPENDIX-I.md) — original property reference

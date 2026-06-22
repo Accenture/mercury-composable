@@ -310,6 +310,6 @@ To try out the demo websocket server, visit http://127.0.0.1:8083 and select "We
 
 ## See also
 
-- [Build, Test & Deploy](CHAPTER-5.md) — package and deploy your app.
+- [Build, Test & Deploy](build-test-deploy.md) — package and deploy your app.
 - [Event over HTTP](event-over-http.md) — cross-instance event communication.
 - [REST Automation](rest-automation/index.md) — declare HTTP endpoints.

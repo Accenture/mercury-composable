@@ -1,3 +1,11 @@
+---
+title: Actuators & HTTP Client
+summary: Built-in actuator endpoints, the AsyncHttpRequest API, and other utility services.
+layer: reference
+audience: [developer, reference]
+keywords: [actuators, health, async http, http client, utilities, reference]
+---
+
 # Actuators, HTTP client and More
 
 *Reference: Built-in actuator endpoints, HTTP client API, and utility services.*
@@ -506,6 +514,7 @@ For untyped numbers, you may use the convenient type conversion methods in the p
 Utility class. For examples, util.str2int and util.str2long.
 <br/>
 
-|                 Appendix-II                  |                   Home                    | 
-|:--------------------------------------------:|:-----------------------------------------:|
-| [Reserved names and headers](APPENDIX-II.md) | [Table of Contents](TABLE-OF-CONTENTS.md) |
+## See also
+
+- [Reserved Names & Headers](APPENDIX-II.md) — system-reserved routes and headers.
+- [API Overview](api-overview.md) — the core APIs.

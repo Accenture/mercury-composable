@@ -25,7 +25,7 @@
 ## Layer 2 — Composable orchestration (Event Script)
 - [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/): the flow DSL — structure, task types, data mapping.
 - [Flow Configuration Schema](https://accenture.github.io/mercury-composable/guides/FLOW-SCHEMA-REFERENCE/): precise flow YAML field reference.
-- [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/CHAPTER-5/): entry point, unit tests, packaging.
+- [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/build-test-deploy/): entry point, unit tests, packaging.
 
 ## Layer 3 — Knowledge Graph as Application (semantic)
 - [Knowledge Graph as Application](https://accenture.github.io/mercury-composable/guides/knowledge-graph/): the paradigm, execution model, node model, built-in skills, layer integration, Playground & AI companion, and maturity.
@@ -37,7 +37,7 @@
 - [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/service-mesh/): Kafka-based service discovery and routing.
 
 ## Reference
-- [API Overview](https://accenture.github.io/mercury-composable/guides/CHAPTER-9/): PostOffice, Platform, EventEnvelope, configuration APIs.
+- [API Overview](https://accenture.github.io/mercury-composable/guides/api-overview/): PostOffice, Platform, EventEnvelope, configuration APIs.
 - [Annotations Reference](https://accenture.github.io/mercury-composable/guides/ANNOTATIONS-REFERENCE/): @PreLoad, @MainApplication, and the rest.
 - [Configuration Reference](https://accenture.github.io/mercury-composable/guides/CONFIGURATION-REFERENCE/): application.properties / application.yml keys.
 - [Event Envelope Reference](https://accenture.github.io/mercury-composable/guides/EVENT-ENVELOPE-REFERENCE/): the EventEnvelope and PostOffice API.

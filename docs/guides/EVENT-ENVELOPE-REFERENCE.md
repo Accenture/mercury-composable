@@ -1,3 +1,12 @@
+---
+title: Event Envelope Reference
+summary: The EventEnvelope and PostOffice API — structure, headers, body, and the messaging methods
+  between functions.
+layer: reference
+audience: [developer, reference]
+keywords: [event envelope, postoffice, messaging, api, headers, body, reference]
+---
+
 # Event Envelope Reference
 
 *Reference: Complete API reference for `EventEnvelope` and `PostOffice`.*
@@ -562,4 +571,4 @@ in user code when operating at the HTTP boundary:
 - [Flow Configuration Schema](FLOW-SCHEMA-REFERENCE.md) — Complete data mapping DSL reference
 - [Event Script Syntax](event-script/index.md) — Flow DSL including input/output mapping and execution types
 - [Function Execution Strategies](function-execution.md) — Virtual threads, auth functions, Flux/Mono return types
-- [API Overview](CHAPTER-9.md) — Full `PostOffice`, `Platform`, and configuration API
+- [API Overview](api-overview.md) — Full `PostOffice`, `Platform`, and configuration API

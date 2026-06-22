@@ -2106,4 +2106,4 @@ tasks:
 - [Flow grammar](flow-grammar.md) — the rule-based schema (the deterministic spec).
 - [AI agent guide](ai-agent-guide.md) — author flows deterministically with an agent.
 - [Flow Configuration Schema](../FLOW-SCHEMA-REFERENCE.md) — exhaustive field reference.
-- [Build, Test & Deploy](../CHAPTER-5.md) — package and run flows.
+- [Build, Test & Deploy](../build-test-deploy.md) — package and run flows.

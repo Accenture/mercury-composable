@@ -17,7 +17,7 @@ Guided, end-to-end experiences for learning the framework from scratch.
 Task-oriented instructions for accomplishing specific goals.
 
 - [REST Automation](rest-automation/index.md) — Declare HTTP endpoints using rest.yaml without writing controllers.
-- [Build, Test and Deploy](CHAPTER-5.md) — Structure your application entry point, write unit tests, and package for deployment.
+- [Build, Test and Deploy](build-test-deploy.md) — Structure your application entry point, write unit tests, and package for deployment.
 - [Spring Boot Integration](spring-boot.md) — Run Mercury Composable as a Spring Boot application using platform-core or rest-spring-3.
 - [Event over HTTP](event-over-http.md) — Enable cross-instance event communication using the built-in Event API endpoint.
 - [Minimalist Service Mesh](service-mesh.md) — Set up service discovery and inter-instance routing using Kafka as a connector.
@@ -42,8 +42,8 @@ Explanation-oriented pages for understanding design decisions and how the framew
 Precise, exhaustive lookup material.
 
 - [Event Script Syntax](event-script/index.md) — Complete DSL reference: flow structure, all task execution types, input/output data mapping namespaces and constants.
-- [API Overview](CHAPTER-9.md) — Full PostOffice, Platform, EventEnvelope, and configuration API documentation.
-- [Application Properties](APPENDIX-I.md) — Complete listing of application.properties and application.yml configuration keys.
+- [API Overview](api-overview.md) — Full PostOffice, Platform, EventEnvelope, and configuration API documentation.
+- [Application Properties](CONFIGURATION-REFERENCE.md) — Complete listing of application.properties and application.yml configuration keys.
 - [Reserved Names & Headers](APPENDIX-II.md) — System-reserved route names and HTTP headers that must not be overridden.
 - [Actuators & HTTP Client](APPENDIX-III.md) — Built-in actuator endpoints, the AsyncHttpRequest API, and utility services.
 - [Release Notes](https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md) — Version history and notable changes by release.

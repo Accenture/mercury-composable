@@ -1,6 +1,21 @@
+---
+title: API Overview
+summary: The core Mercury APIs — PostOffice, Platform, EventEnvelope — and configuration, for the
+  code that needs them.
+layer: reference
+audience: [developer, reference]
+keywords: [api, postoffice, platform, eventenvelope, configuration, core api]
+---
+
 # API Overview
 
 *Reference: PostOffice, Platform, EventEnvelope, and configuration API documentation.*
+
+> **At a glance**
+>
+> - **What** — the core APIs (`PostOffice`, `Platform`, `EventEnvelope`) for the cases that need
+>   code: unit tests, custom flow adapters, legacy wrappers, external gateways.
+> - **For** developers reaching below the composable / Event-Script layers.
 
 ## Main Application
 
@@ -691,8 +706,8 @@ API changes.
 ## Technical support
 
 For enterprise clients, technical support is available. Please contact your Accenture representative for details.
-<br/>
+## See also
 
-|            Chapter-8            |                   Home                    |         CHAPTER-10          |
-|:-------------------------------:|:-----------------------------------------:|:---------------------------:|
-| [Event over HTTP](spring-boot.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Mini-Graph](CHAPTER-10.md) |
+- [Event Envelope Reference](EVENT-ENVELOPE-REFERENCE.md) — the EventEnvelope + PostOffice API in depth.
+- [Minimalist Property Graph](CHAPTER-10.md) — the in-memory graph API.
+- [Annotations Reference](ANNOTATIONS-REFERENCE.md) — `@PreLoad` and the rest.

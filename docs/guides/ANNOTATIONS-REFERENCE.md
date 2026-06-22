@@ -1,3 +1,12 @@
+---
+title: Annotations Reference
+summary: Complete reference for Mercury's annotations — @PreLoad, @MainApplication,
+  @KernelThreadRunner, and the rest — with their parameters.
+layer: reference
+audience: [developer, reference]
+keywords: [annotations, PreLoad, MainApplication, KernelThreadRunner, EventInterceptor, reference]
+---
+
 # Annotations Reference
 
 *Reference: Complete reference for all Mercury Composable Java annotations.*

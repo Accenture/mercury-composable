@@ -1,3 +1,12 @@
+---
+title: Flow Configuration Schema
+summary: Precise field-level reference for flow YAML — every flow/task field, execution type, and
+  data-mapping namespace.
+layer: composable
+audience: [developer, reference]
+keywords: [flow schema, reference, task fields, execution types, data mapping, yaml]
+---
+
 # Flow Configuration Schema Reference
 
 *Reference: Complete field-level reference for Mercury Composable Event Script flow configuration YAML files.*
