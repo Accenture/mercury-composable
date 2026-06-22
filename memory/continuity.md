@@ -140,7 +140,10 @@
   links repointed via `perl`). **Remaining (per-chapter, same pattern):** CH-2→function-execution,
   CH-3 & CH-4 co-located into their DSL folders as `index.md` (rest-automation/, event-script/),
   CH-5→build-test-deploy, CH-6→spring-boot, CH-7→event-over-http, CH-8→service-mesh, CH-9→api-overview;
-  refresh + retire APPENDIX-I. Mechanics: `git mv` + `perl -i` for inbound links + redirect + `--strict`.*
+  refresh + retire APPENDIX-I. Mechanics: `git mv` + `perl -i` for inbound links + redirect + `--strict`.
+  **Done so far:** Part I (`getting-started`), Part II core (`function-execution`; ARCHITECTURE +
+  METHODOLOGY templated). **Next:** CH-3→`rest-automation/index.md` + CH-4→`event-script/index.md`
+  (DSL-folder co-locations — trickier cross-link paths), then CH-5/6/7/8/9 + references + retire APPENDIX-I.*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
