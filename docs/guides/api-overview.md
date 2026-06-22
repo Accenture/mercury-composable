@@ -15,7 +15,7 @@ keywords: [api, postoffice, platform, eventenvelope, configuration, core api]
 >
 > - **What** — the core APIs (`PostOffice`, `Platform`, `EventEnvelope`) for the cases that need
 >   code: unit tests, custom flow adapters, legacy wrappers, external gateways.
-> - **For** developers reaching below the composable / Event-Script layers.
+> - **For** developers reaching below the composable (Event Script) layer.
 
 ## Main Application
 

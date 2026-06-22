@@ -259,4 +259,4 @@ Please refer to [REST Automation](rest-automation/index.md) for details.
 
 - [Spring Boot Integration](spring-boot.md) — run Mercury in Spring Boot.
 - [Minimalist Service Mesh](service-mesh.md) — Kafka-based service discovery & routing.
-- [REST Automation](rest-automation/index.md) — the HTTP endpoint layer.
+- [REST Automation](rest-automation/index.md) — declarative HTTP endpoints, no controllers.

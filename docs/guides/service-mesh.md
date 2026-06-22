@@ -17,7 +17,7 @@ keywords: [service mesh, kafka, service discovery, presence monitor, connectors,
 >   discovery and inter-instance event routing, without sidecars.
 > - **For** architects and developers scaling Mercury across instances.
 
-Service mesh is a dedicated infrastructure layer to facilitate inter-container communication using "sidecar" and
+Service mesh is dedicated infrastructure for inter-container communication using "sidecar" and
 "control plane".
 
 Service mesh systems require additional administrative containers (PODs) for "control plane" and "service discovery."

@@ -107,6 +107,32 @@
   nav is the table of contents). The published-URL safety net is the redirect map; live sources (docs,
   README, llms.txt) are repointed to the new slugs, CHANGELOG (historical) is left to the redirect.
   <!-- id: docs-style-conventions | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- **Documentation content canon** (Design for the content-polish pass; locked with Eric Law 2026-06-22,
+  verified against source — docs are outdated, **code is source of truth**). Resolves old/new *content*
+  drift (7+ yrs, many human + AI contributors). Five decisions: (1) **"layers" = the 3 paradigm layers
+  only** — Event-driven (Platform Core) → Composable (Event Script) → Semantic (Active Knowledge Graph);
+  the runtime request flow is the **"request pipeline"** with **stages** (flow adapter → REST automation →
+  Event Manager/flow engine → in-memory event bus → composable functions), never "layers" (fixes
+  architecture.md's "five distinct layers"). (2) **Layer-3 vocabulary:** *Active Knowledge Graph (AKG)* =
+  the thing/model; *Knowledge Graph as Application* = the paradigm tagline; *MiniGraph* = the engine
+  (`graph.executor` + in-memory property graph + Playground); *semantic* = adjective only. (3) **Origin
+  story is told:** Scala/Akka actor model → Eclipse Vert.x event bus → Java 21 virtual threads (the *why*
+  of decoupled-functions-as-actors) — a Home one-liner + a "Where it came from" Architecture section.
+  (4) **Human–AI collaboration = cross-cutting capability** across all 3 layers (agent-ready DSL specs +
+  companion endpoint), NOT a 4th layer. (5) **"One atom, four roles":** the sole building block is the
+  route-addressed **function** (`@PreLoad` + `LambdaFunction`/`TypedLambdaFunction`, Map/PoJo I/O, private
+  by default); it is *named by how it is wired* — **function** (the atom), **service** (mapped straight to
+  HTTP via `service:` in `rest.yaml` — narrow REST role only; `RoutingEntry.java:44`), **task** (a step in
+  an Event Script flow with an `execution` type; `CompileFlows.EXECUTION_TYPES`), **skill** (attached to an
+  AKG node via the node's `skill:` property; `GraphLambdaFunction.java:116`). "Function" = the general atom,
+  "service" = the narrow REST role (Eric confirmed). **AI-discovery contract:** every doc carries
+  frontmatter + At-a-glance + See-also + stable anchors; `llms.txt` is the current by-layer map (drop the
+  "rewrite in progress / legacy" note); "generate from this page alone" claims belong ONLY to the 3 DSL
+  agent-guides, not concept pages. **Conformance order (approved):** (1) index.md + llms.txt → (2)
+  architecture.md → (3) methodology.md re-voice → (4) terminology sweep of lower/reference docs →
+  (5) persist canon as a published page + wire a light drift check. Extends `docs-style-conventions` /
+  `docs-rewrite-architecture`; serves `vision-mercury-composable`.
+  <!-- id: docs-content-canon | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## Conventions
 
@@ -188,6 +214,13 @@
   docs without At-a-glance, legacy `TABLE-OF-CONTENTS`) with the new slug/frontmatter/At-a-glance/
   See-also pattern. **Done 2026-06-22:** resolved per `docs-style-conventions` — see bp-docs progress (10).
   <!-- id: thread-docs-style-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- [x] **Old/new doc-style *content* inconsistency** — beyond structure, the docs mixed old and new
+  *content* (inconsistent layer model, layer-3 naming, missing origin story, whitepaper vs product voice,
+  loose task/function terminology). **Done 2026-06-22:** locked the **Documentation Canon**
+  (`docs-content-canon`) with Eric and conformed index/llms.txt/architecture/methodology + a terminology
+  sweep; published the canon as `docs/guides/documentation-conventions.md` and added a CI drift check
+  (`scripts/check-doc-canon.py`).
+  <!-- id: thread-docs-content-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## User Preferences
 

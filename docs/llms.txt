@@ -8,8 +8,7 @@
 > Active Knowledge Graph *is* the application.
 
 > This file is the machine-readable map of the documentation, organized by layer, to help an
-> AI agent (or a human) jump directly to the right page. It is maintained alongside a
-> documentation rewrite in progress; pages marked (legacy) are being superseded.
+> AI agent (or a human) jump directly to the right page.
 
 ## Start here
 - [Home](https://accenture.github.io/mercury-composable/): the three-layer model and where to go next.
@@ -27,7 +26,7 @@
 - [Flow Configuration Schema](https://accenture.github.io/mercury-composable/guides/flow-schema-reference/): precise flow YAML field reference.
 - [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/build-test-deploy/): entry point, unit tests, packaging.
 
-## Layer 3 — Knowledge Graph as Application (semantic)
+## Layer 3 — Semantic (Active Knowledge Graph)
 - [Knowledge Graph as Application](https://accenture.github.io/mercury-composable/guides/knowledge-graph/): the paradigm, execution model, node model, built-in skills, layer integration, Playground & AI companion, and maturity.
 - [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/knowledge-graph/property-graph/): the in-memory property-graph data model and API the layer builds on.
 

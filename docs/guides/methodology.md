@@ -18,24 +18,16 @@ keywords: [methodology, composable, design principles, input-process-output, zer
 > - **For** architects shaping composable systems; the [Architecture Overview](architecture.md) is
 >   the technical companion.
 
-The high level concept of composable architecture was advocated by Gartner in 2022.
+Software development is a long fight against complexity — and most of that complexity is *coupling*: code
+that cannot change without breaking something else. Composable methodology attacks coupling at its source.
+You build an application from **self-contained functions** that know nothing about one another, then wire
+them together with configuration instead of code. Functions become plug-and-play: you mix and match them
+into new applications, run multiple versions side by side, and retire one without side effects on the rest —
+so applications are easier to design, build, maintain, deploy, and scale.
 
-At the platform level, composable architecture refers to loosely coupled platform services, utilities, and
-business applications. With modular design, you can assemble platform components and applications to create
-new use cases or to adjust for ever-changing business environment and requirements. Domain driven design (DDD),
-Command Query Responsibility Segregation (CQRS) and Microservices patterns are the popular tools that architects
-use to build composable architecture. You may deploy application in container, serverless or other means.
-
-At the application level, composable application means that an application is assembled from modular software
-components or functions that are self-contained and pluggable. You can mix-n-match functions to form new applications.
-You can retire outdated functions without adverse side effect to a production system. Multiple versions of a function
-can exist, and you can decide how to route user requests to different versions of a function. Applications would be
-easier to design, develop, maintain, deploy, and scale.
-
-In 2023, Accenture extended its event-driven development framework, codename "Mercury", to become the first
-implementation of a Composable framework to realize the goal of composable architecture and application design.
-
-Before we take a deep dive of the mercury-composable framework, let's review Composable Methodology first.
+Composable architecture became an industry direction around 2022, alongside Domain-Driven Design (DDD),
+CQRS, and microservices. Mercury was among the first frameworks to realize it end-to-end for event-driven
+systems — the methodology below is how that realization works in practice.
 
 ## Methodology
 
@@ -62,7 +54,7 @@ white boarding discussion among product owners, business domain experts and tech
 As shown in Figure 1, a transaction flow diagram has a start point and an end point. Each processing step is called
 a "task". Some tasks would do calculation and some tasks would make decision to pass to the next steps.
 
-> *Note*: Task types include decision, response, end, sequential, parallel, fork-n-join, sink and pipeline.
+> *Note*: Task types include decision, response, end, sequential, parallel, fork, sink and pipeline.
 
 The product team designs a transaction flow to address a business use case and presents it as a diagram.
 Naturally, this is how a human designer thinks. We don't want to prematurely adjust the business requirements
@@ -80,8 +72,8 @@ For simplicity, we will call a transaction flow diagram as "Event Flow Diagram" 
 
 ## First principle - "input-process-output"
 
-The first principle of composable application design is that each task (also called "function") is self-contained
-and its input and output are immutable.
+The first principle of composable application design is that each function (called a **task** when it is a step
+in an event flow) is self-contained and its input and output are immutable.
 
 Self-containment means that the task or function does not need to know the world outside its functional scope, thus
 making the function as pure as "input-process-output". i.e. given some input, the task or function will carry out
@@ -90,8 +82,8 @@ some business logic to generate some output according to functional specificatio
 Immutability is an important guardrail for clean code design. A function cannot change the business object outside
 its functional scope, thus eliminating the chance of unintended side effects of data interference.
 
-> *Note*: In composable design, task and function can be used interchangeably. In an event flow diagram, we call each
-          step a "task". In application design, we call each step a "function".
+> *Note*: A **task** is a function in its role as a step in an event flow — the same atom, named by where it
+          appears. The unit you write is always a **function**; "task" is just what we call it inside a flow diagram.
 
 ## Second principle - zero to one dependency
 
@@ -110,7 +102,7 @@ parallel operation that yields higher performance and throughput.
 Since composable functions are self-contained and independent, they can be reused and repackaged into different
 applications to serve different purposes. Therefore, composable functions are, by definition, plug-n-play.
 
-The platform and infrastructure layers are encapsulated as `adapters`, `gateways` and `wrappers`.
+The platform and infrastructure are encapsulated as `adapters`, `gateways` and `wrappers`.
 Figure 1 illustrates this architectural principle by connecting an event flow to the user through an event flow
 adapter. For example, a "HTTP Flow Adapter" serves both inbound request and outbound response. A "Kafka Flow Adapter"
 uses one topic for inbound and another topic for outbound events.
@@ -165,7 +157,7 @@ of the Mercury-Composable framework.
 
 As illustrated in Figure 2, event choreography for an event flow is described as an "Event Flow Configuration".
 An "Event Manager" is implemented as part of a low-latency in-memory event system. Composable functions
-(aka "task" in an event flow) ride on the in-memory event system so that the event manager can invoke them by
+(a **task** when wired into an event flow) ride on the in-memory event system so that the event manager can invoke them by
 sending events.
 
 Since composable functions are self-contained, the event manager performs input/output data mapping to and from

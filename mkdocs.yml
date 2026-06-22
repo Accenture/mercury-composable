@@ -49,6 +49,7 @@ nav:
     - Design Notes: arch-decisions/DESIGN-NOTES.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
 
+  - Documentation Conventions: guides/documentation-conventions.md
   - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
   - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md
   - Inclusivity: https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md

@@ -12,7 +12,9 @@ Mercury Composable lets you build backend applications as **composable, event-dr
 and, increasingly, as **Active Knowledge Graphs** you evolve by *editing a model* rather than
 rewriting code. Functions are fully decoupled — they know each other only by route name, wired
 through event envelopes — so orchestration is **configuration, not code**. It runs on Java 21
-virtual threads, so straightforward synchronous code performs on par with reactive.
+virtual threads, so straightforward synchronous code performs on par with reactive. The
+event-driven core descends from the **Scala/Akka actor model**, realized on the **Eclipse Vert.x**
+event bus.
 
 > **New here?** Start with the **[5-Minute Quickstart](guides/quickstart.md)**, then
 > **[Getting Started](guides/getting-started.md)**.

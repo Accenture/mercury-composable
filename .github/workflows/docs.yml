@@ -42,5 +42,7 @@ jobs:
         run: python3 scripts/check-event-script-grammar.py
       - name: Check REST automation grammar spec is in sync (anti-drift)
         run: python3 scripts/check-rest-automation-grammar.py
+      - name: Check documentation canon (anti-drift)
+        run: python3 scripts/check-doc-canon.py
       - name: Build docs (strict)
         run: mkdocs build --strict

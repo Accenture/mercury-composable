@@ -1,18 +1,18 @@
 ---
 title: Architecture Overview
-summary: The complete technical mental model — layers, components, the in-memory event bus,
+summary: The complete technical mental model — the request pipeline, components, the in-memory event bus,
   threading, and the core APIs.
 layer: platform-core
 audience: [architect, developer]
-keywords: [architecture, event bus, layers, flow adapter, threading, postoffice, platform]
+keywords: [architecture, event bus, request pipeline, flow adapter, threading, postoffice, platform]
 ---
 
 # Architecture Overview
 
 > **At a glance**
 >
-> - **What** — the framework's technical mental model: layers (flow adapters → event manager →
->   functions), the in-memory event bus, threading, and the core APIs.
+> - **What** — the framework's technical mental model: the request pipeline (flow adapters → event
+>   manager → functions), the in-memory event bus, threading, and the core APIs.
 > - **For** architects and developers who want the whole picture before the specifics.
 > - The [Methodology](methodology.md) covers the *why* behind this design.
 
@@ -20,17 +20,37 @@ Mercury Composable is a Java 21 framework for building event-driven applications
 stateless functions wired together by YAML-configured event choreography. It targets microservices,
 serverless deployments, and any system where maintainability and horizontal scalability are priorities.
 Because each function is a pure input-process-output unit with an explicit interface contract, the
-framework is also well suited for AI-assisted code generation — an AI agent can generate correct
-functions, flow configurations, and REST definitions from this page alone.
+framework is also well suited for AI-assisted code generation. For *deterministic* generation, each DSL
+ships an agent-ready specification — a grammar plus a machine-readable catalog — so an agent can author
+artifacts without inferring from examples or reading engine source: see the
+[REST](rest-automation/ai-agent-guide.md), [Event Script](event-script/ai-agent-guide.md), and
+[MiniGraph](knowledge-graph/ai-agent-guide.md) agent guides.
+
+## Where it came from
+
+Mercury Composable's event-driven core descends from the **actor model** — the design behind Scala's
+Akka framework, where independent *actors* share no state and interact only by passing messages to
+named addresses. Mercury carries that into Java: a **function** is an isolated actor, addressed only by
+its **route name**, and the only thing that passes between functions is an immutable **`EventEnvelope`**.
+There are no direct calls between user functions, so there is nothing to tightly couple.
+
+The transport is the **Eclipse Vert.x** event bus, in-process. On top of it, **Java 21 virtual threads**
+let one function call another and await the reply in ordinary synchronous code — no callbacks, no
+reactive plumbing — while performing like non-blocking code, because a parked virtual thread costs
+almost nothing.
+
+This lineage explains the shape of the whole framework: because the atom is a decoupled, address-by-name
+actor, the *same* function can be wired by HTTP (a **service**), by a flow (a **task**), or by a
+knowledge graph (a **skill**) without the function itself ever changing.
 
 ---
 
 ## System Architecture
 
-A Mercury Composable application is structured in five distinct layers that process a request from
-outside in.
+A Mercury Composable application is structured as a **request pipeline** — five stages that process a
+request from outside in.
 
-The outermost layer is the **flow adapter**. Adapters convert external requests into internal events.
+The outermost stage is the **flow adapter**. Adapters convert external requests into internal events.
 The built-in HTTP flow adapter intercepts HTTP requests routed through the REST automation engine and
 packages them as `EventEnvelope` objects destined for the flow engine, then delivers the final response
 back to the caller. The Kafka adapter provides the same contract for stream-based event sources. The
@@ -58,7 +78,7 @@ Broadcast delivery sends an event to all registered instances. The event system 
 overflow buffer when a consumer is slower than the producer, removing the need for explicit back-pressure
 handling in user code.
 
-**Composable functions** are the innermost layer and the only place where application business logic
+**Composable functions** are the innermost stage and the only place where application business logic
 lives. A function knows nothing about HTTP, the flow configuration, or other user functions. It receives
 typed input, executes its logic, and returns typed output. Its only permitted external dependency is a
 platform or infrastructure component consumed through the event system — never a direct method call to
