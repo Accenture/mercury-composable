@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-21 | agent: Claude Code
+- **last_session:** 2026-06-22 | agent: Claude Code
 - **last_review:** 2026-06-21 | through 2026-06-22-003844.md
 - **last_invariant_check:** (none yet)
 
@@ -95,6 +95,18 @@
   fresh-agent-validated. **All 3 DSLs (MiniGraph, Event Script, REST) now have the deterministic
   spec kit + CI drift test.**
   <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-21 | uses: 3 | tier: active -->
+- **Finalized doc-style conventions** (the consistency pass after the migration was declared "done";
+  3 forks decided by Eric Law 2026-06-22): (1) **ALL docs use lowercase-kebab semantic slugs** — every
+  remaining ALL-CAPS file was renamed (`ARCHITECTURE`→`architecture`, `METHODOLOGY`→`methodology`,
+  `COMPOSABLE-DESIGN`→`composable-design`, `QUICKSTART`→`quickstart`, the `*-REFERENCE` set→lowercase,
+  `APPENDIX-II`→`reserved-names-and-headers`, `APPENDIX-III`→`actuators-and-http-client`, and
+  `CHAPTER-10`→`knowledge-graph/property-graph.md` (co-located into Part IV)); each old path keeps an
+  `mkdocs-redirects` entry. (2) **Every content doc carries the full pattern** — frontmatter +
+  "At a glance" + "See also"; **reference docs get At-a-glance too** (not exempt — so it is not later
+  flagged as drift). (3) **`TABLE-OF-CONTENTS` is retired** (redirect → Home; the Part I–VI sidebar
+  nav is the table of contents). The published-URL safety net is the redirect map; live sources (docs,
+  README, llms.txt) are repointed to the new slugs, CHANGELOG (historical) is left to the redirect.
+  <!-- id: docs-style-conventions | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## Conventions
 
@@ -147,8 +159,15 @@
   now = tutorial `index` + grammar + agent guide). **Next (the home stretch):**
   CH-5→`build-test-deploy`, CH-9→`api-overview` (simple flat renames), template COMPOSABLE-DESIGN +
   the reference docs (ANNOTATIONS / CONFIGURATION / EVENT-ENVELOPE / FLOW-SCHEMA / APPENDIX-II/III),
-  retire APPENDIX-I (redirect → CONFIGURATION-REFERENCE). That completes the rewrite.*
-  <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+  retire APPENDIX-I (redirect → CONFIGURATION-REFERENCE). That completes the rewrite.
+  (10) **Consistency pass (2026-06-22):** the migration above was declared "done" but left a tail of
+  old-style remnants (12 ALL-CAPS files incl. an un-migrated `CHAPTER-10`, a BOM-corrupted
+  `event-script/index.md` frontmatter, reference docs missing At-a-glance, a legacy `TABLE-OF-CONTENTS`).
+  Closed per `docs-style-conventions`: full slug-normalization + redirects, At-a-glance on every doc,
+  TOC retired, all inbound links (docs + README + llms.txt) repointed, stale prose "Chapter-N" refs and
+  a stale jar version in quickstart fixed. `mkdocs build --strict` exit 0 / 0 warnings; 3 grammar drift
+  checks pass; all redirect stubs resolve. The rewrite is now stylistically uniform old→new.*
+  <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
@@ -164,6 +183,11 @@
   fail the build. **Done 2026-06-20:** `.github/workflows/docs.yml` runs `mkdocs build --strict`
   + the grammar drift check on docs/spec/help changes.
   <!-- id: thread-ci-docs-build | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+- [x] **Old/new doc-style inconsistency** — the rewrite was declared complete but mixed legacy
+  ALL-CAPS docs (un-migrated `CHAPTER-10`, BOM-broken `event-script/index.md` frontmatter, reference
+  docs without At-a-glance, legacy `TABLE-OF-CONTENTS`) with the new slug/frontmatter/At-a-glance/
+  See-also pattern. **Done 2026-06-22:** resolved per `docs-style-conventions` — see bp-docs progress (10).
+  <!-- id: thread-docs-style-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## User Preferences
 

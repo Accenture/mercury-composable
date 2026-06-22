@@ -10,6 +10,13 @@ keywords: [reserved names, reserved headers, routes, system, reference]
 
 *Reference: System-reserved route names and HTTP headers that must not be overridden.*
 
+> **At a glance**
+>
+> - **What** — the route names and HTTP headers the platform reserves for its own routing.
+> - **Why it matters** — overloading a reserved name or header can silently break system routing;
+>   this is the do-not-collide list.
+> - **For** developers naming functions and setting headers.
+
 The system reserves some route names and headers for routing purpose.
 
 ## System route names
@@ -127,5 +134,5 @@ trace.http.header=X-Correlation-Id, X-Trace-Id
 The system uses a temp folder in "/tmp/reactive" for event streaming.
 ## See also
 
-- [Configuration Reference](CONFIGURATION-REFERENCE.md) — all configuration keys.
-- [Actuators & HTTP Client](APPENDIX-III.md) — built-in endpoints and utilities.
+- [Configuration Reference](configuration-reference.md) — all configuration keys.
+- [Actuators & HTTP Client](actuators-and-http-client.md) — built-in endpoints and utilities.

@@ -8,7 +8,7 @@ audience: [developer, architect, ai-agent, reference]
 keywords: [event script, flow, dsl, grammar, execution type, data mapping, deterministic, yaml]
 related:
   - guides/event-script/index.md
-  - guides/FLOW-SCHEMA-REFERENCE.md
+  - guides/flow-schema-reference.md
   - guides/knowledge-graph/command-reference.md
 ---
 
@@ -20,7 +20,7 @@ related:
 >   needs to write a valid flow without inferring from examples.
 > - Machine-readable form: [`event-script-flow.json`](event-script-flow.json). Authoring from an
 >   agent? See the [AI agent guide](ai-agent-guide.md). Tutorial/worked examples:
->   [Event Script Syntax](index.md); exhaustive field docs: [Flow Schema Reference](../FLOW-SCHEMA-REFERENCE.md).
+>   [Event Script Syntax](index.md); exhaustive field docs: [Flow Schema Reference](../flow-schema-reference.md).
 > - A flow is compiled and validated by the engine; the rules below mirror that validation
 >   (`CompileFlows`), so violating them fails compilation.
 
@@ -141,4 +141,4 @@ Compile-time rules — violate them and the flow won't load:
 
 - [`event-script-flow.json`](event-script-flow.json) — machine-readable form of this grammar.
 - [AI agent guide](ai-agent-guide.md) — authoring flows deterministically from an agent.
-- [Event Script Syntax](index.md) · [Flow Schema Reference](../FLOW-SCHEMA-REFERENCE.md) — worked examples and exhaustive field docs.
+- [Event Script Syntax](index.md) · [Flow Schema Reference](../flow-schema-reference.md) — worked examples and exhaustive field docs.

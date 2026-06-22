@@ -1,4 +1,4 @@
-﻿---
+---
 title: Event Script Syntax
 summary: The complete Event Script DSL reference — YAML flow structure, all task execution types,
   and the data-mapping mini-language.
@@ -19,7 +19,7 @@ keywords: [event script, flow, dsl, task types, data mapping, yaml, choreography
 >   [Flow grammar](flow-grammar.md) and [AI agent guide](ai-agent-guide.md).
 
 > For a quick-reference lookup of all flow fields, namespaces, and task types, see the
-> [Flow Configuration Schema Reference](../FLOW-SCHEMA-REFERENCE.md).
+> [Flow Configuration Schema Reference](../flow-schema-reference.md).
 
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
@@ -250,7 +250,7 @@ For easy matching, please use lower case for headers, cookies, query and path pa
 Regular API uses JSON and XML and they will be converted to a hash map in the event's body.
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
-the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../APPENDIX-III.md)
+the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../actuators-and-http-client.md)
 
 ## Task is a composable function
 
@@ -286,7 +286,7 @@ You can override the default serialization strategy in 2 ways in the PreLoad ann
 1. Configure input / output serialization strategies
 2. Implement your own custom serializer using the CustomSerializer interface
 
-See the [Annotations Reference](../ANNOTATIONS-REFERENCE.md) for complete `@PreLoad` parameter details and documentation of all other Mercury annotations.
+See the [Annotations Reference](../annotations-reference.md) for complete `@PreLoad` parameter details and documentation of all other Mercury annotations.
 
 ```java
 @Target({ElementType.TYPE})
@@ -2105,5 +2105,5 @@ tasks:
 
 - [Flow grammar](flow-grammar.md) — the rule-based schema (the deterministic spec).
 - [AI agent guide](ai-agent-guide.md) — author flows deterministically with an agent.
-- [Flow Configuration Schema](../FLOW-SCHEMA-REFERENCE.md) — exhaustive field reference.
+- [Flow Configuration Schema](../flow-schema-reference.md) — exhaustive field reference.
 - [Build, Test & Deploy](../build-test-deploy.md) — package and run flows.

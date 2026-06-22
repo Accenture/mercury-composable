@@ -8,7 +8,7 @@ audience: [developer, architect, ai-agent, reference]
 keywords: [rest automation, rest.yaml, http endpoint, cors, headers, flow adapter, deterministic]
 related:
   - guides/rest-automation/index.md
-  - guides/CONFIGURATION-REFERENCE.md
+  - guides/configuration-reference.md
   - guides/event-script/flow-grammar.md
 ---
 

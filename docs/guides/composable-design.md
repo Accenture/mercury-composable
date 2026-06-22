@@ -11,6 +11,14 @@ keywords: [composable design, patterns, decoupling, event-driven, maintainabilit
 
 *Concepts: Essay on composable design patterns and their benefits for maintainability and scalability.*
 
+> **At a glance**
+>
+> - **What** — an essay on composable design: self-contained functions communicating by events
+>   instead of tightly coupled calls.
+> - **Why it matters** — decoupling is what keeps a growing codebase modular, testable, and
+>   scalable rather than tangled.
+> - **For** architects and developers reasoning about how to structure composable applications.
+
 ## Introduction
 
 Software development is an ongoing battle against complexity. Over time, codebases can become tangled and unwieldy,
@@ -77,6 +85,6 @@ write code that is a joy to work with.
 
 ## See also
 
-- [Methodology](METHODOLOGY.md) — the four composable principles, formalized.
-- [Architecture Overview](ARCHITECTURE.md) — the technical model behind the patterns.
+- [Methodology](methodology.md) — the four composable principles, formalized.
+- [Architecture Overview](architecture.md) — the technical model behind the patterns.
 - [Getting Started](getting-started.md) — composable design in a working app.

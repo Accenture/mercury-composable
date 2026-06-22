@@ -708,6 +708,6 @@ API changes.
 For enterprise clients, technical support is available. Please contact your Accenture representative for details.
 ## See also
 
-- [Event Envelope Reference](EVENT-ENVELOPE-REFERENCE.md) — the EventEnvelope + PostOffice API in depth.
-- [Minimalist Property Graph](CHAPTER-10.md) — the in-memory graph API.
-- [Annotations Reference](ANNOTATIONS-REFERENCE.md) — `@PreLoad` and the rest.
+- [Event Envelope Reference](event-envelope-reference.md) — the EventEnvelope + PostOffice API in depth.
+- [Minimalist Property Graph](knowledge-graph/property-graph.md) — the in-memory graph API.
+- [Annotations Reference](annotations-reference.md) — `@PreLoad` and the rest.

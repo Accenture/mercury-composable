@@ -14,7 +14,7 @@ keywords: [architecture, event bus, layers, flow adapter, threading, postoffice,
 > - **What** — the framework's technical mental model: layers (flow adapters → event manager →
 >   functions), the in-memory event bus, threading, and the core APIs.
 > - **For** architects and developers who want the whole picture before the specifics.
-> - The [Methodology](METHODOLOGY.md) covers the *why* behind this design.
+> - The [Methodology](methodology.md) covers the *why* behind this design.
 
 Mercury Composable is a Java 21 framework for building event-driven applications from self-contained,
 stateless functions wired together by YAML-configured event choreography. It targets microservices,
@@ -138,7 +138,7 @@ methods (`setTo`, `setHeader`, `setBody`, `setStatus`, `setTrace`, `setCorrelati
 the input type as `EventEnvelope` in the `TypedLambdaFunction` signature.
 
 For a complete listing of all `EventEnvelope` and `PostOffice` methods, see the
-[Event Envelope Reference](EVENT-ENVELOPE-REFERENCE.md).
+[Event Envelope Reference](event-envelope-reference.md).
 
 ---
 
@@ -335,7 +335,7 @@ Calling code uses the same `PostOffice` API whether the target is local or remot
 | `@CloudService` | Mark a class as a cloud service plug-in selected by `cloud.services` in application.properties |
 | `@OptionalService` | Conditionally load a function based on a configuration expression (e.g., `!feature.flag`) |
 
-For complete parameter details, combination rules, and required interfaces, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
+For complete parameter details, combination rules, and required interfaces, see the [Annotations Reference](annotations-reference.md).
 
 ---
 
@@ -343,7 +343,7 @@ For complete parameter details, combination rules, and required interfaces, see 
 
 | File | Purpose |
 |---|---|
-| [`application.properties` / `application.yml`](CONFIGURATION-REFERENCE.md) | Port (`rest.server.port`), component scan (`web.component.scan`), flow list reference (`yaml.flow.automation`), cloud connector (`cloud.connector`), serialization strategy (`snake.case.serialization`) |
+| [`application.properties` / `application.yml`](configuration-reference.md) | Port (`rest.server.port`), component scan (`web.component.scan`), flow list reference (`yaml.flow.automation`), cloud connector (`cloud.connector`), serialization strategy (`snake.case.serialization`) |
 | `rest.yaml` | Declarative HTTP endpoint definitions: URL, methods, flow or service route, CORS config, auth function, tracing |
 | `flows.yaml` | Index of individual flow YAML files to load (`flows:` list; optional `location:` for non-classpath paths) |
 | `*.yml` in `flows/` | Individual event flow configurations, each defining one transaction's complete task sequence |
@@ -356,7 +356,7 @@ comma-separated (e.g., `yaml.rest.automation=file:/tmp/config/rest.yaml, classpa
 
 ## Further Reading
 
-- [Methodology](METHODOLOGY.md) — design principles: input-process-output, zero dependency, event choreography, platform abstraction
+- [Methodology](methodology.md) — design principles: input-process-output, zero dependency, event choreography, platform abstraction
 - [Getting Started](getting-started.md) — hands-on walkthrough with the composable example application
 - [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads, Mono/Flux, authentication functions
 - [REST Automation](rest-automation/index.md) — complete `rest.yaml` syntax reference

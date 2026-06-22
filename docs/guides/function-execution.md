@@ -29,7 +29,7 @@ a network event system, a database or an external REST resource.
 A "task" or "function" is a class that implements the LambdaFunction or TypedLambdaFunction interface. 
 Within each function boundary, it may have private methods that are fully contained within the class.
 
-As discussed in Chapter-1, a function may look like this:
+As discussed in [Getting Started](getting-started.md), a function may look like this:
 
 ```java
 @PreLoad(route = "my.first.function", instances = 10)
@@ -295,7 +295,7 @@ EventEnvelope result = po.request(requestEvent, timeout).get();
 
 ### Kernel thread pool
 
-For complete parameter details on `@KernelThreadRunner`, `@EventInterceptor`, and all other annotations, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
+For complete parameter details on `@KernelThreadRunner`, `@EventInterceptor`, and all other annotations, see the [Annotations Reference](annotations-reference.md).
 
 When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
 the function will be executed using a "kernel thread pool" and Java will run your function in native 
@@ -370,6 +370,6 @@ and encapsulation mean that you can precisely control how your application perfo
 ## See also
 
 - [Getting Started](getting-started.md) — build your first functions in a working app.
-- [Architecture Overview](ARCHITECTURE.md) — where functions sit in the event-driven runtime.
+- [Architecture Overview](architecture.md) — where functions sit in the event-driven runtime.
 - [REST Automation](rest-automation/index.md) — expose functions as HTTP endpoints.
 - [Event Script Syntax](event-script/index.md) — orchestrate functions with YAML flows.

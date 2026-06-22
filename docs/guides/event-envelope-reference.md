@@ -11,6 +11,14 @@ keywords: [event envelope, postoffice, messaging, api, headers, body, reference]
 
 *Reference: Complete API reference for `EventEnvelope` and `PostOffice`.*
 
+> **At a glance**
+>
+> - **What** — the `EventEnvelope` message container and the `PostOffice` API: structure, headers,
+>   body, and the methods functions use to message each other.
+> - **Why it matters** — every event on the bus is an `EventEnvelope`; understanding it is the
+>   prerequisite for advanced function patterns, error handling, and distributed tracing.
+> - **For** developers writing functions that go beyond simple request/response.
+
 `EventEnvelope` is the universal message container in Mercury Composable. Every event that
 travels through the event bus — whether triggered by an HTTP request, a flow step, or a direct
 `PostOffice` call — is carried inside an `EventEnvelope`. Understanding its structure is
@@ -114,7 +122,7 @@ public class InspectEvent implements TypedLambdaFunction<EventEnvelope, Map<Stri
 ```
 
 This pattern is also required when a function is annotated with
-[`@EventInterceptor`](ANNOTATIONS-REFERENCE.md#eventinterceptor).
+[`@EventInterceptor`](annotations-reference.md#eventinterceptor).
 
 ---
 
@@ -329,7 +337,7 @@ helps when debugging flows.
 | `error.stack` | Stack trace when an exception handler task is invoked |
 
 For the complete data mapping syntax and all literal value constructors (`text()`, `int()`,
-`map()`, etc.), see the [Flow Configuration Schema](FLOW-SCHEMA-REFERENCE.md).
+`map()`, etc.), see the [Flow Configuration Schema](flow-schema-reference.md).
 
 ---
 
@@ -566,9 +574,9 @@ in user code when operating at the HTTP boundary:
 
 ## See also
 
-- [Architecture Overview](ARCHITECTURE.md) — Event Envelope structure and role in the system
-- [Annotations Reference](ANNOTATIONS-REFERENCE.md) — `@EventInterceptor`, `@PreLoad`, and other annotations
-- [Flow Configuration Schema](FLOW-SCHEMA-REFERENCE.md) — Complete data mapping DSL reference
+- [Architecture Overview](architecture.md) — Event Envelope structure and role in the system
+- [Annotations Reference](annotations-reference.md) — `@EventInterceptor`, `@PreLoad`, and other annotations
+- [Flow Configuration Schema](flow-schema-reference.md) — Complete data mapping DSL reference
 - [Event Script Syntax](event-script/index.md) — Flow DSL including input/output mapping and execution types
 - [Function Execution Strategies](function-execution.md) — Virtual threads, auth functions, Flux/Mono return types
 - [API Overview](api-overview.md) — Full `PostOffice`, `Platform`, and configuration API

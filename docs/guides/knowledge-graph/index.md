@@ -7,7 +7,7 @@ layer: knowledge-graph
 audience: [architect, developer]
 keywords: [active knowledge graph, minigraph, skill, graph execution, semantic application, zero-code]
 related:
-  - guides/CHAPTER-10.md
+  - guides/knowledge-graph/property-graph.md
   - guides/event-script/index.md
   - index.md
 ---
@@ -25,7 +25,7 @@ related:
 >   Platform Core (event-driven) → Event Script (composable) → **Active Knowledge Graph**.
 > - **How you run it** — Execute a deployed graph via `POST /api/graph/{graph-id}`; design and
 >   dry-run graphs interactively in the **MiniGraph Playground**.
-> - **Before you start** — Skim [Minimalist Property Graph](../CHAPTER-10.md) for the underlying
+> - **Before you start** — Skim [Minimalist Property Graph](property-graph.md) for the underlying
 >   graph data model; [Event Script](../event-script/index.md) helps for the integration section below.
 
 ## From code, to configuration, to knowledge
@@ -46,7 +46,7 @@ This is what "Knowledge Graph as application" means: a single, inspectable model
 ## What an Active Knowledge Graph is {#what-it-is}
 
 A traditional property graph models **nodes** (entities), **connections** (relationships), and
-**properties** (key–values on either). Mercury's [MiniGraph](../CHAPTER-10.md) adds one thing: a
+**properties** (key–values on either). Mercury's [MiniGraph](property-graph.md) adds one thing: a
 node may carry a `skill` property naming a composable function. That node becomes an **active node**.
 
 - Nodes without a skill are **passive** — they hold data and are traversed but not executed.
@@ -165,6 +165,6 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 - [Built-in skills reference](skills-reference.md) — the seven `graph.*` skills with syntax and worked examples.
 - [Composing the layers](composing-the-layers.md) — external APIs, sub-graph/flow extension, and REST exposure.
 - [Playground & AI companion](playground-and-companion.md) — the interactive workbench and user–AI collaboration.
-- [Minimalist Property Graph](../CHAPTER-10.md) — the underlying graph data structures and API.
+- [Minimalist Property Graph](property-graph.md) — the underlying graph data structures and API.
 - [Event Script Syntax](../event-script/index.md) — the composable flow DSL that `graph.extension` delegates to.
 - [Home](../../index.md) — Mercury's three-layer model and where this layer fits.

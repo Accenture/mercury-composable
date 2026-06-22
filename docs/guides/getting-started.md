@@ -18,7 +18,7 @@ keywords: [getting started, tutorial, composable, example app, rest, flows, func
 > - **You'll learn** — how a request flows through REST automation → an Event Script flow →
 >   composable functions, and how to write and wire your own.
 > - **Prerequisites** — Java 21+, Maven 3.9.7+; ~20 minutes. Want the fast version first? See the
->   [Quickstart](QUICKSTART.md).
+>   [Quickstart](quickstart.md).
 
 Mercury Composable is a software development toolkit for writing composable applications.
 
@@ -122,7 +122,7 @@ stateless. The "state machine" is referenced using the namespace "model".
 ### Assigning a route name to a user function
 
 You can assign a route name to a Java class using the `PreLoad` annotation like this:
-See the [Annotations Reference](ANNOTATIONS-REFERENCE.md) for the complete list of parameters and all available annotations.
+See the [Annotations Reference](annotations-reference.md) for the complete list of parameters and all available annotations.
 
 ```java
 @PreLoad(route="v1.get.profile", instances=100)
@@ -238,7 +238,7 @@ yaml.rest.automation=classpath:/rest.yaml
 yaml.flow.automation=classpath:/flows.yaml
 ```
 
-See the [Configuration Reference](CONFIGURATION-REFERENCE.md) for a complete list of all available properties.
+See the [Configuration Reference](configuration-reference.md) for a complete list of all available properties.
 
 The flow configuration files are shown in the "main/resources/flows" folder where you will find the flow configuration
 files for the three event flows, namely get-profile.yml, delete-profile.yml and create-profile.yml.
@@ -519,7 +519,7 @@ However, if there is a use case that you prefer to write orchestration logic by 
 APIs to do event-driven programming. API overview will be covered in [API Overview](api-overview.md).
 ## See also
 
-- [Quickstart](QUICKSTART.md) — the five-minute version of this tutorial.
-- [Methodology](METHODOLOGY.md) — the four composable design principles behind what you built.
+- [Quickstart](quickstart.md) — the five-minute version of this tutorial.
+- [Methodology](methodology.md) — the four composable design principles behind what you built.
 - [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads for your functions.
 - [Event Script Syntax](event-script/index.md) — orchestrate functions with YAML flows.

@@ -11,6 +11,14 @@ keywords: [annotations, PreLoad, MainApplication, KernelThreadRunner, EventInter
 
 *Reference: Complete reference for all Mercury Composable Java annotations.*
 
+> **At a glance**
+>
+> - **What** — every Mercury annotation: `@PreLoad`, `@MainApplication`, `@KernelThreadRunner`,
+>   `@EventInterceptor`, and the rest, with their full parameter sets.
+> - **Why it matters** — annotations are how you register a function and control its execution; the
+>   right parameters wire a function into the platform without coupling it to anything else.
+> - **For** developers building and registering composable functions.
+
 Mercury Composable uses annotations to declare composable functions, control execution
 behavior, and manage application lifecycle. This page documents every annotation with
 its full parameter set, behavior, and usage examples.
@@ -384,7 +392,7 @@ public class RequestRouter implements TypedLambdaFunction<EventEnvelope, Void> {
   `po.asyncRequest()` to reply.
 - Frequently combined with `@ZeroTracing` (high-volume routing should not be traced).
 - Can be combined with `@KernelThreadRunner` when the interception logic needs blocking I/O.
-- For the complete `EventEnvelope` API, see the [Event Envelope Reference](EVENT-ENVELOPE-REFERENCE.md).
+- For the complete `EventEnvelope` API, see the [Event Envelope Reference](event-envelope-reference.md).
 
 ---
 
@@ -646,7 +654,7 @@ input:
 - Security-enforced: classes that attempt I/O, reflection, or dynamic loading will fail
   to load (logged as errors at startup).
 - Built-in plugins cover arithmetic, logic, type conversion, string operations, collection
-  transformation, and generators. See [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md)
+  transformation, and generators. See [Flow Configuration Schema Reference](flow-schema-reference.md)
   for the full list.
 - Located in the `event-script-engine` module; requires that module on the classpath.
 
@@ -758,7 +766,7 @@ and `@SimplePlugin` classes within those packages (and all sub-packages).
 No error is raised. If a function is unexpectedly missing from the event system, verify
 that its package is listed in `web.component.scan`.
 
-See the [Configuration Reference](CONFIGURATION-REFERENCE.md) for all scanning-related
+See the [Configuration Reference](configuration-reference.md) for all scanning-related
 properties.
 
 ---
@@ -768,5 +776,5 @@ properties.
 - [Getting Started](getting-started.md) — first tutorial with `@PreLoad` and `@MainApplication` examples
 - [Function Execution Strategies](function-execution.md) — deep dive on `@KernelThreadRunner` and `@EventInterceptor`
 - [Event Script Syntax](event-script/index.md) — `@PreLoad` serialization strategies; `@SimplePlugin` reference
-- [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md) — `f:` plugin usage in flow YAML
-- [Configuration Reference](CONFIGURATION-REFERENCE.md) — `web.component.scan`, `kernel.thread.pool`, and related properties
+- [Flow Configuration Schema Reference](flow-schema-reference.md) — `f:` plugin usage in flow YAML
+- [Configuration Reference](configuration-reference.md) — `web.component.scan`, `kernel.thread.pool`, and related properties

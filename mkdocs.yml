@@ -5,12 +5,12 @@ nav:
   - Home: index.md
 
   - Part I · Orientation:
-    - Quickstart: guides/QUICKSTART.md
+    - Quickstart: guides/quickstart.md
     - Getting Started: guides/getting-started.md
 
   - Part II · Event-driven foundation:
-    - Architecture Overview: guides/ARCHITECTURE.md
-    - Methodology: guides/METHODOLOGY.md
+    - Architecture Overview: guides/architecture.md
+    - Methodology: guides/methodology.md
     - Function Execution Strategies: guides/function-execution.md
     - REST Automation: guides/rest-automation/index.md
     - REST grammar: guides/rest-automation/rest-grammar.md
@@ -20,9 +20,9 @@ nav:
     - Event Script Syntax: guides/event-script/index.md
     - Flow grammar: guides/event-script/flow-grammar.md
     - Flow AI agent guide: guides/event-script/ai-agent-guide.md
-    - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
+    - Flow Configuration Schema: guides/flow-schema-reference.md
     - Build, Test & Deploy: guides/build-test-deploy.md
-    - Composable Design: guides/COMPOSABLE-DESIGN.md
+    - Composable Design: guides/composable-design.md
 
   - Part IV · Knowledge Graph as Application:
     - Overview: guides/knowledge-graph/index.md
@@ -32,7 +32,7 @@ nav:
     - AI agent guide: guides/knowledge-graph/ai-agent-guide.md
     - Composing the layers: guides/knowledge-graph/composing-the-layers.md
     - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
-    - Minimalist Property Graph: guides/CHAPTER-10.md
+    - Minimalist Property Graph: guides/knowledge-graph/property-graph.md
 
   - Part V · Operate & integrate:
     - Spring Boot Integration: guides/spring-boot.md
@@ -41,14 +41,13 @@ nav:
 
   - Part VI · Reference:
     - API Overview: guides/api-overview.md
-    - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
-    - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
-    - Event Envelope Reference: guides/EVENT-ENVELOPE-REFERENCE.md
-    - Reserved Names & Headers: guides/APPENDIX-II.md
-    - Actuators & HTTP Client: guides/APPENDIX-III.md
+    - Annotations Reference: guides/annotations-reference.md
+    - Configuration Reference: guides/configuration-reference.md
+    - Event Envelope Reference: guides/event-envelope-reference.md
+    - Reserved Names & Headers: guides/reserved-names-and-headers.md
+    - Actuators & HTTP Client: guides/actuators-and-http-client.md
     - Design Notes: arch-decisions/DESIGN-NOTES.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
-    - Table of Contents: guides/TABLE-OF-CONTENTS.md
 
   - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
   - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md
@@ -65,9 +64,21 @@ plugins:
         'guides/CHAPTER-4.md': 'guides/event-script/index.md'
         'guides/CHAPTER-5.md': 'guides/build-test-deploy.md'
         'guides/CHAPTER-9.md': 'guides/api-overview.md'
-        'guides/APPENDIX-I.md': 'guides/CONFIGURATION-REFERENCE.md'
+        'guides/APPENDIX-I.md': 'guides/configuration-reference.md'
         'guides/CHAPTER-6.md': 'guides/spring-boot.md'
         'guides/CHAPTER-7.md': 'guides/event-over-http.md'
         'guides/CHAPTER-8.md': 'guides/service-mesh.md'
         'guides/CHAPTER-11.md': 'guides/knowledge-graph/index.md'
+        'guides/CHAPTER-10.md': 'guides/knowledge-graph/property-graph.md'
+        'guides/QUICKSTART.md': 'guides/quickstart.md'
+        'guides/ARCHITECTURE.md': 'guides/architecture.md'
+        'guides/METHODOLOGY.md': 'guides/methodology.md'
+        'guides/COMPOSABLE-DESIGN.md': 'guides/composable-design.md'
+        'guides/FLOW-SCHEMA-REFERENCE.md': 'guides/flow-schema-reference.md'
+        'guides/ANNOTATIONS-REFERENCE.md': 'guides/annotations-reference.md'
+        'guides/CONFIGURATION-REFERENCE.md': 'guides/configuration-reference.md'
+        'guides/EVENT-ENVELOPE-REFERENCE.md': 'guides/event-envelope-reference.md'
+        'guides/APPENDIX-II.md': 'guides/reserved-names-and-headers.md'
+        'guides/APPENDIX-III.md': 'guides/actuators-and-http-client.md'
+        'guides/TABLE-OF-CONTENTS.md': 'index.md'
 theme: readthedocs

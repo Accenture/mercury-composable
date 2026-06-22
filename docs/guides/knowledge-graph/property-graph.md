@@ -1,6 +1,26 @@
+---
+title: Minimalist Property Graph
+summary: The built-in in-memory property-graph data model and API — nodes, relationships, and
+  properties — that the Active Knowledge Graph layer builds on.
+layer: knowledge-graph
+audience: [developer, architect]
+keywords: [property graph, in-memory graph, nodes, relationships, minigraph, knowledge graph]
+related:
+  - guides/knowledge-graph/index.md
+  - guides/api-overview.md
+---
+
 # Minimalist Property Graph
 
-*Guide: How to use the built-in in-memory property graph for computation and decision-making.*
+*Reference: How to use the built-in in-memory property graph for computation and decision-making.*
+
+> **At a glance**
+>
+> - **What** — a built-in, in-memory property graph (nodes, relationships, key–value properties)
+>   in platform-core, sized for a few hundred nodes.
+> - **Why it matters** — it is the data structure the Active Knowledge Graph layer builds on; a few
+>   hundred nodes can model a surprisingly rich knowledge base for computation and decisioning.
+> - **For** developers and architects working at the semantic layer.
 
 An in-memory Property Graph system is available as a built-in feature in the platform-core.
 
@@ -35,7 +55,7 @@ values or objects as you like.
 
 > Figure 1 - Mini-Graph example
 
-![Mini-Graph example](./diagrams/minigraph.png)
+![Mini-Graph example](../diagrams/minigraph.png)
 
 ## Terminology
 
@@ -231,7 +251,7 @@ It is recommended that you limit the number of nodes to less than 750.
 
 This is the default graph model size for the MiniGraph Playground which
 is an interactive graph designer's workbench and a graph execution engine.
-For details, please refer to [Knowledge Graph as Application](knowledge-graph/index.md).
+For details, please refer to [Knowledge Graph as Application](index.md).
 
 While the typical use case is real-time computation or decision making,
 MiniGraph may be used to model general business use cases without writing
@@ -251,7 +271,7 @@ garbage collector.
 
 *Event flow instance*
 
-In Chapter 4, we have discussed the use of Event Flow. In the beginning of a flow,
+In [Event Script Syntax](../event-script/index.md), we have discussed the use of Event Flow. In the beginning of a flow,
 you can add a new instance of a mini-graph to a shared concurrent map. At the end
 of the flow, you should add a task or exception handler to remove the mini-graph
 instance from the shared concurrent map.
@@ -266,8 +286,8 @@ managed cache. Therefore, if normal clean up is not done at the end of a flow,
 the memory of a mini-graph instance will be released by the cache system
 automatically.
 
-<br/>
+## See also
 
-|            Chapter-9            |                   Home                    |             Knowledge Graph              |
-|:-------------------------------:|:-----------------------------------------:|:----------------------------------------:|
-| [API Overview](api-overview.md)    | [Table of Contents](TABLE-OF-CONTENTS.md) | [Knowledge Graph](knowledge-graph/index.md) |
+- [Knowledge Graph as Application](index.md) — how the semantic layer executes behavior on this graph.
+- [Build your first graph](build-your-first-graph.md) — a hands-on walkthrough.
+- [API Overview](../api-overview.md) — the core APIs the graph engine builds on.

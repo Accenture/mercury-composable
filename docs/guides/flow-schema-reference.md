@@ -11,6 +11,14 @@ keywords: [flow schema, reference, task fields, execution types, data mapping, y
 
 *Reference: Complete field-level reference for Mercury Composable Event Script flow configuration YAML files.*
 
+> **At a glance**
+>
+> - **What** — every field, execution type, and data-mapping namespace available in flow YAML,
+>   documented at the field level.
+> - **Why it matters** — flows are validated at compile time, so a precise field reference is how
+>   you author flows the engine will accept.
+> - **For** developers authoring Event Script flows (pair with the tutorial in [Event Script Syntax](event-script/index.md)).
+
 > **Note**: Due to the dynamic nature of data mapping expressions, a formal JSON Schema is
 > not provided. Validation of flow configurations is performed at compile time by the Mercury
 > flow engine.
@@ -18,7 +26,7 @@ keywords: [flow schema, reference, task fields, execution types, data mapping, y
 This page documents every field, namespace, and syntax element available in flow
 configuration files. For a tutorial-style introduction with worked examples, see
 [Event Script Syntax](event-script/index.md). For the `@PreLoad` annotation used to register
-task functions, see the [Annotations Reference](ANNOTATIONS-REFERENCE.md).
+task functions, see the [Annotations Reference](annotations-reference.md).
 
 ---
 
@@ -943,5 +951,5 @@ tasks:
 
 - [Event Script Syntax](event-script/index.md) — tutorial-style walkthrough with worked examples
 - [REST Automation](rest-automation/index.md) — `rest.yaml` configuration for HTTP endpoint routing
-- [Configuration Reference](CONFIGURATION-REFERENCE.md) — `application.properties` keys
+- [Configuration Reference](configuration-reference.md) — `application.properties` keys
   including `yaml.flow.automation`

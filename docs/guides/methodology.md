@@ -15,7 +15,7 @@ keywords: [methodology, composable, design principles, input-process-output, zer
 >
 > - **What** — the four composable design principles (input-process-output, zero dependency,
 >   platform abstraction, event choreography) and the thinking behind them.
-> - **For** architects shaping composable systems; the [Architecture Overview](ARCHITECTURE.md) is
+> - **For** architects shaping composable systems; the [Architecture Overview](architecture.md) is
 >   the technical companion.
 
 The high level concept of composable architecture was advocated by Gartner in 2022.
@@ -256,10 +256,10 @@ and Node.js have different syntax for annotation, they use a similar declarative
 > *Note*: the "instance" count for each composable function controls execution concurrency in a single application.
           It can be used with horizontal scaling to optimize use of computing resources.
 For a technical deep dive into how the framework implements these principles,
-see the [Architecture Overview](ARCHITECTURE.md).
+see the [Architecture Overview](architecture.md).
 ## See also
 
-- [Architecture Overview](ARCHITECTURE.md) — the technical mental model behind these principles.
+- [Architecture Overview](architecture.md) — the technical mental model behind these principles.
 - [Getting Started](getting-started.md) — the principles applied in a working app.
-- [Composable Design](COMPOSABLE-DESIGN.md) — an essay on composable patterns and their benefits.
+- [Composable Design](composable-design.md) — an essay on composable patterns and their benefits.
 

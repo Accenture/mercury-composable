@@ -10,6 +10,14 @@ keywords: [configuration, application.properties, application.yml, settings, ref
 
 *Reference: All application.properties and application.yml configuration keys for Mercury Composable.*
 
+> **At a glance**
+>
+> - **What** — every `application.properties` / `application.yml` key supported by the framework
+>   and its optional modules, with type, default, and description.
+> - **Why it matters** — configuration is how you tune ports, threading, security, and module
+>   behavior without touching code.
+> - **For** developers and operators configuring and deploying applications.
+
 Mercury Composable applications are configured through `application.properties` (or the
 equivalent `application.yml`). This page is the exhaustive reference for every configuration
 key supported by the framework and its optional modules.
@@ -323,4 +331,4 @@ log.format=text
 
 - [REST Automation](rest-automation/index.md) — declarative REST endpoint configuration syntax
 - [Event Script Syntax](event-script/index.md) — flow YAML configuration syntax
-- [Actuators & HTTP Client](APPENDIX-III.md) — built-in actuator endpoint reference
+- [Actuators & HTTP Client](actuators-and-http-client.md) — built-in actuator endpoint reference

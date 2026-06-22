@@ -1,6 +1,22 @@
+---
+title: Quickstart
+summary: Clone, build, and run the example Mercury Composable app in under five minutes — create,
+  retrieve, and delete a profile through its REST API.
+layer: orientation
+audience: [developer]
+keywords: [quickstart, getting started, example app, build, run, profile api]
+---
+
 # Quickstart
 
-Get Mercury Composable running with a working example app in under 5 minutes.
+*Tutorial: Get Mercury Composable running with a working example app in under 5 minutes.*
+
+> **At a glance**
+>
+> - **What** — clone the repo, build it, run the `composable-example` app, and exercise its
+>   profile REST API (create / retrieve / delete).
+> - **Why it matters** — the fastest path from zero to a running composable app you can poke at.
+> - **For** developers evaluating Mercury or starting a first project.
 
 ---
 
@@ -28,7 +44,7 @@ mvn clean install
 
 ```shell
 cd examples/composable-example
-java -jar target/composable-example-4.3.69.jar
+java -jar target/composable-example-4.4.11.jar
 ```
 
 Look for these lines in the startup output to confirm the app is running:
@@ -118,11 +134,11 @@ between steps. Explore the flow files at `examples/composable-example/src/main/r
 
 ---
 
-## Next steps
+## See also
 
-- [Configuration Reference](https://accenture.github.io/mercury-composable/guides/CONFIGURATION-REFERENCE/) — every `application.properties` key with type, default, and description
-- [Architecture Overview](https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/) — complete mental model of functions, flows, events, and APIs
-- [Methodology](https://accenture.github.io/mercury-composable/guides/METHODOLOGY/) — understand the composable design philosophy
-- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/) — write your own event flows
-- [Getting Started (Chapter 1)](https://accenture.github.io/mercury-composable/guides/getting-started/) — full walkthrough with architecture diagrams
-- [Mercury for Node.js](https://github.com/Accenture/mercury-nodejs) — JavaScript/TypeScript version
+- [Getting Started](getting-started.md) — the full walkthrough with architecture diagrams.
+- [Methodology](methodology.md) — the composable design philosophy behind what you ran.
+- [Event Script Syntax](event-script/index.md) — write your own event flows.
+- [Configuration Reference](configuration-reference.md) — every `application.properties` key with type, default, and description.
+- [Architecture Overview](architecture.md) — the complete mental model of functions, flows, events, and APIs.
+- [Mercury for Node.js](https://github.com/Accenture/mercury-nodejs) — the JavaScript/TypeScript version.

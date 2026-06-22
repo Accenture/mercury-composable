@@ -14,7 +14,7 @@ rewriting code. Functions are fully decoupled — they know each other only by r
 through event envelopes — so orchestration is **configuration, not code**. It runs on Java 21
 virtual threads, so straightforward synchronous code performs on par with reactive.
 
-> **New here?** Start with the **[5-Minute Quickstart](guides/QUICKSTART.md)**, then
+> **New here?** Start with the **[5-Minute Quickstart](guides/quickstart.md)**, then
 > **[Getting Started](guides/getting-started.md)**.
 
 ## A layered ascent
@@ -50,19 +50,18 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 
 ## Explore the docs
 
-- **Quickstart & tutorials** — [Quickstart](guides/QUICKSTART.md) · [Getting Started](guides/getting-started.md)
+- **Quickstart & tutorials** — [Quickstart](guides/quickstart.md) · [Getting Started](guides/getting-started.md)
 - **Guides** — [REST Automation](guides/rest-automation/index.md) · [Build, Test & Deploy](guides/build-test-deploy.md) ·
   [Spring Boot Integration](guides/spring-boot.md) · [Event over HTTP](guides/event-over-http.md) ·
   [Service Mesh](guides/service-mesh.md)
 - **Knowledge Graph** — [Knowledge Graph as Application](guides/knowledge-graph/index.md) ·
   [Build your first graph](guides/knowledge-graph/build-your-first-graph.md) ·
-  [Minimalist Property Graph](guides/CHAPTER-10.md)
-- **Concepts** — [Methodology](guides/METHODOLOGY.md) · [Architecture Overview](guides/ARCHITECTURE.md) ·
-  [Composable Design](guides/COMPOSABLE-DESIGN.md) · [Design Notes](arch-decisions/DESIGN-NOTES.md)
-- **Reference** — [Annotations](guides/ANNOTATIONS-REFERENCE.md) ·
-  [Configuration](guides/CONFIGURATION-REFERENCE.md) · [Event Envelope](guides/EVENT-ENVELOPE-REFERENCE.md) ·
-  [Flow Schema](guides/FLOW-SCHEMA-REFERENCE.md) · [API Overview](guides/api-overview.md) ·
-  [Full Table of Contents](guides/TABLE-OF-CONTENTS.md)
+  [Minimalist Property Graph](guides/knowledge-graph/property-graph.md)
+- **Concepts** — [Methodology](guides/methodology.md) · [Architecture Overview](guides/architecture.md) ·
+  [Composable Design](guides/composable-design.md) · [Design Notes](arch-decisions/DESIGN-NOTES.md)
+- **Reference** — [Annotations](guides/annotations-reference.md) ·
+  [Configuration](guides/configuration-reference.md) · [Event Envelope](guides/event-envelope-reference.md) ·
+  [Flow Schema](guides/flow-schema-reference.md) · [API Overview](guides/api-overview.md)
 
 ## Project
 

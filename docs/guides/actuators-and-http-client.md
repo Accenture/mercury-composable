@@ -10,6 +10,14 @@ keywords: [actuators, health, async http, http client, utilities, reference]
 
 *Reference: Built-in actuator endpoints, HTTP client API, and utility services.*
 
+> **At a glance**
+>
+> - **What** — the built-in actuator endpoints (`/info`, `/health`, …), the `AsyncHttpRequest` API,
+>   and other utility services.
+> - **Why it matters** — these ship with every app for health checks, introspection, and outbound
+>   HTTP without extra wiring.
+> - **For** developers and operators monitoring and integrating applications.
+
 ## Actuator endpoints
 
 The following are actuator endpoints:
@@ -516,5 +524,5 @@ Utility class. For examples, util.str2int and util.str2long.
 
 ## See also
 
-- [Reserved Names & Headers](APPENDIX-II.md) — system-reserved routes and headers.
+- [Reserved Names & Headers](reserved-names-and-headers.md) — system-reserved routes and headers.
 - [API Overview](api-overview.md) — the core APIs.
