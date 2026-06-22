@@ -81,8 +81,6 @@ Composable design patterns offer a powerful paradigm for building maintainable, 
 By embracing the principles of self-contained functions and event-driven communication, you can conquer complexity and
 write code that is a joy to work with.
 
-> *Source*: This article was summarized from composable technology papers using AI in January 2025
-
 ## See also
 
 - [Methodology](methodology.md) — the four composable principles, formalized.

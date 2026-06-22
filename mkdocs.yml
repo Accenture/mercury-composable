@@ -71,14 +71,10 @@ plugins:
         'guides/CHAPTER-8.md': 'guides/service-mesh.md'
         'guides/CHAPTER-11.md': 'guides/knowledge-graph/index.md'
         'guides/CHAPTER-10.md': 'guides/knowledge-graph/property-graph.md'
-        'guides/QUICKSTART.md': 'guides/quickstart.md'
-        'guides/ARCHITECTURE.md': 'guides/architecture.md'
-        'guides/METHODOLOGY.md': 'guides/methodology.md'
-        'guides/COMPOSABLE-DESIGN.md': 'guides/composable-design.md'
-        'guides/FLOW-SCHEMA-REFERENCE.md': 'guides/flow-schema-reference.md'
-        'guides/ANNOTATIONS-REFERENCE.md': 'guides/annotations-reference.md'
-        'guides/CONFIGURATION-REFERENCE.md': 'guides/configuration-reference.md'
-        'guides/EVENT-ENVELOPE-REFERENCE.md': 'guides/event-envelope-reference.md'
+        # NOTE: no case-only redirects (e.g. ARCHITECTURE.md -> architecture.md). On a
+        # case-insensitive filesystem (macOS) their stubs overwrite the real page; the
+        # check-doc-canon.py guard rejects them. Old UPPERCASE slugs differing only by
+        # case are intentionally not redirected.
         'guides/APPENDIX-II.md': 'guides/reserved-names-and-headers.md'
         'guides/APPENDIX-III.md': 'guides/actuators-and-http-client.md'
         'guides/TABLE-OF-CONTENTS.md': 'index.md'

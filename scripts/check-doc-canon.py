@@ -79,6 +79,17 @@ def main() -> int:
                 if rx.search(line):
                     errors.append(f"[term] {label}: {p.relative_to(root)}:{i}")
 
+    # 6. no case-only redirects in mkdocs.yml — their stubs clobber the real page on a
+    #    case-insensitive filesystem (macOS / 'mkdocs serve'); the old URL differs only by case.
+    mkdocs = root / "mkdocs.yml"
+    if mkdocs.exists():
+        redirect_rx = re.compile(r"^\s*'([^']+)'\s*:\s*'([^']+)'\s*$")
+        for i, line in enumerate(mkdocs.read_text(encoding="utf-8").splitlines(), 1):
+            m = redirect_rx.match(line)
+            if m and m.group(1).lower() == m.group(2).lower():
+                errors.append(f"[redirect] case-only redirect (clobbers page on macOS): "
+                              f"mkdocs.yml:{i}  {m.group(1)} -> {m.group(2)}")
+
     if errors:
         print("Documentation canon drift detected:\n")
         for e in errors:
