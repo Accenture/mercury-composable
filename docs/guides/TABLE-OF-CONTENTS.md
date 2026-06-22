@@ -16,7 +16,7 @@ Guided, end-to-end experiences for learning the framework from scratch.
 
 Task-oriented instructions for accomplishing specific goals.
 
-- [REST Automation](CHAPTER-3.md) — Declare HTTP endpoints using rest.yaml without writing controllers.
+- [REST Automation](rest-automation/index.md) — Declare HTTP endpoints using rest.yaml without writing controllers.
 - [Build, Test and Deploy](CHAPTER-5.md) — Structure your application entry point, write unit tests, and package for deployment.
 - [Spring Boot Integration](spring-boot.md) — Run Mercury Composable as a Spring Boot application using platform-core or rest-spring-3.
 - [Event over HTTP](event-over-http.md) — Enable cross-instance event communication using the built-in Event API endpoint.
@@ -41,7 +41,7 @@ Explanation-oriented pages for understanding design decisions and how the framew
 
 Precise, exhaustive lookup material.
 
-- [Event Script Syntax](CHAPTER-4.md) — Complete DSL reference: flow structure, all task execution types, input/output data mapping namespaces and constants.
+- [Event Script Syntax](event-script/index.md) — Complete DSL reference: flow structure, all task execution types, input/output data mapping namespaces and constants.
 - [API Overview](CHAPTER-9.md) — Full PostOffice, Platform, EventEnvelope, and configuration API documentation.
 - [Application Properties](APPENDIX-I.md) — Complete listing of application.properties and application.yml configuration keys.
 - [Reserved Names & Headers](APPENDIX-II.md) — System-reserved route names and HTTP headers that must not be overridden.

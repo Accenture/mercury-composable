@@ -254,9 +254,9 @@ This enforces every incoming request to the Event API endpoint to be authenticat
 before passing to the Event API service. You can plug in your own authentication service such as OAuth 2.0 
 "bearer token" validation.
 
-Please refer to [REST Automation](CHAPTER-3.md) for details.
+Please refer to [REST Automation](rest-automation/index.md) for details.
 ## See also
 
 - [Spring Boot Integration](spring-boot.md) — run Mercury in Spring Boot.
 - [Minimalist Service Mesh](service-mesh.md) — Kafka-based service discovery & routing.
-- [REST Automation](CHAPTER-3.md) — the HTTP endpoint layer.
+- [REST Automation](rest-automation/index.md) — the HTTP endpoint layer.

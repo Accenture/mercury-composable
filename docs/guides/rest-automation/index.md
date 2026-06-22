@@ -1,6 +1,22 @@
+---
+title: REST Automation
+summary: Define REST API endpoints declaratively in rest.yaml — no controllers — mapping HTTP to
+  composable functions or Event Script flows.
+layer: platform-core
+audience: [developer]
+keywords: [rest automation, rest.yaml, http endpoint, cors, flow adapter]
+---
+
 # REST Automation
 
 *Guide: How to define REST API endpoints declaratively using rest.yaml configuration.*
+
+> **At a glance**
+>
+> - **What** — expose HTTP endpoints by configuration: map a URL + method to a function or an Event
+>   Script flow in `rest.yaml`, with CORS, headers, auth, and timeouts.
+> - **For** developers building HTTP-facing services. The [REST grammar](rest-grammar.md) is the
+>   exact schema; the [AI agent guide](ai-agent-guide.md) is for agents.
 
 The platform-core foundation library contains a built-in non-blocking HTTP server that you can use to create REST
 endpoints. Behind the curtain, it is using the vertx web client and server libraries.
@@ -323,8 +339,9 @@ HTTP redirection loop.
 
 Similarly, you can throw exception and the HTTP request will be rejected with the given status
 code and error message accordingly.
-<br/>
+## See also
 
-|                   Chapter-2                   |                   Home                    |              Chapter-4              |
-|:---------------------------------------------:|:-----------------------------------------:|:-----------------------------------:|
-| [Function Execution Strategies](function-execution.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Event Script Syntax](CHAPTER-4.md) |
+- [REST automation grammar](rest-grammar.md) — the exact `rest.yaml` schema (rule-based).
+- [AI agent guide](ai-agent-guide.md) — author `rest.yaml` deterministically with an agent.
+- [Event Script Syntax](../event-script/index.md) — the flows that endpoints route to.
+- [Function Execution Strategies](../function-execution.md) — the functions endpoints invoke.

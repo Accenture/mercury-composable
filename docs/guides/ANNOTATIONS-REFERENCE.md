@@ -758,6 +758,6 @@ properties.
 
 - [Getting Started](getting-started.md) — first tutorial with `@PreLoad` and `@MainApplication` examples
 - [Function Execution Strategies](function-execution.md) — deep dive on `@KernelThreadRunner` and `@EventInterceptor`
-- [Event Script Syntax](CHAPTER-4.md) — `@PreLoad` serialization strategies; `@SimplePlugin` reference
+- [Event Script Syntax](event-script/index.md) — `@PreLoad` serialization strategies; `@SimplePlugin` reference
 - [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md) — `f:` plugin usage in flow YAML
 - [Configuration Reference](CONFIGURATION-REFERENCE.md) — `web.component.scan`, `kernel.thread.pool`, and related properties

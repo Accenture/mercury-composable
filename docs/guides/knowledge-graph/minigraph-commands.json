@@ -10,7 +10,7 @@
     "property": "key=value; keys may be composite using dot-bracket notation",
     "list_property": "a 'key[]=entry' line appends one entry to the list 'key'; repeat to add more",
     "multiline_value": "wrap a value in triple single quotes ''' ... ''' to span lines",
-    "constant": "Event Script constant syntax type(value), e.g. text(hello), int(100); full set in CHAPTER-4",
+    "constant": "Event Script constant syntax type(value), e.g. text(hello), int(100); full set in the Event Script docs",
     "mapping_operator": "source -> target (left is source, right is target)",
     "variable_substitution": "{namespace.key} inside COMPUTE/IF expressions, e.g. {book.price}"
   },

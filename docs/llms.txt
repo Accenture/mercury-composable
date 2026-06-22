@@ -20,10 +20,10 @@
 - [Architecture Overview](https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/): layers, components, the in-memory event bus, threading, core APIs.
 - [Methodology](https://accenture.github.io/mercury-composable/guides/METHODOLOGY/): the four composable design principles.
 - [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/function-execution/): virtual vs. kernel threads, Mono/Flux.
-- [REST Automation](https://accenture.github.io/mercury-composable/guides/CHAPTER-3/): declare HTTP endpoints via rest.yaml, no controllers.
+- [REST Automation](https://accenture.github.io/mercury-composable/guides/rest-automation/): declare HTTP endpoints via rest.yaml, no controllers.
 
 ## Layer 2 — Composable orchestration (Event Script)
-- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/): the flow DSL — structure, task types, data mapping.
+- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/): the flow DSL — structure, task types, data mapping.
 - [Flow Configuration Schema](https://accenture.github.io/mercury-composable/guides/FLOW-SCHEMA-REFERENCE/): precise flow YAML field reference.
 - [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/CHAPTER-5/): entry point, unit tests, packaging.
 

@@ -7,7 +7,7 @@ audience: [ai-agent, developer]
 keywords: [rest automation, rest.yaml, authoring, context engineering, deterministic, http endpoint]
 related:
   - guides/rest-automation/rest-grammar.md
-  - guides/CHAPTER-3.md
+  - guides/rest-automation/index.md
 ---
 
 # AI agent guide — authoring rest.yaml
@@ -88,4 +88,4 @@ rest:
 ## See also {#see-also}
 
 - [REST automation grammar](rest-grammar.md) + [`rest-automation.json`](rest-automation.json) — the source of truth.
-- [REST Automation](../CHAPTER-3.md) — worked examples and the full feature set.
+- [REST Automation](index.md) — worked examples and the full feature set.

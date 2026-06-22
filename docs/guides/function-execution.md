@@ -52,7 +52,7 @@ For event choreography, input body is represented as a PoJo or a Map of key-valu
 dot-bracket convention to map subset of a PoJo from one function to another if needed.
 
 In addition to the input PoJo, you may pass additional parameters to the user function as event headers.
-We will discuss this in [Event Script Syntax](CHAPTER-4.md).
+We will discuss this in [Event Script Syntax](event-script/index.md).
 
 ## Non-blocking design
 
@@ -371,5 +371,5 @@ and encapsulation mean that you can precisely control how your application perfo
 
 - [Getting Started](getting-started.md) — build your first functions in a working app.
 - [Architecture Overview](ARCHITECTURE.md) — where functions sit in the event-driven runtime.
-- [REST Automation](CHAPTER-3.md) — expose functions as HTTP endpoints.
-- [Event Script Syntax](CHAPTER-4.md) — orchestrate functions with YAML flows.
+- [REST Automation](rest-automation/index.md) — expose functions as HTTP endpoints.
+- [Event Script Syntax](event-script/index.md) — orchestrate functions with YAML flows.

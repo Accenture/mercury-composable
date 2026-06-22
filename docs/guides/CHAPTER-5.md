@@ -63,7 +63,7 @@ to the full potential of stability, performance and throughput.
 
 ## HTTP forwarding
 
-In [REST Automation](CHAPTER-3.md), we have presented the configuration syntax for the "rest.yaml" REST automation 
+In [REST Automation](rest-automation/index.md), we have presented the configuration syntax for the "rest.yaml" REST automation 
 definition file. Please review the sample rest.yaml file in the lambda-example project. You may notice that
 it has an entry for HTTP forwarding. The following entry in the sample rest.yaml file illustrates an HTTP 
 forwarding endpoint. In HTTP forwarding, you can replace the "service" route name with a direct HTTP target host.
@@ -510,4 +510,4 @@ and all system overheads. It may look like this when you configure "log.format=j
 
 |              Chapter-4              |                   Home                    |          Chapter-6          |
 |:-----------------------------------:|:-----------------------------------------:|:---------------------------:|
-| [Event Script Syntax](CHAPTER-4.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](spring-boot.md) |
+| [Event Script Syntax](event-script/index.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](spring-boot.md) |

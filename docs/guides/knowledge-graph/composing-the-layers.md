@@ -9,7 +9,7 @@ keywords: [data dictionary, provider, graph.api.fetcher, graph.extension, flow e
 related:
   - guides/knowledge-graph/skills-reference.md
   - guides/knowledge-graph/index.md
-  - guides/CHAPTER-4.md
+  - guides/event-script/index.md
 ---
 
 # Composing the layers
@@ -112,7 +112,7 @@ The sub-graph runs in isolation; only the mapped `output[]` flows back into the 
 ### Delegating to an Event Script flow {#flow-extension}
 
 The same skill bridges to the **composable layer**: prefix the target with `flow://` and the node
-delegates to an [Event Script](../CHAPTER-4.md) flow instead of a graph. This is the pro-code escape
+delegates to an [Event Script](../event-script/index.md) flow instead of a graph. This is the pro-code escape
 hatch — hand demanding logic to a flow of composable functions, then return to the graph:
 
 ```
@@ -192,6 +192,6 @@ Because the protocol lives in the flow, the *same* graph can later be driven by 
 ## See also {#see-also}
 
 - [Built-in skills reference](skills-reference.md) — `graph.api.fetcher` and `graph.extension` in full.
-- [Event Script Syntax](../CHAPTER-4.md) — the flow layer on the other side of `flow://` and the
+- [Event Script Syntax](../event-script/index.md) — the flow layer on the other side of `flow://` and the
   `graph-executor` wrapper.
 - [Knowledge Graph as Application](index.md#layer-integration) — the layer model this realizes.

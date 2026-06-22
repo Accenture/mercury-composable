@@ -7,7 +7,7 @@ layer: platform-core
 audience: [developer, architect, ai-agent, reference]
 keywords: [rest automation, rest.yaml, http endpoint, cors, headers, flow adapter, deterministic]
 related:
-  - guides/CHAPTER-3.md
+  - guides/rest-automation/index.md
   - guides/CONFIGURATION-REFERENCE.md
   - guides/event-script/flow-grammar.md
 ---
@@ -19,7 +19,7 @@ related:
 > - The **source of truth** for `rest.yaml` — declaratively maps HTTP endpoints to a composable
 >   function (`service`) or a flow (`flow`), with no controller code.
 > - Machine-readable form: [`rest-automation.json`](rest-automation.json). Authoring from an agent?
->   See the [AI agent guide](ai-agent-guide.md). Worked examples: [REST Automation](../CHAPTER-3.md).
+>   See the [AI agent guide](ai-agent-guide.md). Worked examples: [REST Automation](index.md).
 > - The keys below mirror the parser (`RoutingEntry`); unrecognized keys are ignored, and invalid
 >   values fail to load.
 
@@ -106,4 +106,4 @@ Parser rules — violate them and the route won't load:
 
 - [`rest-automation.json`](rest-automation.json) — the machine-readable form of this grammar.
 - [AI agent guide](ai-agent-guide.md) — authoring rest.yaml deterministically.
-- [REST Automation](../CHAPTER-3.md) — worked examples; [Event Script flow grammar](../event-script/flow-grammar.md) — the flows endpoints bind to.
+- [REST Automation](index.md) — worked examples; [Event Script flow grammar](../event-script/flow-grammar.md) — the flows endpoints bind to.

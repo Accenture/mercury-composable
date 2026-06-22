@@ -7,7 +7,7 @@ audience: [ai-agent, developer]
 keywords: [event script, flow, authoring, context engineering, deterministic, yaml, compile]
 related:
   - guides/event-script/flow-grammar.md
-  - guides/CHAPTER-4.md
+  - guides/event-script/index.md
 ---
 
 # AI agent guide — authoring Event Script flows
@@ -95,4 +95,4 @@ A decision example (branch on a function result):
 ## See also {#see-also}
 
 - [Event Script flow grammar](flow-grammar.md) + [`event-script-flow.json`](event-script-flow.json) — the source of truth.
-- [Event Script Syntax](../CHAPTER-4.md) — worked examples and the full data-mapping catalog.
+- [Event Script Syntax](index.md) — worked examples and the full data-mapping catalog.

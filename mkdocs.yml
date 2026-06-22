@@ -12,12 +12,12 @@ nav:
     - Architecture Overview: guides/ARCHITECTURE.md
     - Methodology: guides/METHODOLOGY.md
     - Function Execution Strategies: guides/function-execution.md
-    - REST Automation: guides/CHAPTER-3.md
+    - REST Automation: guides/rest-automation/index.md
     - REST grammar: guides/rest-automation/rest-grammar.md
     - REST AI agent guide: guides/rest-automation/ai-agent-guide.md
 
   - Part III · Composable orchestration:
-    - Event Script Syntax: guides/CHAPTER-4.md
+    - Event Script Syntax: guides/event-script/index.md
     - Flow grammar: guides/event-script/flow-grammar.md
     - Flow AI agent guide: guides/event-script/ai-agent-guide.md
     - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
@@ -62,6 +62,8 @@ plugins:
       redirect_maps:
         'guides/CHAPTER-1.md': 'guides/getting-started.md'
         'guides/CHAPTER-2.md': 'guides/function-execution.md'
+        'guides/CHAPTER-3.md': 'guides/rest-automation/index.md'
+        'guides/CHAPTER-4.md': 'guides/event-script/index.md'
         'guides/CHAPTER-6.md': 'guides/spring-boot.md'
         'guides/CHAPTER-7.md': 'guides/event-over-http.md'
         'guides/CHAPTER-8.md': 'guides/service-mesh.md'

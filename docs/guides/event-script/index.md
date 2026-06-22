@@ -1,9 +1,25 @@
-﻿# Event Script Syntax
+﻿---
+title: Event Script Syntax
+summary: The complete Event Script DSL reference — YAML flow structure, all task execution types,
+  and the data-mapping mini-language.
+layer: composable
+audience: [developer, reference]
+keywords: [event script, flow, dsl, task types, data mapping, yaml, choreography]
+---
+
+# Event Script Syntax
 
 *Reference: Complete DSL reference for YAML event flow configurations, task types, and data mapping.*
 
+> **At a glance**
+>
+> - **What** — the full Event Script flow DSL: flow structure, the task execution types, and the
+>   data-mapping mini-language, with worked examples.
+> - **For** developers writing flows. For the rule-based spec + an agent on-ramp, see the
+>   [Flow grammar](flow-grammar.md) and [AI agent guide](ai-agent-guide.md).
+
 > For a quick-reference lookup of all flow fields, namespaces, and task types, see the
-> [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md).
+> [Flow Configuration Schema Reference](../FLOW-SCHEMA-REFERENCE.md).
 
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
@@ -208,7 +224,7 @@ rest:
 The "cors" and "headers" sections are optional. When specified, the REST endpoint will insert CORS headers and HTTP
 request headers accordingly.
 
-For REST automation syntax, please refer to [REST Automation](../guides/CHAPTER-3.md)
+For REST automation syntax, please refer to [REST Automation](../rest-automation/index.md)
 
 The HTTP flow adapter maps the HTTP request dataset and the flow ID into a standard event envelope for delivery
 to the flow engine.
@@ -234,7 +250,7 @@ For easy matching, please use lower case for headers, cookies, query and path pa
 Regular API uses JSON and XML and they will be converted to a hash map in the event's body.
 
 For special use cases like file upload/download, your application logic may invoke a streaming API to retrieve
-the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../guides/APPENDIX-III.md)
+the binary payload. Please refer to [Appendix III: Actuators, HTTP Client & More](../APPENDIX-III.md)
 
 ## Task is a composable function
 
@@ -270,7 +286,7 @@ You can override the default serialization strategy in 2 ways in the PreLoad ann
 1. Configure input / output serialization strategies
 2. Implement your own custom serializer using the CustomSerializer interface
 
-See the [Annotations Reference](ANNOTATIONS-REFERENCE.md) for complete `@PreLoad` parameter details and documentation of all other Mercury annotations.
+See the [Annotations Reference](../ANNOTATIONS-REFERENCE.md) for complete `@PreLoad` parameter details and documentation of all other Mercury annotations.
 
 ```java
 @Target({ElementType.TYPE})
@@ -427,7 +443,7 @@ Subsequent override of the "instances" parameter is ignored. i.e. the first prel
 
 As shown in Figure 1, you can run one or more sub-flows inside a primary flow.
 
-![Hierarchy of flows](./diagrams/parent-namespace.png)
+![Hierarchy of flows](../diagrams/parent-namespace.png)
 
 > Figure 1 - Hierarchy of flows
 
@@ -1380,7 +1396,7 @@ In the following example, the system will evaluate both the model.quit and model
 ## Simple Plugins
 
 When working with Event-Script there are certain use-cases that are not supported natively in flows, such as arithmetic
-and conditional expressions. Typically one would create a [TypedLambdaFunction](function-execution.md#define-a-function) to support
+and conditional expressions. Typically one would create a [TypedLambdaFunction](../function-execution.md#define-a-function) to support
 these type of use-cases.  It may lead to duplication of code and efforts since the same use-case is often reinvented
 multiple times.
 
@@ -1803,7 +1819,7 @@ Another useful built-in function is a resilience handler with the route name `re
 
 It is a generic resilience handler. It will retry, abort, use an alternative path or exercise a brief backoff.
 
-![Resilience Handler](./diagrams/resilience-handler.png)
+![Resilience Handler](../diagrams/resilience-handler.png)
 
 > Figure 2 - Resilience Handler
 
@@ -2085,8 +2101,9 @@ tasks:
     execution: end
     delay: '2000 ms'
 ```
-<br/>
+## See also
 
-|             Chapter-3             |                    Home                     |                Chapter-5                 |
-|:---------------------------------:|:-------------------------------------------:|:----------------------------------------:|
-|  [REST Automation](CHAPTER-3.md)  |  [Table of Contents](TABLE-OF-CONTENTS.md)  |  [Build, Test and Deploy](CHAPTER-5.md)  |
+- [Flow grammar](flow-grammar.md) — the rule-based schema (the deterministic spec).
+- [AI agent guide](ai-agent-guide.md) — author flows deterministically with an agent.
+- [Flow Configuration Schema](../FLOW-SCHEMA-REFERENCE.md) — exhaustive field reference.
+- [Build, Test & Deploy](../CHAPTER-5.md) — package and run flows.

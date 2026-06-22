@@ -54,7 +54,7 @@ present, `.properties` takes precedence.
 
 REST Automation enables declarative HTTP endpoint mapping via a YAML configuration file.
 Set `rest.automation=true` and provide a `yaml.rest.automation` path to activate it. See
-[REST Automation](CHAPTER-3.md) for the full endpoint configuration syntax.
+[REST Automation](rest-automation/index.md) for the full endpoint configuration syntax.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -74,7 +74,7 @@ Set `rest.automation=true` and provide a `yaml.rest.automation` path to activate
 
 Flow configuration files are compiled at startup. Each file lists one or more flow definitions
 identified by `flow.id`. Multiple comma-separated paths are merged. See
-[Event Script Syntax](CHAPTER-4.md) for the full DSL reference.
+[Event Script Syntax](event-script/index.md) for the full DSL reference.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -313,7 +313,7 @@ log.format=text
 
 ## See Also
 
-- [REST Automation](CHAPTER-3.md) — declarative REST endpoint configuration syntax
-- [Event Script Syntax](CHAPTER-4.md) — flow YAML configuration syntax
+- [REST Automation](rest-automation/index.md) — declarative REST endpoint configuration syntax
+- [Event Script Syntax](event-script/index.md) — flow YAML configuration syntax
 - [Actuators & HTTP Client](APPENDIX-III.md) — built-in actuator endpoint reference
 - [Application Properties (Appendix I)](APPENDIX-I.md) — original property reference

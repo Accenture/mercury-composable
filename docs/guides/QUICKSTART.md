@@ -123,6 +123,6 @@ between steps. Explore the flow files at `examples/composable-example/src/main/r
 - [Configuration Reference](https://accenture.github.io/mercury-composable/guides/CONFIGURATION-REFERENCE/) — every `application.properties` key with type, default, and description
 - [Architecture Overview](https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/) — complete mental model of functions, flows, events, and APIs
 - [Methodology](https://accenture.github.io/mercury-composable/guides/METHODOLOGY/) — understand the composable design philosophy
-- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/CHAPTER-4/) — write your own event flows
+- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/) — write your own event flows
 - [Getting Started (Chapter 1)](https://accenture.github.io/mercury-composable/guides/getting-started/) — full walkthrough with architecture diagrams
 - [Mercury for Node.js](https://github.com/Accenture/mercury-nodejs) — JavaScript/TypeScript version

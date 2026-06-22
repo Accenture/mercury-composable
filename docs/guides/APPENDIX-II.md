@@ -71,7 +71,7 @@ an event flow use case.
 
 The "simple.exception.handler" is a placeholder for a user defined exception handler for rapid prototyping.
 For more sophisticated error handling, please use the "resilience.handler" or write your own composable function
-as an exception handler. For more details, refer to [Event Script Syntax](CHAPTER-4.md)
+as an exception handler. For more details, refer to [Event Script Syntax](event-script/index.md)
 
 ## Reserved event header names
 
