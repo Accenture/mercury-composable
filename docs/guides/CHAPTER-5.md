@@ -55,7 +55,7 @@ from a unit test.
 
 ## Writing your functions
 
-Please follow the step-by-step learning guide in [Getting Started](CHAPTER-1.md) to write your own functions. You can then
+Please follow the step-by-step learning guide in [Getting Started](getting-started.md) to write your own functions. You can then
 configure new REST endpoints to use your new functions.
 
 In [Function Execution Strategies](CHAPTER-2.md), we have discussed the two function execution strategies to optimize your application

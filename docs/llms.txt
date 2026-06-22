@@ -14,7 +14,7 @@
 ## Start here
 - [Home](https://accenture.github.io/mercury-composable/): the three-layer model and where to go next.
 - [Quickstart](https://accenture.github.io/mercury-composable/guides/QUICKSTART/): a working app in five minutes.
-- [Getting Started](https://accenture.github.io/mercury-composable/guides/CHAPTER-1/): build and run the composable example; flows, functions, and REST.
+- [Getting Started](https://accenture.github.io/mercury-composable/guides/getting-started/): build and run the composable example; flows, functions, and REST.
 
 ## Layer 1 — Event-driven foundation (Platform Core)
 - [Architecture Overview](https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/): layers, components, the in-memory event bus, threading, core APIs.

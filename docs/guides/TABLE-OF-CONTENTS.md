@@ -8,7 +8,7 @@ Mercury Composable is a software development toolkit for writing composable, eve
 
 Guided, end-to-end experiences for learning the framework from scratch.
 
-- [Getting Started](CHAPTER-1.md) — Build and run the composable example app; understand flows, functions, and REST endpoints through a working project.
+- [Getting Started](getting-started.md) — Build and run the composable example app; understand flows, functions, and REST endpoints through a working project.
 
 ---
 

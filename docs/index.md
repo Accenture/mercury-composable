@@ -15,7 +15,7 @@ through event envelopes — so orchestration is **configuration, not code**. It 
 virtual threads, so straightforward synchronous code performs on par with reactive.
 
 > **New here?** Start with the **[5-Minute Quickstart](guides/QUICKSTART.md)**, then
-> **[Getting Started](guides/CHAPTER-1.md)**.
+> **[Getting Started](guides/getting-started.md)**.
 
 ## A layered ascent
 
@@ -50,7 +50,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 
 ## Explore the docs
 
-- **Quickstart & tutorials** — [Quickstart](guides/QUICKSTART.md) · [Getting Started](guides/CHAPTER-1.md)
+- **Quickstart & tutorials** — [Quickstart](guides/QUICKSTART.md) · [Getting Started](guides/getting-started.md)
 - **Guides** — [REST Automation](guides/CHAPTER-3.md) · [Build, Test & Deploy](guides/CHAPTER-5.md) ·
   [Spring Boot Integration](guides/CHAPTER-6.md) · [Event over HTTP](guides/CHAPTER-7.md) ·
   [Service Mesh](guides/CHAPTER-8.md)

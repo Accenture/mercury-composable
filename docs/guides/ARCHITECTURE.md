@@ -341,7 +341,7 @@ comma-separated (e.g., `yaml.rest.automation=file:/tmp/config/rest.yaml, classpa
 ## Further Reading
 
 - [Methodology](METHODOLOGY.md) — design principles: input-process-output, zero dependency, event choreography, platform abstraction
-- [Getting Started](CHAPTER-1.md) — hands-on walkthrough with the composable example application
+- [Getting Started](getting-started.md) — hands-on walkthrough with the composable example application
 - [Function Execution Strategies](CHAPTER-2.md) — virtual vs. kernel threads, Mono/Flux, authentication functions
 - [REST Automation](CHAPTER-3.md) — complete `rest.yaml` syntax reference
 - [Event Script Syntax](CHAPTER-4.md) — complete flow DSL reference including all task types, data mapping, sub-flows, and preload overrides

@@ -6,7 +6,7 @@ nav:
 
   - Part I · Orientation:
     - Quickstart: guides/QUICKSTART.md
-    - Getting Started: guides/CHAPTER-1.md
+    - Getting Started: guides/getting-started.md
 
   - Part II · Event-driven foundation:
     - Architecture Overview: guides/ARCHITECTURE.md
@@ -60,5 +60,6 @@ plugins:
       separator: '[\s\-\.]+'
   - redirects:
       redirect_maps:
+        'guides/CHAPTER-1.md': 'guides/getting-started.md'
         'guides/CHAPTER-11.md': 'guides/knowledge-graph/index.md'
 theme: readthedocs

@@ -11,6 +11,15 @@ keywords: [getting started, tutorial, composable, example app, rest, flows, func
 
 *Tutorial: Build and run a composable application from zero to a working REST API.*
 
+> **At a glance**
+>
+> - **You'll build** — the composable example app: a profile CRUD REST API assembled from
+>   self-contained functions and a YAML event flow, run end to end.
+> - **You'll learn** — how a request flows through REST automation → an Event Script flow →
+>   composable functions, and how to write and wire your own.
+> - **Prerequisites** — Java 21+, Maven 3.9.7+; ~20 minutes. Want the fast version first? See the
+>   [Quickstart](QUICKSTART.md).
+
 Mercury Composable is a software development toolkit for writing composable applications.
 
 Composable application means that an application is assembled from modular software components or functions that
@@ -508,8 +517,9 @@ even when using reactive or event-driven programming styles.
 
 However, if there is a use case that you prefer to write orchestration logic by code, you may use the Mercury core
 APIs to do event-driven programming. API overview will be covered in [API Overview](CHAPTER-9.md).
-<br/>
+## See also
 
-|          Methodology          |                   Home                    |                  Chapter-2                  |
-|:-----------------------------:|:-----------------------------------------:|:-------------------------------------------:|
-| [Methodology](METHODOLOGY.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Function Execution Strategy](CHAPTER-2.md) |
+- [Quickstart](QUICKSTART.md) — the five-minute version of this tutorial.
+- [Methodology](METHODOLOGY.md) — the four composable design principles behind what you built.
+- [Function Execution Strategies](CHAPTER-2.md) — virtual vs. kernel threads for your functions.
+- [Event Script Syntax](CHAPTER-4.md) — orchestrate functions with YAML flows.

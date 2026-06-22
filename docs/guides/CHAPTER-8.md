@@ -53,7 +53,7 @@ Let's set up a minimalist service mesh with Kafka to see how it works.
 
 You need a Kafka cluster as the network event stream system. For development and testing, you can build
 and run a standalone Kafka server like this. Note that the `mvn clean package` command is optional because
-the executable JAR should be available after the `mvn clean install` command in [Getting Started](CHAPTER-1.md).
+the executable JAR should be available after the `mvn clean install` command in [Getting Started](getting-started.md).
 
 ```shell
 cd connectors/adapters/kafka/kafka-standalone

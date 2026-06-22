@@ -245,5 +245,5 @@ see the [Architecture Overview](ARCHITECTURE.md).
 
 |                   Home                    |          Chapter-1           |
 |:-----------------------------------------:|:----------------------------:|
-| [Table of Contents](TABLE-OF-CONTENTS.md) | [Introduction](CHAPTER-1.md) |
+| [Table of Contents](TABLE-OF-CONTENTS.md) | [Introduction](getting-started.md) |
 

@@ -756,7 +756,7 @@ properties.
 
 ## See also
 
-- [Getting Started](CHAPTER-1.md) — first tutorial with `@PreLoad` and `@MainApplication` examples
+- [Getting Started](getting-started.md) — first tutorial with `@PreLoad` and `@MainApplication` examples
 - [Function Execution Strategies](CHAPTER-2.md) — deep dive on `@KernelThreadRunner` and `@EventInterceptor`
 - [Event Script Syntax](CHAPTER-4.md) — `@PreLoad` serialization strategies; `@SimplePlugin` reference
 - [Flow Configuration Schema Reference](FLOW-SCHEMA-REFERENCE.md) — `f:` plugin usage in flow YAML

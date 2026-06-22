@@ -354,4 +354,4 @@ and encapsulation mean that you can precisely control how your application perfo
 
 |          Chapter-1           |                   Home                    |            Chapter-3            |
 |:----------------------------:|:-----------------------------------------:|:-------------------------------:|
-| [Introduction](CHAPTER-1.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [REST Automation](CHAPTER-3.md) |
+| [Introduction](getting-started.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [REST Automation](CHAPTER-3.md) |
