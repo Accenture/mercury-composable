@@ -50,14 +50,14 @@
 > Hard constraints that must never change. These never decay (`core`).
 
 - Functions are fully decoupled — coupled only by route-name strings and
-  `EventEnvelope`; orchestration lives in YAML event flows, not code.
+  `EventEnvelope`; orchestration lives in YAML event flows, not code. (ADR-0001)
   <!-- id: functions-decoupled-routes | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
-- `TypedLambdaFunction` I/O is Map or PoJo only — a List of PoJo is unsupported.
+- `TypedLambdaFunction` I/O is Map or PoJo only — a List of PoJo is unsupported. (ADR-0003)
   <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
 
 ## Key Decisions
 
-- Java 21 virtual threads throughout; synchronous PostOffice RPC ≈ reactive perf.
+- Java 21 virtual threads throughout; synchronous PostOffice RPC ≈ reactive perf. (ADR-0002)
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
 - `pom.xml` is the source of truth for the version (drift observed across docs).
   <!-- id: pom-version-source-of-truth | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
@@ -108,11 +108,14 @@
   README, llms.txt) are repointed to the new slugs, CHANGELOG (historical) is left to the redirect.
   <!-- id: docs-style-conventions | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - **Documentation content canon** (Design for the content-polish pass; locked with Eric Law 2026-06-22,
-  verified against source — docs are outdated, **code is source of truth**). Resolves old/new *content*
+  verified against source — docs are outdated, **code is source of truth**). Its layer model and
+  one-atom-four-roles framing are formalized as (ADR-0004, ADR-0005). Resolves old/new *content*
   drift (7+ yrs, many human + AI contributors). Five decisions: (1) **"layers" = the 3 paradigm layers
   only** — Event-driven (Platform Core) → Composable (Event Script) → Semantic (Active Knowledge Graph);
-  the runtime request flow is the **"request pipeline"** with **stages** (flow adapter → REST automation →
-  Event Manager/flow engine → in-memory event bus → composable functions), never "layers" (fixes
+  the runtime request flow is the **"request pipeline"** with **stages** (event boundary [REST automation for HTTP,
+  a Kafka listener, …] → flow adapter → Event Manager/flow engine → in-memory event bus → composable functions; for
+  each protocol a corresponding flow adapter — for HTTP, REST automation is the boundary that invokes the built-in HTTP
+  flow adapter), never "layers" (fixes
   architecture.md's "five distinct layers"). (2) **Layer-3 vocabulary:** *Active Knowledge Graph (AKG)* =
   the thing/model; *Knowledge Graph as Application* = the paradigm tagline; *MiniGraph* = the engine
   (`graph.executor` + in-memory property graph + Playground); *semantic* = adjective only. (3) **Origin
@@ -141,6 +144,35 @@
   `docs-content-canon` (their redirect language is now historical). The `check-doc-canon.py`
   case-only-redirect guard stays (dormant) to reject a bad redirect if one is ever re-added.
   <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- **ADR pattern adopted** (the agent-memory optional Architecture Decision Record log; opted in 2026-06-22, Eric). A
+  human-facing governance ledger lives at `docs/arch-decisions/ADR.md` — **the repo's own path; the agent-memory default
+  `docs/ADR.md` is not used** (AGENTS.md pointer updated to match). `DESIGN-NOTES.md` was moved to
+  `docs/notes/design-notes.md` (design notes ≠ ADRs) and the `arch-decisions/` folder repurposed for the ledger. Seeded
+  **retrospectively** with 5 ADRs that **formalize** existing Design-altitude facts — ADR-0001→`functions-decoupled-routes`,
+  ADR-0002→`virtual-threads-rpc`, ADR-0003→`typed-io-map-or-pojo`, ADR-0004 & ADR-0005→`docs-content-canon` (the
+  three-paradigm-layer model + one-atom-four-roles) — each verified against `platform-core`/`event-script-engine`/
+  `minigraph-playground-engine` and the published guides (code/guides = source of truth in ambiguity). Published in the
+  mkdocs nav as the first entry under **Part VII · Reference**. ADR lifecycle: `Proposed → Accepted → Superseded/Deprecated`,
+  never deleted, monotonic numbering, newest-first; read **on demand** only. The `(ADR-NNNN)` tags now on the formalized
+  facts are human pointers, not a cue to open the ledger. Serves `vision-mercury-composable`.
+  <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- **Request pipeline model** (Eric, 2026-06-22): outside-in, `user/calling app → event boundary (REST automation for
+  HTTP, a Kafka listener, or other protocol) → flow adapter → event manager/flow engine → in-memory event bus →
+  composable functions`. For each protocol there is a corresponding flow adapter. **HTTP:** REST automation is the
+  boundary — it holds the request/response objects per HTTP session, does endpoint rendering/serving/routing, and
+  **invokes the built-in HTTP flow adapter** (`HttpToFlow`, route `http.flow.adapter`, in `event-script-engine`);
+  synchronous request/response, the flow's result routed back to the HTTP response object. **Kafka:** the Kafka flow
+  adapter embeds a topic listener; fully asynchronous; a reply (if any) is published to another topic by an outbound
+  **Kafka notification function**. (Earlier docs put "REST automation" as a stage *after* the flow adapter — wrong;
+  it is the boundary *in front* that invokes the adapter. Corrected in architecture.md / documentation-conventions.md /
+  ADR-0004.)
+  <!-- id: request-pipeline-model | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- **Kafka flow adapter + notification function are NOT packaged in this repo** — only the built-in HTTP flow adapter
+  (`HttpToFlow` / `http.flow.adapter`) ships here. The `connectors/adapters/kafka/*` modules are the **cloud connector**
+  (event-stream mesh, `cloud.connector=kafka`) — a *different* concern, not a flow adapter that triggers Event Script
+  flows. Production installations run their own Kafka flow adapter (inbound) + Kafka notification function (outbound);
+  an in-repo minimalist version is planned (see Open Thread). Don't claim Kafka flow-triggering is built-in.
+  <!-- id: kafka-adapter-not-in-repo | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## Conventions
 
@@ -246,6 +278,22 @@
   **Open (Eric's call):** Layer 1's overview is a flat page (`event-driven-foundation.md`), not a section
   folder — fold into `guides/event-driven/` for full parallelism, or leave as the layer's lead page?
   <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- [ ] (next agenda — Eric, 2026-06-22) **Content polishing round 2 + AI context discovery.** Next working
+  session with Eric: (1) **continue content polishing** (improving but "not there yet"); (2) strengthen
+  **AI context discovery** so an AI agent can collaborate with a human on **greenfield *and* brownfield**
+  mercury-composable projects across every artifact — knowledge graph, Event Script, `rest.yaml`,
+  **composable functions**, unit tests, integration tests — and **make sense of the 3 layers** to choose
+  the right one. Especially a clear on-ramp for **writing composable functions**. Key framing (Eric's hint):
+  a composable function is *just regular Java* (with or without Spring), writable in **sequential, reactive,
+  or object-oriented** style — the framework constrains *coupling* (route names + `EventEnvelope`), not
+  coding style. → serves `vision-mercury-composable` (AI-assisted semantic app dev / Human-AI collaboration).
+  <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- [ ] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
+  Kafka notification function (outbound) to this repo.** Today only the HTTP flow adapter ships here (see
+  `kafka-adapter-not-in-repo`); production installations have their own. Deferred until the documentation rewrite
+  (`bp-docs-ai-human-rewrite`) completes, then build a reference-grade minimalist pair so the Kafka path is demonstrable
+  in-repo. → serves `vision-mercury-composable`.
+  <!-- id: thread-minimalist-kafka-adapter | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## User Preferences
 

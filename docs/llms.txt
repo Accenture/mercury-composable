@@ -43,4 +43,5 @@
 - [Event Envelope Reference](https://accenture.github.io/mercury-composable/guides/event-envelope-reference/): the EventEnvelope and PostOffice API.
 - [Reserved Names & Headers](https://accenture.github.io/mercury-composable/guides/reserved-names-and-headers/): system-reserved routes and headers.
 - [Actuators & HTTP Client](https://accenture.github.io/mercury-composable/guides/actuators-and-http-client/): built-in actuator endpoints and the AsyncHttpRequest API.
-- [Design Notes](https://accenture.github.io/mercury-composable/arch-decisions/DESIGN-NOTES/): architecture decision records and rationale.
+- [Architecture Decision Records](https://accenture.github.io/mercury-composable/arch-decisions/ADR/): the durable architecture decisions (decoupled functions, virtual-thread engine, Map/PoJo I/O, the three paradigm layers, one-atom-four-roles) with their rationale.
+- [Design Notes](https://accenture.github.io/mercury-composable/notes/design-notes/): narrative design rationale (serialization, reactive overflow, engine history).

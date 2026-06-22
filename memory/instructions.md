@@ -37,7 +37,8 @@ connectors/                ← Kafka pub/sub adapters + presence/service monitor
 examples/                  ← reference apps; composable-example is the primary demo
   (lambda, rest-spring-3/-4, composable, kotlin, scheduler, minigraph)
 benchmark/benchmark-client ← benchmark tests
-docs/ (guides/, arch-decisions/)  ← documentation (mkdocs `docs_dir: docs`) and ADRs
+docs/ (guides/, arch-decisions/, notes/)  ← docs (mkdocs `docs_dir: docs`);
+                                  arch-decisions/ADR.md = ADR ledger, notes/ = design notes
 ```
 
 ## Core Abstractions

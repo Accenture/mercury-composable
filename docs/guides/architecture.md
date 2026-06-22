@@ -47,21 +47,31 @@ knowledge graph (a **skill**) without the function itself ever changing.
 
 ## System Architecture
 
-A Mercury Composable application is structured as a **request pipeline** — five stages that process a
-request from outside in.
+A Mercury Composable application processes a request as a **pipeline**, from outside in:
+**user / calling application → event boundary (REST automation for HTTP, a Kafka listener, or another
+protocol) → flow adapter → Event Manager / flow engine → in-memory event bus → composable functions**.
+The *event boundary* is the protocol entry point; for each communication protocol there is a
+corresponding *flow adapter* that converts the inbound message into an `EventEnvelope` and triggers a
+named flow. For HTTP, the **REST automation** engine is the boundary and invokes the built-in **HTTP
+flow adapter** (`http.flow.adapter`); for Kafka, the flow adapter itself embeds a topic listener.
 
-The outermost stage is the **flow adapter**. Adapters convert external requests into internal events.
-The built-in HTTP flow adapter intercepts HTTP requests routed through the REST automation engine and
-packages them as `EventEnvelope` objects destined for the flow engine, then delivers the final response
-back to the caller. The Kafka adapter provides the same contract for stream-based event sources. The
-adapter API is open, so custom adapters can consume any event source (serverless triggers, file watchers,
-MQ listeners). Each adapter exposes a named route — the HTTP adapter uses the route `http.flow.adapter`.
+The **flow adapter** converts external requests into internal events. The built-in HTTP flow adapter
+takes HTTP requests routed to it by the REST automation engine, packages them as `EventEnvelope` objects
+destined for the flow engine, and delivers the final response back to the caller. A Kafka flow adapter
+follows the same contract for stream-based sources, embedding a topic listener. The adapter API is open,
+so custom adapters can consume any event source (serverless triggers, file watchers, MQ, CSV). Each
+adapter exposes a named route — the HTTP adapter uses `http.flow.adapter`. **Only the HTTP flow adapter
+is packaged in this repo today**; a Kafka flow adapter (inbound) and its notification function (outbound)
+run in production installations, with a minimalist in-repo version planned for a future iteration.
 
-**REST Automation** sits at the HTTP boundary and eliminates controller boilerplate. HTTP endpoints are
-declared in a `rest.yaml` configuration file. Each entry maps a URL pattern and HTTP method set to
+**REST Automation** is the HTTP event boundary, and it eliminates controller boilerplate. HTTP endpoints
+are declared in a `rest.yaml` configuration file. Each entry maps a URL pattern and HTTP method set to
 either a flow (via the `flow` key, routing through the HTTP flow adapter) or directly to a named function
 (via `service`). REST automation handles CORS headers, per-endpoint authentication functions, request and
-response header rules, distributed tracing activation, and timeout enforcement — all in configuration.
+response header rules, distributed tracing activation, and timeout enforcement — all in configuration. It
+holds the HTTP request and response objects for each session and routes a flow's result back to the
+response object, so HTTP is synchronous request/response; a Kafka boundary, by contrast, is fully
+asynchronous — any reply is published to another topic.
 
 The **Event Manager** (also called the flow engine) is the core orchestrator. When an event arrives from
 an adapter, the event manager resolves the matching flow configuration by its ID, creates a transient

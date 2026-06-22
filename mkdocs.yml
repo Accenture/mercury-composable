@@ -43,13 +43,14 @@ nav:
     - Minimalist Service Mesh: guides/service-mesh.md
 
   - Part VII · Reference:
+    - Architectural Decision Records: arch-decisions/ADR.md
     - API Overview: guides/api-overview.md
     - Annotations Reference: guides/annotations-reference.md
     - Configuration Reference: guides/configuration-reference.md
     - Event Envelope Reference: guides/event-envelope-reference.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md
     - Actuators & HTTP Client: guides/actuators-and-http-client.md
-    - Design Notes: arch-decisions/DESIGN-NOTES.md
+    - Design Notes: notes/design-notes.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
 
   - Documentation Conventions: guides/documentation-conventions.md

@@ -24,11 +24,11 @@ event bus.
 Mercury grew in three layers. Each builds on the one beneath it, and you can mix them in a single
 application — drop down a layer exactly where you need more control, and no further.
 
-| Layer | You express behavior as… | What you write | Start here |
-|:------|:--------------------------|:---------------|:-----------|
-| **Event-driven** — Platform Core | decoupled functions reacting to events | Java functions, addressed by route name | [Event-driven Foundation](guides/event-driven-foundation.md) |
-| **Composable** — Event Script | YAML flows that choreograph functions | ~50% config, 50% code | [Composable Orchestration](guides/event-script/index.md) |
-| **Semantic** — Active Knowledge Graph | a graph whose nodes *execute* during traversal | a model — little or no code | [Knowledge Graph as Application](guides/knowledge-graph/index.md) |
+| Layer | You express behavior as… | What you write |
+|:------|:--------------------------|:---------------|
+| **Event-driven**<br>[Platform Core](guides/event-driven-foundation.md) | decoupled functions reacting<br>to events | Java functions,<br>addressed by route name |
+| **Composable**<br>[Event Script](guides/event-script/index.md) | YAML flows that choreograph<br>functions | ~50% config,<br>50% code |
+| **Semantic**<br>[Active Knowledge Graph](guides/knowledge-graph/index.md) | a graph whose nodes *execute*<br>during traversal | a model —<br>little or no code |
 
 ## Knowledge Graph as application
 
@@ -60,7 +60,8 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
   [Build your first graph](guides/knowledge-graph/build-your-first-graph.md) ·
   [Minimalist Property Graph](guides/knowledge-graph/property-graph.md)
 - **Concepts** — [Methodology](guides/methodology.md) · [Architecture Overview](guides/architecture.md) ·
-  [Event-driven Foundation](guides/event-driven-foundation.md) · [Design Notes](arch-decisions/DESIGN-NOTES.md)
+  [Event-driven Foundation](guides/event-driven-foundation.md) ·
+  [Architecture Decision Records](arch-decisions/ADR.md) · [Design Notes](notes/design-notes.md)
 - **Reference** — [Annotations](guides/annotations-reference.md) ·
   [Configuration](guides/configuration-reference.md) · [Event Envelope](guides/event-envelope-reference.md) ·
   [Flow Schema](guides/flow-schema-reference.md) · [API Overview](guides/api-overview.md)
