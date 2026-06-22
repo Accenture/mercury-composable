@@ -133,7 +133,14 @@
   per-chapter pattern depth (At-a-glance + See-also footer replacing the legacy prev/next nav tables)
   and the **slug question** — keep stable `/guides/CHAPTER-N/` URLs vs. rename to semantic slugs
   (high cross-link churn; ~10 inbound links per chapter via the interlinked bottom-nav tables). Then
-  roll through Parts II/III/V/VI; retire APPENDIX-I (superseded by CONFIGURATION-REFERENCE).*
+  roll through Parts II/III/V/VI; retire APPENDIX-I (superseded by CONFIGURATION-REFERENCE).
+  (9) **DECIDED: Option 2** — semantic slugs + `mkdocs-redirects`, and remove the prev/next nav tables,
+  replacing them with meaningful "See also" footers (Eric, 2026-06-21). **Part I migrated** as the full
+  exemplar: CHAPTER-1 → `getting-started.md` (redirect; frontmatter; At-a-glance; See-also; all inbound
+  links repointed via `perl`). **Remaining (per-chapter, same pattern):** CH-2→function-execution,
+  CH-3 & CH-4 co-located into their DSL folders as `index.md` (rest-automation/, event-script/),
+  CH-5→build-test-deploy, CH-6→spring-boot, CH-7→event-over-http, CH-8→service-mesh, CH-9→api-overview;
+  refresh + retire APPENDIX-I. Mechanics: `git mv` + `perl -i` for inbound links + redirect + `--strict`.*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
