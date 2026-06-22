@@ -430,7 +430,7 @@ response.onFailure(e -> {
 2. Example-2 sets the "timeoutException" to false, telling system to return timeout exception as a regular event.
 3. Example-3 makes an "event over HTTP" RPC call to "another.function" in another application instance called "peer".
 
-"Event over HTTP" is an important topic. Please refer to [Event over HTTP](CHAPTER-7.md) for more details.
+"Event over HTTP" is an important topic. Please refer to [Event over HTTP](event-over-http.md) for more details.
 
 ### Perform a fork-n-join RPC call to multiple functions
 
@@ -695,4 +695,4 @@ For enterprise clients, technical support is available. Please contact your Acce
 
 |            Chapter-8            |                   Home                    |         CHAPTER-10          |
 |:-------------------------------:|:-----------------------------------------:|:---------------------------:|
-| [Event over HTTP](CHAPTER-6.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Mini-Graph](CHAPTER-10.md) |
+| [Event over HTTP](spring-boot.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Mini-Graph](CHAPTER-10.md) |

@@ -52,8 +52,8 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 
 - **Quickstart & tutorials** — [Quickstart](guides/QUICKSTART.md) · [Getting Started](guides/getting-started.md)
 - **Guides** — [REST Automation](guides/CHAPTER-3.md) · [Build, Test & Deploy](guides/CHAPTER-5.md) ·
-  [Spring Boot Integration](guides/CHAPTER-6.md) · [Event over HTTP](guides/CHAPTER-7.md) ·
-  [Service Mesh](guides/CHAPTER-8.md)
+  [Spring Boot Integration](guides/spring-boot.md) · [Event over HTTP](guides/event-over-http.md) ·
+  [Service Mesh](guides/service-mesh.md)
 - **Knowledge Graph** — [Knowledge Graph as Application](guides/knowledge-graph/index.md) ·
   [Build your first graph](guides/knowledge-graph/build-your-first-graph.md) ·
   [Minimalist Property Graph](guides/CHAPTER-10.md)

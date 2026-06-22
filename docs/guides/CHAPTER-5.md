@@ -510,4 +510,4 @@ and all system overheads. It may look like this when you configure "log.format=j
 
 |              Chapter-4              |                   Home                    |          Chapter-6          |
 |:-----------------------------------:|:-----------------------------------------:|:---------------------------:|
-| [Event Script Syntax](CHAPTER-4.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](CHAPTER-6.md) |
+| [Event Script Syntax](CHAPTER-4.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Spring Boot](spring-boot.md) |

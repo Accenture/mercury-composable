@@ -32,9 +32,9 @@
 - [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/CHAPTER-10/): the in-memory property-graph data model and API the layer builds on.
 
 ## Operate & integrate
-- [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/CHAPTER-6/): run Mercury as a Spring Boot 3/4 app.
-- [Event over HTTP](https://accenture.github.io/mercury-composable/guides/CHAPTER-7/): cross-instance event communication.
-- [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/CHAPTER-8/): Kafka-based service discovery and routing.
+- [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/spring-boot/): run Mercury as a Spring Boot 3/4 app.
+- [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/): cross-instance event communication.
+- [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/service-mesh/): Kafka-based service discovery and routing.
 
 ## Reference
 - [API Overview](https://accenture.github.io/mercury-composable/guides/CHAPTER-9/): PostOffice, Platform, EventEnvelope, configuration APIs.

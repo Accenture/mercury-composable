@@ -1,6 +1,21 @@
+---
+title: Minimalist Service Mesh
+summary: Set up service discovery and inter-instance routing using Kafka as a connector, with a
+  built-in presence monitor — no sidecars.
+layer: operate
+audience: [architect, developer]
+keywords: [service mesh, kafka, service discovery, presence monitor, connectors, routing]
+---
+
 # Minimalist Service Mesh
 
 *Guide: How to set up service discovery and inter-instance routing using Kafka as a connector.*
+
+> **At a glance**
+>
+> - **What** — a lightweight service mesh: Kafka connectors + a presence monitor for service
+>   discovery and inter-instance event routing, without sidecars.
+> - **For** architects and developers scaling Mercury across instances.
 
 Service mesh is a dedicated infrastructure layer to facilitate inter-container communication using "sidecar" and
 "control plane".
@@ -176,7 +191,7 @@ Now you have created a minimalist event-driven service mesh.
 
 ## Send an event request from rest-spring-3-example to lambda-example
 
-In [Event over HTTP](CHAPTER-7.md), you have sent a request from the rest-spring-3-example to the lambda-example using 
+In [Event over HTTP](event-over-http.md), you have sent a request from the rest-spring-3-example to the lambda-example using 
 "Event over HTTP" without a service mesh.
 
 In this section, you can make the same request using service mesh.
@@ -355,8 +370,8 @@ When an application instance stops, the presence monitor will detect the event, 
 release the topic associated with the disconnected application instance.
 
 The presence monitor is using the "presence" feature in websocket, thus we call it "presence" monitor.
-<br/>
+## See also
 
-|            Chapter-7            |                   Home                    |          CHAPTER-9           |
-|:-------------------------------:|:-----------------------------------------:|:----------------------------:|
-| [Event over HTTP](CHAPTER-6.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [API Overview](CHAPTER-9.md) |
+- [Event over HTTP](event-over-http.md) — cross-instance event communication.
+- [API Overview](CHAPTER-9.md) — the PostOffice / Platform APIs.
+- [Configuration Reference](CONFIGURATION-REFERENCE.md) — connector and presence-monitor settings.

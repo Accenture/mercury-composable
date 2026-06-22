@@ -1,6 +1,21 @@
+---
+title: Event over HTTP
+summary: Enable cross-instance event communication using the built-in Event API endpoint, keeping
+  the same event model across the wire.
+layer: operate
+audience: [developer]
+keywords: [event over http, event api, cross-instance, distributed, rpc]
+---
+
 # Event over HTTP
 
 *Guide: How to enable cross-instance event communication via the Event API endpoint.*
+
+> **At a glance**
+>
+> - **What** — call a function in *another* Mercury instance over HTTP via the built-in Event API
+>   endpoint, preserving the EventEnvelope model across the wire.
+> - **For** developers distributing functions across instances.
 
 The in-memory event system allows functions to communicate with each other in the same application memory space.
 
@@ -240,8 +255,8 @@ before passing to the Event API service. You can plug in your own authentication
 "bearer token" validation.
 
 Please refer to [REST Automation](CHAPTER-3.md) for details.
-<br/>
+## See also
 
-|          Chapter-6          |                   Home                    |                Chapter-8                |
-|:---------------------------:|:-----------------------------------------:|:---------------------------------------:|
-| [Spring Boot](CHAPTER-6.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Minimalist Service Mesh](CHAPTER-8.md) |
+- [Spring Boot Integration](spring-boot.md) — run Mercury in Spring Boot.
+- [Minimalist Service Mesh](service-mesh.md) — Kafka-based service discovery & routing.
+- [REST Automation](CHAPTER-3.md) — the HTTP endpoint layer.

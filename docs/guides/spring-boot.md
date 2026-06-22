@@ -1,6 +1,21 @@
+---
+title: Spring Boot Integration
+summary: Run Mercury Composable as a Spring Boot 3/4 application — via the rest-spring modules or
+  the lightweight platform-core HTTP server.
+layer: operate
+audience: [developer]
+keywords: [spring boot, integration, rest-spring, autoconfigure, embedded server]
+---
+
 # Spring Boot Integration
 
 *Guide: How to run Mercury Composable as a Spring Boot application.*
+
+> **At a glance**
+>
+> - **What** — run Mercury inside Spring Boot 3 or 4 (the `rest-spring` modules), or keep the
+>   lightweight platform-core HTTP server.
+> - **For** teams integrating Mercury into an existing Spring stack.
 
 While the platform-core foundation code includes a lightweight non-blocking HTTP server, you can also turn your
 application into an executable Spring Boot application.
@@ -293,8 +308,8 @@ annotation.
 
 To try out the demo websocket server, visit http://127.0.0.1:8083 and select "Websocket demo".
 
-<br/>
+## See also
 
-|               Chapter-5                |                   Home                    |            Chapter-7            |
-|:--------------------------------------:|:-----------------------------------------:|:-------------------------------:|
-| [Build, Test and Deploy](CHAPTER-4.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Event over HTTP](CHAPTER-7.md) |
+- [Build, Test & Deploy](CHAPTER-5.md) — package and deploy your app.
+- [Event over HTTP](event-over-http.md) — cross-instance event communication.
+- [REST Automation](CHAPTER-3.md) — declare HTTP endpoints.

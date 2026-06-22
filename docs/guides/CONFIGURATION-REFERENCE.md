@@ -163,7 +163,7 @@ These properties are relevant only when using the `rest-spring-3` module.
 ## Service Mesh / Cloud Connector
 
 The service mesh is provided by the optional `connectors` modules. Set `cloud.connector=kafka`
-to enable inter-instance routing through Kafka. See [Minimalist Service Mesh](CHAPTER-8.md)
+to enable inter-instance routing through Kafka. See [Minimalist Service Mesh](service-mesh.md)
 for a setup walkthrough.
 
 ### Core Connector

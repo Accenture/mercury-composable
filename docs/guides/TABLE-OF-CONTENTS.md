@@ -18,9 +18,9 @@ Task-oriented instructions for accomplishing specific goals.
 
 - [REST Automation](CHAPTER-3.md) — Declare HTTP endpoints using rest.yaml without writing controllers.
 - [Build, Test and Deploy](CHAPTER-5.md) — Structure your application entry point, write unit tests, and package for deployment.
-- [Spring Boot Integration](CHAPTER-6.md) — Run Mercury Composable as a Spring Boot application using platform-core or rest-spring-3.
-- [Event over HTTP](CHAPTER-7.md) — Enable cross-instance event communication using the built-in Event API endpoint.
-- [Minimalist Service Mesh](CHAPTER-8.md) — Set up service discovery and inter-instance routing using Kafka as a connector.
+- [Spring Boot Integration](spring-boot.md) — Run Mercury Composable as a Spring Boot application using platform-core or rest-spring-3.
+- [Event over HTTP](event-over-http.md) — Enable cross-instance event communication using the built-in Event API endpoint.
+- [Minimalist Service Mesh](service-mesh.md) — Set up service discovery and inter-instance routing using Kafka as a connector.
 - [Minimalist Property Graph](CHAPTER-10.md) — Use the built-in in-memory property graph for computation and decision-making.
 
 ---

@@ -35,9 +35,9 @@ nav:
     - Minimalist Property Graph: guides/CHAPTER-10.md
 
   - Part V · Operate & integrate:
-    - Spring Boot Integration: guides/CHAPTER-6.md
-    - Event over HTTP: guides/CHAPTER-7.md
-    - Minimalist Service Mesh: guides/CHAPTER-8.md
+    - Spring Boot Integration: guides/spring-boot.md
+    - Event over HTTP: guides/event-over-http.md
+    - Minimalist Service Mesh: guides/service-mesh.md
 
   - Part VI · Reference:
     - API Overview: guides/CHAPTER-9.md
@@ -62,5 +62,8 @@ plugins:
       redirect_maps:
         'guides/CHAPTER-1.md': 'guides/getting-started.md'
         'guides/CHAPTER-2.md': 'guides/function-execution.md'
+        'guides/CHAPTER-6.md': 'guides/spring-boot.md'
+        'guides/CHAPTER-7.md': 'guides/event-over-http.md'
+        'guides/CHAPTER-8.md': 'guides/service-mesh.md'
         'guides/CHAPTER-11.md': 'guides/knowledge-graph/index.md'
 theme: readthedocs
