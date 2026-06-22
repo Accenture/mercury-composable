@@ -142,11 +142,12 @@
   CH-5→build-test-deploy, CH-6→spring-boot, CH-7→event-over-http, CH-8→service-mesh, CH-9→api-overview;
   refresh + retire APPENDIX-I. Mechanics: `git mv` + `perl -i` for inbound links + redirect + `--strict`.
   **Done so far:** Part I (`getting-started`), Part II core (`function-execution`; ARCHITECTURE +
-  METHODOLOGY templated), **Part V** (`spring-boot`, `event-over-http`, `service-mesh`). **Next:**
-  CH-3→`rest-automation/index.md` + CH-4→`event-script/index.md` (DSL-folder co-locations — trickier
-  cross-link paths: the moved file's own outbound links need `../` and its DSL-folder siblings
-  reference it via `../CHAPTER-N.md`→`index.md`), then CH-5→`build-test-deploy`, CH-9→`api-overview`,
-  template COMPOSABLE-DESIGN + the reference docs, retire APPENDIX-I (redirect → CONFIGURATION-REFERENCE).*
+  METHODOLOGY templated), **Part V** (`spring-boot`, `event-over-http`, `service-mesh`), and the
+  **DSL co-locations** — CH-3→`rest-automation/index.md`, CH-4→`event-script/index.md` (each folder
+  now = tutorial `index` + grammar + agent guide). **Next (the home stretch):**
+  CH-5→`build-test-deploy`, CH-9→`api-overview` (simple flat renames), template COMPOSABLE-DESIGN +
+  the reference docs (ANNOTATIONS / CONFIGURATION / EVENT-ENVELOPE / FLOW-SCHEMA / APPENDIX-II/III),
+  retire APPENDIX-I (redirect → CONFIGURATION-REFERENCE). That completes the rewrite.*
   <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
