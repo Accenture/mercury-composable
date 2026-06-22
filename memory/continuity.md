@@ -154,7 +154,11 @@
   `minigraph-playground-engine` and the published guides (code/guides = source of truth in ambiguity). Published in the
   mkdocs nav as the first entry under **Part VII · Reference**. ADR lifecycle: `Proposed → Accepted → Superseded/Deprecated`,
   never deleted, monotonic numbering, newest-first; read **on demand** only. The `(ADR-NNNN)` tags now on the formalized
-  facts are human pointers, not a cue to open the ledger. Serves `vision-mercury-composable`.
+  facts are human pointers, not a cue to open the ledger. **Upkeep (agent-memory upgraded 4.14.1 → 4.15.0
+  on 2026-06-22):** the ADR log is now actively maintained — superseding/invalidating an `(ADR-NNNN)`-tagged
+  fact, or making a new durable architecture decision, **prompts a human-gated update** to
+  `docs/arch-decisions/ADR.md` (add a newer ADR; old → `Superseded`/`Deprecated`, never deleted; keep
+  `formalizes:` ↔ `(ADR-NNNN)` in sync). Serves `vision-mercury-composable`.
   <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - **Request pipeline model** (Eric, 2026-06-22; stage term **"protocol boundary"** — chosen over "event boundary" for
   precision (requests aren't events until the flow adapter mints the `EventEnvelope`) + code-groundability, and to avoid

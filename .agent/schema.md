@@ -221,6 +221,13 @@ no longer holds is superseded (replaced by a newer ADR) or deprecated (no longer
 its entry left in place with `Status` updated (mirrors `DECAY.md` §9). Numbering is monotonic;
 entries are listed **newest first**.
 
+**When to maintain it.** Adopting the log is on-demand, but once it exists it is **kept in
+sync**: when a new durable architecture decision is made, or a continuity fact carrying an
+`(ADR-NNNN)` tag is superseded/invalidated, the agent **proposes** the matching ledger edit
+(a new ADR, and/or the old one's `Status` → `Superseded`/`Deprecated`), keeping `formalizes:`
+↔ `(ADR-NNNN)` consistent. Like every Design-altitude change it is a **human gate** — the agent
+proposes, the human approves; it is the one time the on-demand ledger is opened during a session.
+
 ---
 
 ## memory/archive/

@@ -261,7 +261,9 @@ memory layer enforces:
   `(blueprint)` Open Threads = the Vision↔Current-State gap. *Design* = Key Decisions /
   Architectural Invariants (and, **optionally**, a human-facing `docs/ADR.md` decision log
   — Architecture Decision Records, read on demand, never in the per-session path; its
-  supersede/deprecate-never-delete lifecycle mirrors §9). *Implementation* = code/commits,
+  supersede/deprecate-never-delete lifecycle mirrors §9, and — once the log exists — is **kept in
+  sync** with fact supersession: superseding an `(ADR-NNNN)`-tagged fact, or making a new durable
+  decision, prompts a human-gated ledger update). *Implementation* = code/commits,
   traced in sessions. *Feedback* = the review ritual. **Only Vision + Blueprint are new; the
   rest is the existing layer, named.**
 - **The trace is the determinism.** Implementation → Design → Blueprint (`serves: <gap>`)
