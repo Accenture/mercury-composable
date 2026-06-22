@@ -67,7 +67,7 @@ building on the one below:
    through skills embedded on nodes.
 
 These conceptual layers are **distinct from the runtime request pipeline** — whose *stages*
-run outside in: user / calling application → event boundary (REST automation for HTTP, a Kafka
+run outside in: user / calling application → protocol boundary (REST automation for HTTP, a Kafka
 listener, or another protocol) → flow adapter → Event Manager / flow engine → in-memory event bus
 → composable functions. (For each protocol there is a corresponding flow adapter; for HTTP, REST
 automation is the boundary that invokes the built-in HTTP flow adapter.) The word "layers" is

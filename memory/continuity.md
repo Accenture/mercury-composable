@@ -112,7 +112,7 @@
   one-atom-four-roles framing are formalized as (ADR-0004, ADR-0005). Resolves old/new *content*
   drift (7+ yrs, many human + AI contributors). Five decisions: (1) **"layers" = the 3 paradigm layers
   only** — Event-driven (Platform Core) → Composable (Event Script) → Semantic (Active Knowledge Graph);
-  the runtime request flow is the **"request pipeline"** with **stages** (event boundary [REST automation for HTTP,
+  the runtime request flow is the **"request pipeline"** with **stages** (protocol boundary [REST automation for HTTP,
   a Kafka listener, …] → flow adapter → Event Manager/flow engine → in-memory event bus → composable functions; for
   each protocol a corresponding flow adapter — for HTTP, REST automation is the boundary that invokes the built-in HTTP
   flow adapter), never "layers" (fixes
@@ -156,7 +156,9 @@
   never deleted, monotonic numbering, newest-first; read **on demand** only. The `(ADR-NNNN)` tags now on the formalized
   facts are human pointers, not a cue to open the ledger. Serves `vision-mercury-composable`.
   <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
-- **Request pipeline model** (Eric, 2026-06-22): outside-in, `user/calling app → event boundary (REST automation for
+- **Request pipeline model** (Eric, 2026-06-22; stage term **"protocol boundary"** — chosen over "event boundary" for
+  precision (requests aren't events until the flow adapter mints the `EventEnvelope`) + code-groundability, and to avoid
+  colliding with Mercury's `EntryPoint`/`@MainApplication`): outside-in, `user/calling app → protocol boundary (REST automation for
   HTTP, a Kafka listener, or other protocol) → flow adapter → event manager/flow engine → in-memory event bus →
   composable functions`. For each protocol there is a corresponding flow adapter. **HTTP:** REST automation is the
   boundary — it holds the request/response objects per HTTP session, does endpoint rendering/serving/routing, and

@@ -41,7 +41,7 @@ Mercury ascends **three layers**. Reserve the word *layer* for these:
 | **3 · Semantic** (Active Knowledge Graph) | a graph whose nodes execute during traversal | a model — little or no code |
 
 The runtime request flow is **not** "layers." It is the **request pipeline** — the **stages** a
-request passes through, outside in: event boundary (REST automation for HTTP, a Kafka listener, or
+request passes through, outside in: protocol boundary (REST automation for HTTP, a Kafka listener, or
 another protocol) → flow adapter → Event Manager / flow engine → in-memory event bus → composable
 functions. For each protocol there is a corresponding flow adapter; for HTTP, REST automation is the
 boundary that invokes the built-in HTTP flow adapter.

@@ -48,11 +48,10 @@ knowledge graph (a **skill**) without the function itself ever changing.
 ## System Architecture
 
 A Mercury Composable application processes a request as a **pipeline**, from outside in:
-**user / calling application → event boundary (REST automation for HTTP, a Kafka listener, or another
+**user / calling application → protocol boundary (REST automation for HTTP, a Kafka listener, or another
 protocol) → flow adapter → Event Manager / flow engine → in-memory event bus → composable functions**.
-The *event boundary* is the protocol entry point; for each communication protocol there is a
-corresponding *flow adapter* that converts the inbound message into an `EventEnvelope` and triggers a
-named flow. For HTTP, the **REST automation** engine is the boundary and invokes the built-in **HTTP
+A *protocol boundary* is where one communication protocol enters the system; each has a corresponding
+*flow adapter* that converts the inbound message into an `EventEnvelope` and triggers a named flow. For HTTP, the **REST automation** engine is the boundary and invokes the built-in **HTTP
 flow adapter** (`http.flow.adapter`); for Kafka, the flow adapter itself embeds a topic listener.
 
 The **flow adapter** converts external requests into internal events. The built-in HTTP flow adapter
@@ -64,7 +63,7 @@ adapter exposes a named route — the HTTP adapter uses `http.flow.adapter`. **O
 is packaged in this repo today**; a Kafka flow adapter (inbound) and its notification function (outbound)
 run in production installations, with a minimalist in-repo version planned for a future iteration.
 
-**REST Automation** is the HTTP event boundary, and it eliminates controller boilerplate. HTTP endpoints
+**REST Automation** is the protocol boundary for HTTP, and it eliminates controller boilerplate. HTTP endpoints
 are declared in a `rest.yaml` configuration file. Each entry maps a URL pattern and HTTP method set to
 either a flow (via the `flow` key, routing through the HTTP flow adapter) or directly to a named function
 (via `service`). REST automation handles CORS headers, per-endpoint authentication functions, request and
