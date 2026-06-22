@@ -10,7 +10,7 @@ keywords: [minigraph, dsl, grammar, command syntax, companion endpoint, determin
 related:
   - guides/knowledge-graph/skills-reference.md
   - guides/knowledge-graph/build-your-first-graph.md
-  - guides/event-script/index.md
+  - guides/event-script/syntax.md
 ---
 
 # MiniGraph command grammar
@@ -34,7 +34,7 @@ related:
 | **Property** | `key=value`; keys may be composite (dot-bracket) | `url=http://...`, `mapping[]=a -> b` |
 | **List property** | a `key[]=entry` line *appends* one entry to the list `key` | repeat `mapping[]=...` per entry |
 | **Multi-line value** | wrap the value in triple single quotes | `statement[]='''` … `'''` |
-| **Constant** | Event Script constant syntax `type(value)` | `text(hello)`, `int(100)` — full set in [Event Script](../event-script/index.md) |
+| **Constant** | Event Script constant syntax `type(value)` | `text(hello)`, `int(100)` — full set in [Event Script](../event-script/syntax.md) |
 | **Mapping operator** | `source -> target` (left = source, right = target) | `input.body.id -> person_id` |
 | **Variable substitution** | `{namespace.key}` inside `COMPUTE`/`IF` expressions | `{book.price}`, `{input.body.discount}` |
 
@@ -214,4 +214,4 @@ Hard rules the engine enforces — violate them and generation fails:
 - [`minigraph-commands.json`](minigraph-commands.json) — the machine-readable form of this grammar.
 - [AI agent guide](ai-agent-guide.md) — driving the Playground via the companion endpoint.
 - [Built-in skills reference](skills-reference.md) — per-skill semantics and examples.
-- [Event Script Syntax](../event-script/index.md) — the shared data-mapping syntax and the full constant set.
+- [Event Script Syntax](../event-script/syntax.md) — the shared data-mapping syntax and the full constant set.

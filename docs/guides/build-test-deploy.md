@@ -523,6 +523,6 @@ and all system overheads. It may look like this when you configure "log.format=j
 ```
 ## See also
 
-- [Event Script Syntax](event-script/index.md) — write the flows you'll test and deploy.
+- [Event Script Syntax](event-script/syntax.md) — write the flows you'll test and deploy.
 - [Spring Boot Integration](spring-boot.md) — package as a Spring Boot app.
 - [API Overview](api-overview.md) — the APIs your tests exercise.

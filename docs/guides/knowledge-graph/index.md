@@ -8,7 +8,7 @@ audience: [architect, developer]
 keywords: [active knowledge graph, minigraph, skill, graph execution, semantic application, zero-code]
 related:
   - guides/knowledge-graph/property-graph.md
-  - guides/event-script/index.md
+  - guides/event-script/syntax.md
   - index.md
 ---
 
@@ -26,7 +26,7 @@ related:
 > - **How you run it** — Execute a deployed graph via `POST /api/graph/{graph-id}`; design and
 >   dry-run graphs interactively in the **MiniGraph Playground**.
 > - **Before you start** — Skim [Minimalist Property Graph](property-graph.md) for the underlying
->   graph data model; [Event Script](../event-script/index.md) helps for the integration section below.
+>   graph data model; [Event Script](../event-script/syntax.md) helps for the integration section below.
 
 ## From code, to configuration, to knowledge
 
@@ -166,5 +166,5 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 - [Composing the layers](composing-the-layers.md) — external APIs, sub-graph/flow extension, and REST exposure.
 - [Playground & AI companion](playground-and-companion.md) — the interactive workbench and user–AI collaboration.
 - [Minimalist Property Graph](property-graph.md) — the underlying graph data structures and API.
-- [Event Script Syntax](../event-script/index.md) — the composable flow DSL that `graph.extension` delegates to.
+- [Event Script Syntax](../event-script/syntax.md) — the composable flow DSL that `graph.extension` delegates to.
 - [Home](../../index.md) — Mercury's three-layer model and where this layer fits.

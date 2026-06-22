@@ -20,7 +20,8 @@ nav:
     - REST AI agent guide: guides/rest-automation/ai-agent-guide.md
 
   - Part IV · Layer 2 — Composable orchestration:
-    - Event Script Syntax: guides/event-script/index.md
+    - Overview: guides/event-script/index.md
+    - Event Script Syntax: guides/event-script/syntax.md
     - Flow grammar: guides/event-script/flow-grammar.md
     - Flow AI agent guide: guides/event-script/ai-agent-guide.md
     - Flow Configuration Schema: guides/flow-schema-reference.md
@@ -59,26 +60,4 @@ plugins:
   - search:
       lang: en
       separator: '[\s\-\.]+'
-  - redirects:
-      redirect_maps:
-        'guides/CHAPTER-1.md': 'guides/getting-started.md'
-        'guides/CHAPTER-2.md': 'guides/function-execution.md'
-        'guides/CHAPTER-3.md': 'guides/rest-automation/index.md'
-        'guides/CHAPTER-4.md': 'guides/event-script/index.md'
-        'guides/CHAPTER-5.md': 'guides/build-test-deploy.md'
-        'guides/CHAPTER-9.md': 'guides/api-overview.md'
-        'guides/APPENDIX-I.md': 'guides/configuration-reference.md'
-        'guides/CHAPTER-6.md': 'guides/spring-boot.md'
-        'guides/CHAPTER-7.md': 'guides/event-over-http.md'
-        'guides/CHAPTER-8.md': 'guides/service-mesh.md'
-        'guides/CHAPTER-11.md': 'guides/knowledge-graph/index.md'
-        'guides/CHAPTER-10.md': 'guides/knowledge-graph/property-graph.md'
-        'guides/composable-design.md': 'guides/methodology.md'
-        # NOTE: no case-only redirects (e.g. ARCHITECTURE.md -> architecture.md). On a
-        # case-insensitive filesystem (macOS) their stubs overwrite the real page; the
-        # check-doc-canon.py guard rejects them. Old UPPERCASE slugs differing only by
-        # case are intentionally not redirected.
-        'guides/APPENDIX-II.md': 'guides/reserved-names-and-headers.md'
-        'guides/APPENDIX-III.md': 'guides/actuators-and-http-client.md'
-        'guides/TABLE-OF-CONTENTS.md': 'index.md'
 theme: readthedocs

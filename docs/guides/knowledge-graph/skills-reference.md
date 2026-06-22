@@ -9,7 +9,7 @@ keywords: [graph.data.mapper, graph.math, graph.js, graph.api.fetcher, graph.ext
 related:
   - guides/knowledge-graph/index.md
   - guides/knowledge-graph/build-your-first-graph.md
-  - guides/event-script/index.md
+  - guides/event-script/syntax.md
 ---
 
 # Built-in skills reference
@@ -18,7 +18,7 @@ related:
 >
 > - **What** — the seven skills shipped with the engine. Attach one to a node (`skill=<route>`)
 >   to make it *active*: it runs when traversal reaches the node.
-> - **They share** — Event Script [data-mapping syntax](../event-script/index.md#tasks-and-data-mapping)
+> - **They share** — Event Script [data-mapping syntax](../event-script/syntax.md#tasks-and-data-mapping)
 >   (`source -> target`) and the same state-machine namespaces (`input.*`, `model.*`, `output.*`,
 >   `{node}.result`).
 > - **One skill per node.** A node returns a **decision** to the engine — `next` (follow the
@@ -197,4 +197,4 @@ connect dictionary to person-address with data
 
 - [Build your first Active Knowledge Graph](build-your-first-graph.md) — `graph.data.mapper` in a full walkthrough.
 - [Composing the layers](composing-the-layers.md) — the data-dictionary/provider model for `graph.api.fetcher`, and `graph.extension` into flows.
-- [Event Script Syntax](../event-script/index.md#tasks-and-data-mapping) — the shared data-mapping syntax.
+- [Event Script Syntax](../event-script/syntax.md#tasks-and-data-mapping) — the shared data-mapping syntax.

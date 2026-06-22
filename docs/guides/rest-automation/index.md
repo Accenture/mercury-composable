@@ -343,5 +343,5 @@ code and error message accordingly.
 
 - [REST automation grammar](rest-grammar.md) — the exact `rest.yaml` schema (rule-based).
 - [AI agent guide](ai-agent-guide.md) — author `rest.yaml` deterministically with an agent.
-- [Event Script Syntax](../event-script/index.md) — the flows that endpoints route to.
+- [Event Script Syntax](../event-script/syntax.md) — the flows that endpoints route to.
 - [Function Execution Strategies](../function-execution.md) — the functions endpoints invoke.

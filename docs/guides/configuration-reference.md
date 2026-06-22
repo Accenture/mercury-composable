@@ -90,7 +90,7 @@ Set `rest.automation=true` and provide a `yaml.rest.automation` path to activate
 
 Flow configuration files are compiled at startup. Each file lists one or more flow definitions
 identified by `flow.id`. Multiple comma-separated paths are merged. See
-[Event Script Syntax](event-script/index.md) for the full DSL reference.
+[Event Script Syntax](event-script/syntax.md) for the full DSL reference.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -330,5 +330,5 @@ log.format=text
 ## See Also
 
 - [REST Automation](rest-automation/index.md) — declarative REST endpoint configuration syntax
-- [Event Script Syntax](event-script/index.md) — flow YAML configuration syntax
+- [Event Script Syntax](event-script/syntax.md) — flow YAML configuration syntax
 - [Actuators & HTTP Client](actuators-and-http-client.md) — built-in actuator endpoint reference

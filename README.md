@@ -109,7 +109,7 @@ Full documentation is available at [https://accenture.github.io/mercury-composab
 | Architecture Overview | https://accenture.github.io/mercury-composable/guides/architecture/ |
 | Methodology & Principles | https://accenture.github.io/mercury-composable/guides/methodology/ |
 | Getting Started Guide | https://accenture.github.io/mercury-composable/guides/getting-started/ |
-| Event Script Syntax | https://accenture.github.io/mercury-composable/guides/event-script/ |
+| Event Script Syntax | https://accenture.github.io/mercury-composable/guides/event-script/syntax/ |
 | API Overview | https://accenture.github.io/mercury-composable/guides/api-overview/ |
 | Application Properties Reference | https://accenture.github.io/mercury-composable/guides/configuration-reference/ |
 

@@ -69,3 +69,5 @@ A function mapped straight to an endpoint via `service:` is a **service**; see
 - [REST Automation](rest-automation/index.md) — declare HTTP endpoints in `rest.yaml`, no controllers.
 - [Architecture Overview](architecture.md) — the full request pipeline and the actor-model origin.
 - [Methodology](methodology.md) — the four composable design principles.
+- [Composable Orchestration](event-script/index.md) — orchestrate these functions as YAML flows (Layer 2, up the ascent).
+- [Composing the layers](knowledge-graph/composing-the-layers.md) — how a function becomes a task, then a skill.

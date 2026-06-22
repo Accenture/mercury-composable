@@ -138,7 +138,7 @@ between steps. Explore the flow files at `examples/composable-example/src/main/r
 
 - [Getting Started](getting-started.md) — the full walkthrough with architecture diagrams.
 - [Methodology](methodology.md) — the composable design philosophy behind what you ran.
-- [Event Script Syntax](event-script/index.md) — write your own event flows.
+- [Event Script Syntax](event-script/syntax.md) — write your own event flows.
 - [Configuration Reference](configuration-reference.md) — every `application.properties` key with type, default, and description.
 - [Architecture Overview](architecture.md) — the complete mental model of functions, flows, events, and APIs.
 - [Mercury for Node.js](https://github.com/Accenture/mercury-nodejs) — the JavaScript/TypeScript version.

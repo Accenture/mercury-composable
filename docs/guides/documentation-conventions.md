@@ -83,8 +83,8 @@ Voice: product narrative, present tense, why before how. Avoid analyst/whitepape
 
 - **Every page** carries YAML frontmatter (`title`, `summary`, `layer`, `audience`, `keywords`,
   optional `related`), an **"At a glance"** block, consistent headings with stable anchors, and a
-  **"See also"** footer. URLs are lowercase-kebab **semantic slugs**; a renamed page keeps an
-  `mkdocs-redirects` entry so old links still resolve.
+  **"See also"** footer. URLs are lowercase-kebab **semantic slugs**. This is a clean rewrite —
+  old URLs are intentionally **not** preserved (no redirects); the navigation is the source of truth.
 - **`llms.txt`** is the machine-readable site map, organized by layer, and is kept current.
 - **The three DSLs** (MiniGraph, Event Script, REST automation) each ship a deterministic spec kit:
   a grammar reference, a machine-readable catalog, an AI-agent guide, and a CI drift test. A claim that

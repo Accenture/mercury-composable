@@ -380,6 +380,6 @@ comma-separated (e.g., `yaml.rest.automation=file:/tmp/config/rest.yaml, classpa
 - [Getting Started](getting-started.md) — hands-on walkthrough with the composable example application
 - [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads, Mono/Flux, authentication functions
 - [REST Automation](rest-automation/index.md) — complete `rest.yaml` syntax reference
-- [Event Script Syntax](event-script/index.md) — complete flow DSL reference including all task types, data mapping, sub-flows, and preload overrides
+- [Event Script Syntax](event-script/syntax.md) — complete flow DSL reference including all task types, data mapping, sub-flows, and preload overrides
 - [API Overview](api-overview.md) — full `PostOffice`, `Platform`, `EventEnvelope`, and configuration API reference
 - [Build, Test and Deploy](build-test-deploy.md) — CI/CD, packaging, and deployment patterns

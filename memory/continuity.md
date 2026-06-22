@@ -133,6 +133,14 @@
   (5) persist canon as a published page + wire a light drift check. Extends `docs-style-conventions` /
   `docs-rewrite-architecture`; serves `vision-mercury-composable`.
   <!-- id: docs-content-canon | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- **No backward-compat redirects (clean rewrite).** All `mkdocs-redirects` entries removed (2026-06-22, Eric):
+  old URLs (`/guides/CHAPTER-N/`, `/APPENDIX-*/`, `/composable-design/`, `/TABLE-OF-CONTENTS/`, and the
+  case-only ones) now 404 by design — the docs are a brand-new user experience and the **navigation is the
+  source of truth**. The `redirects` plugin is dropped from `mkdocs.yml` and `mkdocs-redirects` from the CI
+  install. This reverses the "redirects as the safety net" aspect of `docs-style-conventions` /
+  `docs-content-canon` (their redirect language is now historical). The `check-doc-canon.py`
+  case-only-redirect guard stays (dormant) to reject a bad redirect if one is ever re-added.
+  <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## Conventions
 
@@ -230,8 +238,13 @@
   fronted the large `event-script/index` with an `## Overview` (places the layer in the ascent + the flow
   mental model: flow→tasks→execution types→state machine→adapters), approach (a) (no split), per Eric.
   **Core reorg complete:** all 3 layers now have an Overview + a consistent shape; Foundations consolidated.
-  **Optional remaining polish:** per-layer "Integration" cross-links; Layer-2 has no separate "Overview"
-  nav entry (it leads the syntax page) — mild sidebar asymmetry vs Layers 1 & 3.
+  **Pass 3 done (2026-06-22):** Layer-2 overview promoted to the section **index** (`event-script/index.md` =
+  "Composable Orchestration" overview; deep syntax moved to `event-script/syntax.md`; ~30 inbound links +
+  README + llms.txt refactored) so every layer's overview sits at the section root, matching Layer 3. Added
+  cross-layer "ascent" See-also links (Layers 1 & 2). **ALL mkdocs redirects then removed** (clean rewrite —
+  see `docs-no-redirects`). Eric verified navigation in a browser.
+  **Open (Eric's call):** Layer 1's overview is a flat page (`event-driven-foundation.md`), not a section
+  folder — fold into `guides/event-driven/` for full parallelism, or leave as the layer's lead page?
   <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## User Preferences

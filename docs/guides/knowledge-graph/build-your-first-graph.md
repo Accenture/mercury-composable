@@ -7,7 +7,7 @@ audience: [developer]
 keywords: [minigraph playground, tutorial, graph.data.mapper, instantiate, run, dry-run, deploy, /api/graph]
 related:
   - guides/knowledge-graph/index.md
-  - guides/event-script/index.md
+  - guides/event-script/syntax.md
 ---
 
 # Build your first Active Knowledge Graph
@@ -168,7 +168,7 @@ curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
 
 ## What just happened {#how-it-ran}
 
-The graph isn't called directly — it's wrapped by an [Event Script](../event-script/index.md) flow, which is
+The graph isn't called directly — it's wrapped by an [Event Script](../event-script/syntax.md) flow, which is
 how it gets a REST endpoint without coupling execution to the protocol:
 
 1. `http.flow.adapter` receives `POST /api/graph/my-first-graph` and runs the `graph-executor` flow.
@@ -192,5 +192,5 @@ Each of these gets a worked example in the [built-in skills reference](skills-re
 ## See also {#see-also}
 
 - [Knowledge Graph as Application](index.md) — the concepts behind what you just built.
-- [Event Script Syntax](../event-script/index.md) — the data-mapping syntax the skills share, and the flow
+- [Event Script Syntax](../event-script/syntax.md) — the data-mapping syntax the skills share, and the flow
   layer that exposes graphs over REST.

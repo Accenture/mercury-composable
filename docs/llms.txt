@@ -22,7 +22,8 @@
 - [REST Automation](https://accenture.github.io/mercury-composable/guides/rest-automation/): declare HTTP endpoints via rest.yaml, no controllers.
 
 ## Layer 2 — Composable orchestration (Event Script)
-- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/): the flow DSL — structure, task types, data mapping.
+- [Composable Orchestration (Overview)](https://accenture.github.io/mercury-composable/guides/event-script/): Layer 2 overview — what Event Script is, the flow mental model, where it sits.
+- [Event Script Syntax](https://accenture.github.io/mercury-composable/guides/event-script/syntax/): the flow DSL — structure, task types, data mapping.
 - [Flow Configuration Schema](https://accenture.github.io/mercury-composable/guides/flow-schema-reference/): precise flow YAML field reference.
 - [Build, Test and Deploy](https://accenture.github.io/mercury-composable/guides/build-test-deploy/): entry point, unit tests, packaging.
 

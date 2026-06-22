@@ -271,7 +271,7 @@ garbage collector.
 
 *Event flow instance*
 
-In [Event Script Syntax](../event-script/index.md), we have discussed the use of Event Flow. In the beginning of a flow,
+In [Event Script Syntax](../event-script/syntax.md), we have discussed the use of Event Flow. In the beginning of a flow,
 you can add a new instance of a mini-graph to a shared concurrent map. At the end
 of the flow, you should add a task or exception handler to remove the mini-graph
 instance from the shared concurrent map.

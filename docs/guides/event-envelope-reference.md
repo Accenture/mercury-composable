@@ -577,6 +577,6 @@ in user code when operating at the HTTP boundary:
 - [Architecture Overview](architecture.md) — Event Envelope structure and role in the system
 - [Annotations Reference](annotations-reference.md) — `@EventInterceptor`, `@PreLoad`, and other annotations
 - [Flow Configuration Schema](flow-schema-reference.md) — Complete data mapping DSL reference
-- [Event Script Syntax](event-script/index.md) — Flow DSL including input/output mapping and execution types
+- [Event Script Syntax](event-script/syntax.md) — Flow DSL including input/output mapping and execution types
 - [Function Execution Strategies](function-execution.md) — Virtual threads, auth functions, Flux/Mono return types
 - [API Overview](api-overview.md) — Full `PostOffice`, `Platform`, and configuration API
