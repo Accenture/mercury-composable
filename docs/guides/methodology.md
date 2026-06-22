@@ -113,6 +113,17 @@ Without direct coupling, a composable development framework must support "Event 
 connect the various user composable functions, platform components and libraries together and route the events
 according to an event flow diagram for each use case.
 
+## What composable design buys you
+
+Following these principles pays off in concrete ways:
+
+- **Maintainability** — isolated functions are easy to understand, test, and change.
+- **Reusability** — a self-contained function can be reused across applications.
+- **Performance** — loose coupling enables asynchronous, parallel execution without bottlenecks.
+- **Testability** — well-defined input and output make unit testing straightforward.
+- **Debuggability** — independent functions make it easy to pinpoint a fault.
+- **Technology freedom** — inside a function you may use any style or library; nothing leaks across the boundary.
+
 ## Application development
 
 Once we have drawn the event flow diagrams for different use cases, we can create user stories for each composable
@@ -253,5 +264,5 @@ see the [Architecture Overview](architecture.md).
 
 - [Architecture Overview](architecture.md) — the technical mental model behind these principles.
 - [Getting Started](getting-started.md) — the principles applied in a working app.
-- [Composable Design](composable-design.md) — an essay on composable patterns and their benefits.
+- [Event-driven Foundation](event-driven-foundation.md) — the Layer-1 core these principles run on.
 

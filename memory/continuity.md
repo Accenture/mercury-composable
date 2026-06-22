@@ -221,6 +221,14 @@
   sweep; published the canon as `docs/guides/documentation-conventions.md` and added a CI drift check
   (`scripts/check-doc-canon.py`).
   <!-- id: thread-docs-content-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- [ ] (in progress) **Layer-standardization reorg** — "Shared Foundations + lean parallel layers"
+  (`docs-content-canon`). Each of the 3 layers gets the same shape: Overview → Tutorial → Grammar →
+  Reference → AI guide → Integration; framework-wide pages live once in a Foundations part.
+  **Pass 1 done (2026-06-22):** Foundations part created (architecture + methodology); new Layer-1 Overview
+  (`event-driven-foundation.md`); `composable-design` absorbed into methodology + retired; nav → 7 Parts
+  with "Layer N —" labels; `build-test-deploy` → Operate. **Next:** Pass 2 = Layer 2 Overview (front/split
+  the large `event-script/index`); Pass 3 polish. Part V (Knowledge Graph) is already the template.
+  <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## User Preferences
 
