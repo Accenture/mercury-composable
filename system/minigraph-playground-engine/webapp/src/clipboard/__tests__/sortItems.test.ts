@@ -50,6 +50,23 @@ describe('sortClipboardItems', () => {
     ]);
   });
 
+  it('sorts recent items oldest first when ascending', () => {
+    const items = [
+      item('old', { clippedAt: '2026-01-01T00:00:00.000Z' }),
+      item('new', { clippedAt: '2026-01-03T00:00:00.000Z' }),
+      item('middle', { clippedAt: '2026-01-02T00:00:00.000Z' }),
+    ];
+
+    expect(aliases(sortClipboardItems(items, {
+      field: 'recent',
+      direction: 'ascending',
+    }))).toEqual([
+      'old',
+      'middle',
+      'new',
+    ]);
+  });
+
   it('sorts by primary node type', () => {
     const items = [
       item('root', { type: 'Root' }),
@@ -75,6 +92,23 @@ describe('sortClipboardItems', () => {
       'dictionary',
       'fetcher',
       'root',
+    ]);
+  });
+
+  it('sorts by alias descending when requested', () => {
+    const items = [
+      item('root'),
+      item('dictionary'),
+      item('fetcher'),
+    ];
+
+    expect(aliases(sortClipboardItems(items, {
+      field: 'alias',
+      direction: 'descending',
+    }))).toEqual([
+      'root',
+      'fetcher',
+      'dictionary',
     ]);
   });
 
@@ -106,6 +140,23 @@ describe('sortClipboardItems', () => {
     ]);
   });
 
+  it('sorts by direct connection count from low to high when ascending', () => {
+    const items = [
+      item('one', { connectionCount: 1 }),
+      item('three', { connectionCount: 3 }),
+      item('zero', { connectionCount: 0 }),
+    ];
+
+    expect(aliases(sortClipboardItems(items, {
+      field: 'connections',
+      direction: 'ascending',
+    }))).toEqual([
+      'zero',
+      'one',
+      'three',
+    ]);
+  });
+
   it('sorts by a requested property key and moves missing values last', () => {
     const items = [
       item('missing'),
@@ -119,6 +170,24 @@ describe('sortClipboardItems', () => {
     }))).toEqual([
       'a',
       'b',
+      'missing',
+    ]);
+  });
+
+  it('sorts property values descending while keeping missing values last', () => {
+    const items = [
+      item('missing'),
+      item('b', { properties: { skill: 'graph.fetcher' } }),
+      item('a', { properties: { skill: 'graph.dictionary' } }),
+    ];
+
+    expect(aliases(sortClipboardItems(items, {
+      field: 'property',
+      direction: 'descending',
+      propertyKey: 'skill',
+    }))).toEqual([
+      'b',
+      'a',
       'missing',
     ]);
   });

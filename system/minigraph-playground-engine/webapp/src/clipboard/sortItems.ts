@@ -10,8 +10,11 @@ export type ClipboardSortField =
   | 'connections'
   | 'property';
 
+export type ClipboardSortDirection = 'ascending' | 'descending';
+
 export interface ClipboardSortConfig {
   field: ClipboardSortField;
+  direction?: ClipboardSortDirection;
   // Used only when field === 'property'. Examples: "skill", "method", "url".
   propertyKey?: string;
 }
@@ -37,6 +40,18 @@ function stableTie(leftIndex: number, rightIndex: number): number {
   // When two items have the same sort value, preserve their current workspace
   // order. This avoids visual jumping inside a type/source/property group.
   return leftIndex - rightIndex;
+}
+
+export function getDefaultClipboardSortDirection(field: ClipboardSortField): ClipboardSortDirection {
+  // Keep previous workspace defaults: newest clips first, highest connection
+  // count first, and text-based fields alphabetically ascending.
+  return field === 'recent' || field === 'connections'
+    ? 'descending'
+    : 'ascending';
+}
+
+function applyDirection(order: number, direction: ClipboardSortDirection): number {
+  return direction === 'descending' ? -order : order;
 }
 
 function propertySortValue(item: ClipboardItemRecord, propertyKey: string): {
@@ -66,28 +81,33 @@ function compareProperty(
   left: ClipboardItemRecord,
   right: ClipboardItemRecord,
   propertyKey: string,
+  direction: ClipboardSortDirection,
 ): number {
   const leftValue = propertySortValue(left, propertyKey);
   const rightValue = propertySortValue(right, propertyKey);
 
-  // Nodes with the requested property should appear before nodes missing it.
+  // Nodes with the requested property should appear before nodes missing it,
+  // regardless of ascending/descending direction.
   if (leftValue.missing && !rightValue.missing) return 1;
   if (!leftValue.missing && rightValue.missing) return -1;
-  return compareText(leftValue.value, rightValue.value);
+  return applyDirection(compareText(leftValue.value, rightValue.value), direction);
 }
 
 // Workspace sorting is display-only. IndexedDB still stores items in clipped
 // order, and callers receive a new array so the context state is never mutated.
 //
 // Sort rules:
-// - recent: newest clipped item first;
-// - type/alias/source/property: text ascending;
-// - connections: most direct connections first;
+// - direction is explicit when supplied by the UI;
+// - without direction, recent and connections preserve their previous
+//   descending defaults while text fields default to ascending;
+// - property sorting keeps missing property values last in both directions;
 // - ties: keep existing workspace order.
 export function sortClipboardItems(
   items: ClipboardItemRecord[],
   config: ClipboardSortConfig,
 ): ClipboardItemRecord[] {
+  const direction = config.direction ?? getDefaultClipboardSortDirection(config.field);
+
   return items
     .map((item, originalIndex) => ({ item, originalIndex }))
     .sort((left, right) => {
@@ -103,15 +123,19 @@ export function sortClipboardItems(
           order = compareText(left.item.sourceLabel, right.item.sourceLabel);
           break;
         case 'connections':
-          order = right.item.connections.length - left.item.connections.length;
+          order = left.item.connections.length - right.item.connections.length;
           break;
         case 'property':
-          order = compareProperty(left.item, right.item, config.propertyKey ?? '');
+          order = compareProperty(left.item, right.item, config.propertyKey ?? '', direction);
           break;
         case 'recent':
         default:
-          order = Date.parse(right.item.clippedAt) - Date.parse(left.item.clippedAt);
+          order = Date.parse(left.item.clippedAt) - Date.parse(right.item.clippedAt);
           break;
+      }
+
+      if (config.field !== 'property') {
+        order = applyDirection(order, direction);
       }
 
       return order !== 0 ? order : stableTie(left.originalIndex, right.originalIndex);

@@ -1,7 +1,12 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useClipboardContext } from '../../contexts/ClipboardContext';
 import type { ClipboardItemRecord } from '../../clipboard/db';
-import { sortClipboardItems, type ClipboardSortField } from '../../clipboard/sortItems';
+import {
+  getDefaultClipboardSortDirection,
+  sortClipboardItems,
+  type ClipboardSortDirection,
+  type ClipboardSortField,
+} from '../../clipboard/sortItems';
 import { ClipboardItem } from './ClipboardItem';
 import { ClipboardItemContextMenu } from './ClipboardItemContextMenu';
 import { ClipboardEmptyState } from './ClipboardEmptyState';
@@ -20,14 +25,38 @@ type ActiveClipboardMenuState = {
   y: number;
 };
 
+const SORT_FIELD_OPTIONS: Array<{ value: ClipboardSortField; label: string }> = [
+  { value: 'recent', label: 'Recent' },
+  { value: 'type', label: 'Type' },
+  { value: 'alias', label: 'Alias' },
+  { value: 'source', label: 'Source' },
+  { value: 'connections', label: 'Connections' },
+  { value: 'property', label: 'Property' },
+];
+
+const SORT_DIRECTION_OPTIONS: Array<{ value: ClipboardSortDirection; label: string }> = [
+  { value: 'ascending', label: 'Ascending' },
+  { value: 'descending', label: 'Descending' },
+];
+
+const SORT_FIELD_LABELS = SORT_FIELD_OPTIONS.reduce<Record<ClipboardSortField, string>>(
+  (labels, option) => ({ ...labels, [option.value]: option.label }),
+  {} as Record<ClipboardSortField, string>,
+);
+
 export default function ClipboardSidebar({ connected, onPasteToInput }: ClipboardSidebarProps) {
-  const sortSelectId = useId();
+  const sortMenuId = useId();
   const propertyInputId = useId();
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const clipboardCtx = useClipboardContext();
   const [inspectItem, setInspectItem] = useState<ClipboardItemRecord | null>(null);
   const [activeItemMenu, setActiveItemMenu] = useState<ActiveClipboardMenuState | null>(null);
   const [sortField, setSortField] = useState<ClipboardSortField>('recent');
+  const [sortDirection, setSortDirection] = useState<ClipboardSortDirection>(
+    getDefaultClipboardSortDirection('recent'),
+  );
   const [sortPropertyKey, setSortPropertyKey] = useState('');
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
   const handleOpenItemMenu = (itemId: string, x: number, y: number) => {
     setActiveItemMenu({ itemId, x, y });
@@ -59,6 +88,11 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
     void clipboardCtx.clearAll();
   };
 
+  const handleSortFieldChange = (field: ClipboardSortField) => {
+    setSortField(field);
+    setSortDirection(getDefaultClipboardSortDirection(field));
+  };
+
   useEffect(() => {
     const itemIds = new Set(clipboardCtx.items.map(item => item.id));
 
@@ -71,6 +105,25 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
     }
   }, [clipboardCtx.items, activeItemMenu, inspectItem]);
 
+  useEffect(() => {
+    if (!sortMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (sortMenuRef.current?.contains(event.target as Node)) return;
+      setSortMenuOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSortMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [sortMenuOpen]);
+
   const activeMenuItem = useMemo(
     () => (activeItemMenu
       ? clipboardCtx.items.find(item => item.id === activeItemMenu.itemId) ?? null
@@ -80,9 +133,10 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
   const visibleItems = useMemo(
     () => sortClipboardItems(clipboardCtx.items, {
       field: sortField,
+      direction: sortDirection,
       propertyKey: sortPropertyKey,
     }),
-    [clipboardCtx.items, sortField, sortPropertyKey],
+    [clipboardCtx.items, sortDirection, sortField, sortPropertyKey],
   );
 
   return (
@@ -102,34 +156,80 @@ export default function ClipboardSidebar({ connected, onPasteToInput }: Clipboar
 
       {clipboardCtx.items.length > 0 && (
         <div className={styles.sortBar}>
-          <label className={styles.sortLabel} htmlFor={sortSelectId}>Sort</label>
-          <select
-            id={sortSelectId}
-            className={styles.sortSelect}
-            value={sortField}
-            onChange={(event) => setSortField(event.target.value as ClipboardSortField)}
-            aria-label="Sort workspace items"
-          >
-            <option value="recent">Recent</option>
-            <option value="type">Type</option>
-            <option value="alias">Alias</option>
-            <option value="source">Source</option>
-            <option value="connections">Connections</option>
-            <option value="property">Property</option>
-          </select>
-          {sortField === 'property' && (
-            <>
-              <label className={styles.propertyLabel} htmlFor={propertyInputId}>Key</label>
-              <input
-                id={propertyInputId}
-                className={styles.propertyInput}
-                value={sortPropertyKey}
-                onChange={(event) => setSortPropertyKey(event.target.value)}
-                placeholder="skill"
-                aria-label="Property key to sort by"
-              />
-            </>
-          )}
+          <div className={styles.sortMenuWrapper} ref={sortMenuRef}>
+            <button
+              type="button"
+              className={styles.sortMenuButton}
+              onClick={() => setSortMenuOpen(open => !open)}
+              aria-expanded={sortMenuOpen}
+              aria-controls={sortMenuId}
+            >
+              <span className={styles.sortButtonLabel}>Sort</span>
+              <span className={styles.sortButtonValue}>{SORT_FIELD_LABELS[sortField]}</span>
+              <span className={styles.sortButtonDirection}>
+                {sortDirection === 'ascending' ? 'Asc' : 'Desc'}
+              </span>
+              <span className={styles.sortButtonCaret} aria-hidden="true">v</span>
+            </button>
+
+            {sortMenuOpen && (
+              <div id={sortMenuId} className={styles.sortPopover}>
+                <div
+                  className={styles.sortGroup}
+                  role="group"
+                  aria-labelledby={`${sortMenuId}-field-title`}
+                >
+                  <div id={`${sortMenuId}-field-title`} className={styles.sortGroupTitle}>Sort By</div>
+                  {SORT_FIELD_OPTIONS.map(option => (
+                    <label key={option.value} className={styles.sortOption}>
+                      <input
+                        type="radio"
+                        name={`${sortMenuId}-field`}
+                        value={option.value}
+                        checked={sortField === option.value}
+                        onChange={() => handleSortFieldChange(option.value)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {sortField === 'property' && (
+                  <div className={styles.propertySortRow}>
+                    <label className={styles.propertyLabel} htmlFor={propertyInputId}>Property Key</label>
+                    <input
+                      id={propertyInputId}
+                      className={styles.propertyInput}
+                      value={sortPropertyKey}
+                      onChange={(event) => setSortPropertyKey(event.target.value)}
+                      placeholder="skill"
+                      aria-label="Property key to sort by"
+                    />
+                  </div>
+                )}
+
+                <div
+                  className={styles.sortGroup}
+                  role="group"
+                  aria-labelledby={`${sortMenuId}-direction-title`}
+                >
+                  <div id={`${sortMenuId}-direction-title`} className={styles.sortGroupTitle}>Sort Direction</div>
+                  {SORT_DIRECTION_OPTIONS.map(option => (
+                    <label key={option.value} className={styles.sortOption}>
+                      <input
+                        type="radio"
+                        name={`${sortMenuId}-direction`}
+                        value={option.value}
+                        checked={sortDirection === option.value}
+                        onChange={() => setSortDirection(option.value)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
