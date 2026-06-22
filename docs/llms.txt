@@ -19,7 +19,7 @@
 ## Layer 1 — Event-driven foundation (Platform Core)
 - [Architecture Overview](https://accenture.github.io/mercury-composable/guides/ARCHITECTURE/): layers, components, the in-memory event bus, threading, core APIs.
 - [Methodology](https://accenture.github.io/mercury-composable/guides/METHODOLOGY/): the four composable design principles.
-- [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/CHAPTER-2/): virtual vs. kernel threads, Mono/Flux.
+- [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/function-execution/): virtual vs. kernel threads, Mono/Flux.
 - [REST Automation](https://accenture.github.io/mercury-composable/guides/CHAPTER-3/): declare HTTP endpoints via rest.yaml, no controllers.
 
 ## Layer 2 — Composable orchestration (Event Script)

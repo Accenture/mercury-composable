@@ -1,4 +1,20 @@
+---
+title: Architecture Overview
+summary: The complete technical mental model — layers, components, the in-memory event bus,
+  threading, and the core APIs.
+layer: platform-core
+audience: [architect, developer]
+keywords: [architecture, event bus, layers, flow adapter, threading, postoffice, platform]
+---
+
 # Architecture Overview
+
+> **At a glance**
+>
+> - **What** — the framework's technical mental model: layers (flow adapters → event manager →
+>   functions), the in-memory event bus, threading, and the core APIs.
+> - **For** architects and developers who want the whole picture before the specifics.
+> - The [Methodology](METHODOLOGY.md) covers the *why* behind this design.
 
 Mercury Composable is a Java 21 framework for building event-driven applications from self-contained,
 stateless functions wired together by YAML-configured event choreography. It targets microservices,
@@ -342,7 +358,7 @@ comma-separated (e.g., `yaml.rest.automation=file:/tmp/config/rest.yaml, classpa
 
 - [Methodology](METHODOLOGY.md) — design principles: input-process-output, zero dependency, event choreography, platform abstraction
 - [Getting Started](getting-started.md) — hands-on walkthrough with the composable example application
-- [Function Execution Strategies](CHAPTER-2.md) — virtual vs. kernel threads, Mono/Flux, authentication functions
+- [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads, Mono/Flux, authentication functions
 - [REST Automation](CHAPTER-3.md) — complete `rest.yaml` syntax reference
 - [Event Script Syntax](CHAPTER-4.md) — complete flow DSL reference including all task types, data mapping, sub-flows, and preload overrides
 - [API Overview](CHAPTER-9.md) — full `PostOffice`, `Platform`, `EventEnvelope`, and configuration API reference

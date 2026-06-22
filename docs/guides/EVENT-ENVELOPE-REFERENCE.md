@@ -561,5 +561,5 @@ in user code when operating at the HTTP boundary:
 - [Annotations Reference](ANNOTATIONS-REFERENCE.md) — `@EventInterceptor`, `@PreLoad`, and other annotations
 - [Flow Configuration Schema](FLOW-SCHEMA-REFERENCE.md) — Complete data mapping DSL reference
 - [Event Script Syntax](CHAPTER-4.md) — Flow DSL including input/output mapping and execution types
-- [Function Execution Strategies](CHAPTER-2.md) — Virtual threads, auth functions, Flux/Mono return types
+- [Function Execution Strategies](function-execution.md) — Virtual threads, auth functions, Flux/Mono return types
 - [API Overview](CHAPTER-9.md) — Full `PostOffice`, `Platform`, and configuration API

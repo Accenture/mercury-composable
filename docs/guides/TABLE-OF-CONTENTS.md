@@ -32,7 +32,7 @@ Explanation-oriented pages for understanding design decisions and how the framew
 - [Methodology](METHODOLOGY.md) — The four composable design principles: input-process-output, zero dependency, platform abstraction, event choreography.
 - [Architecture Overview](ARCHITECTURE.md) — Complete technical mental model: layers, components, Event Script, threading, and core APIs.
 - [Composable Design](COMPOSABLE-DESIGN.md) — Essay on composable design patterns and their benefits over tightly coupled architectures.
-- [Function Execution Strategies](CHAPTER-2.md) — How virtual threads and kernel threads work, when to use each, and Mono/Flux support.
+- [Function Execution Strategies](function-execution.md) — How virtual threads and kernel threads work, when to use each, and Mono/Flux support.
 - [Design Notes](../arch-decisions/DESIGN-NOTES.md) — Architecture decisions and technical rationale behind key framework choices.
 
 ---

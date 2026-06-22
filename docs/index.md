@@ -24,7 +24,7 @@ application — drop down a layer exactly where you need more control, and no fu
 
 | Layer | You express behavior as… | What you write | Start here |
 |:------|:--------------------------|:---------------|:-----------|
-| **Event-driven** — Platform Core | decoupled functions reacting to events | Java functions, addressed by route name | [Function Execution Strategies](guides/CHAPTER-2.md) |
+| **Event-driven** — Platform Core | decoupled functions reacting to events | Java functions, addressed by route name | [Function Execution Strategies](guides/function-execution.md) |
 | **Composable** — Event Script | YAML flows that choreograph functions | ~50% config, 50% code | [Event Script Syntax](guides/CHAPTER-4.md) |
 | **Semantic** — Active Knowledge Graph | a graph whose nodes *execute* during traversal | a model — little or no code | [Knowledge Graph as Application](guides/knowledge-graph/index.md) |
 

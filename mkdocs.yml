@@ -11,7 +11,7 @@ nav:
   - Part II · Event-driven foundation:
     - Architecture Overview: guides/ARCHITECTURE.md
     - Methodology: guides/METHODOLOGY.md
-    - Function Execution Strategies: guides/CHAPTER-2.md
+    - Function Execution Strategies: guides/function-execution.md
     - REST Automation: guides/CHAPTER-3.md
     - REST grammar: guides/rest-automation/rest-grammar.md
     - REST AI agent guide: guides/rest-automation/ai-agent-guide.md
@@ -61,5 +61,6 @@ plugins:
   - redirects:
       redirect_maps:
         'guides/CHAPTER-1.md': 'guides/getting-started.md'
+        'guides/CHAPTER-2.md': 'guides/function-execution.md'
         'guides/CHAPTER-11.md': 'guides/knowledge-graph/index.md'
 theme: readthedocs

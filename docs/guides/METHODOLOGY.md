@@ -1,6 +1,22 @@
-# Background
+---
+title: Methodology
+summary: The design philosophy and the four composable principles — input-process-output, zero
+  dependency, platform abstraction, and event choreography.
+layer: platform-core
+audience: [architect]
+keywords: [methodology, composable, design principles, input-process-output, zero dependency, event choreography]
+---
+
+# Methodology
 
 *Concepts: Design philosophy and principles behind Mercury Composable's event-driven architecture.*
+
+> **At a glance**
+>
+> - **What** — the four composable design principles (input-process-output, zero dependency,
+>   platform abstraction, event choreography) and the thinking behind them.
+> - **For** architects shaping composable systems; the [Architecture Overview](ARCHITECTURE.md) is
+>   the technical companion.
 
 The high level concept of composable architecture was advocated by Gartner in 2022.
 
@@ -241,9 +257,9 @@ and Node.js have different syntax for annotation, they use a similar declarative
           It can be used with horizontal scaling to optimize use of computing resources.
 For a technical deep dive into how the framework implements these principles,
 see the [Architecture Overview](ARCHITECTURE.md).
-<br>
+## See also
 
-|                   Home                    |          Chapter-1           |
-|:-----------------------------------------:|:----------------------------:|
-| [Table of Contents](TABLE-OF-CONTENTS.md) | [Introduction](getting-started.md) |
+- [Architecture Overview](ARCHITECTURE.md) — the technical mental model behind these principles.
+- [Getting Started](getting-started.md) — the principles applied in a working app.
+- [Composable Design](COMPOSABLE-DESIGN.md) — an essay on composable patterns and their benefits.
 

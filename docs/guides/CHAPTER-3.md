@@ -327,4 +327,4 @@ code and error message accordingly.
 
 |                   Chapter-2                   |                   Home                    |              Chapter-4              |
 |:---------------------------------------------:|:-----------------------------------------:|:-----------------------------------:|
-| [Function Execution Strategies](CHAPTER-2.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Event Script Syntax](CHAPTER-4.md) |
+| [Function Execution Strategies](function-execution.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [Event Script Syntax](CHAPTER-4.md) |

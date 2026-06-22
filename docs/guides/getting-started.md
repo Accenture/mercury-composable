@@ -521,5 +521,5 @@ APIs to do event-driven programming. API overview will be covered in [API Overvi
 
 - [Quickstart](QUICKSTART.md) — the five-minute version of this tutorial.
 - [Methodology](METHODOLOGY.md) — the four composable design principles behind what you built.
-- [Function Execution Strategies](CHAPTER-2.md) — virtual vs. kernel threads for your functions.
+- [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads for your functions.
 - [Event Script Syntax](CHAPTER-4.md) — orchestrate functions with YAML flows.

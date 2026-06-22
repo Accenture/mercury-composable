@@ -1,6 +1,23 @@
+---
+title: Function Execution Strategies
+summary: How Mercury runs functions — Java 21 virtual threads by default, kernel threads for
+  blocking/legacy code, and reactive Mono/Flux — and when to use each.
+layer: platform-core
+audience: [developer]
+keywords: [virtual threads, kernel threads, execution, concurrency, mono, flux, KernelThreadRunner]
+---
+
 # Function Execution Strategies
 
 *Concepts: Understanding virtual threads, kernel threads, and Mercury's execution model.*
+
+> **At a glance**
+>
+> - **What** — how a function executes: Java 21 **virtual threads** by default (cheap, scalable),
+>   **kernel threads** for blocking/legacy code (`KernelThreadRunner`), and reactive `Mono`/`Flux`.
+> - **Why it matters** — choosing the right strategy per function tunes performance without
+>   coupling functions to each other.
+> - **For** developers building functions in the event-driven foundation.
 
 ## Define a function
 
@@ -350,8 +367,9 @@ Mercury Composable supports mixed thread management - virtual threads and kernel
 
 Functions running in different types of threads are connected loosely in events. This functional isolation
 and encapsulation mean that you can precisely control how your application performs for each functional logic block.
-<br/>
+## See also
 
-|          Chapter-1           |                   Home                    |            Chapter-3            |
-|:----------------------------:|:-----------------------------------------:|:-------------------------------:|
-| [Introduction](getting-started.md) | [Table of Contents](TABLE-OF-CONTENTS.md) | [REST Automation](CHAPTER-3.md) |
+- [Getting Started](getting-started.md) — build your first functions in a working app.
+- [Architecture Overview](ARCHITECTURE.md) — where functions sit in the event-driven runtime.
+- [REST Automation](CHAPTER-3.md) — expose functions as HTTP endpoints.
+- [Event Script Syntax](CHAPTER-4.md) — orchestrate functions with YAML flows.
