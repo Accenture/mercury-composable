@@ -9,7 +9,7 @@ keywords: [event script, flow, dsl, task types, data mapping, yaml, choreography
 
 # Event Script Syntax
 
-*Reference: Complete DSL reference for YAML event flow configurations, task types, and data mapping.*
+*Overview & reference: Event Script — the YAML flow DSL: structure, task types, and the data-mapping mini-language.*
 
 > **At a glance**
 >
@@ -21,8 +21,31 @@ keywords: [event script, flow, dsl, task types, data mapping, yaml, choreography
 > For a quick-reference lookup of all flow fields, namespaces, and task types, see the
 > [Flow Configuration Schema Reference](../flow-schema-reference.md).
 
+## Overview
+
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction flow.
 A transaction is a business use case, and the flow can be an API service, a batch job or a real-time transaction.
+
+Event Script is the **composable** layer — Layer 2 of Mercury's ascent. It moves orchestration *out of
+code and into configuration*: instead of writing Java that calls one function after another, you describe
+the sequence as a **flow** in YAML. Roughly half the work becomes configuration, half stays code (the
+functions themselves). A flow builds on the [event-driven foundation](../event-driven-foundation.md)
+beneath it — it never references a function's class, only its **route name**.
+
+**The mental model:**
+
+- A **flow** is an ordered set of **tasks** with one entry point (`first.task`) and one or more terminal tasks.
+- Each **task** runs a **function** (named by route) — a task *is* a function in its flow-step role. Input
+  and output **data mapping** move values between the flow and the function's scope.
+- A task's **execution type** decides what happens next: `sequential`, `decision`, `parallel`, `fork`,
+  `pipeline`, `response`, `end`, or `sink`.
+- A per-transaction **state machine** (`model`) holds intermediate results across the stateless functions.
+- A **flow adapter** (HTTP via `rest.yaml`, or Kafka) drives a flow from outside and returns its result.
+
+**How this page is organized:** the flow list and file layout, then writing a flow end to end, then the
+task types and the data-mapping mini-language, with worked examples throughout. For a field-level lookup
+see the [Flow Configuration Schema](../flow-schema-reference.md); for the rule-based grammar and an agent
+on-ramp see the [Flow grammar](flow-grammar.md) and [AI agent guide](ai-agent-guide.md).
 
 ## Flow list
 

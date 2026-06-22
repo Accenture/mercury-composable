@@ -226,8 +226,12 @@
   Reference → AI guide → Integration; framework-wide pages live once in a Foundations part.
   **Pass 1 done (2026-06-22):** Foundations part created (architecture + methodology); new Layer-1 Overview
   (`event-driven-foundation.md`); `composable-design` absorbed into methodology + retired; nav → 7 Parts
-  with "Layer N —" labels; `build-test-deploy` → Operate. **Next:** Pass 2 = Layer 2 Overview (front/split
-  the large `event-script/index`); Pass 3 polish. Part V (Knowledge Graph) is already the template.
+  with "Layer N —" labels; `build-test-deploy` → Operate. **Pass 2 done (2026-06-22):** Layer 2 Overview —
+  fronted the large `event-script/index` with an `## Overview` (places the layer in the ascent + the flow
+  mental model: flow→tasks→execution types→state machine→adapters), approach (a) (no split), per Eric.
+  **Core reorg complete:** all 3 layers now have an Overview + a consistent shape; Foundations consolidated.
+  **Optional remaining polish:** per-layer "Integration" cross-links; Layer-2 has no separate "Overview"
+  nav entry (it leads the syntax page) — mild sidebar asymmetry vs Layers 1 & 3.
   <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 
 ## User Preferences
