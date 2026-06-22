@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-20 | agent: Claude Code
-- **last_review:** (none yet)
+- **last_session:** 2026-06-21 | agent: Claude Code
+- **last_review:** 2026-06-21 | through 2026-06-22-003844.md
 - **last_invariant_check:** (none yet)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -67,7 +67,7 @@
   link to those absolute URLs). Root GitHub files (README/CHANGELOG/CONTRIBUTING/
   CODE_OF_CONDUCT/INCLUSIVITY) stay at repo root as external nav links; `docs/index.md`
   is the site Home. Verified by `mkdocs build --strict` (exit 0).
-  <!-- id: docs-dir-layout | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+  <!-- id: docs-dir-layout | created: 2026-06-20 | last_used: 2026-06-21 | uses: 3 | tier: active -->
 - Documentation rewrite (the Design for `bp-docs-ai-human-rewrite`) = a **structural, layered
   re-architecture** into Parts I–VI ascending the layers, centering **"Knowledge Graph as
   application"** (Part IV, mostly new — the current CHAPTER-11 is a glossy stub). **Dual design:**
@@ -79,7 +79,7 @@
   old CHAPTER-11) + fix nav/cross-links/baked URLs. First iteration = spine opener + Part IV.
   Approved by Eric Law 2026-06-20 (3 forks confirmed). Lower-layer chapters (CH 1–9) are sound —
   migrate + refresh, don't rewrite from scratch.
-  <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+  <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-21 | uses: 4 | tier: active -->
 - Each DSL gets a deterministic **spec layer for AI agents**: a rule-based grammar reference +
   a machine-readable catalog (JSON) + an AI-agent guide (endpoint contract + pre-send checklist) +
   a CI **drift test** keeping the spec in sync with the shipped help + engine routes. **Validation
@@ -94,7 +94,7 @@
   `scripts/check-rest-automation-grammar.py`; drift-checks against `RoutingEntry.VALID_METHODS`),
   fresh-agent-validated. **All 3 DSLs (MiniGraph, Event Script, REST) now have the deterministic
   spec kit + CI drift test.**
-  <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+  <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-21 | uses: 3 | tier: active -->
 
 ## Conventions
 
@@ -108,7 +108,7 @@
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
-- [ ] (blueprint) **Rewrite the documentation to be AI- and human-friendly** — the
+- [x] (blueprint) **Rewrite the documentation to be AI- and human-friendly** — the
   user-facing surface is the Active Knowledge Graph. **This is the first iteration.** → serves: vision-mercury-composable
   *Progress (2026-06-20): (1) structural prerequisite landed — docs consolidated into `docs/`,
   mkdocs build fixed (see `docs-dir-layout`). (2) Design approved — the layered re-architecture
