@@ -264,5 +264,5 @@ see the [Architecture Overview](architecture.md).
 
 - [Architecture Overview](architecture.md) — the technical mental model behind these principles.
 - [Getting Started](getting-started.md) — the principles applied in a working app.
-- [Event-driven Foundation](event-driven-foundation.md) — the Layer-1 core these principles run on.
+- [Event-driven Foundation](event-driven/index.md) — the Layer-1 core these principles run on.
 

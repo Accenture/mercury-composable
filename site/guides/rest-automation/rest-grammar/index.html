@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/rest-automation/rest-grammar/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>REST grammar - Composable for Java</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "REST grammar";
+        var mkdocs_page_input_path = "guides/rest-automation/rest-grammar.md";
+        var mkdocs_page_url = "/mercury-composable/guides/rest-automation/rest-grammar/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">REST grammar</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#structure">Top-level structure</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#entry">A rest: endpoint entry</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#binding">Binding modes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cors">cors: block</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#headers">headers: block</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants">Invariants</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Layer 1 — Event-driven</li>
+      <li class="breadcrumb-item active">REST grammar</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="rest-automation-grammar">REST automation grammar</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>The <strong>source of truth</strong> for <code>rest.yaml</code> — declaratively maps HTTP endpoints to a composable
+  function (<code>service</code>) or a flow (<code>flow</code>), with no controller code.</li>
+<li>Machine-readable form: <a href="../rest-automation.json"><code>rest-automation.json</code></a>. Authoring from an agent?
+  See the <a href="../ai-agent-guide/">AI agent guide</a>. Worked examples: <a href="../">REST Automation</a>.</li>
+<li>The keys below mirror the parser (<code>RoutingEntry</code>); unrecognized keys are ignored, and invalid
+  values fail to load.</li>
+</ul>
+</blockquote>
+<h2 id="structure">Top-level structure</h2>
+<p><code>rest.yaml</code> has these top-level keys (all lists except <code>static-content</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rest</code></td>
+<td>the list of HTTP endpoint entries</td>
+</tr>
+<tr>
+<td><code>cors</code></td>
+<td>reusable CORS configs (referenced by a <code>rest</code> entry's <code>cors:</code>)</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td>reusable header-transform configs (referenced by <code>headers:</code>)</td>
+</tr>
+<tr>
+<td><code>static-content</code></td>
+<td>optional static asset / filter config</td>
+</tr>
+</tbody>
+</table>
+<h2 id="entry">A <code>rest:</code> endpoint entry</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Meaning / allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>service</code></td>
+<td><strong>yes</strong></td>
+<td>a function route, <strong>or</strong> a list <code>[primary, secondary]</code> (secondary gets a copy, output ignored), <strong>or</strong> an <code>http(s)://…</code> URL (relay). Use <code>http.flow.adapter</code> when binding to a <code>flow</code>.</td>
+</tr>
+<tr>
+<td><code>methods</code></td>
+<td><strong>yes</strong></td>
+<td>list from <code>GET PUT POST DELETE HEAD PATCH</code> (<code>OPTIONS</code> is added automatically)</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td><strong>yes</strong></td>
+<td>URI path; supports <code>{param}</code> path variables and a trailing <code>*</code> wildcard (case-insensitive)</td>
+</tr>
+<tr>
+<td><code>flow</code></td>
+<td>no</td>
+<td>a flow id (used with <code>service: http.flow.adapter</code>)</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>no</td>
+<td>duration like <code>30s</code> (default 30s; clamped 1s–5m)</td>
+</tr>
+<tr>
+<td><code>cors</code></td>
+<td>no</td>
+<td>id of a <code>cors</code> entry (must exist)</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td>no</td>
+<td>id of a <code>headers</code> entry (must exist)</td>
+</tr>
+<tr>
+<td><code>authentication</code></td>
+<td>no</td>
+<td>a service route, or routing specs: <code>'default: svc'</code>, <code>'header: svc'</code>, <code>'header: value: svc'</code></td>
+</tr>
+<tr>
+<td><code>upload</code></td>
+<td>no</td>
+<td><code>true</code>/<code>false</code> (default false) — enable multipart upload</td>
+</tr>
+<tr>
+<td><code>tracing</code></td>
+<td>no</td>
+<td><code>true</code>/<code>false</code> (default false) — enable distributed tracing</td>
+</tr>
+<tr>
+<td><code>trust_all_cert</code></td>
+<td>no</td>
+<td><code>true</code>/<code>false</code> — <strong>HTTPS relay only</strong></td>
+</tr>
+<tr>
+<td><code>url_rewrite</code></td>
+<td>no</td>
+<td>a list of <strong>exactly two</strong> strings <code>[from, to]</code> — <strong>HTTP(S) relay only</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Boolean fields (<code>upload</code>, <code>tracing</code>, <code>trust_all_cert</code>) are written <strong>unquoted</strong>, e.g. <code>tracing: true</code>.</p>
+<h2 id="binding">Binding modes</h2>
+<p>How an endpoint reaches its backend (set by <code>service</code>/<code>flow</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Config</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Function</strong></td>
+<td><code>service: my.function.route</code></td>
+<td>route the request to a composable function</td>
+</tr>
+<tr>
+<td><strong>Flow</strong></td>
+<td><code>service: http.flow.adapter</code> + <code>flow: my-flow-id</code></td>
+<td>run an <a href="../../event-script/flow-grammar/">Event Script flow</a></td>
+</tr>
+<tr>
+<td><strong>HTTP relay</strong></td>
+<td><code>service: https://host</code></td>
+<td>proxy to an external URL (<code>url_rewrite</code>, <code>trust_all_cert</code> apply)</td>
+</tr>
+<tr>
+<td><strong>A/B (dual)</strong></td>
+<td><code>service: [primary, secondary]</code></td>
+<td>primary serves the response; secondary gets a copy</td>
+</tr>
+</tbody>
+</table>
+<p><code>{param}</code> tokens in <code>url</code> are extracted and passed to the backend (e.g. <code>/api/profile/{id}</code>).</p>
+<h2 id="cors"><code>cors:</code> block</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><strong>yes</strong></td>
+<td>unique id referenced by a <code>rest</code> entry's <code>cors:</code></td>
+</tr>
+<tr>
+<td><code>options</code></td>
+<td><strong>yes</strong></td>
+<td>headers for the preflight (<code>OPTIONS</code>) response</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td><strong>yes</strong></td>
+<td>headers for normal responses</td>
+</tr>
+</tbody>
+</table>
+<p>Each entry in <code>options</code>/<code>headers</code> <strong>must</strong> be an <code>Access-Control-*: value</code> line, e.g.
+<code>'Access-Control-Allow-Origin: *'</code>. A complete cross-origin config typically also lists
+<code>Access-Control-Allow-Methods</code> and <code>Access-Control-Allow-Headers</code> (see the
+<a href="../ai-agent-guide/#example">worked example</a>).</p>
+<h2 id="headers"><code>headers:</code> block</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><strong>yes</strong></td>
+<td>unique id referenced by a <code>rest</code> entry's <code>headers:</code></td>
+</tr>
+<tr>
+<td><code>request</code></td>
+<td>no</td>
+<td>transforms on the inbound request: <code>add</code> / <code>drop</code> / <code>keep</code></td>
+</tr>
+<tr>
+<td><code>response</code></td>
+<td>no</td>
+<td>transforms on the outbound response: <code>add</code> / <code>drop</code> / <code>keep</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>add</code> entries are <code>'header-name: value'</code>; <code>drop</code>/<code>keep</code> are header names (case-insensitive). <code>keep</code>
+retains only the listed headers (drops the rest).</p>
+<h2 id="invariants">Invariants</h2>
+<p>Parser rules — violate them and the route won't load:</p>
+<ol>
+<li>Every <code>rest</code> entry has <code>service</code>, <code>methods</code>, and <code>url</code>.</li>
+<li><code>methods</code> values come from <code>GET PUT POST DELETE HEAD PATCH</code> (<code>OPTIONS</code> is auto-added — don't list it).</li>
+<li>A <code>cors:</code>/<code>headers:</code> reference must match an existing <code>cors</code>/<code>headers</code> <code>id</code>.</li>
+<li><code>url_rewrite</code> is a list of <strong>exactly two</strong> strings; <code>url_rewrite</code> and <code>trust_all_cert</code> apply
+   <strong>only</strong> to <code>http(s)://</code> relay services.</li>
+<li>An HTTP-relay <code>service</code> must be a <strong>single</strong> URL (not a list, not mixed with function routes).</li>
+<li><code>flow</code> binding uses <code>service: http.flow.adapter</code>.</li>
+</ol>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../rest-automation.json"><code>rest-automation.json</code></a> — the machine-readable form of this grammar.</li>
+<li><a href="../ai-agent-guide/">AI agent guide</a> — authoring rest.yaml deterministically.</li>
+<li><a href="../">REST Automation</a> — worked examples; <a href="../../event-script/flow-grammar/">Event Script flow grammar</a> — the flows endpoints bind to.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../" class="btn btn-neutral float-left" title="REST Automation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../ai-agent-guide/" class="btn btn-neutral float-right" title="REST AI agent guide">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../ai-agent-guide/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

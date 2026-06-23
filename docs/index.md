@@ -25,7 +25,7 @@ application — drop down a layer exactly where you need more control, and no fu
 
 | Layer | You express behavior as… | What you write |
 |:------|:--------------------------|:---------------|
-| **Event-driven**<br>[Platform Core](guides/event-driven-foundation.md) | decoupled functions reacting<br>to events | Java functions,<br>addressed by route name |
+| **Event-driven**<br>[Platform Core](guides/event-driven/index.md) | decoupled functions reacting<br>to events | Java functions,<br>addressed by route name |
 | **Composable**<br>[Event Script](guides/event-script/index.md) | YAML flows that choreograph<br>functions | ~50% config,<br>50% code |
 | **Semantic**<br>[Active Knowledge Graph](guides/knowledge-graph/index.md) | a graph whose nodes *execute*<br>during traversal | a model —<br>little or no code |
 
@@ -59,7 +59,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
   [Build your first graph](guides/knowledge-graph/build-your-first-graph.md) ·
   [Minimalist Property Graph](guides/knowledge-graph/property-graph.md)
 - **Concepts** — [Methodology](guides/methodology.md) · [Architecture Overview](guides/architecture.md) ·
-  [Event-driven Foundation](guides/event-driven-foundation.md) ·
+  [Event-driven Foundation](guides/event-driven/index.md) ·
   [Architecture Decision Records](arch-decisions/ADR.md)
 - **Reference** — [Annotations](guides/annotations-reference.md) ·
   [Configuration](guides/configuration-reference.md) · [Event Envelope](guides/event-envelope-reference.md) ·

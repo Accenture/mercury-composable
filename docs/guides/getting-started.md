@@ -557,5 +557,5 @@ APIs to do event-driven programming. API overview will be covered in [API Overvi
 ## See also
 
 - [Methodology](methodology.md) — the four composable design principles behind what you built.
-- [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads for your functions.
+- [Function Execution Strategies](event-driven/function-execution.md) — virtual vs. kernel threads for your functions.
 - [Event Script Syntax](event-script/syntax.md) — orchestrate functions with YAML flows.

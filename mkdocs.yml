@@ -12,8 +12,9 @@ nav:
     - Methodology: guides/methodology.md
 
   - Layer 1 — Event-driven:
-    - Overview: guides/event-driven-foundation.md
-    - Function Execution Strategies: guides/function-execution.md
+    - Overview: guides/event-driven/index.md
+    - Write your first function: guides/event-driven/write-your-first-function.md
+    - Function Execution Strategies: guides/event-driven/function-execution.md
     - REST Automation: guides/rest-automation/index.md
     - REST grammar: guides/rest-automation/rest-grammar.md
     - REST AI agent guide: guides/rest-automation/ai-agent-guide.md

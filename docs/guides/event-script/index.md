@@ -7,7 +7,7 @@ audience: [developer, architect]
 keywords: [event script, composable orchestration, flow, task, execution type, state machine, layer 2, choreography]
 related:
   - guides/event-script/syntax.md
-  - guides/event-driven-foundation.md
+  - guides/event-driven/index.md
   - guides/knowledge-graph/composing-the-layers.md
 ---
 
@@ -21,7 +21,7 @@ related:
 >   choreographs functions — orchestration as configuration, not code.
 > - **Why it matters** — changing how a transaction runs means editing a flow, not rewriting Java;
 >   roughly half config, half code.
-> - **Where it sits** — **Layer 2** of the ascent, built on the [event-driven foundation](../event-driven-foundation.md).
+> - **Where it sits** — **Layer 2** of the ascent, built on the [event-driven foundation](../event-driven/index.md).
 > - **For** developers and architects orchestrating composable functions.
 
 Event Script is a Domain Specific Language (DSL) that uses YAML to represent an end-to-end transaction
@@ -31,7 +31,7 @@ real-time transaction.
 It moves orchestration *out of code and into configuration*: instead of writing Java that calls one
 function after another, you describe the sequence as a **flow** in YAML. Roughly half the work becomes
 configuration, half stays code (the functions themselves). A flow builds on the
-[event-driven foundation](../event-driven-foundation.md) beneath it — it never references a function's
+[event-driven foundation](../event-driven/index.md) beneath it — it never references a function's
 class, only its **route name**.
 
 ## The mental model
@@ -50,6 +50,6 @@ class, only its **route name**.
 - [Flow grammar](flow-grammar.md) — the rule-based schema (the deterministic spec).
 - [Flow AI agent guide](ai-agent-guide.md) — author flows deterministically with an agent.
 - [Flow Configuration Schema](../flow-schema-reference.md) — exhaustive field reference.
-- [Event-driven Foundation](../event-driven-foundation.md) — the Layer-1 core flows build on (down the ascent).
+- [Event-driven Foundation](../event-driven/index.md) — the Layer-1 core flows build on (down the ascent).
 - [Knowledge Graph as Application](../knowledge-graph/index.md) — the semantic layer above (Layer 3).
 - [Composing the layers](../knowledge-graph/composing-the-layers.md) — how the three layers stack.

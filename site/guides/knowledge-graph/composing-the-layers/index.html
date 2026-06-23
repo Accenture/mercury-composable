@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/knowledge-graph/composing-the-layers/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Composing the layers - Composable for Java</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Composing the layers";
+        var mkdocs_page_input_path = "guides/knowledge-graph/composing-the-layers.md";
+        var mkdocs_page_url = "/mercury-composable/guides/knowledge-graph/composing-the-layers/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Composing the layers</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#data-dictionary">Reaching external APIs: data dictionary + provider</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#extension">Delegating down: graph.extension</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#flow-extension">Delegating to an Event Script flow</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#exposure">Exposing a graph: the graph-executor flow</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Layer 3 — Knowledge Graph</li>
+      <li class="breadcrumb-item active">Composing the layers</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="composing-the-layers">Composing the layers</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>An Active Knowledge Graph is the top of Mercury's ascent — it <strong>composes the layers beneath it
+  without coupling</strong>: down to Event Script flows and composable functions, out to external APIs,
+  and up to any protocol.</li>
+<li><strong>Out</strong> — <code>graph.api.fetcher</code> calls HTTP APIs declaratively via <strong>data-dictionary</strong> + <strong>provider</strong>
+  nodes. <strong>Down</strong> — <code>graph.extension</code> runs a <strong>sub-graph</strong> or an <strong>Event Script flow</strong>. <strong>Up</strong> — the
+  <code>graph-executor</code> flow exposes a deployed graph at <code>POST /api/graph/{graph-id}</code>.</li>
+</ul>
+</blockquote>
+<h2 id="data-dictionary">Reaching external APIs: data dictionary + provider</h2>
+<p><code>graph.api.fetcher</code> (<a href="../skills-reference/#api-fetcher">reference</a>) doesn't hard-code endpoints. It
+reads two kinds of configuration node:</p>
+<ul>
+<li>a <strong>provider</strong> node — <em>where</em> and <em>how</em> to call a service (URL, method, request mapping);</li>
+<li>a <strong>data-dictionary</strong> node — <em>what</em> attribute you want, which provider serves it, and how to map
+  the response.</li>
+</ul>
+<p><strong>Provider</strong> — define the endpoint once and reuse it:</p>
+<pre><code>create node mdm-profile
+with type Provider
+with properties
+purpose=Master Data Management profile endpoint
+url=http://127.0.0.1:${rest.server.port:8080}/api/mdm/profile/{id}
+method=GET
+feature[]=log-request-headers
+input[]=text(application/json) -&gt; header.accept
+input[]=person_id -&gt; path_parameter.id
+</code></pre>
+<p>Provider input targets map into the HTTP request: <code>header.*</code>, <code>query.*</code>, <code>path_parameter.*</code>, <code>body.*</code>.
+A URL token like <code>{id}</code> is filled from <code>path_parameter.id</code> (matched by name). Note the two <code>input[]</code>
+forms: in a <strong>Dictionary</strong>, a bare <code>input[]=person_id</code> <em>declares</em> a required input parameter (the
+fetcher supplies its value); in a <strong>Provider</strong>, <code>input[]=source -&gt; target</code> is a <em>mapping</em> into the
+request.</p>
+<p><strong>Data dictionary</strong> — name an attribute, point it at a provider, and map the response into <code>result</code>:</p>
+<pre><code>create node person-name
+with type Dictionary
+with properties
+purpose=name of a person
+provider=mdm-profile
+input[]=person_id
+output[]=response.profile.name -&gt; result.name
+</code></pre>
+<p><strong>Fetcher</strong> — the active node that pulls one or more dictionary attributes:</p>
+<pre><code>create node fetcher
+with type Fetcher
+with properties
+skill=graph.api.fetcher
+dictionary[]=person-name
+dictionary[]=person-address
+input[]=input.body.person_id -&gt; person_id
+output[]=result.name -&gt; output.body.name
+output[]=result.address -&gt; output.body.address
+</code></pre>
+<p>Because two dictionary items here share one provider and the same <code>person_id</code>, the engine
+<strong>deduplicates</strong> them into a single HTTP call. (The shipped <em>Tutorial 3</em> is the clean end-to-end
+version of this example.)</p>
+<p><strong>Config nodes are referenced, not connected.</strong> The fetcher wires in Dictionary and Provider nodes
+<em>by name</em> (<code>dictionary[]=</code>, <code>provider=</code>), so they need <strong>no</strong> <code>connect</code> lines and are exempt from
+the no-orphans rule — they're configuration, not part of the traversal. You may optionally group
+them under a <code>graph.island</code> node for visualization (Tutorial 3 shows this), but it is not required.</p>
+<p>In a Dictionary's <code>output[]</code>, the source namespace <code>response.*</code> is the <strong>provider's raw HTTP
+response body</strong>, mapped into the dictionary's <code>result.*</code> set; the fetcher's <code>output[]</code> then maps
+that <code>result.*</code> into <code>output.*</code> (or <code>model.*</code>).</p>
+<h2 id="extension">Delegating down: graph.extension</h2>
+<p><code>graph.extension</code> (<a href="../skills-reference/#extension">reference</a>) lets a graph call another graph as a
+reusable module — the composition pattern for building larger capabilities from smaller, certified
+graphs:</p>
+<pre><code>create node performance-evaluator
+with type Extension
+with properties
+skill=graph.extension
+extension=evaluate-sales-performance
+input[]=input.body.department_id -&gt; id
+output[]=result.sales_performance -&gt; output.body.sales_performance
+</code></pre>
+<p>The sub-graph runs in isolation; only the mapped <code>output[]</code> flows back into the caller's state.</p>
+<h3 id="flow-extension">Delegating to an Event Script flow</h3>
+<p>The same skill bridges to the <strong>composable layer</strong>: prefix the target with <code>flow://</code> and the node
+delegates to an <a href="../../event-script/syntax/">Event Script</a> flow instead of a graph. This is the pro-code escape
+hatch — hand demanding logic to a flow of composable functions, then return to the graph:</p>
+<pre><code>create node extension
+with type Extension
+with properties
+skill=graph.extension
+extension=flow://flow-11
+input[]=input.body.hello -&gt; hello
+input[]=input.body.message -&gt; message
+output[]=result -&gt; output.body
+</code></pre>
+<pre><code class="language-yaml"># flow-11.yml — the flow on the other side of the bridge
+tasks:
+  - input:
+      - 'input.body -&gt; *'
+    process: 'no.op'
+    output:
+      - 'result -&gt; output.body'
+    execution: end
+</code></pre>
+<p>A graph can thus call a flow, and a flow can call composable functions — each layer delegating
+downward by name, never by direct reference.</p>
+<h2 id="exposure">Exposing a graph: the graph-executor flow</h2>
+<p>A deployed graph is not invoked directly — an Event Script flow wraps it, which is how it gets a
+REST endpoint while keeping execution decoupled from the protocol.</p>
+<pre><code class="language-yaml"># rest.yaml — the generic graph endpoint
+- service: 'http.flow.adapter'
+  methods: ['POST', 'GET']
+  url: '/api/graph/{graph_id}'
+  flow: 'graph-executor'
+  timeout: 30s
+  tracing: true
+</code></pre>
+<pre><code class="language-yaml"># graph-executor.yml — wraps the engine as a flow task
+flow:
+  id: 'graph-executor'
+  exception: 'graph.exception.handler'
+first.task: 'graph.executor'
+tasks:
+  - input:
+      - 'model.instance -&gt; header.instance'
+      - 'input.path_parameter.graph_id -&gt; header.graph'
+    process: 'graph.executor'
+    output:
+      - 'status -&gt; output.status'
+      - 'header -&gt; output.header'
+      - 'result -&gt; output.body'
+    execution: end
+</code></pre>
+<p>So a request flows: <code>http.flow.adapter</code> → <code>graph-executor</code> flow → <code>graph.executor</code> (loads the model
+by <code>graph_id</code>, traverses it) → <code>async.http.response</code>. Calling it:</p>
+<pre><code class="language-bash">curl -X POST http://127.0.0.1:8085/api/graph/tutorial-3 \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;person_id&quot;: 100}'
+</code></pre>
+<pre><code class="language-json">{&quot;name&quot;: &quot;Peter&quot;, &quot;address&quot;: &quot;100 World Blvd&quot;}
+</code></pre>
+<p>Because the protocol lives in the flow, the <em>same</em> graph can later be driven by other adapters
+(e.g. a Kafka event listener) with no change to the model.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../skills-reference/">Built-in skills reference</a> — <code>graph.api.fetcher</code> and <code>graph.extension</code> in full.</li>
+<li><a href="../../event-script/syntax/">Event Script Syntax</a> — the flow layer on the other side of <code>flow://</code> and the
+  <code>graph-executor</code> wrapper.</li>
+<li><a href="../#layer-integration">Knowledge Graph as Application</a> — the layer model this realizes.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../ai-agent-guide/" class="btn btn-neutral float-left" title="AI agent guide"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../playground-and-companion/" class="btn btn-neutral float-right" title="Playground & AI companion">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../ai-agent-guide/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../playground-and-companion/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

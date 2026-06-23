@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/documentation-conventions/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Documentation Conventions - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Documentation Conventions";
+        var mkdocs_page_input_path = "guides/documentation-conventions.md";
+        var mkdocs_page_url = "/mercury-composable/guides/documentation-conventions/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Documentation Conventions</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#two-readers-one-canon">Two readers, one canon</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#canonical-vocabulary">Canonical vocabulary</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#layers-means-the-three-paradigm-layers-nothing-else">"Layers" means the three paradigm layers — nothing else</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layer-3-names">Layer-3 names</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#one-atom-four-roles">One atom, four roles</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-story-spine">The story spine</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-ai-discovery-contract">The AI-discovery contract</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#enforcement">Enforcement</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Documentation Conventions</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="documentation-conventions">Documentation Conventions</h1>
+<p><em>Reference: The canon every documentation page follows — vocabulary, story spine, and the AI-discovery contract.</em></p>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>What</strong> — the rules that keep Mercury's docs consistent: canonical terminology, the narrative
+  spine, and the machine-readable contract that lets an AI agent discover context without reading source.</li>
+<li><strong>Why it matters</strong> — the docs serve two readers at once: a human reading a story, and an AI agent
+  resolving context fast and deterministically. One canon keeps both coherent as the docs evolve.</li>
+<li><strong>For</strong> anyone — human or AI — editing these docs. A CI drift check (<code>scripts/check-doc-canon.py</code>)
+  enforces the mechanical parts.</li>
+</ul>
+</blockquote>
+<h2 id="two-readers-one-canon">Two readers, one canon</h2>
+<p>Every page is written for two audiences at once:</p>
+<ol>
+<li><strong>Humans</strong> — the docs tell a <em>story</em>: why before how, a clear arc, engagement over exhaustiveness.</li>
+<li><strong>AI agents</strong> — the docs are a <em>context surface</em>: structured metadata and deterministic specs let an
+   agent find the right page and generate correct artifacts without drilling into engine source.</li>
+</ol>
+<h2 id="canonical-vocabulary">Canonical vocabulary</h2>
+<h3 id="layers-means-the-three-paradigm-layers-nothing-else">"Layers" means the three paradigm layers — nothing else</h3>
+<p>Mercury ascends <strong>three layers</strong>. Reserve the word <em>layer</em> for these:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Layer</th>
+<th style="text-align: left;">Express behavior as…</th>
+<th style="text-align: left;">You write</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>1 · Event-driven</strong> (Platform Core)</td>
+<td style="text-align: left;">decoupled functions reacting to events</td>
+<td style="text-align: left;">Java functions, addressed by route name</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>2 · Composable</strong> (Event Script)</td>
+<td style="text-align: left;">YAML flows that choreograph functions</td>
+<td style="text-align: left;">~50% config, 50% code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>3 · Semantic</strong> (Active Knowledge Graph)</td>
+<td style="text-align: left;">a graph whose nodes execute during traversal</td>
+<td style="text-align: left;">a model — little or no code</td>
+</tr>
+</tbody>
+</table>
+<p>Describe the path a request takes from the caller through to the functions
+(see the <a href="../architecture/">Architecture Overview</a>) as a <em>pipeline</em>; use <em>layer</em> only for the three
+paradigm layers above. (Don't frame the pipeline as a contrast with the layers — it just confuses a
+first-time reader.)</p>
+<h3 id="layer-3-names">Layer-3 names</h3>
+<ul>
+<li><strong>Active Knowledge Graph (AKG)</strong> — the <em>thing</em> (the model / the artifact).</li>
+<li><strong>Knowledge Graph as Application</strong> — the <em>paradigm</em> (the tagline for the idea).</li>
+<li><strong>MiniGraph</strong> — the <em>engine</em> (<code>graph.executor</code>, the in-memory property graph, the Playground).</li>
+<li><strong>semantic</strong> — an adjective only ("the semantic layer"); never a standalone noun for the thing.</li>
+</ul>
+<h3 id="one-atom-four-roles">One atom, four roles</h3>
+<p>There is one building block: the <strong>function</strong> — a <code>@PreLoad</code> class implementing
+<code>LambdaFunction</code> / <code>TypedLambdaFunction</code>, addressed only by its <strong>route name</strong>, with Map-or-PoJo I/O.
+What we <em>call</em> it depends on how it is wired:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Term</th>
+<th style="text-align: left;">A function that…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Function</strong></td>
+<td style="text-align: left;">the atom — used at every layer</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Service</strong></td>
+<td style="text-align: left;">is mapped straight to an HTTP endpoint via <code>service:</code> in <code>rest.yaml</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Task</strong></td>
+<td style="text-align: left;">is a step in an Event Script flow (carrying an <code>execution</code> type)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Skill</strong></td>
+<td style="text-align: left;">is attached to an Active Knowledge Graph node via the node's <code>skill:</code> property</td>
+</tr>
+</tbody>
+</table>
+<p>"Function" is the general atom; "service" is only the narrow REST role.</p>
+<h2 id="the-story-spine">The story spine</h2>
+<p>Every page reinforces one arc:</p>
+<ol>
+<li><strong>Origin (the why).</strong> The event-driven core descends from the Scala/Akka <strong>actor model</strong>, runs on
+   the <strong>Eclipse Vert.x</strong> event bus, and uses <strong>Java 21 virtual threads</strong> so synchronous code performs
+   like reactive — which is <em>why</em> functions are decoupled actors addressed by name.</li>
+<li><strong>The ascent: code → configuration → knowledge.</strong> Each layer pushes more "how" out of imperative
+   code: decouple functions → move orchestration into YAML flows → move behavior into a model you traverse.</li>
+<li><strong>Cross-cutting: human–AI collaboration.</strong> Agent-ready DSL specs and the companion endpoint let
+   humans and AI co-author across all three layers — a capability, not a fourth layer.</li>
+</ol>
+<p>Voice: product narrative, present tense, why before how. Avoid analyst/whitepaper framing.</p>
+<h2 id="the-ai-discovery-contract">The AI-discovery contract</h2>
+<ul>
+<li><strong>Every page</strong> carries YAML frontmatter (<code>title</code>, <code>summary</code>, <code>layer</code>, <code>audience</code>, <code>keywords</code>,
+  optional <code>related</code>), an <strong>"At a glance"</strong> block, consistent headings with stable anchors, and a
+  <strong>"See also"</strong> footer. URLs are lowercase-kebab <strong>semantic slugs</strong>. This is a clean rewrite —
+  old URLs are intentionally <strong>not</strong> preserved (no redirects); the navigation is the source of truth.</li>
+<li><strong><code>llms.txt</code></strong> is the machine-readable site map, organized by layer, and is kept current.</li>
+<li><strong>The three DSLs</strong> (MiniGraph, Event Script, REST automation) each ship a deterministic spec kit:
+  a grammar reference, a machine-readable catalog, an AI-agent guide, and a CI drift test. A claim that
+  an agent can generate correct artifacts "from this page alone" belongs <strong>only</strong> to those agent guides,
+  never to a concept page.</li>
+</ul>
+<h2 id="enforcement">Enforcement</h2>
+<p>The mechanical rules are checked in CI by <code>scripts/check-doc-canon.py</code> — slugs, frontmatter,
+At-a-glance, no UTF-8 BOM, and retired terminology — alongside the three DSL grammar drift checks.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../architecture/">Architecture Overview</a> — the request pipeline and the origin story in full.</li>
+<li><a href="../methodology/">Methodology</a> — the four composable design principles.</li>
+<li><a href="../knowledge-graph/">Knowledge Graph as Application</a> — the semantic layer and the AKG vocabulary in use.</li>
+<li><a href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a> — how to contribute code and docs.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../actuators-and-http-client/" class="btn btn-neutral float-left" title="Actuators & HTTP Client"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../actuators-and-http-client/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

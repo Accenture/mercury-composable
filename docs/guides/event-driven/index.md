@@ -7,7 +7,7 @@ layer: platform-core
 audience: [developer, architect]
 keywords: [event-driven, platform core, function, route name, postoffice, event envelope, virtual threads, event bus]
 related:
-  - guides/function-execution.md
+  - guides/event-driven/function-execution.md
   - guides/rest-automation/index.md
   - guides/architecture.md
 ---
@@ -55,19 +55,20 @@ never blocks a platform thread.
 The bus runs on the **Eclipse Vert.x** event loop, and functions execute on **Java 21 virtual threads**.
 A virtual thread waiting for a reply is parked almost for free, so straightforward sequential code reaches
 the throughput usually associated with callback-style reactive code — without the callback complexity.
-(The lineage and the full request pipeline are in the [Architecture Overview](architecture.md).)
+(The lineage and the full request pipeline are in the [Architecture Overview](../architecture.md).)
 
 ## The HTTP boundary
 
 To expose a function — or a flow — over HTTP, you don't write a controller; you declare it in `rest.yaml`.
 A function mapped straight to an endpoint via `service:` is a **service**; see
-[REST Automation](rest-automation/index.md) for the full declarative model.
+[REST Automation](../rest-automation/index.md) for the full declarative model.
 
 ## See also
 
+- [Write your first function](write-your-first-function.md) — step-by-step: function → HTTP endpoint → test.
 - [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads, `Mono`/`Flux`.
-- [REST Automation](rest-automation/index.md) — declare HTTP endpoints in `rest.yaml`, no controllers.
-- [Architecture Overview](architecture.md) — the full request pipeline and the actor-model origin.
-- [Methodology](methodology.md) — the four composable design principles.
-- [Composable Orchestration](event-script/index.md) — orchestrate these functions as YAML flows (Layer 2, up the ascent).
-- [Composing the layers](knowledge-graph/composing-the-layers.md) — how a function becomes a task, then a skill.
+- [REST Automation](../rest-automation/index.md) — declare HTTP endpoints in `rest.yaml`, no controllers.
+- [Architecture Overview](../architecture.md) — the full request pipeline and the actor-model origin.
+- [Methodology](../methodology.md) — the four composable design principles.
+- [Composable Orchestration](../event-script/index.md) — orchestrate these functions as YAML flows (Layer 2, up the ascent).
+- [Composing the layers](../knowledge-graph/composing-the-layers.md) — how a function becomes a task, then a skill.

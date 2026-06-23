@@ -29,7 +29,7 @@ a network event system, a database or an external REST resource.
 A "task" or "function" is a class that implements the LambdaFunction or TypedLambdaFunction interface. 
 Within each function boundary, it may have private methods that are fully contained within the class.
 
-As discussed in [Getting Started](getting-started.md), a function may look like this:
+As discussed in [Getting Started](../getting-started.md), a function may look like this:
 
 ```java
 @PreLoad(route = "my.first.function", instances = 10)
@@ -52,7 +52,7 @@ For event choreography, input body is represented as a PoJo or a Map of key-valu
 dot-bracket convention to map subset of a PoJo from one function to another if needed.
 
 In addition to the input PoJo, you may pass additional parameters to the user function as event headers.
-We will discuss this in [Event Script Syntax](event-script/syntax.md).
+We will discuss this in [Event Script Syntax](../event-script/syntax.md).
 
 ## Non-blocking design
 
@@ -295,7 +295,7 @@ EventEnvelope result = po.request(requestEvent, timeout).get();
 
 ### Kernel thread pool
 
-For complete parameter details on `@KernelThreadRunner`, `@EventInterceptor`, and all other annotations, see the [Annotations Reference](annotations-reference.md).
+For complete parameter details on `@KernelThreadRunner`, `@EventInterceptor`, and all other annotations, see the [Annotations Reference](../annotations-reference.md).
 
 When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
 the function will be executed using a "kernel thread pool" and Java will run your function in native 
@@ -369,7 +369,7 @@ Functions running in different types of threads are connected loosely in events.
 and encapsulation mean that you can precisely control how your application performs for each functional logic block.
 ## See also
 
-- [Getting Started](getting-started.md) — build your first functions in a working app.
-- [Architecture Overview](architecture.md) — where functions sit in the event-driven runtime.
-- [REST Automation](rest-automation/index.md) — expose functions as HTTP endpoints.
-- [Event Script Syntax](event-script/syntax.md) — orchestrate functions with YAML flows.
+- [Getting Started](../getting-started.md) — build your first functions in a working app.
+- [Architecture Overview](../architecture.md) — where functions sit in the event-driven runtime.
+- [REST Automation](../rest-automation/index.md) — expose functions as HTTP endpoints.
+- [Event Script Syntax](../event-script/syntax.md) — orchestrate functions with YAML flows.

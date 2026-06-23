@@ -1395,7 +1395,7 @@ In the following example, the system will evaluate both the model.quit and model
 ## Simple Plugins
 
 When working with Event-Script there are certain use-cases that are not supported natively in flows, such as arithmetic
-and conditional expressions. Typically one would create a [TypedLambdaFunction](../function-execution.md#define-a-function) to support
+and conditional expressions. Typically one would create a [TypedLambdaFunction](../event-driven/function-execution.md#define-a-function) to support
 these type of use-cases.  It may lead to duplication of code and efforts since the same use-case is often reinvented
 multiple times.
 

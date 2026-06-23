@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/knowledge-graph/command-reference/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>MiniGraph command grammar - Composable for Java</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "MiniGraph command grammar";
+        var mkdocs_page_input_path = "guides/knowledge-graph/command-reference.md";
+        var mkdocs_page_url = "/mercury-composable/guides/knowledge-graph/command-reference/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">MiniGraph command grammar</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#lexical">Lexical rules</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#namespaces">Namespaces</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#create">create node / update node</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#connect">connect</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#delete">delete</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#instantiate">instantiate graph</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#run">run / execute / inspect</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#describe">describe / list / seen</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#export">export / import</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#session">session</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#node-types">Node types</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#skill-matrix">Skill → property matrix</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants">Invariants</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Layer 3 — Knowledge Graph</li>
+      <li class="breadcrumb-item active">MiniGraph command grammar</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="minigraph-command-grammar">MiniGraph command grammar</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>This is the <strong>source of truth</strong> for the MiniGraph command language — the rules, not a tour.
+  Tutorials teach by example; this page states the grammar so you (or an AI agent) generate
+  commands <strong>deterministically</strong>, without inferring.</li>
+<li>A machine-readable form of this grammar lives at
+  <a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> (ingest it; validate against it).</li>
+<li>Driving the Playground from an agent? See the <a href="../ai-agent-guide/">AI agent guide</a>.</li>
+</ul>
+</blockquote>
+<h2 id="lexical">Lexical rules</h2>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Rule</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Node name</strong></td>
+<td>lowercase letters and hyphen only</td>
+<td><code>person-name</code>, <code>mdm-profile</code></td>
+</tr>
+<tr>
+<td><strong>Node type</strong></td>
+<td>a descriptive label; shipped examples <strong>capitalize</strong> structural types</td>
+<td><code>Root</code>, <code>End</code>, <code>Provider</code>, <code>Dictionary</code>, <code>Fetcher</code>, <code>Island</code></td>
+</tr>
+<tr>
+<td><strong>Reserved names</strong></td>
+<td>the root node <strong>must</strong> be named <code>root</code>; the end node <strong>must</strong> be <code>end</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Property</strong></td>
+<td><code>key=value</code>; keys may be composite (dot-bracket)</td>
+<td><code>url=http://...</code>, <code>mapping[]=a -&gt; b</code></td>
+</tr>
+<tr>
+<td><strong>List property</strong></td>
+<td>a <code>key[]=entry</code> line <em>appends</em> one entry to the list <code>key</code></td>
+<td>repeat <code>mapping[]=...</code> per entry</td>
+</tr>
+<tr>
+<td><strong>Multi-line value</strong></td>
+<td>wrap the value in triple single quotes</td>
+<td><code>statement[]='''</code> … <code>'''</code></td>
+</tr>
+<tr>
+<td><strong>Constant</strong></td>
+<td>Event Script constant syntax <code>type(value)</code></td>
+<td><code>text(hello)</code>, <code>int(100)</code> — full set in <a href="../../event-script/syntax/">Event Script</a></td>
+</tr>
+<tr>
+<td><strong>Mapping operator</strong></td>
+<td><code>source -&gt; target</code> (left = source, right = target)</td>
+<td><code>input.body.id -&gt; person_id</code></td>
+</tr>
+<tr>
+<td><strong>Variable substitution</strong></td>
+<td><code>{namespace.key}</code> inside <code>COMPUTE</code>/<code>IF</code> expressions</td>
+<td><code>{book.price}</code>, <code>{input.body.discount}</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="namespaces">Namespaces</h2>
+<p>The per-execution <strong>state machine</strong> is addressed through these namespaces (sources and targets in
+mappings):</p>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Meaning</th>
+<th>Read</th>
+<th>Write</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input.body</code> / <code>input.header</code></td>
+<td>the incoming request</td>
+<td>✓</td>
+<td>(seeded at instantiate)</td>
+</tr>
+<tr>
+<td><code>model.*</code></td>
+<td>intermediate working state</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>output.body</code> / <code>output.header</code></td>
+<td>the response returned to the caller</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>{node-name}</code></td>
+<td>a node's own properties</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td><code>{node-name}.result</code></td>
+<td>a skill's output</td>
+<td>✓</td>
+<td>(set by the skill)</td>
+</tr>
+<tr>
+<td><code>{node-name}.status</code> / <code>.error</code></td>
+<td>a skill's execution status</td>
+<td>✓</td>
+<td>(set by the engine)</td>
+</tr>
+<tr>
+<td><code>response.*</code></td>
+<td>a <strong>data Provider's</strong> raw HTTP response — used in a <strong>Dictionary</strong> node's <code>output[]</code></td>
+<td>✓ (in a dictionary mapping)</td>
+<td>(set by the fetch)</td>
+</tr>
+<tr>
+<td><code>result.*</code></td>
+<td>a <strong>Dictionary/Fetcher</strong> result set</td>
+<td>✓</td>
+<td>(set by the skill)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="commands">Commands</h2>
+<p>Each command's exact form. Lines shown stacked are a single <strong>multi-line</strong> command (enter as one
+block); one-line commands are self-contained.</p>
+<h3 id="create">create node / update node</h3>
+<p>Multi-line. <code>update node</code> has the identical shape and replaces a node's definition.</p>
+<pre><code>create node {name}
+with type {type}
+with properties
+{key}={value}
+{key}={value}
+</code></pre>
+<ul>
+<li><code>with properties</code> and the key lines are <strong>optional</strong> (properties act as defaults).</li>
+<li>A node has <strong>zero or one</strong> skill, set with <code>skill={route}</code>.</li>
+<li><code>{name}</code> and <code>{type}</code> are lowercase-and-hyphen; <code>root</code>/<code>end</code> are reserved (see <a href="#lexical">lexical</a>).</li>
+</ul>
+<h3 id="connect">connect</h3>
+<p>One-line. <strong>Directional</strong> — <code>connect a to b</code> differs from <code>connect b to a</code>.</p>
+<pre><code>connect {node-a} to {node-b} with {relation}
+</code></pre>
+<p>The <code>{relation}</code> is a <strong>descriptive label</strong> (e.g. <code>done</code>, <code>fetch</code>, <code>provider</code>) — free-form, not
+interpreted for skill routing. For data-entity nodes, meaningful relationship names capture
+enterprise knowledge.</p>
+<h3 id="delete">delete</h3>
+<pre><code>delete node {name}
+delete connection {node-a} and {node-b}
+</code></pre>
+<h3 id="instantiate">instantiate graph</h3>
+<p>Multi-line. Creates a runnable instance with optional seeded mock input. <strong>Required before</strong>
+<code>run</code>, <code>execute</code>, or <code>inspect</code>. Alias: <code>start</code>.</p>
+<pre><code>instantiate graph
+{constant} -&gt; input.body.{key}
+{constant} -&gt; input.header.{key}
+{constant} -&gt; model.{key}
+</code></pre>
+<pre><code>instantiate graph
+int(100) -&gt; input.body.profile_id
+text(application/json) -&gt; input.header.content-type
+</code></pre>
+<h3 id="run">run / execute / inspect</h3>
+<pre><code>run                        # traverse from root to end
+execute {node}             # run a single node (after instantiate)
+inspect {namespace.key}    # read a value from the state machine
+</code></pre>
+<pre><code>inspect output                # a whole namespace: input | output | model
+inspect {output.body.name}    # a specific composite key (braced)
+</code></pre>
+<h3 id="describe">describe / list / seen</h3>
+<pre><code>describe graph
+describe node {name}
+describe connection {node-a} and {node-b}
+describe skill {skill.route}     # prints the shipped help for a skill
+list nodes
+list connections
+seen                             # nodes visited in the last run
+</code></pre>
+<h3 id="export">export / import</h3>
+<pre><code>export graph as {name}
+import graph from {name}
+import node {node} from {name}
+</code></pre>
+<ul>
+<li><code>export</code> writes JSON to <code>location.graph.temp</code>; it adds <code>name={name}</code> to the root node and
+  <strong>fails if any node is an orphan</strong> (every node must connect to ≥1 other).</li>
+</ul>
+<h3 id="session">session</h3>
+<pre><code>session                    # show this session id + subscribers
+session subscribe {id}     # mirror another (primary) session's commands into yours
+session unsubscribe
+session reset
+</code></pre>
+<h2 id="node-types">Node types</h2>
+<p><code>root</code> and <code>end</code> are <strong>structural</strong> (entry/exit). All other types are <strong>descriptive labels</strong>
+validated by the node's skill, if any. Common conventional types:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Role</th>
+<th>Typical skill</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Root</code> / <code>End</code></td>
+<td>entry / exit</td>
+<td>— / often <code>graph.data.mapper</code></td>
+</tr>
+<tr>
+<td>data-entity</td>
+<td>passive data holder</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>Dictionary</code></td>
+<td>external attribute definition</td>
+<td>none (config)</td>
+</tr>
+<tr>
+<td><code>Provider</code></td>
+<td>external endpoint definition</td>
+<td>none (config)</td>
+</tr>
+<tr>
+<td><code>Island</code></td>
+<td>groups configuration / isolated nodes (not executed)</td>
+<td><code>graph.island</code></td>
+</tr>
+<tr>
+<td>(active node)</td>
+<td>does work during traversal</td>
+<td>a <code>graph.*</code> skill</td>
+</tr>
+</tbody>
+</table>
+<h2 id="skill-matrix">Skill → property matrix</h2>
+<p>Which properties each skill accepts. See the <a href="../skills-reference/">skills reference</a> for semantics
+and examples; this is the at-a-glance contract.</p>
+<table>
+<thead>
+<tr>
+<th>Skill (<code>skill=</code>)</th>
+<th>Required</th>
+<th>Optional</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>graph.data.mapper</code></td>
+<td><code>mapping[]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>graph.math</code></td>
+<td><code>statement[]</code> (<code>COMPUTE</code>/<code>IF</code>/<code>MAPPING</code>/<code>EXECUTE</code>/<code>RESET</code>)</td>
+<td><code>for_each[]</code>, <code>NEXT:</code>, <code>DELAY:</code>, <code>BEGIN</code>/<code>END</code></td>
+</tr>
+<tr>
+<td><code>graph.js</code></td>
+<td><code>statement[]</code> (same as math)</td>
+<td><code>for_each[]</code>, <code>NEXT:</code>, <code>DELAY:</code></td>
+</tr>
+<tr>
+<td><code>graph.api.fetcher</code></td>
+<td><code>dictionary[]</code>, <code>input[]</code>, <code>output[]</code></td>
+<td><code>for_each[]</code>, <code>concurrency</code> (1–30, def 3), <code>exception</code></td>
+</tr>
+<tr>
+<td><code>graph.extension</code></td>
+<td><code>extension</code> (<code>{graph-id}</code> or <code>flow://{flow-id}</code>), <code>input[]</code></td>
+<td><code>output[]</code>, <code>for_each[]</code>, <code>concurrency</code>, <code>exception</code></td>
+</tr>
+<tr>
+<td><code>graph.join</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>graph.island</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Configuration nodes used by <code>graph.api.fetcher</code> (see <a href="../composing-the-layers/#data-dictionary">Composing the layers</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Node</th>
+<th>Properties</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Provider</strong></td>
+<td><code>url</code>, <code>method</code>, <code>feature[]</code>, <code>input[]</code> (targets: <code>header.*</code>, <code>query.*</code>, <code>path_parameter.*</code>, <code>body.*</code>)</td>
+</tr>
+<tr>
+<td><strong>Dictionary</strong></td>
+<td><code>provider</code>, <code>input[]</code>, <code>output[]</code> (→ <code>result.*</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="invariants">Invariants</h2>
+<p>Hard rules the engine enforces — violate them and generation fails:</p>
+<ol>
+<li>The root node is named <code>root</code>; the end node is named <code>end</code>.</li>
+<li>A node has <strong>0 or 1</strong> skill.</li>
+<li>Node <strong>names</strong> are <strong>lowercase + hyphen</strong> only (<code>root</code>/<code>end</code> reserved). Node <strong>types</strong> are
+   descriptive labels — shipped examples capitalize structural types (see <a href="#lexical">lexical</a>).</li>
+<li>Every node <strong>in the traversal path</strong> must connect to ≥1 node, or <code>export</code> fails. <strong>Exception:</strong>
+   <code>Dictionary</code> and <code>Provider</code> configuration nodes are referenced <em>by name</em> (<code>dictionary[]=</code>,
+   <code>provider=</code>) — not traversed — and need <strong>no</strong> connections; optionally group them under a
+   <code>graph.island</code> node purely for organization.</li>
+<li>A node is <strong>executed once</strong> per run (loop guard); <code>graph.math</code>/<code>graph.js</code> <code>RESET</code> is the only
+   escape, for advanced re-execution.</li>
+<li><code>instantiate graph</code> must precede <code>run</code> / <code>execute</code> / <code>inspect</code>.</li>
+</ol>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> — the machine-readable form of this grammar.</li>
+<li><a href="../ai-agent-guide/">AI agent guide</a> — driving the Playground via the companion endpoint.</li>
+<li><a href="../skills-reference/">Built-in skills reference</a> — per-skill semantics and examples.</li>
+<li><a href="../../event-script/syntax/">Event Script Syntax</a> — the shared data-mapping syntax and the full constant set.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../skills-reference/" class="btn btn-neutral float-left" title="Built-in skills reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../ai-agent-guide/" class="btn btn-neutral float-right" title="AI agent guide">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../skills-reference/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../ai-agent-guide/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
