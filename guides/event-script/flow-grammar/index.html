@@ -77,19 +77,19 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Flow grammar</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#flow-file-structure-structure">Flow file structure {#structure}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#structure">Flow file structure</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#task-fields-task-fields">Task fields {#task-fields}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#task-fields">Task fields</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#execution-types-execution-types">Execution types {#execution-types}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-types">Execution types</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#data-mapping-mini-language-mapping">Data-mapping mini-language {#mapping}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#mapping">Data-mapping mini-language</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#triggering-chaining-exceptions-flow">Triggering, chaining &amp; exceptions {#flow}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#flow">Triggering, chaining &amp; exceptions</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#invariants-invariants">Invariants {#invariants}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants">Invariants</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -200,7 +200,7 @@
   (<code>CompileFlows</code>), so violating them fails compilation.</li>
 </ul>
 </blockquote>
-<h2 id="flow-file-structure-structure">Flow file structure {#structure}</h2>
+<h2 id="structure">Flow file structure</h2>
 <p>A flow is a YAML file with these top-level keys:</p>
 <table>
 <thead>
@@ -248,7 +248,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="task-fields-task-fields">Task fields {#task-fields}</h2>
+<h2 id="task-fields">Task fields</h2>
 <p>Each entry under <code>tasks:</code> may have:</p>
 <table>
 <thead>
@@ -326,7 +326,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="execution-types-execution-types">Execution types {#execution-types}</h2>
+<h2 id="execution-types">Execution types</h2>
 <p>The eight values <code>execution:</code> may take (authoritative set —
 <code>CompileFlows.EXECUTION_TYPES</code>). <code>next</code> requirements are enforced at compile time:</p>
 <table>
@@ -398,7 +398,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="data-mapping-mini-language-mapping">Data-mapping mini-language {#mapping}</h2>
+<h2 id="mapping">Data-mapping mini-language</h2>
 <p>Every <code>input</code>/<code>output</code> entry is <code>'source -&gt; target'</code> (one <code>-&gt;</code> per rule; a three-part
 <code>'LHS -&gt; model.var -&gt; RHS'</code> is allowed and compiles to two).</p>
 <p><strong>Source (LHS) namespaces</strong></p>
@@ -486,7 +486,7 @@ function outputs. <code>model.*</code> always needs a <strong>specific key</stro
 <code>:or(model.k)</code>. <strong>Special tokens:</strong> <code>-&gt;</code> (map), <code>[]</code> (append), <code>*</code> (whole-object map),
 <code>{model.key}</code> (runtime interpolation in <code>text()</code>), <code>.ITEM</code>/<code>.INDEX</code> (dynamic-fork iteration).
 The full catalog with examples is in <a href="../syntax/#tasks-and-data-mapping">Event Script Syntax</a>.</p>
-<h2 id="triggering-chaining-exceptions-flow">Triggering, chaining &amp; exceptions {#flow}</h2>
+<h2 id="flow">Triggering, chaining &amp; exceptions</h2>
 <ul>
 <li>Tasks are referenced — in <code>first.task</code>, <code>next</code>, <code>join</code>, and <code>pipeline</code> — by their <strong><code>name</code></strong>
   (which defaults to <code>process</code>).</li>
@@ -495,7 +495,7 @@ The full catalog with examples is in <a href="../syntax/#tasks-and-data-mapping"
 <li><code>flow.exception</code> catches unhandled task errors; a task's own <code>exception</code> overrides it; the handler
   reads <code>error.*</code>. The built-in <code>resilience.handler</code> adds retry/backoff.</li>
 </ul>
-<h2 id="invariants-invariants">Invariants {#invariants}</h2>
+<h2 id="invariants">Invariants</h2>
 <p>Compile-time rules — violate them and the flow won't load:</p>
 <ol>
 <li><code>flow.id</code>, <code>flow.description</code>, <code>flow.ttl</code>, <code>first.task</code>, and <code>tasks</code> are all present; <code>ttl ≥ 1s</code>.</li>
@@ -507,7 +507,7 @@ The full catalog with examples is in <a href="../syntax/#tasks-and-data-mapping"
 <li>A <code>name</code> is required when the same <code>process</code> appears in more than one task.</li>
 <li><code>ext:</code> targets require <code>external.state.machine</code> to be declared.</li>
 </ol>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../event-script-flow.json"><code>event-script-flow.json</code></a> — machine-readable form of this grammar.</li>
 <li><a href="../ai-agent-guide/">AI agent guide</a> — authoring flows deterministically from an agent.</li>

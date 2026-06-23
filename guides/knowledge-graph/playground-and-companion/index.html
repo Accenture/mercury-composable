@@ -98,15 +98,15 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Playground & AI companion</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#the-command-grammar-cli">The command grammar {#cli}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#cli">The command grammar</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#collaborative-sessions-sessions">Collaborative sessions {#sessions}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#sessions">Collaborative sessions</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#the-companion-endpoint-companion">The companion endpoint {#companion}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#companion">The companion endpoint</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#userai-collaboration-collaboration">User–AI collaboration {#collaboration}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#collaboration">User–AI collaboration</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -196,7 +196,7 @@
   registered in production.</li>
 </ul>
 </blockquote>
-<h2 id="the-command-grammar-cli">The command grammar {#cli}</h2>
+<h2 id="cli">The command grammar</h2>
 <p>Everything you do in the Playground is a command typed into the console (multi-line where noted).
 The essentials:</p>
 <table>
@@ -273,7 +273,7 @@ inspect output
 </code></pre>
 <p><code>describe skill &lt;route&gt;</code> (e.g. <code>describe skill graph.api.fetcher</code>) prints the authoritative,
 shipped help for each skill — the same content this Part documents.</p>
-<h2 id="collaborative-sessions-sessions">Collaborative sessions {#sessions}</h2>
+<h2 id="sessions">Collaborative sessions</h2>
 <p>Each open Playground connection is a <strong>session</strong> with a public id like <code>ws-178443-2</code>. Sessions can
 be shared so several people model the same graph together:</p>
 <pre><code>session                       # show this session + its subscribers
@@ -284,7 +284,7 @@ session reset                 # clear the primary session; subscribers keep thei
 <p>When you subscribe to a primary session, commands flow to both, keeping the model in sync. (You
 can't subscribe to yourself or to a non-primary session; a primary session has nothing to
 unsubscribe.)</p>
-<h2 id="the-companion-endpoint-companion">The companion endpoint {#companion}</h2>
+<h2 id="companion">The companion endpoint</h2>
 <p>The <strong>companion endpoint</strong> lets an HTTP client — a script, a test harness, or an AI agent —
 dispatch a Playground command into an <strong>already-open</strong> session. The command runs as if typed, and
 output streams back to that session's browser console.</p>
@@ -314,7 +314,7 @@ curl -sS -X POST &quot;http://localhost:8300/api/companion/${SESSION_ID}&quot; \
 to a <strong>singleton</strong> command handler so commands execute in order without races. Like the Playground
 itself, it is gated by <code>@OptionalService("app.env=dev")</code> — <strong>do not expose it beyond trusted dev
 environments</strong> (there is no auth).</p>
-<h2 id="userai-collaboration-collaboration">User–AI collaboration {#collaboration}</h2>
+<h2 id="collaboration">User–AI collaboration</h2>
 <p>Put the two together and you get the seed of the framework's collaboration vision: a person watches
 the Playground in the browser while an <strong>AI companion</strong> builds the graph through the companion
 endpoint, one command per request, pausing for the human to confirm on the console between steps.
@@ -323,7 +323,7 @@ The human steers and certifies; the AI drafts and refines; both work on the <em>
 <a href="../">Knowledge Graph as the application</a>. Today the AI is an external session driving the
 endpoint; maturing it into an integrated, pluggable companion is on the roadmap (see
 <a href="../#maturity">the maturity section</a>).</p>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../build-your-first-graph/">Build your first Active Knowledge Graph</a> — the command loop in a full walkthrough.</li>
 <li><a href="../skills-reference/">Built-in skills reference</a> — what <code>describe skill</code> documents in the console.</li>

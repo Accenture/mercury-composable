@@ -79,15 +79,15 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Flow AI agent guide</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#how-flows-are-deployed-triggered-deploy">How flows are deployed &amp; triggered {#deploy}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#deploy">How flows are deployed &amp; triggered</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#generate-deterministically-deterministic">Generate deterministically {#deterministic}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#deterministic">Generate deterministically</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#recipe-recipe">Recipe {#recipe}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#recipe">Recipe</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#worked-example-example">Worked example {#example}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Worked example</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -195,7 +195,7 @@
   produce one that passes — the <a href="../flow-grammar/#invariants">invariants</a> are the contract.</li>
 </ul>
 </blockquote>
-<h2 id="how-flows-are-deployed-triggered-deploy">How flows are deployed &amp; triggered {#deploy}</h2>
+<h2 id="deploy">How flows are deployed &amp; triggered</h2>
 <p>A flow is not called directly:</p>
 <ol>
 <li>Write the flow YAML under <code>src/main/resources/flows/</code>.</li>
@@ -204,7 +204,7 @@
 </ol>
 <p>The engine compiles every registered flow at startup; a flow that violates the grammar fails to
 load. So correctness is checkable <em>before</em> runtime.</p>
-<h2 id="generate-deterministically-deterministic">Generate deterministically {#deterministic}</h2>
+<h2 id="deterministic">Generate deterministically</h2>
 <p>Use <a href="../event-script-flow.json"><code>event-script-flow.json</code></a> to look up the exact execution types, task
 fields, and mapping namespaces; use <a href="../flow-grammar/"><code>flow-grammar.md</code></a> for the rules. Then verify:</p>
 <blockquote>
@@ -220,7 +220,7 @@ fields, and mapping namespaces; use <a href="../flow-grammar/"><code>flow-gramma
 - [ ] Every <code>source -&gt; target</code> uses valid namespaces (see the grammar's mapping section);
       <code>ext:</code> targets require <code>external.state.machine</code>.</p>
 </blockquote>
-<h2 id="recipe-recipe">Recipe {#recipe}</h2>
+<h2 id="recipe">Recipe</h2>
 <ol>
 <li><strong>Header:</strong> set <code>flow.id</code>, <code>description</code>, <code>ttl</code>, optional <code>exception</code>; pick <code>first.task</code>.</li>
 <li><strong>Tasks:</strong> for each, set <code>process</code> (or <code>flow://</code>), <code>description</code>, <code>input</code>, <code>output</code>, <code>execution</code>,
@@ -228,7 +228,7 @@ fields, and mapping namespaces; use <a href="../flow-grammar/"><code>flow-gramma
 <li><strong>Terminate:</strong> ensure at least one <code>end</code> task whose <code>output</code> builds the response.</li>
 <li><strong>Wire up:</strong> register in <code>flows.yaml</code>; add a <code>rest.yaml</code> mapping if HTTP-facing.</li>
 </ol>
-<h2 id="worked-example-example">Worked example {#example}</h2>
+<h2 id="example">Worked example</h2>
 <p>A minimal flow: receive a POST, call a <code>greeting</code> function, return its result.</p>
 <pre><code class="language-yaml">flow:
   id: 'greeting-flow'
@@ -256,7 +256,7 @@ tasks:
       - 'approve.task'      # decision = false -&gt; next[0]
       - 'review.task'       # decision = true  -&gt; next[1]
 </code></pre>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../flow-grammar/">Event Script flow grammar</a> + <a href="../event-script-flow.json"><code>event-script-flow.json</code></a> — the source of truth.</li>
 <li><a href="../syntax/">Event Script Syntax</a> — worked examples and the full data-mapping catalog.</li>

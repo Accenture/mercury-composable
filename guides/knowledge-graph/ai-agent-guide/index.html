@@ -94,17 +94,17 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">AI agent guide</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#which-endpoint-endpoints">Which endpoint? {#endpoints}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#endpoints">Which endpoint?</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#the-companion-contract-contract">The companion contract {#contract}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#contract">The companion contract</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#generate-deterministically-deterministic">Generate deterministically {#deterministic}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#deterministic">Generate deterministically</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#canonical-build-recipe-recipe">Canonical build recipe {#recipe}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#recipe">Canonical build recipe</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#worked-example-example">Worked example {#example}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Worked example</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -197,7 +197,7 @@
 <li><strong>Two endpoints, two jobs</strong> — see below. Both are <strong>dev-only</strong> (<code>app.env=dev</code>), no auth.</li>
 </ul>
 </blockquote>
-<h2 id="which-endpoint-endpoints">Which endpoint? {#endpoints}</h2>
+<h2 id="endpoints">Which endpoint?</h2>
 <table>
 <thead>
 <tr>
@@ -226,7 +226,7 @@
 </table>
 <p>This guide is about the <strong>companion</strong> flow — co-authoring a graph with a human watching the
 Playground.</p>
-<h2 id="the-companion-contract-contract">The companion contract {#contract}</h2>
+<h2 id="contract">The companion contract</h2>
 <pre><code>1. A human opens the Playground:  ws://{host}/ws/graph
 2. The first WebSocket frame carries the session id, format  ws-&lt;6 digits&gt;-&lt;counter&gt;
    (e.g. ws-384729-17). Get this id from the human.
@@ -242,7 +242,7 @@ Playground.</p>
 <p><strong>Rules of engagement:</strong> one command per POST (multi-line commands are fine — see the grammar);
 the session must already be open (you do not create it); single operator — don't POST while a
 human is typing in the same instant; never expose this beyond a trusted dev host.</p>
-<h2 id="generate-deterministically-deterministic">Generate deterministically {#deterministic}</h2>
+<h2 id="deterministic">Generate deterministically</h2>
 <ol>
 <li><strong>Use the grammar as source of truth</strong> — <a href="../command-reference/"><code>command-reference.md</code></a> for the
    rules, <a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> to look up a command's exact syntax,
@@ -263,7 +263,7 @@ human is typing in the same instant; never expose this beyond a trusted dev host
 - [ ] <code>instantiate graph</code> precedes <code>run</code>/<code>execute</code>/<code>inspect</code>.
 - [ ] Exactly <strong>one</strong> command per POST.</p>
 </blockquote>
-<h2 id="canonical-build-recipe-recipe">Canonical build recipe {#recipe}</h2>
+<h2 id="recipe">Canonical build recipe</h2>
 <p>A reliable order for building a graph:</p>
 <ol>
 <li><strong>Plan</strong> the nodes and the connections (root → … → end) before issuing commands.</li>
@@ -275,7 +275,7 @@ human is typing in the same instant; never expose this beyond a trusted dev host
 <li><strong>Export &amp; deploy:</strong> <code>export graph as {name}</code>, deploy the JSON, then call
    <code>POST /api/graph/{name}</code>.</li>
 </ol>
-<h2 id="worked-example-example">Worked example {#example}</h2>
+<h2 id="example">Worked example</h2>
 <p>Building the hello-world graph via the companion endpoint, one command per request:</p>
 <pre><code class="language-bash">SID=&quot;ws-384729-17&quot;   # from the WebSocket welcome frame
 
@@ -298,7 +298,7 @@ curl -sS &quot;http://{host}/api/graph/session/${SID}&quot;   # read the resulti
 </code></pre>
 <p>Each <code>run</code>/result appears on the human's WebSocket console — pause there for confirmation before
 continuing, so a mistake doesn't cascade.</p>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../command-reference/">MiniGraph command grammar</a> + <a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> — the source of truth.</li>
 <li><a href="../playground-and-companion/">Playground &amp; AI companion</a> — the human-facing view of the same surface.</li>

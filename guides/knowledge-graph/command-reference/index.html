@@ -92,37 +92,37 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">MiniGraph command grammar</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#lexical-rules-lexical">Lexical rules {#lexical}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#lexical">Lexical rules</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#namespaces-namespaces">Namespaces {#namespaces}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#namespaces">Namespaces</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#commands-commands">Commands {#commands}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#create-node-update-node-create">create node / update node {#create}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#create">create node / update node</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#connect-connect">connect {#connect}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#connect">connect</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#delete-delete">delete {#delete}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#delete">delete</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#instantiate-graph-instantiate">instantiate graph {#instantiate}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#instantiate">instantiate graph</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#run-execute-inspect-run">run / execute / inspect {#run}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#run">run / execute / inspect</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#describe-list-seen-describe">describe / list / seen {#describe}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#describe">describe / list / seen</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#export-import-export">export / import {#export}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#export">export / import</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#session-session">session {#session}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#session">session</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#node-types-node-types">Node types {#node-types}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#node-types">Node types</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#skill-property-matrix-skill-matrix">Skill → property matrix {#skill-matrix}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#skill-matrix">Skill → property matrix</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#invariants-invariants">Invariants {#invariants}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants">Invariants</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -217,7 +217,7 @@
 <li>Driving the Playground from an agent? See the <a href="../ai-agent-guide/">AI agent guide</a>.</li>
 </ul>
 </blockquote>
-<h2 id="lexical-rules-lexical">Lexical rules {#lexical}</h2>
+<h2 id="lexical">Lexical rules</h2>
 <table>
 <thead>
 <tr>
@@ -274,7 +274,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="namespaces-namespaces">Namespaces {#namespaces}</h2>
+<h2 id="namespaces">Namespaces</h2>
 <p>The per-execution <strong>state machine</strong> is addressed through these namespaces (sources and targets in
 mappings):</p>
 <table>
@@ -337,10 +337,10 @@ mappings):</p>
 </tr>
 </tbody>
 </table>
-<h2 id="commands-commands">Commands {#commands}</h2>
+<h2 id="commands">Commands</h2>
 <p>Each command's exact form. Lines shown stacked are a single <strong>multi-line</strong> command (enter as one
 block); one-line commands are self-contained.</p>
-<h3 id="create-node-update-node-create">create node / update node {#create}</h3>
+<h3 id="create">create node / update node</h3>
 <p>Multi-line. <code>update node</code> has the identical shape and replaces a node's definition.</p>
 <pre><code>create node {name}
 with type {type}
@@ -353,18 +353,18 @@ with properties
 <li>A node has <strong>zero or one</strong> skill, set with <code>skill={route}</code>.</li>
 <li><code>{name}</code> and <code>{type}</code> are lowercase-and-hyphen; <code>root</code>/<code>end</code> are reserved (see <a href="#lexical">lexical</a>).</li>
 </ul>
-<h3 id="connect-connect">connect {#connect}</h3>
+<h3 id="connect">connect</h3>
 <p>One-line. <strong>Directional</strong> — <code>connect a to b</code> differs from <code>connect b to a</code>.</p>
 <pre><code>connect {node-a} to {node-b} with {relation}
 </code></pre>
 <p>The <code>{relation}</code> is a <strong>descriptive label</strong> (e.g. <code>done</code>, <code>fetch</code>, <code>provider</code>) — free-form, not
 interpreted for skill routing. For data-entity nodes, meaningful relationship names capture
 enterprise knowledge.</p>
-<h3 id="delete-delete">delete {#delete}</h3>
+<h3 id="delete">delete</h3>
 <pre><code>delete node {name}
 delete connection {node-a} and {node-b}
 </code></pre>
-<h3 id="instantiate-graph-instantiate">instantiate graph {#instantiate}</h3>
+<h3 id="instantiate">instantiate graph</h3>
 <p>Multi-line. Creates a runnable instance with optional seeded mock input. <strong>Required before</strong>
 <code>run</code>, <code>execute</code>, or <code>inspect</code>. Alias: <code>start</code>.</p>
 <pre><code>instantiate graph
@@ -376,7 +376,7 @@ delete connection {node-a} and {node-b}
 int(100) -&gt; input.body.profile_id
 text(application/json) -&gt; input.header.content-type
 </code></pre>
-<h3 id="run-execute-inspect-run">run / execute / inspect {#run}</h3>
+<h3 id="run">run / execute / inspect</h3>
 <pre><code>run                        # traverse from root to end
 execute {node}             # run a single node (after instantiate)
 inspect {namespace.key}    # read a value from the state machine
@@ -384,7 +384,7 @@ inspect {namespace.key}    # read a value from the state machine
 <pre><code>inspect output                # a whole namespace: input | output | model
 inspect {output.body.name}    # a specific composite key (braced)
 </code></pre>
-<h3 id="describe-list-seen-describe">describe / list / seen {#describe}</h3>
+<h3 id="describe">describe / list / seen</h3>
 <pre><code>describe graph
 describe node {name}
 describe connection {node-a} and {node-b}
@@ -393,7 +393,7 @@ list nodes
 list connections
 seen                             # nodes visited in the last run
 </code></pre>
-<h3 id="export-import-export">export / import {#export}</h3>
+<h3 id="export">export / import</h3>
 <pre><code>export graph as {name}
 import graph from {name}
 import node {node} from {name}
@@ -402,13 +402,13 @@ import node {node} from {name}
 <li><code>export</code> writes JSON to <code>location.graph.temp</code>; it adds <code>name={name}</code> to the root node and
   <strong>fails if any node is an orphan</strong> (every node must connect to ≥1 other).</li>
 </ul>
-<h3 id="session-session">session {#session}</h3>
+<h3 id="session">session</h3>
 <pre><code>session                    # show this session id + subscribers
 session subscribe {id}     # mirror another (primary) session's commands into yours
 session unsubscribe
 session reset
 </code></pre>
-<h2 id="node-types-node-types">Node types {#node-types}</h2>
+<h2 id="node-types">Node types</h2>
 <p><code>root</code> and <code>end</code> are <strong>structural</strong> (entry/exit). All other types are <strong>descriptive labels</strong>
 validated by the node's skill, if any. Common conventional types:</p>
 <table>
@@ -452,7 +452,7 @@ validated by the node's skill, if any. Common conventional types:</p>
 </tr>
 </tbody>
 </table>
-<h2 id="skill-property-matrix-skill-matrix">Skill → property matrix {#skill-matrix}</h2>
+<h2 id="skill-matrix">Skill → property matrix</h2>
 <p>Which properties each skill accepts. See the <a href="../skills-reference/">skills reference</a> for semantics
 and examples; this is the at-a-glance contract.</p>
 <table>
@@ -520,7 +520,7 @@ and examples; this is the at-a-glance contract.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="invariants-invariants">Invariants {#invariants}</h2>
+<h2 id="invariants">Invariants</h2>
 <p>Hard rules the engine enforces — violate them and generation fails:</p>
 <ol>
 <li>The root node is named <code>root</code>; the end node is named <code>end</code>.</li>
@@ -535,7 +535,7 @@ and examples; this is the at-a-glance contract.</p>
    escape, for advanced re-execution.</li>
 <li><code>instantiate graph</code> must precede <code>run</code> / <code>execute</code> / <code>inspect</code>.</li>
 </ol>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../minigraph-commands.json"><code>minigraph-commands.json</code></a> — the machine-readable form of this grammar.</li>
 <li><a href="../ai-agent-guide/">AI agent guide</a> — driving the Playground via the companion endpoint.</li>

@@ -88,21 +88,21 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#from-code-to-configuration-to-knowledge">From code, to configuration, to knowledge</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#what-an-active-knowledge-graph-is-what-it-is">What an Active Knowledge Graph is {#what-it-is}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#what-it-is">What an Active Knowledge Graph is</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#how-execution-works-execution-model">How execution works {#execution-model}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-model">How execution works</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#the-node-model-node-model">The node model {#node-model}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#node-model">The node model</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#built-in-skills-built-in-skills">Built-in skills {#built-in-skills}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#built-in-skills">Built-in skills</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#composing-with-the-lower-layers-layer-integration">Composing with the lower layers {#layer-integration}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#layer-integration">Composing with the lower layers</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#designing-graphs-the-playground-ai-companion-playground">Designing graphs: the Playground &amp; AI companion {#playground}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#playground">Designing graphs: the Playground &amp; AI companion</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#whats-built-today-vs-on-the-roadmap-maturity">What's built today vs. on the roadmap {#maturity}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#maturity">What's built today vs. on the roadmap</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -219,7 +219,7 @@ means <strong>traversing the graph</strong>. Changing behavior means <strong>edi
 deploying the updated model — not rewriting and redeploying code.</p>
 <p>This is what "Knowledge Graph as application" means: a single, inspectable model that unifies
 <em>what the system knows</em> with <em>what it does</em>.</p>
-<h2 id="what-an-active-knowledge-graph-is-what-it-is">What an Active Knowledge Graph is {#what-it-is}</h2>
+<h2 id="what-it-is">What an Active Knowledge Graph is</h2>
 <p>A traditional property graph models <strong>nodes</strong> (entities), <strong>connections</strong> (relationships), and
 <strong>properties</strong> (key–values on either). Mercury's <a href="property-graph/">MiniGraph</a> adds one thing: a
 node may carry a <code>skill</code> property naming a composable function. That node becomes an <strong>active node</strong>.</p>
@@ -229,7 +229,7 @@ node may carry a <code>skill</code> property naming a composable function. That 
 </ul>
 <p>Because a skill is just a composable function addressed by route name, the same decoupling and
 event-driven execution that powers the rest of Mercury powers the graph.</p>
-<h2 id="how-execution-works-execution-model">How execution works {#execution-model}</h2>
+<h2 id="execution-model">How execution works</h2>
 <p>Execution is event-driven and asynchronous — not a blocking tree-walk. The engine
 (<code>graph.executor</code>) drives a single graph instance through these steps:</p>
 <ol>
@@ -279,7 +279,7 @@ event-driven execution that powers the rest of Mercury powers the graph.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="the-node-model-node-model">The node model {#node-model}</h2>
+<h2 id="node-model">The node model</h2>
 <table>
 <thead>
 <tr>
@@ -319,7 +319,7 @@ event-driven execution that powers the rest of Mercury powers the graph.</p>
 <p>A node has <strong>at most one</strong> skill. Inputs come from the node's own properties plus values pulled from
 the state machine via data-mapping (<code>{source} -&gt; {target}</code>); outputs flow back into the state machine
 for downstream nodes.</p>
-<h2 id="built-in-skills-built-in-skills">Built-in skills {#built-in-skills}</h2>
+<h2 id="built-in-skills">Built-in skills</h2>
 <p>Seven skills ship with the engine. Each is a composable function on a <code>graph.*</code> route:</p>
 <table>
 <thead>
@@ -364,7 +364,7 @@ for downstream nodes.</p>
 <a href="skills-reference/">Built-in skills reference</a>; in the Playground, <code>describe skill {name}</code>
 prints the same content.</p>
 </blockquote>
-<h2 id="composing-with-the-lower-layers-layer-integration">Composing with the lower layers {#layer-integration}</h2>
+<h2 id="layer-integration">Composing with the lower layers</h2>
 <p>An Active Knowledge Graph is not an island — it rides on the layers beneath it, without coupling:</p>
 <ul>
 <li><strong>Down to Event Script &amp; functions</strong> — <code>graph.extension</code> runs a <strong>sub-graph</strong> (<code>extension=&lt;graph-id&gt;</code>)
@@ -377,7 +377,7 @@ prints the same content.</p>
   other endpoint. Protocol stays decoupled from execution.</li>
 </ul>
 <p><img alt="Active Knowledge Graph architecture" src="../diagrams/active-knowledge-graph.png" /></p>
-<h2 id="designing-graphs-the-playground-ai-companion-playground">Designing graphs: the Playground &amp; AI companion {#playground}</h2>
+<h2 id="playground">Designing graphs: the Playground &amp; AI companion</h2>
 <p>The <strong>MiniGraph Playground</strong> is a browser workbench (served over a WebSocket session at
 <code>/ws/graph</code>) for building, dry-running, and inspecting graphs interactively. Its command grammar
 covers the full lifecycle — <code>create node</code>, <code>connect</code>, <code>instantiate graph</code>, <code>run</code>, <code>inspect</code>,
@@ -387,7 +387,7 @@ Playground command (as <code>text/plain</code>) and dispatches it into your live
 back to the browser console. This is the seed of <strong>user–AI collaboration</strong> — a person and an AI
 co-authoring the same graph in real time. (Both the Playground and companion endpoints are
 <strong>dev-only</strong>, gated by <code>app.env=dev</code>.)</p>
-<h2 id="whats-built-today-vs-on-the-roadmap-maturity">What's built today vs. on the roadmap {#maturity}</h2>
+<h2 id="maturity">What's built today vs. on the roadmap</h2>
 <p>To keep this honest — the engine is real, the enterprise lifecycle is partly aspirational:</p>
 <p><strong>Available now:</strong> interactive model authoring; instance creation (<code>instantiate graph</code> with mock
 data); execution (<code>run</code>, or single-node <code>execute</code>); state-machine inspection; JSON <code>export</code>/<code>import</code>;
@@ -396,7 +396,7 @@ data); execution (<code>run</code>, or single-node <code>execute</code>); state-
 described as the target operating model; graph versioning; access control on the dev endpoints; and
 persistence of sessions across restarts. Where this Part describes those, it marks them as the
 <em>intended</em> lifecycle, not current behavior.</p>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="build-your-first-graph/">Build your first Active Knowledge Graph</a> — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.</li>
 <li><a href="skills-reference/">Built-in skills reference</a> — the seven <code>graph.*</code> skills with syntax and worked examples.</li>

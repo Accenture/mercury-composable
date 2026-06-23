@@ -96,17 +96,17 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Composing the layers</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#reaching-external-apis-data-dictionary-provider-data-dictionary">Reaching external APIs: data dictionary + provider {#data-dictionary}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#data-dictionary">Reaching external APIs: data dictionary + provider</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#delegating-down-graphextension-extension">Delegating down: graph.extension {#extension}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#extension">Delegating down: graph.extension</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#delegating-to-an-event-script-flow-flow-extension">Delegating to an Event Script flow {#flow-extension}</a>
+    <li class="toctree-l3"><a class="reference internal" href="#flow-extension">Delegating to an Event Script flow</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#exposing-a-graph-the-graph-executor-flow-exposure">Exposing a graph: the graph-executor flow {#exposure}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#exposure">Exposing a graph: the graph-executor flow</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -197,7 +197,7 @@
   <code>graph-executor</code> flow exposes a deployed graph at <code>POST /api/graph/{graph-id}</code>.</li>
 </ul>
 </blockquote>
-<h2 id="reaching-external-apis-data-dictionary-provider-data-dictionary">Reaching external APIs: data dictionary + provider {#data-dictionary}</h2>
+<h2 id="data-dictionary">Reaching external APIs: data dictionary + provider</h2>
 <p><code>graph.api.fetcher</code> (<a href="../skills-reference/#api-fetcher">reference</a>) doesn't hard-code endpoints. It
 reads two kinds of configuration node:</p>
 <ul>
@@ -251,7 +251,7 @@ them under a <code>graph.island</code> node for visualization (Tutorial 3 shows 
 <p>In a Dictionary's <code>output[]</code>, the source namespace <code>response.*</code> is the <strong>provider's raw HTTP
 response body</strong>, mapped into the dictionary's <code>result.*</code> set; the fetcher's <code>output[]</code> then maps
 that <code>result.*</code> into <code>output.*</code> (or <code>model.*</code>).</p>
-<h2 id="delegating-down-graphextension-extension">Delegating down: graph.extension {#extension}</h2>
+<h2 id="extension">Delegating down: graph.extension</h2>
 <p><code>graph.extension</code> (<a href="../skills-reference/#extension">reference</a>) lets a graph call another graph as a
 reusable module — the composition pattern for building larger capabilities from smaller, certified
 graphs:</p>
@@ -264,7 +264,7 @@ input[]=input.body.department_id -&gt; id
 output[]=result.sales_performance -&gt; output.body.sales_performance
 </code></pre>
 <p>The sub-graph runs in isolation; only the mapped <code>output[]</code> flows back into the caller's state.</p>
-<h3 id="delegating-to-an-event-script-flow-flow-extension">Delegating to an Event Script flow {#flow-extension}</h3>
+<h3 id="flow-extension">Delegating to an Event Script flow</h3>
 <p>The same skill bridges to the <strong>composable layer</strong>: prefix the target with <code>flow://</code> and the node
 delegates to an <a href="../../event-script/syntax/">Event Script</a> flow instead of a graph. This is the pro-code escape
 hatch — hand demanding logic to a flow of composable functions, then return to the graph:</p>
@@ -288,7 +288,7 @@ tasks:
 </code></pre>
 <p>A graph can thus call a flow, and a flow can call composable functions — each layer delegating
 downward by name, never by direct reference.</p>
-<h2 id="exposing-a-graph-the-graph-executor-flow-exposure">Exposing a graph: the graph-executor flow {#exposure}</h2>
+<h2 id="exposure">Exposing a graph: the graph-executor flow</h2>
 <p>A deployed graph is not invoked directly — an Event Script flow wraps it, which is how it gets a
 REST endpoint while keeping execution decoupled from the protocol.</p>
 <pre><code class="language-yaml"># rest.yaml — the generic graph endpoint
@@ -325,7 +325,7 @@ by <code>graph_id</code>, traverses it) → <code>async.http.response</code>. Ca
 </code></pre>
 <p>Because the protocol lives in the flow, the <em>same</em> graph can later be driven by other adapters
 (e.g. a Kafka event listener) with no change to the model.</p>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../skills-reference/">Built-in skills reference</a> — <code>graph.api.fetcher</code> and <code>graph.extension</code> in full.</li>
 <li><a href="../../event-script/syntax/">Event Script Syntax</a> — the flow layer on the other side of <code>flow://</code> and the

@@ -88,21 +88,21 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Build your first graph</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#step-1-a-root-and-an-end-hello-world">Step 1 — a root and an end {#hello-world}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#hello-world">Step 1 — a root and an end</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#step-2-make-it-echo-the-input-echo-input">Step 2 — make it echo the input {#echo-input}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#echo-input">Step 2 — make it echo the input</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#step-3-export-the-model-export">Step 3 — export the model {#export}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#export">Step 3 — export the model</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#step-4-deploy-it-deploy">Step 4 — deploy it {#deploy}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#deploy">Step 4 — deploy it</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#step-5-call-it-over-rest-call-over-rest">Step 5 — call it over REST {#call-over-rest}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#call-over-rest">Step 5 — call it over REST</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#what-just-happened-how-it-ran">What just happened {#how-it-ran}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#how-it-ran">What just happened</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#whats-next-whats-next">What's next {#whats-next}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#whats-next">What's next</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -203,7 +203,7 @@
   console's reply follows under <code>&gt;</code>.</li>
 </ul>
 </blockquote>
-<h2 id="step-1-a-root-and-an-end-hello-world">Step 1 — a root and an end {#hello-world}</h2>
+<h2 id="hello-world">Step 1 — a root and an end</h2>
 <p>Every graph has a <strong>Root</strong> (entry) and an <strong>End</strong> (exit). Create the root first:</p>
 <pre><code>create node root
 with type Root
@@ -240,7 +240,7 @@ Graph traversal completed in 9 ms
 </code></pre>
 <p>That is a complete, working Active Knowledge Graph: a root, an active node carrying a skill, and
 an end — behavior expressed entirely as a model.</p>
-<h2 id="step-2-make-it-echo-the-input-echo-input">Step 2 — make it echo the input {#echo-input}</h2>
+<h2 id="echo-input">Step 2 — make it echo the input</h2>
 <p>A real service reacts to input. Update the end node to map the <em>request</em> body to the <em>response</em>
 body instead of a constant:</p>
 <pre><code>update node end
@@ -269,7 +269,7 @@ Executed end with skill graph.data.mapper in 0.4 ms
 Graph traversal completed in 2 ms
 </code></pre>
 <p>A dry-run needs no live dependencies — it's how you validate a model before deploying it.</p>
-<h2 id="step-3-export-the-model-export">Step 3 — export the model {#export}</h2>
+<h2 id="export">Step 3 — export the model</h2>
 <p>Export the graph to JSON so it can be deployed. The engine writes it to the temp graph location
 (<code>location.graph.temp</code>, default <code>file:/tmp/graph</code>) and stamps the graph's name onto the root node:</p>
 <pre><code>export graph as my-first-graph
@@ -278,7 +278,7 @@ Graph traversal completed in 2 ms
 Added name=my-first-graph to Root node
 Graph exported to /tmp/graph/my-first-graph.json
 </code></pre>
-<h2 id="step-4-deploy-it-deploy">Step 4 — deploy it {#deploy}</h2>
+<h2 id="deploy">Step 4 — deploy it</h2>
 <p>Deployment is a file copy: move the exported JSON into your project's deployed-graph folder. The
 relevant <code>application.properties</code> keys:</p>
 <pre><code class="language-properties"># temp working location (must be file:/ — read/write)
@@ -289,7 +289,7 @@ location.graph.deployed=classpath:/graph
 <p>So copy the model into the classpath graph folder and restart the app to load it:</p>
 <pre><code>cp /tmp/graph/my-first-graph.json src/main/resources/graph/
 </code></pre>
-<h2 id="step-5-call-it-over-rest-call-over-rest">Step 5 — call it over REST {#call-over-rest}</h2>
+<h2 id="call-over-rest">Step 5 — call it over REST</h2>
 <p>A deployed graph is reachable at the generic endpoint <code>POST /api/graph/{graph-id}</code>, where the id is
 the name you exported. Send it some input:</p>
 <pre><code>curl -X POST http://127.0.0.1:8085/api/graph/my-first-graph \
@@ -299,7 +299,7 @@ the name you exported. Send it some input:</p>
 <pre><code class="language-json">{&quot;message&quot;: &quot;it is a wonderful day&quot;}
 </code></pre>
 <p>(The port follows your app's configuration; <code>8085</code> is illustrative.)</p>
-<h2 id="what-just-happened-how-it-ran">What just happened {#how-it-ran}</h2>
+<h2 id="how-it-ran">What just happened</h2>
 <p>The graph isn't called directly — it's wrapped by an <a href="../../event-script/syntax/">Event Script</a> flow, which is
 how it gets a REST endpoint without coupling execution to the protocol:</p>
 <ol>
@@ -309,7 +309,7 @@ how it gets a REST endpoint without coupling execution to the protocol:</p>
 <li><code>async.http.response</code> returns that body to your <code>curl</code>.</li>
 </ol>
 <p>You can see exactly these steps in the application's telemetry log.</p>
-<h2 id="whats-next-whats-next">What's next {#whats-next}</h2>
+<h2 id="whats-next">What's next</h2>
 <p>You built behavior with one skill. The graph becomes genuinely <em>active</em> when nodes <strong>decide</strong>,
 <strong>compute</strong>, and <strong>fetch</strong>:</p>
 <ul>
@@ -318,7 +318,7 @@ how it gets a REST endpoint without coupling execution to the protocol:</p>
 <li><code>graph.extension</code> — delegate to a sub-graph or an Event Script flow.</li>
 </ul>
 <p>Each of these gets a worked example in the <a href="../skills-reference/">built-in skills reference</a>.</p>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../">Knowledge Graph as Application</a> — the concepts behind what you just built.</li>
 <li><a href="../../event-script/syntax/">Event Script Syntax</a> — the data-mapping syntax the skills share, and the flow

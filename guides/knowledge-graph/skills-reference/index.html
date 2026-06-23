@@ -90,21 +90,21 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Built-in skills reference</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#graphdatamapper-data-mapper">graph.data.mapper {#data-mapper}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#data-mapper">graph.data.mapper</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#graphmath-math">graph.math {#math}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#math">graph.math</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#graphjs-js">graph.js {#js}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#js">graph.js</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#graphapifetcher-api-fetcher">graph.api.fetcher {#api-fetcher}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#api-fetcher">graph.api.fetcher</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#graphextension-extension">graph.extension {#extension}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#extension">graph.extension</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#graphjoin-join">graph.join {#join}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#join">graph.join</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#graphisland-island">graph.island {#island}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#island">graph.island</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -240,7 +240,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="graphdatamapper-data-mapper">graph.data.mapper {#data-mapper}</h2>
+<h2 id="data-mapper">graph.data.mapper</h2>
 <p>Copies and transforms data between state-machine namespaces. The workhorse for shaping inputs and
 building the response.</p>
 <pre><code>skill=graph.data.mapper
@@ -254,7 +254,7 @@ skill=graph.data.mapper
 mapping[]=input.body.hr_id -&gt; employee.id
 mapping[]=input.body.join_date -&gt; employee.join_date
 </code></pre>
-<h2 id="graphmath-math">graph.math {#math}</h2>
+<h2 id="math">graph.math</h2>
 <p>Fast inline math and boolean evaluation for computation and decision-making. Prefer this over
 <a href="#js"><code>graph.js</code></a> when you only need simple expressions. Statements run in order; five types:</p>
 <table>
@@ -300,7 +300,7 @@ An <code>IF</code> returning a node name <strong>overrides</strong> natural trav
 <code>for_each[]</code> iterates a statement block; <code>NEXT:</code>/<code>DELAY:</code> control flow and timing.</p>
 <p><strong>Gotchas:</strong> a node runs <strong>once</strong> (guard against loops) unless you <code>RESET</code> it — an advanced,
 use-with-care feature; a node may not contain only <code>MAPPING</code> statements (use the data mapper).</p>
-<h2 id="graphjs-js">graph.js {#js}</h2>
+<h2 id="js">graph.js</h2>
 <p>Same statement model as <a href="#math"><code>graph.math</code></a>, but expressions run as full JavaScript on GraalVM —
 more flexible, slower.</p>
 <pre><code>skill=graph.js
@@ -308,7 +308,7 @@ statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
 </code></pre>
 <p><strong>Gotchas:</strong> capped at <strong>50 instances</strong> per deployment (it uses kernel threads); reach for
 <code>graph.math</code> unless you need real JavaScript.</p>
-<h2 id="graphapifetcher-api-fetcher">graph.api.fetcher {#api-fetcher}</h2>
+<h2 id="api-fetcher">graph.api.fetcher</h2>
 <p>Calls external HTTP APIs declaratively, driven by <a href="../composing-the-layers/#data-dictionary">data-dictionary and provider nodes</a>.
 Supports response caching and bounded fork-join concurrency.</p>
 <pre><code>skill=graph.api.fetcher
@@ -331,9 +331,9 @@ output[]=result.name -&gt; output.body.name
 output[]=result.address -&gt; output.body.address
 </code></pre>
 <p>The result lands at <code>{node}.result</code>. <strong>Gotcha:</strong> identical requests (same URL + method + input) are
-<strong>deduplicated</strong> into a single HTTP call. See <a href="../composing-the-layers/#api-fetcher">Composing the layers</a>
+<strong>deduplicated</strong> into a single HTTP call. See <a href="../composing-the-layers/#data-dictionary">Composing the layers</a>
 for the dictionary/provider setup this skill depends on.</p>
-<h2 id="graphextension-extension">graph.extension {#extension}</h2>
+<h2 id="extension">graph.extension</h2>
 <p>Delegates to another <strong>graph model</strong> or an <strong>Event Script flow</strong>, so you can compose larger
 capabilities and reuse logic.</p>
 <pre><code>skill=graph.extension
@@ -353,7 +353,7 @@ output[]=result.sales_performance -&gt; output.body.sales_performance
 </code></pre>
 <p>This is the seam between the semantic layer and the composable layer beneath it — see
 <a href="../composing-the-layers/#extension">Composing the layers</a>.</p>
-<h2 id="graphjoin-join">graph.join {#join}</h2>
+<h2 id="join">graph.join</h2>
 <p>A synchronization barrier for parallel branches. It returns <code>next</code> <strong>only when all</strong> connected
 upstream nodes have completed, and <code>.sink</code> (pause) until then.</p>
 <pre><code>skill=graph.join
@@ -364,7 +364,7 @@ connect join to combine with proceed
 </code></pre>
 <p><strong>Gotchas:</strong> needs at least two predecessors to be meaningful; it is the explicit fork-join
 mechanism — without it, traversal proceeds as branches complete.</p>
-<h2 id="graphisland-island">graph.island {#island}</h2>
+<h2 id="island">graph.island</h2>
 <p>Marks an <strong>isolated</strong> node: it always returns <code>.sink</code>, so traversal does not continue through it.
 Used to organize non-executable configuration (e.g. grouping data-dictionary and provider nodes)
 or to park a sub-graph that isn't wired in yet.</p>
@@ -374,7 +374,7 @@ or to park a sub-graph that isn't wired in yet.</p>
 connect dictionary to person-name with data
 connect dictionary to person-address with data
 </code></pre>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../build-your-first-graph/">Build your first Active Knowledge Graph</a> — <code>graph.data.mapper</code> in a full walkthrough.</li>
 <li><a href="../composing-the-layers/">Composing the layers</a> — the data-dictionary/provider model for <code>graph.api.fetcher</code>, and <code>graph.extension</code> into flows.</li>

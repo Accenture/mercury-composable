@@ -66,19 +66,19 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">REST grammar</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#top-level-structure-structure">Top-level structure {#structure}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#structure">Top-level structure</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#a-rest-endpoint-entry-entry">A rest: endpoint entry {#entry}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#entry">A rest: endpoint entry</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#binding-modes-binding">Binding modes {#binding}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#binding">Binding modes</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#cors-block-cors">cors: block {#cors}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#cors">cors: block</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#headers-block-headers">headers: block {#headers}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#headers">headers: block</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#invariants-invariants">Invariants {#invariants}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants">Invariants</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -199,7 +199,7 @@
   values fail to load.</li>
 </ul>
 </blockquote>
-<h2 id="top-level-structure-structure">Top-level structure {#structure}</h2>
+<h2 id="structure">Top-level structure</h2>
 <p><code>rest.yaml</code> has these top-level keys (all lists except <code>static-content</code>):</p>
 <table>
 <thead>
@@ -227,7 +227,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="a-rest-endpoint-entry-entry">A <code>rest:</code> endpoint entry {#entry}</h2>
+<h2 id="entry">A <code>rest:</code> endpoint entry</h2>
 <table>
 <thead>
 <tr>
@@ -300,7 +300,7 @@
 </tbody>
 </table>
 <p>Boolean fields (<code>upload</code>, <code>tracing</code>, <code>trust_all_cert</code>) are written <strong>unquoted</strong>, e.g. <code>tracing: true</code>.</p>
-<h2 id="binding-modes-binding">Binding modes {#binding}</h2>
+<h2 id="binding">Binding modes</h2>
 <p>How an endpoint reaches its backend (set by <code>service</code>/<code>flow</code>):</p>
 <table>
 <thead>
@@ -334,7 +334,7 @@
 </tbody>
 </table>
 <p><code>{param}</code> tokens in <code>url</code> are extracted and passed to the backend (e.g. <code>/api/profile/{id}</code>).</p>
-<h2 id="cors-block-cors"><code>cors:</code> block {#cors}</h2>
+<h2 id="cors"><code>cors:</code> block</h2>
 <table>
 <thead>
 <tr>
@@ -365,7 +365,7 @@
 <code>'Access-Control-Allow-Origin: *'</code>. A complete cross-origin config typically also lists
 <code>Access-Control-Allow-Methods</code> and <code>Access-Control-Allow-Headers</code> (see the
 <a href="../ai-agent-guide/#example">worked example</a>).</p>
-<h2 id="headers-block-headers"><code>headers:</code> block {#headers}</h2>
+<h2 id="headers"><code>headers:</code> block</h2>
 <table>
 <thead>
 <tr>
@@ -394,7 +394,7 @@
 </table>
 <p><code>add</code> entries are <code>'header-name: value'</code>; <code>drop</code>/<code>keep</code> are header names (case-insensitive). <code>keep</code>
 retains only the listed headers (drops the rest).</p>
-<h2 id="invariants-invariants">Invariants {#invariants}</h2>
+<h2 id="invariants">Invariants</h2>
 <p>Parser rules — violate them and the route won't load:</p>
 <ol>
 <li>Every <code>rest</code> entry has <code>service</code>, <code>methods</code>, and <code>url</code>.</li>
@@ -405,7 +405,7 @@ retains only the listed headers (drops the rest).</p>
 <li>An HTTP-relay <code>service</code> must be a <strong>single</strong> URL (not a list, not mixed with function routes).</li>
 <li><code>flow</code> binding uses <code>service: http.flow.adapter</code>.</li>
 </ol>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../rest-automation.json"><code>rest-automation.json</code></a> — the machine-readable form of this grammar.</li>
 <li><a href="../ai-agent-guide/">AI agent guide</a> — authoring rest.yaml deterministically.</li>

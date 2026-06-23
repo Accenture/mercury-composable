@@ -68,13 +68,13 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">REST AI agent guide</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#decide-the-binding-first-binding">Decide the binding first {#binding}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#binding">Decide the binding first</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#generate-deterministically-deterministic">Generate deterministically {#deterministic}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#deterministic">Generate deterministically</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#worked-example-example">Worked example {#example}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Worked example</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
                   </li>
@@ -192,14 +192,14 @@
 <li><code>rest.yaml</code> is parsed and validated at startup (<code>RoutingEntry</code>); an invalid entry fails to load.</li>
 </ul>
 </blockquote>
-<h2 id="decide-the-binding-first-binding">Decide the binding first {#binding}</h2>
+<h2 id="binding">Decide the binding first</h2>
 <p>Pick how the endpoint reaches its backend, then fill the entry:</p>
 <ul>
 <li><strong>Function</strong> → <code>service: &lt;function.route&gt;</code>.</li>
 <li><strong>Flow</strong> → <code>service: http.flow.adapter</code> <strong>and</strong> <code>flow: &lt;flow-id&gt;</code>.</li>
 <li><strong>HTTP relay</strong> → <code>service: https://host</code> (single URL; <code>url_rewrite</code>/<code>trust_all_cert</code> allowed).</li>
 </ul>
-<h2 id="generate-deterministically-deterministic">Generate deterministically {#deterministic}</h2>
+<h2 id="deterministic">Generate deterministically</h2>
 <p>Look up exact fields/values in <a href="../rest-automation.json"><code>rest-automation.json</code></a>; follow the rules in
 <a href="../rest-grammar/"><code>rest-grammar.md</code></a>. Then verify:</p>
 <blockquote>
@@ -212,7 +212,7 @@
 - [ ] <code>url_rewrite</code> (if present) is a list of exactly two strings, and only on a relay service.
 - [ ] <code>{param}</code> tokens in <code>url</code> are balanced and not nested.</p>
 </blockquote>
-<h2 id="worked-example-example">Worked example {#example}</h2>
+<h2 id="example">Worked example</h2>
 <p>A flow-backed endpoint plus a reusable CORS config:</p>
 <pre><code class="language-yaml">rest:
   - service: 'http.flow.adapter'
@@ -248,7 +248,7 @@ headers:
     url: '/api/profile/{id}'
     timeout: 10s
 </code></pre>
-<h2 id="see-also-see-also">See also {#see-also}</h2>
+<h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../rest-grammar/">REST automation grammar</a> + <a href="../rest-automation.json"><code>rest-automation.json</code></a> — the source of truth.</li>
 <li><a href="../">REST Automation</a> — worked examples and the full feature set.</li>
