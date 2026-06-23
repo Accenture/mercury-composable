@@ -61,5 +61,8 @@ plugins:
       separator: '[\s\-\.]+'
 theme: readthedocs
 
+markdown_extensions:
+  - attr_list
+
 extra_css:
   - css/extra.css

@@ -128,7 +128,7 @@ output[]=result.address -> output.body.address
 ```
 
 The result lands at `{node}.result`. **Gotcha:** identical requests (same URL + method + input) are
-**deduplicated** into a single HTTP call. See [Composing the layers](composing-the-layers.md#api-fetcher)
+**deduplicated** into a single HTTP call. See [Composing the layers](composing-the-layers.md#data-dictionary)
 for the dictionary/provider setup this skill depends on.
 
 ## graph.extension {#extension}
