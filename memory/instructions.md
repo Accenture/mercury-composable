@@ -37,17 +37,18 @@ connectors/                ← Kafka pub/sub adapters + presence/service monitor
 examples/                  ← reference apps; composable-example is the primary demo
   (lambda, rest-spring-3/-4, composable, kotlin, scheduler, minigraph)
 benchmark/benchmark-client ← benchmark tests
-docs/ (guides/, arch-decisions/, notes/)  ← docs (mkdocs `docs_dir: docs`);
-                                  arch-decisions/ADR.md = ADR ledger, notes/ = design notes
+docs/ (guides/, arch-decisions/)  ← docs (mkdocs `docs_dir: docs`);
+                                  arch-decisions/ADR.md = the ADR ledger (holds durable design rationale)
 ```
 
 ## Core Abstractions
 
 - **Functions** — plain Java classes annotated `@PreLoad(route="...", instances=N)`
   implementing either `LambdaFunction` (untyped, takes `EventEnvelope`) or
-  `TypedLambdaFunction<I, O>` (typed; input/output is a Map or PoJo — a List of PoJo is not a
-  data-mapping contract for Event Script or the Knowledge Graph; Layer 1 accepts a `List<PoJo>` input
-  via `@PreLoad(inputPojoClass=…)` for external JSON-list ingestion). Registered by route name in the `Platform` registry
+  `TypedLambdaFunction<I, O>` (typed; key-by-key data mapping requires Map or PoJo — a List cannot be
+  the key-by-key mapping contract; the `*` whole-body passthrough in Event Script bypasses key-by-key
+  mapping and, with `@PreLoad(inputPojoClass=…)`, enables `List<PoJo>` at the function boundary;
+  Layer 1 also uses `inputPojoClass` to ingest external JSON-list payloads directly). Registered by route name in the `Platform` registry
   and addressed exclusively by that string.
 - **EventEnvelope** — immutable message container between functions. Headers are
   `Map<String,String>`; body is MsgPack-serialized.

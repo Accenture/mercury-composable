@@ -90,29 +90,30 @@ layers, which conflated the conceptual layering with the request pipeline.
 **Status:** Accepted · **Date:** 2026-06-22T22:47:23.000Z · **Serves:** vision-mercury-composable
 <!-- id: adr-0003 | status: accepted | formalizes: typed-io-map-or-pojo -->
 
-**Abstract.** A `TypedLambdaFunction<I, O>`'s input and output type is a **Map or a PoJo**. A
-**List of PoJo is not a data-mapping contract** in Event Script (Layer 2) or the Knowledge Graph
-(Layer 3) — where values are mapped key by key, use a Map or a single PoJo. **Layer 1 (Platform Core)
-is the exception:** a `@PreLoad`-annotated function may declare a `List<PoJo>` input via the
-`inputPojoClass` hint to ingest an incoming JSON-*list* payload from an external source (see
-Consequences). Functions exchange the immutable `EventEnvelope` message container: headers are
-`Map<String,String>`, the body is MsgPack-serialized on the wire, and PoJo↔Map conversion uses a
-customized Gson.
+**Abstract.** A `TypedLambdaFunction<I, O>`'s normal input and output type is a **Map or a PoJo**.
+**Key-by-key data mapping** in Event Script (Layer 2) and the Knowledge Graph (Layer 3) maps fields
+individually, so a List cannot serve as the mapping contract there — use a Map or a single PoJo.
+However, the **`*` whole-body passthrough** (`model.list -> *`) is a special escape from key-by-key
+mapping: it passes the entire state-machine value as the event body, bypassing field-level mapping.
+Combined with `inputPojoClass` on `@PreLoad`, this enables a `List<PoJo>` at the function boundary
+within an Event Script flow. Layer 1 (Platform Core) uses the same `inputPojoClass` mechanism to
+ingest an incoming JSON-*list* payload directly from an external source (see Consequences). Functions
+exchange the immutable `EventEnvelope` message container: headers are `Map<String,String>`, the body
+is MsgPack-serialized on the wire, and PoJo↔Map conversion uses a customized Gson.
 
-**Rationale.** Constraining I/O to Map-or-PoJo keeps the *input data mapping* in Event
-Script clean and readable and avoids serialization edge cases. A PoJo enforces an
-interface contract; a Map gives flexible structure — together they cover the spectrum
-without admitting ambiguous generic collections. The accepted consequences are the
-serialization gotchas that follow from the wire format: MsgPack downcasts a small `Long`
-to `Integer` on the wire (pin the type with a PoJo when it matters); the customized Gson
-treats integers in a Map as `Long` (use `util.str2int` / `util.str2long` for safe
-conversion); Map keys must be strings (non-string keys are auto-converted). The one exception to the
-Map-or-PoJo rule is a **Layer-1 ingestion edge case**: to accept an incoming JSON *list* payload from
-an external source you don't control, a `@PreLoad`-annotated platform-core function declares a
-`List<PoJo>` input via `inputPojoClass = X.class` — the serializer deserializes the list of maps into
-the typed list, and the function extracts the key-values it needs. (Outgoing list payloads need no
-special handling: Event Script's `AsyncHttpClient` and the Knowledge Graph's API-fetcher skill do their
-own data mapping.) Functions may still return `Mono<T>` / `Flux<T>` for reactive pipelines.
+**Rationale.** Constraining key-by-key I/O to Map-or-PoJo keeps Event Script data mapping clean and
+readable and avoids serialization edge cases. A PoJo enforces an interface contract; a Map gives
+flexible structure — together they cover the spectrum without admitting ambiguous generic collections.
+The `*` passthrough is the intentional escape hatch for List payloads (tested in the
+event-script-engine suite). The accepted consequences are the serialization gotchas that follow from
+the wire format: MsgPack downcasts a small `Long` to `Integer` on the wire (pin the type with a PoJo
+when it matters); the customized Gson treats integers in a Map as `Long` (use `util.str2int` /
+`util.str2long` for safe conversion); Map keys must be strings (non-string keys are auto-converted).
+The `List<PoJo>` path (via `*` passthrough or Layer-1 external ingestion): declare
+`inputPojoClass = X.class` on `@PreLoad` — the serializer deserializes the list of maps into the
+typed list. (Outgoing list payloads need no special handling: Event Script's `AsyncHttpClient` and
+the Knowledge Graph's API-fetcher skill do their own data mapping.) Functions may still return
+`Mono<T>` / `Flux<T>` for reactive pipelines.
 
 ---
 

@@ -158,10 +158,12 @@ public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object
 }
 ```
 
-> *Note*: A List of PoJo as input is not a data-mapping contract in Event Script (Layer 2) or the
-          Knowledge Graph (Layer 3). It is supported at Layer 1 (Platform Core) for the edge case of
-          ingesting an incoming JSON-list payload from an external source — declare the `List<PoJo>`
-          input and add the `inputPojoClass` hint as shown above.
+> *Note*: A `List<PoJo>` input requires `inputPojoClass`. **Key-by-key data mapping** in Event Script
+          (Layer 2) and the Knowledge Graph (Layer 3) maps fields individually, so a List cannot be
+          the mapping contract there. Use the **`*` whole-body passthrough** (`model.list -> *`) in an
+          Event Script input mapping to pass a List as the entire event body — with `inputPojoClass` set,
+          the engine deserializes it into `List<PoJo>` before invoking the function. Layer 1
+          (Platform Core) uses the same mechanism for external JSON-list ingestion.
 
 ## PoJo deserialization hints
 

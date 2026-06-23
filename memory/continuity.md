@@ -52,10 +52,12 @@
 - Functions are fully decoupled — coupled only by route-name strings and
   `EventEnvelope`; orchestration lives in YAML event flows, not code. (ADR-0001)
   <!-- id: functions-decoupled-routes | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
-- `TypedLambdaFunction` I/O is Map or PoJo for Event Script (Layer 2) and Knowledge Graph (Layer 3)
-  data mapping — a List of PoJo is **not** a data-mapping contract there. Layer 1 (Platform Core) may
-  accept a `List<PoJo>` input via `@PreLoad(inputPojoClass=…)` to ingest an external JSON-list payload. (ADR-0003)
-  <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
+- `TypedLambdaFunction` **key-by-key data mapping** (Event Script Layer 2, Knowledge Graph Layer 3)
+  requires Map or PoJo — a List cannot be mapped field-by-field. The **`*` whole-body passthrough**
+  (`model.list -> *`) bypasses key-by-key mapping and, with `@PreLoad(inputPojoClass=…)`, enables
+  `List<PoJo>` at the function boundary in an Event Script flow. Layer 1 (Platform Core) uses the
+  same `inputPojoClass` for external JSON-list ingestion. (ADR-0003)
+  <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-23 | uses: 2 | tier: core -->
 
 ## Key Decisions
 
@@ -148,8 +150,8 @@
   <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - **ADR pattern adopted** (the agent-memory optional Architecture Decision Record log; opted in 2026-06-22, Eric). A
   human-facing governance ledger lives at `docs/arch-decisions/ADR.md` — **the repo's own path; the agent-memory default
-  `docs/ADR.md` is not used** (AGENTS.md pointer updated to match). `DESIGN-NOTES.md` was moved to
-  `docs/notes/design-notes.md` (design notes ≠ ADRs) and the `arch-decisions/` folder repurposed for the ledger. Seeded
+  `docs/ADR.md` is not used** (AGENTS.md pointer updated to match). `DESIGN-NOTES.md` — the author's design notepad — was **removed** (2026-06-23) as a drift source; the ADR
+  ledger now holds the durable design rationale, and the `arch-decisions/` folder is repurposed for the ledger. Seeded
   **retrospectively** with 5 ADRs that **formalize** existing Design-altitude facts — ADR-0001→`functions-decoupled-routes`,
   ADR-0002→`virtual-threads-rpc`, ADR-0003→`typed-io-map-or-pojo`, ADR-0004 & ADR-0005→`docs-content-canon` (the
   three-paradigm-layer model + one-atom-four-roles) — each verified against `platform-core`/`event-script-engine`/
