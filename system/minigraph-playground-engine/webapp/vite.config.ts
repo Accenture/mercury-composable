@@ -20,17 +20,12 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Routing
-          'vendor-router': ['react-router-dom'],
-          // Flow/graph renderer (largest single dependency)
-          'vendor-xyflow': ['@xyflow/react'],
-          // Markdown rendering + GFM plugin
-          'vendor-markdown': ['react-markdown', 'remark-gfm'],
-          // JSON viewer
-          'vendor-json-view': ['react-json-view-lite'],
-          // Resizable panels
-          'vendor-panels': ['react-resizable-panels'],
+        manualChunks: (id: string) => {
+          if (id.includes('react-router-dom')) return 'vendor-router';
+          if (id.includes('@xyflow/react')) return 'vendor-xyflow';
+          if (id.includes('react-markdown') || id.includes('remark-gfm')) return 'vendor-markdown';
+          if (id.includes('react-json-view-lite')) return 'vendor-json-view';
+          if (id.includes('react-resizable-panels')) return 'vendor-panels';
         },
       },
     },
