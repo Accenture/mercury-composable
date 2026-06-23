@@ -1,3 +1,8 @@
+/* Sidebar section captions: allow wrapping so long titles don't clip. */
+.wy-menu-vertical .caption-text {
+  white-space: normal;
+}
+
 /* Mercury Composable docs — small overrides on the readthedocs theme.
  *
  * Wide reference tables (e.g. Annotations Reference) were forcing horizontal
