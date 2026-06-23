@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-script/flow-grammar/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Flow grammar - Composable for Java</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Flow grammar";
+        var mkdocs_page_input_path = "guides/event-script/flow-grammar.md";
+        var mkdocs_page_url = "/mercury-composable/guides/event-script/flow-grammar/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part I · Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part II · Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part III · Layer 1 — Event-driven foundation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven-foundation/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part IV · Layer 2 — Composable orchestration</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Flow grammar</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#flow-file-structure-structure">Flow file structure {#structure}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#task-fields-task-fields">Task fields {#task-fields}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#execution-types-execution-types">Execution types {#execution-types}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#data-mapping-mini-language-mapping">Data-mapping mini-language {#mapping}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#triggering-chaining-exceptions-flow">Triggering, chaining &amp; exceptions {#flow}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants-invariants">Invariants {#invariants}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part V · Layer 3 — Knowledge Graph as Application</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part VI · Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part VII · Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Part IV · Layer 2 — Composable orchestration</li>
+      <li class="breadcrumb-item active">Flow grammar</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="event-script-flow-grammar">Event Script flow grammar</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>The <strong>source of truth</strong> for the Event Script flow DSL — the rules an author (human or AI)
+  needs to write a valid flow without inferring from examples.</li>
+<li>Machine-readable form: <a href="../event-script-flow.json"><code>event-script-flow.json</code></a>. Authoring from an
+  agent? See the <a href="../ai-agent-guide/">AI agent guide</a>. Tutorial/worked examples:
+  <a href="../syntax/">Event Script Syntax</a>; exhaustive field docs: <a href="../../flow-schema-reference/">Flow Schema Reference</a>.</li>
+<li>A flow is compiled and validated by the engine; the rules below mirror that validation
+  (<code>CompileFlows</code>), so violating them fails compilation.</li>
+</ul>
+</blockquote>
+<h2 id="flow-file-structure-structure">Flow file structure {#structure}</h2>
+<p>A flow is a YAML file with these top-level keys:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flow.id</code></td>
+<td><strong>yes</strong></td>
+<td>unique flow id (referenced by <code>rest.yaml</code> and by sub-flows as <code>flow://{id}</code>)</td>
+</tr>
+<tr>
+<td><code>flow.description</code></td>
+<td><strong>yes</strong></td>
+<td>human-readable purpose (validated non-blank)</td>
+</tr>
+<tr>
+<td><code>flow.ttl</code></td>
+<td><strong>yes</strong></td>
+<td>time-to-live, e.g. <code>30s</code> (<code>s</code>/<code>m</code>/<code>h</code>; minimum 1s)</td>
+</tr>
+<tr>
+<td><code>flow.exception</code></td>
+<td>no</td>
+<td>route of a global exception handler</td>
+</tr>
+<tr>
+<td><code>first.task</code></td>
+<td><strong>yes</strong></td>
+<td>the entry-point task (route name or task <code>name</code>)</td>
+</tr>
+<tr>
+<td><code>external.state.machine</code></td>
+<td>conditional</td>
+<td>route or <code>flow://id</code> of an external state machine — <strong>required</strong> if any task uses the <code>ext:</code> namespace</td>
+</tr>
+<tr>
+<td><code>tasks</code></td>
+<td><strong>yes</strong></td>
+<td>the list of task definitions; <strong>must include ≥1 task with <code>execution: end</code></strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="task-fields-task-fields">Task fields {#task-fields}</h2>
+<p>Each entry under <code>tasks:</code> may have:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>process</code></td>
+<td>conditional</td>
+<td>route of the composable function, or <code>flow://{flow-id}</code> for a sub-flow (either <code>process</code> or <code>name</code> required)</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>conditional</td>
+<td>unique task id; <strong>defaults to <code>process</code></strong> — required only when the same <code>process</code> is used more than once</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><strong>yes</strong></td>
+<td>non-blank purpose</td>
+</tr>
+<tr>
+<td><code>input</code></td>
+<td><strong>yes</strong></td>
+<td>list of <code>source -&gt; target</code> mapping rules (use <code>[]</code> for none)</td>
+</tr>
+<tr>
+<td><code>output</code></td>
+<td><strong>yes</strong></td>
+<td>list of <code>source -&gt; target</code> mapping rules (use <code>[]</code> for none)</td>
+</tr>
+<tr>
+<td><code>execution</code></td>
+<td><strong>yes</strong></td>
+<td>one of the <a href="#execution-types">execution types</a> below</td>
+</tr>
+<tr>
+<td><code>next</code></td>
+<td>conditional</td>
+<td>next task(s) — required/shaped by execution type</td>
+</tr>
+<tr>
+<td><code>join</code></td>
+<td>conditional</td>
+<td>the join task — <strong>required</strong> for <code>fork</code></td>
+</tr>
+<tr>
+<td><code>pipeline</code></td>
+<td>conditional</td>
+<td>ordered task list — <strong>required</strong> for <code>pipeline</code></td>
+</tr>
+<tr>
+<td><code>loop</code></td>
+<td>no</td>
+<td>loop control (<code>statement</code>/<code>condition</code>) for a <code>pipeline</code></td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>no</td>
+<td>a <code>model.*</code> list to iterate for a dynamic <code>fork</code></td>
+</tr>
+<tr>
+<td><code>delay</code></td>
+<td>no</td>
+<td>ms (int) or a <code>model.*</code> var; must be &lt; <code>flow.ttl</code></td>
+</tr>
+<tr>
+<td><code>exception</code></td>
+<td>no</td>
+<td>task-level exception handler route (overrides <code>flow.exception</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="execution-types-execution-types">Execution types {#execution-types}</h2>
+<p>The eight values <code>execution:</code> may take (authoritative set —
+<code>CompileFlows.EXECUTION_TYPES</code>). <code>next</code> requirements are enforced at compile time:</p>
+<table>
+<thead>
+<tr>
+<th><code>execution</code></th>
+<th><code>next</code></th>
+<th>also requires</th>
+<th>forbids</th>
+<th>does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sequential</code></td>
+<td>exactly 1</td>
+<td>—</td>
+<td>—</td>
+<td>run, then go to the one next task</td>
+</tr>
+<tr>
+<td><code>decision</code></td>
+<td>≥ 2</td>
+<td>output maps <code>-&gt; decision</code></td>
+<td><code>join</code>,<code>pipeline</code>,<code>source</code></td>
+<td>branch on the <code>decision</code> value (<code>false</code>→next[0]/<code>true</code>→next[1]; or numeric 1-indexed)</td>
+</tr>
+<tr>
+<td><code>parallel</code></td>
+<td>≥ 2</td>
+<td>—</td>
+<td><code>join</code></td>
+<td>fan out to all next tasks concurrently</td>
+</tr>
+<tr>
+<td><code>fork</code></td>
+<td>≥ 1</td>
+<td><code>join</code></td>
+<td><code>pipeline</code></td>
+<td>run next tasks concurrently, resume at <code>join</code>; optional <code>source</code> to iterate</td>
+</tr>
+<tr>
+<td><code>pipeline</code></td>
+<td>exactly 1</td>
+<td><code>pipeline</code> list</td>
+<td><code>join</code></td>
+<td>run the pipeline tasks in order (optional <code>loop</code>), then the one next task</td>
+</tr>
+<tr>
+<td><code>response</code></td>
+<td>exactly 1</td>
+<td>—</td>
+<td><code>join</code></td>
+<td>send the HTTP response now, then continue async to next</td>
+</tr>
+<tr>
+<td><code>end</code></td>
+<td><strong>none</strong></td>
+<td>—</td>
+<td><code>next</code>,<code>join</code>,…</td>
+<td>terminate; <code>output</code> mappings form the final response</td>
+</tr>
+<tr>
+<td><code>sink</code></td>
+<td><strong>none</strong></td>
+<td>—</td>
+<td><code>next</code>,…</td>
+<td>terminal branch (no response) — e.g. a fork/parallel leaf</td>
+</tr>
+</tbody>
+</table>
+<h2 id="data-mapping-mini-language-mapping">Data-mapping mini-language {#mapping}</h2>
+<p>Every <code>input</code>/<code>output</code> entry is <code>'source -&gt; target'</code> (one <code>-&gt;</code> per rule; a three-part
+<code>'LHS -&gt; model.var -&gt; RHS'</code> is allowed and compiles to two).</p>
+<p><strong>Source (LHS) namespaces</strong></p>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input.*</code></td>
+<td>the HTTP request dataset (<code>input.body</code>, <code>input.header.*</code>, <code>input.query.*</code>, <code>input.path_parameter.*</code>, <code>input.method</code>, …)</td>
+</tr>
+<tr>
+<td><code>model.*</code></td>
+<td>flow-instance state (dot/bracket/<code>{model.key}</code> dynamic keys)</td>
+</tr>
+<tr>
+<td><code>model.parent.*</code> / <code>model.root.*</code></td>
+<td>parent-flow state (in sub-flows)</td>
+</tr>
+<tr>
+<td><code>error.*</code></td>
+<td>exception context in a handler (<code>error.task/.status/.message/.stack</code>)</td>
+</tr>
+<tr>
+<td><code>$.…</code></td>
+<td>a JSONPath expression</td>
+</tr>
+<tr>
+<td><code>result</code> / <code>input</code> / <code>header</code> / <code>status</code> / <code>datatype</code></td>
+<td>(in <code>output</code> rules) the function's result, the task input, response headers, status code, or result class name</td>
+</tr>
+<tr>
+<td>constants</td>
+<td><code>text(…)</code>, <code>int(…)</code>, <code>long(…)</code>, <code>float(…)</code>, <code>double(…)</code>, <code>boolean(…)</code>, <code>map(k=v,…)</code>, <code>file(text:/json:/binary:path)</code>, <code>classpath(…)</code></td>
+</tr>
+<tr>
+<td><code>f:fn(args)</code></td>
+<td>a simple plugin function</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Target (RHS) namespaces</strong></p>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>output.*</code></td>
+<td>the HTTP response (<code>output.body</code>, <code>output.header.*</code>, <code>output.status</code>)</td>
+</tr>
+<tr>
+<td><code>model.*</code> (+ <code>model.parent.*</code>)</td>
+<td>store in flow / parent state (<code>[]</code> appends to a list)</td>
+</tr>
+<tr>
+<td><code>decision</code></td>
+<td>(in a <code>decision</code> task) the branch selector</td>
+</tr>
+<tr>
+<td><code>file(path)</code> / <code>file(append:path)</code></td>
+<td>write/append a file</td>
+</tr>
+<tr>
+<td><code>ext:…</code></td>
+<td>external state machine (needs <code>external.state.machine</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Input vs. output targets (this trips up authors).</strong> In an <strong><code>input</code></strong> mapping the right-hand side
+is the <strong>function's input body</strong> — written with <strong>no namespace</strong> (e.g. <code>model.order -&gt; order</code> puts
+<code>order</code> into the function's input body), or <code>header.*</code> for input headers. In an <strong><code>output</code></strong> mapping
+the right-hand side uses the namespaces above. On the <strong>left</strong> of an <code>output</code> mapping, <code>result</code>
+(bare) is the <strong>whole</strong> function result, <code>result.x</code> a field, and <code>status</code>/<code>header</code>/<code>datatype</code> other
+function outputs. <code>model.*</code> always needs a <strong>specific key</strong> — no whole-<code>model</code> access.</p>
+<p><strong>Type-conversion suffixes</strong> (on a source): <code>:text</code> <code>:int</code> <code>:long</code> <code>:float</code> <code>:double</code> <code>:boolean</code>
+<code>:binary</code> <code>:b64</code> <code>:!</code> (negate) <code>:uuid</code> <code>:length</code> <code>:substring(a[,b])</code> <code>:concat(…)</code> <code>:and(model.k)</code>
+<code>:or(model.k)</code>. <strong>Special tokens:</strong> <code>-&gt;</code> (map), <code>[]</code> (append), <code>*</code> (whole-object map),
+<code>{model.key}</code> (runtime interpolation in <code>text()</code>), <code>.ITEM</code>/<code>.INDEX</code> (dynamic-fork iteration).
+The full catalog with examples is in <a href="../syntax/#tasks-and-data-mapping">Event Script Syntax</a>.</p>
+<h2 id="triggering-chaining-exceptions-flow">Triggering, chaining &amp; exceptions {#flow}</h2>
+<ul>
+<li>Tasks are referenced — in <code>first.task</code>, <code>next</code>, <code>join</code>, and <code>pipeline</code> — by their <strong><code>name</code></strong>
+  (which defaults to <code>process</code>).</li>
+<li>The engine runs <code>first.task</code>, then chains by execution type (<code>next</code>/<code>join</code>/<code>pipeline</code>).</li>
+<li>A <code>decision</code> task routes by the value its <code>output</code> maps into <code>decision</code>.</li>
+<li><code>flow.exception</code> catches unhandled task errors; a task's own <code>exception</code> overrides it; the handler
+  reads <code>error.*</code>. The built-in <code>resilience.handler</code> adds retry/backoff.</li>
+</ul>
+<h2 id="invariants-invariants">Invariants {#invariants}</h2>
+<p>Compile-time rules — violate them and the flow won't load:</p>
+<ol>
+<li><code>flow.id</code>, <code>flow.description</code>, <code>flow.ttl</code>, <code>first.task</code>, and <code>tasks</code> are all present; <code>ttl ≥ 1s</code>.</li>
+<li>Every task has <code>description</code>, <code>input</code>, <code>output</code>, and a valid <code>execution</code>.</li>
+<li>There is <strong>≥1 <code>end</code></strong> task.</li>
+<li><code>decision</code> needs <strong>≥2</strong> <code>next</code>; <code>sequential</code>/<code>response</code>/<code>pipeline</code> need <strong>exactly 1</strong>; <code>end</code>/<code>sink</code>
+   have <strong>no</strong> <code>next</code>.</li>
+<li><code>fork</code> requires <code>join</code>; <code>pipeline</code> requires a <code>pipeline</code> list.</li>
+<li>A <code>name</code> is required when the same <code>process</code> appears in more than one task.</li>
+<li><code>ext:</code> targets require <code>external.state.machine</code> to be declared.</li>
+</ol>
+<h2 id="see-also-see-also">See also {#see-also}</h2>
+<ul>
+<li><a href="../event-script-flow.json"><code>event-script-flow.json</code></a> — machine-readable form of this grammar.</li>
+<li><a href="../ai-agent-guide/">AI agent guide</a> — authoring flows deterministically from an agent.</li>
+<li><a href="../syntax/">Event Script Syntax</a> · <a href="../../flow-schema-reference/">Flow Schema Reference</a> — worked examples and exhaustive field docs.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../syntax/" class="btn btn-neutral float-left" title="Event Script Syntax"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../ai-agent-guide/" class="btn btn-neutral float-right" title="Flow AI agent guide">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../syntax/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../ai-agent-guide/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

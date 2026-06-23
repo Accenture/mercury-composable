@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-script/ai-agent-guide/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Flow AI agent guide - Composable for Java</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Flow AI agent guide";
+        var mkdocs_page_input_path = "guides/event-script/ai-agent-guide.md";
+        var mkdocs_page_url = "/mercury-composable/guides/event-script/ai-agent-guide/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part I · Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part II · Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part III · Layer 1 — Event-driven foundation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven-foundation/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part IV · Layer 2 — Composable orchestration</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Flow AI agent guide</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-flows-are-deployed-triggered-deploy">How flows are deployed &amp; triggered {#deploy}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#generate-deterministically-deterministic">Generate deterministically {#deterministic}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#recipe-recipe">Recipe {#recipe}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#worked-example-example">Worked example {#example}</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also-see-also">See also {#see-also}</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part V · Layer 3 — Knowledge Graph as Application</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part VI · Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Part VII · Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Part IV · Layer 2 — Composable orchestration</li>
+      <li class="breadcrumb-item active">Flow AI agent guide</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="ai-agent-guide-authoring-event-script-flows">AI agent guide — authoring Event Script flows</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>Read this if you are an AI agent</strong> asked to write or modify an Event Script flow. It is the
+  context you need — you should not have to read the engine source.</li>
+<li><strong>Generate from rules.</strong> The <a href="../flow-grammar/">flow grammar</a> and its machine-readable form
+  <a href="../event-script-flow.json"><code>event-script-flow.json</code></a> are the source of truth. Validate against them.</li>
+<li>A flow is a <strong>YAML file compiled and validated by the engine</strong> (<code>CompileFlows</code>). Your job is to
+  produce one that passes — the <a href="../flow-grammar/#invariants">invariants</a> are the contract.</li>
+</ul>
+</blockquote>
+<h2 id="how-flows-are-deployed-triggered-deploy">How flows are deployed &amp; triggered {#deploy}</h2>
+<p>A flow is not called directly:</p>
+<ol>
+<li>Write the flow YAML under <code>src/main/resources/flows/</code>.</li>
+<li>Register its file in the <strong><code>flows.yaml</code></strong> manifest.</li>
+<li>Map an HTTP endpoint to it in <strong><code>rest.yaml</code></strong> (<code>flow: {flow-id}</code>) — or trigger it by event.</li>
+</ol>
+<p>The engine compiles every registered flow at startup; a flow that violates the grammar fails to
+load. So correctness is checkable <em>before</em> runtime.</p>
+<h2 id="generate-deterministically-deterministic">Generate deterministically {#deterministic}</h2>
+<p>Use <a href="../event-script-flow.json"><code>event-script-flow.json</code></a> to look up the exact execution types, task
+fields, and mapping namespaces; use <a href="../flow-grammar/"><code>flow-grammar.md</code></a> for the rules. Then verify:</p>
+<blockquote>
+<p><strong>Pre-write checklist</strong>
+- [ ] <code>flow.id</code>, <code>flow.description</code>, <code>flow.ttl</code> (≥1s), <code>first.task</code>, and <code>tasks</code> are present.
+- [ ] Every task has <code>description</code>, <code>input</code>, <code>output</code>, and a valid <code>execution</code>.
+- [ ] There is <strong>≥1 task with <code>execution: end</code></strong>.
+- [ ] <code>next</code> matches the execution type: <code>decision</code> ≥2; <code>sequential</code>/<code>response</code>/<code>pipeline</code> exactly 1;
+      <code>end</code>/<code>sink</code> none.
+- [ ] <code>fork</code> has a <code>join</code>; <code>pipeline</code> has a <code>pipeline</code> list; a <code>decision</code> task's <code>output</code> maps a value
+      into <code>decision</code>.
+- [ ] If the same <code>process</code> is used twice, each such task has a unique <code>name</code>.
+- [ ] Every <code>source -&gt; target</code> uses valid namespaces (see the grammar's mapping section);
+      <code>ext:</code> targets require <code>external.state.machine</code>.</p>
+</blockquote>
+<h2 id="recipe-recipe">Recipe {#recipe}</h2>
+<ol>
+<li><strong>Header:</strong> set <code>flow.id</code>, <code>description</code>, <code>ttl</code>, optional <code>exception</code>; pick <code>first.task</code>.</li>
+<li><strong>Tasks:</strong> for each, set <code>process</code> (or <code>flow://</code>), <code>description</code>, <code>input</code>, <code>output</code>, <code>execution</code>,
+   and the <code>next</code>/<code>join</code>/<code>pipeline</code> its type requires.</li>
+<li><strong>Terminate:</strong> ensure at least one <code>end</code> task whose <code>output</code> builds the response.</li>
+<li><strong>Wire up:</strong> register in <code>flows.yaml</code>; add a <code>rest.yaml</code> mapping if HTTP-facing.</li>
+</ol>
+<h2 id="worked-example-example">Worked example {#example}</h2>
+<p>A minimal flow: receive a POST, call a <code>greeting</code> function, return its result.</p>
+<pre><code class="language-yaml">flow:
+  id: 'greeting-flow'
+  description: 'Greet a caller by name'
+  ttl: 10s
+first.task: 'greeting.service'
+tasks:
+  - input:
+      - 'input.body.name -&gt; name'
+    process: 'greeting.service'
+    output:
+      - 'result.message -&gt; output.body.message'
+    description: 'Build the greeting'
+    execution: end
+</code></pre>
+<p>A decision example (branch on a function result):</p>
+<pre><code class="language-yaml">  - input:
+      - 'input.body.amount -&gt; amount'
+    process: 'risk.scorer'
+    output:
+      - 'result.high_risk -&gt; decision'
+    description: 'Score and branch'
+    execution: decision
+    next:
+      - 'approve.task'      # decision = false -&gt; next[0]
+      - 'review.task'       # decision = true  -&gt; next[1]
+</code></pre>
+<h2 id="see-also-see-also">See also {#see-also}</h2>
+<ul>
+<li><a href="../flow-grammar/">Event Script flow grammar</a> + <a href="../event-script-flow.json"><code>event-script-flow.json</code></a> — the source of truth.</li>
+<li><a href="../syntax/">Event Script Syntax</a> — worked examples and the full data-mapping catalog.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../flow-grammar/" class="btn btn-neutral float-left" title="Flow grammar"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../flow-schema-reference/" class="btn btn-neutral float-right" title="Flow Configuration Schema">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../flow-grammar/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../flow-schema-reference/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
