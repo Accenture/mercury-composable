@@ -149,8 +149,7 @@
   case-only-redirect guard stays (dormant) to reject a bad redirect if one is ever re-added.
   <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - **ADR pattern adopted** (the agent-memory optional Architecture Decision Record log; opted in 2026-06-22, Eric). A
-  human-facing governance ledger lives at `docs/arch-decisions/ADR.md` — **the repo's own path; the agent-memory default
-  `docs/ADR.md` is not used** (AGENTS.md pointer updated to match). `DESIGN-NOTES.md` — the author's design notepad — was **removed** (2026-06-23) as a drift source; the ADR
+  human-facing governance ledger lives at `docs/arch-decisions/ADR.md`. `DESIGN-NOTES.md` — the author's design notepad — was **removed** (2026-06-23) as a drift source; the ADR
   ledger now holds the durable design rationale, and the `arch-decisions/` folder is repurposed for the ledger. Seeded
   **retrospectively** with 5 ADRs that **formalize** existing Design-altitude facts — ADR-0001→`functions-decoupled-routes`,
   ADR-0002→`virtual-threads-rpc`, ADR-0003→`typed-io-map-or-pojo`, ADR-0004 & ADR-0005→`docs-content-canon` (the

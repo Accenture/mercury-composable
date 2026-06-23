@@ -35,8 +35,8 @@ altitude transition (confirming the Vision, opening or closing a gap) is a **hum
 gate**: propose, then let the human approve. Never fabricate the Vision.
 
 The Design altitude keeps an Architecture Decision Record log — adopted in this repo
-(2026-06-22) at `docs/arch-decisions/ADR.md` (the repo's own path; the agent-memory default
-is `docs/ADR.md`) — a human-facing governance ledger of durable architecture decisions
+(2026-06-22) at `docs/arch-decisions/ADR.md` — a human-facing governance ledger of durable
+architecture decisions
 (see `.agent/schema.md`). It is read **on demand**, **not** part of the per-session read;
 any `(ADR-NNNN)` tag on an invariant is a human pointer, not a cue to open it.
 **This repo has adopted the log, so keep it alive:** when you make a new durable architecture
