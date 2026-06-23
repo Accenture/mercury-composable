@@ -60,7 +60,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
   [Minimalist Property Graph](guides/knowledge-graph/property-graph.md)
 - **Concepts** — [Methodology](guides/methodology.md) · [Architecture Overview](guides/architecture.md) ·
   [Event-driven Foundation](guides/event-driven-foundation.md) ·
-  [Architecture Decision Records](arch-decisions/ADR.md) · [Design Notes](notes/design-notes.md)
+  [Architecture Decision Records](arch-decisions/ADR.md)
 - **Reference** — [Annotations](guides/annotations-reference.md) ·
   [Configuration](guides/configuration-reference.md) · [Event Envelope](guides/event-envelope-reference.md) ·
   [Flow Schema](guides/flow-schema-reference.md) · [API Overview](guides/api-overview.md)

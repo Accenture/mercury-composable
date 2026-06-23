@@ -17,8 +17,8 @@ foundational decoupling decision; the rest build on it.
 ADR-0001 to 0005 were seeded as a **retrospective** in 2026-06-22 from the decisions already
 governing the codebase — verified against the source (`platform-core`,
 `event-script-engine`, `minigraph-playground-engine`) and the published guides, which are
-the source of truth in case of ambiguity. Narrative design rationale that is *not* a
-governance decision lives separately in [Design Notes](../notes/design-notes.md).
+the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
+in that ADR's own *Rationale* section.
 
 ---
 
@@ -90,10 +90,14 @@ layers, which conflated the conceptual layering with the request pipeline.
 **Status:** Accepted · **Date:** 2026-06-22T22:47:23.000Z · **Serves:** vision-mercury-composable
 <!-- id: adr-0003 | status: accepted | formalizes: typed-io-map-or-pojo -->
 
-**Abstract.** A `TypedLambdaFunction<I, O>`'s input and output type must be a **Map or a
-PoJo** — a List of PoJo is **not** supported. Functions exchange the immutable
-`EventEnvelope` message container: headers are `Map<String,String>`, the body is
-MsgPack-serialized on the wire, and PoJo↔Map conversion uses a customized Gson.
+**Abstract.** A `TypedLambdaFunction<I, O>`'s input and output type is a **Map or a PoJo**. A
+**List of PoJo is not a data-mapping contract** in Event Script (Layer 2) or the Knowledge Graph
+(Layer 3) — where values are mapped key by key, use a Map or a single PoJo. **Layer 1 (Platform Core)
+is the exception:** a `@PreLoad`-annotated function may declare a `List<PoJo>` input via the
+`inputPojoClass` hint to ingest an incoming JSON-*list* payload from an external source (see
+Consequences). Functions exchange the immutable `EventEnvelope` message container: headers are
+`Map<String,String>`, the body is MsgPack-serialized on the wire, and PoJo↔Map conversion uses a
+customized Gson.
 
 **Rationale.** Constraining I/O to Map-or-PoJo keeps the *input data mapping* in Event
 Script clean and readable and avoids serialization edge cases. A PoJo enforces an
@@ -102,10 +106,13 @@ without admitting ambiguous generic collections. The accepted consequences are t
 serialization gotchas that follow from the wire format: MsgPack downcasts a small `Long`
 to `Integer` on the wire (pin the type with a PoJo when it matters); the customized Gson
 treats integers in a Map as `Long` (use `util.str2int` / `util.str2long` for safe
-conversion); Map keys must be strings (non-string keys are auto-converted). The trade-off:
-a caller with a List of PoJo must wrap it in a holder PoJo or a Map — a deliberate price
-for predictable serialization. Functions may still return `Mono<T>` / `Flux<T>` for
-reactive pipelines.
+conversion); Map keys must be strings (non-string keys are auto-converted). The one exception to the
+Map-or-PoJo rule is a **Layer-1 ingestion edge case**: to accept an incoming JSON *list* payload from
+an external source you don't control, a `@PreLoad`-annotated platform-core function declares a
+`List<PoJo>` input via `inputPojoClass = X.class` — the serializer deserializes the list of maps into
+the typed list, and the function extracts the key-values it needs. (Outgoing list payloads need no
+special handling: Event Script's `AsyncHttpClient` and the Knowledge Graph's API-fetcher skill do their
+own data mapping.) Functions may still return `Mono<T>` / `Flux<T>` for reactive pipelines.
 
 ---
 
@@ -148,7 +155,7 @@ written in code; the only link between a flow and a function is the route-name s
 can be developed, tested, deployed, relocated across a service mesh, and recomposed into
 new flows without recompiling or knowing about each other. Moving orchestration out of
 code and into configuration makes the sequencing reviewable and changeable on its own, and
-(per the design notes) roughly halves application code. The alternatives — direct method
+roughly halves application code. The alternatives — direct method
 calls or dependency-injection wiring between components, and imperative orchestration code
 — were rejected because they reintroduce compile-time coupling and bury the transaction
 flow in control logic. The accepted consequence is that the route-name string is the whole

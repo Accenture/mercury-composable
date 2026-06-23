@@ -45,8 +45,9 @@ docs/ (guides/, arch-decisions/, notes/)  ← docs (mkdocs `docs_dir: docs`);
 
 - **Functions** — plain Java classes annotated `@PreLoad(route="...", instances=N)`
   implementing either `LambdaFunction` (untyped, takes `EventEnvelope`) or
-  `TypedLambdaFunction<I, O>` (typed; input/output must be Map or PoJo — a List of
-  PoJo is **not** supported). Registered by route name in the `Platform` registry
+  `TypedLambdaFunction<I, O>` (typed; input/output is a Map or PoJo — a List of PoJo is not a
+  data-mapping contract for Event Script or the Knowledge Graph; Layer 1 accepts a `List<PoJo>` input
+  via `@PreLoad(inputPojoClass=…)` for external JSON-list ingestion). Registered by route name in the `Platform` registry
   and addressed exclusively by that string.
 - **EventEnvelope** — immutable message container between functions. Headers are
   `Map<String,String>`; body is MsgPack-serialized.

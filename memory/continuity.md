@@ -52,7 +52,9 @@
 - Functions are fully decoupled — coupled only by route-name strings and
   `EventEnvelope`; orchestration lives in YAML event flows, not code. (ADR-0001)
   <!-- id: functions-decoupled-routes | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
-- `TypedLambdaFunction` I/O is Map or PoJo only — a List of PoJo is unsupported. (ADR-0003)
+- `TypedLambdaFunction` I/O is Map or PoJo for Event Script (Layer 2) and Knowledge Graph (Layer 3)
+  data mapping — a List of PoJo is **not** a data-mapping contract there. Layer 1 (Platform Core) may
+  accept a `List<PoJo>` input via `@PreLoad(inputPojoClass=…)` to ingest an external JSON-list payload. (ADR-0003)
   <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
 
 ## Key Decisions

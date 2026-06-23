@@ -158,9 +158,10 @@ public class InputAsListOfPoJo implements TypedLambdaFunction<List<PoJo>, Object
 }
 ```
 
-> *Note*: List of PoJo as input to a composable function is not supported by input data mapping
-          of Event Script. This is only allowed when sending events programmatically for certain
-          use cases.
+> *Note*: A List of PoJo as input is not a data-mapping contract in Event Script (Layer 2) or the
+          Knowledge Graph (Layer 3). It is supported at Layer 1 (Platform Core) for the edge case of
+          ingesting an incoming JSON-list payload from an external source — declare the `List<PoJo>`
+          input and add the `inputPojoClass` hint as shown above.
 
 ## PoJo deserialization hints
 
