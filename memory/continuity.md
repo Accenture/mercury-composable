@@ -296,8 +296,9 @@
   **Progress (2026-06-23):** (1) content polishing largely **done** — Quickstart/Getting-Started merged,
   the 3-layer site polished, wide reference tables fixed site-wide via `docs/css/extra.css` (wrap, not
   per-cell `<br>`), and a code-vs-docs **drift validation** of annotations/configuration/reserved-names
-  completed + corrected. (2) AI-context-discovery on-ramp **still pending** — the next focus. A PR for the
-  whole rewrite was opened for peer review on 2026-06-23.
+  completed + corrected. (2) AI-context-discovery on-ramp **still pending** — the next focus. The whole
+  rewrite is **ready for peer review** (2026-06-23); `gh pr create` is blocked for the Enterprise-Managed-User,
+  so the PR is opened **manually via the GitHub web UI** (branch is fully pushed).
   <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - [ ] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
   Kafka notification function (outbound) to this repo.** Today only the HTTP flow adapter ships here (see
