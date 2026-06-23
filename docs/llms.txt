@@ -13,6 +13,7 @@
 ## Start here
 - [Home](https://accenture.github.io/mercury-composable/): the three-layer model and where to go next.
 - [Getting Started](https://accenture.github.io/mercury-composable/guides/getting-started/): a working app in five minutes (quickstart), then how a request flows through flows, functions, and REST.
+- [AI Developer Guide](https://accenture.github.io/mercury-composable/guides/ai-developer-guide/): **start here if you are an AI agent** — brownfield orientation, layer-choice decision tree, adding features, testing, and pointers to each layer's DSL guide.
 
 ## Layer 1 — Event-driven foundation (Platform Core)
 - [Architecture Overview](https://accenture.github.io/mercury-composable/guides/architecture/): layers, components, the in-memory event bus, threading, core APIs.
@@ -20,6 +21,7 @@
 - [Event-driven Foundation](https://accenture.github.io/mercury-composable/guides/event-driven/): Layer 1 overview — functions, route names, PostOffice, EventEnvelope, the in-memory event bus.
 - [Write your first function](https://accenture.github.io/mercury-composable/guides/event-driven/write-your-first-function/): step-by-step — define a function, expose it over HTTP, call it via PostOffice, test it.
 - [Function Execution Strategies](https://accenture.github.io/mercury-composable/guides/event-driven/function-execution/): virtual vs. kernel threads, Mono/Flux.
+- [Function AI agent guide](https://accenture.github.io/mercury-composable/guides/event-driven/ai-agent-guide/): @PreLoad annotation contract, TypedLambdaFunction interface, pre-write checklist, PostOffice patterns — for deterministic function generation.
 - [REST Automation](https://accenture.github.io/mercury-composable/guides/rest-automation/): declare HTTP endpoints via rest.yaml, no controllers.
 
 ## Layer 2 — Composable orchestration (Event Script)

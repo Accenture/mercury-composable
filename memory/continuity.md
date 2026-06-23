@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-23 | agent: Claude Code
+- **last_session:** 2026-06-23T18:28:51Z | agent: Claude Code
 - **last_review:** 2026-06-21 | through 2026-06-22-003844.md
 - **last_invariant_check:** (none yet)
 
@@ -176,6 +176,15 @@
   it is the boundary *in front* that invokes the adapter. Corrected in architecture.md / documentation-conventions.md /
   ADR-0004.)
   <!-- id: request-pipeline-model | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- **Service mesh is opt-in, not the default.** `cloud.connector=none` is the framework default. The Kafka
+  service mesh (`cloud.connector=kafka` + presence-monitor) solves exactly two problems: (1) synchronous
+  request-response across application instances over Kafka (sync over async), and (2) service discovery
+  between pods. Applications that do not need either must be designed cloud-native (self-contained,
+  horizontally scaled, no cross-instance coupling). Superimposing sync over async is a recipe for a
+  "distributed monolith" — full operational cost of distribution with monolith-level coupling. The mesh is an
+  advanced opt-in for specific use cases (cross-application RPC, leader selection, pod-aware broadcast).
+  This preference must be front-and-center in documentation and AI guides. (ADR-0006)
+  <!-- id: kafka-mesh-opt-in | created: 2026-06-23 | last_used: 2026-06-23 | uses: 1 | tier: core -->
 - **Kafka flow adapter + notification function are NOT packaged in this repo** — only the built-in HTTP flow adapter
   (`HttpToFlow` / `http.flow.adapter`) ships here. The `connectors/adapters/kafka/*` modules are the **cloud connector**
   (event-stream mesh, `cloud.connector=kafka`) — a *different* concern, not a flow adapter that triggers Event Script
@@ -270,7 +279,7 @@
   sweep; published the canon as `docs/guides/documentation-conventions.md` and added a CI drift check
   (`scripts/check-doc-canon.py`).
   <!-- id: thread-docs-content-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
-- [ ] (in progress) **Layer-standardization reorg** — "Shared Foundations + lean parallel layers"
+- [x] (in progress) **Layer-standardization reorg** — "Shared Foundations + lean parallel layers"
   (`docs-content-canon`). Each of the 3 layers gets the same shape: Overview → Tutorial → Grammar →
   Reference → AI guide → Integration; framework-wide pages live once in a Foundations part.
   **Pass 1 done (2026-06-22):** Foundations part created (architecture + methodology); new Layer-1 Overview
@@ -286,8 +295,11 @@
   see `docs-no-redirects`). Eric verified navigation in a browser.
   **Open (Eric's call):** Layer 1's overview is a flat page (`event-driven-foundation.md`), not a section
   folder — fold into `guides/event-driven/` for full parallelism, or leave as the layer's lead page?
-  <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
-- [ ] (next agenda — Eric, 2026-06-22) **Content polishing round 2 + AI context discovery.** Next working
+  **Done 2026-06-23:** folded into `guides/event-driven/` (index.md + function-execution.md + write-your-first-function.md tutorial);
+  Layer 1 now fully parallel to Layers 2 & 3; all cross-references updated; mkdocs build --strict 0 warnings; deployed to gh-pages.
+  `site/` gitignored and untracked.
+  <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: working -->
+- [x] (next agenda — Eric, 2026-06-22) **Content polishing round 2 + AI context discovery.** Next working
   session with Eric: (1) **continue content polishing** (improving but "not there yet"); (2) strengthen
   **AI context discovery** so an AI agent can collaborate with a human on **greenfield *and* brownfield**
   mercury-composable projects across every artifact — knowledge graph, Event Script, `rest.yaml`,
@@ -299,10 +311,13 @@
   **Progress (2026-06-23):** (1) content polishing largely **done** — Quickstart/Getting-Started merged,
   the 3-layer site polished, wide reference tables fixed site-wide via `docs/css/extra.css` (wrap, not
   per-cell `<br>`), and a code-vs-docs **drift validation** of annotations/configuration/reserved-names
-  completed + corrected. (2) AI-context-discovery on-ramp **still pending** — the next focus. The whole
+  completed + corrected. (2) AI-context-discovery on-ramp **done (2026-06-23):** created
+  `docs/guides/ai-developer-guide.md` — cross-layer guide for AI agents joining a mercury-composable
+  project (brownfield orientation, layer-choice decision tree, add-a-feature at each layer, testing,
+  invariants, DSL guide table); added to nav (Foundations) and `llms.txt` (Start here). The whole
   rewrite is **ready for peer review** (2026-06-23); `gh pr create` is blocked for the Enterprise-Managed-User,
   so the PR is opened **manually via the GitHub web UI** (branch is fully pushed).
-  <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: working -->
 - [ ] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
   Kafka notification function (outbound) to this repo.** Today only the HTTP flow adapter ships here (see
   `kafka-adapter-not-in-repo`); production installations have their own. Deferred until the documentation rewrite

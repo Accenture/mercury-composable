@@ -10,11 +10,13 @@ nav:
   - Foundations:
     - Architecture Overview: guides/architecture.md
     - Methodology: guides/methodology.md
+    - AI Developer Guide: guides/ai-developer-guide.md
 
   - Layer 1 — Event-driven:
     - Overview: guides/event-driven/index.md
     - Write your first function: guides/event-driven/write-your-first-function.md
     - Function Execution Strategies: guides/event-driven/function-execution.md
+    - Function AI agent guide: guides/event-driven/ai-agent-guide.md
     - REST Automation: guides/rest-automation/index.md
     - REST grammar: guides/rest-automation/rest-grammar.md
     - REST AI agent guide: guides/rest-automation/ai-agent-guide.md

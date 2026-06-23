@@ -22,6 +22,36 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0006 — Cloud-native by default; service mesh for sync-over-async and service discovery only {#adr-0006}
+**Status:** Accepted · **Date:** 2026-06-23T18:30:00.000Z · **Serves:** vision-mercury-composable
+<!-- id: adr-0006 | status: accepted | formalizes: kafka-mesh-opt-in -->
+
+**Abstract.** The Kafka service mesh (`cloud.connector=kafka` + presence-monitor) is an **opt-in
+capability** that solves two specific problems: (1) synchronous request-response between different
+application instances over Kafka, and (2) service discovery between running pods. Applications that do
+not need either capability must be designed **cloud-native** — each instance self-contained, stateless,
+and horizontally scaled without cross-instance coupling. Enabling `cloud.connector=kafka` is a
+deliberate architectural choice, not a default or a convenience. `cloud.connector=none` is the
+framework default.
+
+**Rationale.** Superimposing synchronous request-response over Kafka (an inherently asynchronous
+transport) is technically feasible — the same pattern appears in IBM MQ, Redis pub/sub for RPC, and
+other enterprise messaging systems — but it is architecturally expensive. Cross-instance synchronous
+RPC creates latency dependencies between otherwise independent scaling units: if one pod is slow, every
+caller waiting on it is slow; errors propagate across instance boundaries; horizontal scaling no longer
+provides isolation between workloads. Overuse of this pattern degrades a cloud application into a
+**distributed monolith** — all the operational complexity of a distributed system combined with the
+tight coupling of a monolith. Cloud-native design avoids these risks: inbound load is distributed at
+the infrastructure layer (load balancer / Kubernetes ingress), and each instance handles its share
+independently. The service mesh should be adopted only when one of its two genuine use cases applies:
+(a) cross-application synchronous RPC that cannot be decoupled further, or (b) distributed resilience
+patterns that require peer awareness (leader selection, failover, pod-aware broadcast). Consequence:
+documentation, tooling, and AI agent guides must treat the service mesh as an advanced, opt-in topic —
+not the standard deployment model — to avoid steering users toward the distributed monolith
+anti-pattern.
+
+---
+
 ## ADR-0005 — One atom, four roles
 **Status:** Accepted · **Date:** 2026-06-22T22:47:23.000Z · **Serves:** vision-mercury-composable
 <!-- id: adr-0005 | status: accepted | formalizes: docs-content-canon -->

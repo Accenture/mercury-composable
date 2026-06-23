@@ -98,7 +98,7 @@ identified by `flow.id`. Multiple comma-separated paths are merged. See
 | `yaml.event.over.http` | `String` (comma-sep paths) | `classpath:/event-over-http.yaml` | Location(s) of the event-over-HTTP target mapping configuration. |
 | `yaml.flow.automation` | `String` (comma-sep paths) | `classpath:/flows.yaml` | Location(s) of Event Script flow definition files. |
 | `yaml.journal` | `String` (comma-sep paths) | `classpath:/journal.yaml` | Location(s) of the journal configuration (lists routes whose messages are recorded). |
-| `yaml.multicast` | `String` (comma-sep paths) | `classpath:/multicast.yaml` | Location(s) of the multicast route configuration. |
+| `yaml.multicast` | `String` (comma-sep paths) | `classpath:/multicast.yaml` | Location(s) of the multicast route configuration. Multicast is a **local-JVM fan-out**: a message sent to a source route is automatically relayed to all listed target routes within the same in-memory event bus. Format: `multicast: [{source: "a.route", targets: ["b.route", "c.route"]}]`. Not the same as `PostOffice.broadcast()`, which is a distributed service-mesh operation. |
 
 ---
 

@@ -1,39 +1,63 @@
 ---
 title: Minimalist Service Mesh
 summary: Set up service discovery and inter-instance routing using Kafka as a connector, with a
-  built-in presence monitor — no sidecars.
+  built-in presence monitor — no sidecars. Opt-in only when sync-over-async RPC or service
+  discovery is genuinely needed.
 layer: operate
 audience: [architect, developer]
-keywords: [service mesh, kafka, service discovery, presence monitor, connectors, routing]
+keywords: [service mesh, kafka, service discovery, presence monitor, connectors, routing, distributed monolith]
 ---
 
 # Minimalist Service Mesh
 
-*Guide: How to set up service discovery and inter-instance routing using Kafka as a connector.*
+*Guide: When to use the service mesh, and how to set it up with Kafka and a presence monitor.*
 
 > **At a glance**
 >
-> - **What** — a lightweight service mesh: Kafka connectors + a presence monitor for service
->   discovery and inter-instance event routing, without sidecars.
-> - **For** architects and developers scaling Mercury across instances.
+> - **What** — an opt-in Kafka + presence-monitor layer that adds (1) synchronous request-response
+>   across application instances and (2) service discovery between pods.
+> - **Default is no mesh.** `cloud.connector=none` is the default. Most applications that scale
+>   horizontally as independent instances do not need a service mesh at all.
+> - **Enabling the mesh is a deliberate architectural choice** — only when your application genuinely
+>   needs cross-instance sync RPC or peer discovery.
+> - **Risk** — sync over async creates cross-instance coupling; without discipline it turns a cloud
+>   application into a distributed monolith.
+> - **For** architects deciding whether to introduce the mesh, and developers setting it up.
 
-Service mesh is dedicated infrastructure for inter-container communication using "sidecar" and
-"control plane".
+## When to use — and when not to {#when-to-use}
 
-Service mesh systems require additional administrative containers (PODs) for "control plane" and "service discovery."
+The service mesh solves exactly **two problems**:
 
-The additional infrastructure requirements vary among products.
+1. **Synchronous request-response across application instances.** When application A must call a
+   function in application B and wait for the result over Kafka — which is inherently asynchronous.
+   This is the same pattern as IBM MQ or Redis pub/sub for RPC: a synchronous semantic layered over
+   an asynchronous transport.
 
-## Using kafka as a minimalist service mesh
+2. **Service discovery.** Knowing which instances are running, detecting peers joining and leaving,
+   and building distributed resilience patterns — leader selection, failover, pod-aware broadcast.
 
-We will discuss using Kafka as a minimalist service mesh.
+**If your application does not need either of these, do not enable the service mesh.**
 
-> *Important*: Always design your application system in an event-driven manner to decouple application services
-          from each other. You should avoid using service mesh to tightly couple application services together
-          because it would lead to the creation of a "Distributed Monolith". Minimalist service mesh
-          is designed as a service discovery mechanism so that you can detect the presence of
-          other application instances. You can use it for operation control mechanism and "leader selection"
-          in writing resilient distributed application.
+Cloud-native design means each application instance is fully self-contained. Functions communicate
+over the in-memory event bus. The infrastructure — a load balancer or Kubernetes ingress — distributes
+inbound HTTP load across identical, stateless instances. No instance needs to know about another.
+
+**The risk.** Superimposing synchronous calls over Kafka is architecturally expensive. Cross-instance
+synchronous RPC creates latency dependencies between scaling units: if one pod is slow, callers are
+slow; errors propagate across instance boundaries; horizontal scaling no longer provides isolation.
+Overuse of this pattern degrades a cloud application into a **distributed monolith** — all the
+operational cost of distribution with the tight coupling of a monolith. See [ADR-0006](../arch-decisions/ADR.md#adr-0006) for the full rationale.
+
+`cloud.connector=none` is the framework default because most applications do not need a service mesh.
+Enabling `cloud.connector=kafka` is a deliberate, opt-in architectural decision.
+
+---
+
+## Using Kafka as a minimalist service mesh {#setup}
+
+When the use case does warrant a service mesh, the framework provides a Kafka-based implementation
+without sidecars. Each application instance maintains a distributed routing table; the presence
+monitor is the lightweight control plane that keeps it current.
 
 Typically, a service mesh system uses a "side-car" to sit next to the application container in the same POD to provide
 service discovery and network proxy services.
@@ -370,6 +394,45 @@ When an application instance stops, the presence monitor will detect the event, 
 release the topic associated with the disconnected application instance.
 
 The presence monitor is using the "presence" feature in websocket, thus we call it "presence" monitor.
+
+## Broadcast vs multicast {#broadcast-vs-multicast}
+
+With the service mesh running, `PostOffice.broadcast()` becomes meaningful. It delivers an event to
+**every pod / container** that has the target route registered — not just one instance selected by
+load balancing.
+
+```java
+// Delivers to ALL instances of "cache.invalidate" across all running pods
+var po = new PostOffice(headers, instance);
+po.broadcast(new EventEnvelope().setTo("cache.invalidate").setBody(Map.of("key", "session-42")));
+```
+
+The cloud connector reads the broadcast flag, queries the distributed routing table (maintained by the
+presence monitor), and publishes the event to every known instance. Without `cloud.connector=kafka` and
+presence-monitor running, `po.broadcast()` degrades silently to unicast on the local instance.
+
+**Multicast is a separate, unrelated feature.** It operates entirely within the local JVM's in-memory
+event bus — no service mesh required. A multicast entry in `multicast.yaml` registers a `LocalPublisher`
+function at the source route that relays each incoming message to all listed target routes **within the
+same application instance**:
+
+```yaml
+# multicast.yaml — local fan-out only
+multicast:
+  - source: "order.placed"
+    targets:
+      - "inventory.handler"
+      - "notification.handler"
+      - "audit.handler"
+```
+
+| | Multicast | Broadcast |
+|:---|:---|:---|
+| Scope | Single JVM | All pods in the service mesh |
+| Config | `multicast.yaml` | `po.broadcast()` API call |
+| Requires | Nothing extra | `cloud.connector=kafka` + presence-monitor |
+| Without mesh | Works (always local) | Silently degrades to unicast |
+
 ## See also
 
 - [Event over HTTP](event-over-http.md) — cross-instance event communication.

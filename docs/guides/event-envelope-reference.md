@@ -387,7 +387,9 @@ String token = po.sendLater(EventEnvelope event, Date future)
 
 ### Broadcast
 
-Delivers to all registered instances of the target function:
+Delivers to **all instances of the target route across all pods in the Kafka service mesh**.
+Broadcast is only meaningful when `cloud.connector=kafka` and presence-monitor are running.
+Without a service mesh it degrades to unicast on the local instance.
 
 ```java
 po.broadcast(String to, Kv... parameters)
@@ -395,6 +397,12 @@ po.broadcast(String to, Object body)
 po.broadcast(String to, Object body, Kv... parameters)
 po.broadcast(EventEnvelope event)
 ```
+
+> **Local fan-out within the same JVM is a separate feature — multicast.** Configure it in
+> `multicast.yaml` (`yaml.multicast` property): a source route is intercepted and the message
+> relayed to every listed target route, entirely within the in-memory event bus.
+> See [Minimalist Service Mesh](service-mesh.md) for the distributed broadcast context and
+> [Configuration Reference](configuration-reference.md) for the `yaml.multicast` key.
 
 ### Request-Reply: three Future types
 
