@@ -3,23 +3,23 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/function-execution/" />
-      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-driven/function-execution/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
     <title>Function Execution Strategies - Composable for Java</title>
-    <link rel="stylesheet" href="../../css/theme.css" />
-    <link rel="stylesheet" href="../../css/theme_extra.css" />
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
-        <link href="../../css/extra.css" rel="stylesheet" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
     
       <script>
         // Current page data
         var mkdocs_page_name = "Function Execution Strategies";
-        var mkdocs_page_input_path = "guides/function-execution.md";
-        var mkdocs_page_url = "/mercury-composable/guides/function-execution/";
+        var mkdocs_page_input_path = "guides/event-driven/function-execution.md";
+        var mkdocs_page_url = "/mercury-composable/guides/event-driven/function-execution/";
       </script>
     
     <!--[if lt IE 9]>
-      <script src="../../js/html5shiv.min.js"></script>
+      <script src="../../../js/html5shiv.min.js"></script>
     <![endif]-->
       <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
       <script>hljs.highlightAll();</script> 
@@ -31,9 +31,9 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
     <div class="wy-side-scroll">
       <div class="wy-side-nav-search">
-          <a href="../.." class="icon icon-home"> Composable for Java
+          <a href="../../.." class="icon icon-home"> Composable for Java
         </a><div role="search">
-  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
       <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
@@ -41,24 +41,26 @@
 
       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Orientation</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Foundations</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../event-driven-foundation/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../write-your-first-function/">Write your first function</a>
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Function Execution Strategies</a>
     <ul class="current">
@@ -92,77 +94,77 @@
     </li>
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/syntax/">Event Script Syntax</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/flow-grammar/">Flow grammar</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/ai-agent-guide/">Flow AI agent guide</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/build-your-first-graph/">Build your first graph</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/skills-reference/">Built-in skills reference</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/command-reference/">MiniGraph command grammar</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/ai-agent-guide/">AI agent guide</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/composing-the-layers/">Composing the layers</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/property-graph/">Minimalist Property Graph</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Operate & integrate</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../api-overview/">API Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
                 </li>
               </ul>
               <ul>
@@ -184,13 +186,13 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
       <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../..">Composable for Java</a>
+          <a href="../../..">Composable for Java</a>
         
       </nav>
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Layer 1 — Event-driven</li>
       <li class="breadcrumb-item active">Function Execution Strategies</li>
     <li class="wy-breadcrumbs-aside">
@@ -219,7 +221,7 @@
 a network event system, a database or an external REST resource.</p>
 <p>A "task" or "function" is a class that implements the LambdaFunction or TypedLambdaFunction interface. 
 Within each function boundary, it may have private methods that are fully contained within the class.</p>
-<p>As discussed in <a href="../getting-started/">Getting Started</a>, a function may look like this:</p>
+<p>As discussed in <a href="../../getting-started/">Getting Started</a>, a function may look like this:</p>
 <pre><code class="language-java">@PreLoad(route = &quot;my.first.function&quot;, instances = 10)
 public class MyFirstFunction implements TypedLambdaFunction&lt;MyPoJo, AnotherPoJo&gt; {
 
@@ -236,7 +238,7 @@ by API interface contract in an event flow configuration.</p>
 <p>For event choreography, input body is represented as a PoJo or a Map of key-values so that you can use the
 dot-bracket convention to map subset of a PoJo from one function to another if needed.</p>
 <p>In addition to the input PoJo, you may pass additional parameters to the user function as event headers.
-We will discuss this in <a href="../event-script/syntax/">Event Script Syntax</a>.</p>
+We will discuss this in <a href="../../event-script/syntax/">Event Script Syntax</a>.</p>
 <h2 id="non-blocking-design">Non-blocking design</h2>
 <p>While you can apply sequential, object-oriented or reactive programming styles in your functions, you should pay
 attention to making your function non-blocking and fast.</p>
@@ -429,7 +431,7 @@ EventEnvelope result = po.request(requestEvent, timeout).get();
   manage event flows using one or more configuration files.</p>
 </blockquote>
 <h3 id="kernel-thread-pool">Kernel thread pool</h3>
-<p>For complete parameter details on <code>@KernelThreadRunner</code>, <code>@EventInterceptor</code>, and all other annotations, see the <a href="../annotations-reference/">Annotations Reference</a>.</p>
+<p>For complete parameter details on <code>@KernelThreadRunner</code>, <code>@EventInterceptor</code>, and all other annotations, see the <a href="../../annotations-reference/">Annotations Reference</a>.</p>
 <p>When you add the annotation "KernelThreadRunner" in a function declared as LambdaFunction or TypedLambdaFunction, 
 the function will be executed using a "kernel thread pool" and Java will run your function in native 
 "preemptive multitasking" mode.</p>
@@ -485,17 +487,17 @@ of concurrent RPC requests in a single compute machine, container or serverless 
 and encapsulation mean that you can precisely control how your application performs for each functional logic block.</p>
 <h2 id="see-also">See also</h2>
 <ul>
-<li><a href="../getting-started/">Getting Started</a> — build your first functions in a working app.</li>
-<li><a href="../architecture/">Architecture Overview</a> — where functions sit in the event-driven runtime.</li>
-<li><a href="../rest-automation/">REST Automation</a> — expose functions as HTTP endpoints.</li>
-<li><a href="../event-script/syntax/">Event Script Syntax</a> — orchestrate functions with YAML flows.</li>
+<li><a href="../../getting-started/">Getting Started</a> — build your first functions in a working app.</li>
+<li><a href="../../architecture/">Architecture Overview</a> — where functions sit in the event-driven runtime.</li>
+<li><a href="../../rest-automation/">REST Automation</a> — expose functions as HTTP endpoints.</li>
+<li><a href="../../event-script/syntax/">Event Script Syntax</a> — orchestrate functions with YAML flows.</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../event-driven-foundation/" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../rest-automation/" class="btn btn-neutral float-right" title="REST Automation">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../write-your-first-function/" class="btn btn-neutral float-left" title="Write your first function"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../rest-automation/" class="btn btn-neutral float-right" title="REST Automation">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -518,18 +520,18 @@ and encapsulation mean that you can precisely control how your application perfo
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../event-driven-foundation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../write-your-first-function/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../rest-automation/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../../rest-automation/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
-    <script src="../../js/jquery-3.6.0.min.js"></script>
-    <script>var base_url = "../..";</script>
-    <script src="../../js/theme_extra.js"></script>
-    <script src="../../js/theme.js"></script>
-      <script src="../../search/main.js"></script>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
     <script>
         jQuery(function () {
             SphinxRtdTheme.Navigation.enable(true);

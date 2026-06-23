@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/rest-automation/ai-agent-guide/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-driven/write-your-first-function/" />
       <link rel="shortcut icon" href="../../../img/favicon.ico" />
-    <title>REST AI agent guide - Composable for Java</title>
+    <title>Write your first function - Composable for Java</title>
     <link rel="stylesheet" href="../../../css/theme.css" />
     <link rel="stylesheet" href="../../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "REST AI agent guide";
-        var mkdocs_page_input_path = "guides/rest-automation/ai-agent-guide.md";
-        var mkdocs_page_url = "/mercury-composable/guides/rest-automation/ai-agent-guide/";
+        var mkdocs_page_name = "Write your first function";
+        var mkdocs_page_input_path = "guides/event-driven/write-your-first-function.md";
+        var mkdocs_page_url = "/mercury-composable/guides/event-driven/write-your-first-function/";
       </script>
     
     <!--[if lt IE 9]>
@@ -58,27 +58,31 @@
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/write-your-first-function/">Write your first function</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/function-execution/">Function Execution Strategies</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../">REST Automation</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../rest-grammar/">REST grammar</a>
-                  </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">REST AI agent guide</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Write your first function</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#binding">Decide the binding first</a>
+    <li class="toctree-l2"><a class="reference internal" href="#1-define-the-function">1. Define the function</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#deterministic">Generate deterministically</a>
+    <li class="toctree-l2"><a class="reference internal" href="#2-expose-it-over-http">2. Expose it over HTTP</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#example">Worked example</a>
+    <li class="toctree-l2"><a class="reference internal" href="#3-call-it-from-another-function">3. Call it from another function</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#4-run-and-test">4. Run and test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#5-add-it-to-a-flow-optional-next-step">5. Add it to a flow (optional next step)</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
@@ -174,7 +178,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Layer 1 — Event-driven</li>
-      <li class="breadcrumb-item active">REST AI agent guide</li>
+      <li class="breadcrumb-item active">Write your first function</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -183,84 +187,162 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="ai-agent-guide-authoring-restyaml">AI agent guide — authoring rest.yaml</h1>
+                <h1 id="write-your-first-function">Write your first function</h1>
+<p><em>Tutorial: build a working composable function from scratch, wire it to HTTP, and call it
+programmatically.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>Read this if you are an AI agent</strong> asked to add or change an HTTP endpoint. It is the context
-  you need — you should not have to read the parser source.</li>
-<li><strong>Generate from rules.</strong> The <a href="../rest-grammar/">REST grammar</a> and its machine-readable form
-  <a href="../rest-automation.json"><code>rest-automation.json</code></a> are the source of truth.</li>
-<li><code>rest.yaml</code> is parsed and validated at startup (<code>RoutingEntry</code>); an invalid entry fails to load.</li>
+<li><strong>What</strong> — write a <code>@PreLoad</code>-annotated class, expose it over HTTP in <code>rest.yaml</code>, and call it
+  from another function via <code>PostOffice</code>.</li>
+<li><strong>Why it matters</strong> — every higher-layer concept (flow task, graph skill) is still this same atom;
+  mastering Layer 1 is the foundation.</li>
+<li><strong>For</strong> developers new to Mercury or building their first composable feature.</li>
 </ul>
 </blockquote>
-<h2 id="binding">Decide the binding first</h2>
-<p>Pick how the endpoint reaches its backend, then fill the entry:</p>
-<ul>
-<li><strong>Function</strong> → <code>service: &lt;function.route&gt;</code>.</li>
-<li><strong>Flow</strong> → <code>service: http.flow.adapter</code> <strong>and</strong> <code>flow: &lt;flow-id&gt;</code>.</li>
-<li><strong>HTTP relay</strong> → <code>service: https://host</code> (single URL; <code>url_rewrite</code>/<code>trust_all_cert</code> allowed).</li>
-</ul>
-<h2 id="deterministic">Generate deterministically</h2>
-<p>Look up exact fields/values in <a href="../rest-automation.json"><code>rest-automation.json</code></a>; follow the rules in
-<a href="../rest-grammar/"><code>rest-grammar.md</code></a>. Then verify:</p>
-<blockquote>
-<p><strong>Pre-write checklist</strong>
-- [ ] The entry has <code>service</code>, <code>methods</code>, and <code>url</code>.
-- [ ] <code>methods</code> are from <code>GET PUT POST DELETE HEAD PATCH</code> — do <strong>not</strong> list <code>OPTIONS</code> (auto-added).
-- [ ] Binding is consistent: a <code>flow</code> uses <code>service: http.flow.adapter</code>; an <code>http(s)://</code> relay
-      <code>service</code> is a single URL.
-- [ ] Any <code>cors:</code>/<code>headers:</code> value matches an existing <code>cors</code>/<code>headers</code> <code>id</code> in the same file.
-- [ ] <code>url_rewrite</code> (if present) is a list of exactly two strings, and only on a relay service.
-- [ ] <code>{param}</code> tokens in <code>url</code> are balanced and not nested.</p>
-</blockquote>
-<h2 id="example">Worked example</h2>
-<p>A flow-backed endpoint plus a reusable CORS config:</p>
-<pre><code class="language-yaml">rest:
-  - service: 'http.flow.adapter'
-    flow: 'order-status'
-    methods: ['POST']
-    url: '/api/orders/{order_id}/status'
-    timeout: 30s
-    cors: cors_1
-    headers: header_1
-    tracing: true
+<p>A composable function is <strong>plain Java</strong> — no framework-specific base class, no dependency injection
+container, no coupling to other functions. You pick the coding style that suits the problem:
+sequential, object-oriented, or reactive. The framework constrains only <em>coupling</em> (functions
+communicate through named routes and <code>EventEnvelope</code>, never by direct call).</p>
+<hr />
+<h2 id="1-define-the-function">1. Define the function</h2>
+<p>Create a class that implements <code>TypedLambdaFunction&lt;I, O&gt;</code> and annotate it with <code>@PreLoad</code>.</p>
+<pre><code class="language-java">import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.models.TypedLambdaFunction;
 
-cors:
-  - id: cors_1
-    options:
-      - 'Access-Control-Allow-Origin: *'
-      - 'Access-Control-Allow-Methods: GET, POST, OPTIONS'
-      - 'Access-Control-Allow-Headers: Origin, Authorization, Content-Type'
-    headers:
-      - 'Access-Control-Allow-Origin: *'
+import java.util.Map;
 
-headers:
-  - id: header_1
-    response:
-      add:
-        - 'x-powered-by: mercury'
-      drop:
-        - 'server'
+@PreLoad(route = &quot;hello.function&quot;, instances = 10)
+public class HelloFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input,
+                                           int instance) throws Exception {
+        var name = input.getOrDefault(&quot;name&quot;, &quot;world&quot;).toString();
+        return Map.of(&quot;message&quot;, &quot;Hello, &quot; + name + &quot;!&quot;);
+    }
+}
 </code></pre>
-<p>A function-backed endpoint with a path parameter:</p>
+<p><strong>Three things to notice:</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Part</th>
+<th style="text-align: left;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>@PreLoad(route = "hello.function")</code></td>
+<td style="text-align: left;">Registers the function on the event bus under this name. Other components reach it <em>only</em> by this string.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>instances = 10</code></td>
+<td style="text-align: left;">How many concurrent workers the platform starts for this function.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TypedLambdaFunction&lt;I, O&gt;</code></td>
+<td style="text-align: left;">Typed input/output. Use <code>Map&lt;String, Object&gt;</code> for flexible key-value data, or a PoJo for a strict interface contract.</td>
+</tr>
+</tbody>
+</table>
+<p>For an <strong>untyped</strong> function that works directly with the raw <code>EventEnvelope</code> (useful for
+pass-through or routing logic), implement <code>LambdaFunction</code> instead:</p>
+<pre><code class="language-java">@PreLoad(route = &quot;hello.passthrough&quot;, instances = 5)
+public class HelloPassthrough implements LambdaFunction {
+
+    @Override
+    public Object handleEvent(Map&lt;String, String&gt; headers,
+                              Object body,
+                              int instance) throws Exception {
+        return body; // echo the raw body back
+    }
+}
+</code></pre>
+<hr />
+<h2 id="2-expose-it-over-http">2. Expose it over HTTP</h2>
+<p>Open (or create) <code>src/main/resources/rest.yaml</code> and add an entry under the <code>rest:</code> section:</p>
 <pre><code class="language-yaml">rest:
-  - service: 'profile.lookup'
-    methods: ['GET']
-    url: '/api/profile/{id}'
+  - service: &quot;hello.function&quot;
+    methods: ['GET', 'POST']
+    url: &quot;/api/hello&quot;
     timeout: 10s
 </code></pre>
+<p>The <code>service:</code> value is the route name from <code>@PreLoad</code>. That string is the <em>only</em> link between
+the HTTP layer and your function — no import, no wiring code.</p>
+<p>Enable REST automation in <code>application.properties</code>:</p>
+<pre><code class="language-properties">rest.server.port=8085
+rest.automation=true
+yaml.rest.automation=classpath:/rest.yaml
+</code></pre>
+<hr />
+<h2 id="3-call-it-from-another-function">3. Call it from another function</h2>
+<p>Inside any other function, use <code>PostOffice</code> to send a request to <code>hello.function</code> by route name:</p>
+<pre><code class="language-java">import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.models.EventEnvelope;
+
+// inside handleEvent(...)
+var po = new PostOffice(headers, instance);
+EventEnvelope response = po.request(
+    new EventEnvelope().setTo(&quot;hello.function&quot;).setBody(Map.of(&quot;name&quot;, &quot;Mercury&quot;)),
+    5000   // timeout in ms
+).get();
+
+var result = response.getBody(); // Map containing {&quot;message&quot;: &quot;Hello, Mercury!&quot;}
+</code></pre>
+<p><code>po.request(...).get()</code> reads as synchronous but never blocks a platform thread — the virtual
+thread is parked while waiting, so you get sequential code at reactive throughput.</p>
+<hr />
+<h2 id="4-run-and-test">4. Run and test</h2>
+<p>Start the application (adjust the version to match your build):</p>
+<pre><code class="language-bash">cd examples/composable-example
+java -jar target/composable-example-4.4.11.jar
+</code></pre>
+<p>Test with <code>curl</code>:</p>
+<pre><code class="language-bash"># GET — query parameter mapped automatically
+curl &quot;http://127.0.0.1:8085/api/hello?name=World&quot;
+
+# POST — JSON body
+curl -s -X POST http://127.0.0.1:8085/api/hello \
+     -H &quot;content-type: application/json&quot; \
+     -d '{&quot;name&quot;: &quot;Mercury&quot;}'
+</code></pre>
+<p>Expected response:</p>
+<pre><code class="language-json">{&quot;message&quot;: &quot;Hello, Mercury!&quot;}
+</code></pre>
+<hr />
+<h2 id="5-add-it-to-a-flow-optional-next-step">5. Add it to a flow (optional next step)</h2>
+<p>Once the function works standalone, you can orchestrate it as a <strong>task</strong> in an Event Script flow
+without changing a single line of its code:</p>
+<pre><code class="language-yaml"># flows/hello-flow.yml
+tasks:
+  - name: greet
+    input:
+      - input.body.name -&gt; name
+    process: &quot;hello.function&quot;
+    output:
+      - result.message -&gt; model.greeting
+    execution: end
+</code></pre>
+<p>The route name <code>hello.function</code> is the only connection. See
+<a href="../../event-script/">Composable Orchestration</a> for the full flow model.</p>
+<hr />
 <h2 id="see-also">See also</h2>
 <ul>
-<li><a href="../rest-grammar/">REST automation grammar</a> + <a href="../rest-automation.json"><code>rest-automation.json</code></a> — the source of truth.</li>
-<li><a href="../">REST Automation</a> — worked examples and the full feature set.</li>
+<li><a href="../function-execution/">Function Execution Strategies</a> — virtual vs. kernel threads, <code>Mono</code>/<code>Flux</code>,
+  authentication functions, serialization.</li>
+<li><a href="../../rest-automation/">REST Automation</a> — full <code>rest.yaml</code> reference: CORS, headers,
+  authentication, static content.</li>
+<li><a href="../../event-script/syntax/">Event Script Syntax</a> — orchestrate this function as a flow task.</li>
+<li><a href="../../api-overview/">API Overview</a> — <code>PostOffice</code>, <code>Platform</code>, <code>EventEnvelope</code> API reference.</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../rest-grammar/" class="btn btn-neutral float-left" title="REST grammar"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../../event-script/" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../function-execution/" class="btn btn-neutral float-right" title="Function Execution Strategies">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -283,10 +365,10 @@ headers:
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../rest-grammar/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../../event-script/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../function-execution/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

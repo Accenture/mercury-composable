@@ -37,10 +37,6 @@
          <lastmod>2026-06-23</lastmod>
     </url>
     <url>
-         <loc>https://accenture.github.io/mercury-composable/guides/event-driven-foundation/</loc>
-         <lastmod>2026-06-23</lastmod>
-    </url>
-    <url>
          <loc>https://accenture.github.io/mercury-composable/guides/event-envelope-reference/</loc>
          <lastmod>2026-06-23</lastmod>
     </url>
@@ -50,10 +46,6 @@
     </url>
     <url>
          <loc>https://accenture.github.io/mercury-composable/guides/flow-schema-reference/</loc>
-         <lastmod>2026-06-23</lastmod>
-    </url>
-    <url>
-         <loc>https://accenture.github.io/mercury-composable/guides/function-execution/</loc>
          <lastmod>2026-06-23</lastmod>
     </url>
     <url>
@@ -74,6 +66,18 @@
     </url>
     <url>
          <loc>https://accenture.github.io/mercury-composable/guides/spring-boot/</loc>
+         <lastmod>2026-06-23</lastmod>
+    </url>
+    <url>
+         <loc>https://accenture.github.io/mercury-composable/guides/event-driven/</loc>
+         <lastmod>2026-06-23</lastmod>
+    </url>
+    <url>
+         <loc>https://accenture.github.io/mercury-composable/guides/event-driven/function-execution/</loc>
+         <lastmod>2026-06-23</lastmod>
+    </url>
+    <url>
+         <loc>https://accenture.github.io/mercury-composable/guides/event-driven/write-your-first-function/</loc>
          <lastmod>2026-06-23</lastmod>
     </url>
     <url>

@@ -58,9 +58,11 @@
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../event-driven-foundation/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../function-execution/">Function Execution Strategies</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
                   </li>
@@ -186,7 +188,7 @@
   choreographs functions — orchestration as configuration, not code.</li>
 <li><strong>Why it matters</strong> — changing how a transaction runs means editing a flow, not rewriting Java;
   roughly half config, half code.</li>
-<li><strong>Where it sits</strong> — <strong>Layer 2</strong> of the ascent, built on the <a href="../event-driven-foundation/">event-driven foundation</a>.</li>
+<li><strong>Where it sits</strong> — <strong>Layer 2</strong> of the ascent, built on the <a href="../event-driven/">event-driven foundation</a>.</li>
 <li><strong>For</strong> developers and architects orchestrating composable functions.</li>
 </ul>
 </blockquote>
@@ -196,7 +198,7 @@ real-time transaction.</p>
 <p>It moves orchestration <em>out of code and into configuration</em>: instead of writing Java that calls one
 function after another, you describe the sequence as a <strong>flow</strong> in YAML. Roughly half the work becomes
 configuration, half stays code (the functions themselves). A flow builds on the
-<a href="../event-driven-foundation/">event-driven foundation</a> beneath it — it never references a function's
+<a href="../event-driven/">event-driven foundation</a> beneath it — it never references a function's
 class, only its <strong>route name</strong>.</p>
 <h2 id="the-mental-model">The mental model</h2>
 <ul>
@@ -214,7 +216,7 @@ class, only its <strong>route name</strong>.</p>
 <li><a href="flow-grammar/">Flow grammar</a> — the rule-based schema (the deterministic spec).</li>
 <li><a href="ai-agent-guide/">Flow AI agent guide</a> — author flows deterministically with an agent.</li>
 <li><a href="../flow-schema-reference/">Flow Configuration Schema</a> — exhaustive field reference.</li>
-<li><a href="../event-driven-foundation/">Event-driven Foundation</a> — the Layer-1 core flows build on (down the ascent).</li>
+<li><a href="../event-driven/">Event-driven Foundation</a> — the Layer-1 core flows build on (down the ascent).</li>
 <li><a href="../knowledge-graph/">Knowledge Graph as Application</a> — the semantic layer above (Layer 3).</li>
 <li><a href="../knowledge-graph/composing-the-layers/">Composing the layers</a> — how the three layers stack.</li>
 </ul>

@@ -58,9 +58,11 @@
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven-foundation/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../function-execution/">Function Execution Strategies</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-driven/function-execution/">Function Execution Strategies</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
                   </li>
@@ -1639,7 +1641,7 @@ In the following example, the system will evaluate both the model.quit and model
 </code></pre>
 <h2 id="simple-plugins">Simple Plugins</h2>
 <p>When working with Event-Script there are certain use-cases that are not supported natively in flows, such as arithmetic
-and conditional expressions. Typically one would create a <a href="../../function-execution/#define-a-function">TypedLambdaFunction</a> to support
+and conditional expressions. Typically one would create a <a href="../../event-driven/function-execution/#define-a-function">TypedLambdaFunction</a> to support
 these type of use-cases.  It may lead to duplication of code and efforts since the same use-case is often reinvented
 multiple times.</p>
 <p>To address this, a new concept called <code>Simple Plugin</code> has been introduced since version 4.3.36. 
