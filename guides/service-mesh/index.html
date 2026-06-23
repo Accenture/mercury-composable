@@ -55,6 +55,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-developer-guide/">AI Developer Guide</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul>
@@ -63,6 +65,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
                   </li>
@@ -113,7 +117,9 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Minimalist Service Mesh</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#using-kafka-as-a-minimalist-service-mesh">Using kafka as a minimalist service mesh</a>
+    <li class="toctree-l2"><a class="reference internal" href="#when-to-use">When to use — and when not to</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#setup">Using Kafka as a minimalist service mesh</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#set-up-a-standalone-kafka-server-for-development">Set up a standalone Kafka server for development</a>
     </li>
@@ -132,6 +138,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#actuator-endpoints">Actuator endpoints</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#stop-an-application">Stop an application</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#broadcast-vs-multicast">Broadcast vs multicast</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
@@ -198,29 +206,51 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="minimalist-service-mesh">Minimalist Service Mesh</h1>
-<p><em>Guide: How to set up service discovery and inter-instance routing using Kafka as a connector.</em></p>
+<p><em>Guide: When to use the service mesh, and how to set it up with Kafka and a presence monitor.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — a lightweight service mesh: Kafka connectors + a presence monitor for service
-  discovery and inter-instance event routing, without sidecars.</li>
-<li><strong>For</strong> architects and developers scaling Mercury across instances.</li>
+<li><strong>What</strong> — an opt-in Kafka + presence-monitor layer that adds (1) synchronous request-response
+  across application instances and (2) service discovery between pods.</li>
+<li><strong>Default is no mesh.</strong> <code>cloud.connector=none</code> is the default. Most applications that scale
+  horizontally as independent instances do not need a service mesh at all.</li>
+<li><strong>Enabling the mesh is a deliberate architectural choice</strong> — only when your application genuinely
+  needs cross-instance sync RPC or peer discovery.</li>
+<li><strong>Risk</strong> — sync over async creates cross-instance coupling; without discipline it turns a cloud
+  application into a distributed monolith.</li>
+<li><strong>For</strong> architects deciding whether to introduce the mesh, and developers setting it up.</li>
 </ul>
 </blockquote>
-<p>Service mesh is dedicated infrastructure for inter-container communication using "sidecar" and
-"control plane".</p>
-<p>Service mesh systems require additional administrative containers (PODs) for "control plane" and "service discovery."</p>
-<p>The additional infrastructure requirements vary among products.</p>
-<h2 id="using-kafka-as-a-minimalist-service-mesh">Using kafka as a minimalist service mesh</h2>
-<p>We will discuss using Kafka as a minimalist service mesh.</p>
-<blockquote>
-<p><em>Important</em>: Always design your application system in an event-driven manner to decouple application services
-          from each other. You should avoid using service mesh to tightly couple application services together
-          because it would lead to the creation of a "Distributed Monolith". Minimalist service mesh
-          is designed as a service discovery mechanism so that you can detect the presence of
-          other application instances. You can use it for operation control mechanism and "leader selection"
-          in writing resilient distributed application.</p>
-</blockquote>
+<h2 id="when-to-use">When to use — and when not to</h2>
+<p>The service mesh solves exactly <strong>two problems</strong>:</p>
+<ol>
+<li>
+<p><strong>Synchronous request-response across application instances.</strong> When application A must call a
+   function in application B and wait for the result over Kafka — which is inherently asynchronous.
+   This is the same pattern as IBM MQ or Redis pub/sub for RPC: a synchronous semantic layered over
+   an asynchronous transport.</p>
+</li>
+<li>
+<p><strong>Service discovery.</strong> Knowing which instances are running, detecting peers joining and leaving,
+   and building distributed resilience patterns — leader selection, failover, pod-aware broadcast.</p>
+</li>
+</ol>
+<p><strong>If your application does not need either of these, do not enable the service mesh.</strong></p>
+<p>Cloud-native design means each application instance is fully self-contained. Functions communicate
+over the in-memory event bus. The infrastructure — a load balancer or Kubernetes ingress — distributes
+inbound HTTP load across identical, stateless instances. No instance needs to know about another.</p>
+<p><strong>The risk.</strong> Superimposing synchronous calls over Kafka is architecturally expensive. Cross-instance
+synchronous RPC creates latency dependencies between scaling units: if one pod is slow, callers are
+slow; errors propagate across instance boundaries; horizontal scaling no longer provides isolation.
+Overuse of this pattern degrades a cloud application into a <strong>distributed monolith</strong> — all the
+operational cost of distribution with the tight coupling of a monolith. See <a href="../../arch-decisions/ADR/#adr-0006">ADR-0006</a> for the full rationale.</p>
+<p><code>cloud.connector=none</code> is the framework default because most applications do not need a service mesh.
+Enabling <code>cloud.connector=kafka</code> is a deliberate, opt-in architectural decision.</p>
+<hr />
+<h2 id="setup">Using Kafka as a minimalist service mesh</h2>
+<p>When the use case does warrant a service mesh, the framework provides a Kafka-based implementation
+without sidecars. Each application instance maintains a distributed routing table; the presence
+monitor is the lightweight control plane that keeps it current.</p>
 <p>Typically, a service mesh system uses a "side-car" to sit next to the application container in the same POD to provide
 service discovery and network proxy services.</p>
 <p>Instead of using a side-car proxy, the system maintains a distributed routing table in each application instance.
@@ -483,6 +513,60 @@ TopicController:250 - multiplex.0001-001 released by 2023032808d82ebe2c0d4e5aa9c
 <p>When an application instance stops, the presence monitor will detect the event, remove it from the registry and
 release the topic associated with the disconnected application instance.</p>
 <p>The presence monitor is using the "presence" feature in websocket, thus we call it "presence" monitor.</p>
+<h2 id="broadcast-vs-multicast">Broadcast vs multicast</h2>
+<p>With the service mesh running, <code>PostOffice.broadcast()</code> becomes meaningful. It delivers an event to
+<strong>every pod / container</strong> that has the target route registered — not just one instance selected by
+load balancing.</p>
+<pre><code class="language-java">// Delivers to ALL instances of &quot;cache.invalidate&quot; across all running pods
+var po = new PostOffice(headers, instance);
+po.broadcast(new EventEnvelope().setTo(&quot;cache.invalidate&quot;).setBody(Map.of(&quot;key&quot;, &quot;session-42&quot;)));
+</code></pre>
+<p>The cloud connector reads the broadcast flag, queries the distributed routing table (maintained by the
+presence monitor), and publishes the event to every known instance. Without <code>cloud.connector=kafka</code> and
+presence-monitor running, <code>po.broadcast()</code> degrades silently to unicast on the local instance.</p>
+<p><strong>Multicast is a separate, unrelated feature.</strong> It operates entirely within the local JVM's in-memory
+event bus — no service mesh required. A multicast entry in <code>multicast.yaml</code> registers a <code>LocalPublisher</code>
+function at the source route that relays each incoming message to all listed target routes <strong>within the
+same application instance</strong>:</p>
+<pre><code class="language-yaml"># multicast.yaml — local fan-out only
+multicast:
+  - source: &quot;order.placed&quot;
+    targets:
+      - &quot;inventory.handler&quot;
+      - &quot;notification.handler&quot;
+      - &quot;audit.handler&quot;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Multicast</th>
+<th style="text-align: left;">Broadcast</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Scope</td>
+<td style="text-align: left;">Single JVM</td>
+<td style="text-align: left;">All pods in the service mesh</td>
+</tr>
+<tr>
+<td style="text-align: left;">Config</td>
+<td style="text-align: left;"><code>multicast.yaml</code></td>
+<td style="text-align: left;"><code>po.broadcast()</code> API call</td>
+</tr>
+<tr>
+<td style="text-align: left;">Requires</td>
+<td style="text-align: left;">Nothing extra</td>
+<td style="text-align: left;"><code>cloud.connector=kafka</code> + presence-monitor</td>
+</tr>
+<tr>
+<td style="text-align: left;">Without mesh</td>
+<td style="text-align: left;">Works (always local)</td>
+<td style="text-align: left;">Silently degrades to unicast</td>
+</tr>
+</tbody>
+</table>
 <h2 id="see-also">See also</h2>
 <ul>
 <li><a href="../event-over-http/">Event over HTTP</a> — cross-instance event communication.</li>

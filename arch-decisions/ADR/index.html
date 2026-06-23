@@ -55,6 +55,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/methodology/">Methodology</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/ai-developer-guide/">AI Developer Guide</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul>
@@ -63,6 +65,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/event-driven/write-your-first-function/">Write your first function</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/event-driven/ai-agent-guide/">Function AI agent guide</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/rest-automation/">REST Automation</a>
                   </li>
@@ -118,6 +122,8 @@
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Architectural Decision Records</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#adr-0006">ADR-0006 — Cloud-native by default; service mesh for sync-over-async and service discovery only</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#adr-0005-one-atom-four-roles">ADR-0005 — One atom, four roles</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#adr-0004-three-paradigm-layer-architecture">ADR-0004 — Three-paradigm-layer architecture</a>
@@ -203,6 +209,33 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0006">ADR-0006 — Cloud-native by default; service mesh for sync-over-async and service discovery only</h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-23T18:30:00.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
+<!-- id: adr-0006 | status: accepted | formalizes: kafka-mesh-opt-in -->
+
+<p><strong>Abstract.</strong> The Kafka service mesh (<code>cloud.connector=kafka</code> + presence-monitor) is an <strong>opt-in
+capability</strong> that solves two specific problems: (1) synchronous request-response between different
+application instances over Kafka, and (2) service discovery between running pods. Applications that do
+not need either capability must be designed <strong>cloud-native</strong> — each instance self-contained, stateless,
+and horizontally scaled without cross-instance coupling. Enabling <code>cloud.connector=kafka</code> is a
+deliberate architectural choice, not a default or a convenience. <code>cloud.connector=none</code> is the
+framework default.</p>
+<p><strong>Rationale.</strong> Superimposing synchronous request-response over Kafka (an inherently asynchronous
+transport) is technically feasible — the same pattern appears in IBM MQ, Redis pub/sub for RPC, and
+other enterprise messaging systems — but it is architecturally expensive. Cross-instance synchronous
+RPC creates latency dependencies between otherwise independent scaling units: if one pod is slow, every
+caller waiting on it is slow; errors propagate across instance boundaries; horizontal scaling no longer
+provides isolation between workloads. Overuse of this pattern degrades a cloud application into a
+<strong>distributed monolith</strong> — all the operational complexity of a distributed system combined with the
+tight coupling of a monolith. Cloud-native design avoids these risks: inbound load is distributed at
+the infrastructure layer (load balancer / Kubernetes ingress), and each instance handles its share
+independently. The service mesh should be adopted only when one of its two genuine use cases applies:
+(a) cross-application synchronous RPC that cannot be decoupled further, or (b) distributed resilience
+patterns that require peer awareness (leader selection, failover, pod-aware broadcast). Consequence:
+documentation, tooling, and AI agent guides must treat the service mesh as an advanced, opt-in topic —
+not the standard deployment model — to avoid steering users toward the distributed monolith
+anti-pattern.</p>
 <hr />
 <h2 id="adr-0005-one-atom-four-roles">ADR-0005 — One atom, four roles</h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-22T22:47:23.000Z · <strong>Serves:</strong> vision-mercury-composable</p>

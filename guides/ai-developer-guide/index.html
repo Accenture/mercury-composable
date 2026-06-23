@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/ai-developer-guide/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>AI Developer Guide - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "AI Developer Guide";
+        var mkdocs_page_input_path = "guides/ai-developer-guide.md";
+        var mkdocs_page_url = "/mercury-composable/guides/ai-developer-guide/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">AI Developer Guide</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#mental-model">The mental model in two sentences</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#brownfield">Orienting in an existing project (brownfield)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#layer-choice">Choosing the right layer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adding-a-feature">Adding a feature</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#layer-1-a-standalone-function">Layer 1 — a standalone function</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layer-2-an-event-script-flow">Layer 2 — an Event Script flow</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layer-3-a-knowledge-graph-skill">Layer 3 — a Knowledge Graph skill</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#invariants">Key invariants — what not to do</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#dsl-guides">DSL-specific AI guides</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Foundations</li>
+      <li class="breadcrumb-item active">AI Developer Guide</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="ai-developer-guide-collaborating-on-mercury-composable-projects">AI developer guide — collaborating on mercury-composable projects</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>Read this first</strong> if you are an AI agent joining a mercury-composable project,
+  whether greenfield or brownfield.</li>
+<li><strong>One mental model:</strong> a composable function is <em>plain Java</em> — the framework constrains
+  only <em>coupling</em>, not coding style.</li>
+<li><strong>Three layers, one decision tree</strong> — choose the layer before writing code; the DSL guides
+  below handle each layer's specifics.</li>
+</ul>
+</blockquote>
+<hr />
+<h2 id="mental-model">The mental model in two sentences</h2>
+<p>A composable function is an ordinary Java class (<code>@PreLoad</code>, <code>TypedLambdaFunction&lt;I,O&gt;</code> or
+<code>LambdaFunction</code>) that holds no direct reference to any other function. The framework's only
+constraint is the coupling contract: every function is <em>addressed by route name</em> and communicates
+through <code>EventEnvelope</code> messages dispatched by <code>PostOffice</code>.</p>
+<p>This is the invariant. Whether the function is sequential, reactive, or object-oriented; whether
+it runs as a standalone service, a flow step, or a graph node — that is <em>wiring</em>, not a code
+change.</p>
+<p><strong>One atom, four roles</strong> — the same <code>@PreLoad</code>-annotated function plays different roles depending
+on how it is wired:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Role</th>
+<th style="text-align: left;">When</th>
+<th style="text-align: left;">Wired by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>function</strong></td>
+<td style="text-align: left;">Any standalone callable on the event bus</td>
+<td style="text-align: left;"><code>@PreLoad(route=…)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>service</strong></td>
+<td style="text-align: left;">Mapped directly to an HTTP endpoint</td>
+<td style="text-align: left;"><code>rest.yaml</code> <code>service:</code> entry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>task</strong></td>
+<td style="text-align: left;">A step in an Event Script flow</td>
+<td style="text-align: left;"><code>flows/*.yml</code> + <code>flows.yaml</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>skill</strong></td>
+<td style="text-align: left;">Attached to a Knowledge Graph node</td>
+<td style="text-align: left;">node's <code>skill=</code> property in graph JSON</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="brownfield">Orienting in an existing project (brownfield)</h2>
+<p>Start with the config files — they are the application's surface area:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">File</th>
+<th style="text-align: left;">What it tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>src/main/resources/rest.yaml</code></td>
+<td style="text-align: left;">Every HTTP endpoint: method, path, handler (route name or flow id)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>src/main/resources/flows.yaml</code></td>
+<td style="text-align: left;">Every active flow file (by filename under <code>classpath:/flows/</code>)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>src/main/resources/flows/*.yml</code></td>
+<td style="text-align: left;">Each flow's tasks, process names, and data mappings</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>src/main/resources/application.properties</code></td>
+<td style="text-align: left;">Port, <code>rest.automation</code>, <code>yaml.rest.automation</code>, <code>yaml.flows</code>, <code>location.graph.deployed</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>@PreLoad</code> (grep)</td>
+<td style="text-align: left;">Every registered function: route name, concurrency (<code>instances</code>), class location</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>src/main/resources/graph/*.json</code></td>
+<td style="text-align: left;">Deployed Knowledge Graph definitions (present if Layer 3 is used)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quick orientation sequence:</strong></p>
+<ol>
+<li><code>grep -r "@PreLoad" src/</code> — inventory every function by route name and class.</li>
+<li>Read <code>flows.yaml</code> — know which flows are active and where they live.</li>
+<li>Read <code>rest.yaml</code> — trace each endpoint to its handler (function route or flow id).</li>
+<li>Open each flow YAML — understand the orchestration: task order, process names, data mapping.</li>
+<li>Check <code>application.properties</code> for <code>location.graph.deployed</code> — if present, read those JSON files for the Knowledge Graph.</li>
+</ol>
+<hr />
+<h2 id="layer-choice">Choosing the right layer</h2>
+<pre><code>Is the requirement a single function responding to one event?
+  → Layer 1 (Platform Core). Write the function; wire to rest.yaml if HTTP.
+
+Does it need to sequence or orchestrate multiple functions
+  with data mapping between steps?
+  → Layer 2 (Event Script). Write functions + a flow YAML; register in flows.yaml.
+
+Does it need a semantic data model where graph structure and
+  traversal define behavior (nodes, edges, skills, dynamic routing)?
+  → Layer 3 (Active Knowledge Graph). Build the graph; attach skill functions.
+</code></pre>
+<p>When in doubt, start at Layer 1. A function can become a flow task or graph skill
+without touching its code — the wiring is the only change.</p>
+<hr />
+<h2 id="adding-a-feature">Adding a feature</h2>
+<h3 id="layer-1-a-standalone-function">Layer 1 — a standalone function</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;my.function&quot;, instances = 10)
+public class MyFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input,
+                                           int instance) throws Exception {
+        // plain Java — sequential, object-oriented, or reactive (Mono/Flux)
+        return Map.of(&quot;result&quot;, input.get(&quot;value&quot;));
+    }
+}
+</code></pre>
+<p>Wire to HTTP by adding a <code>rest.yaml</code> entry:</p>
+<pre><code class="language-yaml">rest:
+  - service: &quot;my.function&quot;
+    methods: ['GET', 'POST']
+    url: &quot;/api/my-endpoint&quot;
+    timeout: 10s
+</code></pre>
+<p>See <a href="../event-driven/write-your-first-function/">Write your first function</a> for the full walkthrough.</p>
+<h3 id="layer-2-an-event-script-flow">Layer 2 — an Event Script flow</h3>
+<p>Write the function (same as Layer 1), add a flow YAML, and register it:</p>
+<pre><code class="language-yaml"># src/main/resources/flows/my-flow.yml
+flow:
+  id: 'my-flow'
+  description: 'Orchestrate my feature'
+  ttl: 10s
+first.task: 'my.function'
+tasks:
+  - input:
+      - 'input.body.value -&gt; value'
+    process: 'my.function'
+    output:
+      - 'result.result -&gt; output.body.result'
+    description: 'Call my function'
+    execution: end
+</code></pre>
+<p>Register in <code>flows.yaml</code>:</p>
+<pre><code class="language-yaml">flows:
+  - 'my-flow.yml'
+location: 'classpath:/flows/'
+</code></pre>
+<p>Wire to <code>rest.yaml</code> with <code>flow:</code> instead of <code>service:</code>:</p>
+<pre><code class="language-yaml">rest:
+  - flow: &quot;my-flow&quot;
+    methods: ['POST']
+    url: &quot;/api/my-flow-endpoint&quot;
+    timeout: 10s
+</code></pre>
+<p>See <a href="../event-script/ai-agent-guide/">Event Script AI agent guide</a> for the full flow grammar and
+pre-write checklist.</p>
+<h3 id="layer-3-a-knowledge-graph-skill">Layer 3 — a Knowledge Graph skill</h3>
+<p>Write a function (<code>@PreLoad</code>) that becomes a skill attached to a graph node. The graph traversal
+calls it automatically when the node is reached. Skill functions are plain <code>TypedLambdaFunction</code>
+instances; the graph engine routes to them by the node's <code>skill=</code> property.</p>
+<p>See <a href="../knowledge-graph/ai-agent-guide/">Knowledge Graph AI agent guide</a> for the companion-endpoint
+contract and canonical build recipe.</p>
+<hr />
+<h2 id="testing">Testing</h2>
+<p>Mercury tests use standard JUnit via Maven Surefire. The canonical reference for end-to-end flow
+testing is <code>examples/composable-example/FlowTest.java</code>.</p>
+<p><strong>Unit test a function in isolation</strong> — no framework needed:</p>
+<pre><code class="language-java">MyFunction fn = new MyFunction();
+Map&lt;String, Object&gt; result = fn.handleEvent(Map.of(), Map.of(&quot;value&quot;, &quot;hello&quot;), 1);
+assertEquals(&quot;hello&quot;, result.get(&quot;result&quot;));
+</code></pre>
+<p><strong>Integration test via HTTP</strong> — start the app in the test scope, then call the endpoint:</p>
+<pre><code class="language-java">// See examples/composable-example/FlowTest.java for the full pattern:
+// platform starts with AutoStart.main(), then HTTP calls drive the flows end-to-end.
+</code></pre>
+<p>Run tests:</p>
+<pre><code class="language-bash">mvn test -f your-module/pom.xml
+mvn test -Dtest=MyFlowTest -f your-module/pom.xml
+mvn test -Dtest=MyFlowTest#specificMethod -f your-module/pom.xml
+</code></pre>
+<hr />
+<h2 id="invariants">Key invariants — what not to do</h2>
+<ul>
+<li><strong>Never call another function directly.</strong> Use <code>PostOffice</code>. Direct references are a framework
+  violation — the compiler won't catch it, but the design breaks.</li>
+<li><strong>Never import another user function.</strong> The only link between functions is a route-name string.</li>
+<li><strong>Do not put business logic in flow YAML.</strong> Flow YAML is orchestration; business logic belongs
+  in the function body.</li>
+<li><strong>Map-or-PoJo for key-by-key mapping.</strong> <code>TypedLambdaFunction</code>'s normal data-mapping contract
+  requires Map or PoJo. A <code>List</code> cannot be a key-by-key mapping target. To pass a list through an
+  Event Script flow, use the <code>*</code> whole-body passthrough (<code>model.list -&gt; *</code>) and set
+  <code>@PreLoad(inputPojoClass=ElementType.class)</code> on the receiving function.</li>
+<li><strong>Watch serialization gotchas.</strong> MsgPack downcasts small <code>Long → Integer</code> on the wire; customized
+  Gson treats Map integers as <code>Long</code>. Use <code>Utility.str2int</code> / <code>str2long</code> for safe numeric conversion.</li>
+<li><strong>Do not recommend the service mesh by default.</strong> <code>cloud.connector=none</code> is the framework default.
+  The Kafka service mesh is an <strong>opt-in capability for two specific use cases only</strong>: (1) synchronous
+  request-response across different application instances over Kafka, or (2) service discovery (leader
+  selection, peer-liveness detection, pod-aware broadcast). Applications that scale horizontally as
+  independent, stateless instances do not need it. Superimposing sync over async creates cross-instance
+  coupling — the distributed-monolith anti-pattern. See <a href="../service-mesh/">Minimalist Service Mesh</a> and
+  <a href="../../arch-decisions/ADR/#adr-0006">ADR-0006</a>.</li>
+</ul>
+<hr />
+<h2 id="dsl-guides">DSL-specific AI guides</h2>
+<p>Each layer's DSL has a deterministic spec and a dedicated AI agent guide. Use those for generating
+DSL artifacts — not this overview:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Layer / DSL</th>
+<th style="text-align: left;">Grammar + machine-readable spec</th>
+<th style="text-align: left;">AI agent guide</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Layer 2 — Event Script flows</td>
+<td style="text-align: left;"><a href="../event-script/flow-grammar/">flow-grammar.md</a> · <a href="../event-script/event-script-flow.json">event-script-flow.json</a></td>
+<td style="text-align: left;"><a href="../event-script/ai-agent-guide/">AI agent guide</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Layer 1 — REST automation</td>
+<td style="text-align: left;"><a href="../rest-automation/rest-grammar/">rest-grammar.md</a> · <a href="../rest-automation/rest-automation.json">rest-automation.json</a></td>
+<td style="text-align: left;"><a href="../rest-automation/ai-agent-guide/">AI agent guide</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Layer 3 — MiniGraph</td>
+<td style="text-align: left;"><a href="../knowledge-graph/command-reference/">command-reference.md</a> · <a href="../knowledge-graph/minigraph-commands.json">minigraph-commands.json</a></td>
+<td style="text-align: left;"><a href="../knowledge-graph/ai-agent-guide/">AI agent guide</a></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../event-driven/write-your-first-function/">Write your first function</a> — step-by-step Layer 1 tutorial.</li>
+<li><a href="../event-driven/">Event-driven Foundation</a> — Layer 1 overview: functions, PostOffice, EventEnvelope.</li>
+<li><a href="../event-script/">Composable Orchestration</a> — Layer 2 overview: flows, tasks, state machine.</li>
+<li><a href="../knowledge-graph/">Knowledge Graph as Application</a> — Layer 3 overview: AKG model, node types, skills.</li>
+<li><a href="../architecture/">Architecture Overview</a> — the full request pipeline and actor-model origin.</li>
+<li><a href="../api-overview/">API Overview</a> — PostOffice, Platform, EventEnvelope API reference.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../methodology/" class="btn btn-neutral float-left" title="Methodology"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../event-driven/" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../methodology/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../event-driven/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

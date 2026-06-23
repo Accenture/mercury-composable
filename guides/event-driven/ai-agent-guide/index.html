@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/event-driven/ai-agent-guide/" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Function AI agent guide - Composable for Java</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Function AI agent guide";
+        var mkdocs_page_input_path = "guides/event-driven/ai-agent-guide.md";
+        var mkdocs_page_url = "/mercury-composable/guides/event-driven/ai-agent-guide/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../methodology/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../ai-developer-guide/">AI Developer Guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Function AI agent guide</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#deploy">How functions are loaded</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#annotation">@PreLoad annotation — full contract</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#interface">Interface contract</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#typedlambdafunctioni-o-preferred">TypedLambdaFunction&lt;I, O&gt; — preferred</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#lambdafunction-untyped-fallback">LambdaFunction — untyped fallback</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#checklist">Pre-write checklist</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#patterns">Patterns</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#typed-function-map-io">Typed function — Map I/O</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#typed-function-pojo-io">Typed function — PoJo I/O</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#lambdafunction-raw-body">LambdaFunction — raw body</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#kernel-thread-cpu-intensive-or-blocking-legacy-io">Kernel thread — CPU-intensive or blocking legacy I/O</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#event-interceptor-access-the-raw-eventenvelope">Event interceptor — access the raw EventEnvelope</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#postoffice">Calling another function (PostOffice)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#synchronous-rpc-virtual-thread-recommended">Synchronous RPC (virtual-thread — recommended)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fire-and-forget">Fire-and-forget</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#parallel-rpc-multiple-targets">Parallel RPC (multiple targets)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fan-out-multicast-local-vs-broadcast-service-mesh">Fan-out: multicast (local) vs broadcast (service mesh)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#serialization">Serialization gotchas</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example">Worked example — full function + HTTP wiring</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Layer 1 — Event-driven</li>
+      <li class="breadcrumb-item active">Function AI agent guide</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="ai-agent-guide-writing-composable-functions-layer-1">AI agent guide — writing composable functions (Layer 1)</h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>Read this if you are an AI agent</strong> asked to write or review a composable function. It is the
+  single context you need — you should not need to read the engine source.</li>
+<li><strong>Generate from contracts.</strong> The <code>@PreLoad</code> annotation and the <code>TypedLambdaFunction</code> interface are
+  the source of truth. Validate against the checklist below before proposing code.</li>
+<li>A composable function is <strong>plain Java</strong> — no framework base class, no DI container, no coupling to
+  other functions by import. The only constraint is the <code>@PreLoad</code> annotation and the interface.</li>
+</ul>
+</blockquote>
+<hr />
+<h2 id="deploy">How functions are loaded</h2>
+<p>Functions are <strong>not called directly</strong>. The framework loads them at startup:</p>
+<ol>
+<li>Annotate the class with <code>@PreLoad(route="…")</code>.</li>
+<li>Implement <code>TypedLambdaFunction&lt;I, O&gt;</code> (or <code>LambdaFunction</code> for raw body access).</li>
+<li>The engine scans the classpath, registers every <code>@PreLoad</code> class on the in-memory event bus under
+   its <code>route</code> name, and starts <code>instances</code> concurrent workers for it.</li>
+<li>Any caller (REST endpoint, Event Script flow, another function) addresses the function <strong>only by
+   its route name string</strong>.</li>
+</ol>
+<p>A function that violates the contract (duplicate route, invalid <code>instances</code>, bad interface) causes the
+application to fail at startup — correctness is checkable before runtime.</p>
+<hr />
+<h2 id="annotation"><code>@PreLoad</code> annotation — full contract</h2>
+<pre><code class="language-java">@PreLoad(
+    route          = &quot;my.function&quot;,        // REQUIRED — unique route name (dot-separated, lowercase)
+    instances      = 1,                    // optional — workers (default 1, max 1000)
+    envInstances   = &quot;&quot;,                   // optional — property key to read instances from at startup
+    isPrivate      = true,                 // optional — true = local event bus only (default)
+    inputPojoClass = Void.class,           // optional — see List-of-PoJo note below
+    customSerializer = Void.class,         // optional — implements CustomSerializer
+    inputStrategy  = SerializationStrategy.DEFAULT,   // optional — SNAKE, CAMEL, DEFAULT
+    outputStrategy = SerializationStrategy.DEFAULT    // optional — SNAKE, CAMEL, DEFAULT
+)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Type</th>
+<th style="text-align: left;">Default</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>route</code></td>
+<td style="text-align: left;">String</td>
+<td style="text-align: left;"><strong>required</strong></td>
+<td style="text-align: left;">Unique. Dot-separated lowercase convention (<code>v1.my.function</code>).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>instances</code></td>
+<td style="text-align: left;">int</td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;">Number of concurrent workers. Production services typically use 10–100. Max 1000.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>envInstances</code></td>
+<td style="text-align: left;">String</td>
+<td style="text-align: left;"><code>""</code></td>
+<td style="text-align: left;">Property key in <code>application.properties</code> to read instances at startup (e.g. <code>"${MY_FN_WORKERS:10}"</code>). Falls back to <code>instances</code> if absent.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>isPrivate</code></td>
+<td style="text-align: left;">boolean</td>
+<td style="text-align: left;"><code>true</code></td>
+<td style="text-align: left;"><code>true</code> = accessible only within this process (local event bus). <code>false</code> = published to the distributed service mesh. REST automation and Event Script flows call functions locally — <code>true</code> is correct for almost all functions.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>inputPojoClass</code></td>
+<td style="text-align: left;">Class</td>
+<td style="text-align: left;"><code>Void.class</code></td>
+<td style="text-align: left;">Used when <code>I</code> is <code>Object</code> AND the arriving payload is a <code>List&lt;Map&gt;</code>. The engine deserializes each Map to this class. No effect when <code>I</code> is already a concrete PoJo type.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>customSerializer</code></td>
+<td style="text-align: left;">Class</td>
+<td style="text-align: left;"><code>Void.class</code></td>
+<td style="text-align: left;">Implements <code>CustomSerializer</code> for non-standard wire formats.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>inputStrategy</code></td>
+<td style="text-align: left;">enum</td>
+<td style="text-align: left;"><code>DEFAULT</code></td>
+<td style="text-align: left;"><code>SNAKE</code> / <code>CAMEL</code> / <code>DEFAULT</code> serialization for inbound JSON field names.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>outputStrategy</code></td>
+<td style="text-align: left;">enum</td>
+<td style="text-align: left;"><code>DEFAULT</code></td>
+<td style="text-align: left;"><code>SNAKE</code> / <code>CAMEL</code> / <code>DEFAULT</code> serialization for outbound JSON field names.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="interface">Interface contract</h2>
+<h3 id="typedlambdafunctioni-o-preferred"><code>TypedLambdaFunction&lt;I, O&gt;</code> — preferred</h3>
+<pre><code class="language-java">public interface TypedLambdaFunction&lt;I, O&gt; {
+    O handleEvent(Map&lt;String, String&gt; headers, I input, int instance) throws Exception;
+}
+</code></pre>
+<ul>
+<li><code>headers</code> — request headers (<code>Map&lt;String, String&gt;</code>); case-insensitive lookup via <code>EventEnvelope.getHeader()</code>.</li>
+<li><code>input</code> — the deserialized request body. Type <code>I</code> can be <code>Map&lt;String, Object&gt;</code>, a PoJo, or a primitive.
+  For key-by-key data mapping (Event Script / Knowledge Graph), <code>I</code> must be <code>Map</code> or a PoJo —
+  not a <code>List</code>.</li>
+<li><code>instance</code> — the worker index (0 to <code>instances − 1</code>). Pass to <code>new PostOffice(headers, instance)</code>.</li>
+<li>Return type <code>O</code> — can be <code>Map</code>, PoJo, <code>List</code>, primitive, or <code>Void</code>. Reactive: <code>Mono&lt;O&gt;</code> or <code>Flux&lt;O&gt;</code>.</li>
+<li><strong>Any thrown <code>Exception</code> is caught by the framework</strong> and returned as an error <code>EventEnvelope</code> to the
+  caller — no unhandled exception will crash the process.</li>
+</ul>
+<h3 id="lambdafunction-untyped-fallback"><code>LambdaFunction</code> — untyped fallback</h3>
+<pre><code class="language-java">// extends TypedLambdaFunction&lt;Object, Object&gt;
+public interface LambdaFunction extends TypedLambdaFunction&lt;Object, Object&gt; {
+    Object handleEvent(Map&lt;String, String&gt; headers, Object input, int instance) throws Exception;
+}
+</code></pre>
+<p>Use <code>LambdaFunction</code> only when you need raw access to the body (pass-through, routing logic, or when
+the input type varies). For all other cases, prefer <code>TypedLambdaFunction&lt;I, O&gt;</code> for a stricter contract.</p>
+<hr />
+<h2 id="checklist">Pre-write checklist</h2>
+<blockquote>
+<p><strong>Validate before proposing code:</strong>
+- [ ] <code>route</code> is set (required). Follows the dot-separated lowercase convention.
+- [ ] <code>route</code> is unique across the application (no two <code>@PreLoad</code> classes share a route).
+- [ ] <code>instances</code> is appropriate for concurrency needs (default <code>1</code>; typical services use <code>10–100</code>; max <code>1000</code>).
+- [ ] Input type <code>I</code> is <code>Map&lt;String, Object&gt;</code> or a PoJo when the function participates in key-by-key
+      data mapping. Do <strong>not</strong> use <code>List</code> as <code>I</code> in that context.
+- [ ] If the function receives a <code>List&lt;PoJo&gt;</code> (via Event Script <code>*</code> passthrough), use <code>I = Object</code>
+      and set <code>inputPojoClass = ElementType.class</code>.
+- [ ] <code>isPrivate = false</code> is set only if the function must be visible to other services over the
+      distributed event mesh. For REST or Event Script, leave the default <code>true</code>.
+- [ ] The function holds <strong>no direct reference to another user function</strong> (no <code>new OtherFunction()</code>).
+- [ ] PostOffice is constructed as <code>new PostOffice(headers, instance)</code> inside <code>handleEvent</code> — not
+      cached as a field (it carries per-request trace context).
+- [ ] Numeric values from event headers use <code>Utility.getInstance().str2int()</code> / <code>str2long()</code>, not
+      direct <code>Integer.parseInt()</code>, to survive the MsgPack Long↔Integer downcast.</p>
+</blockquote>
+<hr />
+<h2 id="patterns">Patterns</h2>
+<h3 id="typed-function-map-io">Typed function — Map I/O</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;hello.function&quot;, instances = 10)
+public class HelloFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input,
+                                           int instance) throws Exception {
+        var name = input.getOrDefault(&quot;name&quot;, &quot;world&quot;).toString();
+        return Map.of(&quot;message&quot;, &quot;Hello, &quot; + name + &quot;!&quot;);
+    }
+}
+</code></pre>
+<h3 id="typed-function-pojo-io">Typed function — PoJo I/O</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;v1.create.profile&quot;, instances = 10)
+public class CreateProfile implements TypedLambdaFunction&lt;Profile, ProfileConfirmation&gt; {
+
+    @Override
+    public ProfileConfirmation handleEvent(Map&lt;String, String&gt; headers,
+                                           Profile input,
+                                           int instance) throws Exception {
+        // input is already deserialized to Profile by the framework
+        return new ProfileConfirmation(input);
+    }
+}
+</code></pre>
+<h3 id="lambdafunction-raw-body">LambdaFunction — raw body</h3>
+<pre><code class="language-java">@PreLoad(route = &quot;hello.passthrough&quot;, instances = 5)
+public class HelloPassthrough implements LambdaFunction {
+
+    @Override
+    public Object handleEvent(Map&lt;String, String&gt; headers,
+                              Object body,
+                              int instance) throws Exception {
+        return body;  // echo the raw body back unchanged
+    }
+}
+</code></pre>
+<h3 id="kernel-thread-cpu-intensive-or-blocking-legacy-io">Kernel thread — CPU-intensive or blocking legacy I/O</h3>
+<pre><code class="language-java">@KernelThreadRunner
+@PreLoad(route = &quot;legacy.blocking.call&quot;, instances = 5)
+public class LegacyBlockingFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+    // instances should be small (kernel threads are limited; default pool = 100)
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input,
+                                           int instance) throws Exception {
+        // may do synchronous blocking I/O here
+        return result;
+    }
+}
+</code></pre>
+<h3 id="event-interceptor-access-the-raw-eventenvelope">Event interceptor — access the raw EventEnvelope</h3>
+<pre><code class="language-java">@EventInterceptor
+@PreLoad(route = &quot;my.interceptor&quot;, instances = 5)
+public class MyInterceptor implements LambdaFunction {
+    @Override
+    public Object handleEvent(Map&lt;String, String&gt; headers,
+                              Object body,    // body IS the original EventEnvelope
+                              int instance) throws Exception {
+        EventEnvelope original = (EventEnvelope) body;
+        // forward, log, or transform — return value is ignored
+        return null;
+    }
+}
+</code></pre>
+<hr />
+<h2 id="postoffice">Calling another function (PostOffice)</h2>
+<h3 id="synchronous-rpc-virtual-thread-recommended">Synchronous RPC (virtual-thread — recommended)</h3>
+<pre><code class="language-java">var po = new PostOffice(headers, instance);   // always construct inside handleEvent
+
+EventEnvelope response = po.request(
+    new EventEnvelope().setTo(&quot;target.route&quot;).setBody(Map.of(&quot;key&quot;, &quot;value&quot;)),
+    5000   // timeout in milliseconds
+).get();  // .get() suspends the virtual thread — does NOT block a kernel thread
+
+if (response.hasError()) {
+    throw new AppException(response.getStatus(), response.getError().toString());
+}
+var result = (Map&lt;String, Object&gt;) response.getBody();
+</code></pre>
+<h3 id="fire-and-forget">Fire-and-forget</h3>
+<pre><code class="language-java">var po = new PostOffice(headers, instance);
+po.send(new EventEnvelope().setTo(&quot;target.route&quot;).setBody(Map.of(&quot;key&quot;, &quot;value&quot;)));
+</code></pre>
+<h3 id="parallel-rpc-multiple-targets">Parallel RPC (multiple targets)</h3>
+<pre><code class="language-java">var po = new PostOffice(headers, instance);
+List&lt;EventEnvelope&gt; requests = List.of(
+    new EventEnvelope().setTo(&quot;service.a&quot;).setBody(bodyA),
+    new EventEnvelope().setTo(&quot;service.b&quot;).setBody(bodyB)
+);
+List&lt;EventEnvelope&gt; responses = po.request(requests, 5000).get();
+</code></pre>
+<h3 id="fan-out-multicast-local-vs-broadcast-service-mesh">Fan-out: multicast (local) vs broadcast (service mesh)</h3>
+<p>Mercury has two fan-out mechanisms with <strong>completely different scopes</strong>. Do not confuse them.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;">Multicast</th>
+<th style="text-align: left;">Broadcast</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Scope</strong></td>
+<td style="text-align: left;">Single JVM — local event bus only</td>
+<td style="text-align: left;">All pods / containers in the service mesh</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>How enabled</strong></td>
+<td style="text-align: left;"><code>multicast.yaml</code> config — no API call</td>
+<td style="text-align: left;"><code>po.broadcast()</code> API call</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Requires</strong></td>
+<td style="text-align: left;">Nothing extra</td>
+<td style="text-align: left;"><code>cloud.connector=kafka</code> + presence-monitor</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Fallback without mesh</strong></td>
+<td style="text-align: left;">N/A (always local)</td>
+<td style="text-align: left;">Degrades to unicast on local instance</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Multicast</strong> — configure in <code>src/main/resources/multicast.yaml</code>, then send to the source route normally:</p>
+<pre><code class="language-yaml"># multicast.yaml — fan out order.placed to three local subscribers
+multicast:
+  - source: &quot;order.placed&quot;
+    targets:
+      - &quot;inventory.handler&quot;
+      - &quot;notification.handler&quot;
+      - &quot;audit.handler&quot;
+</code></pre>
+<pre><code class="language-properties"># application.properties
+yaml.multicast=classpath:/multicast.yaml
+</code></pre>
+<p>Callers just <code>po.send("order.placed", body)</code> — the framework intercepts and relays to all targets. No API change.</p>
+<p><strong>Broadcast</strong> — delivers to every instance of the route <strong>across all pods</strong> in the Kafka service mesh:</p>
+<pre><code class="language-java">var po = new PostOffice(headers, instance);
+po.broadcast(new EventEnvelope().setTo(&quot;target.route&quot;).setBody(payload));
+// Only effective with cloud.connector=kafka + presence-monitor running.
+// Without a service mesh it degrades to unicast on the local instance.
+</code></pre>
+<blockquote>
+<p><strong>Do not use <code>po.broadcast()</code> for local fan-out.</strong> Use <code>multicast.yaml</code> for that.</p>
+</blockquote>
+<p><strong>PostOffice rules:</strong>
+- Create inside <code>handleEvent</code> — it carries per-request trace context from <code>headers</code>.
+- Do not cache it as a field.
+- <code>request().get()</code> is safe on a virtual thread. Use <code>@KernelThreadRunner</code> if the function itself
+  must be on a kernel thread, but the PostOffice RPC is still virtual-thread-safe.</p>
+<hr />
+<h2 id="serialization">Serialization gotchas</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Scenario</th>
+<th style="text-align: left;">Pitfall</th>
+<th style="text-align: left;">Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Small <code>Long</code> value in a <code>Map</code> body</td>
+<td style="text-align: left;">MsgPack downcasts it to <code>Integer</code> on the wire</td>
+<td style="text-align: left;">Use a PoJo to enforce the type, or <code>Utility.str2long(String)</code> for safe conversion</td>
+</tr>
+<tr>
+<td style="text-align: left;">Integer value in a <code>Map</code> from Gson</td>
+<td style="text-align: left;">Customized Gson returns it as <code>Long</code></td>
+<td style="text-align: left;">Use <code>Utility.str2int(String)</code> / <code>str2long(String)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Integer map key</td>
+<td style="text-align: left;">Auto-converted to <code>String</code> on serialization</td>
+<td style="text-align: left;">Always use <code>String</code> map keys</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>List</code> as input type with key-by-key mapping</td>
+<td style="text-align: left;">Cannot be mapped field-by-field</td>
+<td style="text-align: left;">Use <code>*</code> passthrough in Event Script + <code>inputPojoClass</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-java">// Safe numeric conversions
+Utility util = Utility.getInstance();
+int n  = util.str2int(headers.get(&quot;x-count&quot;));    // returns -1 if null/invalid
+long t = util.str2long(String.valueOf(map.get(&quot;amount&quot;)));  // returns -1 if null/invalid
+</code></pre>
+<hr />
+<h2 id="example">Worked example — full function + HTTP wiring</h2>
+<pre><code class="language-java">// 1. The function
+@PreLoad(route = &quot;greeting.function&quot;, instances = 10)
+public class GreetingFunction implements TypedLambdaFunction&lt;Map&lt;String, Object&gt;, Map&lt;String, Object&gt;&gt; {
+
+    @Override
+    public Map&lt;String, Object&gt; handleEvent(Map&lt;String, String&gt; headers,
+                                           Map&lt;String, Object&gt; input,
+                                           int instance) throws Exception {
+        var name = input.getOrDefault(&quot;name&quot;, &quot;world&quot;).toString();
+        return Map.of(&quot;greeting&quot;, &quot;Hello, &quot; + name + &quot;!&quot;);
+    }
+}
+</code></pre>
+<pre><code class="language-yaml"># 2. Wire to HTTP in rest.yaml
+rest:
+  - service: &quot;greeting.function&quot;
+    methods: ['GET', 'POST']
+    url: &quot;/api/greeting&quot;
+    timeout: 10s
+</code></pre>
+<pre><code class="language-bash"># 3. Test
+curl -s -X POST http://127.0.0.1:8085/api/greeting \
+     -H &quot;content-type: application/json&quot; \
+     -d '{&quot;name&quot;: &quot;Mercury&quot;}'
+# → {&quot;greeting&quot;: &quot;Hello, Mercury!&quot;}
+</code></pre>
+<hr />
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../write-your-first-function/">Write your first function</a> — step-by-step tutorial with PostOffice call.</li>
+<li><a href="../function-execution/">Function Execution Strategies</a> — virtual vs kernel threads, Mono/Flux in depth.</li>
+<li><a href="../../annotations-reference/">Annotations Reference</a> — complete <code>@PreLoad</code>, <code>@MainApplication</code>, and other annotations.</li>
+<li><a href="../../api-overview/">API Overview</a> — <code>PostOffice</code>, <code>Platform</code>, <code>EventEnvelope</code> API reference.</li>
+<li><a href="../../event-script/ai-agent-guide/">Event Script AI agent guide</a> — how to orchestrate this function as a flow task.</li>
+<li><a href="../../rest-automation/ai-agent-guide/">REST automation AI agent guide</a> — how to wire it to HTTP in rest.yaml.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../function-execution/" class="btn btn-neutral float-left" title="Function Execution Strategies"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../rest-automation/" class="btn btn-neutral float-right" title="REST Automation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../function-execution/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../rest-automation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

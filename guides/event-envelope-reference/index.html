@@ -55,6 +55,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-developer-guide/">AI Developer Guide</a>
+                  </li>
               </ul>
               <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
               <ul>
@@ -63,6 +65,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
                   </li>
@@ -995,12 +999,21 @@ po.send(EventEnvelope event)
 String token = po.sendLater(EventEnvelope event, Date future)
 </code></pre>
 <h3 id="broadcast">Broadcast</h3>
-<p>Delivers to all registered instances of the target function:</p>
+<p>Delivers to <strong>all instances of the target route across all pods in the Kafka service mesh</strong>.
+Broadcast is only meaningful when <code>cloud.connector=kafka</code> and presence-monitor are running.
+Without a service mesh it degrades to unicast on the local instance.</p>
 <pre><code class="language-java">po.broadcast(String to, Kv... parameters)
 po.broadcast(String to, Object body)
 po.broadcast(String to, Object body, Kv... parameters)
 po.broadcast(EventEnvelope event)
 </code></pre>
+<blockquote>
+<p><strong>Local fan-out within the same JVM is a separate feature — multicast.</strong> Configure it in
+<code>multicast.yaml</code> (<code>yaml.multicast</code> property): a source route is intercepted and the message
+relayed to every listed target route, entirely within the in-memory event bus.
+See <a href="../service-mesh/">Minimalist Service Mesh</a> for the distributed broadcast context and
+<a href="../configuration-reference/">Configuration Reference</a> for the <code>yaml.multicast</code> key.</p>
+</blockquote>
 <h3 id="request-reply-three-future-types">Request-Reply: three Future types</h3>
 <p>Choose the Future type based on your execution context:</p>
 <table>
