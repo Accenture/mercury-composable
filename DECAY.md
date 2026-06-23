@@ -259,7 +259,7 @@ memory layer enforces:
 - **The primitives.** *Current State* = `continuity.md` (read at session start). *Vision* =
   `memory/vision.md` (the target; `core`, invariant-verified). *Blueprint* = typed
   `(blueprint)` Open Threads = the Vision↔Current-State gap. *Design* = Key Decisions /
-  Architectural Invariants (and, **optionally**, a human-facing `docs/ADR.md` decision log
+  Architectural Invariants (and, **optionally**, a human-facing `docs/arch-decisions/ADR.md` decision log
   — Architecture Decision Records, read on demand, never in the per-session path; its
   supersede/deprecate-never-delete lifecycle mirrors §9, and — once the log exists — is **kept in
   sync** with fact supersession: superseding an `(ADR-NNNN)`-tagged fact, or making a new durable

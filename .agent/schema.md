@@ -99,8 +99,9 @@ work segment); that is expected and correct. The decay math counts session *file
 (`DECAY.md` §4), so each log is one event regardless of how conversations are sliced.
 
 Name the file with the UTC timestamp at **persist time** — the moment you write it.
-Use `date -u +%Y-%m-%d-%H%M%S` or equivalent; colons omitted for cross-platform
-filename compatibility. Filenames sort lexicographically = chronologically, so the
+**Always run `date -u +%Y-%m-%d-%H%M%S`** — the `currentDate` injected into your
+context is date-only and produces a non-conforming `YYYY-MM-DD.md` name if used
+directly. Colons omitted for cross-platform filename compatibility. Filenames sort lexicographically = chronologically, so the
 most recent log is always the last file — unambiguous even with multiple
 contributors on the same day.
 
@@ -190,7 +191,7 @@ broken link is drift, and it's grep-detectable.
 
 ---
 
-## docs/ADR.md  (optional — human-facing governance, on-demand)
+## docs/arch-decisions/ADR.md  (optional — human-facing governance, on-demand)
 
 An **optional** Architecture Decision Record log: a human-facing ledger of significant,
 durable architecture decisions, one per entry, at the VBDI **Design** altitude. It lives
@@ -203,7 +204,7 @@ like `docs/DESIGN-*.md`). Not auto-installed; adopt it only if the team wants on
 `id`. An ADR is the durable *why* (context, alternatives, consequences). They cross-link:
 `formalizes: <continuity-id>` on the ADR ↔ a visible **`(ADR-NNNN)` tag in the invariant's
 title** (e.g. `Target-repo scope only (ADR-0001)`). That tag is a **pointer for humans** — it
-is **not** a cue for the agent to open `docs/ADR.md`; the constraint text in `continuity.md`
+is **not** a cue for the agent to open `docs/arch-decisions/ADR.md`; the constraint text in `continuity.md`
 stays authoritative and is read every session, the ADR is read on demand only. The constraint
 text is never restated as competing truth.
 

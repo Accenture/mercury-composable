@@ -131,5 +131,33 @@ class TestDanglingCrossFile(unittest.TestCase):
             self.assertTrue(any("orphan-fact" in w and "ghost-fact" in w for w in warns), warns)
 
 
+class TestSessionFilenames(unittest.TestCase):
+    def test_date_only_filenames_flagged(self):
+        sessions = [
+            "/repo/memory/sessions/2026-06-12.md",
+            "/repo/memory/sessions/2026-06-23.md",
+        ]
+        warns = memory_lint.check_session_filenames(sessions)
+        self.assertEqual(len(warns), 2)
+        self.assertTrue(all("[date-only-session]" in w for w in warns))
+
+    def test_timestamped_filenames_not_flagged(self):
+        sessions = [
+            "/repo/memory/sessions/2026-06-23-153401.md",
+            "/repo/memory/sessions/2026-06-13-011149.md",
+        ]
+        warns = memory_lint.check_session_filenames(sessions)
+        self.assertEqual(len(warns), 0)
+
+    def test_mixed(self):
+        sessions = [
+            "/repo/memory/sessions/2026-06-12.md",
+            "/repo/memory/sessions/2026-06-23-153401.md",
+        ]
+        warns = memory_lint.check_session_filenames(sessions)
+        self.assertEqual(len(warns), 1)
+        self.assertIn("2026-06-12.md", warns[0])
+
+
 if __name__ == "__main__":
     unittest.main()

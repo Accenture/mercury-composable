@@ -215,6 +215,20 @@ function check_overdue(cont, pinned, sslu, aw) {
   return out;
 }
 
+export function check_session_filenames(sessions) {
+  // (5) session filenames must carry a time component (YYYY-MM-DD-HHmmss.md).
+  // A date-only name means the agent used the injected context date instead of
+  // running `date -u +%Y-%m-%d-%H%M%S` — it breaks same-day lexicographic ordering.
+  const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+  return sessions
+    .filter((s) => DATE_ONLY.test(s.replace(/\.md$/, "")))
+    .map(
+      (s) =>
+        `[date-only-session] ${s} — missing time component; ` +
+        "run `date -u +%Y-%m-%d-%H%M%S` at persist time (not the context date)"
+    );
+}
+
 export function check_dangling(allf) {
   // (4) supersession links resolve
   const out = [];
@@ -267,6 +281,7 @@ export function main(argv) {
   const warns = [
     ...check_overdue(cont, pinned, sslu, aw),
     ...check_dangling(new Map([...cont, ...arch, ...extra])),
+    ...check_session_filenames(sessions),
   ];
 
   return report({ cont, arch, sessions, acw, aw, warns, errors, strict });

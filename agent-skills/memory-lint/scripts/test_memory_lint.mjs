@@ -11,6 +11,7 @@ import {
   memref_ids,
   load_repo,
   check_dangling,
+  check_session_filenames,
 } from "./memory-lint.mjs";
 
 function byCodePoint(a, b) {
@@ -115,6 +116,26 @@ test("memref_ids is bounded by the next heading", () => {
   const ids = memref_ids(text);
   assert.ok(ids.has("in-block-id"));
   assert.ok(!ids.has("not-a-ref-id"));
+});
+
+test("check_session_filenames flags date-only names", () => {
+  const sessions = ["2026-06-12.md", "2026-06-23.md"];
+  const warns = check_session_filenames(sessions);
+  assert.equal(warns.length, 2);
+  assert.ok(warns.every((w) => w.includes("[date-only-session]")));
+});
+
+test("check_session_filenames passes timestamped names", () => {
+  const sessions = ["2026-06-23-153401.md", "2026-06-13-011149.md"];
+  const warns = check_session_filenames(sessions);
+  assert.equal(warns.length, 0);
+});
+
+test("check_session_filenames mixed", () => {
+  const sessions = ["2026-06-12.md", "2026-06-23-153401.md"];
+  const warns = check_session_filenames(sessions);
+  assert.equal(warns.length, 1);
+  assert.ok(warns[0].includes("2026-06-12.md"));
 });
 
 test("supersession target in vision.md is not dangling (cross-file resolution)", () => {

@@ -79,8 +79,10 @@ whole conversation. A long, multi-task conversation may produce several logs; th
 expected (the decay math counts log files — `DECAY.md` §4).
 
 1. **Create** `memory/sessions/YYYY-MM-DD-HHMMSS.md` using the UTC timestamp at
-   **persist time** (when you write the file). Use `date -u +%Y-%m-%d-%H%M%S` or
-   equivalent; omit colons for cross-platform compatibility. Title line:
+   **persist time** (when you write the file). **Always run `date -u +%Y-%m-%d-%H%M%S`
+   to get the filename** — the `currentDate` injected into your context is date-only
+   and produces a non-conforming `YYYY-MM-DD.md` name if used directly. Omit colons
+   for cross-platform compatibility. Title line:
    `# Session (endZ)` — the persist-time UTC stamp (full ISO 8601 ms) is required; a
    start time is optional/best-effort, so don't fabricate one. Never append to
    another contributor's session file.
@@ -116,7 +118,7 @@ expected (the decay math counts log files — `DECAY.md` §4).
    nothing to do.)
 
 **After-session checklist** (the ritual is convention — run it each time):
-- [ ] session log written (persist-time filename + `## Memory References`)
+- [ ] session log written — ran `date -u +%Y-%m-%d-%H%M%S` for the filename (not `currentDate`); includes `## Memory References`
 - [ ] `continuity.md`: `last_session` set, threads checked, new facts have footers
 - [ ] review run if cadence/size triggered (`REVIEW.md`)
 - [ ] reminded the user to commit `memory/` (deliberate, human-initiated, with a self-identifying co-author trailer)

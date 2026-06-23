@@ -201,6 +201,22 @@ def check_overdue(cont, pinned, sslu, aw):
     return out
 
 
+def check_session_filenames(sessions):
+    # (5) session filenames must carry a time component (YYYY-MM-DD-HHmmss.md).
+    # A date-only name means the agent used the injected context date instead of
+    # running `date -u +%Y-%m-%d-%H%M%S` — it breaks same-day lexicographic ordering.
+    DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    out = []
+    for s in sessions:
+        stem = os.path.basename(s)[:-3]
+        if DATE_ONLY.match(stem):
+            out.append(
+                f"[date-only-session] {os.path.basename(s)} — missing time component; "
+                "run `date -u +%Y-%m-%d-%H%M%S` at persist time (not the context date)"
+            )
+    return out
+
+
 def check_dangling(allf):
     # (4) supersession links resolve
     out = []
@@ -244,7 +260,11 @@ def main():
     sslu = make_sslu(refs)
 
     errors = check_duplicates(cont, arch) + check_over_archived(arch, sslu, aw)
-    warns = check_overdue(cont, pinned, sslu, aw) + check_dangling({**cont, **arch, **extra})
+    warns = (
+        check_overdue(cont, pinned, sslu, aw)
+        + check_dangling({**cont, **arch, **extra})
+        + check_session_filenames(sessions)
+    )
 
     return report(cont, arch, sessions, acw, aw, warns, errors, strict)
 
