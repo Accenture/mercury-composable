@@ -4,28 +4,28 @@ docs_dir: docs
 nav:
   - Home: index.md
 
-  - Part I · Orientation:
+  - Orientation:
     - Getting Started: guides/getting-started.md
 
-  - Part II · Foundations:
+  - Foundations:
     - Architecture Overview: guides/architecture.md
     - Methodology: guides/methodology.md
 
-  - Part III · Layer 1 — Event-driven foundation:
+  - Layer 1 — Event-driven:
     - Overview: guides/event-driven-foundation.md
     - Function Execution Strategies: guides/function-execution.md
     - REST Automation: guides/rest-automation/index.md
     - REST grammar: guides/rest-automation/rest-grammar.md
     - REST AI agent guide: guides/rest-automation/ai-agent-guide.md
 
-  - Part IV · Layer 2 — Composable orchestration:
+  - Layer 2 — Composable:
     - Overview: guides/event-script/index.md
     - Event Script Syntax: guides/event-script/syntax.md
     - Flow grammar: guides/event-script/flow-grammar.md
     - Flow AI agent guide: guides/event-script/ai-agent-guide.md
     - Flow Configuration Schema: guides/flow-schema-reference.md
 
-  - Part V · Layer 3 — Knowledge Graph as Application:
+  - Layer 3 — Knowledge Graph:
     - Overview: guides/knowledge-graph/index.md
     - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
     - Built-in skills reference: guides/knowledge-graph/skills-reference.md
@@ -35,13 +35,13 @@ nav:
     - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
     - Minimalist Property Graph: guides/knowledge-graph/property-graph.md
 
-  - Part VI · Operate & integrate:
+  - Operate & integrate:
     - Build, Test & Deploy: guides/build-test-deploy.md
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
     - Minimalist Service Mesh: guides/service-mesh.md
 
-  - Part VII · Reference:
+  - Reference:
     - Architectural Decision Records: arch-decisions/ADR.md
     - API Overview: guides/api-overview.md
     - Annotations Reference: guides/annotations-reference.md
