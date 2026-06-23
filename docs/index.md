@@ -16,8 +16,7 @@ virtual threads, so straightforward synchronous code performs on par with reacti
 event-driven core descends from the **Scala/Akka actor model**, realized on the **Eclipse Vert.x**
 event bus.
 
-> **New here?** Start with the **[5-Minute Quickstart](guides/quickstart.md)**, then
-> **[Getting Started](guides/getting-started.md)**.
+> **New here?** Start with **[Getting Started](guides/getting-started.md)** — it opens with a 5-minute quickstart.
 
 ## A layered ascent
 
@@ -52,7 +51,7 @@ A machine-readable map of the whole site lives at [`llms.txt`](llms.txt).
 
 ## Explore the docs
 
-- **Quickstart & tutorials** — [Quickstart](guides/quickstart.md) · [Getting Started](guides/getting-started.md)
+- **Get started** — [Getting Started](guides/getting-started.md)
 - **Guides** — [REST Automation](guides/rest-automation/index.md) · [Build, Test & Deploy](guides/build-test-deploy.md) ·
   [Spring Boot Integration](guides/spring-boot.md) · [Event over HTTP](guides/event-over-http.md) ·
   [Service Mesh](guides/service-mesh.md)

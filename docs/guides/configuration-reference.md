@@ -122,7 +122,7 @@ virtual threads.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `deferred.commit.log` | `boolean` | `false` | Defer write commits in the ElasticQueue overflow buffer. For unit-test use only — do not set in production. |
-| `kernel.thread.pool` | `int` | `100` | Size of the kernel thread pool for `@KernelThreadRunner` functions. Maximum 200. |
+| `kernel.thread.pool` | `int` | `100` | Size of the kernel thread pool for `@KernelThreadRunner` functions. The framework enforces a minimum of 32; there is no hard maximum, but ~200 is advisory — a JVM can rarely sustain more than ~250 kernel threads. |
 | `worker.instances.<route>` | `int` | _(from `@PreLoad`)_ | Override the concurrency instance count for any named route at startup. Example: `worker.instances.my.service=50`. |
 | `worker.instances.no.op` | `int` | `500` | Instance count for the built-in `no.op` placeholder function. |
 | `worker.instances.resilience.handler` | `int` | `500` | Instance count for the built-in `resilience.handler`. |
@@ -147,6 +147,7 @@ virtual threads.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `distributed.trace.processor` | `String` | — | Route name of a user function that receives all distributed trace entries for forwarding to a telemetry backend. |
+| `log.format` | `String` | `text` | Application log output format: `text` (human-readable), `compact`, or `json`. |
 | `show.application.properties` | `String` (comma-sep list) | — | Application property keys to expose via the `/env` actuator endpoint. |
 | `show.env.variables` | `String` (comma-sep list) | — | Environment variable names to expose via the `/env` actuator endpoint. |
 | `skip.rpc.tracing` | `String` (comma-sep list) | `async.http.request` | Route names excluded from distributed trace recording. |
@@ -222,7 +223,7 @@ These properties are used by the optional `mini-scheduler` module.
 |-----|------|---------|-------------|
 | `deferred.start` | `boolean` | `false` | Defer scheduler startup until triggered manually, e.g. to wait for leader election. |
 | `leader.election` | `boolean` | `false` | Enable leader election so that only one instance in a cluster runs each scheduled job. |
-| `yaml.cron` | `String` (comma-sep paths) | `classpath:/cron.yaml` | Location(s) of the cron job definition file(s). Multiple files are merged. |
+| `yaml.cron` | `String` (comma-sep paths) | `file:/tmp/config/cron.yaml, classpath:/cron.yaml` | Location(s) of the cron job definition file(s). Multiple files are merged. |
 
 ---
 

@@ -45,6 +45,7 @@ to avoid breaking the system unintentionally.
 | task.executor                | Perform event choreography            | event-script     |
 | http.flow.adapter            | Built-in flow adapter                 | event-script     |
 | no.op                        | no-operation placeholder function     | event-script     |
+| resilience.handler           | Resilience handler (retry / circuit breaker) for flows | event-script     |
 | system.service.registry      | Distributed routing registry          | Connector        |
 | system.service.query         | Distributed routing query             | Connector        |
 | cloud.connector.health       | Cloud connector health service        | Connector        |
@@ -58,6 +59,7 @@ to avoid breaking the system unintentionally.
 | async.http.request           | HTTP request event handler            | REST automation  |
 | async.http.response          | HTTP response event handler           | REST automation  |
 | cron.scheduler               | Cron job scheduler                    | Simple Scheduler |
+| run.scheduled.job            | Scheduled job executor                | Simple Scheduler |
 | init.service.monitor.*       | reserved for event stream startup     | Service monitor  |
 | completion.service.monitor.* | reserved for event stream clean up    | Service monitor  |
 

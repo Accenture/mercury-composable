@@ -105,16 +105,16 @@ A REST endpoint may look like this:
 
 *Syntax*
 
-| Parameter      | Usage                                                              | Example                                                     |
-|:---------------|:-------------------------------------------------------------------|:------------------------------------------------------------|
-| service        | List of one or two route names of a service                        | 'hello.world'<br>['primary.service', 'secondary.service']   |
-| methods        | List of one or two HTTP methods                                    | ['GET']                                                     |
-| url            | URI path of the service                                            | '/api/hello/world'                                          |
-| timeout        | Maximum time to wait for a REST response                           | Default value is '30s' for 30 seconds.<br>("s" for seconds) |
-| cors           | Reference ID of a CORS section                                     | 'cors_1'                                                    |
-| headers        | Reference ID of a HEADERS transformation section                   | 'header_1'                                                  |
-| authentication | *Optional*. Route the HTTP request for authentication is provided. | default is false                                            |
-| tracing        | Enable distributed tracing when set to 'true'                      | default is false                                            |
+| Parameter | Usage | Example |
+|:---|:---|:---|
+| service | List of one or two route names<br>of a service | 'hello.world'<br>['primary.service',<br>'secondary.service'] |
+| methods | List of one or two HTTP methods | ['GET'] |
+| url | URI path of the service | '/api/hello/world' |
+| timeout | Maximum time to wait<br>for a REST response | Default value is '30s'<br>for 30 seconds<br>("s" for seconds) |
+| cors | Reference ID of a CORS section | 'cors_1' |
+| headers | Reference ID of a HEADERS<br>transformation section | 'header_1' |
+| authentication | *Optional*. Route the HTTP<br>request for authentication<br>is provided. | default is false |
+| tracing | Enable distributed tracing<br>when set to 'true' | default is false |
 
 When more than one service route name is provided, the first one is the primary service and the system will
 deliver its output as HTTP response. The second one is the secondary service for listening to the REST endpoint.

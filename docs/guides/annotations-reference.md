@@ -24,7 +24,8 @@ behavior, and manage application lifecycle. This page documents every annotation
 its full parameter set, behavior, and usage examples.
 
 All core annotations are in the `org.platformlambda.core.annotations` package.
-The `@SimplePlugin` annotation is in `com.accenture.models` (event-script-engine module).
+The `@SimplePlugin` annotation is in `com.accenture.models` (event-script-engine module), and the MiniGraph
+`@FetchFeature` annotation is in `com.accenture.minigraph.annotations` (minigraph-playground-engine module).
 
 ---
 
@@ -43,6 +44,7 @@ The `@SimplePlugin` annotation is in `com.accenture.models` (event-script-engine
 | [`@CloudConnector`](#cloudconnector) | Cloud integration | 2 | Service mesh connector plug-in |
 | [`@CloudService`](#cloudservice) | Cloud integration | 2 | Cloud service plug-in |
 | [`@SimplePlugin`](#simpleplugin) | Event Script | 0 | Event Script `f:` function plug-in |
+| [`@FetchFeature`](#fetchfeature) | MiniGraph | 1 | Register a MiniGraph fetch-feature plug-in |
 
 ---
 
@@ -657,6 +659,44 @@ input:
   transformation, and generators. See [Flow Configuration Schema Reference](flow-schema-reference.md)
   for the full list.
 - Located in the `event-script-engine` module; requires that module on the classpath.
+
+---
+
+## @FetchFeature
+
+Registers a class as a **MiniGraph fetch feature** — a named plug-in (implementing the `FeatureRunner`
+interface) that the `graph.api.fetcher` skill invokes during an API fetch, for example to log request or
+response headers or to apply authentication. The MiniGraph playground scans for these at startup and
+registers each by its feature name.
+
+**Target:** `ElementType.TYPE`
+**Retention:** `RetentionPolicy.RUNTIME`
+**Package:** `com.accenture.minigraph.annotations` (minigraph-playground-engine module)
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` | `String` | *(required)* | Feature name used to reference this plug-in (e.g. `log-request-headers`). |
+
+### Required interface
+
+The annotated class must implement `FeatureRunner`.
+
+### Example
+
+```java
+@FetchFeature("log-request-headers")
+public class LogRequestHeaders implements FeatureRunner {
+    // invoked by the graph.api.fetcher skill during an API fetch
+}
+```
+
+### Notes
+
+- MiniGraph-specific: requires the `minigraph-playground-engine` module on the classpath.
+- Scanned and registered at startup by the playground loader; referenced by feature name from
+  `graph.api.fetcher` configuration.
 
 ---
 

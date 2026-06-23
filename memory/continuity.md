@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-22 | agent: Claude Code
+- **last_session:** 2026-06-23 | agent: Claude Code
 - **last_review:** 2026-06-21 | through 2026-06-22-003844.md
 - **last_invariant_check:** (none yet)
 
@@ -293,6 +293,11 @@
   a composable function is *just regular Java* (with or without Spring), writable in **sequential, reactive,
   or object-oriented** style — the framework constrains *coupling* (route names + `EventEnvelope`), not
   coding style. → serves `vision-mercury-composable` (AI-assisted semantic app dev / Human-AI collaboration).
+  **Progress (2026-06-23):** (1) content polishing largely **done** — Quickstart/Getting-Started merged,
+  the 3-layer site polished, wide reference tables fixed site-wide via `docs/css/extra.css` (wrap, not
+  per-cell `<br>`), and a code-vs-docs **drift validation** of annotations/configuration/reserved-names
+  completed + corrected. (2) AI-context-discovery on-ramp **still pending** — the next focus. A PR for the
+  whole rewrite was opened for peer review on 2026-06-23.
   <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
 - [ ] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
   Kafka notification function (outbound) to this repo.** Today only the HTTP flow adapter ships here (see

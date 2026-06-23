@@ -5,7 +5,6 @@ nav:
   - Home: index.md
 
   - Part I · Orientation:
-    - Quickstart: guides/quickstart.md
     - Getting Started: guides/getting-started.md
 
   - Part II · Foundations:
@@ -62,3 +61,6 @@ plugins:
       lang: en
       separator: '[\s\-\.]+'
 theme: readthedocs
+
+extra_css:
+  - css/extra.css

@@ -17,8 +17,10 @@ keywords: [getting started, tutorial, composable, example app, rest, flows, func
 >   self-contained functions and a YAML event flow, run end to end.
 > - **You'll learn** — how a request flows through REST automation → an Event Script flow →
 >   composable functions, and how to write and wire your own.
-> - **Prerequisites** — Java 21+, Maven 3.9.7+; ~20 minutes. Want the fast version first? See the
->   [Quickstart](quickstart.md).
+> - **And glimpse** — the **Active Knowledge Graph** (the top layer): one call returns `hello world`
+>   from a *graph that executes*, not from code.
+> - **Prerequisites** — Java 21+, Maven 3.9.7+. The Quickstart below takes ~5 minutes; the full
+>   walkthrough that follows, ~20.
 
 Mercury Composable is a software development toolkit for writing composable applications.
 
@@ -27,6 +29,91 @@ are self-contained and pluggable. You can mix-n-match functions to form new appl
 functions without adverse side effect to a production system. Multiple versions of a function can exist, and you
 can decide how to route user requests to different versions of a function. Applications would be easier to design,
 develop, maintain, deploy, and scale.
+
+## Quickstart — five minutes from zero to a running API
+
+**Prerequisites:** Java 21+ (`java --version`), Maven 3.9.7+ (`mvn --version`), and Git.
+
+**1. Clone and build.**
+
+```shell
+git clone https://github.com/Accenture/mercury-composable.git
+cd mercury-composable
+mvn clean install
+```
+
+> The first build downloads all dependencies and may take a few minutes.
+
+**2. Run the example app.**
+
+```shell
+cd examples/composable-example
+java -jar target/composable-example-4.4.11.jar
+```
+
+Look for these lines to confirm it's running:
+
+```log
+CompileFlows - Loaded create-profile
+CompileFlows - Loaded delete-profile
+CompileFlows - Loaded get-profile
+CompileFlows - Event scripts deployed: 3
+AppStarter - Reactive HTTP server running on port-8100
+```
+
+**3. Try it.** The example is a simple profile management API. Run these in a new terminal:
+
+```bash
+# Create
+curl -s -X POST http://127.0.0.1:8100/api/profile \
+  -H "Content-Type: application/json" -H "Accept: application/json" \
+  -d '{"id": 100, "name": "Hello World", "address": "100 World Blvd", "telephone": "123-456-7890"}'
+
+# Retrieve
+curl -s http://127.0.0.1:8100/api/profile/100
+
+# Delete
+curl -s -X DELETE http://127.0.0.1:8100/api/profile/100
+```
+
+Create returns `201 Created` — note `address` and `telephone` masked as `***` (the flow encrypts them
+before storing):
+
+```json
+{
+  "profile": { "address": "***", "name": "Hello World", "telephone": "***", "id": 100 },
+  "type": "CREATE",
+  "secure": ["address", "telephone"]
+}
+```
+
+Retrieve returns `200 OK` with the fields decrypted; delete returns `200 OK` with
+`{ "id": 100, "deleted": true }`.
+
+**What just happened?** Each HTTP request was routed through a matching **event flow**
+(`create-profile`, `get-profile`, `delete-profile`) that orchestrated one or more self-contained Java
+**functions** — including an encryption step. Every function is stateless; the flow's **state machine**
+tracks intermediate results between steps. The rest of this guide explains how that works, and how to
+build your own.
+
+**A taste of the top layer.** That profile API is the *event-driven* foundation. Mercury's newest layer
+lets a **graph** be the application — nodes execute as the engine traverses them, so behavior lives in a
+model, not in code. For a 30-second taste, run the MiniGraph playground (a separate example) and call a
+built-in tutorial graph:
+
+```shell
+cd examples/minigraph-playground
+java -jar target/minigraph-playground-4.4.11.jar
+```
+
+```bash
+curl http://127.0.0.1:8085/api/graph/tutorial-1
+# hello world
+```
+
+That `hello world` came from traversing a two-node graph — a `Root` wired to an `End` node carrying a
+skill — not from imperative code. Build one yourself in
+[Build your first graph](knowledge-graph/build-your-first-graph.md).
 
 ## Composable application architecture
 
@@ -182,19 +269,9 @@ target machine has.
 
 ## Composable application example
 
-Let's take a test drive of a composable application example in the "examples/composable-example" subproject.
-
-You can use your favorite IDE to run the example or execute it from a terminal using command line.
-
-To run it from the command line, you may do this:
-
-```shell
-cd sandbox/mercury-composable/examples/composable-example
-java -jar target/composable-example-4.4.11.jar
-```
-
-If you run the application from the IDE, you may execute the "main" method in the `MainApp` class under the
-"com.accenture.demo.start" package folder.
+You ran the `examples/composable-example` app in the Quickstart above; this section explains how that app
+is built — the event flows behind those three endpoints. To run it from an IDE instead of the command line,
+execute the `main` method in the `MainApp` class under the `com.accenture.demo.start` package.
 
 The first step in designing a composable application is to draw an event flow diagram. This is similar to
 a data flow diagram where the arrows are labeled with the event objects. Note that event flow diagram is
@@ -264,51 +341,11 @@ AppStarter:365 - Reactive HTTP server running on port-8100
 It shows that the 3 flow configuration files are compiled as objects to optimize performance. The user functions are
 loaded into the event system and the REST endpoints are rendered from the "rest.yaml" file.
 
-### Testing the application
+### Observing a request
 
-You can create a test user profile with this python code. Alternatively, you can also use PostMan or other means
-to do this.
-
-```python
->>> import requests, json
->>> d = { 'id': 100, 'name': 'Hello World', 'address': '100 World Blvd', 'telephone': '123-456-7890' }
->>> h = { 'content-type': 'application/json', 'accept': 'application/json' }
->>> r = requests.post('http://127.0.0.1:8100/api/profile', data=json.dumps(d), headers=h)
->>> print(r.status_code)
-201
->>> print(r.text)
-{
-  "profile": {
-    "address": "***",
-    "name": "Hello World",
-    "telephone": "***",
-    "id": 100
-  },
-  "type": "CREATE",
-  "secure": [
-    "address",
-    "telephone"
-  ]
-}
-```
-
-To verify that the user profile has been created, you can point your browser to
-
-```text
-http://127.0.0.1:8100/api/profile/100
-```
-
-Your browser will return the following:
-```json
-{
-  "address": "100 World Blvd",
-  "name": "Hello World",
-  "telephone": "123-456-7890",
-  "id": 100
-}
-```
-
-You have successfully tested the two REST endpoints. Tracing information in the application log may look like this:
+You exercised the three endpoints in the Quickstart. Because the `get-profile` endpoint sets
+`tracing: true` in `rest.yaml`, each request also emits a distributed trace to the application log —
+handy for seeing the path a request took and the time spent in each task:
 
 ```json
 {
@@ -519,7 +556,6 @@ However, if there is a use case that you prefer to write orchestration logic by 
 APIs to do event-driven programming. API overview will be covered in [API Overview](api-overview.md).
 ## See also
 
-- [Quickstart](quickstart.md) — the five-minute version of this tutorial.
 - [Methodology](methodology.md) — the four composable design principles behind what you built.
 - [Function Execution Strategies](function-execution.md) — virtual vs. kernel threads for your functions.
 - [Event Script Syntax](event-script/syntax.md) — orchestrate functions with YAML flows.

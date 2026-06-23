@@ -424,7 +424,7 @@ dataset.put("filename", request.getFileName());
 dataset.put("session", request.getSessionInfo());
 ```
 
-If you write your own Kafka flow adapter, the dataset should contain headers and body mapped with a Kafka event.
+For a Kafka flow adapter, the dataset should contain headers and body mapped from the Kafka event.
 
 For other flow adapters, you may use different set of key-values.
 

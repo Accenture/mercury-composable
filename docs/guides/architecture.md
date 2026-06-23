@@ -308,12 +308,15 @@ arguments to preserve the distributed trace chain:
 PostOffice po = PostOffice.trackable(headers, instance);
 ```
 
-Key methods: `po.send(route, body)` — fire-and-forget; `po.request(event, timeoutMs).get()` — blocking
-RPC on virtual thread; `po.asyncRequest(event, timeoutMs)` — async RPC returning a Vert.x `Future`;
-`po.eRequest(event, timeoutMs)` — async RPC returning `CompletableFuture`; `po.asyncRequest(events, timeout)`
-— fork-n-join parallel requests; `po.sendLater(event, futureDate)` — scheduled delivery;
-`po.broadcast(route, body)` — send to all instances of a function. The `po.exists(route)` method can
-discover public functions in other application instances when running in service mesh mode.
+Key methods:
+
+- `po.send(route, body)` — fire-and-forget
+- `po.request(event, timeoutMs).get()` — blocking RPC on a virtual thread
+- `po.asyncRequest(event, timeoutMs)` — async RPC returning a Vert.x `Future`
+- `po.eRequest(event, timeoutMs)` — async RPC returning a `CompletableFuture`
+- `po.asyncRequest(events, timeout)` — fork-n-join parallel requests
+- `po.sendLater(event, futureDate)` — scheduled delivery
+- `po.exists(route)` — discover public functions in other application instances (service mesh mode)
 
 **Platform** is the singleton service registry:
 

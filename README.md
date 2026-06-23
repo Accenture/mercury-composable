@@ -4,7 +4,7 @@ A Java framework for building composable, event-driven applications from self-co
 
 [![License](https://img.shields.io/github/license/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/blob/main/LICENSE) [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/projects/jdk/21/) [![Last Commit](https://img.shields.io/github/last-commit/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/commits/main) [![GitHub Stars](https://img.shields.io/github/stars/Accenture/mercury-composable)](https://github.com/Accenture/mercury-composable/stargazers)
 
-> **New to Mercury Composable?** Jump to the [Quickstart](https://accenture.github.io/mercury-composable/guides/quickstart/) to get a working app running in under 5 minutes.
+> **New to Mercury Composable?** Jump to [Getting Started](https://accenture.github.io/mercury-composable/guides/getting-started/) — it opens with a 5-minute quickstart to get a working app running.
 
 ## What is Mercury Composable?
 
@@ -17,8 +17,8 @@ self-contained with immutable I/O, the design is optimized for both human develo
 
 ## Quick Start
 
-**[5-Minute Quickstart](https://accenture.github.io/mercury-composable/guides/quickstart/)**
-— Clone, build, and run your first composable app.
+**[Getting Started](https://accenture.github.io/mercury-composable/guides/getting-started/)**
+— clone, build, and run your first composable app in 5 minutes.
 
 ### Prerequisites
 
