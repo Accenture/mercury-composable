@@ -30,3 +30,18 @@ project
 .idea
 .history
 *.iml
+
+# AI infrastructure
+.kiro/
+
+# === agent-memory: regenerated per-vendor adapters — do NOT commit ===
+# The shared layer (memory/, .agent/, agent-skills/, AGENTS.md, CLAUDE.md, DECAY.md,
+# REVIEW.md, SKILLS.md) is intentionally TRACKED. These per-vendor adapters and
+# scratch/compiled artifacts are regenerated locally and must stay ignored:
+.claude/
+.cursor/
+.gemini/
+review-scratch/
+__pycache__/
+*.pyc
+site/

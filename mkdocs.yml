@@ -1,46 +1,71 @@
 site_name: Composable for Java
-site_url: https://github.com/accenture/mercury-composable
+site_url: https://accenture.github.io/mercury-composable/
+docs_dir: docs
 nav:
-  - Home: README.md
-  - Quickstart: guides/QUICKSTART.md
+  - Home: index.md
 
-  - Tutorials:
-    - Getting Started: guides/CHAPTER-1.md
+  - Orientation:
+    - Getting Started: guides/getting-started.md
 
-  - Guides:
-    - REST Automation: guides/CHAPTER-3.md
-    - Build, Test and Deploy: guides/CHAPTER-5.md
-    - Spring Boot Integration: guides/CHAPTER-6.md
-    - Event over HTTP: guides/CHAPTER-7.md
-    - Minimalist Service Mesh: guides/CHAPTER-8.md
-    - Minimalist Property Graph: guides/CHAPTER-10.md
-    - Active Knowledge Graph: guides/CHAPTER-11.md
+  - Foundations:
+    - Architecture Overview: guides/architecture.md
+    - Methodology: guides/methodology.md
+    - AI Developer Guide: guides/ai-developer-guide.md
 
-  - Concepts:
-    - Methodology: guides/METHODOLOGY.md
-    - Architecture Overview: guides/ARCHITECTURE.md
-    - Composable Design: guides/COMPOSABLE-DESIGN.md
-    - Function Execution Strategies: guides/CHAPTER-2.md
-    - Design Notes: arch-decisions/DESIGN-NOTES.md
+  - Layer 1 — Event-driven:
+    - Overview: guides/event-driven/index.md
+    - Write your first function: guides/event-driven/write-your-first-function.md
+    - Function Execution Strategies: guides/event-driven/function-execution.md
+    - Function AI agent guide: guides/event-driven/ai-agent-guide.md
+    - REST Automation: guides/rest-automation/index.md
+    - REST grammar: guides/rest-automation/rest-grammar.md
+    - REST AI agent guide: guides/rest-automation/ai-agent-guide.md
+
+  - Layer 2 — Composable:
+    - Overview: guides/event-script/index.md
+    - Event Script Syntax: guides/event-script/syntax.md
+    - Flow grammar: guides/event-script/flow-grammar.md
+    - Flow AI agent guide: guides/event-script/ai-agent-guide.md
+    - Flow Configuration Schema: guides/flow-schema-reference.md
+
+  - Layer 3 — Knowledge Graph:
+    - Overview: guides/knowledge-graph/index.md
+    - Build your first graph: guides/knowledge-graph/build-your-first-graph.md
+    - Built-in skills reference: guides/knowledge-graph/skills-reference.md
+    - MiniGraph command grammar: guides/knowledge-graph/command-reference.md
+    - AI agent guide: guides/knowledge-graph/ai-agent-guide.md
+    - Composing the layers: guides/knowledge-graph/composing-the-layers.md
+    - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
+    - Minimalist Property Graph: guides/knowledge-graph/property-graph.md
+
+  - Operate & integrate:
+    - Build, Test & Deploy: guides/build-test-deploy.md
+    - Spring Boot Integration: guides/spring-boot.md
+    - Event over HTTP: guides/event-over-http.md
+    - Minimalist Service Mesh: guides/service-mesh.md
 
   - Reference:
-    - Annotations Reference: guides/ANNOTATIONS-REFERENCE.md
-    - Configuration Reference: guides/CONFIGURATION-REFERENCE.md
-    - Event Envelope Reference: guides/EVENT-ENVELOPE-REFERENCE.md
-    - Flow Configuration Schema: guides/FLOW-SCHEMA-REFERENCE.md
-    - Event Script Syntax: guides/CHAPTER-4.md
-    - API Overview: guides/CHAPTER-9.md
-    - Application Properties: guides/APPENDIX-I.md
-    - Reserved Names & Headers: guides/APPENDIX-II.md
-    - Actuators & HTTP Client: guides/APPENDIX-III.md
-    - Release Notes: CHANGELOG.md
-    - Table of Contents: guides/TABLE-OF-CONTENTS.md
+    - Architectural Decision Records: arch-decisions/ADR.md
+    - API Overview: guides/api-overview.md
+    - Annotations Reference: guides/annotations-reference.md
+    - Configuration Reference: guides/configuration-reference.md
+    - Event Envelope Reference: guides/event-envelope-reference.md
+    - Reserved Names & Headers: guides/reserved-names-and-headers.md
+    - Actuators & HTTP Client: guides/actuators-and-http-client.md
+    - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
 
-  - Contributing: CONTRIBUTING.md
-  - Code of Conduct: CODE_OF_CONDUCT.md
-  - Inclusivity: INCLUSIVITY.md
+  - Documentation Conventions: guides/documentation-conventions.md
+  - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
+  - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md
+  - Inclusivity: https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md
 plugins:
   - search:
       lang: en
       separator: '[\s\-\.]+'
 theme: readthedocs
+
+markdown_extensions:
+  - attr_list
+
+extra_css:
+  - css/extra.css

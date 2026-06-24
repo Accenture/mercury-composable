@@ -1,0 +1,397 @@
+---
+title: Architecture Overview
+summary: The complete technical mental model — the request pipeline, components, the in-memory event bus,
+  threading, and the core APIs.
+layer: platform-core
+audience: [architect, developer]
+keywords: [architecture, event bus, request pipeline, flow adapter, threading, postoffice, platform]
+---
+
+# Architecture Overview
+
+> **At a glance**
+>
+> - **What** — the framework's technical mental model: the request pipeline (flow adapters → event
+>   manager → functions), the in-memory event bus, threading, and the core APIs.
+> - **For** architects and developers who want the whole picture before the specifics.
+> - The [Methodology](methodology.md) covers the *why* behind this design.
+
+Mercury Composable is a Java 21 framework for building event-driven applications from self-contained,
+stateless functions wired together by YAML-configured event choreography. It targets microservices,
+serverless deployments, and any system where maintainability and horizontal scalability are priorities.
+Because each function is a pure input-process-output unit with an explicit interface contract, the
+framework is also well suited for AI-assisted code generation. For *deterministic* generation, each DSL
+ships an agent-ready specification — a grammar plus a machine-readable catalog — so an agent can author
+artifacts without inferring from examples or reading engine source: see the
+[REST](rest-automation/ai-agent-guide.md), [Event Script](event-script/ai-agent-guide.md), and
+[MiniGraph](knowledge-graph/ai-agent-guide.md) agent guides.
+
+## Where it came from
+
+Mercury Composable's event-driven core descends from the **actor model** — the design behind Scala's
+Akka framework, where independent *actors* share no state and interact only by passing messages to
+named addresses. Mercury carries that into Java: a **function** is an isolated actor, addressed only by
+its **route name**, and the only thing that passes between functions is an immutable **`EventEnvelope`**.
+There are no direct calls between user functions, so there is nothing to tightly couple.
+
+The transport is the **Eclipse Vert.x** event bus, in-process. On top of it, **Java 21 virtual threads**
+let one function call another and await the reply in ordinary synchronous code — no callbacks, no
+reactive plumbing — while performing like non-blocking code, because a parked virtual thread costs
+almost nothing.
+
+This lineage explains the shape of the whole framework: because the atom is a decoupled, address-by-name
+actor, the *same* function can be wired by HTTP (a **service**), by a flow (a **task**), or by a
+knowledge graph (a **skill**) without the function itself ever changing.
+
+---
+
+## System Architecture
+
+A Mercury Composable application processes a request as a **pipeline**, from outside in:
+**user / calling application → protocol boundary (REST automation for HTTP, a Kafka listener, or another
+protocol) → flow adapter → Event Manager / flow engine → in-memory event bus → composable functions**.
+A *protocol boundary* is where one communication protocol enters the system; each has a corresponding
+*flow adapter* that converts the inbound message into an `EventEnvelope` and triggers a named flow. For HTTP, the **REST automation** engine is the boundary and invokes the built-in **HTTP
+flow adapter** (`http.flow.adapter`); for Kafka, the flow adapter itself embeds a topic listener.
+
+The **flow adapter** converts external requests into internal events. The built-in HTTP flow adapter
+takes HTTP requests routed to it by the REST automation engine, packages them as `EventEnvelope` objects
+destined for the flow engine, and delivers the final response back to the caller. A Kafka flow adapter
+follows the same contract for stream-based sources, embedding a topic listener. The adapter API is open,
+so custom adapters can consume any event source (serverless triggers, file watchers, MQ, CSV). Each
+adapter exposes a named route — the HTTP adapter uses `http.flow.adapter`. **Only the HTTP flow adapter
+is packaged in this repo today**; a Kafka flow adapter (inbound) and its notification function (outbound)
+run in production installations, with a minimalist in-repo version planned for a future iteration.
+
+**REST Automation** is the protocol boundary for HTTP, and it eliminates controller boilerplate. HTTP endpoints
+are declared in a `rest.yaml` configuration file. Each entry maps a URL pattern and HTTP method set to
+either a flow (via the `flow` key, routing through the HTTP flow adapter) or directly to a named function
+(via `service`). REST automation handles CORS headers, per-endpoint authentication functions, request and
+response header rules, distributed tracing activation, and timeout enforcement — all in configuration. It
+holds the HTTP request and response objects for each session and routes a flow's result back to the
+response object, so HTTP is synchronous request/response; a Kafka boundary, by contrast, is fully
+asynchronous — any reply is published to another topic.
+
+The **Event Manager** (also called the flow engine) is the core orchestrator. When an event arrives from
+an adapter, the event manager resolves the matching flow configuration by its ID, creates a transient
+in-memory **state machine** for that transaction, and begins executing the task sequence. For each task,
+the event manager performs the input data mapping (populating the function's argument scope from the
+state machine and request dataset), dispatches the event to the target function, collects the result,
+and applies the output data mapping (writing result values back to the state machine or flow output).
+Exception handling — per-task or per-flow — is also managed by the event manager.
+
+The **in-memory event system** is the transport backbone, built on Eclipse Vertx's event bus with
+Java 21 virtual thread management. All inter-function communication within a single JVM travels through
+this bus. Point-to-point delivery routes an event to exactly one worker instance of the target function.
+Broadcast delivery sends an event to all registered instances. The event system uses `/tmp` as an
+overflow buffer when a consumer is slower than the producer, removing the need for explicit back-pressure
+handling in user code.
+
+**Composable functions** are the innermost stage and the only place where application business logic
+lives. A function knows nothing about HTTP, the flow configuration, or other user functions. It receives
+typed input, executes its logic, and returns typed output. Its only permitted external dependency is a
+platform or infrastructure component consumed through the event system — never a direct method call to
+another user function.
+
+---
+
+## Composable Functions
+
+A composable function is a Java class implementing `TypedLambdaFunction<I, O>` or the untyped
+`LambdaFunction`. The typed interface defines the exact contract:
+
+```java
+public interface TypedLambdaFunction<I, O> {
+    O handleEvent(Map<String, String> headers, I input, int instance) throws Exception;
+}
+```
+
+`LambdaFunction` is equivalent to `TypedLambdaFunction<Object, Object>` and is used when input type
+cannot be determined statically. Prefer `TypedLambdaFunction` with a concrete PoJo or
+`Map<String, Object>` as the input type for all new functions.
+
+The `@PreLoad` annotation registers the function with the event system at startup:
+
+```java
+@PreLoad(route = "v1.get.profile", instances = 50, isPrivate = false)
+public class GetProfile implements TypedLambdaFunction<Map<String, Object>, Profile> {
+    @Override
+    public Profile handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
+        String profileId = headers.get("profile_id");
+        // business logic — return result or throw AppException(statusCode, message)
+        return profile;
+    }
+}
+```
+
+The `route` is a lowercase, dot-separated identifier (e.g., `v1.get.profile`). At least one dot is
+required. The `instances` value sets the maximum number of concurrent workers for this function.
+`isPrivate = false` makes the function addressable by other application instances through the service
+mesh; the default is `true` (local only). Optional `@PreLoad` parameters include `envInstances`
+(read instance count from application.properties at startup), `customSerializer`, `inputPojoClass`,
+and `inputStrategy` / `outputStrategy` for snake-case or camel-case serialization control.
+
+Functions must be stateless. They must not share mutable state via static fields or `ThreadLocal`
+variables, and must never call other user functions directly. All inter-function communication goes
+through `PostOffice`. This isolation is what enables independent unit testing, safe parallel execution,
+and hot-deployment of individual functions.
+
+Throw `AppException(statusCode, message)` to return structured error responses with HTTP-compatible
+status codes.
+
+---
+
+## Event Envelope
+
+Every message in the framework is transported as an `EventEnvelope` — an immutable container with three
+distinct parts: **metadata** (routing address, trace ID, correlation ID, status code, execution timing),
+**headers** (`Map<String, String>` of user-defined parameters passed to `handleEvent`), and **body**
+(the event payload — a PoJo, `Map<String, Object>`, Java primitive, or `byte[]`).
+
+Envelopes are serialized with MsgPack (binary JSON) inside the event bus and converted to standard JSON
+at HTTP boundaries. User code never serializes directly. The framework maps the envelope body to the
+typed `input` argument of `handleEvent`, and wraps the return value into a new envelope automatically.
+
+```java
+EventEnvelope event = new EventEnvelope()
+    .setTo("v1.get.profile")
+    .setHeader("profile_id", "100")
+    .setBody(requestMap);
+EventEnvelope response = po.request(event, 5000).get();
+Profile profile = response.getBody(Profile.class);
+```
+
+The `status` field uses HTTP-compatible codes; `getStatus() >= 400` indicates an error. Fluent setter
+methods (`setTo`, `setHeader`, `setBody`, `setStatus`, `setTrace`, `setCorrelationId`) all return
+`EventEnvelope` for chaining. To inspect all envelope metadata from inside a function, declare
+the input type as `EventEnvelope` in the `TypedLambdaFunction` signature.
+
+For a complete listing of all `EventEnvelope` and `PostOffice` methods, see the
+[Event Envelope Reference](event-envelope-reference.md).
+
+---
+
+## Event Script and Flow Configuration
+
+Event Script is a YAML DSL that represents an event flow as a data structure rather than as code.
+A flow file specifies which function executes first, how data is mapped between functions, and what
+to do on success or error. An entire transaction's orchestration logic lives in a YAML file that can
+be changed and redeployed without modifying Java code.
+
+```yaml
+flow:
+  id: 'create-profile'
+  description: 'Create a user profile with field encryption'
+  ttl: 30s
+  exception: 'v1.hello.exception'
+
+first.task: 'v1.encrypt.fields'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'text(address, telephone) -> protected_fields'
+    process: 'v1.encrypt.fields'
+    output:
+      - 'result -> model.profile'
+    description: 'Encrypt PII fields before storage'
+    execution: sequential
+    next:
+      - 'v1.save.profile'
+
+  - input:
+      - 'model.profile -> *'
+    process: 'v1.save.profile'
+    output:
+      - 'text(application/json) -> output.header.content-type'
+      - 'result -> output.body'
+    description: 'Persist profile and return to caller'
+    execution: end
+```
+
+**Input/output data mapping** uses an `origin -> destination` syntax with namespaces. Every expression
+in the `input:` and `output:` lists is a mapping statement. The namespaces are:
+
+- `input.` — the incoming request dataset. For HTTP: `input.body`, `input.header.<name>`,
+  `input.path_parameter.<name>`, `input.query.<name>`, `input.method`, `input.uri`, `input.session`
+- `model.` — the per-transaction state machine, readable and writable by all tasks in the flow.
+  Use `model.parent.` (alias: `model.root.`) to share state with sub-flows.
+- `result` — the entire return value of the just-executed task
+- `result.<key>` — a specific field from the return value (uses dot-bracket notation)
+- `output.body` — the final response body returned to the caller
+- `output.header.<name>` — a response header
+- `output.status` — the HTTP response status code
+- `header.<name>` — a key-value passed into the next function's `headers` argument
+- `error.status`, `error.message`, `error.task`, `error.stack` — available in exception handlers
+- `text(value)` — a string constant (also used for content-type, e.g., `text(application/json)`)
+- `int(n)`, `long(n)`, `float(n)`, `double(n)`, `boolean(true|false)` — typed constants
+- `map(k=v, ...)` or `map(config.key)` — a map of key-values or values from application config
+
+The wildcard `-> *` maps the entire source object as the function's input body. Dot-bracket notation
+(`model.user.address`, `numbers[1]`) is used throughout for nested access.
+
+**Execution types** control flow advancement after each task: `sequential` continues to the `next`
+task list; `end` terminates the flow and delivers the result; `response` sends the HTTP response
+immediately and continues executing remaining tasks asynchronously; `fork-n-join` dispatches to
+multiple tasks in parallel and waits for all; `parallel` dispatches without waiting; `decision`
+evaluates the task's boolean return to branch; `pipeline` chains tasks as a streaming pipeline;
+`sink` discards the result and continues without waiting.
+
+Sub-flows are referenced using the `flow://` protocol: `process: 'flow://my-sub-flow'`. The parent
+TTL must cover the combined execution time of all sub-flows.
+
+---
+
+## REST Automation
+
+HTTP endpoints are declared in `rest.yaml` without writing Java controllers:
+
+```yaml
+rest:
+  - service: "http.flow.adapter"
+    methods: ['GET', 'POST']
+    url: "/api/profile/{profile_id}"
+    flow: 'get-profile'
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+    authentication: 'v1.auth.validator'
+```
+
+When `flow` is specified, the HTTP flow adapter packages the request and passes it to the flow engine.
+When `service` points directly to a function route (without `flow`), requests go to that function
+without a flow configuration. Path template parameters (`{profile_id}`) are accessible in flows as
+`input.path_parameter.profile_id`. The optional `authentication` field names a function that receives
+an `AsyncHttpRequest` and returns `true` to approve, `false` for HTTP 401, or throws
+`AppException(statusCode, message)` for custom rejections.
+
+---
+
+## Function Execution Model
+
+Virtual threads are the default execution environment for all functions. Java 21 virtual threads
+are cooperatively scheduled, cheap to create in large numbers, and suspend non-destructively on
+blocking calls. A `po.request(event, timeout).get()` call appears sequential in code but the
+virtual thread is suspended while waiting, freeing the JVM to schedule other work. This means
+sequential, readable code behaves with the performance characteristics of reactive code, without
+the callback complexity.
+
+For functions that make blocking calls incompatible with virtual threads — tight CPU-bound loops
+or legacy code using kernel-thread-specific constructs — add `@KernelThreadRunner`:
+
+```java
+@PreLoad(route = "v1.heavy.computation", instances = 5)
+@KernelThreadRunner
+public class HeavyTask implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
+    // executes in kernel thread pool (configurable via kernel.thread.pool, default 100)
+}
+```
+
+Keep `instances` small for kernel-thread functions (5–10 is typical). The default kernel thread
+pool is capped at 100 (`kernel.thread.pool` in application.properties). Avoid the `synchronized`
+keyword and `ThreadLocal` in virtual-thread functions; both create contention that undermines the
+cooperative scheduling model.
+
+Functions can also return `Mono<T>` or `Flux<T>` from Project Reactor. The framework integrates
+these reactive return types automatically. For `Flux`, the consumer function receives stream
+coordinates in headers (`x-stream-id`, `x-ttl`) and processes the stream via `FluxConsumer<T>`.
+
+---
+
+## Core APIs
+
+**PostOffice** is the messaging client. Always obtain it from `handleEvent`'s `headers` and `instance`
+arguments to preserve the distributed trace chain:
+
+```java
+PostOffice po = PostOffice.trackable(headers, instance);
+```
+
+Key methods:
+
+- `po.send(route, body)` — fire-and-forget
+- `po.request(event, timeoutMs).get()` — blocking RPC on a virtual thread
+- `po.asyncRequest(event, timeoutMs)` — async RPC returning a Vert.x `Future`
+- `po.eRequest(event, timeoutMs)` — async RPC returning a `CompletableFuture`
+- `po.asyncRequest(events, timeout)` — fork-n-join parallel requests
+- `po.sendLater(event, futureDate)` — scheduled delivery
+- `po.exists(route)` — discover public functions in other application instances (service mesh mode)
+
+**Platform** is the singleton service registry:
+
+```java
+Platform platform = Platform.getInstance();
+platform.register("my.dynamic.function", new MyFunction(), 5); // dynamic registration
+platform.hasRoute("v1.get.profile");   // check if function is registered locally
+platform.release("my.dynamic.function");
+platform.waitForProvider("cloud.connector", 10); // wait up to 10s for a provider to be ready
+```
+
+**AsyncHttpRequest** is the typed input class for functions declared directly as REST endpoints without
+a flow. It provides accessors for all HTTP request fields. **FluxConsumer\<T\>** wraps Flux streams
+returned by other functions. **AppConfigReader** provides runtime access to `application.properties`
+and `application.yml` values via `config.get("my.key")` and `config.getProperty("my.key")`.
+
+---
+
+## Distributed Architecture
+
+Mercury scales beyond a single JVM through two complementary mechanisms. **Event over HTTP** allows
+functions in separate application instances to communicate by exposing a built-in `POST /api/event`
+endpoint (`event.api.service`). A caller routes an event to a function in a peer instance using
+`po.asyncRequest(event, timeout, headers, "http://peer/api/event", true)` — the same `EventEnvelope`
+serialization crosses the network boundary transparently. In Kubernetes, the event API endpoint is
+reached via internal cluster DNS without requiring an ingress.
+
+**Minimalist Service Mesh** uses Kafka as a distributed routing table and event bridge. Setting
+`cloud.connector=kafka` in `application.properties` enables the `cloud.connector` module, which
+publishes public-function routes to the distributed registry and bridges inter-instance events
+through Kafka. Functions with `isPrivate = false` become reachable by any instance in the mesh.
+Calling code uses the same `PostOffice` API whether the target is local or remote.
+
+---
+
+## Key Annotations Reference
+
+| Annotation | Purpose |
+|---|---|
+| `@PreLoad` | Register a function at startup: `route`, `instances`, `isPrivate`, `envInstances`, `customSerializer`, `inputStrategy`, `outputStrategy` |
+| `@MainApplication` | Mark the application entry point class (implements `EntryPoint`); `sequence` controls order (1–999) |
+| `@BeforeApplication` | Initialization hook that runs before `@MainApplication`; use sequences 3–999 for user code |
+| `@KernelThreadRunner` | Execute the function in the kernel thread pool instead of virtual threads |
+| `@EventInterceptor` | Receive the raw `EventEnvelope` as input body; return value is ignored (advanced routing patterns) |
+| `@ZeroTracing` | Suppress distributed tracing for this function |
+| `@WebSocketService` | Register a WebSocket endpoint handler; annotated class implements `LambdaFunction` |
+| `@CloudConnector` | Mark a class as a cloud connector plug-in selected by `cloud.connector` in application.properties |
+| `@CloudService` | Mark a class as a cloud service plug-in selected by `cloud.services` in application.properties |
+| `@OptionalService` | Conditionally load a function based on a configuration expression (e.g., `!feature.flag`) |
+
+For complete parameter details, combination rules, and required interfaces, see the [Annotations Reference](annotations-reference.md).
+
+---
+
+## Key Configuration Files
+
+| File | Purpose |
+|---|---|
+| [`application.properties` / `application.yml`](configuration-reference.md) | Port (`rest.server.port`), component scan (`web.component.scan`), flow list reference (`yaml.flow.automation`), cloud connector (`cloud.connector`), serialization strategy (`snake.case.serialization`) |
+| `rest.yaml` | Declarative HTTP endpoint definitions: URL, methods, flow or service route, CORS config, auth function, tracing |
+| `flows.yaml` | Index of individual flow YAML files to load (`flows:` list; optional `location:` for non-classpath paths) |
+| `*.yml` in `flows/` | Individual event flow configurations, each defining one transaction's complete task sequence |
+
+All configuration files are loaded from the classpath (`classpath:/`) in `src/main/resources` by
+default. File-system paths can be specified using the `file:/` prefix, and multiple files can be
+comma-separated (e.g., `yaml.rest.automation=file:/tmp/config/rest.yaml, classpath:/rest.yaml`).
+
+---
+
+## Further Reading
+
+- [Methodology](methodology.md) — design principles: input-process-output, zero dependency, event choreography, platform abstraction
+- [Getting Started](getting-started.md) — hands-on walkthrough with the composable example application
+- [Function Execution Strategies](event-driven/function-execution.md) — virtual vs. kernel threads, Mono/Flux, authentication functions
+- [REST Automation](rest-automation/index.md) — complete `rest.yaml` syntax reference
+- [Event Script Syntax](event-script/syntax.md) — complete flow DSL reference including all task types, data mapping, sub-flows, and preload overrides
+- [API Overview](api-overview.md) — full `PostOffice`, `Platform`, `EventEnvelope`, and configuration API reference
+- [Build, Test and Deploy](build-test-deploy.md) — CI/CD, packaging, and deployment patterns

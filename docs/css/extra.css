@@ -1,0 +1,27 @@
+/* Sidebar section captions: allow wrapping so long titles don't clip. */
+.wy-menu-vertical .caption-text {
+  white-space: normal;
+}
+
+/* Mercury Composable docs — small overrides on the readthedocs theme.
+ *
+ * Wide reference tables (e.g. Annotations Reference) were forcing horizontal
+ * scrolling. The usual culprit is long, unbreakable inline-code tokens
+ * (package and type names like org.platformlambda.core.annotations). Letting
+ * cells and inline code wrap lets the table shrink to the content width
+ * instead of overflowing — no per-cell <br> needed.
+ */
+
+.rst-content table td,
+.rst-content table th {
+  white-space: normal;
+  vertical-align: top;
+}
+
+/* Break only genuinely long tokens, and only as a last resort. Unlike
+ * word-break / overflow-wrap:anywhere, this does NOT shrink a column below its
+ * longest word — so short words like "String" are never split mid-word. */
+.rst-content table td code,
+.rst-content table th code {
+  overflow-wrap: break-word;
+}
