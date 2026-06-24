@@ -662,6 +662,11 @@ public class PostOffice {
         if (event.getTracePath() == null) {
             event.setTracePath(myTracePath);
         }
+        // carry this function's spanId so the receiver can store it as its parentSpanId
+        TraceInfo trace = getTrace();
+        if (trace != null && trace.spanId != null) {
+            event.setSpanId(trace.spanId);
+        }
         return event;
     }
 }

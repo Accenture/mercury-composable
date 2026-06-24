@@ -61,6 +61,8 @@ public class WorkerHandler {
     private static final String BODY = "body";
     private static final String STATUS = "status";
     private static final String EXCEPTION = "exception";
+    private static final String SPAN_ID = "span_id";
+    private static final String PARENT_SPAN_ID = "parent_span_id";
     private static final String ASYNC = "async";
     private static final String ANNOTATIONS = "annotations";
     private static final String JOURNAL = "journal";
@@ -98,7 +100,7 @@ public class WorkerHandler {
         }
         String rpc = event.getTag(EventEmitter.RPC);
         EventEmitter po = EventEmitter.getInstance();
-        String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), instance) : "?";
+        String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), event.getSpanId(), instance) : "?";
         ProcessStatus ps = processEvent(event, rpc);
         TraceInfo trace = po.stopTracing(ref);
         if (tracing && trace != null && trace.id != null && trace.path != null) {
@@ -161,6 +163,12 @@ public class WorkerHandler {
             metrics.put(STATUS, 500);
             metrics.put(SUCCESS, false);
             metrics.put(EXCEPTION, "Response not delivered - "+ ps.getDeliveryError());
+        }
+        if (trace.spanId != null) {
+            metrics.put(SPAN_ID, trace.spanId);
+        }
+        if (trace.parentSpanId != null) {
+            metrics.put(PARENT_SPAN_ID, trace.parentSpanId);
         }
         return metrics;
     }
@@ -573,6 +581,10 @@ public class WorkerHandler {
         TraceInfo trace = po.getTrace(parentRoute, instance);
         if (trace != null) {
             response.setAnnotations(trace.annotations);
+            // Carry this function's own span_id so the caller can use it as parentSpanId for the next hop
+            if (trace.spanId != null) {
+                response.setSpanId(trace.spanId);
+            }
         }
         return response;
     }

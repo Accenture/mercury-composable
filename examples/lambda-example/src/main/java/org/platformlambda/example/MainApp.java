@@ -20,14 +20,10 @@ package org.platformlambda.example;
 
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
-import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @MainApplication
 public class MainApp implements EntryPoint {
@@ -41,26 +37,11 @@ public class MainApp implements EntryPoint {
     public void start(String[] args) {
         // Obtain the platform singleton instance
         Platform platform = Platform.getInstance();
-        // You can create a microservice as a lambda function inline or write it as a regular Java class
-        LambdaFunction echo = (headers, input, instance) -> {
-            log.info("echo #{} got a request", instance);
-            Map<String, Object> result = new HashMap<>();
-            result.put("body", input);
-            result.put("instance", instance);
-            result.put("origin", platform.getOrigin());
-            return result;
-        };
-        // Register the above inline lambda function
-        platform.register("hello.world", echo, 10);
         /*
-         * There are a few demo services in the "services" folder.
-         * They use the "PreLoad" annotation to load automatically.
-         *
          * If you are using Kafka or other messaging system as a service mesh,
          * you can set the "cloud.connector" in application.properties
          * and call the "connectToCloud" method.
          */
         platform.connectToCloud();
     }
-
 }

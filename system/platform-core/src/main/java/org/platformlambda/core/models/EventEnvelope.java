@@ -36,6 +36,7 @@ public class EventEnvelope {
     private static final String REPLY_TO_FIELD = "reply_to";
     private static final String TRACE_ID_FIELD = "trace_id";
     private static final String TRACE_PATH_FIELD = "trace_path";
+    private static final String SPAN_ID_FIELD = "span_id";
     private static final String CID_FIELD = "cid";
     private static final String TAG_FIELD = "tags";
     private static final String ANNOTATION_FIELD = "annotations";
@@ -72,6 +73,8 @@ public class EventEnvelope {
     // distributed trace ID for tracking a transaction from the edge to multiple levels of services
     private static final String TRACE_ID_FLAG = "t";
     private static final String TRACE_PATH_FLAG = "p";
+    // OTel span ID carried on the envelope so the receiver knows the sender's span (its own parentSpanId)
+    private static final String SPAN_ID_FLAG = "s";
     // optional correlation ID
     private static final String CID_FLAG = "X";
     // object type for automatic serialization
@@ -88,6 +91,7 @@ public class EventEnvelope {
     private String replyTo;
     private String traceId;
     private String tracePath;
+    private String spanId;
     private String cid;
     // type: Map = "M", List = "L", Primitive = "P", Nothing = "N" or body class name
     private String type;
@@ -393,6 +397,22 @@ public class EventEnvelope {
     public EventEnvelope setTracePath(String tracePath) {
         this.tracePath = tracePath;
         return this;
+    }
+
+    /**
+     * Carry the sender's OTel span-ID so the receiver can store it as its parentSpanId.
+     * This is reserved for system use — set automatically by PostOffice.
+     *
+     * @param spanId 16-char lowercase hex string
+     * @return event envelope
+     */
+    public EventEnvelope setSpanId(String spanId) {
+        this.spanId = spanId;
+        return this;
+    }
+
+    public String getSpanId() {
+        return spanId;
     }
 
     /**
@@ -776,7 +796,8 @@ public class EventEnvelope {
         event.setStatus(this.getStatus())
             .setReplyTo(this.getReplyTo())
             .setTraceId(this.getTraceId())
-            .setTracePath(this.getTracePath());
+            .setTracePath(this.getTracePath())
+            .setSpanId(this.getSpanId());
         event.id = this.id;
         event.body = this.body;
         event.stackTrace = this.stackTrace;
@@ -827,6 +848,9 @@ public class EventEnvelope {
         }
         if (message.get(TRACE_PATH_FLAG) instanceof String text) {
             tracePath = text;
+        }
+        if (message.get(SPAN_ID_FLAG) instanceof String text) {
+            spanId = text;
         }
         if (message.get(CID_FLAG) instanceof String text) {
             cid = text;
@@ -904,6 +928,9 @@ public class EventEnvelope {
         if (tracePath != null) {
             message.put(TRACE_PATH_FLAG, tracePath);
         }
+        if (spanId != null) {
+            message.put(SPAN_ID_FLAG, spanId);
+        }
         if (cid != null) {
             message.put(CID_FLAG, cid);
         }
@@ -969,6 +996,9 @@ public class EventEnvelope {
         if (message.get(TRACE_PATH_FIELD) instanceof String text) {
             tracePath = text;
         }
+        if (message.get(SPAN_ID_FIELD) instanceof String text) {
+            spanId = text;
+        }
         if (message.get(CID_FIELD) instanceof String text) {
             cid = text;
         }
@@ -1033,6 +1063,9 @@ public class EventEnvelope {
         }
         if (tracePath != null) {
             message.put(TRACE_PATH_FIELD, tracePath);
+        }
+        if (spanId != null) {
+            message.put(SPAN_ID_FIELD, spanId);
         }
         if (cid != null) {
             message.put(CID_FIELD, cid);

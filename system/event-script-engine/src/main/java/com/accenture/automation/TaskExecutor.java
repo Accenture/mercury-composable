@@ -150,10 +150,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
          * 1. first task
          * 2. flow timeout
          */
-        var ref = taskRefs.get(cid);
-        if (ref != null) {
-            taskRefs.remove(cid);
-        }
+        var ref = taskRefs.remove(cid);
         String refId = ref == null? cid : ref.flowInstanceId;
         FlowInstance flowInstance = Flows.getFlowInstance(refId);
         if (flowInstance == null) {
@@ -163,13 +160,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         String flowName = flowInstance.getFlow().id;
         if (headers.containsKey(TIMEOUT) && event.getBody() instanceof List) {
             log.warn("Flow {}:{} expired", flowName, flowInstance.id);
-            abortFlow(flowInstance, 408, "Flow timeout for "+ flowInstance.getTtl()+" ms");
+            abortFlow(flowInstance, 408, "Flow timeout for "+ flowInstance.getTtl()+" ms",
+                    flowInstance.getParentSpanId());
             return null;
         }
         try {
             String firstTask = headers.get(FIRST_TASK);
             if (firstTask != null) {
-                executeTask(flowInstance, firstTask);
+                // The first task's parent is the span of the function that triggered this flow
+                executeTask(flowInstance, firstTask, flowInstance.getParentSpanId());
             } else {
                 handleFunctionCallback(ref, event, flowInstance, refId, seq);
             }
@@ -182,7 +181,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 rc = ae.getStatus();
             }
             log.error("Unable to execute flow {}:{} - {}", flowName, flowInstance.id, e.getMessage());
-            abortFlow(flowInstance, rc, e.getMessage());
+            abortFlow(flowInstance, rc, e.getMessage(), flowInstance.getParentSpanId());
         }
         return null;
     }
@@ -207,17 +206,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 taskMetrics.complete();
             }
         }
+        // Anchor the completed task's own span_id to its TaskReference; it becomes the
+        // parent span for whatever task this callback dispatches next (OTel lineage).
+        if (ref != null && event.getSpanId() != null) {
+            ref = new TaskReference(ref.uuid(), ref.flowInstanceId(), ref.processId(),
+                                    ref.errorTask(), event.getSpanId());
+        }
+        String parentSpanId = ref != null ? ref.spanId : event.getSpanId();
         int statusCode = event.getStatus();
         if (statusCode >= 400 || event.isException()) {
-            handleFunctionException(event, flowInstance, task, seq, statusCode);
+            handleFunctionException(parentSpanId, event, flowInstance, task, seq, statusCode);
             return;
         }
         // clear top level exception state
         flowInstance.setExceptionAtTopLevel(false);
-        handleCallback(ref, from, flowInstance, task, event, seq);
+        handleCallback(parentSpanId, ref, from, flowInstance, task, event, seq);
     }
 
-    private void handleFunctionException(EventEnvelope event, FlowInstance flowInstance, Task task,
+    private void handleFunctionException(String parentSpanId, EventEnvelope event, FlowInstance flowInstance, Task task,
                                          int seq, int statusCode) {
         if (seq > 0) {
             if (task.getExceptionTask() != null) {
@@ -243,10 +249,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (!isTaskLevel) {
                 flowInstance.setExceptionAtTopLevel(true);
             }
-            executeTask(flowInstance, handler, getTaskErrorMap(task.service, statusCode, event));
+            executeTask(flowInstance, handler, parentSpanId, getTaskErrorMap(task.service, statusCode, event));
         } else {
             // when there are no task or flow exception handlers
-            abortFlow(flowInstance, statusCode, event.getError());
+            abortFlow(flowInstance, statusCode, event.getError(), parentSpanId);
         }
     }
 
@@ -271,14 +277,15 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return error;
     }
 
-    private void abortFlow(FlowInstance flowInstance, int status, Object message) {
+    private void abortFlow(FlowInstance flowInstance, int status, Object message, String parentSpanId) {
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
             Map<String, Object> result = getFlowErrorMap(status, message);
             flowInstance.setReference(ERROR, result);
             EventEnvelope error = new EventEnvelope();
             // restore the original correlation-ID to the calling party
-            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid);
+            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid)
+                 .setSpanId(parentSpanId);
             error.setStatus(status).setBody(result);
             PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
@@ -330,6 +337,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (!normal) {
                 metrics.put("exception", "Flow aborted");
             }
+            metrics.put("span_id", String.format("%016x", UUID.randomUUID().getLeastSignificantBits()));
+            if (flowInstance.getParentSpanId() != null) {
+                metrics.put("parent_span_id", flowInstance.getParentSpanId());
+            }
             annotations.put("execution", "Run " + totalExecutions +
                     " task" + (totalExecutions == 1 ? "" : "s") + " in " + formatted);
             annotations.put("tasks", taskInfo);
@@ -362,7 +373,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void handleCallback(TaskReference ref, String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq) {
+    private void handleCallback(String parentSpanId, TaskReference ref, String from, FlowInstance flowInstance, Task task, EventEnvelope event, int seq) {
         Map<String, Object> combined = new HashMap<>();
         combined.put(INPUT, flowInstance.dataset.get(INPUT));
         combined.put(MODEL, flowInstance.dataset.get(MODEL));
@@ -379,38 +390,38 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             PipeInfo pipe = flowInstance.pipeMap.get(seq);
             // this is a callback from a fork task
             if (JOIN.equals(pipe.getType())) {
-                handleCallbackFromForkTask(from, (JoinTaskInfo) pipe, flowInstance, seq);
+                handleCallbackFromForkTask(parentSpanId, from, (JoinTaskInfo) pipe, flowInstance, seq);
                 return;
             }
             // this is a callback from a pipeline task
             if (PIPELINE.equals(pipe.getType())) {
-                handlePipeline(md, flowInstance, (PipelineInfo) pipe, seq);
+                handlePipeline(parentSpanId, md, flowInstance, (PipelineInfo) pipe, seq);
                 return;
             }
         }
         String executionType = task.execution;
         // consolidated dataset would be mapped as output for "response", "end" and "decision" tasks
         if (RESPONSE.equals(executionType)) {
-            handleResponseTask(flowInstance, task, md.consolidated);
+            handleResponseTask(parentSpanId, flowInstance, task, md.consolidated);
         }
         if (END.equals(executionType)) {
-            handleEndTask(flowInstance, task, md.consolidated);
+            handleEndTask(parentSpanId, flowInstance, task, md.consolidated);
         }
         if (DECISION.equals(executionType)) {
-            handleDecisionTask(ref, flowInstance, task, md.consolidated.getElement(DECISION));
+            handleDecisionTask(parentSpanId, ref, flowInstance, task, md.consolidated.getElement(DECISION));
         }
         // consolidated dataset should be mapped to model for normal tasks
         if (SEQUENTIAL.equals(executionType)) {
-            queueSequentialTask(flowInstance, task);
+            queueSequentialTask(parentSpanId, flowInstance, task);
         }
         if (PARALLEL.equals(executionType)) {
-            queueParallelTasks(flowInstance, task);
+            queueParallelTasks(parentSpanId, flowInstance, task);
         }
         if (FORK.equals(executionType)) {
-            handleForkAndJoin(flowInstance, task);
+            handleForkAndJoin(parentSpanId, flowInstance, task);
         }
         if (PIPELINE.equals(executionType)) {
-            handlePipelineTask(flowInstance, task, md.consolidated);
+            handlePipelineTask(parentSpanId, flowInstance, task, md.consolidated);
         }
     }
 
@@ -463,10 +474,10 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void handlePipeline(OutputMappingMetadata md, FlowInstance flowInstance, PipelineInfo pipeline, int seq) {
+    private void handlePipeline(String parentSpanId, OutputMappingMetadata md, FlowInstance flowInstance, PipelineInfo pipeline, int seq) {
         Task pipelineTask = pipeline.getTask();
         if (pipeline.isCompleted()) {
-            pipelineCompletion(flowInstance, pipeline, md.consolidated, seq);
+            pipelineCompletion(parentSpanId, flowInstance, pipeline, md.consolidated, seq);
             return;
         }
         int n = pipeline.nextStep();
@@ -481,16 +492,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         if (pipelineTask.conditions.isEmpty()) {
             if (pipeline.isCompleted() && pipeline.isSingleton()) {
-                pipelineCompletion(flowInstance, pipeline, md.consolidated, seq);
+                pipelineCompletion(parentSpanId, flowInstance, pipeline, md.consolidated, seq);
             } else {
-                executeTask(flowInstance, pipeline.getTaskName(n), seq);
+                executeTask(flowInstance, pipeline.getTaskName(n), parentSpanId, seq);
             }
         } else {
-            evaluatePipelineCondition(md, flowInstance, pipelineTask, pipeline, seq, n);
+            evaluatePipelineCondition(parentSpanId, md, flowInstance, pipelineTask, pipeline, seq, n);
         }
     }
 
-    private void evaluatePipelineCondition(OutputMappingMetadata md, FlowInstance flowInstance, Task pipelineTask,
+    private void evaluatePipelineCondition(String parentSpanId, OutputMappingMetadata md, FlowInstance flowInstance, Task pipelineTask,
                                            PipelineInfo pipeline, int seq, int n) {
         String action = null;
         for (List<String> condition: pipelineTask.conditions) {
@@ -510,26 +521,26 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
         if (BREAK.equals(action)) {
             flowInstance.pipeMap.remove(seq);
-            executeTask(flowInstance, pipeline.getExitTask());
+            executeTask(flowInstance, pipeline.getExitTask(), parentSpanId);
         } else if (CONTINUE.equals(action)) {
-            pipelineCompletion(flowInstance, pipeline, md.consolidated, seq);
+            pipelineCompletion(parentSpanId, flowInstance, pipeline, md.consolidated, seq);
         } else {
             if (pipeline.isCompleted() && pipeline.isSingleton()) {
-                pipelineCompletion(flowInstance, pipeline, md.consolidated, seq);
+                pipelineCompletion(parentSpanId, flowInstance, pipeline, md.consolidated, seq);
             } else {
-                executeTask(flowInstance, pipeline.getTaskName(n), seq);
+                executeTask(flowInstance, pipeline.getTaskName(n), parentSpanId, seq);
             }
         }
     }
 
-    private void handleCallbackFromForkTask(String from, JoinTaskInfo joinInfo, FlowInstance flowInstance, int seq) {
+    private void handleCallbackFromForkTask(String parentSpanId, String from, JoinTaskInfo joinInfo, FlowInstance flowInstance, int seq) {
         int callBackCount = joinInfo.resultCount.incrementAndGet();
         log.debug("Flow {}:{} fork-n-join #{} result {} of {} from {}",
                 flowInstance.getFlow().id, flowInstance.id, seq, callBackCount, joinInfo.forks, from);
         if (callBackCount >= joinInfo.forks) {
             flowInstance.pipeMap.remove(seq);
             log.debug("Flow {}:{} fork-n-join #{} done", flowInstance.getFlow().id, flowInstance.id, seq);
-            executeTask(flowInstance, joinInfo.joinTask);
+            executeTask(flowInstance, joinInfo.joinTask, parentSpanId);
         }
     }
 
@@ -638,7 +649,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void pipelineCompletion(FlowInstance flowInstance, PipelineInfo pipeline,
+    private void pipelineCompletion(String parentSpanId, FlowInstance flowInstance, PipelineInfo pipeline,
                                     MultiLevelMap consolidated, int seq) {
         Task pipelineTask = pipeline.getTask();
         boolean iterate = false;
@@ -665,24 +676,24 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             var taskName = pipeline.getTaskName(0);
             log.debug("Flow {}:{} pipeline #{} loop {}",
                     flowInstance.getFlow().id, flowInstance.id, seq, taskName);
-            executeTask(flowInstance, pipeline.getTaskName(0), seq);
+            executeTask(flowInstance, pipeline.getTaskName(0), parentSpanId, seq);
         } else {
             flowInstance.pipeMap.remove(seq);
-            executeTask(flowInstance, pipeline.getExitTask());
+            executeTask(flowInstance, pipeline.getExitTask(), parentSpanId);
         }
     }
 
-    private void handleResponseTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
-        sendResponse(flowInstance, task, map);
-        queueSequentialTask(flowInstance, task);
+    private void handleResponseTask(String parentSpanId, FlowInstance flowInstance, Task task, MultiLevelMap map) {
+        sendResponse(parentSpanId, flowInstance, task, map);
+        queueSequentialTask(parentSpanId, flowInstance, task);
     }
 
-    private void handleEndTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
-        sendResponse(flowInstance, task, map);
+    private void handleEndTask(String parentSpanId, FlowInstance flowInstance, Task task, MultiLevelMap map) {
+        sendResponse(parentSpanId, flowInstance, task, map);
         endFlow(flowInstance, true);
     }
 
-    private void handleDecisionTask(TaskReference ref, FlowInstance flowInstance, Task task, Object decisionValue) {
+    private void handleDecisionTask(String parentSpanId, TaskReference ref, FlowInstance flowInstance, Task task, Object decisionValue) {
         List<String> nextTasks = task.nextSteps;
         final int decisionNumber;
         if (decisionValue instanceof Boolean) {
@@ -697,28 +708,28 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             log.error("Flow {}:{} {} returned invalid decision ({})",
                     flowInstance.getFlow().id, flowInstance.id, task.service, decisionValue);
             abortFlow(flowInstance, 500,
-                    "Task "+task.service+" returned invalid decision ("+decisionValue+")");
+                    "Task "+task.service+" returned invalid decision ("+decisionValue+")", parentSpanId);
         } else {
-            decideNextTask(ref, flowInstance, task, nextTasks, decisionNumber);
+            decideNextTask(parentSpanId, ref, flowInstance, task, nextTasks, decisionNumber);
         }
     }
 
-    private void decideNextTask(TaskReference ref, FlowInstance flowInstance, Task task,
+    private void decideNextTask(String parentSpanId, TaskReference ref, FlowInstance flowInstance, Task task,
                                 List<String> nextTasks, int decisionNumber) {
         var nextList = getDecision(nextTasks.get(decisionNumber - 1));
         if (decisionNumber == 1 && RETRY.equals(nextList.getFirst())) {
             if (ref.errorTask != null) {
-                executeTask(flowInstance, ref.errorTask);
+                executeTask(flowInstance, ref.errorTask, parentSpanId);
             } else if (nextList.size() > 1) {
-                executeTask(flowInstance, nextList.get(1));
+                executeTask(flowInstance, nextList.get(1), parentSpanId);
             } else {
                 log.error("Flow {}:{} {} does not have a previous task {}",
                         flowInstance.getFlow().id, flowInstance.id, task.service, nextList);
                 abortFlow(flowInstance, 500,
-                        "Task "+task.service+" does not have a previous task "+nextList);
+                        "Task "+task.service+" does not have a previous task "+nextList, parentSpanId);
             }
         } else {
-            executeTask(flowInstance, nextList.getFirst());
+            executeTask(flowInstance, nextList.getFirst(), parentSpanId);
         }
     }
 
@@ -732,23 +743,23 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private void queueSequentialTask(FlowInstance flowInstance, Task task) {
+    private void queueSequentialTask(String parentSpanId, FlowInstance flowInstance, Task task) {
         List<String> nextTasks = task.nextSteps;
         if (!nextTasks.isEmpty()) {
-            executeTask(flowInstance, nextTasks.getFirst());
+            executeTask(flowInstance, nextTasks.getFirst(), parentSpanId);
         }
     }
 
-    private void queueParallelTasks(FlowInstance flowInstance, Task task) {
+    private void queueParallelTasks(String parentSpanId, FlowInstance flowInstance, Task task) {
         List<String> nextTasks = task.nextSteps;
         if (!nextTasks.isEmpty()) {
             for (String next: nextTasks) {
-                executeTask(flowInstance, next);
+                executeTask(flowInstance, next, parentSpanId);
             }
         }
     }
 
-    private void handleForkAndJoin(FlowInstance flowInstance, Task task) {
+    private void handleForkAndJoin(String parentSpanId, FlowInstance flowInstance, Task task) {
         List<String> steps = new ArrayList<>(task.nextSteps);
         boolean isList = false;
         var dynamicListKey = task.getSourceModelKey();
@@ -771,18 +782,18 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             }
         }
         if (!steps.isEmpty() && task.getJoinTask() != null) {
-            executeForkAndJoin(flowInstance, task, steps, isList, dynamicListKey);
+            executeForkAndJoin(parentSpanId, flowInstance, task, steps, isList, dynamicListKey);
         }
     }
 
-    private void executeForkAndJoin(FlowInstance flowInstance, Task task, List<String> steps,
+    private void executeForkAndJoin(String parentSpanId, FlowInstance flowInstance, Task task, List<String> steps,
                                     boolean isList, String dynamicListKey) {
         int seq = flowInstance.pipeCounter.incrementAndGet();
         int forks = steps.size();
         flowInstance.pipeMap.put(seq, new JoinTaskInfo(forks, task.getJoinTask()));
         for (int i = 0; i < steps.size(); i++) {
             String next = steps.get(i);
-            executeTask(flowInstance, next, seq, isList ? i : -1, isList ? dynamicListKey : null);
+            executeTask(flowInstance, next, parentSpanId, seq, isList ? i : -1, isList ? dynamicListKey : null);
         }
     }
 
@@ -800,7 +811,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         };
     }
 
-    private void handlePipelineTask(FlowInstance flowInstance, Task task, MultiLevelMap map) {
+    private void handlePipelineTask(String parentSpanId, FlowInstance flowInstance, Task task, MultiLevelMap map) {
         if (!task.pipelineSteps.isEmpty()) {
             // evaluate initial condition
             boolean valid = true;
@@ -826,29 +837,30 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 var taskName = pipeline.getTaskName(0);
                 log.debug("Flow {}:{} pipeline #{} begin {}",
                         flowInstance.getFlow().id, flowInstance.id, seq, taskName);
-                executeTask(flowInstance, pipeline.getTaskName(0), seq);
+                executeTask(flowInstance, pipeline.getTaskName(0), parentSpanId, seq);
             } else {
-                executeTask(flowInstance, task.nextSteps.getFirst());
+                executeTask(flowInstance, task.nextSteps.getFirst(), parentSpanId);
             }
         }
     }
 
-    private void sendResponse(FlowInstance flowInstance, Task task, MultiLevelMap map) {
+    private void sendResponse(String parentSpanId, FlowInstance flowInstance, Task task, MultiLevelMap map) {
         PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME, flowInstance.getTraceId(), flowInstance.getTracePath());
         if (flowInstance.isNotResponded()) {
             flowInstance.setResponded(true);
             // is a response event required when the flow is completed?
             if (flowInstance.replyTo != null) {
-                sendResponseFromTask(po, flowInstance, task, map);
+                sendResponseFromTask(parentSpanId, po, flowInstance, task, map);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void sendResponseFromTask(PostOffice po, FlowInstance flowInstance, Task task, MultiLevelMap map) {
+    private void sendResponseFromTask(String parentSpanId, PostOffice po, FlowInstance flowInstance, Task task, MultiLevelMap map) {
         EventEnvelope result = new EventEnvelope();
         // restore the original correlation-ID to the calling party
-        result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid);
+        result.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.cid)
+              .setSpanId(parentSpanId);
         Object headers = map.getElement(OUTPUT_HEADER);
         Object body = map.getElement(OUTPUT_BODY);
         Object status = map.getElement(OUTPUT_STATUS);
@@ -871,28 +883,28 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         po.send(result);
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName) {
-        executeTask(flowInstance, processName, -1);
+    private void executeTask(FlowInstance flowInstance, String processName, String parentSpanId) {
+        executeTask(flowInstance, processName, parentSpanId, -1);
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName, int seq) {
-        executeTask(flowInstance, processName, seq, null, -1, null);
+    private void executeTask(FlowInstance flowInstance, String processName, String parentSpanId, int seq) {
+        executeTask(flowInstance, processName, parentSpanId, seq, null, -1, null);
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName, Map<String, Object> error) {
-        executeTask(flowInstance, processName, -1, error, -1, null);
+    private void executeTask(FlowInstance flowInstance, String processName, String parentSpanId, Map<String, Object> error) {
+        executeTask(flowInstance, processName, parentSpanId, -1, error, -1, null);
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName, int seq, int dynamicListIndex, String dynamicListKey) {
-        executeTask(flowInstance, processName, seq, null, dynamicListIndex, dynamicListKey);
+    private void executeTask(FlowInstance flowInstance, String processName, String parentSpanId, int seq, int dynamicListIndex, String dynamicListKey) {
+        executeTask(flowInstance, processName, parentSpanId, seq, null, dynamicListIndex, dynamicListKey);
     }
 
-    private void executeTask(FlowInstance flowInstance, String processName, int seq, Map<String, Object> error, int dynamicListIndex, String dynamicListKey) {
+    private void executeTask(FlowInstance flowInstance, String processName, String parentSpanId, int seq, Map<String, Object> error, int dynamicListIndex, String dynamicListKey) {
         var task = flowInstance.getFlow().tasks.get(processName);
         if (task == null) {
             log.error("Unable to process flow {}:{} - missing task '{}'",
                     flowInstance.getFlow().id, flowInstance.id, processName);
-            abortFlow(flowInstance, 500, SERVICE_AT +processName+" not defined");
+            abortFlow(flowInstance, 500, SERVICE_AT +processName+" not defined", parentSpanId);
             return;
         }
         String errorTask = null;
@@ -913,7 +925,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             deferred = getDelayedVariable(md, flowInstance, task);
         }
         final var uuid = util.getDateUuid();
-        final var ref = new TaskReference(uuid, flowInstance.id, task.service, errorTask);
+        final var ref = new TaskReference(uuid, flowInstance.id, task.service, errorTask, null);
         taskRefs.put(uuid, ref);
         // add task metrics and pending status to the flow-instance
         var functionRoute = task.getFunctionRoute();
@@ -927,7 +939,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (subFlow == null) {
                 log.error("Unable to process flow {}:{} - missing sub-flow {}",
                         flowInstance.getFlow().id, flowInstance.id, functionRoute);
-                abortFlow(flowInstance, 500, functionRoute+" not defined");
+                abortFlow(flowInstance, 500, functionRoute+" not defined", parentSpanId);
                 return;
             }
             Map<String, Object> dataset = new HashMap<>();
@@ -941,7 +953,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                                 .setReplyTo(TaskExecutor.SERVICE_NAME)
                                                 .setHeader(PARENT, flowInstance.id)
                                                 .setHeader(FLOW_ID, flowId).setBody(dataset)
-                                                .setCorrelationId(compositeCid);
+                                                .setCorrelationId(compositeCid)
+                                                .setSpanId(parentSpanId);
             var po = new PostOffice(functionRoute, flowInstance.getTraceId(), flowInstance.getTracePath());
             po.send(forward);
         } else {
@@ -949,7 +962,8 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                                             flowInstance.getTraceId(), flowInstance.getTracePath());
             var event = new EventEnvelope().setTo(functionRoute).setReplyTo(TaskExecutor.SERVICE_NAME)
                                             .setCorrelationId(compositeCid)
-                                            .setBody(unwrapBodyIfWildcard(md));
+                                            .setBody(unwrapBodyIfWildcard(md))
+                                            .setSpanId(parentSpanId);
             md.optionalHeaders.forEach(event::setHeader);
             // execute task by sending event
             if (deferred > 0) {
@@ -1363,7 +1377,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private record TaskReference(String uuid, String flowInstanceId, String processId, String errorTask) { }
+    private record TaskReference(String uuid, String flowInstanceId, String processId, String errorTask, String spanId) { }
 
     private static class OutputMappingMetadata {
         MultiLevelMap consolidated;

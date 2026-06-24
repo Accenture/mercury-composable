@@ -23,6 +23,7 @@ import org.platformlambda.core.util.Utility;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This is reserved for system use.
@@ -32,17 +33,23 @@ public class TraceInfo {
     public final String route;
     public final String id;
     public final String path;
+    public final String spanId;
+    public final String parentSpanId;
     public final String startTime = Utility.getInstance().date2str(new Date());
     public final Map<String, Object> annotations = new HashMap<>();
 
-    public TraceInfo(String route, String id, String path) {
+    public TraceInfo(String route, String id, String path, String parentSpanId) {
         this.route = route;
         if (id == null) {
             this.id = null;
             this.path = null;
+            this.spanId = null;
+            this.parentSpanId = null;
         } else {
             this.id = id;
             this.path = path;
+            this.spanId = String.format("%016x", UUID.randomUUID().getLeastSignificantBits());
+            this.parentSpanId = parentSpanId;
         }
     }
 

@@ -20,12 +20,14 @@ package com.accenture.minigraph.services;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.models.EventEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
+@ZeroTracing
 @PreLoad(route = GraphHousekeeper.ROUTE, instances=20)
 public class GraphHousekeeper extends GraphLambdaFunction {
     public static final String ROUTE = "graph.housekeeper";
