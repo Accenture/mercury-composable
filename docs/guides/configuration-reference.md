@@ -146,7 +146,6 @@ virtual threads.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `distributed.trace.forwarder` | `route` | — | Reserved route name for an optional user function. When implemented, the system auto-detects it and forwards every distributed trace entry to it for export to a telemetry backend (e.g. Dynatrace, Splunk). Not a property value — see [Build, Test and Deploy](build-test-deploy.md). |
 | `log.format` | `String` | `text` | Application log output format: `text` (human-readable), `compact`, or `json`. |
 | `show.application.properties` | `String` (comma-sep list) | — | Application property keys to expose via the `/env` actuator endpoint. |
 | `show.env.variables` | `String` (comma-sep list) | — | Environment variable names to expose via the `/env` actuator endpoint. |
@@ -154,7 +153,6 @@ virtual threads.
 | `stack.trace.transport.size` | `int` | `10` | Maximum stack-trace lines embedded in an `EventEnvelope` when an exception occurs. |
 | `trace.http.header` | `String` (comma-sep list) | `X-Trace-Id` | Legacy HTTP request header(s) carrying a trace ID (e.g. `X-Trace-Id`, `X-Correlation-Id`). Accepted on inbound requests as a fallback; the first entry is used as the outbound legacy trace header. The W3C `traceparent` header takes precedence over these on inbound. |
 | `trace.http.legacy.header.enabled` | `boolean` | `true` | When `true`, outbound HTTP requests emit the legacy `trace.http.header` alongside W3C `traceparent`. Set to `false` to send only `traceparent` once downstream services are fully on OpenTelemetry. Inbound acceptance of the legacy header is unaffected by this flag. |
-| `transaction.journal.recorder` | `route` | — | Reserved route name for an optional user function. When implemented, the system forwards request/response payloads of journaled services to it for audit storage. Not a property value — see [Build, Test and Deploy](build-test-deploy.md). |
 
 ---
 
