@@ -5,6 +5,13 @@ import type { MinigraphGraphData, MinigraphNode } from '../../utils/graphTypes';
 import type { NodeActionTextResult } from '../../utils/messageParser';
 import type { GraphAuthoringExecutor } from '../../graphActions/graphAuthoringExecutor';
 import {
+  buildBatchDeleteFeedback,
+  isBatchDeleteComplete,
+  MAX_BATCH_NODE_ACTIONS,
+  recordBatchDeleteResult,
+  type PendingBatchDeleteSubmit,
+} from '../../graphActions/batchNodeActions';
+import {
   buildCreateNodeCommand,
   buildDeleteNodeCommand,
   buildUpdateNodeCommand,
@@ -24,10 +31,14 @@ type EditableNodeAction = Extract<NodeAction, 'create-node' | 'edit-node'>;
 type CreateNodeFormSource = Exclude<NodeFormSource, 'edit-node'>;
 type UserMessageType = 'info' | 'success' | 'error';
 
+// AuthoringState is the UI-facing state machine for node actions.
+// - closed: no modal is open, but a delete action may still be waiting for backend confirmation.
+// - open/editing: create/edit modal is editable.
+// - open/sending: modal stays open while a create/edit command is waiting for backend confirmation.
 export type AuthoringState =
   | {
       status: 'closed';
-      pendingSubmit: PendingNodeActionSubmit | null;
+      pendingSubmit: PendingAuthoringSubmit | null;
       serverMessage: string | null;
     }
   | {
@@ -36,17 +47,21 @@ export type AuthoringState =
       phase: 'editing' | 'sending';
       formState: NodeFormState;
       originalAlias: string | null;
-      pendingSubmit: PendingNodeActionSubmit | null;
+      pendingSubmit: PendingAuthoringSubmit | null;
       serverMessage: string | null;
       connectionLost: boolean;
     };
 
+// Single-command pending state for create/edit/delete. Batch delete uses the
+// wider PendingBatchDeleteSubmit shape from batchNodeActions.ts.
 export interface PendingNodeActionSubmit {
   action: NodeAction;
   alias: string;
   command: string;
   sentAt: string;
 }
+
+export type PendingAuthoringSubmit = PendingNodeActionSubmit | PendingBatchDeleteSubmit;
 
 export interface UseGraphAuthoringOptions {
   bus: ProtocolBus;
@@ -64,6 +79,7 @@ export interface UseGraphAuthoringReturn {
   openCreateNode: (source: CreateNodeFormSource) => void;
   openEditNode: (node: MinigraphNode) => void;
   deleteNode: (node: MinigraphNode) => void;
+  deleteNodes: (nodes: MinigraphNode[]) => void;
   updateFormState: (formState: NodeFormState) => void;
   submit: () => void;
   close: () => void;
@@ -73,6 +89,10 @@ const PENDING_ACTION_MESSAGE = 'A node action is already pending. Wait for it to
 const CREATE_SEND_FAILURE_MESSAGE = 'Could not send the create-node command because the WebSocket is not open. The form values remain in this dialog.';
 const EDIT_SEND_FAILURE_MESSAGE = 'Could not send the edit-node command because the WebSocket is not open. Your changes remain in this dialog.';
 const DELETE_SEND_FAILURE_MESSAGE = 'Could not send the delete-node command because the WebSocket is not open.';
+const DELETE_NODES_SEND_FAILURE_MESSAGE = 'Could not send delete-node commands because the WebSocket is not open.';
+const DELETE_NODES_EMPTY_MESSAGE = 'No selected nodes are available to delete.';
+const DELETE_NODES_LIMIT_MESSAGE = 'Select 100 or fewer nodes to delete at once.';
+const DELETE_NODES_TIMEOUT_MESSAGE = 'Some delete-node commands were sent, but not all backend results were observed yet. Refresh the graph before trying again.';
 const NODE_UNAVAILABLE_MESSAGE = 'This node is no longer available in the current graph.';
 const CREATE_DISCONNECTED_EDITING_MESSAGE = 'Connection disconnected. Refresh the page and create the node again after the app reconnects.';
 const EDIT_DISCONNECTED_EDITING_MESSAGE = 'Connection disconnected. Refresh the page and edit the node again after the app reconnects.';
@@ -80,8 +100,14 @@ const PENDING_DISCONNECTED_MESSAGE = 'Connection disconnected while the node act
 
 const CLOSED_STATE: AuthoringState = { status: 'closed', pendingSubmit: null, serverMessage: null };
 
-function getPendingSubmit(state: AuthoringState): PendingNodeActionSubmit | null {
+function getPendingSubmit(state: AuthoringState): PendingAuthoringSubmit | null {
   return state.pendingSubmit;
+}
+
+function isPendingBatchDelete(
+  pending: PendingAuthoringSubmit,
+): pending is PendingBatchDeleteSubmit {
+  return pending.action === 'delete-nodes';
 }
 
 function getSendFailureMessage(action: NodeAction): string {
@@ -90,8 +116,9 @@ function getSendFailureMessage(action: NodeAction): string {
   return CREATE_SEND_FAILURE_MESSAGE;
 }
 
-function getTimeoutMessage(action: NodeAction): string {
-  return `The ${action} command was sent, but no backend result was observed yet. The outcome is unknown.`;
+function getTimeoutMessage(pending: PendingAuthoringSubmit): string {
+  if (isPendingBatchDelete(pending)) return DELETE_NODES_TIMEOUT_MESSAGE;
+  return `The ${pending.action} command was sent, but no backend result was observed yet. The outcome is unknown.`;
 }
 
 function getDisconnectedEditingMessage(action: EditableNodeAction): string {
@@ -115,6 +142,8 @@ function eventMatchesPendingAction(
   event: NodeActionTextResultEvent,
   pending: PendingNodeActionSubmit,
 ): boolean {
+  // Backend error text can be generic, so a single-command pending submit treats
+  // any error event as relevant. Successful events still need alias/action match.
   if (event.status === 'error') return true;
   if (!aliasesMatch(event.alias, pending.alias)) return false;
   return event.action === null || event.action === pending.action;
@@ -159,6 +188,9 @@ export function useGraphAuthoring({
     setState(next);
   }, []);
 
+  // Every submitted action starts one timeout. The timeout message differs
+  // depending on whether the modal is still open or the action happened from a
+  // context menu with no modal to return to.
   const clearPendingTimer = useCallback(() => {
     if (timeoutRef.current !== null) {
       clearTimeout(timeoutRef.current);
@@ -173,21 +205,26 @@ export function useGraphAuthoring({
       const pending = getPendingSubmit(current);
       if (!pending) return;
 
-      if (current.status === 'open') {
+      if (isPendingBatchDelete(pending)) {
+        setAuthoringState(CLOSED_STATE);
+        notifyUser(getTimeoutMessage(pending), 'error');
+      } else if (current.status === 'open') {
         setAuthoringState({
           ...current,
           phase: 'editing',
           pendingSubmit: null,
-          serverMessage: getTimeoutMessage(pending.action),
+          serverMessage: getTimeoutMessage(pending),
         });
       } else {
         setAuthoringState(CLOSED_STATE);
-        notifyUser(getTimeoutMessage(pending.action), 'error');
+        notifyUser(getTimeoutMessage(pending), 'error');
       }
       timeoutRef.current = null;
     }, timeoutMs);
   }, [clearPendingTimer, notifyUser, setAuthoringState, timeoutMs]);
 
+  // Open create starts from defaults only. Form values live in memory inside
+  // this hook; closing or refreshing drops them.
   const openCreateNode = useCallback((source: CreateNodeFormSource) => {
     if (!connected) return;
     if (getPendingSubmit(stateRef.current)) {
@@ -209,6 +246,8 @@ export function useGraphAuthoring({
     });
   }, [connected, notifyUser, setAuthoringState]);
 
+  // Open edit snapshots the node from the latest graphData so the form does not
+  // edit stale data passed from an old right-click menu.
   const openEditNode = useCallback((node: MinigraphNode) => {
     if (!connected) {
       notifyUser(EDIT_DISCONNECTED_EDITING_MESSAGE, 'error');
@@ -244,6 +283,8 @@ export function useGraphAuthoring({
     });
   }, [connected, notifyUser, setAuthoringState]);
 
+  // Single-node delete has no modal. It validates the alias against the latest
+  // graphData, sends one raw command, then waits for one backend text result.
   const deleteNode = useCallback((node: MinigraphNode) => {
     if (!connected) {
       notifyUser(DELETE_SEND_FAILURE_MESSAGE, 'error');
@@ -285,6 +326,83 @@ export function useGraphAuthoring({
     startSubmitTimer();
   }, [connected, executor, notifyUser, setAuthoringState, startSubmitTimer]);
 
+  // Multi-select delete is intentionally implemented as N individual delete
+  // commands because the backend command protocol is still node-scoped. The
+  // batch pending state lets the UI report one combined result after all node
+  // responses are observed.
+  const deleteNodes = useCallback((selectedNodes: MinigraphNode[]) => {
+    if (!connected) {
+      notifyUser(DELETE_NODES_SEND_FAILURE_MESSAGE, 'error');
+      return;
+    }
+    if (getPendingSubmit(stateRef.current)) {
+      notifyUser(PENDING_ACTION_MESSAGE, 'error');
+      return;
+    }
+    if (selectedNodes.length === 0) {
+      notifyUser(DELETE_NODES_EMPTY_MESSAGE, 'info');
+      return;
+    }
+    if (selectedNodes.length > MAX_BATCH_NODE_ACTIONS) {
+      notifyUser(DELETE_NODES_LIMIT_MESSAGE, 'error');
+      return;
+    }
+
+    const seenAliases = new Set<string>();
+    const nodes = selectedNodes.filter((node) => {
+      const normalized = node.alias.trim().toLowerCase();
+      if (seenAliases.has(normalized)) return false;
+      seenAliases.add(normalized);
+      return true;
+    });
+
+    // Build every command before sending any of them. If validation fails, no
+    // partial batch is sent.
+    const commands: string[] = [];
+    const aliases: string[] = [];
+    for (const node of nodes) {
+      const validation = validateDeleteNodeAlias(node.alias, { graphData: graphDataRef.current });
+      if (!validation.valid) {
+        notifyUser(Object.values(validation.errors)[0] ?? DELETE_NODES_EMPTY_MESSAGE, 'error');
+        return;
+      }
+      try {
+        aliases.push(node.alias.trim());
+        commands.push(buildDeleteNodeCommand(node.alias, { graphData: graphDataRef.current }));
+      } catch (err) {
+        notifyUser(err instanceof Error ? err.message : String(err), 'error');
+        return;
+      }
+    }
+
+    // Send sequentially through the same executor used by create/edit/delete.
+    // If the socket fails mid-batch, the user gets an unknown-outcome message
+    // because earlier commands may already be processing on the backend.
+    for (const [index, command] of commands.entries()) {
+      if (!executor.execute(command)) {
+        notifyUser(
+          index === 0 ? DELETE_NODES_SEND_FAILURE_MESSAGE : PENDING_DISCONNECTED_MESSAGE,
+          'error',
+        );
+        return;
+      }
+    }
+
+    const pending: PendingBatchDeleteSubmit = {
+      action: 'delete-nodes',
+      aliases,
+      commands,
+      sentAt: new Date().toISOString(),
+      results: {},
+    };
+    setValidationErrors({});
+    setAuthoringState({ status: 'closed', pendingSubmit: pending, serverMessage: null });
+    notifyUser(`${aliases.length} delete-node commands sent. Waiting for backend response.`, 'info');
+    startSubmitTimer();
+  }, [connected, executor, notifyUser, setAuthoringState, startSubmitTimer]);
+
+  // Form changes are ignored while sending or after connection loss so the
+  // visible modal cannot drift away from the command/pending state.
   const updateFormState = useCallback((formState: NodeFormState) => {
     const current = stateRef.current;
     if (current.status !== 'open') return;
@@ -300,6 +418,9 @@ export function useGraphAuthoring({
     });
   }, [setAuthoringState]);
 
+  // Create/edit submit path: validate the current form, build one raw minigraph
+  // command, send it through the executor, then keep the modal in sending state
+  // until the backend text result arrives.
   const submit = useCallback(() => {
     const current = stateRef.current;
     if (current.status !== 'open') return;
@@ -369,6 +490,8 @@ export function useGraphAuthoring({
     startSubmitTimer();
   }, [connected, executor, setAuthoringState, startSubmitTimer]);
 
+  // Closing is disabled while a create/edit command is pending so the user does
+  // not lose the backend error/success context mid-submit.
   const close = useCallback(() => {
     const current = stateRef.current;
     if (current.status !== 'open') return;
@@ -378,11 +501,42 @@ export function useGraphAuthoring({
     setAuthoringState(CLOSED_STATE);
   }, [clearPendingTimer, setAuthoringState]);
 
+  // All backend node-action text results enter here. The hook first tries the
+  // batch-delete matcher, then falls back to the single-command matcher.
   useEffect(() => {
     return bus.on('minigraph.nodeAction.textResult', (event: NodeActionTextResultEvent) => {
       const current = stateRef.current;
       const pending = getPendingSubmit(current);
-      if (!pending || !eventMatchesPendingAction(event, pending)) return;
+      if (!pending) return;
+
+      if (isPendingBatchDelete(pending)) {
+        // Batch delete may receive results in any order. Keep waiting until all
+        // selected aliases have either success or error.
+        const nextPending = recordBatchDeleteResult(pending, event);
+        if (!nextPending) return;
+
+        if (event.status === 'accepted') {
+          onAcceptedRef.current?.({
+            status: event.status,
+            action: event.action,
+            alias: event.alias,
+            message: event.message,
+          });
+        }
+
+        if (!isBatchDeleteComplete(nextPending)) {
+          setAuthoringState({ ...current, pendingSubmit: nextPending });
+          return;
+        }
+
+        clearPendingTimer();
+        setAuthoringState(CLOSED_STATE);
+        const feedback = buildBatchDeleteFeedback(nextPending);
+        notifyUser(feedback.message, feedback.type);
+        return;
+      }
+
+      if (!eventMatchesPendingAction(event, pending)) return;
 
       clearPendingTimer();
 
@@ -455,6 +609,7 @@ export function useGraphAuthoring({
     openCreateNode,
     openEditNode,
     deleteNode,
+    deleteNodes,
     updateFormState,
     submit,
     close,
