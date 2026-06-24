@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
   BackgroundVariant,
@@ -373,27 +372,6 @@ export default function GraphView({
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
               <Controls showInteractive={false} />
-              <MiniMap
-                nodeColor={(node) => {
-                  const colorMap: Record<string, string> = {
-                    Root:        '#15803d',
-                    End:         '#dc2626',
-                    Fetcher:     '#2563eb',
-                    mapper:      '#ea580c',
-                    Math:        '#a16207',
-                    JavaScript:  '#7e22ce',
-                    Provider:    '#be185d',
-                    Dictionary:  '#0e7490',
-                    Join:        '#65a30d',
-                    Extension:   '#4338ca',
-                    Island:      '#475569',
-                    Decision:    '#b45309',
-                  };
-                  return colorMap[node.type ?? ''] ?? '#6c7086';
-                }}
-                maskColor="rgba(0,0,0,0.3)"
-                style={{ background: '#fff' }}
-              />
             </ReactFlow>
           ) : (
             <div className={styles.empty}>
