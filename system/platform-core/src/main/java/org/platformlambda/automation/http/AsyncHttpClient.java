@@ -322,9 +322,10 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 http.set(kv.getKey(), kv.getValue());
             }
         }
-        // propagate X-Trace-Id when forwarding the HTTP request
+        // propagate the legacy trace header (X-Trace-Id / X-Correlation-Id) for backward
+        // compatibility, unless disabled via trace.http.legacy.header.enabled=false
         String traceId = po.getTraceId();
-        if (traceId != null) {
+        if (traceId != null && HttpRouter.isLegacyTraceHeaderEnabled()) {
             http.set(HttpRouter.getDefaultTraceIdLabel(), traceId);
         }
         // propagate W3C trace context so the downstream server span chains to this caller's span

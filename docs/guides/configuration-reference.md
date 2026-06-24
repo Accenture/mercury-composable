@@ -152,7 +152,8 @@ virtual threads.
 | `show.env.variables` | `String` (comma-sep list) | — | Environment variable names to expose via the `/env` actuator endpoint. |
 | `skip.rpc.tracing` | `String` (comma-sep list) | `async.http.request` | Route names excluded from distributed trace recording. |
 | `stack.trace.transport.size` | `int` | `10` | Maximum stack-trace lines embedded in an `EventEnvelope` when an exception occurs. |
-| `trace.http.header` | `String` (comma-sep list) | `X-Trace-Id` | HTTP request header(s) carrying a trace ID. The first entry is also used as the outbound trace header. |
+| `trace.http.header` | `String` (comma-sep list) | `X-Trace-Id` | Legacy HTTP request header(s) carrying a trace ID (e.g. `X-Trace-Id`, `X-Correlation-Id`). Accepted on inbound requests as a fallback; the first entry is used as the outbound legacy trace header. The W3C `traceparent` header takes precedence over these on inbound. |
+| `trace.http.legacy.header.enabled` | `boolean` | `true` | When `true`, outbound HTTP requests emit the legacy `trace.http.header` alongside W3C `traceparent`. Set to `false` to send only `traceparent` once downstream services are fully on OpenTelemetry. Inbound acceptance of the legacy header is unaffected by this flag. |
 
 ---
 
@@ -304,8 +305,11 @@ kernel.thread.pool=100
 http.client.connection.timeout=5000
 
 # --- Distributed Tracing ---
-# List headers in preference order; first entry is also used as the outbound header.
+# Legacy trace headers, in preference order; first entry is also the outbound legacy header.
+# The W3C "traceparent" header takes precedence over these on inbound requests.
 trace.http.header=X-Trace-Id
+# Emit the legacy header outbound alongside "traceparent" (set false for pure W3C OpenTelemetry).
+trace.http.legacy.header.enabled=true
 
 # --- Health ---
 # List health-check routes that must all pass for /health to return 200.

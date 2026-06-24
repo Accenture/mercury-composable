@@ -106,6 +106,7 @@ public class HttpRouter {
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
     private static List<String> traceIdLabels;
+    private static boolean legacyTraceHeaderEnabled;
     private static String staticFolder;
     private static String resourceFolder;
 
@@ -125,7 +126,12 @@ public class HttpRouter {
                     labels.add("X-Trace-Id");
                 }
                 traceIdLabels = labels;
-                log.info("Initialized with HTTP trace headers {}", traceIdLabels);
+                // When enabled (default), outbound HTTP calls also emit the legacy trace header
+                // alongside W3C "traceparent". Set to false once downstreams are fully on OTel.
+                legacyTraceHeaderEnabled = "true".equalsIgnoreCase(
+                        config.getProperty("trace.http.legacy.header.enabled", "true"));
+                log.info("Initialized with HTTP trace headers {}, outbound legacy header {}",
+                        traceIdLabels, legacyTraceHeaderEnabled ? "enabled" : "disabled");
                 String folder = config.getProperty("spring.web.resources.static-locations",
                         config.getProperty("static.html.folder", "classpath:/public"));
                 if (folder.endsWith("/")) {
@@ -153,6 +159,18 @@ public class HttpRouter {
 
     public static String getDefaultTraceIdLabel() {
         return traceIdLabels.getFirst();
+    }
+
+    /**
+     * Whether outbound HTTP requests should emit the legacy trace header (X-Trace-Id /
+     * X-Correlation-Id) in addition to the W3C "traceparent". Controlled by the
+     * "trace.http.legacy.header.enabled" property (default true). Inbound acceptance of the
+     * legacy header is unconditional and not affected by this flag.
+     *
+     * @return true if the legacy outbound trace header is enabled
+     */
+    public static boolean isLegacyTraceHeaderEnabled() {
+        return legacyTraceHeaderEnabled;
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {

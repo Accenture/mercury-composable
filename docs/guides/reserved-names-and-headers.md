@@ -117,8 +117,9 @@ var po = new PostOffice(headers, instance);
 | X-Small-Payload-As-Bytes | This header, if set to true, tells system to render stream content as bytes |
 | X-Event-Api              | The system uses this header to indicate that the request is sent over HTTP  |
 | X-Async                  | This header, if set to true, indicates it is a drop-n-forget request        |
-| X-Trace-Id               | This allows the system to propagate trace ID                                |
+| X-Trace-Id               | Legacy header to propagate trace ID                                         |
 | X-Correlation-Id         | Alternative to X-Trace-Id                                                   |
+| traceparent              | W3C Trace Context header carrying trace ID + parent span ID (OpenTelemetry) |
 | X-Content-Length         | If present, it is the expected length of a streaming content                |
 | X-Raw-Xml                | This header, if set to true, tells to system to skip XML rendering          |
 | X-Flow-Id                | This tells the event manager to select a flow configuration by ID           |
@@ -129,6 +130,24 @@ To support traceId that is stored in X-Correlation-Id HTTP header, set this in a
 ```properties
 # list of supported traceId headers where the first one is the default label
 trace.http.header=X-Correlation-Id, X-Trace-Id
+```
+
+### W3C Trace Context (OpenTelemetry)
+
+The system also supports the W3C `traceparent` header for end-to-end OpenTelemetry tracing
+(span lineage across HTTP boundaries):
+
+- **Inbound** - when a request carries a well-formed `traceparent`, it takes precedence over the
+  legacy `trace.http.header`. The trace ID segment becomes the Mercury trace ID and the parent span
+  ID is adopted, so the trace continues from the upstream caller. The legacy header is honored only
+  when `traceparent` is absent.
+- **Outbound** - the system emits `traceparent` and, for backward compatibility, the legacy header.
+  Set `trace.http.legacy.header.enabled=false` to emit only `traceparent` once all downstream
+  services are on OpenTelemetry.
+
+```properties
+# emit the legacy trace header outbound alongside traceparent (default true)
+trace.http.legacy.header.enabled=true
 ```
 
 ## Transient data store
