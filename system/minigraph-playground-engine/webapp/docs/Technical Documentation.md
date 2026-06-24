@@ -1646,13 +1646,14 @@ npm run test:watch
 
 Tests use Vitest 3 with the built-in `node` environment and `globals: true` (no explicit imports needed for `describe`/`it`/`expect`). The tests are pure TypeScript logic with no DOM or React rendering dependency, so no external testing library is required. Test files live alongside source in `__tests__/` directories. See `vitest.config.ts` for configuration.
 
-### Production Build + Deploy
+### Production release
 
 ```bash
-npm run build:deploy
+npm run release
 # Equivalent to:
+npm run clean
 npm run build    # → dist/
-npm run deploy   # → cp dist/* ../src/main/resources/public/
+npm run deploy   # → copies dist/ → ../src/main/resources/public/
 ```
 
 The Java jar is then rebuilt and serves the SPA from the same origin as the WebSocket and REST endpoints — no CORS, no proxy needed.

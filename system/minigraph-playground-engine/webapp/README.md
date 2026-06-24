@@ -31,13 +31,13 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173) in your browser. The dev server proxies WebSocket connections to `ws://localhost:3000`.
 
-### Production build (deploy to backend)
+### Production release (deploy to backend)
 
 ```bash
-npm run build:deploy
+npm run release
 ```
 
-This builds the app and copies the output into the backend's `src/main/resources/public/` directory. The Spring Boot / Mercury Composable server then serves the static files.
+This builds the app and reloads the output into the backend's `src/main/resources/public/` directory. The Spring Boot / Mercury Composable server then serves the static files.
 
 Once the backend JAR is running:
 
