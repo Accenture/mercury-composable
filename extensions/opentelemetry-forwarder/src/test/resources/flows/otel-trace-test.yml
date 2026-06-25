@@ -1,0 +1,30 @@
+#
+# Minimal two-task sequential flow to validate Level-2 (Event Script) OpenTelemetry tracing.
+# Running it produces task.1 and task.2 spans (a Level-1-style chain) plus one synthetic
+# "task.executor" flow-summary span annotated with the flow id.
+#
+flow:
+  id: 'otel-trace-test'
+  description: 'Two-task sequential flow for OTel tracing validation'
+  ttl: 10s
+
+first.task: 'task.1'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'task.1'
+    output:
+      - 'result -> model.step1'
+    description: 'first task'
+    execution: sequential
+    next:
+      - 'task.2'
+
+  - input:
+      - 'model.step1 -> *'
+    process: 'task.2'
+    output:
+      - 'result -> output.body'
+    description: 'second task'
+    execution: end

@@ -1,0 +1,5 @@
+#
+# Flow manifest for the Level-2 (Event Script) tracing test.
+#
+flows:
+  - 'otel-trace-test.yml'

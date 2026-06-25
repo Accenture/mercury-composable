@@ -1,0 +1,22 @@
+#
+# Test fixture: a composable mock OTLP/HTTP collector.
+#
+# Boot MockOtlpAppMain (from your IDE or `AutoStart.main`) and POST OTLP spans to either backend path:
+#   POST http://127.0.0.1:8299/api/v2/otlp/v1/traces   (Dynatrace-style ingest path)
+#   POST http://127.0.0.1:8299/v2/trace/otlp            (Splunk Observability ingest path)
+#
+# Both endpoints are backed by the same "mock.otlp.collector" function (MockOtlpCollector) - no
+# controller, just a route name. This mirrors how a real OTLP backend endpoint would be declared.
+#
+rest:
+  # Dynatrace OTLP/HTTP ingest path
+  - service: "mock.otlp.collector"
+    methods: ['POST']
+    url: "/api/v2/otlp/v1/traces"
+    timeout: 10s
+
+  # Splunk Observability OTLP/HTTP ingest path
+  - service: "mock.otlp.collector"
+    methods: ['POST']
+    url: "/v2/trace/otlp"
+    timeout: 10s
