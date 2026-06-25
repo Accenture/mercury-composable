@@ -70,7 +70,7 @@ The following optional route names will be detected by the system for additional
 | Route                        | Purpose                                                                               |
 |:-----------------------------|:--------------------------------------------------------------------------------------|
 | additional.info              | User application function to return information<br/> about your application status    |
-| distributed.trace.forwarder  | Custom function to forward performance metrics<br/> to a telemetry system             |
+| distributed.trace.forwarder  | Function to forward performance metrics to a telemetry<br/> system (ready-made OpenTelemetry/OTLP version: the<br/> `opentelemetry-forwarder` extension), or your own        |
 | transaction.journal.recorder | Custom function to record transaction request-response<br/> payloads into an audit DB |
 
 The `additional.info` function, if implemented, will be invoked from the "/info" endpoint and its response

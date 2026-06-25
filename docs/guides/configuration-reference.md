@@ -142,7 +142,10 @@ virtual threads.
 
 ---
 
-## Distributed Tracing & Observability
+## Distributed Tracing & Observability {#observability}
+
+See the [Observability guide](observability.md) for the tracing design and OpenTelemetry/OTLP export; the keys
+below tune it. The `otel.*` keys are read by the `opentelemetry-forwarder` extension.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -153,6 +156,13 @@ virtual threads.
 | `stack.trace.transport.size` | `int` | `10` | Maximum stack-trace lines embedded in an `EventEnvelope` when an exception occurs. |
 | `trace.http.header` | `String` (comma-sep list) | `X-Trace-Id` | Legacy HTTP request header(s) carrying a trace ID (e.g. `X-Trace-Id`, `X-Correlation-Id`). Accepted on inbound requests as a fallback; the first entry is used as the outbound legacy trace header. The W3C `traceparent` header takes precedence over these on inbound. |
 | `trace.http.legacy.header.enabled` | `boolean` | `true` | When `true`, outbound HTTP requests emit the legacy `trace.http.header` alongside W3C `traceparent`. Set to `false` to send only `traceparent` once downstream services are fully on OpenTelemetry. Inbound acceptance of the legacy header is unaffected by this flag. |
+| `otel.trace.forwarder.enabled` | `boolean` | `true` | Used by the `opentelemetry-forwarder` extension. `false` makes the forwarder a no-op (jar present, no export). |
+| `otel.exporter.otlp.endpoint` | `String` | `http://localhost:4318/v1/traces` | OTLP/HTTP traces endpoint the `opentelemetry-forwarder` extension exports spans to. |
+| `otel.exporter.otlp.timeout` | `int` (ms) | `10000` | OTLP export timeout for the `opentelemetry-forwarder` extension. |
+| `otel.service.name` | `String` | `application.name` | `service.name` resource attribute the `opentelemetry-forwarder` extension stamps on every exported span. |
+| `otel.exporter.otlp.headers` | `String` (comma-sep `key=value`) | — | Request headers for the `opentelemetry-forwarder` extension — **where backend API credentials go** (e.g. `Authorization=Api-Token …` for Dynatrace, `X-SF-Token=…` for Splunk). Source it from the environment with **no default** — `otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}` — so no secret is hard-coded; unset resolves to no headers. |
+
+> The `otel.*` values support `${ENV_VAR:default}` substitution, so the forwarder is configured entirely from `application.properties` while secrets stay in the environment.
 
 ---
 
