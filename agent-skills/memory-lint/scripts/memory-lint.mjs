@@ -229,6 +229,23 @@ export function check_session_filenames(sessions) {
     );
 }
 
+export function check_version_manifest(root) {
+  // (6) .agent/version.md, IF present, must carry a parseable semver `version:` line.
+  // An empty/malformed manifest breaks Mode B upgrade detection — and was a real bug
+  // (a truncating stamp one-liner emptied it). A MISSING file is valid (pre-versioning
+  // baseline, handled by ENABLE/UPGRADE) and is NOT flagged.
+  const p = join(root, ".agent", "version.md");
+  if (!existsSync(p) || !statSync(p).isFile()) return [];
+  const m = read_text(p).match(/^- \*\*version:\*\*\s*(\d+\.\d+\.\d+)/m);
+  if (m === null) {
+    return [
+      "[version-manifest] .agent/version.md exists but has no parseable " +
+        "`- **version:** X.Y.Z` line (empty or malformed) — breaks Mode B upgrade detection",
+    ];
+  }
+  return [];
+}
+
 export function check_dangling(allf) {
   // (4) supersession links resolve
   const out = [];
@@ -277,7 +294,11 @@ export function main(argv) {
   const acw = w.active_window;
   const sslu = make_sslu(refs);
 
-  const errors = [...check_duplicates(cont, arch), ...check_over_archived(arch, sslu, aw)];
+  const errors = [
+    ...check_duplicates(cont, arch),
+    ...check_over_archived(arch, sslu, aw),
+    ...check_version_manifest(root),
+  ];
   const warns = [
     ...check_overdue(cont, pinned, sslu, aw),
     ...check_dangling(new Map([...cont, ...arch, ...extra])),

@@ -159,5 +159,42 @@ class TestSessionFilenames(unittest.TestCase):
         self.assertIn("2026-06-12.md", warns[0])
 
 
+class TestVersionManifest(unittest.TestCase):
+    # Regression for the empty-version.md bug: a present-but-empty/malformed
+    # .agent/version.md breaks Mode B upgrade detection and must be flagged; a
+    # MISSING file is the valid pre-versioning baseline and must NOT be flagged.
+    @staticmethod
+    def _setup(root, version_md=None):
+        os.makedirs(os.path.join(root, "memory"), exist_ok=True)
+        with open(os.path.join(root, "memory", "continuity.md"), "w", encoding="utf-8") as f:
+            f.write("# c\n")
+        if version_md is not None:
+            os.makedirs(os.path.join(root, ".agent"), exist_ok=True)
+            with open(os.path.join(root, ".agent", "version.md"), "w", encoding="utf-8") as f:
+                f.write(version_md)
+
+    def test_empty_version_md_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, version_md="")
+            errs = memory_lint.check_version_manifest(root)
+            self.assertEqual(len(errs), 1)
+            self.assertIn("[version-manifest]", errs[0])
+
+    def test_malformed_version_md_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, version_md="# manifest\n(no version line here)\n")
+            self.assertEqual(len(memory_lint.check_version_manifest(root)), 1)
+
+    def test_valid_version_md_ok(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, version_md="- **version:**       4.20.3\n")
+            self.assertEqual(memory_lint.check_version_manifest(root), [])
+
+    def test_missing_version_md_ok(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, version_md=None)
+            self.assertEqual(memory_lint.check_version_manifest(root), [])
+
+
 if __name__ == "__main__":
     unittest.main()

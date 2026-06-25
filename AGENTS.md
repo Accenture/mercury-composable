@@ -34,17 +34,15 @@ and to the Design it realizes — so intent is traceable and drift is detectable
 altitude transition (confirming the Vision, opening or closing a gap) is a **human
 gate**: propose, then let the human approve. Never fabricate the Vision.
 
-The Design altitude keeps an Architecture Decision Record log — adopted in this repo
-(2026-06-22) at `docs/arch-decisions/ADR.md` — a human-facing governance ledger of durable
-architecture decisions
+The Design altitude *may* keep an **optional** Architecture Decision Record log,
+`docs/arch-decisions/ADR.md` — a human-facing governance ledger of durable architecture decisions
 (see `.agent/schema.md`). It is read **on demand**, **not** part of the per-session read;
 any `(ADR-NNNN)` tag on an invariant is a human pointer, not a cue to open it.
-**This repo has adopted the log, so keep it alive:** when you make a new durable architecture
-decision, or supersede/invalidate a continuity fact carrying an `(ADR-NNNN)` tag, **propose** a
-matching update to `docs/arch-decisions/ADR.md` — add a newer ADR, mark the old one
-`Superseded`/`Deprecated` (never delete), keep `formalizes:` ↔ `(ADR-NNNN)` in sync — and let the
-human approve (a Design-altitude change is a human gate; `DECAY.md` §9, §12). That supersession is
-the one time you open the ledger.
+**If the log exists, keep it alive:** when you make a new durable architecture decision, or
+supersede/invalidate a continuity fact carrying an `(ADR-NNNN)` tag, **propose** a matching
+ledger update — add a newer ADR, mark the old one `Superseded`/`Deprecated` (never delete),
+keep `formalizes:` ↔ `(ADR-NNNN)` in sync — and let the human approve (a Design-altitude change
+is a human gate; `DECAY.md` §9, §12). That supersession is the one time you open the ledger.
 
 ## Skills
 
@@ -53,13 +51,15 @@ vendor-neutral `agent-skills/<name>/SKILL.md` files. **This is the runtime:** wh
 matches a skill's `description`, read and follow that `SKILL.md` (and any scripts it
 references). The agent is the runtime — works on any vendor, no engine.
 
-Per-vendor adapters (`.claude/skills/`, `.gemini/commands/`, `.cursor/rules/`, `.kiro/skills/`)
-are thin, gitignored, regenerated pointers — **never commit them** (only `agent-skills/` is
-shared); the source of truth is always `agent-skills/<name>/SKILL.md`.
+Per-vendor adapters (`.claude/skills/`, `.gemini/commands/`, `.cursor/rules/`, `.kiro/skills/`,
+`.github/skills/`) are thin, gitignored, regenerated pointers — **never commit them** (only
+`agent-skills/` is shared); the source of truth is always `agent-skills/<name>/SKILL.md`.
 
 **Authoring, syncing, adopting, sanity-checking, or editing a tool-provided skill?** See **`SKILLS.md`**
-(read on demand — it is *not* part of this per-session read). Skill work is a deliberate, occasional
-action, never part of the session ritual. A skill whose frontmatter says `provenance: agent-memory-builtin`
+(read on demand — it is *not* part of this per-session read). **Authoring a skill is a 3-step action —
+write `agent-skills/<name>/SKILL.md`, run `sync skill adapters`, then reload your runtime if it loads
+adapters at startup (e.g. GitHub Copilot CLI `/restart`); it is not done after step 1.** Skill work is
+a deliberate, occasional action, never part of the session ritual. A skill whose frontmatter says `provenance: agent-memory-builtin`
 is **tool-managed** (overwritten on upgrade) — don't edit it in place; fork it under a new name, or
 upstream a genuine fix to the agent-memory project (`SKILLS.md` → "Tool-provided (system) skills").
 
@@ -140,9 +140,19 @@ expected (the decay math counts log files — `DECAY.md` §4).
 > The ledger stays continuous for anything that touched a *tracked* file; the review treats a lite log
 > as a normal reference-free session, so usage is unaffected.
 
-> Optional reinforcement: wire a lightweight Stop or pre-commit hook in your runtime
-> so this ritual is *prompted*, not merely documented. It stays optional — the
-> protocol itself is no-code.
+> **Reinforced, not just documented (v4.19.0).** This repo ships vendor-neutral triggers: a committed
+> **`.githooks/post-commit`** (auto-stubs a session log when a commit does real work without one;
+> activated via `git config core.hooksPath .githooks`) + a **CI floor**
+> (`.github/workflows/agent-memory.yml`, zero per-user setup). Treat the session log as part of **done** —
+> *a task that changed tracked files isn't finished until its log exists.* The triggers are **advisory**
+> (never block) and **no-code** (git/CI run them in your env; the tool runs nothing). See
+> **`.githooks/README.md`** for activation + per-vendor end-of-turn hook extras.
+>
+> **First session in a fresh clone? Self-initialize.** A clone has the gitignored skill adapters
+> **absent** and the hook **unactivated** (git can't auto-run committed hooks on clone). If you see
+> empty vendor adapter dirs or `git config core.hooksPath` is unset, run **`bash .githooks/init.sh`**
+> once (regenerates adapters + activates the post-commit hook) — do this proactively, before other
+> work. (CI runs server-side regardless.)
 
 ## Multi-Agent Continuity
 

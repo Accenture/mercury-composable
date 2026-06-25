@@ -44,7 +44,10 @@ script, so the riskiest operation is verified against observable evidence.
      guard: if it was, the count was wrong, so **reactivate it**;
    - *advisory* — continuity facts overdue for archival (`sslu > archive_window`), excluding `core`,
      `superseded`, and pinned `- [ ]` open threads (which never decay);
-   - supersession links resolve (`supersedes` / `superseded-by` point at real footers).
+   - supersession links resolve (`supersedes` / `superseded-by` point at real footers);
+   - **`.agent/version.md`, if present, carries a parseable `- **version:** X.Y.Z` line** — an
+     empty/malformed manifest breaks Mode B upgrade detection (this was a real bug: a truncating stamp
+     one-liner emptied it). A *missing* file is the valid pre-versioning baseline and is not flagged.
 3. **ERROR** (exit 1) → fix per `DECAY.md` / `REVIEW.md`: reactivate an over-archived fact (move it
    back into `continuity.md`), de-duplicate, or repair a link. **WARN** is advisory — the next review
    may act on it.

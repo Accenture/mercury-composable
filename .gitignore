@@ -41,6 +41,7 @@ project
 .claude/
 .cursor/
 .gemini/
+.github/skills/
 review-scratch/
 __pycache__/
 *.pyc
