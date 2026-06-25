@@ -46,3 +46,6 @@ review-scratch/
 __pycache__/
 *.pyc
 site/
+
+# Work-in-progress design drafts — kept local until finalized (not for commit)
+draft-design-specs/

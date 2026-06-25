@@ -21,6 +21,7 @@
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>
         <module>extensions/opentelemetry-forwarder</module>
+        <module>extensions/sync-over-async</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>
