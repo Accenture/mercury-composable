@@ -36,6 +36,7 @@ public class HttpRequestEvent {
     private static final String SERVICES_TAG = "7";
     private static final String TIMEOUT_TAG = "8";
     private static final String TRACING_TAG = "9";
+    private static final String PARENT_SPAN_ID = "10";
 
     public String requestId;
     public String primary;
@@ -46,6 +47,8 @@ public class HttpRequestEvent {
     public List<String> services;
     public long timeout;
     public boolean tracing;
+    // W3C trace context: the caller's span ID extracted from an inbound "traceparent" header, if any
+    public String parentSpanId;
 
     @SuppressWarnings("unchecked")
     public HttpRequestEvent(Object data) {
@@ -60,6 +63,7 @@ public class HttpRequestEvent {
             this.services = (List<String>) map.get(SERVICES_TAG);
             this.timeout = Utility.getInstance().str2long(map.get(TIMEOUT_TAG).toString());
             this.tracing = (boolean) map.get(TRACING_TAG);
+            this.parentSpanId = (String) map.get(PARENT_SPAN_ID);
         }
     }
 
@@ -91,6 +95,9 @@ public class HttpRequestEvent {
         result.put(SERVICES_TAG, services);
         result.put(TIMEOUT_TAG, timeout);
         result.put(TRACING_TAG, tracing);
+        if (parentSpanId != null) {
+            result.put(PARENT_SPAN_ID, parentSpanId);
+        }
         return result;
     }
 }

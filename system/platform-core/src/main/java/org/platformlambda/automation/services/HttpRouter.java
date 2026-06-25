@@ -42,6 +42,7 @@ import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.core.util.W3cTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +106,7 @@ public class HttpRouter {
     // requestId -> context
     private static final ConcurrentMap<String, AsyncContextHolder> contexts = new ConcurrentHashMap<>();
     private static List<String> traceIdLabels;
+    private static boolean legacyTraceHeaderEnabled;
     private static String staticFolder;
     private static String resourceFolder;
 
@@ -124,7 +126,12 @@ public class HttpRouter {
                     labels.add("X-Trace-Id");
                 }
                 traceIdLabels = labels;
-                log.info("Initialized with HTTP trace headers {}", traceIdLabels);
+                // When enabled (default), outbound HTTP calls also emit the legacy trace header
+                // alongside W3C "traceparent". Set to false once downstreams are fully on OTel.
+                legacyTraceHeaderEnabled = "true".equalsIgnoreCase(
+                        config.getProperty("trace.http.legacy.header.enabled", "true"));
+                log.info("Initialized with HTTP trace headers {}, outbound legacy header {}",
+                        traceIdLabels, legacyTraceHeaderEnabled ? "enabled" : "disabled");
                 String folder = config.getProperty("spring.web.resources.static-locations",
                         config.getProperty("static.html.folder", "classpath:/public"));
                 if (folder.endsWith("/")) {
@@ -152,6 +159,18 @@ public class HttpRouter {
 
     public static String getDefaultTraceIdLabel() {
         return traceIdLabels.getFirst();
+    }
+
+    /**
+     * Whether outbound HTTP requests should emit the legacy trace header (X-Trace-Id /
+     * X-Correlation-Id) in addition to the W3C "traceparent". Controlled by the
+     * "trace.http.legacy.header.enabled" property (default true). Inbound acceptance of the
+     * legacy header is unconditional and not affected by this flag.
+     *
+     * @return true if the legacy outbound trace header is enabled
+     */
+    public static boolean isLegacyTraceHeaderEnabled() {
+        return legacyTraceHeaderEnabled;
     }
 
     public ConcurrentMap<String, AsyncContextHolder> getContexts() {
@@ -462,6 +481,7 @@ public class HttpRouter {
         // Distributed tracing required?
         String traceId = null;
         String tracePath = null;
+        String parentSpanId = null;
         // Set trace header if needed
         if (route.info.tracing) {
             List<String> traceHeader = getTraceId(request);
@@ -470,9 +490,16 @@ public class HttpRouter {
             if (req.getQueryString() != null) {
                 tracePath += "?" + req.getQueryString();
             }
-            response.putHeader(traceHeader.get(0), traceHeader.get(1));
+            // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
+            String[] traceParent = W3cTrace.parse(request.getHeader(W3cTrace.TRACEPARENT));
+            if (traceParent != null) {
+                traceId = traceParent[0];
+                parentSpanId = traceParent[1];
+            }
+            response.putHeader(traceHeader.get(0), traceId);
         }
         final HttpRequestEvent requestEvent = new HttpRequestEvent(requestId, route, authService, traceId, tracePath);
+        requestEvent.parentSpanId = parentSpanId;
         // load HTTP body
         if (POST.equals(method) || PUT.equals(method) || PATCH.equals(method)) {
             handlePayload(request, route, requestEvent, req);
@@ -798,6 +825,9 @@ public class HttpRouter {
             // enable distributed tracing if needed
             if (requestEvent.tracing) {
                 event.setTrace(requestEvent.traceId, requestEvent.tracePath);
+                if (requestEvent.parentSpanId != null) {
+                    event.setSpanId(requestEvent.parentSpanId);
+                }
             }
             try {
                 po.send(event);
@@ -818,6 +848,9 @@ public class HttpRouter {
                         .setBody(requestEvent.httpRequest);
                 if (requestEvent.tracing) {
                     copy.setTrace(requestEvent.traceId, requestEvent.tracePath);
+                    if (requestEvent.parentSpanId != null) {
+                        copy.setSpanId(requestEvent.parentSpanId);
+                    }
                 }
                 try {
                     EventEmitter.getInstance().send(copy);
@@ -911,6 +944,9 @@ class HttpAuth implements LambdaFunction {
                 if (event.tracing) {
                     authRequest.setFrom(HTTP_REQUEST);
                     authRequest.setTrace(event.traceId, event.tracePath);
+                    if (event.parentSpanId != null) {
+                        authRequest.setSpanId(event.parentSpanId);
+                    }
                 }
                 po.asyncRequest(authRequest, event.timeout)
                         .onSuccess(response -> handleAuthResponse(response, event, req))
@@ -941,6 +977,9 @@ class HttpAuth implements LambdaFunction {
             if (event.tracing) {
                 forward.setFrom(event.authService);
                 forward.setTrace(event.traceId, event.tracePath);
+                if (event.parentSpanId != null) {
+                    forward.setSpanId(event.parentSpanId);
+                }
             }
             try {
                 po.send(forward);

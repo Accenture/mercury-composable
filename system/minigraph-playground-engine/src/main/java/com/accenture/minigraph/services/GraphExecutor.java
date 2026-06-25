@@ -78,15 +78,18 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     private void executeGraph(PostOffice po, Map<String, String> headers, EventEnvelope event) {
+        // The span that triggered this graph (stamped by the event-script task executor) is the
+        // parent span for the graph's first node, establishing OTel lineage into the graph.
+        var parentSpanId = event.getSpanId();
         try {
             var graphInstance = createInstance(headers, event.getReplyTo(), event.getCorrelationId());
             var flowInstanceId = headers.get(INSTANCE);
             var flowInstance = Flows.getFlowInstance(flowInstanceId);
-            beginTraversal(po, flowInstance, graphInstance);
+            beginTraversal(po, flowInstance, graphInstance, parentSpanId);
         } catch (Exception e) {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;
             var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc).setBody(e.getMessage())
-                    .setCorrelationId(event.getCorrelationId());
+                    .setCorrelationId(event.getCorrelationId()).setSpanId(parentSpanId);
             po.send(error);
         }
     }
@@ -120,7 +123,7 @@ public class GraphExecutor extends GraphLambdaFunction {
     }
 
     @SuppressWarnings("unchecked")
-    private void beginTraversal(PostOffice po, FlowInstance flowInstance, GraphInstance graphInstance) {
+    private void beginTraversal(PostOffice po, FlowInstance flowInstance, GraphInstance graphInstance, String parentSpanId) {
         var stateMachine = graphInstance.stateMachine;
         var graph = graphInstance.graph;
         // make a copy of flow input and model to avoid accidentally changing the original values
@@ -138,7 +141,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         if (end == null) {
             throw new IllegalArgumentException("End node does not exist");
         }
-        walk(po, graphInstance, root);
+        walk(po, graphInstance, root, parentSpanId);
     }
 
     private void handleSkillResponse(PostOffice po, EventEnvelope response) {
@@ -149,6 +152,9 @@ public class GraphExecutor extends GraphLambdaFunction {
         var graphInstance = graphInstances.get(flowInstanceId);
         var flowInstance = Flows.getFlowInstance(flowInstanceId);
         if (graphInstance != null && flowInstance != null) {
+            // The completed node's own span (stamped on its reply by WorkerHandler) is the parent
+            // span for whatever node this callback dispatches next.
+            var parentSpanId = response.getSpanId();
             var stateMachine = graphInstance.stateMachine;
             var target = stateMachine.getElement(nodeName + "." + TARGET);
             // Unrecoverable error from the node itself
@@ -157,13 +163,13 @@ public class GraphExecutor extends GraphLambdaFunction {
                     var eMap = getErrorMap(stateMachine.getElement(OUTPUT_BODY_NAMESPACE), target);
                     stateMachine.setElement(OUTPUT_BODY_NAMESPACE, eMap);
                 }
-                handleErrorResponse(po, graphInstance, response);
+                handleErrorResponse(po, graphInstance, response, parentSpanId);
                 return;
             }
             var graph = graphInstance.graph;
             var node = graph.findNodeByAlias(nodeName);
             graphInstance.skillRun.put(nodeName, true);
-            checkFrequency(po, graphInstance, nodeName);
+            checkFrequency(po, graphInstance, nodeName, parentSpanId);
             // Skill handler can also set status and error in its node properties instead of throwing exception
             var processStatus = stateMachine.getElement(nodeName + "." + STATUS);
             var resultError = stateMachine.getElement(nodeName + "." + ERROR);
@@ -174,17 +180,18 @@ public class GraphExecutor extends GraphLambdaFunction {
                 var errorMap = getErrorMap(resultError, target);
                 var replyTo = graphInstance.getReplyTo();
                 var cid = graphInstance.getCorrelationId();
-                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap).setStatus(rc);
+                var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap)
+                        .setStatus(rc).setSpanId(parentSpanId);
                 po.send(error);
                 graphInstance.complete.set(true);
             } else if (!graphInstance.complete.get()) {
                 var next = String.valueOf(response.getBody());
-                decideNext(po, node, next, graphInstance);
+                decideNext(po, node, next, graphInstance, parentSpanId);
             }
         }
     }
 
-    private void checkFrequency(PostOffice po, GraphInstance graphInstance, String nodeName) {
+    private void checkFrequency(PostOffice po, GraphInstance graphInstance, String nodeName, String parentSpanId) {
         var frequency = graphInstance.hits.getOrDefault(nodeName, new Visits());
         var now = System.currentTimeMillis();
         var last = frequency.lastVisit.get();
@@ -198,57 +205,57 @@ public class GraphExecutor extends GraphLambdaFunction {
             log.error("Looping detected - {} hits in {} ms for {} in {}",
                     total, now - last, nodeName, graphInstance.graphId);
             var response = new EventEnvelope().setBody("Node " + nodeName + " executed too frequently").setStatus(400);
-            handleErrorResponse(po, graphInstance, response);
+            handleErrorResponse(po, graphInstance, response, parentSpanId);
         }
     }
 
-    private void decideNext(PostOffice po, SimpleNode node, String next, GraphInstance graphInstance) {
+    private void decideNext(PostOffice po, SimpleNode node, String next, GraphInstance graphInstance, String parentSpanId) {
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
-            executionComplete(po, graphInstance);
+            executionComplete(po, graphInstance, parentSpanId);
         } else {
-            nextOrJump(po, graphInstance, node, next);
+            nextOrJump(po, graphInstance, node, next, parentSpanId);
         }
     }
 
-    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
+    private void walk(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
         if (!graphInstance.complete.get()) {
             var nodeName = node.getAlias();
             String skill = node.getProperty(SKILL) != null ? String.valueOf(node.getProperty(SKILL)) : null;
             var seen = !GraphJoin.ROUTE.equals(skill) && graphInstance.nodeSeen.get(nodeName) != null;
             if (!seen) {
                 graphInstance.nodeSeen.put(nodeName, true);
-                walkTo(po, skill, graphInstance, node);
+                walkTo(po, skill, graphInstance, node, parentSpanId);
             }
         }
     }
 
-    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
+    private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
             if (skill != null) {
-                executeSkill(po, skill, graphInstance, node);
+                executeSkill(po, skill, graphInstance, node, parentSpanId);
             } else {
-                executionComplete(po, graphInstance);
+                executionComplete(po, graphInstance, parentSpanId);
             }
         } else {
             if (skill != null) {
-                executeSkill(po, skill, graphInstance, node);
+                executeSkill(po, skill, graphInstance, node, parentSpanId);
             } else {
-                walkNext(po, graphInstance, node);
+                walkNext(po, graphInstance, node, parentSpanId);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void executionComplete(PostOffice po, GraphInstance graphInstance) {
+    private void executionComplete(PostOffice po, GraphInstance graphInstance, String parentSpanId) {
         var body = graphInstance.stateMachine.getElement(OUTPUT_BODY_NAMESPACE);
         var hdr = graphInstance.stateMachine.getElement(OUTPUT_HEADER_NAMESPACE);
         var headers = hdr instanceof Map ? (Map<String, Object>) hdr : new HashMap<String, Object>();
         var response = new EventEnvelope().setTo(graphInstance.getReplyTo())
-                .setCorrelationId(graphInstance.getCorrelationId());
+                .setCorrelationId(graphInstance.getCorrelationId()).setSpanId(parentSpanId);
         for (Map.Entry<String, Object> kv : headers.entrySet()) {
             response.setHeader(kv.getKey(), kv.getValue());
         }
@@ -256,41 +263,41 @@ public class GraphExecutor extends GraphLambdaFunction {
         graphInstance.complete.set(true);
     }
 
-    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node) {
+    private void executeSkill(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
         if (po.exists(skill)) {
             var flowInstanceId = graphInstance.getFlowInstanceId();
             var nodeName = node.getAlias();
             var compositeId = flowInstanceId + "@" + nodeName;
             po.send(new EventEnvelope().setTo(skill).setHeader(IN, flowInstanceId)
                     .setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName)
-                    .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId));
+                    .setReplyTo(GraphExecutor.ROUTE).setCorrelationId(compositeId).setSpanId(parentSpanId));
         } else {
-            sendError(po, graphInstance, "Skill " + skill + " does not exist");
+            sendError(po, graphInstance, "Skill " + skill + " does not exist", parentSpanId);
         }
     }
 
-    private void nextOrJump(PostOffice po, GraphInstance graphInstance, SimpleNode node, String next) {
+    private void nextOrJump(PostOffice po, GraphInstance graphInstance, SimpleNode node, String next, String parentSpanId) {
         if (!SINK.equals(next)) {
             var graph = graphInstance.graph;
             if (NEXT.equals(next)) {
-                walkNext(po, graphInstance, node);
+                walkNext(po, graphInstance, node, parentSpanId);
             } else {
                 var nextNode = graph.findNodeByAlias(next);
                 if (nextNode != null) {
-                    walk(po, graphInstance, nextNode);
+                    walk(po, graphInstance, nextNode, parentSpanId);
                 } else {
-                    sendError(po, graphInstance, "Next node '" + next + "' does not exist");
+                    sendError(po, graphInstance, "Next node '" + next + "' does not exist", parentSpanId);
                 }
             }
         }
     }
 
-    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node) {
+    private void walkNext(PostOffice po, GraphInstance graphInstance, SimpleNode node, String parentSpanId) {
         if (!graphInstance.complete.get()) {
             var graph = graphInstance.graph;
             var nodes = graph.getForwardLinks(node.getAlias());
             for (SimpleNode next : nodes) {
-                walk(po, graphInstance, next);
+                walk(po, graphInstance, next, parentSpanId);
             }
         }
     }
@@ -312,17 +319,19 @@ public class GraphExecutor extends GraphLambdaFunction {
         }
     }
 
-    private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
+    private void handleErrorResponse(PostOffice po, GraphInstance graphInstance, EventEnvelope response, String parentSpanId) {
         var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
                                         .setCorrelationId(graphInstance.getCorrelationId())
-                                        .setBody(response.getBody()).setStatus(response.getStatus());
+                                        .setBody(response.getBody()).setStatus(response.getStatus())
+                                        .setSpanId(parentSpanId);
         po.send(error);
         graphInstance.complete.set(true);
     }
 
-    private void sendError(PostOffice po, GraphInstance graphInstance, String message) {
+    private void sendError(PostOffice po, GraphInstance graphInstance, String message, String parentSpanId) {
         var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
-                            .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400);
+                            .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400)
+                            .setSpanId(parentSpanId);
         po.send(error);
         graphInstance.complete.set(true);
     }

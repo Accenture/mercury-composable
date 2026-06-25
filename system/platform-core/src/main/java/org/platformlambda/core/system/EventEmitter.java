@@ -361,13 +361,14 @@ public class EventEmitter {
      * @param route name
      * @param traceId to identify a transaction
      * @param tracePath for the transaction
+     * @param parentSpanId OTel span-ID of the caller (null for root span)
      * @param instance for the worker serving this transaction
      * @return ref for the thread or coroutine
      */
-    public String startTracing(String route, String traceId, String tracePath, int instance) {
+    public String startTracing(String route, String traceId, String tracePath, String parentSpanId, int instance) {
         String ref = Thread.currentThread().threadId() + "/" + instance + "/" + route;
         if (route != null && route.contains(".")) {
-            traces.put(ref, new TraceInfo(route, traceId, tracePath));
+            traces.put(ref, new TraceInfo(route, traceId, tracePath, parentSpanId));
         }
         return ref;
     }

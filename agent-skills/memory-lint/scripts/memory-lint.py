@@ -217,6 +217,23 @@ def check_session_filenames(sessions):
     return out
 
 
+def check_version_manifest(root):
+    # (6) .agent/version.md, IF present, must carry a parseable semver `version:` line.
+    # An empty/malformed manifest breaks Mode B upgrade detection — and was a real bug
+    # (a truncating stamp one-liner emptied it). A MISSING file is valid (pre-versioning
+    # baseline, handled by ENABLE/UPGRADE) and is NOT flagged.
+    p = os.path.join(root, ".agent", "version.md")
+    if not os.path.isfile(p):
+        return []
+    m = re.search(r"(?m)^- \*\*version:\*\*\s*(\d+\.\d+\.\d+)", read_text(p))
+    if m is None:
+        return [
+            "[version-manifest] .agent/version.md exists but has no parseable "
+            "`- **version:** X.Y.Z` line (empty or malformed) — breaks Mode B upgrade detection"
+        ]
+    return []
+
+
 def check_dangling(allf):
     # (4) supersession links resolve
     out = []
@@ -259,7 +276,11 @@ def main():
     aw, acw = w["archive_window"], w["active_window"]
     sslu = make_sslu(refs)
 
-    errors = check_duplicates(cont, arch) + check_over_archived(arch, sslu, aw)
+    errors = (
+        check_duplicates(cont, arch)
+        + check_over_archived(arch, sslu, aw)
+        + check_version_manifest(root)
+    )
     warns = (
         check_overdue(cont, pinned, sslu, aw)
         + check_dangling({**cont, **arch, **extra})

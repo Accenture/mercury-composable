@@ -4,7 +4,7 @@
 > tier `core`, re-confirmed on the invariant-verification cadence. The Blueprint
 > (gap from Current State to here) lives as `(blueprint)` Open Threads in continuity.md.
 >
-> <!-- id: vision-mercury-composable | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
+> <!-- id: vision-mercury-composable | created: 2026-06-20 | last_used: 2026-06-24 | uses: 18 | tier: core -->
 
 ## Elevator statement
 

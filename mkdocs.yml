@@ -40,6 +40,7 @@ nav:
 
   - Operate & integrate:
     - Build, Test & Deploy: guides/build-test-deploy.md
+    - Observability: guides/observability.md
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
     - Minimalist Service Mesh: guides/service-mesh.md

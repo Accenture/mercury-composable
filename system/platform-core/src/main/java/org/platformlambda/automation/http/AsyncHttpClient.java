@@ -43,6 +43,7 @@ import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.core.util.W3cTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -182,7 +183,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
         HttpClient client = HttpClient.create()
                             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout)
-                            .headers(h -> updateHttpHeaders(po, request, h));
+                            .headers(h -> updateHttpHeaders(po, request, h, input.getSpanId()));
         // override default of 8 KB to 16 KB - use this with caution
         if (relaxedHeaderSize) {
             client = client.httpResponseDecoder(spec -> spec.maxHeaderSize(16 * 1024));
@@ -303,7 +304,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
-    private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpHeaders http) {
+    private void updateHttpHeaders(PostOffice po, AsyncHttpRequest request, HttpHeaders http, String spanId) {
         // set user-agent for this HTTP client
         http.set(USER_AGENT, USER_AGENT_NAME);
         // set content-length, including zero, if needed
@@ -321,10 +322,16 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 http.set(kv.getKey(), kv.getValue());
             }
         }
-        // propagate X-Trace-Id when forwarding the HTTP request
+        // propagate the legacy trace header (X-Trace-Id / X-Correlation-Id) for backward
+        // compatibility, unless disabled via trace.http.legacy.header.enabled=false
         String traceId = po.getTraceId();
-        if (traceId != null) {
+        if (traceId != null && HttpRouter.isLegacyTraceHeaderEnabled()) {
             http.set(HttpRouter.getDefaultTraceIdLabel(), traceId);
+        }
+        // propagate W3C trace context so the downstream server span chains to this caller's span
+        String traceparent = W3cTrace.traceparent(traceId, spanId);
+        if (traceparent != null) {
+            http.set(W3cTrace.TRACEPARENT, traceparent);
         }
         // set cookies if any
         Map<String, String> cookies  = request.getCookies();

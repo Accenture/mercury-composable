@@ -67,6 +67,8 @@ public class FlowInstance {
     private String traceId;
     private String tracePath;
     private String parentId;
+    // OTel: parentSpanId is the span_id of the function that triggered this flow (set by EventScriptManager)
+    private String parentSpanId;
 
 
     /**
@@ -279,6 +281,14 @@ public class FlowInstance {
      */
     public void setTracePath(String tracePath) {
         this.tracePath = tracePath;
+    }
+
+    public String getParentSpanId() {
+        return parentSpanId;
+    }
+
+    public void setParentSpanId(String parentSpanId) {
+        this.parentSpanId = parentSpanId;
     }
 
     public boolean topLevelExceptionHappened() {

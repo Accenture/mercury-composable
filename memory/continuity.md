@@ -16,9 +16,9 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-23T18:28:51Z | agent: Claude Code
-- **last_review:** 2026-06-21 | through 2026-06-22-003844.md
-- **last_invariant_check:** (none yet)
+- **last_session:** 2026-06-24T22:27:52Z | agent: Claude Code
+- **last_review:** 2026-06-24 | through 2026-06-24-222752.md
+- **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -30,20 +30,23 @@
 > Canonical live home for the current stack — language version, dependencies, tool
 > versions. `instructions.md` keeps only a high-level descriptor and points here.
 
-- Language: Java 21 (virtual threads); one Kotlin example module
-  <!-- id: stack-language-java21 | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
-- Build: Maven 3.9.7+ (multi-module reactor, `com.accenture.mercury:parent-mercury`)
-  <!-- id: stack-build-maven | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+- Language: Java 21 (virtual threads). (Kotlin appears only as an example module, not a framework language.)
+  <!-- id: stack-language-java21 | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- Build: Maven 3.9.7+ is the current build tool (multi-module reactor, `com.accenture.mercury:parent-mercury`).
+  **Gradle support is planned to be added alongside it** (Eric, 2026-06-24 — see Open Thread `thread-add-gradle-build`).
+  <!-- id: stack-build-maven | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Integration: Spring Boot (rest-spring-3 / -4 modules)
-  <!-- id: stack-integration-spring | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: stack-integration-spring | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Messaging: Kafka connectors; MsgPack wire serialization; customized Gson
-  <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
-- Persistence (extension): reactive PostgreSQL (R2DBC)
-  <!-- id: stack-persistence-r2dbc | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- Persistence: **not part of the framework core** — the framework is persistence-agnostic. The
+  `extensions/reactive-postgres` module (reactive PostgreSQL via R2DBC) is an **example/optional add-on**
+  demonstrating one persistence approach, not a built-in persistence layer. (Corrected — Eric, 2026-06-24.)
+  <!-- id: stack-persistence-r2dbc | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: active -->
 - Docs: mkdocs (`docs_dir: docs`) → accenture.github.io/mercury-composable
-  <!-- id: stack-docs-mkdocs | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: stack-docs-mkdocs | created: 2026-06-20 | last_used: 2026-06-22 | uses: 7 | tier: active -->
 - CI: GitHub Actions (`.github/workflows/`)
-  <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 
 ## Architectural Invariants
 
@@ -51,27 +54,27 @@
 
 - Functions are fully decoupled — coupled only by route-name strings and
   `EventEnvelope`; orchestration lives in YAML event flows, not code. (ADR-0001)
-  <!-- id: functions-decoupled-routes | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: core -->
+  <!-- id: functions-decoupled-routes | created: 2026-06-20 | last_used: 2026-06-24 | uses: 11 | tier: core -->
 - `TypedLambdaFunction` **key-by-key data mapping** (Event Script Layer 2, Knowledge Graph Layer 3)
   requires Map or PoJo — a List cannot be mapped field-by-field. The **`*` whole-body passthrough**
   (`model.list -> *`) bypasses key-by-key mapping and, with `@PreLoad(inputPojoClass=…)`, enables
   `List<PoJo>` at the function boundary in an Event Script flow. Layer 1 (Platform Core) uses the
   same `inputPojoClass` for external JSON-list ingestion. (ADR-0003)
-  <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-23 | uses: 2 | tier: core -->
+  <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-24 | uses: 8 | tier: core -->
 
 ## Key Decisions
 
 - Java 21 virtual threads throughout; synchronous PostOffice RPC ≈ reactive perf. (ADR-0002)
-  <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-22 | uses: 3 | tier: active -->
 - `pom.xml` is the source of truth for the version (drift observed across docs).
-  <!-- id: pom-version-source-of-truth | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: pom-version-source-of-truth | created: 2026-06-20 | last_used: 2026-06-22 | uses: 4 | tier: archive-candidate -->
 - Docs live under `docs/` (mkdocs `docs_dir: docs`): `guides/` → `docs/guides/` and
   `arch-decisions/` → `docs/arch-decisions/`, **keeping the `guides/` subfolder so
   published URLs stay `/guides/...`** (the MiniGraph webapp, help tutorials, and README
   link to those absolute URLs). Root GitHub files (README/CHANGELOG/CONTRIBUTING/
   CODE_OF_CONDUCT/INCLUSIVITY) stay at repo root as external nav links; `docs/index.md`
   is the site Home. Verified by `mkdocs build --strict` (exit 0).
-  <!-- id: docs-dir-layout | created: 2026-06-20 | last_used: 2026-06-21 | uses: 3 | tier: active -->
+  <!-- id: docs-dir-layout | created: 2026-06-20 | last_used: 2026-06-22 | uses: 7 | tier: archive-candidate -->
 - Documentation rewrite (the Design for `bp-docs-ai-human-rewrite`) = a **structural, layered
   re-architecture** into Parts I–VI ascending the layers, centering **"Knowledge Graph as
   application"** (Part IV, mostly new — the current CHAPTER-11 is a glossy stub). **Dual design:**
@@ -83,7 +86,7 @@
   old CHAPTER-11) + fix nav/cross-links/baked URLs. First iteration = spine opener + Part IV.
   Approved by Eric Law 2026-06-20 (3 forks confirmed). Lower-layer chapters (CH 1–9) are sound —
   migrate + refresh, don't rewrite from scratch.
-  <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-21 | uses: 4 | tier: active -->
+  <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-22 | uses: 13 | tier: archive-candidate -->
 - Each DSL gets a deterministic **spec layer for AI agents**: a rule-based grammar reference +
   a machine-readable catalog (JSON) + an AI-agent guide (endpoint contract + pre-send checklist) +
   a CI **drift test** keeping the spec in sync with the shipped help + engine routes. **Validation
@@ -98,7 +101,7 @@
   `scripts/check-rest-automation-grammar.py`; drift-checks against `RoutingEntry.VALID_METHODS`),
   fresh-agent-validated. **All 3 DSLs (MiniGraph, Event Script, REST) now have the deterministic
   spec kit + CI drift test.**
-  <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-21 | uses: 3 | tier: active -->
+  <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-22 | uses: 5 | tier: archive-candidate -->
 - **Finalized doc-style conventions** (the consistency pass after the migration was declared "done";
   3 forks decided by Eric Law 2026-06-22): (1) **ALL docs use lowercase-kebab semantic slugs** — every
   remaining ALL-CAPS file was renamed (`ARCHITECTURE`→`architecture`, `METHODOLOGY`→`methodology`,
@@ -110,7 +113,7 @@
   flagged as drift). (3) **`TABLE-OF-CONTENTS` is retired** (redirect → Home; the Part I–VI sidebar
   nav is the table of contents). The published-URL safety net is the redirect map; live sources (docs,
   README, llms.txt) are repointed to the new slugs, CHANGELOG (historical) is left to the redirect.
-  <!-- id: docs-style-conventions | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: docs-style-conventions | created: 2026-06-22 | last_used: 2026-06-23 | uses: 5 | tier: active -->
 - **Documentation content canon** (Design for the content-polish pass; locked with Eric Law 2026-06-22,
   verified against source — docs are outdated, **code is source of truth**). Its layer model and
   one-atom-four-roles framing are formalized as (ADR-0004, ADR-0005). Resolves old/new *content*
@@ -139,7 +142,7 @@
   architecture.md → (3) methodology.md re-voice → (4) terminology sweep of lower/reference docs →
   (5) persist canon as a published page + wire a light drift check. Extends `docs-style-conventions` /
   `docs-rewrite-architecture`; serves `vision-mercury-composable`.
-  <!-- id: docs-content-canon | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: docs-content-canon | created: 2026-06-22 | last_used: 2026-06-23 | uses: 10 | tier: active -->
 - **No backward-compat redirects (clean rewrite).** All `mkdocs-redirects` entries removed (2026-06-22, Eric):
   old URLs (`/guides/CHAPTER-N/`, `/APPENDIX-*/`, `/composable-design/`, `/TABLE-OF-CONTENTS/`, and the
   case-only ones) now 404 by design — the docs are a brand-new user experience and the **navigation is the
@@ -147,7 +150,7 @@
   install. This reverses the "redirects as the safety net" aspect of `docs-style-conventions` /
   `docs-content-canon` (their redirect language is now historical). The `check-doc-canon.py`
   case-only-redirect guard stays (dormant) to reject a bad redirect if one is ever re-added.
-  <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: active -->
 - **ADR pattern adopted** (the agent-memory optional Architecture Decision Record log; opted in 2026-06-22, Eric). A
   human-facing governance ledger lives at `docs/arch-decisions/ADR.md`. `DESIGN-NOTES.md` — the author's design notepad — was **removed** (2026-06-23) as a drift source; the ADR
   ledger now holds the durable design rationale, and the `arch-decisions/` folder is repurposed for the ledger. Seeded
@@ -162,7 +165,7 @@
   fact, or making a new durable architecture decision, **prompts a human-gated update** to
   `docs/arch-decisions/ADR.md` (add a newer ADR; old → `Superseded`/`Deprecated`, never deleted; keep
   `formalizes:` ↔ `(ADR-NNNN)` in sync). Serves `vision-mercury-composable`.
-  <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-23 | uses: 5 | tier: active -->
 - **Request pipeline model** (Eric, 2026-06-22; stage term **"protocol boundary"** — chosen over "event boundary" for
   precision (requests aren't events until the flow adapter mints the `EventEnvelope`) + code-groundability, and to avoid
   colliding with Mercury's `EntryPoint`/`@MainApplication`): outside-in, `user/calling app → protocol boundary (REST automation for
@@ -175,7 +178,7 @@
   **Kafka notification function**. (Earlier docs put "REST automation" as a stage *after* the flow adapter — wrong;
   it is the boundary *in front* that invokes the adapter. Corrected in architecture.md / documentation-conventions.md /
   ADR-0004.)
-  <!-- id: request-pipeline-model | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: request-pipeline-model | created: 2026-06-22 | last_used: 2026-06-22 | uses: 2 | tier: active -->
 - **Service mesh is opt-in, not the default.** `cloud.connector=none` is the framework default. The Kafka
   service mesh (`cloud.connector=kafka` + presence-monitor) solves exactly two problems: (1) synchronous
   request-response across application instances over Kafka (sync over async), and (2) service discovery
@@ -184,23 +187,69 @@
   "distributed monolith" — full operational cost of distribution with monolith-level coupling. The mesh is an
   advanced opt-in for specific use cases (cross-application RPC, leader selection, pod-aware broadcast).
   This preference must be front-and-center in documentation and AI guides. (ADR-0006)
-  <!-- id: kafka-mesh-opt-in | created: 2026-06-23 | last_used: 2026-06-23 | uses: 1 | tier: core -->
+  <!-- id: kafka-mesh-opt-in | created: 2026-06-23 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Kafka flow adapter + notification function are NOT packaged in this repo** — only the built-in HTTP flow adapter
   (`HttpToFlow` / `http.flow.adapter`) ships here. The `connectors/adapters/kafka/*` modules are the **cloud connector**
   (event-stream mesh, `cloud.connector=kafka`) — a *different* concern, not a flow adapter that triggers Event Script
   flows. Production installations run their own Kafka flow adapter (inbound) + Kafka notification function (outbound);
   an in-repo minimalist version is planned (see Open Thread). Don't claim Kafka flow-triggering is built-in.
-  <!-- id: kafka-adapter-not-in-repo | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: kafka-adapter-not-in-repo | created: 2026-06-22 | last_used: 2026-06-23 | uses: 3 | tier: active -->
+- **W3C OpenTelemetry distributed tracing** (`feature/open-telemetry` branch). Each function gets a 16-hex
+  `span_id` + `parent_span_id` propagated end-to-end: PostOffice/WorkerHandler stamp+emit them; Event Script
+  `TaskExecutor` threads the parent span via a `TaskReference` anchor (**virtual-thread-safe, no ThreadLocal**);
+  MiniGraph `GraphExecutor` threads it through graph traversal; the HTTP boundary uses `W3cTrace` to build/parse
+  `traceparent` (`AsyncHttpClient` injects, `HttpRouter` extracts). The trace-metrics dataset now carries
+  `span_id`/`parent_span_id`/trace id. `trace.http.legacy.header.enabled` toggles the legacy `X-Trace-Id`
+  outbound alongside `traceparent`. **Export = the open item, now done:** `distributed.trace.forwarder` is the
+  framework's extension point (`Telemetry` forwards completed trace metrics to it if registered); the new
+  **`extensions/opentelemetry-forwarder`** module is a drop-in reusable forwarder that builds OTel `SpanData`
+  **directly** (preserving Mercury's exact W3C ids — the `Tracer` API would regenerate them and break lineage)
+  and exports via **OTLP/HTTP**. Auto-registers just by adding the jar (it's under `org.platformlambda`, an
+  always-scanned base package). **Config-driven for production:** `OpenTelemetryForwarder`'s no-arg constructor
+  reads `application.properties` via `AppConfigReader` (values support `${ENV_VAR:default}` substitution) —
+  `otel.exporter.otlp.endpoint`, `otel.service.name`, `otel.trace.forwarder.enabled`, `otel.exporter.otlp.timeout`,
+  and `otel.exporter.otlp.headers`. **Credentials**: set `otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}`
+  with **no default** so no secret is hard-coded (static-analysis-safe) — an unset var resolves to null → `"null"` →
+  zero headers, which the no-auth mock accepts. A package-private 2nd constructor injects a context (in-memory
+  exporter) for unit tests; the old static install()/getInstance() singleton seam was removed. Verified green:
+  21 module tests + the existing `W3cTraceTest`/`PostOfficeTest`/`SpanPropagationTest`/`GraphSpanPropagationTest`.
+  **SonarQube/security-hardened:** `opentelemetry-proto` bumped 1.3.2-alpha → **1.10.0-alpha** so the transitive
+  `protobuf-java` is 4.34.0 (clears **CVE-2024-7254**, fixed in 4.28.2); `TraceMetricsSpanData` constructor collapsed
+  to 4 args (S107), its `StatusData` field renamed `statusData`; `OpenTelemetryForwarder` dropped redundant
+  `instances=1`, removed a plain-text-link Javadoc URL, and its no-arg (reflective `@PreLoad`) constructor now has a
+  direct test.
+  **JaCoCo coverage** (the project's 85% minimum): line 95.4% / instruction 95.4% / branch 84.6%, **enforced** by a
+  `jacoco:check` gate on LINE + INSTRUCTION ≥ 0.85 (branch not gated — its last gap is the boot-time disabled
+  constructor branch). Report at `target/site/jacoco/`.
+  Validated **end-to-end through the real forwarder → mock** at **Level-1** (`OtlpTracePipelineTest`: a traced
+  `unit.test → fun.1 → fun.2 → fun.3` PostOffice RPC chain → 3 linked spans, asserting shared trace id +
+  root/child/grandchild lineage decoded off the wire) **and Level-2** (`OtlpFlowTraceTest`: a `task.1 → task.2`
+  Event Script flow via `FlowExecutor` → the same Level-1-style task chain **plus the one synthetic
+  `task.executor` flow-summary span**, annotated with the flow id; RPC round-trip records carry no `span_id` and
+  are gracefully skipped by the mapper). Level-3 (MiniGraph `GraphExecutor`) rides the same WorkerHandler path.
+  The mock OTLP backend is built **the composable way** (Eric's preference) — a `@PreLoad`
+  `TypedLambdaFunction` `mock.otlp.collector` behind test `rest.yaml` (`POST /api/v2/otlp/v1/traces`) +
+  `application.properties` + `@MainApplication` (`MockOtlpAppMain`), booted via `AutoStart`, so a human can run
+  it from an IDE and point a real exporter/`curl` at it. `rest.yaml` maps **both** backend ingest paths to the
+  one function — `/api/v2/otlp/v1/traces` (Dynatrace) and `/v2/trace/otlp` (Splunk). The test drives the real
+  OTLP exporter against both and asserts the credential header arrives. The mock **decodes the OTLP protobuf**
+  (`io.opentelemetry.proto:opentelemetry-proto`, test scope) and logs the span key-values + asserts the
+  round-tripped trace/span/parent ids and `service.name` survived the wire — a deliberately self-explanatory
+  reviewer example (unit-test-as-documentation). **Documented** in the new **Observability** guide
+  (`docs/guides/observability.md`, nav: Operate & Integrate) — built-in tracing design across the 3 layers +
+  OpenTelemetry/OTLP export; wired into `mkdocs.yml`, `llms.txt`, and `configuration-reference.md#observability`
+  (doc-canon checker passes). Possible future: batch export.
+  <!-- id: otel-w3c-tracing | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
 
 ## Conventions
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
-  <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
-  <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - See `examples/composable-example` (`FlowTest`) as the canonical reference.
-  <!-- id: conv-canonical-example | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: conv-canonical-example | created: 2026-06-20 | last_used: 2026-06-22 | uses: 2 | tier: archive-candidate -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -251,22 +300,16 @@
   TOC retired, all inbound links (docs + README + llms.txt) repointed, stale prose "Chapter-N" refs and
   a stale jar version in quickstart fixed. `mkdocs build --strict` exit 0 / 0 warnings; 3 grammar drift
   checks pass; all redirect stubs resolve. The rewrite is now stylistically uniform old→new.*
-  <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-22 | uses: 11 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
-  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+  <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 - [ ] (blueprint) **Enterprise governance lifecycle** for graph models (dry-run → certify → stage →
   approve → production), so models promote to production as standard endpoints. → serves: vision-mercury-composable
-  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
+  <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
 
-- [x] No CI builds the docs site — the mkdocs config was broken-as-committed (no `docs_dir`,
-  defaulted to absent `./docs`) and no workflow caught it (`.github/workflows/` builds Maven only).
-  Now fixed on this branch; add a CI step running `mkdocs build --strict` so future doc breakages
-  fail the build. **Done 2026-06-20:** `.github/workflows/docs.yml` runs `mkdocs build --strict`
-  + the grammar drift check on docs/spec/help changes.
-  <!-- id: thread-ci-docs-build | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: working -->
 - [x] **Old/new doc-style inconsistency** — the rewrite was declared complete but mixed legacy
   ALL-CAPS docs (un-migrated `CHAPTER-10`, BOM-broken `event-script/index.md` frontmatter, reference
   docs without At-a-glance, legacy `TABLE-OF-CONTENTS`) with the new slug/frontmatter/At-a-glance/
@@ -298,7 +341,7 @@
   **Done 2026-06-23:** folded into `guides/event-driven/` (index.md + function-execution.md + write-your-first-function.md tutorial);
   Layer 1 now fully parallel to Layers 2 & 3; all cross-references updated; mkdocs build --strict 0 warnings; deployed to gh-pages.
   `site/` gitignored and untracked.
-  <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: working -->
+  <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-23 | uses: 5 | tier: working -->
 - [x] (next agenda — Eric, 2026-06-22) **Content polishing round 2 + AI context discovery.** Next working
   session with Eric: (1) **continue content polishing** (improving but "not there yet"); (2) strengthen
   **AI context discovery** so an AI agent can collaborate with a human on **greenfield *and* brownfield**
@@ -324,13 +367,68 @@
   (`bp-docs-ai-human-rewrite`) completes, then build a reference-grade minimalist pair so the Kafka path is demonstrable
   in-repo. → serves `vision-mercury-composable`.
   <!-- id: thread-minimalist-kafka-adapter | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+- [x] **Re-verify invariants (first invariant check; 24 session files ≥ `verify_invariants_every` 20).**
+  Confirmed the never-decay set still holds, or supersede any that don't (`DECAY.md` §9): the Architectural
+  Invariants (`functions-decoupled-routes`, `typed-io-map-or-pojo`), the `core` Key Decision
+  `kafka-mesh-opt-in`, the **7 facts promoted to `core` this review** (`stack-language-java21`,
+  `stack-build-maven`, `stack-integration-spring`, `stack-messaging-kafka`,
+  `stack-ci-gha`, `conv-add-capability`, `conv-serialization-gotchas`), and the Vision
+  (`vision-mercury-composable`). **Done 2026-06-24 (Eric):** all 11 confirmed to hold. One content
+  correction — `stack-language-java21` Kotlin clause removed (Kotlin is only an example module, not a
+  framework language). `stack-persistence-r2dbc` had already been reclassified out of the set (demoted
+  `core`→`active` — it's an example extension).
+  <!-- id: thread-verify-invariants-2026q2 | created: 2026-06-24 | last_used: 2026-06-24 | uses: 2 | tier: working -->
+- [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
+  (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
+  build for the multi-module project.
+  <!-- id: thread-add-gradle-build | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
+- [ ] (docs backlog — Eric, 2026-06-24) **Documentation improvement — serve both audiences, every sprint.**
+  The standing purpose of the documentation sprints (sharpens the dual-design principle in
+  `docs-rewrite-architecture` / `docs-content-canon`; extends `bp-docs-ai-human-rewrite`,
+  `thread-next-ai-context`): **for humans — storytelling: engaging, why-before-how, a narrative arc;**
+  **for AI agents — token-efficient: the shortest path to the point, machine-greppable, "generate from
+  this page alone."** These are the acceptance criteria for every doc change. Backlog of concrete items
+  (grows as findings surface; first batch from a fresh-agent discovery pass on 2026-06-24 — building the
+  OTel forwarder via `llms.txt` → REST-automation guide):
+  - **Biggest gap: an AI-agent "boot & test an app" recipe.** Authoring a `rest.yaml` was well-documented;
+    *standing up and testing* an app was not — had to read platform-core source + test fixtures for
+    `AutoStart.main`, the minimal `application.properties` (`rest.automation`/`web.component.scan`/`server.port`),
+    `@PreLoad` base-package auto-scan, and the `AsyncHttpRequest` service contract (incl. returning an empty 200).
+  - **Surface the working test-fixture pattern** (`TestBase` + a service function + test `rest.yaml`) as a
+    documented example — it was the single highest-signal context, yet lives only in `src/test`.
+  - **Machine-readable runtime-API signatures** — like the DSL `*.json` catalogs (`docs-dsl-spec`) but for
+    `AsyncHttpRequest`/`AutoStart`/`AppConfigReader`; agents grep source for exact signatures today.
+  - **Repo-relative links in `llms.txt`** (alongside the published URLs) so an in-repo agent maps map→file in one hop.
+  - Re-validate each pass with the **fresh-agent test** (`docs-dsl-spec` methodology): can a clean agent build
+    *and test* from the docs alone?
+  Second batch — from building the **whole** OpenTelemetry forwarder feature end-to-end (2026-06-24), where the
+  recurring friction was *grepping platform-core source* for things prose didn't cover (AI-context-discovery focus):
+  - **Reserved-route extension contract + a machine-readable dataset schema.** Writing a `distributed.trace.forwarder`
+    meant reverse-engineering the trace-metrics map shape (`id`/`span_id`/`parent_span_id`/`service`/`path`/`from`/
+    `origin`/`start`/`exec_time`/`round_trip`/`success`/`status`/`exception` + `annotations`) from `Telemetry`/
+    `WorkerHandler`. Document the reserved routes (`distributed.trace.forwarder`, `transaction.journal.recorder`) with
+    a JSON dataset schema like the DSL `*.json` catalogs. *(The new Observability guide now documents the dataset in
+    prose — the goal is the machine-readable schema.)*
+  - **"Author a reusable extension" recipe + the auto-registration fact.** The cornerstone — `@PreLoad` classes under
+    the base packages (`org.platformlambda.*`/`com.accenture.*`) are *always* scanned, so dropping the jar on the
+    classpath auto-registers the route — lives only in `SimpleClassScanner` source.
+  - **Document `${ENV_VAR:default}` config substitution** (`AppConfigReader`), incl. an unset `${VAR}` with no default
+    resolving to null — central to production config + keeping secrets out of files; learned from Eric, not the docs.
+  - **Test server-readiness via the `async.http.response` provider** (`Platform.waitForProvider`), not `Thread.sleep`
+    — the signal the HTTP server registers after `listen()`; found in `AppStarter` source. Folds into the boot-&-test recipe.
+  - **Drive an Event Script flow programmatically** (`FlowExecutor.request(originator, traceId, tracePath, flowId,
+    dataset, cid, timeout)`) and document the synthetic `task.executor` flow-summary span — needed for testing flows.
+  - **Surface the machine-readable catalogs in `llms.txt`** (the DSL `*.json` files) as first-class entries, and add
+    "build & test an app" + "author an extension" entries so an agent doesn't discover them only by reading prose.
+  → serves `vision-mercury-composable`.
+  <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
 
 ## User Preferences
 
 - From the documentation-rewrite effort onward, the **official Accenture GitHub repo is the
   source of truth**; work directly here (not a separate prototyping repo) to keep a clean
   AI–Human commit log on the official repo.
-  <!-- id: pref-github-source-of-truth | created: 2026-06-20 | last_used: 2026-06-20 | uses: 1 | tier: active -->
+  <!-- id: pref-github-source-of-truth | created: 2026-06-20 | last_used: 2026-06-22 | uses: 2 | tier: archive-candidate -->
 
 ## Team / Members
 

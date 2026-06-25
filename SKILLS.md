@@ -29,13 +29,21 @@ Create **`agent-skills/<name>/SKILL.md`** — **never** a vendor folder (those a
 regenerated pointers, and won't be shared). Keep the `description` a **single line, quote-free,
 and concise**: a compact, trigger-phrase-rich summary (~1–2 sentences; it's matched within a
 small discovery budget, so avoid long abstract paragraphs). Put helper scripts under
-`agent-skills/<name>/scripts/`. Then run **sync skill adapters** so your vendor gets a native
-adapter.
+`agent-skills/<name>/scripts/`.
+
+**Authoring is not finished when you save the file — `sync` and reload are part of it. Do all three:**
+1. Write `agent-skills/<name>/SKILL.md` (the neutral source of truth).
+2. **Run `sync skill adapters`** — the runnable `sync-adapters` script (`node …/sync-adapters.mjs` or
+   `python3 …/sync-adapters.py`; see Operations below). Until you do, *no vendor sees the skill* — it
+   lives only in the neutral layer. Do this in the **same turn** as authoring; don't wait to be asked.
+3. **Reload your runtime if it loads adapters at startup.** GitHub Copilot CLI parses `.github/skills/`
+   at init, so the new `/<name>` won't be live until you **`/restart`** (or trigger a skills rescan).
+   Claude / Cursor / Kiro pick up a new description-matched skill without a restart.
 
 ## Tool-provided (system) skills
 
 Some skills are **provided by agent-memory itself** — the built-ins installed into every enabled repo
-(`memory-lint`, `second-opinion`, `apply-critique`). Each is marked in its
+(`memory-lint`, `second-opinion`, `apply-critique`, `sync-adapters`). Each is marked in its
 `agent-skills/<name>/SKILL.md` frontmatter:
 
 ```
@@ -106,10 +114,24 @@ drifts). For each `agent-skills/<name>/SKILL.md` (using its `name` + `descriptio
   Maintained vendor-neutrally. Read and follow `agent-skills/<name>/SKILL.md` (repo root)
   and any scripts it references.
   ```
+- **GitHub Copilot CLI** → `.github/skills/<name>/SKILL.md` (Copilot CLI follows the open Agent
+  Skills standard, so this is the **same shape as the Claude / Kiro adapter**; `.github/skills/`
+  is Copilot's canonical project-skill location. Copilot CLI *also* reads `.claude/skills/`, but a
+  dedicated `.github/skills/` adapter is unambiguous and survives even if that compatibility path
+  changes — note `name` must be lowercase-with-hyphens, which our skill names already are):
+  ```
+  ---
+  name: <name>
+  description: <description>
+  ---
+  Maintained vendor-neutrally. Read and follow `agent-skills/<name>/SKILL.md` (repo root)
+  and any scripts it references.
+  ```
 
-**Trigger semantics differ per vendor — set expectations accordingly.** Claude / Cursor / Kiro
-adapters are *description-matched* — they auto-fire when a natural-language request matches the
-`description`. The **Gemini** adapter is a *slash command* — it fires only on an explicit
+**Trigger semantics differ per vendor — set expectations accordingly.** Claude / Cursor / Kiro /
+**Copilot** adapters are *description-matched* — they auto-fire when a natural-language request
+matches the `description` (Copilot CLI **also** accepts an explicit `/<name>`, so it's both). The
+**Gemini** adapter is *slash-only* — it fires only on an explicit
 `/<name>`, never on a natural-language phrase. This is **not** drift or a missing adapter: every
 adapter is a thin pointer back to the **same** `agent-skills/<name>/SKILL.md`, and the
 `AGENTS.md` baseline runs that neutral skill on any vendor regardless. So "checks `agent-skills/`
@@ -125,19 +147,40 @@ literal string; `.mdc`/YAML: quote the whole value). YAML `>`/`|` folded/literal
 ## Operations
 
 ### `sync skill adapters`
-For **each** `agent-skills/<name>/SKILL.md`, (re)write the four adapters above — idempotent;
-overwrite the adapter, never the neutral skill — and **prune** orphaned *generated* adapters
-(one whose `agent-skills/<name>/` no longer exists; never touch other files in a vendor dir).
-Touches no committed file (adapters are gitignored); not a version change. **Enable and every
-Mode B re-enable run this automatically** (v4.12.0), so adapters are materialized without a manual
-step. Still run it by hand after authoring/editing a skill, or after a clone/pull on a machine that
-wants native auto-trigger before its next enable/upgrade.
+**This operation is a runnable script (v4.18.0) — run it; do not hand-write the adapter files or hunt
+for an npm/MCP command.** From the repo root (output is byte-identical across all three; **bash needs no
+runtime install — prefer it**, especially in a non-Node project):
+
+```
+bash agent-skills/sync-adapters/scripts/sync-adapters.sh
+# no bash? (e.g. native Windows) — use whichever runtime you have:
+node agent-skills/sync-adapters/scripts/sync-adapters.mjs
+python3 agent-skills/sync-adapters/scripts/sync-adapters.py
+```
+
+For **each** `agent-skills/<name>/SKILL.md` it (re)writes the five adapters defined in the recipe above
+and **prunes** orphaned adapters it previously generated — *signature-guarded*, so it never deletes a
+hand-authored vendor file (only its own pointers). Idempotent; writes only the gitignored adapter dirs,
+never `agent-skills/` or a committed file; not a version change. The script ships as the built-in
+**`sync-adapters`** skill, so an agent can also trigger it by description. **Enable and every Mode B
+re-enable run it automatically** (v4.12.0). Still run it by hand after authoring/editing a skill, or
+after a clone/pull. (Before v4.18.0 this was a prose recipe the agent acted out by hand — which led
+agents to hunt for a non-existent command; the script removes that ambiguity.)
+
+**Hot-reload caveat (vendor-specific).** Some runtimes read skill adapters **only at startup** — e.g.
+**GitHub Copilot CLI** parses `.github/skills/` on init, so a freshly-synced skill (and its `/<name>`
+slash command) isn't available mid-session until you **restart the session or trigger a skills rescan**
+(in Copilot CLI: `/restart`, or its `/skills` rescan). Claude / Cursor / Kiro pick up a new
+description-matched skill without a restart. If a just-synced skill doesn't fire, restart the runtime.
+(The same applies to a newly-added `.github/hooks/` config — Copilot loads hooks at CLI start too.)
 
 > **Never commit the adapters — and never tell the user to.** The vendor adapter dirs
-> (`.claude/`, `.gemini/`, `.cursor/`, `.kiro/`) are gitignored, per-machine, and regenerated;
-> the **only** committed skills artifact is the neutral `agent-skills/`. After a sync, do **not**
-> `git add` an adapter dir or suggest the user commit one. Report it like: *"regenerated N local
-> adapters (gitignored — do not commit; only `agent-skills/` is shared)."*
+> (`.claude/`, `.gemini/`, `.cursor/`, `.kiro/`, and Copilot's `.github/skills/`) are gitignored,
+> per-machine, and regenerated; the **only** committed skills artifact is the neutral
+> `agent-skills/`. (Copilot's adapter is path-scoped — only `.github/skills/` is ignored; the rest
+> of `.github/`, e.g. `copilot-instructions.md` and `workflows/`, stays tracked.) After a sync, do
+> **not** `git add` an adapter dir or suggest the user commit one. Report it like: *"regenerated N
+> local adapters (gitignored — do not commit; only `agent-skills/` is shared)."*
 
 ### `adopt skill` (vendor → neutral)
 If a skill was authored natively in a vendor folder (e.g. a vendor's built-in skill creator
@@ -149,6 +192,22 @@ Promote it:
 2. Run **`sync skill adapters`** — regenerates the vendor file as a *pointer*.
 3. Stage `agent-skills/<name>/` for the normal commit (on demand you may commit directly; the
    agent doesn't self-commit mid-ritual).
+
+### `delete a skill` (remove / deprecate)
+To remove or deprecate a skill, delete the **neutral source** and let the next sync prune its adapters —
+don't hand-delete each vendor dir:
+1. **Remove the source:** `rm -rf agent-skills/<name>/` (or `git rm -r agent-skills/<name>`). This stays a
+   deliberate, human-visible step — the `sync-adapters` script **never** deletes `agent-skills/` itself
+   (it only writes the gitignored adapter dirs).
+2. **Run `sync skill adapters`** (the `sync-adapters` script). It **prunes** the now-orphaned vendor
+   adapters automatically — *signature-guarded*, so it removes only adapters it generated, never a
+   hand-authored vendor file.
+3. **If the skill's `id` was referenced in `memory/continuity.md`,** apply the supersession rule
+   (`DECAY.md` §9): replacing it → add the successor + mark the old fact `tier: superseded`; pure removal
+   → note it. Same truth-state edit as any retired fact.
+
+Then reload your runtime if it loads adapters at startup (e.g. Copilot CLI `/restart`) so the dropped
+`/<name>` disappears from the session.
 
 ### `skill sanity check` (heavyweight — run deliberately)
 The full alignment, for when you've been authoring/editing skills or suspect drift. Reads file

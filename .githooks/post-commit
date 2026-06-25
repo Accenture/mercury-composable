@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# agent-memory post-commit hook — vendor-neutral, advisory ritual reinforcement (v4.19.0).
+#
+# Activated by `git config core.hooksPath .githooks` (the agent runs this at enable — no manual
+# user step). Fires after every commit; NEVER blocks (post-commit exit codes are ignored by git).
+# The tool runs nothing itself — git invokes this in the user's env at their opt-in
+# (`no-build-step-agent-run`). Bash 3.2-compatible.
+#
+# What it does, only in an agent-memory repo:
+#   1) keep skill adapters current when a skill changed (idempotent, gitignored-only);
+#   2) if the commit did real work but carried no session log, auto-stub one + nudge (capture);
+#      the thoughtful summary is still the agent's job — this just guarantees no silent gap.
+
+[ -f memory/continuity.md ] || exit 0          # only act in an agent-memory repo
+git rev-parse -q --verify HEAD^2 >/dev/null 2>&1 && exit 0   # skip merge commits
+
+changed="$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null)"
+
+# (1) re-sync adapters if a skill changed in this commit
+if printf '%s\n' "$changed" | grep -qE '^agent-skills/'; then
+  bash   agent-skills/sync-adapters/scripts/sync-adapters.sh  >/dev/null 2>&1 \
+    || node   agent-skills/sync-adapters/scripts/sync-adapters.mjs >/dev/null 2>&1 \
+    || python3 agent-skills/sync-adapters/scripts/sync-adapters.py  >/dev/null 2>&1 || true
+fi
+
+# (2) auto-stub the session log if real work landed without one
+work="$(printf '%s\n' "$changed" | grep -vE '^(memory/|\.agent/)' | grep -v '^$' || true)"
+logged="$(printf '%s\n' "$changed" | grep -E '^memory/sessions/.*\.md$' || true)"
+
+if [ -n "$work" ] && [ -z "$logged" ]; then
+  if git status --porcelain memory/sessions/ 2>/dev/null | grep -q '^??'; then
+    echo "agent-memory: this commit changed tracked files but added no session log — an unlogged" >&2
+    echo "              session stub is already waiting in memory/sessions/; enrich + commit it." >&2
+  else
+    ts="$(date -u +%Y-%m-%d-%H%M%S)"
+    stub="memory/sessions/$ts.md"
+    {
+      printf '# Session (%s)\n\n' "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
+      printf '**Agent:** (auto-stub — replace with your agent name and enrich)\n'
+      printf '**Lightweight:** auto-captured by the post-commit hook; summary pending.\n\n'
+      printf 'Commit `%s` — %s\n\n' "$(git rev-parse --short HEAD)" "$(git log -1 --pretty=%s)"
+      printf '```\n%s\n```\n\n' "$(git diff-tree --no-commit-id --stat -r HEAD 2>/dev/null)"
+      printf '## Memory References\n'
+      printf '(none — auto-stub; enrich per AGENTS.md "After Every Session", or leave as a lite log)\n'
+    } > "$stub"
+    echo "agent-memory: auto-stubbed a session log → $stub" >&2
+    echo "              enrich it (or keep it as a lite log) and commit it, per AGENTS.md." >&2
+  fi
+fi
+exit 0

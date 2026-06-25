@@ -12,6 +12,7 @@ import {
   load_repo,
   check_dangling,
   check_session_filenames,
+  check_version_manifest,
 } from "./memory-lint.mjs";
 
 function byCodePoint(a, b) {
@@ -177,6 +178,58 @@ test("supersession target in vision.md is not dangling (cross-file resolution)",
       warns.some((w) => w.includes("orphan-fact") && w.includes("ghost-fact")),
       warns.join("\n")
     );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Regression for the empty-version.md bug: a present-but-empty/malformed
+// .agent/version.md breaks Mode B upgrade detection and must be flagged; a
+// MISSING file is the valid pre-versioning baseline and must NOT be flagged.
+function setupVersion(versionMd) {
+  const root = mkdtempSync(join(tmpdir(), "memlint-"));
+  mkdirSync(join(root, "memory"), { recursive: true });
+  writeFileSync(join(root, "memory", "continuity.md"), "# c\n");
+  if (versionMd !== null) {
+    mkdirSync(join(root, ".agent"), { recursive: true });
+    writeFileSync(join(root, ".agent", "version.md"), versionMd);
+  }
+  return root;
+}
+
+test("check_version_manifest flags empty version.md", () => {
+  const root = setupVersion("");
+  try {
+    const errs = check_version_manifest(root);
+    assert.equal(errs.length, 1);
+    assert.ok(errs[0].includes("[version-manifest]"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_version_manifest flags malformed version.md", () => {
+  const root = setupVersion("# manifest\n(no version line here)\n");
+  try {
+    assert.equal(check_version_manifest(root).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_version_manifest passes a valid version.md", () => {
+  const root = setupVersion("- **version:**       4.20.3\n");
+  try {
+    assert.deepEqual(check_version_manifest(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_version_manifest passes when version.md is missing", () => {
+  const root = setupVersion(null);
+  try {
+    assert.deepEqual(check_version_manifest(root), []);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -307,7 +307,10 @@ class GraphTests {
         request.setHeader("Accept", "application/json");
         request.setUrl("/api/graph/tutorial-"+chapter);
         var event = new EventEnvelope().setTo("async.http.request").setBody(request);
-        var po = PostOffice.trackable("unit.test", "ch-"+chapter, "TEST /chapter/"+chapter);
+        // use a W3C-compatible 32-hex trace ID (chapter encoded in the trailing digits) so the
+        // tutorial exercises traceparent propagation across the HTTP boundary
+        var traceId = String.format("%032x", chapter);
+        var po = PostOffice.trackable("unit.test", traceId, "TEST /chapter/"+chapter);
         var response = po.asyncRequest(event, TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
         if (response.hasError()) {
             log.error("HTTP-{} - {}", response.getStatus(), response.getBody());

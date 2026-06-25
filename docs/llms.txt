@@ -35,6 +35,7 @@
 - [Minimalist Property Graph](https://accenture.github.io/mercury-composable/guides/knowledge-graph/property-graph/): the in-memory property-graph data model and API the layer builds on.
 
 ## Operate & integrate
+- [Observability](https://accenture.github.io/mercury-composable/guides/observability/): built-in distributed tracing across the three layers and OpenTelemetry/OTLP export (W3C trace context, the distributed.trace.forwarder hook, the opentelemetry-forwarder extension).
 - [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/spring-boot/): run Mercury as a Spring Boot 3/4 app.
 - [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/): cross-instance event communication.
 - [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/service-mesh/): Kafka-based service discovery and routing.

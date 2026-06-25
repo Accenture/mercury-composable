@@ -398,6 +398,9 @@ ENTRYPOINT ["java","-jar","rest-spring-3-example-4.2.3.jar"]
 
 ## Distributed tracing
 
+> For the full tracing design across the three layers and OpenTelemetry/OTLP export, see the
+> [Observability](observability.md) guide. This section covers enabling tracing and the forwarder hook.
+
 The system has a built-in distributed tracing feature. You can enable tracing for any REST endpoint by adding
 "tracing=true" in the endpoint definition in the "rest.yaml" configuration file.
 
@@ -416,6 +419,33 @@ trace={path=/api/upload/demo, service=hello.upload, success=true,
 
 The system will detect if `distributed.trace.forwarder` is available. If yes, it will forward performance metrics
 from distributed trace to your custom function.
+
+### Ready-made OpenTelemetry forwarder
+
+You do not have to write the forwarder yourself for OpenTelemetry. The `opentelemetry-forwarder` extension
+(`extensions/opentelemetry-forwarder`) ships a `distributed.trace.forwarder` that maps the trace metrics to
+OpenTelemetry spans — preserving the W3C trace/span/parent-span IDs Mercury propagates across all layers — and
+exports them over OTLP/HTTP to a collector (and on to Dynatrace, Splunk, Jaeger, Tempo, …).
+
+Add the dependency and it auto-registers (no code):
+
+```xml
+<dependency>
+    <groupId>org.platformlambda</groupId>
+    <artifactId>opentelemetry-forwarder</artifactId>
+    <version>4.4.11</version>
+</dependency>
+```
+
+Configure the collector endpoint and service name in `application.properties`:
+
+```properties
+otel.exporter.otlp.endpoint=http://localhost:4318/v1/traces
+otel.service.name=my-application
+# otel.trace.forwarder.enabled=false   # disable export without removing the jar
+```
+
+See `extensions/opentelemetry-forwarder/README.md` for the full metric-to-span mapping.
 
 ## Request-response journaling
 

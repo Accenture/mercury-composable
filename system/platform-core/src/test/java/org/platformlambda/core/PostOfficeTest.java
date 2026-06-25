@@ -1194,10 +1194,11 @@ class PostOfficeTest extends TestBase {
         final EventEmitter po = EventEmitter.getInstance();
         final LambdaFunction f1 = (headers, input, instance) -> input;
         platform.registerPrivate(service, f1, parallelInstances);
+        final String cid = util.getUuid();
         List<EventEnvelope> requests = new ArrayList<>();
         for (int i=1; i < parallelInstances + 1; i++) {
             EventEnvelope req = new EventEnvelope().setTo(service).setBody(text + "." + i)
-                                    .setFrom(from).setTrace(traceId, tracePath);
+                                    .setFrom(from).setTrace(traceId, tracePath).setCorrelationId(cid);
             requests.add(req);
         }
         Future<List<EventEnvelope>> future = po.asyncRequest(requests, 1500);
@@ -1212,6 +1213,7 @@ class PostOfficeTest extends TestBase {
             assertInstanceOf(String.class, r.getBody());
             String responseText = (String) r.getBody();
             assertTrue(responseText.startsWith(text));
+            assertEquals(cid, r.getCorrelationId());
             log.info("Received response #{} {} - {}", r.getCorrelationId(), r.getId(), text);
         }
     }
@@ -1303,7 +1305,7 @@ class PostOfficeTest extends TestBase {
         EventEnvelope event = new EventEnvelope();
         event.setTo(routeOne).setHeader("hello", "world").setBody(testMessage);
         event.setTrace(traceId, tracePath).setFrom("unit.test");
-        EventEmitter po = EventEmitter.getInstance();
+        PostOffice po = PostOffice.trackable("unit.test", "101", "TEST /multi-level-trace");
         po.asyncRequest(event, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
         assert response != null;

@@ -108,6 +108,10 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         if (traceId != null && tracePath != null) {
             flowInstance.setTrace(traceId, tracePath);
         }
+        // Capture the triggering function's spanId as the flow's parentSpanId for OTel lineage
+        if (event.getSpanId() != null) {
+            flowInstance.setParentSpanId(event.getSpanId());
+        }
         return flowInstance;
     }
 }

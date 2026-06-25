@@ -20,7 +20,6 @@ package org.platformlambda.services;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
-import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.models.SamplePoJo;
