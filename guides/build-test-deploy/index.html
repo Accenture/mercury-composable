@@ -132,6 +132,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#deployment">Deployment</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#distributed-tracing">Distributed tracing</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#ready-made-opentelemetry-forwarder">Ready-made OpenTelemetry forwarder</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#request-response-journaling">Request-response journaling</a>
     </li>
@@ -142,6 +146,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../observability/">Observability</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
                   </li>
@@ -543,6 +549,10 @@ COPY target/rest-spring-3-example-4.2.3.jar .
 ENTRYPOINT [&quot;java&quot;,&quot;-jar&quot;,&quot;rest-spring-3-example-4.2.3.jar&quot;]
 </code></pre>
 <h2 id="distributed-tracing">Distributed tracing</h2>
+<blockquote>
+<p>For the full tracing design across the three layers and OpenTelemetry/OTLP export, see the
+<a href="../observability/">Observability</a> guide. This section covers enabling tracing and the forwarder hook.</p>
+</blockquote>
 <p>The system has a built-in distributed tracing feature. You can enable tracing for any REST endpoint by adding
 "tracing=true" in the endpoint definition in the "rest.yaml" configuration file.</p>
 <p>You may also upload performance metrics from the distributed tracing data to your favorite telemetry system dashboard.</p>
@@ -555,6 +565,24 @@ ENTRYPOINT [&quot;java&quot;,&quot;-jar&quot;,&quot;rest-spring-3-example-4.2.3.
 </code></pre>
 <p>The system will detect if <code>distributed.trace.forwarder</code> is available. If yes, it will forward performance metrics
 from distributed trace to your custom function.</p>
+<h3 id="ready-made-opentelemetry-forwarder">Ready-made OpenTelemetry forwarder</h3>
+<p>You do not have to write the forwarder yourself for OpenTelemetry. The <code>opentelemetry-forwarder</code> extension
+(<code>extensions/opentelemetry-forwarder</code>) ships a <code>distributed.trace.forwarder</code> that maps the trace metrics to
+OpenTelemetry spans — preserving the W3C trace/span/parent-span IDs Mercury propagates across all layers — and
+exports them over OTLP/HTTP to a collector (and on to Dynatrace, Splunk, Jaeger, Tempo, …).</p>
+<p>Add the dependency and it auto-registers (no code):</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.platformlambda&lt;/groupId&gt;
+    &lt;artifactId&gt;opentelemetry-forwarder&lt;/artifactId&gt;
+    &lt;version&gt;4.4.11&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p>Configure the collector endpoint and service name in <code>application.properties</code>:</p>
+<pre><code class="language-properties">otel.exporter.otlp.endpoint=http://localhost:4318/v1/traces
+otel.service.name=my-application
+# otel.trace.forwarder.enabled=false   # disable export without removing the jar
+</code></pre>
+<p>See <code>extensions/opentelemetry-forwarder/README.md</code> for the full metric-to-span mapping.</p>
 <h2 id="request-response-journaling">Request-response journaling</h2>
 <p>Optionally, you may also implement a custom audit function named <code>transaction.journal.recorder</code> to monitor 
 request-response payloads.</p>
@@ -648,7 +676,7 @@ and all system overheads. It may look like this when you configure "log.format=j
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../knowledge-graph/property-graph/" class="btn btn-neutral float-left" title="Minimalist Property Graph"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../spring-boot/" class="btn btn-neutral float-right" title="Spring Boot Integration">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../observability/" class="btn btn-neutral float-right" title="Observability">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -674,7 +702,7 @@ and all system overheads. It may look like this when you configure "log.format=j
       <span><a href="../knowledge-graph/property-graph/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../spring-boot/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../observability/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

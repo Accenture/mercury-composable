@@ -111,6 +111,8 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../observability/">Observability</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
@@ -143,6 +145,10 @@
     <li class="toctree-l2"><a class="reference internal" href="#reserved-event-header-names">Reserved event header names</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#reserved-http-header-names">Reserved HTTP header names</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#w3c-trace-context-opentelemetry">W3C Trace Context (OpenTelemetry)</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#transient-data-store">Transient data store</a>
     </li>
@@ -408,7 +414,7 @@ to avoid breaking the system unintentionally.</p>
 </tr>
 <tr>
 <td style="text-align: left;">distributed.trace.forwarder</td>
-<td style="text-align: left;">Custom function to forward performance metrics<br/> to a telemetry system</td>
+<td style="text-align: left;">Function to forward performance metrics to a telemetry<br/> system (ready-made OpenTelemetry/OTLP version: the<br/> <code>opentelemetry-forwarder</code> extension), or your own</td>
 </tr>
 <tr>
 <td style="text-align: left;">transaction.journal.recorder</td>
@@ -487,11 +493,15 @@ of your function.</p>
 </tr>
 <tr>
 <td style="text-align: left;">X-Trace-Id</td>
-<td style="text-align: left;">This allows the system to propagate trace ID</td>
+<td style="text-align: left;">Legacy header to propagate trace ID</td>
 </tr>
 <tr>
 <td style="text-align: left;">X-Correlation-Id</td>
 <td style="text-align: left;">Alternative to X-Trace-Id</td>
+</tr>
+<tr>
+<td style="text-align: left;">traceparent</td>
+<td style="text-align: left;">W3C Trace Context header carrying trace ID + parent span ID (OpenTelemetry)</td>
 </tr>
 <tr>
 <td style="text-align: left;">X-Content-Length</td>
@@ -514,6 +524,21 @@ of your function.</p>
 <p>To support traceId that is stored in X-Correlation-Id HTTP header, set this in application.properties.</p>
 <pre><code class="language-properties"># list of supported traceId headers where the first one is the default label
 trace.http.header=X-Correlation-Id, X-Trace-Id
+</code></pre>
+<h3 id="w3c-trace-context-opentelemetry">W3C Trace Context (OpenTelemetry)</h3>
+<p>The system also supports the W3C <code>traceparent</code> header for end-to-end OpenTelemetry tracing
+(span lineage across HTTP boundaries):</p>
+<ul>
+<li><strong>Inbound</strong> - when a request carries a well-formed <code>traceparent</code>, it takes precedence over the
+  legacy <code>trace.http.header</code>. The trace ID segment becomes the Mercury trace ID and the parent span
+  ID is adopted, so the trace continues from the upstream caller. The legacy header is honored only
+  when <code>traceparent</code> is absent.</li>
+<li><strong>Outbound</strong> - the system emits <code>traceparent</code> and, for backward compatibility, the legacy header.
+  Set <code>trace.http.legacy.header.enabled=false</code> to emit only <code>traceparent</code> once all downstream
+  services are on OpenTelemetry.</li>
+</ul>
+<pre><code class="language-properties"># emit the legacy trace header outbound alongside traceparent (default true)
+trace.http.legacy.header.enabled=true
 </code></pre>
 <h2 id="transient-data-store">Transient data store</h2>
 <p>The system uses a temp folder in "/tmp/reactive" for event streaming.</p>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/observability/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Observability - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Observability";
+        var mkdocs_page_input_path = "guides/observability.md";
+        var mkdocs_page_url = "/mercury-composable/guides/observability/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-developer-guide/">AI Developer Guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Observability</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#design">The built-in tracing design</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#enable">Turning tracing on</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#metrics">What a trace records</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layers">Spans across the three layers</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#w3c">W3C Trace Context (OpenTelemetry compliance)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#export">Exporting telemetry</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#forwarder">The forwarder extension point</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#otel-forwarder">The OpenTelemetry forwarder (ready-made)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#custom-forwarder">A custom forwarder</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Operate & integrate</li>
+      <li class="breadcrumb-item active">Observability</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="observability">Observability</h1>
+<p><em>Guide: how the built-in distributed tracing works, and how to export it to OpenTelemetry.</em></p>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>What</strong> — every traced request produces a causal <strong>span tree</strong> across the three layers; the system
+  stamps W3C-compatible trace/span IDs automatically and can ship the telemetry to any OpenTelemetry backend.</li>
+<li><strong>Built-in</strong> — distributed tracing is part of the platform; you turn it on per endpoint/flow and the
+  spans propagate without code.</li>
+<li><strong>For</strong> developers and operators wiring Mercury to Dynatrace, Splunk, Jaeger, Tempo, or an OpenTelemetry Collector.</li>
+</ul>
+</blockquote>
+<p>In an event-driven, composable system a single request fans out across <strong>decoupled</strong> functions, flows, and graph
+nodes that never call each other directly. Observability is therefore not optional — it is the only way to see the
+causal path a request actually took. Mercury answers this with a built-in distributed-tracing engine whose output
+is <strong>OpenTelemetry-compliant</strong>, so the spans drop straight into the dashboard you already run.</p>
+<h2 id="design">The built-in tracing design</h2>
+<h3 id="enable">Turning tracing on</h3>
+<p>Tracing is opt-in per entry point:</p>
+<ul>
+<li><strong>HTTP endpoints</strong> — add <code>tracing: true</code> to the <code>rest.yaml</code> entry (see <a href="../rest-automation/">REST Automation</a>).</li>
+<li><strong>Event Script flows</strong> — a flow started through <code>FlowExecutor</code> carries a trace; the engine traces every task.</li>
+<li><strong>Programmatically</strong> — construct a trace-aware <code>PostOffice(fromRoute, traceId, tracePath)</code> and the events it
+  sends are traced end-to-end.</li>
+</ul>
+<p>Two controls tune what is recorded:</p>
+<ul>
+<li><code>@ZeroTracing</code> on a function suppresses tracing for that function (used by system services so they never trace themselves).</li>
+<li><code>skip.rpc.tracing</code> (in <code>application.properties</code>) lists route names excluded from trace recording; the default is
+  <code>async.http.request</code>.</li>
+</ul>
+<h3 id="metrics">What a trace records</h3>
+<p>When a traced function finishes, the system sends a performance-metrics dataset to the built-in
+<code>distributed.tracing</code> service. The dataset is a plain map:</p>
+<pre><code class="language-text">trace={ id=&lt;32-hex trace id&gt;, span_id=&lt;16-hex&gt;, parent_span_id=&lt;16-hex&gt;,
+        service=&lt;route name&gt;, path=&lt;request path&gt;, from=&lt;caller route&gt;,
+        origin=&lt;instance id&gt;, start=&lt;ISO-8601&gt;, exec_time=&lt;ms&gt;, round_trip=&lt;ms&gt;,
+        success=&lt;bool&gt;, status=&lt;int&gt;, exception=&lt;text&gt; }
+annotations={ &lt;your key&gt;=&lt;value&gt;, ... }
+</code></pre>
+<p><code>span_id</code> and <code>parent_span_id</code> are the OpenTelemetry-compatible IDs (see <a href="#w3c">W3C trace context</a>); you can attach
+business context with <code>PostOffice.annotateTrace(key, value)</code>.</p>
+<h3 id="layers">Spans across the three layers</h3>
+<p>The span tree mirrors the <a href="../architecture/">three paradigm layers</a>, and tracing is <strong>virtual-thread-safe</strong> — the
+parent span is threaded through a per-task anchor, not a <code>ThreadLocal</code>, so concurrently-dispatched siblings still
+share the correct parent.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Layer</th>
+<th style="text-align: left;">What becomes a span</th>
+<th style="text-align: left;">Lineage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Layer 1 — Platform Core</strong></td>
+<td style="text-align: left;">each function execution</td>
+<td style="text-align: left;">the caller's span becomes the child's <code>parent_span_id</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Layer 2 — Event Script</strong></td>
+<td style="text-align: left;">each task, <strong>plus one synthetic <code>task.executor</code> flow-summary span</strong> (annotated with the flow id)</td>
+<td style="text-align: left;">tasks chain exactly like Layer 1; a sub-flow chains to the parent task that dispatched it</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Layer 3 — Knowledge Graph</strong></td>
+<td style="text-align: left;">each node dispatch through <code>graph.executor</code></td>
+<td style="text-align: left;">the graph traversal threads the parent span through node execution</td>
+</tr>
+</tbody>
+</table>
+<p>Because Layer 2 and Layer 3 ride on Layer 1's engine, the task/node spans look identical to Layer-1 spans — the only
+addition at Layer 2 is the synthetic flow summary that brackets the whole flow's timing.</p>
+<h2 id="w3c">W3C Trace Context (OpenTelemetry compliance)</h2>
+<p>Mercury's trace and span IDs follow the <a href="https://www.w3.org/TR/trace-context/">W3C Trace Context</a> format that
+OpenTelemetry uses: a <strong>32-hex trace ID</strong> and <strong>16-hex span ID</strong>. Across an HTTP boundary the system propagates the
+standard <code>traceparent</code> header:</p>
+<ul>
+<li>outbound — the HTTP client injects <code>traceparent</code> carrying the current trace + span;</li>
+<li>inbound — the HTTP layer extracts <code>traceparent</code>, continues the upstream trace, and adopts the caller's span as the parent.</li>
+</ul>
+<p>For a transition period you can also emit the legacy <code>X-Trace-Id</code> header alongside <code>traceparent</code> — controlled by
+<code>trace.http.legacy.header.enabled</code> (default <code>true</code>; set <code>false</code> once every service is on OpenTelemetry). Inbound
+acceptance of the legacy header is unaffected by the flag.</p>
+<h2 id="export">Exporting telemetry</h2>
+<h3 id="forwarder">The forwarder extension point</h3>
+<p>By default the trace dataset is logged. To ship it elsewhere, register a function at the reserved route
+<code>distributed.trace.forwarder</code>; the system detects it and forwards every dataset to it. A companion hook,
+<code>transaction.journal.recorder</code>, receives request/response payloads when journaling is enabled (see
+<a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> and <a href="../build-test-deploy/">Build, Test &amp; Deploy</a>).</p>
+<h3 id="otel-forwarder">The OpenTelemetry forwarder (ready-made)</h3>
+<p>You do not have to write the forwarder for OpenTelemetry. The <strong><code>opentelemetry-forwarder</code></strong> extension ships a
+<code>distributed.trace.forwarder</code> that maps each dataset to an OpenTelemetry span — preserving the <strong>exact</strong> W3C
+trace/span/parent-span IDs — and exports it over <strong>OTLP/HTTP</strong> to a collector (and on to Dynatrace, Splunk, Jaeger,
+Tempo, …). Add the dependency and it auto-registers; no code required:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.platformlambda&lt;/groupId&gt;
+    &lt;artifactId&gt;opentelemetry-forwarder&lt;/artifactId&gt;
+    &lt;version&gt;4.4.11&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p>Configure it in <code>application.properties</code> (values support <code>${ENV_VAR:default}</code> substitution):</p>
+<pre><code class="language-properties">otel.exporter.otlp.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+otel.service.name=${OTEL_SERVICE_NAME:my-app}
+# Backend credentials come from the environment — no secret hard-coded:
+otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}
+</code></pre>
+<p>Point the endpoint at an OpenTelemetry Collector, or directly at a SaaS backend with its API token in the headers:</p>
+<pre><code class="language-bash"># Dynatrace
+export OTEL_EXPORTER_OTLP_ENDPOINT=&quot;https://{env-id}.live.dynatrace.com/api/v2/otlp/v1/traces&quot;
+export OTEL_EXPORTER_OTLP_HEADERS=&quot;Authorization=Api-Token dt0c01.XXXX&quot;
+
+# Splunk Observability Cloud
+export OTEL_EXPORTER_OTLP_ENDPOINT=&quot;https://ingest.{realm}.signalfx.com/v2/trace/otlp&quot;
+export OTEL_EXPORTER_OTLP_HEADERS=&quot;X-SF-Token=YOUR_ACCESS_TOKEN&quot;
+</code></pre>
+<p>Each span carries the route name (<code>route</code>), <code>path</code>, <code>from</code>, <code>origin</code>, <code>status</code>, timing, and your <code>annotation.*</code>
+values as span attributes, with <code>service.name</code> on the resource. See the full key reference in the
+<a href="../configuration-reference/#observability">Configuration Reference</a>.</p>
+<h3 id="custom-forwarder">A custom forwarder</h3>
+<p>To target a system without an OTLP path, implement your own function at <code>distributed.trace.forwarder</code> and consume
+the dataset described in <a href="#metrics">What a trace records</a> — for example, write it to a metrics database or a
+proprietary APM API.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../build-test-deploy/">Build, Test &amp; Deploy</a> — enabling tracing and the forwarder hook.</li>
+<li><a href="../configuration-reference/#observability">Configuration Reference</a> — the <code>trace.*</code> and <code>otel.*</code> keys.</li>
+<li><a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> — <code>distributed.trace.forwarder</code>, <code>traceparent</code>.</li>
+<li><a href="../architecture/">Architecture Overview</a> — the three layers the span tree mirrors.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../build-test-deploy/" class="btn btn-neutral float-left" title="Build, Test & Deploy"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../spring-boot/" class="btn btn-neutral float-right" title="Spring Boot Integration">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../build-test-deploy/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../spring-boot/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

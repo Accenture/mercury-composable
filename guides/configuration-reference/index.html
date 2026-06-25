@@ -111,6 +111,8 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../observability/">Observability</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
@@ -142,7 +144,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#http-client">HTTP Client</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#distributed-tracing-observability">Distributed Tracing &amp; Observability</a>
+    <li class="toctree-l2"><a class="reference internal" href="#observability">Distributed Tracing &amp; Observability</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#health-actuators">Health &amp; Actuators</a>
     </li>
@@ -604,7 +606,9 @@ virtual threads.</p>
 </tbody>
 </table>
 <hr />
-<h2 id="distributed-tracing-observability">Distributed Tracing &amp; Observability</h2>
+<h2 id="observability">Distributed Tracing &amp; Observability</h2>
+<p>See the <a href="../observability/">Observability guide</a> for the tracing design and OpenTelemetry/OTLP export; the keys
+below tune it. The <code>otel.*</code> keys are read by the <code>opentelemetry-forwarder</code> extension.</p>
 <table>
 <thead>
 <tr>
@@ -615,12 +619,6 @@ virtual threads.</p>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>distributed.trace.processor</code></td>
-<td><code>String</code></td>
-<td>—</td>
-<td>Route name of a user function that receives all distributed trace entries for forwarding to a telemetry backend.</td>
-</tr>
 <tr>
 <td><code>log.format</code></td>
 <td><code>String</code></td>
@@ -655,10 +653,49 @@ virtual threads.</p>
 <td><code>trace.http.header</code></td>
 <td><code>String</code> (comma-sep list)</td>
 <td><code>X-Trace-Id</code></td>
-<td>HTTP request header(s) carrying a trace ID. The first entry is also used as the outbound trace header.</td>
+<td>Legacy HTTP request header(s) carrying a trace ID (e.g. <code>X-Trace-Id</code>, <code>X-Correlation-Id</code>). Accepted on inbound requests as a fallback; the first entry is used as the outbound legacy trace header. The W3C <code>traceparent</code> header takes precedence over these on inbound.</td>
+</tr>
+<tr>
+<td><code>trace.http.legacy.header.enabled</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>When <code>true</code>, outbound HTTP requests emit the legacy <code>trace.http.header</code> alongside W3C <code>traceparent</code>. Set to <code>false</code> to send only <code>traceparent</code> once downstream services are fully on OpenTelemetry. Inbound acceptance of the legacy header is unaffected by this flag.</td>
+</tr>
+<tr>
+<td><code>otel.trace.forwarder.enabled</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+<td>Used by the <code>opentelemetry-forwarder</code> extension. <code>false</code> makes the forwarder a no-op (jar present, no export).</td>
+</tr>
+<tr>
+<td><code>otel.exporter.otlp.endpoint</code></td>
+<td><code>String</code></td>
+<td><code>http://localhost:4318/v1/traces</code></td>
+<td>OTLP/HTTP traces endpoint the <code>opentelemetry-forwarder</code> extension exports spans to.</td>
+</tr>
+<tr>
+<td><code>otel.exporter.otlp.timeout</code></td>
+<td><code>int</code> (ms)</td>
+<td><code>10000</code></td>
+<td>OTLP export timeout for the <code>opentelemetry-forwarder</code> extension.</td>
+</tr>
+<tr>
+<td><code>otel.service.name</code></td>
+<td><code>String</code></td>
+<td><code>application.name</code></td>
+<td><code>service.name</code> resource attribute the <code>opentelemetry-forwarder</code> extension stamps on every exported span.</td>
+</tr>
+<tr>
+<td><code>otel.exporter.otlp.headers</code></td>
+<td><code>String</code> (comma-sep <code>key=value</code>)</td>
+<td>—</td>
+<td>Request headers for the <code>opentelemetry-forwarder</code> extension — <strong>where backend API credentials go</strong> (e.g. <code>Authorization=Api-Token …</code> for Dynatrace, <code>X-SF-Token=…</code> for Splunk). Source it from the environment with <strong>no default</strong> — <code>otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}</code> — so no secret is hard-coded; unset resolves to no headers.</td>
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p>The <code>otel.*</code> values support <code>${ENV_VAR:default}</code> substitution, so the forwarder is configured entirely from <code>application.properties</code> while secrets stay in the environment.</p>
+</blockquote>
 <hr />
 <h2 id="health-actuators">Health &amp; Actuators</h2>
 <table>
@@ -1072,8 +1109,11 @@ kernel.thread.pool=100
 http.client.connection.timeout=5000
 
 # --- Distributed Tracing ---
-# List headers in preference order; first entry is also used as the outbound header.
+# Legacy trace headers, in preference order; first entry is also the outbound legacy header.
+# The W3C &quot;traceparent&quot; header takes precedence over these on inbound requests.
 trace.http.header=X-Trace-Id
+# Emit the legacy header outbound alongside &quot;traceparent&quot; (set false for pure W3C OpenTelemetry).
+trace.http.legacy.header.enabled=true
 
 # --- Health ---
 # List health-check routes that must all pass for /health to return 200.
