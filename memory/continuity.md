@@ -238,7 +238,9 @@
   reviewer example (unit-test-as-documentation). **Documented** in the new **Observability** guide
   (`docs/guides/observability.md`, nav: Operate & Integrate) — built-in tracing design across the 3 layers +
   OpenTelemetry/OTLP export; wired into `mkdocs.yml`, `llms.txt`, and `configuration-reference.md#observability`
-  (doc-canon checker passes). Possible future: batch export.
+  (doc-canon checker passes). Possible future: batch export. **Shipped & merged to `main`** via
+  [PR #122](https://github.com/Accenture/mercury-composable/pull/122) (approved in peer review) — the OpenTelemetry
+  feature is now part of the framework.
   <!-- id: otel-w3c-tracing | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
 
 ## Conventions
@@ -422,6 +424,35 @@
     "build & test an app" + "author an extension" entries so an agent doesn't discover them only by reading prose.
   → serves `vision-mercury-composable`.
   <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
+- [ ] (next iteration — Eric, 2026-06-24; **design + implement**) **Cross-pod request-response via Redis
+  Pub/Sub RPC + Kafka.** A distributed sync-over-async pattern (an advanced opt-in use case, cf.
+  `kafka-mesh-opt-in`): `REST sync request-response → Composable service (POD-1) → Redis Pub/Sub RPC + Kafka
+  **outbound** topic; Kafka **inbound** topic (response) → Composable service (POD-2) → Redis`. A
+  **correlation-id** is the return-path reference so Redis routes the response back to POD-1. Build:
+  (1) a composable function interfacing **Redis** + Kafka send/receive topics; (2) a **minimalist Kafka flow
+  adapter (inbound)**; (3) a **Kafka notification function (outbound)**. Items (2)+(3) are the scope of
+  `thread-minimalist-kafka-adapter` — now folded into this larger concept. → serves `vision-mercury-composable`.
+  **Prototyping started 2026-06-25 on branch `feature/sync-over-async`** (design reviewed from Eric's spec).
+  **Locked decisions:** return path = **Redis** (cloud-native REST facade for UI apps; deliberately *not* the full
+  mesh/presence discovery); Redis client = **Lettuce** (Reactor-native, matches `reactive-postgres`, battle-tested,
+  robust pub/sub + auto-reconnect); module = new self-initializing extension **`extensions/sync-over-async`**;
+  tests = **embedded Redis** (codemonstur `embedded-redis`, arm64; Testcontainers/Docker fallback) + an **embedded
+  Kafka** extracted from `connectors/adapters/kafka/kafka-standalone` (`EmbeddedKafka.java`) for unit tests, with
+  `kafka-standalone` for integration. Pod identity = `Platform.getOrigin()`. **Reliability cornerstones** (from
+  review): payload in Redis `SETEX` is the source of truth, pub/sub is wake-up only, and a **final Redis read before
+  timeout** is MVP-required (correctness independent of pub/sub); race-safe idempotent future completion.
+  **Phase plan → MVP:** P1 = return-route engine (TDD, embedded Redis, no Kafka — cross-pod return, timeout→408,
+  duplicate, orphan, missed-pubsub→final-read); P2 = Kafka legs (outbound notifier + inbound adapter, trace headers,
+  mock SoR loopback); P3 = REST facade + e2e (+ trace via the OTel forwarder); P4 (post-MVP) = guardrails/503/metrics,
+  two-JVM test, docs. **Note:** trace-across-Kafka is *not* free — needs cid + `traceparent` in Kafka headers + the
+  inbound adapter rebuilding trace context.
+  **Status (2026-06-25): scaffold + P1 ✅ done.** Module `extensions/sync-over-async` (pkg `org.platformlambda.sync`):
+  `PendingRequests` (race-safe idempotent registry + max-pending), `ReturnRouteStore` (Lettuce `SETEX`/`GET` for
+  `request:`/`response:` keys), `ReturnRouteCoordinator` (per-pod: `begin`/`awaitResponse`-with-final-read/`deliver`;
+  pub/sub callback dispatches the blocking read to a virtual thread to avoid stalling the Lettuce event loop).
+  16 tests vs embedded Redis (incl. cross-pod return, timeout, missed-notification→final-read, orphan, duplicate);
+  JaCoCo 93.6% line, **85% gate enforced**. Next: P2 Kafka legs.
+  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-25 | uses: 2 | tier: working -->
 
 ## User Preferences
 
