@@ -59,9 +59,11 @@ takes HTTP requests routed to it by the REST automation engine, packages them as
 destined for the flow engine, and delivers the final response back to the caller. A Kafka flow adapter
 follows the same contract for stream-based sources, embedding a topic listener. The adapter API is open,
 so custom adapters can consume any event source (serverless triggers, file watchers, MQ, CSV). Each
-adapter exposes a named route — the HTTP adapter uses `http.flow.adapter`. **Only the HTTP flow adapter
-is packaged in this repo today**; a Kafka flow adapter (inbound) and its notification function (outbound)
-run in production installations, with a minimalist in-repo version planned for a future iteration.
+adapter exposes a named route — the HTTP adapter uses `http.flow.adapter`. The **HTTP flow adapter is
+built into `event-script-engine`** and is always available. A **minimalist Kafka flow adapter (inbound)
+and Kafka notification function (outbound)** ship as the opt-in **`minimalist-kafka`** library: an
+application enables them by depending on the library and pointing `yaml.kafka.flow.adapter` at a
+`topic → flow` configuration. Production installations may still run their own adapters.
 
 **REST Automation** is the protocol boundary for HTTP, and it eliminates controller boilerplate. HTTP endpoints
 are declared in a `rest.yaml` configuration file. Each entry maps a URL pattern and HTTP method set to
