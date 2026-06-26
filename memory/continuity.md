@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-24T22:27:52Z | agent: Claude Code
+- **last_session:** 2026-06-26T03:20:43Z | agent: Claude Code
 - **last_review:** 2026-06-24 | through 2026-06-24-222752.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -188,12 +188,14 @@
   advanced opt-in for specific use cases (cross-application RPC, leader selection, pod-aware broadcast).
   This preference must be front-and-center in documentation and AI guides. (ADR-0006)
   <!-- id: kafka-mesh-opt-in | created: 2026-06-23 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **Kafka flow adapter + notification function are NOT packaged in this repo** — only the built-in HTTP flow adapter
-  (`HttpToFlow` / `http.flow.adapter`) ships here. The `connectors/adapters/kafka/*` modules are the **cloud connector**
-  (event-stream mesh, `cloud.connector=kafka`) — a *different* concern, not a flow adapter that triggers Event Script
-  flows. Production installations run their own Kafka flow adapter (inbound) + Kafka notification function (outbound);
-  an in-repo minimalist version is planned (see Open Thread). Don't claim Kafka flow-triggering is built-in.
-  <!-- id: kafka-adapter-not-in-repo | created: 2026-06-22 | last_used: 2026-06-23 | uses: 3 | tier: active -->
+- **The built-in HTTP flow adapter (`HttpToFlow` / `http.flow.adapter`) is the only one in `event-script-engine`;
+  a minimalist Kafka pair now ships as the `system/minimalist-kafka` library** (added 2026-06-26, commit `c8824519`):
+  `KafkaFlowAdapter` (inbound, routes a topic into an Event Script flow) + `SimpleKafkaNotification` (outbound,
+  `simple.kafka.notification`). It is **not** auto-wired into the engine — an app opts in by depending on the library
+  and configuring `yaml.kafka.flow.adapter`. The `connectors/adapters/kafka/*` modules remain the **cloud connector**
+  (event-stream mesh, `cloud.connector=kafka`) — a *different* concern, not a flow adapter. So: HTTP flow-triggering is
+  built-in; Kafka flow-triggering is an opt-in library, not core. Production installs may still run their own.
+  <!-- id: kafka-adapter-not-in-repo | created: 2026-06-22 | last_used: 2026-06-26 | uses: 4 | tier: active -->
 - **W3C OpenTelemetry distributed tracing** (`feature/open-telemetry` branch). Each function gets a 16-hex
   `span_id` + `parent_span_id` propagated end-to-end: PostOffice/WorkerHandler stamp+emit them; Event Script
   `TaskExecutor` threads the parent span via a `TaskReference` anchor (**virtual-thread-safe, no ThreadLocal**);
@@ -363,12 +365,18 @@
   rewrite is **ready for peer review** (2026-06-23); `gh pr create` is blocked for the Enterprise-Managed-User,
   so the PR is opened **manually via the GitHub web UI** (branch is fully pushed).
   <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: working -->
-- [ ] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
+- [x] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
   Kafka notification function (outbound) to this repo.** Today only the HTTP flow adapter ships here (see
   `kafka-adapter-not-in-repo`); production installations have their own. Deferred until the documentation rewrite
   (`bp-docs-ai-human-rewrite`) completes, then build a reference-grade minimalist pair so the Kafka path is demonstrable
   in-repo. → serves `vision-mercury-composable`.
-  <!-- id: thread-minimalist-kafka-adapter | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
+  **Done 2026-06-26 (commit `c8824519`):** built as the `system/minimalist-kafka` library (`org.platformlambda.mini.kafka`,
+  depends on `event-script-engine`) — `SimpleKafkaNotification` (`simple.kafka.notification`, outbound) + `KafkaFlowAdapter`/
+  `KafkaFlowConsumer` (inbound, one poll-loop thread per `topic→flow`, low-level `PostOffice` routing with W3C span
+  continuity, commit-after-process = at-least-once) + `KafkaFlowAutoStart` (`@MainApplication`). Emerged from the
+  sync-over-async sprint (`thread-redis-kafka-rpc`) rather than waiting on the docs rewrite. 87% coverage; standalone
+  embedded-KRaft e2e. (Folded into `thread-redis-kafka-rpc`.)
+  <!-- id: thread-minimalist-kafka-adapter | created: 2026-06-22 | last_used: 2026-06-26 | uses: 2 | tier: working -->
 - [x] **Re-verify invariants (first invariant check; 24 session files ≥ `verify_invariants_every` 20).**
   Confirmed the never-decay set still holds, or supersede any that don't (`DECAY.md` §9): the Architectural
   Invariants (`functions-decoupled-routes`, `typed-io-map-or-pojo`), the `core` Key Decision
@@ -451,8 +459,25 @@
   `request:`/`response:` keys), `ReturnRouteCoordinator` (per-pod: `begin`/`awaitResponse`-with-final-read/`deliver`;
   pub/sub callback dispatches the blocking read to a virtual thread to avoid stalling the Lettuce event loop).
   16 tests vs embedded Redis (incl. cross-pod return, timeout, missed-notification→final-read, orphan, duplicate);
-  JaCoCo 93.6% line, **85% gate enforced**. Next: P2 Kafka legs.
-  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-25 | uses: 2 | tier: working -->
+  JaCoCo 93.6% line, **85% gate enforced**.
+  **Status (2026-06-26): MVP complete + building blocks extracted into a library** (commit `c8824519`).
+  P2 (Kafka legs) → P3 (REST facade `test.endpoint`, the composable way: `event-script-engine` + `rest.yaml` →
+  `sync-to-async` flow) → P4 (refactor the raw legs into composable **building blocks**: a drop-n-forget Kafka
+  **notification function** + a **Kafka Flow Adapter** that routes each topic into an Event Script flow,
+  one poll-loop thread per topic, synchronous request + commit-after-process = at-least-once). Full round-trip
+  proven: `REST → http.flow.adapter → sync-to-async → test.endpoint (begin+notify) → Kafka topic-1 → adapter →
+  system-of-record (echo+notify topic-2) → Kafka topic-2 → adapter → soa-reply → coordinator.deliver → Redis
+  return route → HTTP 200 / 408`. **OTel span propagation across Kafka fixed without touching `event-script-engine`**
+  (use the low-level `PostOffice` API: notification stamps its own span into the Kafka `traceparent`; the consumer
+  parses it and `forward.setSpanId(parentSpanId)` so the flow chains onto it — `WorkerHandler:103` adopts the
+  event span-id as the function's parent; validated against the telemetry log = one continuous trace, the two
+  notification hops are the bridge spans). **Then promoted the pair to a reusable library** (Eric's call) —
+  see `thread-minimalist-kafka-adapter` (now fulfilled): `system/minimalist-kafka` (`org.platformlambda.mini.kafka`,
+  depends on `event-script-engine`, 87% cov, standalone embedded-Kafka e2e); `sync-over-async` now depends on it
+  and is purely the Redis return-route engine (96% cov, 20 tests). Both green in the reactor on JDK 21.
+  **Remaining (post-MVP, not yet built):** productionization — Redis coordinator config-driven init, consumer
+  partition-pinning, 503 guardrails/metrics, two-JVM test, module docs/README; and Gradle build (`thread-add-gradle-build`).
+  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-26 | uses: 3 | tier: working -->
 
 ## User Preferences
 
