@@ -1,0 +1,6 @@
+#
+# Kafka Flow Adapter configuration for the test: bind the test topic to the sink flow.
+#
+consumer:
+  - topic: 'mini-test-topic'
+    flow: 'kafka-sink-flow'

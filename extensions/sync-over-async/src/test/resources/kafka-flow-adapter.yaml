@@ -1,0 +1,10 @@
+#
+# Kafka Flow Adapter configuration (conceptually the Kafka counterpart of rest.yaml).
+# Each entry binds a topic to an Event Script flow; the adapter starts one consumer thread per topic
+# and routes every message into its flow (the partition field is optional, like the publisher side).
+#
+consumer:
+  - topic: 'topic-1'
+    flow: 'system-of-record'
+  - topic: 'topic-2'
+    flow: 'soa-reply'

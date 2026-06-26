@@ -1,0 +1,37 @@
+#
+# Synchronous REST facade flow.
+#
+# The single task 'test.endpoint' runs the full sync-over-async round-trip: register the cross-pod
+# return route in Redis, publish the request to the Kafka request topic (topic-1), then block until the
+# asynchronous backend's response arrives via the Kafka response topic + Redis return route. It returns
+# HTTP 200 with the response body, or raises 408 on timeout - which the exception handler maps to an
+# HTTP 408 status.
+#
+flow:
+  id: 'sync-to-async'
+  description: 'Synchronous REST facade over asynchronous Kafka processing'
+  ttl: 30s
+  exception: 'sync.error.handler'
+
+first.task: 'test.endpoint'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.traceparent -> header.traceparent'
+      - 'input.header.x-sync-timeout -> header.x-sync-timeout'
+    process: 'test.endpoint'
+    output:
+      - 'result -> output.body'
+    description: 'Register the return route, publish to Kafka topic-1, and await the response'
+    execution: end
+
+  - input:
+      - 'error.code -> status'
+      - 'error.message -> message'
+    process: 'sync.error.handler'
+    output:
+      - 'result.status -> output.status'
+      - 'result -> output.body'
+    description: 'Map a timeout/error to an HTTP status'
+    execution: end

@@ -36,6 +36,10 @@ Redis carries the cross-pod return route: the response payload is stored in Redi
 Pub/Sub channel wakes the originating pod, keyed by a correlation-id. Kafka remains the durable business
 transport; Redis Pub/Sub is only a low-latency wake-up signal.
 
+The Kafka transport legs (the `simple.kafka.notification` function and the Kafka Flow Adapter that routes
+each topic into an Event Script flow) are provided by the reusable `system/minimalist-kafka` library, which
+this module depends on; sync-over-async itself only adds the Redis cross-pod return-route engine on top.
+
 This module is under active development (prototype). See the module's own `README.md` for the threading
 model and the virtual-thread-safety evidence for the blocking Lettuce sync API.
 

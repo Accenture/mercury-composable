@@ -1,0 +1,21 @@
+#
+# Mock System-of-Record flow. Reached when the Kafka flow adapter routes a message from the request
+# topic (topic-1). Its task processes the request and publishes a reply to the response topic.
+#
+flow:
+  id: 'system-of-record'
+  description: 'Process the async request and publish a reply'
+  ttl: 30s
+
+first.task: 'system.of.record'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+      - 'input.header.traceparent -> header.traceparent'
+    process: 'system.of.record'
+    output:
+      - 'result -> output.body'
+    description: 'Echo the request and emit a reply notification to the response topic'
+    execution: end

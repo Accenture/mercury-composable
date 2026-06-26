@@ -1,0 +1,12 @@
+#
+# REST automation for the sync-over-async MVP.
+# The endpoint is backed by an Event Script flow (no controller) via the
+# built-in 'http.flow.adapter' service - the Mercury Composable way.
+#
+rest:
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/sync-to-async"
+    flow: 'sync-to-async'
+    timeout: 30s
+    tracing: true

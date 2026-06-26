@@ -17,6 +17,7 @@
         <module>system/event-script-engine</module>
         <module>system/minigraph-playground-engine</module>
         <module>system/mini-scheduler</module>
+        <module>system/minimalist-kafka</module>
 
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>

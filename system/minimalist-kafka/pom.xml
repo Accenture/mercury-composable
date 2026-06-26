@@ -4,15 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
-    <artifactId>sync-over-async</artifactId>
+    <artifactId>minimalist-kafka</artifactId>
     <version>4.4.11</version>
     <packaging>jar</packaging>
-    <name>Sync-over-async (Redis-assisted Kafka request/reply)</name>
+    <name>Minimalist Kafka (notification function + flow adapter)</name>
     <description>
-        A self-initializing extension that exposes synchronous REST semantics over asynchronous Kafka
-        processing across horizontally scaled pods. Redis carries the cross-pod return route: the
-        response payload lands in Redis (SETEX) and a per-pod Pub/Sub channel wakes the originating pod,
-        keyed by correlation-id.
+        A minimalist bridge between Kafka and Event Script: a drop-n-forget notification function
+        (simple.kafka.notification) that publishes Post Office events to Kafka, and a Kafka flow adapter
+        that routes each topic into a configured Event Script flow (the Kafka counterpart of rest.yaml),
+        with W3C trace propagation across the Kafka boundary. byte[] headers/body, no custom serdes.
     </description>
 
     <parent>
@@ -24,8 +24,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>
-        <!-- Embedded broker (kafka_2.13) version for tests. Matches the kafka-clients version pinned by
-             minimalist-kafka so there is no client/broker protocol skew. -->
+        <!-- Pin the Kafka client to the same version as the embedded broker used in tests
+             (kafka_2.13) to avoid client/broker protocol skew. -->
         <kafka.version>4.2.0</kafka.version>
     </properties>
 
@@ -49,32 +49,28 @@
     </repositories>
 
     <dependencies>
-        <!-- The minimalist-kafka building blocks (Kafka notification function + flow adapter). It brings
-             event-script-engine (flow runtime + REST automation, and platform-core) and the Kafka client
-             transitively, so the facade only adds the Redis return-route engine on top. -->
+        <!-- Event Script engine brings the flow runtime + REST automation, and fetches platform-core
+             transitively. The flow adapter routes Kafka messages into Event Script flows. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
-            <artifactId>minimalist-kafka</artifactId>
+            <artifactId>event-script-engine</artifactId>
             <version>4.4.11</version>
         </dependency>
 
-        <!-- Reactor-native, battle-tested Redis client with robust Pub/Sub + auto-reconnect.
-             Version is managed by the spring-boot parent BOM. -->
+        <!-- Kafka client (key=String, value=byte[]). -->
         <dependency>
-            <groupId>io.lettuce</groupId>
-            <artifactId>lettuce-core</artifactId>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.lz4</groupId>
+                    <artifactId>lz4-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <!-- Embedded Redis (real redis-server binary, incl. arm64 macOS) for unit tests -->
-        <dependency>
-            <groupId>com.github.codemonstur</groupId>
-            <artifactId>embedded-redis</artifactId>
-            <version>1.4.3</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Embedded Kafka (real KRaft broker) for integration tests. Reuses the kafka-standalone
-             pattern; same exclusions to keep the transitive footprint lean. -->
+        <!-- Embedded Kafka (real KRaft broker) for integration tests. -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.13</artifactId>

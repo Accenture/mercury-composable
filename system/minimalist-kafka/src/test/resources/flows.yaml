@@ -1,0 +1,5 @@
+#
+# Event Script flow manifest for the minimalist-kafka end-to-end test.
+#
+flows:
+  - 'kafka-sink-flow.yml'

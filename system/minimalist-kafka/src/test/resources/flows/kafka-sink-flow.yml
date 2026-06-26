@@ -1,0 +1,20 @@
+#
+# Flow reached when the Kafka flow adapter routes a message from 'mini-test-topic'. Its single task
+# records the received message so the test can assert delivery + trace continuity.
+#
+flow:
+  id: 'kafka-sink-flow'
+  description: 'Record a Kafka message routed by the flow adapter'
+  ttl: 30s
+
+first.task: 'kafka.test.sink'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+    process: 'kafka.test.sink'
+    output:
+      - 'result -> output.body'
+    description: 'Record the received message'
+    execution: end
