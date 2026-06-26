@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>sync-over-async</artifactId>
-    <version>4.4.11</version>
+    <version>4.5.0</version>
     <packaging>jar</packaging>
     <name>Sync-over-async (Redis-assisted Kafka request/reply)</name>
     <description>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
-            <version>4.4.11</version>
+            <version>4.5.0</version>
         </dependency>
 
         <!-- Reactor-native, battle-tested Redis client with robust Pub/Sub + auto-reconnect.
