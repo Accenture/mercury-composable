@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-26T03:29:08Z | agent: Claude Code
+- **last_session:** 2026-06-26T03:34:32Z | agent: Claude Code
 - **last_review:** 2026-06-24 | through 2026-06-24-222752.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
