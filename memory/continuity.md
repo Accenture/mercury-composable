@@ -159,6 +159,15 @@
   feature package and config in `support`/`config`; plus route-naming discipline and function granularity.
   Add future code-style recs here. Established 2026-06-27 (Eric + Claude Code).
   <!-- id: code-conventions-home | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: active -->
+- **Standalone dev servers live in `helpers/`; worked examples teach the patterns.** `helpers/` (new
+  top-level folder, 2026-06-27) holds no-Docker standalone dev servers: `kafka-standalone` (moved here from
+  `connectors/adapters/kafka/`) and `redis-standalone` (embedded Redis via `embedded-redis`). Both pin
+  transient working files to **`/tmp/soa-redis`** / `/tmp` (cloud-native pattern); the sync-over-async
+  `RedisTestBase` uses the same `/tmp/soa-redis` dir. `examples/kafka-demo` is the minimalist-kafka
+  producer+consumer **worked example** (Java flow + kafkajs Node programs: create-topics/listen/publish),
+  validated live end-to-end. A **sync-over-async worked example is the planned next step**. Worked examples
+  are how this project teaches pattern adoption (Eric). On `feature/sync-over-async` (PR #124).
+  <!-- id: helpers-and-worked-examples | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: active -->
 - **The built-in HTTP flow adapter (`HttpToFlow` / `http.flow.adapter`) is the only one in `event-script-engine`;
   a minimalist Kafka pair now ships as the `system/minimalist-kafka` library** (added 2026-06-26, commit `c8824519`):
   `KafkaFlowAdapter` (inbound, routes a topic into an Event Script flow) + `SimpleKafkaNotification` (outbound,
