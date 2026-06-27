@@ -57,6 +57,9 @@ public class EmbeddedRedis {
     }
 
     /** Start the embedded redis-server subprocess and register a shutdown hook to stop it cleanly. */
+    // S5443: the fixed /tmp/soa-redis path is intentional for this dev/test-only standalone server - a
+    // known, transient store, shared with the test suite and wiped before each start (never production).
+    @SuppressWarnings("java:S5443")
     public void start() {
         try {
             // wipe the transient store and recreate it, so a restart begins from a clean slate

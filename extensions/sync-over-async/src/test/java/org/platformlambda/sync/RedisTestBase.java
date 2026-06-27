@@ -49,6 +49,8 @@ public abstract class RedisTestBase {
     protected static RedisClient redisClient;
     protected static int redisPort;
 
+    // S5443: a fixed /tmp/soa-redis path is intentional for this test fixture (wiped before each run).
+    @SuppressWarnings("java:S5443")
     @BeforeAll
     static void startRedis() throws IOException {
         redisPort = freePort();
