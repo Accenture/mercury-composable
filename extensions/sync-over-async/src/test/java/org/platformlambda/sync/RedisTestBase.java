@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import redis.embedded.RedisServer;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 
@@ -31,8 +32,16 @@ import java.net.ServerSocket;
  * exposes a Lettuce client to it. The bundled binary covers macOS arm64/amd64 and Linux arm64/amd64,
  * so the return-route mechanism is exercised against genuine Redis semantics (incl. Pub/Sub) with no
  * Docker dependency.
+ *
+ * <p>The working directory is pinned to {@code /tmp/soa-redis} - the same transient {@code /tmp} location
+ * the {@code redis-standalone} helper uses (cloud-native pattern). Persistence is disabled
+ * ({@code save ""} + {@code appendonly no}) so each test class starts from a clean, isolated slate with no
+ * RDB carried over between runs.</p>
  */
 public abstract class RedisTestBase {
+
+    /** Transient working directory for Redis data; shared with the redis-standalone helper. */
+    protected static final String REDIS_DATA_DIR = "/tmp/soa-redis";
 
     protected static RedisServer redisServer;
     protected static RedisClient redisClient;
@@ -41,7 +50,16 @@ public abstract class RedisTestBase {
     @BeforeAll
     static void startRedis() throws IOException {
         redisPort = freePort();
-        redisServer = new RedisServer(redisPort);
+        File dir = new File(REDIS_DATA_DIR);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        redisServer = RedisServer.newRedisServer()
+                .port(redisPort)
+                .setting("dir " + REDIS_DATA_DIR)   // transient /tmp working dir
+                .setting("save \"\"")               // no RDB snapshots -> clean, isolated state per run
+                .setting("appendonly no")
+                .build();
         redisServer.start();
         redisClient = RedisClient.create("redis://127.0.0.1:" + redisPort);
     }
