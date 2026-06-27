@@ -18,20 +18,16 @@
 
 package org.platformlambda.async;
 
-import org.platformlambda.sync.ReturnRouteCoordinator;
-
 /**
- * Test-only holder for the return-route coordinator (Redis) used by {@code test.endpoint} and
- * {@code soa.reply}, plus the topic names shared between the entry function, the mock System-of-Record
- * task, and the test. The Kafka publisher and flow adapter live in the minimalist-kafka library's
- * {@code KafkaRuntime}, built by its {@code KafkaFlowAutoStart} autoloader.
+ * Test-only holder for the topic names shared between the entry function, the mock System-of-Record task,
+ * and the test. The return-route coordinator now lives in the production {@code org.platformlambda.sync.SyncRuntime},
+ * built by the {@code SyncOverAsyncAutoStart} autoloader; the Kafka publisher and flow adapter live in the
+ * minimalist-kafka library's {@code KafkaRuntime}.
  */
 final class SyncRuntime {
 
     static final String REQUEST_TOPIC = "topic-1";
     static final String RESPONSE_TOPIC = "topic-2";
-
-    static ReturnRouteCoordinator coordinator;
 
     private SyncRuntime() { }
 }

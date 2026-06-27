@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * One Kafka consumer thread for the {@link KafkaFlowAdapter}: it polls a topic and routes each message
@@ -58,6 +59,15 @@ import java.util.concurrent.TimeUnit;
  * message at a time. If the instance crashes before the commit (e.g. a Kubernetes rolling restart), the
  * offset stays uncommitted and Kafka redelivers the message to a surviving instance in the group - the
  * deliberate resilience-over-throughput tradeoff for the consume side.</p>
+ *
+ * <p><b>Flow-failure handling.</b> A flow-level failure is retried up to {@link RetryPolicy#maxRetries()}
+ * times; if it still fails, the original message is routed to the per-topic dead-letter topic
+ * ({@code <topic><dlqSuffix>}, suffix default {@code .dlq}). The DLQ write is <b>confirmed</b> (the broker
+ * must acknowledge it) and the offset is committed <b>only if that write succeeds</b>; if the DLQ write
+ * fails - e.g. the DLQ topic does not exist (Kafka auto-creation is off in production) - the offset is
+ * <b>not</b> committed, so the message redelivers rather than being silently lost. Operationally this means
+ * <b>DLQ topics must be pre-provisioned</b>; a missing one stalls the partition loudly instead of dropping
+ * data, which is the correct trade-off for a holding area whose purpose is reprocessing.</p>
  */
 public class KafkaFlowConsumer implements AutoCloseable {
 
@@ -67,20 +77,30 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private static final String FLOW_ID = "flow_id";   // header key read by event.script.manager
     private static final String HEADER = "header";
     private static final String BODY = "body";
+    private static final String DLQ_SUFFIX = ".dlq";
+    private static final String DLQ_ERROR_HEADER = "dlq.error";
+    private static final String DLQ_ORIGIN_TOPIC_HEADER = "dlq.origin.topic";
 
     private final Consumer<String, byte[]> consumer;
     private final String topic;
     private final String flowId;
     private final long flowTimeoutMs;
+    private final RetryPolicy retryPolicy;
+    private final String deadLetterTopic;
     private final ExecutorService loop;
 
     private volatile boolean running;
 
-    public KafkaFlowConsumer(Consumer<String, byte[]> consumer, String topic, String flowId, long flowTimeoutMs) {
+    public KafkaFlowConsumer(Consumer<String, byte[]> consumer, String topic, String flowId,
+                             long flowTimeoutMs, RetryPolicy retryPolicy) {
         this.consumer = consumer;
         this.topic = topic;
         this.flowId = flowId;
         this.flowTimeoutMs = flowTimeoutMs;
+        this.retryPolicy = retryPolicy;
+        // per-topic DLQ; a blank suffix falls back to .dlq so the DLQ can never equal the source topic
+        String suffix = retryPolicy.dlqSuffix();
+        this.deadLetterTopic = topic + (suffix == null || suffix.isBlank() ? DLQ_SUFFIX : suffix);
         this.loop = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "kafka-flow-" + topic);
             thread.setDaemon(true);
@@ -115,9 +135,12 @@ public class KafkaFlowConsumer implements AutoCloseable {
 
     /**
      * Route the record into the flow, blocking until it finishes (so the offset is committed only after
-     * the message is processed).
+     * the message is processed). On flow failure it retries per the {@link RetryPolicy}, then dead-letters
+     * the message before allowing the commit.
      *
-     * @return true if the offset may be committed (flow delivered/completed), false on interruption.
+     * @return true if the offset may be committed (flow completed, or message durably dead-lettered),
+     *         false if it must NOT be committed (interrupted, or the dead-letter write failed) so the
+     *         message redelivers rather than being skipped.
      */
     boolean routeToFlow(ConsumerRecord<String, byte[]> consumerRecord) {
         Map<String, Object> dataset = toDataset(consumerRecord);
@@ -137,18 +160,88 @@ public class KafkaFlowConsumer implements AutoCloseable {
             // The flow chains onto the upstream span carried in the Kafka traceparent.
             forward.setSpanId(parentSpanId);
         }
+        int attempt = 0;
+        while (true) {
+            try {
+                invokeFlow(forward, traceId, tracePath);
+                return true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                running = false;
+                return false;   // do not commit a message that was interrupted mid-processing
+            } catch (ExecutionException e) {
+                if (attempt >= retryPolicy.maxRetries()) {
+                    log.warn("Flow {} failed for a '{}' message after {} attempt(s); routing to {}",
+                            flowId, topic, attempt + 1, deadLetterTopic, e.getCause());
+                    // commit only if the message is durably dead-lettered; otherwise redeliver (no loss)
+                    return writeToDeadLetter(consumerRecord, e.getCause());
+                }
+                attempt++;
+                log.warn("Flow {} failed for a '{}' message (attempt {}/{}); retrying",
+                        flowId, topic, attempt, retryPolicy.maxRetries(), e.getCause());
+                if (!backoff()) {
+                    return false;   // interrupted during backoff -> redeliver, do not commit
+                }
+            }
+        }
+    }
+
+    /**
+     * Send the event into the flow engine, blocking until it completes. Visible (package-private and
+     * non-final) so the retry/dead-letter orchestration can be unit-tested without a running engine.
+     */
+    void invokeFlow(EventEnvelope forward, String traceId, String tracePath)
+            throws InterruptedException, ExecutionException {
         PostOffice po = PostOffice.trackable(ADAPTER_ROUTE, traceId, tracePath);
+        po.request(forward, flowTimeoutMs).get();
+    }
+
+    /** Pause between retry attempts. @return false if interrupted while waiting (caller must not commit). */
+    private boolean backoff() {
+        if (retryPolicy.backoffMs() <= 0) {
+            return true;
+        }
         try {
-            po.request(forward, flowTimeoutMs).get();
+            TimeUnit.MILLISECONDS.sleep(retryPolicy.backoffMs());
             return true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             running = false;
-            return false;   // do not commit a message that was interrupted mid-processing
-        } catch (ExecutionException e) {
-            // The message reached the flow; a flow-level failure is logged, not retried forever.
-            log.warn("Flow {} did not complete for a '{}' message: {}", flowId, topic, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Park an un-processable message on {@code <topic><dlqSuffix>} with a <b>confirmed</b> write, preserving
+     * its headers + body. Visible (package-private, non-final) so the commit-gating can be unit-tested.
+     *
+     * @return true if the broker acknowledged the dead-letter write (safe to commit); false if it could not
+     *         be stored (no publisher, write failed, or interrupted) so the caller must not commit.
+     */
+    boolean writeToDeadLetter(ConsumerRecord<String, byte[]> consumerRecord, Throwable cause) {
+        KafkaRequestPublisher publisher = retryPolicy.deadLetterPublisher();
+        if (publisher == null) {
+            log.error("No dead-letter publisher; NOT committing '{}' offset {} (will redeliver)",
+                    topic, consumerRecord.offset());
+            return false;
+        }
+        Map<String, byte[]> deadLetterHeaders = new HashMap<>();
+        consumerRecord.headers().forEach(h -> deadLetterHeaders.put(h.key(), h.value()));
+        deadLetterHeaders.put(DLQ_ORIGIN_TOPIC_HEADER, topic.getBytes(StandardCharsets.UTF_8));
+        deadLetterHeaders.put(DLQ_ERROR_HEADER,
+                (cause != null ? cause.toString() : "unknown").getBytes(StandardCharsets.UTF_8));
+        try {
+            publisher.publishSync(deadLetterTopic, null, deadLetterHeaders, consumerRecord.value(), flowTimeoutMs);
             return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            running = false;
+            return false;
+        } catch (ExecutionException | TimeoutException e) {
+            log.error("Dead-letter write to {} failed; NOT committing '{}' offset {} (will redeliver). "
+                            + "Ensure the DLQ topic exists (Kafka auto-creation is off in production): {}",
+                    deadLetterTopic, topic, consumerRecord.offset(), e.getMessage());
+            return false;
         }
     }
 

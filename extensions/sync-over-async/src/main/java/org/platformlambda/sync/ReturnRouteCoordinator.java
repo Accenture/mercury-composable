@@ -68,6 +68,9 @@ public class ReturnRouteCoordinator implements AutoCloseable {
 
     /** Subscribe to this pod's return channel. Call once at startup. */
     public void start() {
+        if (subscription != null) {
+            throw new IllegalStateException("Return-route coordinator already started");
+        }
         subscription = client.connectPubSub();
         subscription.addListener(new RedisPubSubAdapter<>() {
             @Override
@@ -97,12 +100,15 @@ public class ReturnRouteCoordinator implements AutoCloseable {
     public String awaitResponse(String correlationId, CompletableFuture<String> future, long timeoutMillis)
             throws InterruptedException, TimeoutException {
         try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            String response = future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            store.cleanup(correlationId);   // rendezvous done; free the keys now instead of on TTL
+            return response;
         } catch (TimeoutException timeout) {
             String late = store.getResponse(correlationId);
             pending.cancel(correlationId);
             if (late != null) {
                 log.debug("Recovered response for {} via final read (missed notification)", correlationId);
+                store.cleanup(correlationId);
                 return late;
             }
             throw timeout;
@@ -145,7 +151,16 @@ public class ReturnRouteCoordinator implements AutoCloseable {
         if (subscription != null) {
             subscription.close();
         }
-        signalWorkers.shutdownNow();
+        // let in-flight signal handlers finish their blocking read before forcing the connection shut
+        signalWorkers.shutdown();
+        try {
+            if (!signalWorkers.awaitTermination(5, TimeUnit.SECONDS)) {
+                signalWorkers.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            signalWorkers.shutdownNow();
+        }
         commandConnection.close();
     }
 }

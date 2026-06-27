@@ -4,3 +4,5 @@
 consumer:
   - topic: 'mini-test-topic'
     flow: 'kafka-sink-flow'
+    # exercises env-var substitution (unset -> default); group is used exactly as resolved
+    group: '${KAFKA_TEST_CONSUMER_GROUP:mini-test-group}'

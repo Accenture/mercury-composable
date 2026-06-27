@@ -64,4 +64,13 @@ class ReturnRouteStoreTest extends RedisTestBase {
         long ttl = connection.sync().ttl("response:cid-1");
         assertTrue(ttl > 0 && ttl <= 30, "response TTL should be set, got " + ttl);
     }
+
+    @Test
+    void cleanupDeletesBothKeys() {
+        store.saveRoute("cid-1", "svc-return:origin-1", 90);
+        store.saveResponse("cid-1", "{\"status\":\"200\"}", 30);
+        store.cleanup("cid-1");
+        assertNull(store.getRoute("cid-1"), "route deleted on cleanup");
+        assertNull(store.getResponse("cid-1"), "response deleted on cleanup");
+    }
 }

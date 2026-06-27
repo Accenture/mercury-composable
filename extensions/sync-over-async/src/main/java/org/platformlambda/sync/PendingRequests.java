@@ -21,6 +21,7 @@ package org.platformlambda.sync;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Per-pod registry of in-flight synchronous requests, keyed by correlation-id. The REST handler
@@ -29,11 +30,13 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * Completion is race-safe and idempotent: whichever of the subscriber thread and the timeout path wins,
  * the future is completed exactly once and the entry removed - duplicate or late responses are no-ops.
- * Growth is bounded by {@code maxPending} to protect a pod under load.
+ * Growth is bounded by {@code maxPending} to protect a pod under load; the cap is reserved atomically
+ * (increment-then-check), so concurrent {@code register} calls cannot oversubscribe it.
  */
 public class PendingRequests {
 
     private final ConcurrentMap<String, CompletableFuture<String>> pending = new ConcurrentHashMap<>();
+    private final AtomicInteger inFlight = new AtomicInteger();
     private final int maxPending;
 
     public PendingRequests(int maxPending) {
@@ -46,11 +49,14 @@ public class PendingRequests {
      * @throws IllegalStateException if the pod is at capacity or the correlation-id is already in flight
      */
     public CompletableFuture<String> register(String correlationId) {
-        if (pending.size() >= maxPending) {
+        // reserve the slot atomically before the map write so two threads can't both pass the cap check
+        if (inFlight.incrementAndGet() > maxPending) {
+            inFlight.decrementAndGet();
             throw new IllegalStateException("Too many pending requests (max " + maxPending + ")");
         }
         CompletableFuture<String> future = new CompletableFuture<>();
         if (pending.putIfAbsent(correlationId, future) != null) {
+            inFlight.decrementAndGet();
             throw new IllegalStateException("Duplicate correlation-id in flight: " + correlationId);
         }
         return future;
@@ -61,13 +67,22 @@ public class PendingRequests {
      * if no request is pending - i.e. an orphan, duplicate, or already-completed/timed-out response.
      */
     public boolean complete(String correlationId, String response) {
-        CompletableFuture<String> future = pending.remove(correlationId);
+        CompletableFuture<String> future = remove(correlationId);
         return future != null && future.complete(response);
     }
 
     /** Drop a pending request (e.g. on timeout) without completing it. */
     public void cancel(String correlationId) {
-        pending.remove(correlationId);
+        remove(correlationId);
+    }
+
+    /** Remove the entry and release its reserved slot, exactly once. */
+    private CompletableFuture<String> remove(String correlationId) {
+        CompletableFuture<String> future = pending.remove(correlationId);
+        if (future != null) {
+            inFlight.decrementAndGet();
+        }
+        return future;
     }
 
     public boolean isPending(String correlationId) {

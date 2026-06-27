@@ -29,9 +29,7 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.mini.kafka.KafkaRuntime;
-import org.platformlambda.support.SyncOverAsyncConfig;
 import org.platformlambda.sync.RedisTestBase;
-import org.platformlambda.sync.ReturnRouteCoordinator;
 
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -62,7 +60,6 @@ class RestFlowMvpTest extends RedisTestBase {
 
     private static final int REST_PORT = 8305;   // matches rest.server.port in test application.properties
     private static final String TRACE_PARENT = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
-    private static final SyncOverAsyncConfig CONFIG = new SyncOverAsyncConfig("svc-return", 90, 30, 100);
 
     private static EmbeddedKafka kafka;
 
@@ -71,14 +68,16 @@ class RestFlowMvpTest extends RedisTestBase {
         kafka = new EmbeddedKafka();
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), SyncRuntime.REQUEST_TOPIC);
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), SyncRuntime.RESPONSE_TOPIC);
-        // Inject the embedded broker into the autoloader (system property overrides application.properties).
-        System.setProperty("kafka.bootstrap.servers", kafka.bootstrapServers());
+        // Point the autoloaders at the embedded infra: KAFKA_BOOTSTRAP_SERVERS feeds the
+        // ${KAFKA_BOOTSTRAP_SERVERS:...} placeholder in the Kafka client templates; redis.port overrides the
+        // file value (ConfigReader resolves a system property before the file). sync.over.async.enabled=true
+        // is in the test application.properties.
+        System.setProperty("KAFKA_BOOTSTRAP_SERVERS", kafka.bootstrapServers());
+        System.setProperty("redis.port", String.valueOf(redisPort));
 
-        SyncRuntime.coordinator = new ReturnRouteCoordinator(redisClient, "pod-mvp", CONFIG);
-        SyncRuntime.coordinator.start();
-
-        // Platform start registers all functions, then KafkaFlowAutoStart builds the publisher singleton
-        // and starts the Kafka flow adapter (topic-1 -> system-of-record, topic-2 -> soa-reply).
+        // Platform start registers all functions, then the autoloaders run: SyncOverAsyncAutoStart builds the
+        // Redis client + return-route coordinator from config; KafkaFlowAutoStart builds the Kafka publisher
+        // and starts the flow adapter (topic-1 -> system-of-record, topic-2 -> soa-reply).
         AutoStart.main(new String[0]);
         BlockingQueue<Boolean> ready = new ArrayBlockingQueue<>(1);
         Platform.getInstance().waitForProvider(AsyncHttpClient.ASYNC_HTTP_RESPONSE, 20).onSuccess(ready::add);
@@ -95,13 +94,12 @@ class RestFlowMvpTest extends RedisTestBase {
         if (KafkaRuntime.publisher() != null) {
             KafkaRuntime.publisher().close();
         }
-        if (SyncRuntime.coordinator != null) {
-            SyncRuntime.coordinator.close();
-        }
+        org.platformlambda.sync.SyncRuntime.shutdown();
         if (kafka != null) {
             kafka.close();
         }
-        System.clearProperty("kafka.bootstrap.servers");
+        System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
+        System.clearProperty("redis.port");
     }
 
     @Test

@@ -58,11 +58,12 @@ public class TestEndpoint implements TypedLambdaFunction<Map<String, Object>, Ma
         long timeoutMillis = parseTimeout(headers.get(TIMEOUT_HEADER));
         byte[] payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(input);
 
-        CompletableFuture<String> future = SyncRuntime.coordinator.begin(correlationId);
+        var coordinator = org.platformlambda.sync.SyncRuntime.coordinator();
+        CompletableFuture<String> future = coordinator.begin(correlationId);
         publishRequest(headers, instance, correlationId, payload);
 
         try {
-            String responseJson = SyncRuntime.coordinator.awaitResponse(correlationId, future, timeoutMillis);
+            String responseJson = coordinator.awaitResponse(correlationId, future, timeoutMillis);
             return SimpleMapper.getInstance().getMapper().readValue(responseJson, Map.class);   // HTTP 200 + body
         } catch (TimeoutException e) {
             throw new AppException(408, "Timed out awaiting response for " + correlationId);

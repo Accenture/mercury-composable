@@ -71,4 +71,26 @@ class PendingRequestsTest {
         pending.register("cid-1");
         assertThrows(IllegalStateException.class, () -> pending.register("cid-1"));
     }
+
+    @Test
+    void capacityIsReleasedOnCompleteAndCancel() {
+        PendingRequests pending = new PendingRequests(1);
+        pending.register("cid-1");
+        pending.complete("cid-1", "ok");                      // slot freed
+        pending.register("cid-2");                            // can register again at cap 1
+        pending.cancel("cid-2");                              // slot freed
+        pending.register("cid-3");
+        assertTrue(pending.isPending("cid-3"));
+    }
+
+    @Test
+    void rejectedRegistrationDoesNotConsumeASlot() {
+        PendingRequests pending = new PendingRequests(1);
+        pending.register("cid-1");
+        assertThrows(IllegalStateException.class, () -> pending.register("cid-2"));   // over cap
+        pending.cancel("cid-1");
+        // the over-cap attempt must not have leaked a reserved slot
+        pending.register("cid-3");
+        assertTrue(pending.isPending("cid-3"));
+    }
 }

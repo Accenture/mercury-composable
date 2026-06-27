@@ -55,7 +55,8 @@ class KafkaFlowAdapterTest {
     static void boot() throws Exception {
         kafka = new EmbeddedKafka();
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), TOPIC);
-        System.setProperty("kafka.bootstrap.servers", kafka.bootstrapServers());
+        // resolved by ${KAFKA_BOOTSTRAP_SERVERS:...} in the kafka-producer/consumer.properties templates
+        System.setProperty("KAFKA_BOOTSTRAP_SERVERS", kafka.bootstrapServers());
         AutoStart.main(new String[0]);
         // KafkaFlowAutoStart (@MainApplication) runs after the engine is up: it sets the publisher and
         // starts the adapter. A non-null adapter is our readiness signal.
@@ -77,7 +78,7 @@ class KafkaFlowAdapterTest {
         if (kafka != null) {
             kafka.close();
         }
-        System.clearProperty("kafka.bootstrap.servers");
+        System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
     }
 
     @Test

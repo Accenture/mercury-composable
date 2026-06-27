@@ -60,6 +60,14 @@ public class ReturnRouteStore {
         return commands().get(RESPONSE_PREFIX + correlationId);
     }
 
+    /**
+     * Delete both keys for a completed rendezvous. The TTLs are the safety net for crashes/timeouts;
+     * deleting on success frees the keys immediately instead of waiting out the TTL (less key churn).
+     */
+    public void cleanup(String correlationId) {
+        commands().del(ROUTE_PREFIX + correlationId, RESPONSE_PREFIX + correlationId);
+    }
+
     private RedisCommands<String, String> commands() {
         return connection.sync();
     }

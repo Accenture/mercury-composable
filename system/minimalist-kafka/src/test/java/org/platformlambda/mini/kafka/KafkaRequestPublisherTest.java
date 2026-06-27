@@ -56,4 +56,17 @@ class KafkaRequestPublisherTest {
         new KafkaRequestPublisher(producer).publish("topic-1", 3, null, "x".getBytes(UTF_8));
         assertEquals(3, producer.history().getFirst().partition());
     }
+
+    @Test
+    void publishSyncConfirmsDelivery() throws Exception {
+        MockProducer<String, byte[]> producer = autoCompletingProducer();
+        try (KafkaRequestPublisher publisher = new KafkaRequestPublisher(producer)) {
+            publisher.publishSync("orders.dlq", null,
+                    Map.of("dlq.error", "boom".getBytes(UTF_8)), "body".getBytes(UTF_8), 5000);
+        }
+        ProducerRecord<String, byte[]> sent = producer.history().getFirst();
+        assertEquals("orders.dlq", sent.topic());
+        assertEquals("body", new String(sent.value(), UTF_8));
+        assertEquals("boom", new String(sent.headers().lastHeader("dlq.error").value(), UTF_8));
+    }
 }

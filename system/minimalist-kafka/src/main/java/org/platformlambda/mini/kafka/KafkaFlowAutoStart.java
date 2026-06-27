@@ -19,10 +19,6 @@
 package org.platformlambda.mini.kafka;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.util.AppConfigReader;
@@ -37,42 +33,52 @@ import java.util.Properties;
  * platform-core engine has registered every composable function, which the flow adapter routes messages
  * into (a {@code @BeforeApplication} would run too early, before the engine exists).
  *
- * <p>It builds the shared {@link KafkaRequestPublisher} singleton from {@code kafka.bootstrap.servers},
- * and, when {@code yaml.kafka.flow.adapter} is configured, starts the {@link KafkaFlowAdapter} from that
- * file. Both settings support {@code ${ENV_VAR:default}} substitution and system-property override.</p>
+ * <p>It builds the shared {@link KafkaRequestPublisher} singleton and, when {@code yaml.kafka.flow.adapter}
+ * is configured, starts the {@link KafkaFlowAdapter} from that file. The Kafka client connection/security
+ * settings come from the external {@code kafka-producer.properties} / {@code kafka-consumer.properties}
+ * templates (see {@link KafkaClientConfig}) - not hard-coded - so any enterprise installation can be
+ * configured without code changes.</p>
+ *
+ * <p>Flow-failure handling is tunable via {@code application.properties}:
+ * {@code kafka.flow.max.retries} (default 3), {@code kafka.flow.retry.backoff.ms} (default 500), and
+ * {@code kafka.flow.dlq.suffix} (default {@code .dlq}) - appended to each source topic to form its
+ * <b>per-topic</b> DLQ ({@code orders} → {@code orders.dlq}). Only the suffix is configurable, since a
+ * shared/global DLQ is an anti-pattern for reprocessing; DLQ topics must be pre-provisioned.</p>
  */
 @MainApplication
 public class KafkaFlowAutoStart implements EntryPoint {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaFlowAutoStart.class);
-    private static final String BOOTSTRAP = "kafka.bootstrap.servers";
     private static final String ADAPTER_CONFIG = "yaml.kafka.flow.adapter";
     private static final String FLOW_TIMEOUT = "kafka.flow.timeout.ms";
+    private static final String MAX_RETRIES = "kafka.flow.max.retries";
+    private static final String RETRY_BACKOFF = "kafka.flow.retry.backoff.ms";
+    private static final String DLQ_SUFFIX = "kafka.flow.dlq.suffix";
 
     @Override
     public void start(String[] args) {
         AppConfigReader config = AppConfigReader.getInstance();
-        String bootstrap = config.getProperty(BOOTSTRAP, "127.0.0.1:9092");
-        KafkaRuntime.setPublisher(new KafkaRequestPublisher(newProducer(bootstrap)));
+        KafkaRequestPublisher publisher =
+                new KafkaRequestPublisher(new KafkaProducer<>(KafkaClientConfig.producerProperties(config)));
+        KafkaRuntime.setPublisher(publisher);
 
         String adapterConfig = config.getProperty(ADAPTER_CONFIG);
         if (adapterConfig != null) {
             long flowTimeoutMs = Long.parseLong(config.getProperty(FLOW_TIMEOUT, "30000"));
-            KafkaFlowAdapter adapter = new KafkaFlowAdapter(bootstrap, new ConfigReader(adapterConfig), flowTimeoutMs);
+            int maxRetries = Integer.parseInt(config.getProperty(MAX_RETRIES, "3"));
+            long retryBackoffMs = Long.parseLong(config.getProperty(RETRY_BACKOFF, "500"));
+            // per-topic DLQ: <topic><suffix>; only the suffix is configurable (no global DLQ - anti-pattern)
+            String dlqSuffix = config.getProperty(DLQ_SUFFIX, ".dlq");
+            // failed messages are dead-lettered through the same shared producer
+            RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, dlqSuffix, publisher);
+            Properties consumerProps = KafkaClientConfig.consumerProperties(config);
+            KafkaFlowAdapter adapter =
+                    new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig), flowTimeoutMs, retryPolicy);
             adapter.start();
             KafkaRuntime.setAdapter(adapter);
             log.info("Kafka flow adapter started from {}", adapterConfig);
         } else {
             log.info("{} not set; Kafka flow adapter not started", ADAPTER_CONFIG);
         }
-    }
-
-    private static Producer<String, byte[]> newProducer(String bootstrapServers) {
-        Properties p = new Properties();
-        p.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        p.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        p.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        p.put(ProducerConfig.ACKS_CONFIG, "1");
-        return new KafkaProducer<>(p);
     }
 }

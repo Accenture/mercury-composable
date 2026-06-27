@@ -18,9 +18,12 @@
 
 package org.platformlambda.support;
 
+import org.platformlambda.core.util.Utility;
+import org.platformlambda.core.util.common.ConfigBase;
+
 /**
- * Tunables for the return-route mechanism. In production these are read from {@code application.properties}
- * (Phase 3); the per-request REST timeout is supplied separately (from the {@code rest.yaml} entry).
+ * Tunables for the return-route mechanism, read from {@code application.properties} via {@link #from}
+ * (the per-request REST timeout is supplied separately, from the {@code rest.yaml} entry).
  *
  * @param returnChannelPrefix prefix for the per-pod Pub/Sub return channel, e.g. {@code svc-return}
  * @param routeTtlSeconds     TTL for {@code request:{cid}} (should cover REST timeout + buffer)
@@ -33,7 +36,22 @@ public record SyncOverAsyncConfig(
         long responseTtlSeconds,
         int maxPendingRequests) {
 
+    private static final String RETURN_CHANNEL_PREFIX = "sync.return.channel.prefix";
+    private static final String ROUTE_TTL_SECONDS = "sync.route.ttl.seconds";
+    private static final String RESPONSE_TTL_SECONDS = "sync.response.ttl.seconds";
+    private static final String MAX_PENDING_REQUESTS = "sync.max.pending.requests";
+
     public static SyncOverAsyncConfig defaults() {
         return new SyncOverAsyncConfig("svc-return", 90, 30, 10_000);
+    }
+
+    /** Build from configuration, falling back to {@link #defaults()} values for any unset key. */
+    public static SyncOverAsyncConfig from(ConfigBase config) {
+        Utility util = Utility.getInstance();
+        return new SyncOverAsyncConfig(
+                config.getProperty(RETURN_CHANNEL_PREFIX, "svc-return"),
+                util.str2long(config.getProperty(ROUTE_TTL_SECONDS, "90")),
+                util.str2long(config.getProperty(RESPONSE_TTL_SECONDS, "30")),
+                util.str2int(config.getProperty(MAX_PENDING_REQUESTS, "10000")));
     }
 }

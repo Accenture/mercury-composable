@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,6 +75,17 @@ class ReturnRouteCoordinatorTest extends RedisTestBase {
         assertTrue(podB.deliver(cid, RESPONSE));                // POD-2 stores response + notifies POD-1
         assertEquals(RESPONSE, podA.awaitResponse(cid, future, 5000));
         assertEquals(0, podA.pendingCount());
+        // success path cleans up the Redis keys instead of waiting out the TTL
+        try (StatefulRedisConnection<String, String> c = redisClient.connect()) {
+            ReturnRouteStore store = new ReturnRouteStore(c);
+            assertNull(store.getRoute(cid), "route key deleted after a successful rendezvous");
+            assertNull(store.getResponse(cid), "response key deleted after a successful rendezvous");
+        }
+    }
+
+    @Test
+    void startTwiceIsRejected() {
+        assertThrows(IllegalStateException.class, () -> podA.start());   // already started in setup()
     }
 
     @Test

@@ -21,8 +21,6 @@ package org.platformlambda.mini.kafka;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.platformlambda.core.util.ConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +40,17 @@ import java.util.Properties;
  * consumer:
  *   - topic: 'topic-1'
  *     flow: 'system-of-record'
+ *     group: 'sales-order-group'   # optional; supports ${ENV_VAR:default}
  *   - topic: 'topic-2'
  *     flow: 'soa-reply'
  * </pre>
+ *
+ * <p>{@code group} (within the {@code consumer} section) is the Kafka consumer group id, used <b>exactly</b>
+ * as given - enterprise DevSecOps teams typically create topics, ACLs and consumer groups administratively,
+ * so the library must not decorate the value. This YAML is read by {@code ConfigReader}, so the value
+ * supports {@code ${ENV_VAR:default}} environment-variable substitution. It is optional; when omitted it
+ * defaults to {@code kafka-flow-adapter.<topic>} (convenient for dev/test). Set it explicitly to your
+ * administratively-assigned group in production.</p>
  */
 public class KafkaFlowAdapter implements AutoCloseable {
 
@@ -52,39 +58,69 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static final String CONSUMER = "consumer";
     private static final String TOPIC = "topic";
     private static final String FLOW = "flow";
+    private static final String GROUP = "group";
+    private static final String DEFAULT_GROUP_PREFIX = "kafka-flow-adapter";
 
     private final List<KafkaFlowConsumer> consumers = new ArrayList<>();
+    private final Properties consumerProps;
 
-    public KafkaFlowAdapter(String bootstrapServers, ConfigReader config, long flowTimeoutMs) {
+    public KafkaFlowAdapter(Properties consumerProps, ConfigReader config, long flowTimeoutMs,
+                            RetryPolicy retryPolicy) {
+        this.consumerProps = consumerProps;
         Object entries = config.get(CONSUMER);
-        if (!(entries instanceof List<?> list)) {
-            throw new IllegalArgumentException("kafka-flow-adapter config must contain a 'consumer' list");
+        if (!(entries instanceof List<?> list) || list.isEmpty()) {
+            throw new IllegalArgumentException("kafka-flow-adapter config must contain a non-empty 'consumer' list");
         }
-        for (Object item : list) {
-            if (item instanceof Map<?, ?> entry) {
-                String topic = String.valueOf(entry.get(TOPIC));
-                String flowId = String.valueOf(entry.get(FLOW));
-                Consumer<String, byte[]> consumer = newConsumer(bootstrapServers, topic);
-                consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs));
-                log.info("Kafka flow adapter binding: topic '{}' -> flow '{}'", topic, flowId);
+        // Validate the whole config before opening any consumer, so a malformed entry fails fast and
+        // loud (the old behaviour silently skipped it) without leaking half-created consumers.
+        for (int i = 0; i < list.size(); i++) {
+            Object item = list.get(i);
+            if (!(item instanceof Map<?, ?> entry)) {
+                throw new IllegalArgumentException("consumer[" + i + "] must be a map with 'topic' and 'flow'");
             }
+            String topic = text(entry.get(TOPIC));
+            String flowId = text(entry.get(FLOW));
+            if (topic == null) {
+                throw new IllegalArgumentException("consumer[" + i + "] is missing a 'topic'");
+            }
+            if (flowId == null) {
+                throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') is missing a 'flow'");
+            }
+            String groupId = resolveGroupId(entry, topic);
+            Consumer<String, byte[]> consumer = newConsumer(groupId);
+            consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs, retryPolicy));
+            log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}')",
+                    topic, flowId, groupId);
         }
+    }
+
+    /**
+     * Resolve the consumer group id for a binding: the {@code group} value used exactly as given, or
+     * {@code kafka-flow-adapter.<topic>} when omitted. Visible for testing.
+     */
+    static String resolveGroupId(Map<?, ?> entry, String topic) {
+        String group = text(entry.get(GROUP));
+        return group != null ? group : DEFAULT_GROUP_PREFIX + "." + topic;
+    }
+
+    /** @return the trimmed value, or {@code null} if absent/blank. */
+    private static String text(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String s = String.valueOf(value).trim();
+        return s.isEmpty() ? null : s;
     }
 
     public void start() {
         consumers.forEach(KafkaFlowConsumer::start);
     }
 
-    private static Consumer<String, byte[]> newConsumer(String bootstrapServers, String topic) {
+    /** Consumer: the shared template props (serializers + at-least-once pinned) + the binding's group id. */
+    private Consumer<String, byte[]> newConsumer(String groupId) {
         Properties p = new Properties();
-        p.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        p.put(ConsumerConfig.GROUP_ID_CONFIG, "kafka-flow-adapter." + topic);
-        p.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        p.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        p.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        // commit-after-process, one message at a time -> at-least-once delivery (see KafkaFlowConsumer)
-        p.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        p.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
+        p.putAll(consumerProps);
+        p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         return new KafkaConsumer<>(p);
     }
 
