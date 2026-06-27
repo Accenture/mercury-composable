@@ -78,17 +78,18 @@ node publish-inbound.js
 ```
 [2026-06-27T16:30:00.123Z] -> demo.inbound cid=2f1c... traceId=0af7651916cd43dd8448eb211c80319c hello composable kafka
 ```
-**Terminal C (Java app)** logs the receipt and the telemetry **end-to-end path** (same trace id):
+**Terminal C (Java app)** logs the receipt (with the trace-id and the incoming span it chained onto) and
+the telemetry **end-to-end path** (same trace id):
 ```
-... DemoProcessor - Received from demo.inbound (cid=2f1c...): hello composable kafka
-... Telemetry - {trace={... id=0af7651916cd43dd8448eb211c80319c, service=demo.processor ...}}
-... Telemetry - {trace={... parent_span_id=<demo.processor span>, service=simple.kafka.notification ...}}
+... DemoProcessor - Received from demo.inbound (cid=2f1c..., traceId=0af765...319c, incoming span=7bd5f5...): hello composable kafka
+... Telemetry - {trace={... id=0af765...319c, span_id=bd18e9..., service=demo.processor ...}}
+... Telemetry - {trace={... parent_span_id=bd18e9..., span_id=ac1bc0..., service=simple.kafka.notification ...}}
 ... Telemetry - {trace={... service=task.executor ...}, annotations={execution=Run 2 tasks ...,
       tasks=[{name=demo.processor}, {name=simple.kafka.notification}], flow=kafka-demo-flow}}
 ```
-**Terminal D (listener)** receives the processed message, carrying the **same trace id**:
+**Terminal D (listener)** receives the processed message, carrying the **same trace id** but a **new span**:
 ```
-[2026-06-27T16:30:00.456Z] <- demo.outbound[p3] cid=2f1c... traceId=0af7651916cd43dd8448eb211c80319c {"received":"hello composable kafka","processedBy":"kafka-demo","processedAt":"...","traceId":"0af7651916cd43dd8448eb211c80319c"}
+[2026-06-27T16:30:00.456Z] <- demo.outbound[p3] cid=2f1c... traceId=0af765...319c span=ac1bc0... {"received":"hello composable kafka","processedBy":"kafka-demo","processedAt":"2026-06-27T16:30:00.4Z","traceId":"0af765...319c"}
 ```
 
 The `cid` is preserved end-to-end, and the **`traceId` is identical** at the publisher, in the Java

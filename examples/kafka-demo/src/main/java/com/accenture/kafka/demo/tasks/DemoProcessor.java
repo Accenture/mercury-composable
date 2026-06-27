@@ -20,6 +20,7 @@ package com.accenture.kafka.demo.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
@@ -28,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,12 +52,17 @@ public class DemoProcessor implements TypedLambdaFunction<byte[], EventEnvelope>
         String cid = headers.get(KafkaHeaders.CORRELATION_ID);
         String received = new String(input, StandardCharsets.UTF_8);
         PostOffice po = new PostOffice(headers, instance);
-        log.info("Received from demo.inbound (cid={}): {}", cid, received);
+        // incoming span = the upstream span carried in the inbound traceparent (null if none was sent)
+        TraceInfo trace = po.getTrace();
+        String incomingSpan = trace != null ? trace.parentSpanId : null;
+        log.info("Received from demo.inbound (cid={}, traceId={}, incoming span={}): {}",
+                cid, po.getTraceId(), incomingSpan, received);
 
         Map<String, Object> response = new HashMap<>();
         response.put("received", received);
         response.put("processedBy", "kafka-demo");
-        response.put("processedAt", Instant.now().toString());
+        // a java.util.Date is serialized as an ISO-8601 / RFC-3339 string by the built-in mapper
+        response.put("processedAt", new Date());
         response.put("traceId", po.getTraceId());   // continuous across the Kafka hop
         byte[] payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(response);
 
