@@ -1,0 +1,43 @@
+// publish-inbound.js (program-2) - read lines from the console and publish each to demo.inbound.
+// Run in its own terminal:  node publish-inbound.js   (then type a message and press Enter)
+'use strict';
+
+const readline = require('readline');
+const crypto = require('crypto');
+const { Kafka, Partitioners } = require('kafkajs');
+const cfg = require('./config');
+
+(async () => {
+  const kafka = new Kafka({ clientId: 'kafka-demo-publisher', brokers: cfg.brokers });
+  // DefaultPartitioner avoids kafkajs' legacy-partitioner warning and spreads across the 10 partitions
+  const producer = kafka.producer({ createPartitioner: Partitioners.DefaultPartitioner });
+  await producer.connect();
+  console.log(
+    `[${cfg.ts()}] connected. Type a message + Enter to publish to '${cfg.inboundTopic}' (Ctrl-C to quit).`
+  );
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: '> ' });
+  rl.prompt();
+
+  rl.on('line', async (line) => {
+    const text = line.trim();
+    if (text.length > 0) {
+      const cid = crypto.randomUUID();
+      try {
+        await producer.send({ topic: cfg.inboundTopic, messages: [{ value: text, headers: { cid } }] });
+        console.log(`[${cfg.ts()}] -> ${cfg.inboundTopic} cid=${cid} ${text}`);
+      } catch (e) {
+        console.error(`[${cfg.ts()}] publish failed:`, e.message);
+      }
+    }
+    rl.prompt();
+  });
+
+  rl.on('close', async () => {
+    await producer.disconnect();
+    process.exit(0);
+  });
+})().catch((e) => {
+  console.error(`[${cfg.ts()}] error:`, e.message);
+  process.exit(1);
+});

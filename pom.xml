@@ -30,10 +30,12 @@
 
         <!-- connnector implementations -->
         <module>connectors/adapters/kafka/kafka-connector</module>
-        <!-- Convenient kafka standalone server for develoopment and testing -->
-        <module>connectors/adapters/kafka/kafka-standalone</module>
         <!-- Executables for cloud specific presence monitors -->
         <module>connectors/adapters/kafka/kafka-presence</module>
+
+        <!-- Convenient standalone dev servers (no Docker required) -->
+        <module>helpers/kafka-standalone</module>
+        <module>helpers/redis-standalone</module>
 
         <!-- Executables for application examples -->
         <module>examples/lambda-example</module>
@@ -43,6 +45,7 @@
         <module>examples/kotlin-example</module>
         <module>examples/scheduler-example</module>
         <module>examples/minigraph-playground</module>
+        <module>examples/kafka-demo</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>

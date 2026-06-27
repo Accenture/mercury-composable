@@ -33,9 +33,10 @@ system/
 extensions/reactive-postgres   ← optional add-ons (R2DBC, graph engine, playground)
 connectors/                ← Kafka pub/sub adapters + presence/service monitoring
   core/{cloud-connector, service-monitor}
-  adapters/kafka/{kafka-connector, kafka-standalone, kafka-presence}
+  adapters/kafka/{kafka-connector, kafka-presence}
+helpers/                   ← standalone dev servers, no Docker (kafka-standalone, redis-standalone)
 examples/                  ← reference apps; composable-example is the primary demo
-  (lambda, rest-spring-3/-4, composable, kotlin, scheduler, minigraph)
+  (lambda, rest-spring-3/-4, composable, kotlin, scheduler, minigraph, kafka-demo)
 benchmark/benchmark-client ← benchmark tests
 docs/ (guides/, arch-decisions/)  ← docs (mkdocs `docs_dir: docs`);
                                   arch-decisions/ADR.md = the ADR ledger (holds durable design rationale)

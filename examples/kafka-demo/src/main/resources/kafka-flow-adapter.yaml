@@ -1,0 +1,9 @@
+#
+# Kafka Flow Adapter configuration for the worked example: bind the inbound demo topic to the demo flow.
+# The adapter starts one consumer thread for the topic and routes every message into 'kafka-demo-flow'.
+#
+consumer:
+  - topic: 'demo.inbound'
+    flow: 'kafka-demo-flow'
+    group: '${KAFKA_DEMO_CONSUMER_GROUP:kafka-demo-group}'
+    # partition: 0                    # optional; pins one partition (manual assign, no group rebalancing)

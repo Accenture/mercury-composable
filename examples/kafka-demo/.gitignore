@@ -1,0 +1,14 @@
+*.class
+.DS_STORE
+*.jar
+*.war
+*.ear
+hs_err_pid*
+target
+logs
+.project
+.classpath
+.settings
+.idea
+.history
+*.iml

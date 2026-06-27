@@ -1,0 +1,21 @@
+*.class
+.DS_STORE
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# virtual machine crash logs
+hs_err_pid*
+
+target
+logs
+.project
+.classpath
+.settings
+
+# IntelliJ specific ignores
+.idea
+.history
+*.iml
