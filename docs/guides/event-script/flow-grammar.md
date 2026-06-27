@@ -66,7 +66,7 @@ The eight values `execution:` may take (authoritative set —
 | `execution` | `next` | also requires | forbids | does |
 |---|---|---|---|---|
 | `sequential` | exactly 1 | — | — | run, then go to the one next task |
-| `decision` | ≥ 2 | output maps `-> decision` | `join`,`pipeline`,`source` | branch on the `decision` value (`false`→next[0]/`true`→next[1]; or numeric 1-indexed) |
+| `decision` | ≥ 2 | output maps `-> decision` | `join`,`pipeline`,`source` | branch on the `decision` value (`true`→next[0]/`false`→next[1]; or numeric 1-indexed, multi-way) |
 | `parallel` | ≥ 2 | — | `join` | fan out to all next tasks concurrently |
 | `fork` | ≥ 1 | `join` | `pipeline` | run next tasks concurrently, resume at `join`; optional `source` to iterate |
 | `pipeline` | exactly 1 | `pipeline` list | `join` | run the pipeline tasks in order (optional `loop`), then the one next task |

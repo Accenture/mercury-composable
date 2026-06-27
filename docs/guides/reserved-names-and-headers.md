@@ -62,6 +62,15 @@ to avoid breaking the system unintentionally.
 | run.scheduled.job            | Scheduled job executor                | Simple Scheduler |
 | init.service.monitor.*       | reserved for event stream startup     | Service monitor  |
 | completion.service.monitor.* | reserved for event stream clean up    | Service monitor  |
+| simple.kafka.notification    | Publish an event to a Kafka topic (drop-n-forget / fail-fast) | minimalist-kafka |
+| sync.prepare                 | Sync-over-async facade: register the return route + serialize the request | sync-over-async  |
+| sync.await                   | Sync-over-async facade: block for the asynchronous response   | sync-over-async  |
+
+Routes from the last three rows belong to **opt-in extension modules** (`minimalist-kafka`,
+`sync-over-async`): they are reserved only when that module is on the classpath. `sync.prepare` and
+`sync.await` are the ready-made facade tasks an application wires into its own `sync-to-async` flow (see
+[Event Script Syntax](event-script/syntax.md)); like every reserved route, do not register your own
+function under these names.
 
 ## Optional user defined functions
 
