@@ -135,6 +135,30 @@
   advanced opt-in for specific use cases (cross-application RPC, leader selection, pod-aware broadcast).
   This preference must be front-and-center in documentation and AI guides. (ADR-0006)
   <!-- id: kafka-mesh-opt-in | created: 2026-06-23 | last_used: 2026-06-24 | uses: 2 | tier: core -->
+- **Event Script config is preferred over code for orchestration.** When a step is orchestration —
+  sequencing functions, branching, failure handling, moving data — express it as Event Script YAML
+  (tasks, `execution` types, I/O data mapping, exception handler), not imperative code; code is reserved
+  for the unit of work (the function body). Two reasons: it **communicates intent** (the flow file is a
+  legible statement of the event flow — sequence, topics, fail-fast path, branches — without reading
+  Java) and it **manages dependencies** (the engine enforces control- and data-flow wiring, functions
+  stay decoupled per `functions-decoupled-routes`, reusable blocks like `simple.kafka.notification` are
+  composed by reference not duplicated). Bounded by `one-atom-four-roles`: not all code becomes YAML — an
+  intrinsically in-function concern (e.g. a blocking rendezvous that must wrap a publish) stays in code.
+  Routing vocabulary to learn: `decision` selects a `next` entry by value (`true`=`1`=first, `false`=`2`=
+  second; integer is 1-based → multi-way switch — engine `TaskExecutor.handleDecisionTask`, intentional;
+  several *derived* docs had it inverted and were corrected 2026-06-27), and `byte[]` rides through
+  `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
+  Claude Code). (ADR-0007)
+  <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
+- **Code-style conventions have a documentation home.** Soft, evolving code-organization/naming
+  recommendations live in `docs/guides/code-conventions.md` — a new page, sibling to
+  `documentation-conventions.md` in the nav meta area, linked from `llms.txt` (Reference). Altitude tier:
+  **below** ADRs (durable decisions) and `methodology.md` (the 4 principles) — if breaking a guideline
+  breaks the system, promote it to an ADR instead. Seeded with: group Event Script flow-task functions
+  under a `tasks` package (e.g. `org.platformlambda.tasks`) while runtime/coordinator classes stay in the
+  feature package and config in `support`/`config`; plus route-naming discipline and function granularity.
+  Add future code-style recs here. Established 2026-06-27 (Eric + Claude Code).
+  <!-- id: code-conventions-home | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: active -->
 - **The built-in HTTP flow adapter (`HttpToFlow` / `http.flow.adapter`) is the only one in `event-script-engine`;
   a minimalist Kafka pair now ships as the `system/minimalist-kafka` library** (added 2026-06-26, commit `c8824519`):
   `KafkaFlowAdapter` (inbound, routes a topic into an Event Script flow) + `SimpleKafkaNotification` (outbound,
