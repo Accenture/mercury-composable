@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-27T01:24:01Z | agent: Claude Code
+- **last_session:** 2026-06-27T02:00:39Z | agent: Claude Code
 - **last_review:** 2026-06-27 | through 2026-06-27-012401.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -214,6 +214,17 @@
   `Properties` (adds the per-topic group.id) instead of a bootstrap string. Test-config location keys listed
   per [[pref-explicit-test-config]]; shares the producer with [[kafka-flow-failure-dlq]] (the DLQ writer).
   <!-- id: kafka-client-config-templates | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: working | origin: 2026-06-27-005108.md -->
+- **Kafka consumer partition pinning = opt-in per binding (Eric, 2026-06-27).** A `kafka-flow-adapter.yaml`
+  consumer entry may include an optional `partition:` field. When present, `KafkaFlowConsumer` manually
+  **`assign`s** that single `TopicPartition` instead of group-managed **`subscribe`** — bypassing consumer-group
+  rebalancing so the pinned consumer reads exactly that partition; offsets still commit under the configured
+  group. When absent, behaviour is unchanged (subscribe). The operator owns the deployment model (one consumer
+  per partition, or each pod pinning a distinct partition via `partition: ${POD_PARTITION}` — the value is
+  `${ENV_VAR:default}`-substitutable like the rest of the YAML). Parsed by `KafkaFlowAdapter.parsePartition`
+  (non-negative int, else `IllegalArgumentException`); applied via `KafkaFlowConsumer.subscribeOrAssign`
+  (both seams unit-tested with `MockConsumer`/maps, no broker). Closes the "consumer partition-pinning"
+  post-MVP item in [[thread-redis-kafka-rpc]]. Extends [[kafka-client-config-templates]].
+  <!-- id: kafka-partition-pinning | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: working | origin: 2026-06-27-020039.md -->
 - **W3C OpenTelemetry distributed tracing** (`feature/open-telemetry` branch). Each function gets a 16-hex
   `span_id` + `parent_span_id` propagated end-to-end: PostOffice/WorkerHandler stamp+emit them; Event Script
   `TaskExecutor` threads the parent span via a `TaskReference` anchor (**virtual-thread-safe, no ThreadLocal**);
@@ -431,9 +442,11 @@
   see `thread-minimalist-kafka-adapter` (now fulfilled): `system/minimalist-kafka` (`org.platformlambda.mini.kafka`,
   depends on `event-script-engine`, 87% cov, standalone embedded-Kafka e2e); `sync-over-async` now depends on it
   and is purely the Redis return-route engine (96% cov, 20 tests). Both green in the reactor on JDK 21.
-  **Remaining (post-MVP):** ~~Redis coordinator config-driven init~~ **done 2026-06-27** (see
-  [[soa-config-driven-init]]); still open — consumer partition-pinning, 503 guardrails/metrics, two-JVM test,
-  module docs/README; and Gradle build (`thread-add-gradle-build`).
+  **Remaining (post-MVP):** ~~Redis coordinator config-driven init~~ **done** ([[soa-config-driven-init]]),
+  ~~consumer partition-pinning~~ **done 2026-06-27** ([[kafka-partition-pinning]]); still open — 503
+  guardrails/metrics, two-JVM test, module docs/README; and Gradle build (`thread-add-gradle-build`).
+  Also done this sprint: externalized Kafka client config ([[kafka-client-config-templates]]), configurable
+  per-binding consumer group, and the Copilot-review hardening (incl. [[kafka-flow-failure-dlq]]).
   **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
   (`draft-design-specs/kafka-sync-over-async-review.md`) via `apply-critique` — 6 fixes across both modules:
   mk#1 producer failure-logging callback (still drop-n-forget), mk#2 consumer retry→DLQ (`kafka-flow-failure-dlq`),
