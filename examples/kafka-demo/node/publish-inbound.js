@@ -1,11 +1,12 @@
 // publish-inbound.js (program-2) - read lines from the console and publish each to demo.inbound.
 // Run in its own terminal:  node publish-inbound.js   (then type a message and press Enter)
-'use strict';
 
-const readline = require('readline');
-const crypto = require('crypto');
-const { Kafka, Partitioners } = require('kafkajs');
-const cfg = require('./config');
+import readline from 'node:readline';
+import { randomUUID } from 'node:crypto';
+import kafkajs from 'kafkajs';
+import cfg from './config.js';
+
+const { Kafka, Partitioners } = kafkajs;
 
 (async () => {
   const kafka = new Kafka({ clientId: 'kafka-demo-publisher', brokers: cfg.brokers });
@@ -22,7 +23,7 @@ const cfg = require('./config');
   rl.on('line', async (line) => {
     const text = line.trim();
     if (text.length > 0) {
-      const cid = crypto.randomUUID();
+      const cid = randomUUID();
       try {
         await producer.send({ topic: cfg.inboundTopic, messages: [{ value: text, headers: { cid } }] });
         console.log(`[${cfg.ts()}] -> ${cfg.inboundTopic} cid=${cid} ${text}`);

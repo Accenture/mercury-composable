@@ -1,9 +1,10 @@
 // create-topics.js - administratively create the demo topics (10 partitions each) on the local broker.
 // Run once after starting kafka-standalone:  node create-topics.js
-'use strict';
 
-const { Kafka } = require('kafkajs');
-const cfg = require('./config');
+import kafkajs from 'kafkajs';
+import cfg from './config.js';
+
+const { Kafka } = kafkajs;
 
 (async () => {
   const kafka = new Kafka({ clientId: 'kafka-demo-admin', brokers: cfg.brokers });

@@ -1,9 +1,10 @@
 // listen-outbound.js (program-1) - listen on demo.outbound and log every message the Java app publishes.
 // Run in its own terminal:  node listen-outbound.js
-'use strict';
 
-const { Kafka } = require('kafkajs');
-const cfg = require('./config');
+import kafkajs from 'kafkajs';
+import cfg from './config.js';
+
+const { Kafka } = kafkajs;
 
 (async () => {
   const kafka = new Kafka({ clientId: 'kafka-demo-listener', brokers: cfg.brokers });

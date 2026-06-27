@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Node helpers for the minimalist-kafka worked example (topic admin, listener, publisher)",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "create-topics": "node create-topics.js",
     "listen": "node listen-outbound.js",
