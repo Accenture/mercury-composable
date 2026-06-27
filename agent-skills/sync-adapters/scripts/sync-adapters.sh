@@ -3,7 +3,9 @@
 # Part of agent-memory (provenance: agent-memory-builtin). Pure bash + coreutils — no runtime to install.
 #
 # Idempotent. Writes ONLY the gitignored vendor adapter dirs (.claude/skills, .gemini/commands,
-# .cursor/rules, .kiro/skills, .github/skills); never edits agent-skills/ or any committed file.
+# .cursor/rules, .kiro/skills, .github/skills, .agents/skills); never edits agent-skills/ or any
+# committed file. (.agents/skills is the Agent Skills standard dir read by Google Antigravity 'agy',
+# the Gemini CLI successor — it ignores .gemini/commands.)
 # Prunes only adapters THIS tool generated (signature-guarded). Run from the repo root. --dry-run previews.
 #
 # Byte-for-byte equivalent to sync-adapters.mjs / sync-adapters.py (shared behavior = the contract).
@@ -52,15 +54,16 @@ if [ -d "$SRC" ]; then
     LIVE="$LIVE$name $dir "
     if [ "$DRY" -eq 0 ]; then
       mkdir -p "$ROOT/.claude/skills/$name" "$ROOT/.gemini/commands" "$ROOT/.cursor/rules" \
-               "$ROOT/.kiro/skills/$name" "$ROOT/.github/skills/$name"
+               "$ROOT/.kiro/skills/$name" "$ROOT/.github/skills/$name" "$ROOT/.agents/skills/$name"
     fi
     w_claude "$ROOT/.claude/skills/$name/SKILL.md" "$name" "$desc"
     w_gemini "$ROOT/.gemini/commands/$name.toml" "$name" "$desc"
     w_cursor "$ROOT/.cursor/rules/$name.mdc" "$name" "$desc"
     w_claude "$ROOT/.kiro/skills/$name/SKILL.md" "$name" "$desc"
     w_claude "$ROOT/.github/skills/$name/SKILL.md" "$name" "$desc"
+    w_claude "$ROOT/.agents/skills/$name/SKILL.md" "$name" "$desc"
     skills=$((skills + 1))
-    adapters=$((adapters + 5))
+    adapters=$((adapters + 6))
   done
 fi
 
@@ -97,6 +100,7 @@ prune_files() { # $1=base $2=ext $3=signature
 prune_dirs ".claude/skills" "$SIG"
 prune_dirs ".kiro/skills" "$SIG"
 prune_dirs ".github/skills" "$SIG"
+prune_dirs ".agents/skills" "$SIG"
 prune_files ".gemini/commands" ".toml" "$GEM_SIG"
 prune_files ".cursor/rules" ".mdc" "$CUR_SIG"
 

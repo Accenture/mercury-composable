@@ -1,6 +1,6 @@
 ---
 name: sync-adapters
-description: Regenerate the per-vendor skill adapters from the committed agent-skills/ layer. Run after authoring or editing a skill, or after a clone or pull, so Claude, Gemini, Cursor, Kiro, and GitHub Copilot each get a current native adapter.
+description: Regenerate the per-vendor skill adapters from the committed agent-skills/ layer. Run after authoring or editing a skill, or after a clone or pull, so Claude, Gemini, Cursor, Kiro, GitHub Copilot, and Google Antigravity each get a current native adapter.
 provenance: agent-memory-builtin
 ---
 
@@ -19,10 +19,13 @@ node agent-skills/sync-adapters/scripts/sync-adapters.mjs
 python3 agent-skills/sync-adapters/scripts/sync-adapters.py
 ```
 
-For each `agent-skills/<name>/SKILL.md` it (re)writes all **five** vendor adapters —
+For each `agent-skills/<name>/SKILL.md` it (re)writes all **six** vendor adapters —
 `.claude/skills/<name>/SKILL.md`, `.gemini/commands/<name>.toml`, `.cursor/rules/<name>.mdc`,
-`.kiro/skills/<name>/SKILL.md`, `.github/skills/<name>/SKILL.md` — and **prunes** orphaned adapters it
-previously generated (identified by their pointer signature; never touches hand-authored vendor files).
+`.kiro/skills/<name>/SKILL.md`, `.github/skills/<name>/SKILL.md`, `.agents/skills/<name>/SKILL.md` — and
+**prunes** orphaned adapters it previously generated (identified by their pointer signature; never touches
+hand-authored vendor files). The `.agents/skills/` adapter is the Agent Skills standard dir read by Google
+Antigravity (`agy`, the Gemini CLI successor) — Antigravity ignores `.gemini/commands`, so this is what
+makes `/<name>` work there.
 
 It is **idempotent** and writes **only the gitignored adapter dirs** — never `agent-skills/`, never a
 committed file. Pass `--dry-run` to preview. The neutral `agent-skills/<name>/SKILL.md` is always the

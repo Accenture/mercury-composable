@@ -42,6 +42,7 @@ project
 .cursor/
 .gemini/
 .github/skills/
+.agents/
 review-scratch/
 __pycache__/
 *.pyc
