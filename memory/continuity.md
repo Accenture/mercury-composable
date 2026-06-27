@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-27T02:00:39Z | agent: Claude Code
+- **last_session:** 2026-06-27T02:22:32Z | agent: Claude Code
 - **last_review:** 2026-06-27 | through 2026-06-27-012401.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -225,6 +225,19 @@
   (both seams unit-tested with `MockConsumer`/maps, no broker). Closes the "consumer partition-pinning"
   post-MVP item in [[thread-redis-kafka-rpc]]. Extends [[kafka-client-config-templates]].
   <!-- id: kafka-partition-pinning | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: working | origin: 2026-06-27-020039.md -->
+- **minimalist-kafka + sync-over-async are documented in mkdocs (2026-06-27).** Two new published guides under
+  **Operate & integrate**: `docs/guides/kafka-flow-adapter.md` (the library — adapter YAML schema
+  topic/flow/group/partition, externalized producer/consumer client templates, consumer group, partition
+  pinning, retry→DLQ, `simple.kafka.notification`, trace continuity) and `docs/guides/sync-over-async.md` (the
+  cross-pod Redis return-route pattern, reliability cornerstones, when-to-use vs the service mesh). All new
+  config keys added to `configuration-reference.md` under `#kafka-flow-adapter` + `#sync-over-async`. Nav
+  (`mkdocs.yml`) + `docs/llms.txt` updated; conforms to doc canon (frontmatter/At-a-glance/See-also, banned
+  terms). **Local mkdocs validation:** mkdocs is **not** a repo dependency (CI does `pip install mkdocs`); run
+  `uv run --with mkdocs mkdocs build --strict` (theme=readthedocs, plugins=search — both built-in; no extras).
+  Validated: doc-canon OK + `--strict` clean. Closes the "module docs" post-MVP item in [[thread-redis-kafka-rpc]].
+  Documents [[kafka-client-config-templates]], [[kafka-flow-failure-dlq]], [[kafka-partition-pinning]],
+  [[soa-config-driven-init]].
+  <!-- id: kafka-soa-docs | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: working | origin: 2026-06-27-022232.md -->
 - **W3C OpenTelemetry distributed tracing** (`feature/open-telemetry` branch). Each function gets a 16-hex
   `span_id` + `parent_span_id` propagated end-to-end: PostOffice/WorkerHandler stamp+emit them; Event Script
   `TaskExecutor` threads the parent span via a `TaskReference` anchor (**virtual-thread-safe, no ThreadLocal**);
@@ -443,8 +456,9 @@
   depends on `event-script-engine`, 87% cov, standalone embedded-Kafka e2e); `sync-over-async` now depends on it
   and is purely the Redis return-route engine (96% cov, 20 tests). Both green in the reactor on JDK 21.
   **Remaining (post-MVP):** ~~Redis coordinator config-driven init~~ **done** ([[soa-config-driven-init]]),
-  ~~consumer partition-pinning~~ **done 2026-06-27** ([[kafka-partition-pinning]]); still open — 503
-  guardrails/metrics, two-JVM test, module docs/README; and Gradle build (`thread-add-gradle-build`).
+  ~~consumer partition-pinning~~ **done 2026-06-27** ([[kafka-partition-pinning]]), ~~module docs~~ **done
+  2026-06-27** (mkdocs guides — [[kafka-soa-docs]]); still open — 503 guardrails/metrics, two-JVM test,
+  per-module README (code-level); and Gradle build (`thread-add-gradle-build`).
   Also done this sprint: externalized Kafka client config ([[kafka-client-config-templates]]), configurable
   per-binding consumer group, and the Copilot-review hardening (incl. [[kafka-flow-failure-dlq]]).
   **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
