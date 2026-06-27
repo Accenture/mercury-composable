@@ -258,6 +258,59 @@ is on the classpath.
 
 ---
 
+## Kafka Flow Adapter (`minimalist-kafka` library) {#kafka-flow-adapter}
+
+The opt-in `minimalist-kafka` library routes Kafka topics into Event Script flows and publishes events to
+Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound adapter starts only when
+`yaml.kafka.flow.adapter` is set; the outbound `simple.kafka.notification` function registers automatically.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `yaml.kafka.flow.adapter` | `String` (path) | — | Location of the `kafka-flow-adapter.yaml` binding file (`topic -> flow`). Unset = inbound adapter disabled. |
+| `kafka.producer.properties` | `String` (comma-sep paths) | `file:/tmp/config/kafka-producer.properties, classpath:/kafka-producer.properties` | Producer client config template location(s); file path falls back to classpath. |
+| `kafka.consumer.properties` | `String` (comma-sep paths) | `file:/tmp/config/kafka-consumer.properties, classpath:/kafka-consumer.properties` | Consumer client config template location(s); file path falls back to classpath. |
+| `kafka.flow.timeout.ms` | `long` (ms) | `30000` | Per-message flow processing timeout; also bounds the confirmed dead-letter write. |
+| `kafka.flow.max.retries` | `int` | `3` | Retry attempts on a flow-processing failure before dead-lettering. |
+| `kafka.flow.retry.backoff.ms` | `long` (ms) | `500` | Pause between retry attempts. |
+| `kafka.flow.dlq.suffix` | `String` | `.dlq` | Suffix appended to a source topic to form its per-topic dead-letter topic (`<topic><suffix>`). A blank value falls back to `.dlq`. |
+
+The Kafka **connection and security** settings (`bootstrap.servers`, `security.protocol`, `sasl.*`, `ssl.*`,
+`acks`, `auto.offset.reset`) live in the `kafka-producer.properties` / `kafka-consumer.properties` template
+files — not as `application.properties` keys — so any enterprise installation is configured by editing or
+overriding those templates. All template values support `${ENV_VAR:default}` substitution; `bootstrap.servers`
+defaults to `${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}`. The library pins the (de)serializers and the
+consumer's `enable.auto.commit=false` / `max.poll.records=1`; everything else is template-owned.
+
+Per-binding fields in `kafka-flow-adapter.yaml` (all `${ENV_VAR:default}`-substitutable): `topic` (required),
+`flow` (required), `group` (optional consumer group, used verbatim; default `kafka-flow-adapter.<topic>`), and
+`partition` (optional; pins one partition via manual assignment).
+
+---
+
+## Sync-over-Async (`sync-over-async` extension) {#sync-over-async}
+
+The opt-in `sync-over-async` extension exposes a synchronous REST request/response over an asynchronous,
+cross-pod Kafka backend using a Redis return route. See the [Sync-over-Async guide](sync-over-async.md). It is
+off by default and starts (eagerly connecting to Redis) only when `sync.over.async.enabled=true`.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `sync.over.async.enabled` | `boolean` | `false` | Master switch. `true` starts the Redis return-route coordinator at boot. |
+| `redis.host` | `String` | `127.0.0.1` | Redis host. |
+| `redis.port` | `int` | `6379` | Redis port. |
+| `redis.password` | `String` | — (blank) | Auth password; blank = no auth. Source from the environment (`${REDIS_PASSWORD}`). |
+| `redis.ssl` | `boolean` | `false` | Use TLS (`rediss://`). |
+| `redis.database` | `int` | `0` | Logical Redis database index. |
+| `redis.timeout.ms` | `long` (ms) | `5000` | Default Redis command timeout. |
+| `sync.return.channel.prefix` | `String` | `svc-return` | Prefix for the per-pod Pub/Sub return channel. |
+| `sync.route.ttl.seconds` | `long` (s) | `90` | TTL for the return-route key; should cover the REST timeout plus a buffer. |
+| `sync.response.ttl.seconds` | `long` (s) | `30` | TTL for the response key (short rendezvous window). |
+| `sync.max.pending.requests` | `int` | `10000` | Per-pod ceiling on in-flight synchronous requests (backpressure). |
+
+All `redis.*` and `sync.*` values support `${ENV_VAR:default}` substitution.
+
+---
+
 ## Serialization & Content Types
 
 | Key | Type | Default | Description |

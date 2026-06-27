@@ -43,6 +43,8 @@ nav:
     - Observability: guides/observability.md
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
+    - Kafka Flow Adapter: guides/kafka-flow-adapter.md
+    - Sync-over-Async: guides/sync-over-async.md
     - Minimalist Service Mesh: guides/service-mesh.md
 
   - Reference:
