@@ -18,6 +18,7 @@
 
 package org.platformlambda.system;
 
+import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.embedded.RedisServer;
@@ -37,6 +38,10 @@ import java.io.IOException;
  * matching the cloud-native pattern used by {@code kafka-standalone} (working files under {@code /tmp},
  * wiped on reboot). The same directory is used by the sync-over-async test suite, so both exercise Redis
  * against a known, transient store.</p>
+ *
+ * <p>Like {@code kafka-standalone}, the data directory is <b>wiped and recreated before each start</b>, so
+ * a restart begins from a clean slate with no residual records from a previous run - the standalone server
+ * is for development and testing, where that is the intended behavior.</p>
  */
 public class EmbeddedRedis {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedRedis.class);
@@ -54,9 +59,12 @@ public class EmbeddedRedis {
     /** Start the embedded redis-server subprocess and register a shutdown hook to stop it cleanly. */
     public void start() {
         try {
+            // wipe the transient store and recreate it, so a restart begins from a clean slate
             File dir = new File(DATA_DIR);
-            if (!dir.exists() && dir.mkdirs()) {
-                log.info("Created Redis data directory {}", DATA_DIR);
+            Utility.getInstance().cleanupDir(dir);
+            if (!dir.mkdirs()) {
+                log.error("Unable to create Redis data directory {}", DATA_DIR);
+                System.exit(-1);
             }
             redisServer = RedisServer.newRedisServer()
                     .port(port)

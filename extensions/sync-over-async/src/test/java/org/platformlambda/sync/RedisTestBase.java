@@ -21,6 +21,7 @@ package org.platformlambda.sync;
 import io.lettuce.core.RedisClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.platformlambda.core.util.Utility;
 import redis.embedded.RedisServer;
 
 import java.io.File;
@@ -34,9 +35,10 @@ import java.net.ServerSocket;
  * Docker dependency.
  *
  * <p>The working directory is pinned to {@code /tmp/soa-redis} - the same transient {@code /tmp} location
- * the {@code redis-standalone} helper uses (cloud-native pattern). Persistence is disabled
- * ({@code save ""} + {@code appendonly no}) so each test class starts from a clean, isolated slate with no
- * RDB carried over between runs.</p>
+ * the {@code redis-standalone} helper uses (cloud-native pattern). It is <b>wiped and recreated before the
+ * server starts</b> (as {@code kafka-standalone} does with its log dir), and persistence is disabled
+ * ({@code save ""} + {@code appendonly no}), so each test class starts from a clean, isolated slate with no
+ * residual records carried over between runs.</p>
  */
 public abstract class RedisTestBase {
 
@@ -50,10 +52,10 @@ public abstract class RedisTestBase {
     @BeforeAll
     static void startRedis() throws IOException {
         redisPort = freePort();
+        // wipe the transient store and recreate it, so each run begins from a clean slate
         File dir = new File(REDIS_DATA_DIR);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        Utility.getInstance().cleanupDir(dir);
+        dir.mkdirs();
         redisServer = RedisServer.newRedisServer()
                 .port(redisPort)
                 .setting("dir " + REDIS_DATA_DIR)   // transient /tmp working dir
