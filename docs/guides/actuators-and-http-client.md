@@ -430,8 +430,18 @@ For other flow adapters, you may use different set of key-values.
 
 ## Writing your own Flow Adapters
 
-Please browse the csv-flow-adapter and csv-flow-demo subprojects in the examples project folder for hints in
-writing your own flow adapters to address your specific requirements.
+A flow adapter bridges an external source (an HTTP request, a Kafka topic, a file, a queue, …) into an
+Event Script flow: it receives the input, builds the flow dataset (headers + body, as shown above), and
+invokes the target flow by its id. Two adapters in this codebase are worked references that cover both the
+synchronous and the asynchronous shapes:
+
+- the **built-in HTTP flow adapter** (`http.flow.adapter`) — the synchronous request/response path; and
+- the **Kafka flow adapter** in the `minimalist-kafka` library — the asynchronous, topic-driven path.
+  Its `KafkaFlowAdapter` is a minimal, complete template to model your own adapter on: a source loop that
+  maps each event to a dataset and dispatches it to a flow. See the
+  [Kafka Flow Adapter](kafka-flow-adapter.md) guide and the runnable `examples/kafka-demo` worked example.
+
+Use whichever is closer to your source as the starting point.
 
 ## Application log format
 

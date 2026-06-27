@@ -173,6 +173,14 @@
   validated live end-to-end. A **sync-over-async worked example is the planned next step**. Worked examples
   are how this project teaches pattern adoption (Eric). On `feature/sync-over-async` (PR #124).
   <!-- id: helpers-and-worked-examples | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: active -->
+- **Examples are kept deliberately minimal (avoid drift).** Bare-minimum examples on principle (Eric:
+  "minimalist is our design principle; too many examples drift thinking"). Retired `csv-flow-adapter` +
+  `csv-flow-demo` (2026-06-27, were not in the reactor + drifting): the built-in **HTTP flow adapter**
+  (sync) + minimalist-kafka's **`KafkaFlowAdapter`** (async) sufficiently demonstrate the flow-adapter
+  pattern, and `KafkaFlowAdapter` is the reference for writing a custom adapter (the "Writing your own Flow
+  Adapters" section of `actuators-and-http-client.md` now points there). Don't add a new example without a
+  clear, non-redundant teaching purpose. Relates to [[helpers-and-worked-examples]].
+  <!-- id: minimalist-examples | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: active -->
 - **The built-in HTTP flow adapter (`HttpToFlow` / `http.flow.adapter`) is the only one in `event-script-engine`;
   a minimalist Kafka pair now ships as the `system/minimalist-kafka` library** (added 2026-06-26, commit `c8824519`):
   `KafkaFlowAdapter` (inbound, routes a topic into an Event Script flow) + `SimpleKafkaNotification` (outbound,
