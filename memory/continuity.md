@@ -59,6 +59,11 @@
   `List<PoJo>` at the function boundary in an Event Script flow. Layer 1 (Platform Core) uses the
   same `inputPojoClass` for external JSON-list ingestion. (ADR-0003)
   <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-24 | uses: 8 | tier: core -->
+- Functions execute on **Java 21 virtual threads** over the Vert.x in-memory event bus; a synchronous
+  PostOffice RPC (`po.request`) suspends the virtual thread and releases its carrier, so sequential
+  blocking-style code performs on par with reactive — and a function may still return `Mono`/`Flux`.
+  This is why e.g. 250 instances of a blocking `sync.await` are cheap. (ADR-0002)
+  <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
 

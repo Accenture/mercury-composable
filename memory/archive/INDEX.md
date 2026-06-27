@@ -7,7 +7,6 @@
 
 - thread-ci-docs-build — CI step running `mkdocs build --strict` + grammar drift check (shipped) — swept (completed thread) — 2026-Q2.md
 - stack-docs-mkdocs — docs site built with mkdocs (`docs_dir: docs`) — faded — 2026-Q2.md
-- virtual-threads-rpc — Java 21 virtual threads; sync PostOffice RPC ≈ reactive (ADR-0002) — faded — 2026-Q2.md
 - pom-version-source-of-truth — `pom.xml` is the version source of truth — faded — 2026-Q2.md
 - docs-dir-layout — docs under `docs/` keeping `guides/` subfolder for stable URLs — faded — 2026-Q2.md
 - docs-rewrite-architecture — layered Parts I–VI docs re-architecture (Design) — faded — 2026-Q2.md
