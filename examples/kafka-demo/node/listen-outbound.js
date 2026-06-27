@@ -15,8 +15,13 @@ const { Kafka } = kafkajs;
 
   await consumer.run({
     eachMessage: async ({ partition, message }) => {
-      const cid = message.headers && message.headers.cid ? message.headers.cid.toString() : '(none)';
-      console.log(`[${cfg.ts()}] <- ${cfg.outboundTopic}[p${partition}] cid=${cid} ${message.value.toString()}`);
+      const h = message.headers || {};
+      const cid = h.cid ? h.cid.toString() : '(none)';
+      // simple.kafka.notification stamps a fresh traceparent whose trace-id is the SAME one the publisher
+      // sent (continuous across both Kafka hops); the span-id differs (a new hop). Show the trace-id so the
+      // continuity is visible: it should match the publisher's traceId and the Java telemetry trace id.
+      const traceId = h.traceparent ? h.traceparent.toString().split('-')[1] : '(none)';
+      console.log(`[${cfg.ts()}] <- ${cfg.outboundTopic}[p${partition}] cid=${cid} traceId=${traceId} ${message.value.toString()}`);
     },
   });
 })().catch((e) => {

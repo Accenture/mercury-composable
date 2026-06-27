@@ -74,24 +74,27 @@ node publish-inbound.js
 
 ## What you should see
 
-**Terminal E (publisher):**
+**Terminal E (publisher)** sends a `traceparent`, so it prints the `traceId` it started:
 ```
-[2026-06-27T16:30:00.123Z] -> demo.inbound cid=2f1c... hello composable kafka
+[2026-06-27T16:30:00.123Z] -> demo.inbound cid=2f1c... traceId=0af7651916cd43dd8448eb211c80319c hello composable kafka
 ```
-**Terminal C (Java app)** logs the receipt and the telemetry **end-to-end path**:
+**Terminal C (Java app)** logs the receipt and the telemetry **end-to-end path** (same trace id):
 ```
 ... DemoProcessor - Received from demo.inbound (cid=2f1c...): hello composable kafka
+... Telemetry - {trace={... id=0af7651916cd43dd8448eb211c80319c, service=demo.processor ...}}
+... Telemetry - {trace={... parent_span_id=<demo.processor span>, service=simple.kafka.notification ...}}
 ... Telemetry - {trace={... service=task.executor ...}, annotations={execution=Run 2 tasks ...,
       tasks=[{name=demo.processor}, {name=simple.kafka.notification}], flow=kafka-demo-flow}}
 ```
-**Terminal D (listener)** receives the processed message:
+**Terminal D (listener)** receives the processed message, carrying the **same trace id**:
 ```
-[2026-06-27T16:30:00.456Z] <- demo.outbound[p3] cid=2f1c... {"received":"hello composable kafka",
-      "processedBy":"kafka-demo","processedAt":"2026-06-27T16:30:00.4Z","traceId":"...."}
+[2026-06-27T16:30:00.456Z] <- demo.outbound[p3] cid=2f1c... traceId=0af7651916cd43dd8448eb211c80319c {"received":"hello composable kafka","processedBy":"kafka-demo","processedAt":"...","traceId":"0af7651916cd43dd8448eb211c80319c"}
 ```
 
-The `cid` is preserved end-to-end, and the `traceId` in the payload matches the Java telemetry trace —
-proof the trace stays continuous across both Kafka hops.
+The `cid` is preserved end-to-end, and the **`traceId` is identical** at the publisher, in the Java
+telemetry, and at the listener — proof the trace stays continuous across both Kafka hops. (Each hop gets a
+new `span_id`; `simple.kafka.notification`'s span becomes the parent of the next hop, while the trace-id is
+carried unchanged.) If the publisher sends no `traceparent`, the flow simply starts a fresh trace instead.
 
 ## How it maps to minimalist-kafka
 

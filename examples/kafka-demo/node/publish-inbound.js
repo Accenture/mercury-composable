@@ -2,7 +2,7 @@
 // Run in its own terminal:  node publish-inbound.js   (then type a message and press Enter)
 
 import readline from 'node:readline';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes } from 'node:crypto';
 import kafkajs from 'kafkajs';
 import cfg from './config.js';
 
@@ -24,9 +24,17 @@ const { Kafka, Partitioners } = kafkajs;
     const text = line.trim();
     if (text.length > 0) {
       const cid = randomUUID();
+      // W3C traceparent: 00-<32-hex trace-id>-<16-hex span-id>-01. The Kafka flow adapter adopts this
+      // trace-id, so the whole flow (and the message it publishes to demo.outbound) shares it - making
+      // the end-to-end trace continuity visible.
+      const traceId = randomBytes(16).toString('hex');
+      const traceparent = `00-${traceId}-${randomBytes(8).toString('hex')}-01`;
       try {
-        await producer.send({ topic: cfg.inboundTopic, messages: [{ value: text, headers: { cid } }] });
-        console.log(`[${cfg.ts()}] -> ${cfg.inboundTopic} cid=${cid} ${text}`);
+        await producer.send({
+          topic: cfg.inboundTopic,
+          messages: [{ value: text, headers: { cid, traceparent } }],
+        });
+        console.log(`[${cfg.ts()}] -> ${cfg.inboundTopic} cid=${cid} traceId=${traceId} ${text}`);
       } catch (e) {
         console.error(`[${cfg.ts()}] publish failed:`, e.message);
       }
