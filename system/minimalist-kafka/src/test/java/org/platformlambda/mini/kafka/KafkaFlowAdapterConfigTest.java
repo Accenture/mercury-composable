@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -99,5 +100,27 @@ class KafkaFlowAdapterConfigTest {
     void blankGroupFallsBackToDefault() {
         assertEquals("kafka-flow-adapter.orders",
                 KafkaFlowAdapter.resolveGroupId(Map.of("topic", "orders", "flow", "f", "group", "  "), "orders"));
+    }
+
+    @Test
+    void parsesPartitionWhenPresent() {
+        assertEquals(3, KafkaFlowAdapter.parsePartition("3"));
+        assertEquals(0, KafkaFlowAdapter.parsePartition(0));   // numeric YAML value
+    }
+
+    @Test
+    void absentOrBlankPartitionIsNull() {
+        assertNull(KafkaFlowAdapter.parsePartition(null));
+        assertNull(KafkaFlowAdapter.parsePartition("  "));
+    }
+
+    @Test
+    void rejectsNonIntegerPartition() {
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parsePartition("abc"));
+    }
+
+    @Test
+    void rejectsNegativePartition() {
+        assertThrows(IllegalArgumentException.class, () -> KafkaFlowAdapter.parsePartition("-1"));
     }
 }

@@ -43,6 +43,7 @@ import java.util.Properties;
  *     group: 'sales-order-group'   # optional; supports ${ENV_VAR:default}
  *   - topic: 'topic-2'
  *     flow: 'soa-reply'
+ *     partition: 0                 # optional; pins this partition (manual assign)
  * </pre>
  *
  * <p>{@code group} (within the {@code consumer} section) is the Kafka consumer group id, used <b>exactly</b>
@@ -51,6 +52,11 @@ import java.util.Properties;
  * supports {@code ${ENV_VAR:default}} environment-variable substitution. It is optional; when omitted it
  * defaults to {@code kafka-flow-adapter.<topic>} (convenient for dev/test). Set it explicitly to your
  * administratively-assigned group in production.</p>
+ *
+ * <p>{@code partition} is optional and enables <b>partition pinning</b>: when present, the consumer manually
+ * assigns that single partition instead of joining the consumer group for dynamic assignment (see
+ * {@link KafkaFlowConsumer}). Also {@code ${ENV_VAR:default}}-substitutable, so each pod can pin a distinct
+ * partition. When omitted, the consumer subscribes group-managed as usual.</p>
  */
 public class KafkaFlowAdapter implements AutoCloseable {
 
@@ -59,6 +65,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static final String TOPIC = "topic";
     private static final String FLOW = "flow";
     private static final String GROUP = "group";
+    private static final String PARTITION = "partition";
     private static final String DEFAULT_GROUP_PREFIX = "kafka-flow-adapter";
 
     private final List<KafkaFlowConsumer> consumers = new ArrayList<>();
@@ -87,10 +94,11 @@ public class KafkaFlowAdapter implements AutoCloseable {
                 throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') is missing a 'flow'");
             }
             String groupId = resolveGroupId(entry, topic);
+            Integer partition = parsePartition(entry.get(PARTITION));
             Consumer<String, byte[]> consumer = newConsumer(groupId);
-            consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs, retryPolicy));
-            log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}')",
-                    topic, flowId, groupId);
+            consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs, retryPolicy, partition));
+            log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}'{})",
+                    topic, flowId, groupId, partition != null ? ", pinned to partition " + partition : "");
         }
     }
 
@@ -101,6 +109,29 @@ public class KafkaFlowAdapter implements AutoCloseable {
     static String resolveGroupId(Map<?, ?> entry, String topic) {
         String group = text(entry.get(GROUP));
         return group != null ? group : DEFAULT_GROUP_PREFIX + "." + topic;
+    }
+
+    /**
+     * Parse the optional {@code partition} for partition pinning: {@code null} when absent, otherwise a
+     * non-negative integer. Visible for testing.
+     *
+     * @throws IllegalArgumentException if present but not a valid non-negative integer
+     */
+    static Integer parsePartition(Object value) {
+        String text = text(value);
+        if (text == null) {
+            return null;
+        }
+        int partition;
+        try {
+            partition = Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("consumer 'partition' must be an integer, got '" + text + "'");
+        }
+        if (partition < 0) {
+            throw new IllegalArgumentException("consumer 'partition' must be >= 0, got " + partition);
+        }
+        return partition;
     }
 
     /** @return the trimmed value, or {@code null} if absent/blank. */

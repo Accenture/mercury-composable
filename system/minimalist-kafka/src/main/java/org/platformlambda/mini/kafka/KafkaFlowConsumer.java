@@ -68,6 +68,12 @@ import java.util.concurrent.TimeoutException;
  * <b>not</b> committed, so the message redelivers rather than being silently lost. Operationally this means
  * <b>DLQ topics must be pre-provisioned</b>; a missing one stalls the partition loudly instead of dropping
  * data, which is the correct trade-off for a holding area whose purpose is reprocessing.</p>
+ *
+ * <p><b>Partition pinning (opt-in).</b> When a {@code partition} is supplied for the binding, the consumer
+ * <b>manually assigns</b> that one topic-partition ({@code assign}) instead of joining the consumer group
+ * ({@code subscribe}). This bypasses group rebalancing - the pinned consumer reads exactly that partition -
+ * so the operator owns the deployment model (e.g. one consumer per partition, or each pod pinning a distinct
+ * partition via {@code partition: ${POD_PARTITION}}). Offsets still commit under the configured group id.</p>
  */
 public class KafkaFlowConsumer implements AutoCloseable {
 
@@ -86,18 +92,20 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private final String flowId;
     private final long flowTimeoutMs;
     private final RetryPolicy retryPolicy;
+    private final Integer partition;   // null = group-managed subscribe; non-null = pin this partition
     private final String deadLetterTopic;
     private final ExecutorService loop;
 
     private volatile boolean running;
 
     public KafkaFlowConsumer(Consumer<String, byte[]> consumer, String topic, String flowId,
-                             long flowTimeoutMs, RetryPolicy retryPolicy) {
+                             long flowTimeoutMs, RetryPolicy retryPolicy, Integer partition) {
         this.consumer = consumer;
         this.topic = topic;
         this.flowId = flowId;
         this.flowTimeoutMs = flowTimeoutMs;
         this.retryPolicy = retryPolicy;
+        this.partition = partition;
         // per-topic DLQ; a blank suffix falls back to .dlq so the DLQ can never equal the source topic
         String suffix = retryPolicy.dlqSuffix();
         this.deadLetterTopic = topic + (suffix == null || suffix.isBlank() ? DLQ_SUFFIX : suffix);
@@ -115,7 +123,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
 
     private void pollLoop() {
         try {
-            consumer.subscribe(List.of(topic));
+            subscribeOrAssign(consumer);
             while (running) {
                 ConsumerRecords<String, byte[]> records = consumer.poll(POLL_TIMEOUT);
                 for (ConsumerRecord<String, byte[]> consumerRecord : records) {
@@ -130,6 +138,18 @@ public class KafkaFlowConsumer implements AutoCloseable {
             log.error("Kafka flow consumer for topic {} stopped unexpectedly", topic, e);
         } finally {
             consumer.close();
+        }
+    }
+
+    /**
+     * Group-managed {@code subscribe} by default; manual {@code assign} of the single pinned topic-partition
+     * when a {@code partition} was configured. Visible for testing.
+     */
+    void subscribeOrAssign(Consumer<String, byte[]> consumer) {
+        if (partition != null) {
+            consumer.assign(List.of(new TopicPartition(topic, partition)));
+        } else {
+            consumer.subscribe(List.of(topic));
         }
     }
 

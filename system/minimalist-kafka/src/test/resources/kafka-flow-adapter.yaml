@@ -6,3 +6,5 @@ consumer:
     flow: 'kafka-sink-flow'
     # exercises env-var substitution (unset -> default); group is used exactly as resolved
     group: '${KAFKA_TEST_CONSUMER_GROUP:mini-test-group}'
+    # partition: 0                      # optional; pins this partition (manual assign, no group rebalancing)
+    # partition: '${POD_PARTITION}'     # or per-pod via env substitution

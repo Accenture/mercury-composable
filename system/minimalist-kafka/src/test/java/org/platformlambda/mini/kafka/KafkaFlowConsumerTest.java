@@ -19,14 +19,17 @@
 package org.platformlambda.mini.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.platformlambda.core.models.EventEnvelope;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -127,6 +130,24 @@ class KafkaFlowConsumerTest {
         assertEquals(0, dlqProducer.history().size(), "no dead-letter on eventual success");
     }
 
+    @Test
+    void pinsPartitionWhenConfigured() {
+        MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
+        RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", null);
+        new KafkaFlowConsumer(mock, "orders", "order-flow", 1000, policy, 2).subscribeOrAssign(mock);
+        assertEquals(Set.of(new TopicPartition("orders", 2)), mock.assignment(), "pinned via manual assign");
+        assertTrue(mock.subscription().isEmpty(), "no group subscription when pinned");
+    }
+
+    @Test
+    void subscribesWhenNoPartition() {
+        MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
+        RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", null);
+        new KafkaFlowConsumer(mock, "orders", "order-flow", 1000, policy, null).subscribeOrAssign(mock);
+        assertEquals(Set.of("orders"), mock.subscription(), "group-managed subscribe when not pinned");
+        assertTrue(mock.assignment().isEmpty(), "no manual assignment when subscribing");
+    }
+
     private static MockProducer<String, byte[]> autoCompletingProducer() {
         return new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
     }
@@ -144,7 +165,7 @@ class KafkaFlowConsumerTest {
 
         AlwaysFailingConsumer(int failTimes, RetryPolicy policy) {
             // small flow timeout doubles as the DLQ confirm-write timeout, keeping the failure test fast
-            super(null, "orders", "order-flow", 200, policy);
+            super(null, "orders", "order-flow", 200, policy, null);
             this.failTimes = failTimes;
         }
 
