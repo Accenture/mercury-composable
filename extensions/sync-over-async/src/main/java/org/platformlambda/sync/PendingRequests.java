@@ -89,6 +89,15 @@ public class PendingRequests {
         return pending.containsKey(correlationId);
     }
 
+    /**
+     * Look up the pending future for this correlation-id without removing it. Returns {@code null} if no
+     * request is in flight - e.g. the response already arrived and completed (and removed) the entry.
+     * Used by the await-by-cid path when {@code begin} and {@code awaitResponse} run as separate flow tasks.
+     */
+    public CompletableFuture<String> get(String correlationId) {
+        return pending.get(correlationId);
+    }
+
     public int size() {
         return pending.size();
     }

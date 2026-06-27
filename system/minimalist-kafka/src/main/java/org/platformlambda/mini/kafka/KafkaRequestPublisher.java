@@ -22,21 +22,24 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
  * Thread-safe wrapper around a Kafka producer, shared as a singleton by {@code
- * simple.kafka.notification}. Publishing is <b>drop-n-forget</b>: Kafka's commit-log journaling is the
- * durable, high-performance buffer, so the notification side does not block on broker acknowledgement
- * (the consumer side carries the at-least-once guarantee instead).
+ * simple.kafka.notification}. The record is sent <b>eagerly</b> (the send is issued before the returned
+ * {@link Mono} is subscribed), and the {@code Mono<Void>} completes when the broker acknowledges the
+ * record or errors when the send fails. This lets a caller that cares - e.g. a synchronous REST facade -
+ * await delivery and fail-fast on a publish failure, while a drop-n-forget caller can simply ignore the
+ * Mono (the record is still sent).
  *
- * <p>Drop-n-forget does <b>not</b> mean silent: a send-completion callback logs any asynchronous
- * delivery failure (e.g. broker unreachable past {@code delivery.timeout.ms}) so a dropped publish is
- * visible in the logs rather than masked, while the caller still returns immediately.</p>
+ * <p>Delivery failures (e.g. broker unreachable past {@code delivery.timeout.ms}) are always logged via
+ * {@code doOnError}, so a failed publish is visible even when no subscriber observes the Mono.</p>
  */
 public class KafkaRequestPublisher implements AutoCloseable {
 
@@ -49,24 +52,33 @@ public class KafkaRequestPublisher implements AutoCloseable {
     }
 
     /**
-     * Publish a message and return immediately (drop-n-forget).
+     * Send a message eagerly and return a {@link Mono} that completes on broker acknowledgement (or errors
+     * on a delivery failure). The send is issued immediately, so a caller that ignores the Mono still
+     * publishes; a caller that subscribes (e.g. via the composable function machinery) observes success or
+     * failure and can react - the basis for fail-fast on the synchronous request path.
      *
      * @param topic destination topic (required).
      * @param partition target partition, or {@code null} to let Kafka's default partitioner choose.
      * @param headers Kafka record headers, already byte[]-encoded; may be {@code null}.
      * @param body message body.
+     * @return a {@code Mono<Void>} that completes when the broker acknowledges, or errors on failure.
      */
-    public void publish(String topic, Integer partition, Map<String, byte[]> headers, byte[] body) {
+    public Mono<Void> publish(String topic, Integer partition, Map<String, byte[]> headers, byte[] body) {
         ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(topic, partition, null, body);
         if (headers != null) {
             headers.forEach((key, value) -> producerRecord.headers().add(key, value));
         }
-        // drop-n-forget, but surface async delivery failures instead of masking them
+        // send eagerly; bridge the delivery callback to a future the Mono observes
+        CompletableFuture<Void> ack = new CompletableFuture<>();
         producer.send(producerRecord, (metadata, exception) -> {
             if (exception != null) {
-                log.error("Failed to publish to topic {}: {}", topic, exception.getMessage());
+                ack.completeExceptionally(exception);
+            } else {
+                ack.complete(null);
             }
         });
+        return Mono.fromFuture(ack)
+                .doOnError(e -> log.error("Failed to publish to topic {}: {}", topic, e.getMessage()));
     }
 
     /**

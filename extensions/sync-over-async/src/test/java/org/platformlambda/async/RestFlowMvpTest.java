@@ -29,6 +29,7 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.mini.kafka.KafkaRuntime;
+import org.platformlambda.support.TestRuntimeConstants;
 import org.platformlambda.sync.RedisTestBase;
 
 import java.util.Map;
@@ -43,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * End-to-end proof of the whole sync-over-async MVP, fully composable:
  *
  * <pre>
- *   HTTP POST /api/sync-to-async -> http.flow.adapter -> flow sync-to-async -> test.endpoint
- *     begin(cid) [Redis] + simple.kafka.notification -> Kafka topic-1
+ *   HTTP POST /api/sync-to-async -> http.flow.adapter -> flow sync-to-async
+ *     sync.prepare: begin(cid) [Redis] -> simple.kafka.notification -> Kafka topic-1 -> sync.await (blocks)
  *       -> Kafka Flow Adapter -> flow system-of-record (echo + notify topic-2)
  *         -> Kafka topic-2 -> Kafka Flow Adapter -> flow soa-reply -> coordinator.deliver
- *           -> Redis return route wakes awaitResponse -> HTTP 200 + body
+ *           -> Redis return route wakes sync.await -> HTTP 200 + body
  * </pre>
  *
  * Runs against embedded Redis ({@link RedisTestBase}) and an embedded KRaft Kafka broker. The Kafka
@@ -66,8 +67,8 @@ class RestFlowMvpTest extends RedisTestBase {
     @BeforeAll
     static void boot() throws Exception {
         kafka = new EmbeddedKafka();
-        KafkaTestSupport.createTopic(kafka.bootstrapServers(), SyncRuntime.REQUEST_TOPIC);
-        KafkaTestSupport.createTopic(kafka.bootstrapServers(), SyncRuntime.RESPONSE_TOPIC);
+        KafkaTestSupport.createTopic(kafka.bootstrapServers(), TestRuntimeConstants.REQUEST_TOPIC);
+        KafkaTestSupport.createTopic(kafka.bootstrapServers(), TestRuntimeConstants.RESPONSE_TOPIC);
         // Point the autoloaders at the embedded infra: KAFKA_BOOTSTRAP_SERVERS feeds the
         // ${KAFKA_BOOTSTRAP_SERVERS:...} placeholder in the Kafka client templates; redis.port overrides the
         // file value (ConfigReader resolves a system property before the file). sync.over.async.enabled=true

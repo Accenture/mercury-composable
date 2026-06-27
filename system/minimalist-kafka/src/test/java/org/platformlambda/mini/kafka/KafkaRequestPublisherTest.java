@@ -23,11 +23,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KafkaRequestPublisherTest {
 
@@ -55,6 +59,25 @@ class KafkaRequestPublisherTest {
         MockProducer<String, byte[]> producer = autoCompletingProducer();
         new KafkaRequestPublisher(producer).publish("topic-1", 3, null, "x".getBytes(UTF_8));
         assertEquals(3, producer.history().getFirst().partition());
+    }
+
+    @Test
+    void publishMonoCompletesOnBrokerAck() {
+        try (KafkaRequestPublisher publisher = new KafkaRequestPublisher(autoCompletingProducer())) {
+            // the auto-completing producer acknowledges immediately, so the Mono completes with no value
+            assertNull(publisher.publish("topic-1", null, null, "body".getBytes(UTF_8)).block());
+        }
+    }
+
+    @Test
+    void publishMonoErrorsWhenDeliveryFails() {
+        // a non-auto-completing producer lets the test fail the in-flight send explicitly
+        MockProducer<String, byte[]> producer =
+                new MockProducer<>(false, null, new StringSerializer(), new ByteArraySerializer());
+        Mono<Void> publish = new KafkaRequestPublisher(producer).publish("topic-1", null, null, "x".getBytes(UTF_8));
+        producer.errorNext(new RuntimeException("broker down"));
+        Exception ex = assertThrows(Exception.class, publish::block);
+        assertTrue(ex.getMessage().contains("broker down"));
     }
 
     @Test

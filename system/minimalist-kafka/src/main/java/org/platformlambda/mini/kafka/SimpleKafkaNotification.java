@@ -23,6 +23,7 @@ import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.W3cTrace;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -41,12 +42,18 @@ import java.util.Map;
  *
  * <p>byte[] is used for headers and body so no custom serializer/deserializer is needed. This is the
  * minimalist building block; richer encodings (e.g. a Confluent Schema Registry) layer on top.</p>
+ *
+ * <p>It returns the {@code Mono<Void>} from the publisher: the platform-core worker subscribes to it,
+ * deferring the function's completion until the broker acknowledges. A caller using {@code po.request}
+ * (RPC) therefore learns whether the publish succeeded - a publish failure propagates back as an error -
+ * while a {@code po.send} (async) caller simply doesn't observe it. The Mono is realized as {@code null}
+ * (a {@code Void} body) on success.</p>
  */
 @PreLoad(route = "simple.kafka.notification", instances = 10)
-public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Void> {
+public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono<Void>> {
 
     @Override
-    public Void handleEvent(Map<String, String> headers, byte[] body, int instance) {
+    public Mono<Void> handleEvent(Map<String, String> headers, byte[] body, int instance) {
         String topic = headers.get(KafkaHeaders.TOPIC);
         if (topic == null) {
             throw new IllegalArgumentException("Missing '" + KafkaHeaders.TOPIC + "' header");
@@ -65,8 +72,7 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Void
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
         }
-        KafkaRuntime.publisher().publish(topic, partition, kafkaHeaders, body);
-        return null;
+        return KafkaRuntime.publisher().publish(topic, partition, kafkaHeaders, body);
     }
 
     /** Build a W3C traceparent from this function's current trace context (null if tracing is off). */

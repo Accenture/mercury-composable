@@ -16,11 +16,12 @@
 
  */
 
-package org.platformlambda.async;
+package org.platformlambda.mock;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.mini.kafka.KafkaHeaders;
+import org.platformlambda.sync.SyncRuntime;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class SoaReplyTask implements TypedLambdaFunction<byte[], Map<String, Obj
     public Map<String, Object> handleEvent(Map<String, String> headers, byte[] input, int instance) {
         String cid = headers.get(KafkaHeaders.CORRELATION_ID);
         String payload = new String(input, StandardCharsets.UTF_8);
-        boolean delivered = org.platformlambda.sync.SyncRuntime.coordinator().deliver(cid, payload);
+        boolean delivered = SyncRuntime.coordinator().deliver(cid, payload);
         return Map.of("cid", cid, "delivered", delivered);
     }
 }
