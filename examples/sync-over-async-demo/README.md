@@ -34,6 +34,7 @@ business logic) and [`SyncErrorHandler`](src/main/java/com/accenture/soa/demo/su
 
 - Java 21 + Maven. Build once from the repo root: `mvn -pl examples/sync-over-async-demo -am install`.
 - The `redis-standalone` and `kafka-standalone` helper jars (built by the same reactor).
+- Node.js 18+ — only for the one-time topic-creation helper in `node/` (the app client is `curl`).
 
 ## Run it
 
@@ -45,7 +46,22 @@ cd helpers/redis-standalone && java -jar target/redis-standalone-4.5.0.jar
 ```shell
 cd helpers/kafka-standalone && java -jar target/kafka-standalone-4.5.0.jar
 ```
-The `soa.request` / `soa.response` topics are auto-created on first use.
+
+### Create the topics (10 partitions each) — once
+```shell
+cd examples/sync-over-async-demo/node
+npm install        # once
+node create-topics.js
+```
+This creates `soa.request` / `soa.response` with **10 partitions** each. Don't rely on Kafka auto-creation
+here: an auto-created topic has a single partition, so the `soa-reply-group` consumer group can only place
+it on **one** facade — a second facade would stay idle. Multiple partitions let the group spread across
+facades, which is what makes the multi-facade test below meaningful.
+
+> Run this **before** the apps (Terminals C/D) — otherwise the flow adapter auto-creates the topics at 1
+> partition first, and `create-topics.js` will then skip them as already existing. If they already exist at
+> 1 partition from an earlier run, restart `kafka-standalone` first (it wipes all topics on restart), then
+> create them here.
 
 ### Terminal C — backend pod
 ```shell
@@ -70,8 +86,10 @@ The facade and backend logs show the same `traceId` across the Kafka hops.
 
 ## Two things worth trying
 
-- **Multiple facade pods on one machine.** Start a second facade on another port and call it — the Redis
-  return route still delivers each reply to the pod that originated the request:
+- **Multiple facade pods on one machine** (requires the multi-partition topics created above). Start a
+  second facade on another port and call it — the Redis return route delivers each reply to the pod that
+  originated the request, even when the *other* facade is the one that consumed the reply off `soa.response`
+  (watch which facade logs `soa.reply` vs. which one returns the HTTP response):
   ```shell
   java -Dspring.profiles.active=facade -Drest.server.port=8401 -jar examples/sync-over-async-demo/target/sync-over-async-demo-4.5.0.jar
   curl -sS -X POST http://127.0.0.1:8401/api/sync-to-async -H 'content-type: application/json' -d '{"order":"B-200"}'
