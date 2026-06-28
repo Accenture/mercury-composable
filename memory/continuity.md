@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-28T18:53:31Z | agent: Gemini CLI
+- **last_session:** 2026-06-28T19:04:10Z | agent: Gemini CLI
 - **last_review:** 2026-06-28 | through 2026-06-28-182607.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
