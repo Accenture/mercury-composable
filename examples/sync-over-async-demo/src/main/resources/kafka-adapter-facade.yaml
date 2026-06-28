@@ -1,0 +1,8 @@
+#
+# Kafka Flow Adapter for the facade role: bind the response topic to the reply-delivery flow.
+# The facade consumes replies here and the coordinator wakes the matching awaiting REST request.
+#
+consumer:
+  - topic: 'soa.response'
+    flow: 'soa-reply'
+    group: '${SOA_REPLY_GROUP:soa-reply-group}'

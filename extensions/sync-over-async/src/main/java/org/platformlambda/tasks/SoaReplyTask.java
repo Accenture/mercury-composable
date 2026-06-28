@@ -16,7 +16,7 @@
 
  */
 
-package org.platformlambda.mock;
+package org.platformlambda.tasks;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
@@ -27,12 +27,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
- * The task of the {@code soa-reply} flow, reached when the Kafka flow adapter routes a message from the
- * response topic. It bridges the asynchronous response back into the synchronous facade by handing the
- * payload to the return-route coordinator, which completes the awaiting REST request (cross-pod via the
- * Redis return route).
+ * Reusable reply-delivery task for the sync-over-async pattern. Wire it as the task of a flow bound (via
+ * the Kafka flow adapter) to the response topic: it hands the asynchronous response to the return-route
+ * coordinator, which completes the awaiting REST request - cross-pod via the Redis return route, so the
+ * pod that consumed the reply need not be the one that originated the request.
+ *
+ * <p>This is generic boilerplate every sync-over-async application needs, so it ships with the extension
+ * alongside {@link SyncPrepareTask} and {@link SyncAwaitTask}; an application only supplies its own
+ * backend (system-of-record) logic. Sized for user-facing concurrency ({@code instances = 250}).</p>
  */
-@PreLoad(route = "soa.reply", instances = 10)
+@PreLoad(route = "soa.reply", instances = 250)
 public class SoaReplyTask implements TypedLambdaFunction<byte[], Map<String, Object>> {
 
     @Override

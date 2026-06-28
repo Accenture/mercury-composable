@@ -46,6 +46,7 @@
         <module>examples/scheduler-example</module>
         <module>examples/minigraph-playground</module>
         <module>examples/kafka-demo</module>
+        <module>examples/sync-over-async-demo</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>

@@ -1,0 +1,6 @@
+#
+# Facade flows: the synchronous REST facade and the reply-delivery flow.
+#
+flows:
+  - 'sync-to-async.yml'
+  - 'soa-reply.yml'

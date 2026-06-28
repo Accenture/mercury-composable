@@ -1,0 +1,5 @@
+#
+# Backend flow: the system-of-record that processes requests and publishes replies.
+#
+flows:
+  - 'system-of-record.yml'

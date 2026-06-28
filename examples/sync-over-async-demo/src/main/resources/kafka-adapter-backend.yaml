@@ -1,0 +1,7 @@
+#
+# Kafka Flow Adapter for the backend role: bind the request topic to the system-of-record flow.
+#
+consumer:
+  - topic: 'soa.request'
+    flow: 'system-of-record'
+    group: '${SOA_BACKEND_GROUP:system-of-record-group}'
