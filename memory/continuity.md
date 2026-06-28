@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-28T19:08:26Z | agent: Gemini CLI
+- **last_session:** 2026-06-28T19:11:14Z | agent: Gemini CLI
 - **last_review:** 2026-06-28 | through 2026-06-28-182607.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -62,6 +62,9 @@
   <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
+
+- **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an interactive end-to-end demo and testing layer. Includes an `examples/schema-registry-demo` module.
+  <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-191114 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -213,10 +216,8 @@
   mercury's domain content; agent-memory only flags, never picks. 0 lint **errors**.
   <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-173142 -->
 
-- [ ] (planned — Eric, 2026-06-28; **next challenge**) **Schema Registry feature.** The richer Kafka
-  payload-encoding layer that sits on top of minimalist-kafka's `byte[]` building block — `simple.kafka.
-  notification`'s javadoc already names "a Confluent Schema Registry" as the intended layer-on-top. Scope
-  to be designed next session. Builds on [[helpers-and-worked-examples]] / the minimalist-kafka work.
+- [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble.
+  <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-191114 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.

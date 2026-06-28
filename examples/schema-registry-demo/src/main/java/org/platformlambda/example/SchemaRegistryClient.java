@@ -83,7 +83,7 @@ public class SchemaRegistryClient {
             Map<?,?> resBody = (Map<?,?>) res.getBody();
             if (resBody.containsKey("schema")) {
                 String schema = (String) resBody.get("schema");
-                String type = (String) resBody.getOrDefault("schemaType", "AVRO");
+                String type = resBody.containsKey("schemaType") ? (String) resBody.get("schemaType") : "AVRO";
                 log.info("Retrieved {} schema for ID {}: {}", type, id, schema);
                 return schema;
             }
