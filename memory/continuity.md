@@ -75,7 +75,9 @@
   `TraceInfo` on the worker thread first**. This caused Mono-returning flow tasks to drop their `span_id`
   from the response, orphaning the next task's `parent_span_id` (fixed 2026-06-28 in
   `WorkerHandler.handleMonoResponse` via `applyTraceContext`; see `WorkerHandlerTest.monoResponseForwardsSpanId`).
-  Watch for this in any future async/reactive code that needs trace context.
+  Watch for this in any future async/reactive code that needs trace context. The **Flux** path was checked
+  and is **safe** — it returns its response (the `x-stream-id` handle) synchronously on the worker thread, and
+  `FluxPublisher` streaming never reads the trace (guarded by `WorkerHandlerTest.fluxResponseForwardsSpanId`).
   <!-- id: trace-thread-keyed-mono-gotcha | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: core -->
 
 - **platform-core serializes `java.time.Instant` as first-class (2026-06-27).** Instant had no adapter and
