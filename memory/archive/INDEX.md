@@ -29,3 +29,7 @@
 - thread-minimalist-kafka-adapter — (future — after the docs-rewrite phase; Eric, 2026-06-22) Add a minimalist Kafka flow adap… — swept: completed thread — 2026-Q2.md
 - thread-verify-invariants-2026q2 — Re-verify invariants (first invariant check; 24 session files ≥ `verify_invariants_every`… — swept: completed thread — 2026-Q2.md
 - agent-memory-upgrade-v4224 — Upgraded agent-memory v4.21.0 → v4.23.1 (in-place Mode B, 2026-06-28, by Claude Code from… — swept: completed thread — 2026-Q2.md
+- kafka-flow-failure-dlq — Kafka flow-adapter consumer error semantics = bounded retry → per-topic dead-letter, commi… — faded — 2026-Q2.md
+- soa-config-driven-init — sync-over-async production bootstrap = config-driven init (Eric, 2026-06-26). The module's… — faded — 2026-Q2.md
+- kafka-client-config-templates — Kafka client config is externalized to template files, not hard-coded (Eric, 2026-06-27).… — faded — 2026-Q2.md
+- kafka-partition-pinning — Kafka consumer partition pinning = opt-in per binding (Eric, 2026-06-27). A `kafka-flow-ad… — faded — 2026-Q2.md
