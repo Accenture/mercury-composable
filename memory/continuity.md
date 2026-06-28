@@ -179,8 +179,10 @@
   transient working files to **`/tmp/soa-redis`** / `/tmp` (cloud-native pattern); the sync-over-async
   `RedisTestBase` uses the same `/tmp/soa-redis` dir. `examples/kafka-demo` is the minimalist-kafka
   producer+consumer **worked example** (Java flow + kafkajs Node programs: create-topics/listen/publish),
-  validated live end-to-end. A **sync-over-async worked example is the planned next step**. Worked examples
-  are how this project teaches pattern adoption (Eric). On `feature/sync-over-async` (PR #124).
+  validated live end-to-end. `examples/sync-over-async-demo` is the **sync-over-async worked example** (done
+  2026-06-28): one jar, two pods via Spring profile (`-Dspring.profiles.active=facade|backend`), cross-pod
+  REST-over-Kafka with a Redis return route (ADR-0006); promoted `soa.reply` into the extension. Worked
+  examples are how this project teaches pattern adoption (Eric). On `feature/sync-over-async` (PR #124).
   <!-- id: helpers-and-worked-examples | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: active -->
 - **Examples are kept deliberately minimal (avoid drift).** Bare-minimum examples on principle (Eric:
   "minimalist is our design principle; too many examples drift thinking"). Retired `csv-flow-adapter` +
