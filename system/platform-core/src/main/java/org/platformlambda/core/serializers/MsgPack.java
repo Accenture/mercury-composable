@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -253,6 +254,9 @@ public class MsgPack {
             case Date d ->
                 // Date object will be packed as ISO-8601 string
                 packer.packString(util.date2str(d));
+            case Instant i ->
+                // Instant (java.time) is packed as an ISO-8601 UTC string, like Date
+                packer.packString(util.date2str(Date.from(i)));
             default -> {
                 // handle pojo inside data structure
                 if (util.isPoJo(o)) {

@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,8 +61,8 @@ public class DemoProcessor implements TypedLambdaFunction<byte[], EventEnvelope>
         Map<String, Object> response = new HashMap<>();
         response.put("received", received);
         response.put("processedBy", "kafka-demo");
-        // a java.util.Date is serialized as an ISO-8601 / RFC-3339 string by the built-in mapper
-        response.put("processedAt", new Date());
+        // Instant is serialized as an ISO-8601 / RFC-3339 string by the built-in mapper (platform-core)
+        response.put("processedAt", Instant.now());
         response.put("traceId", po.getTraceId());   // continuous across the Kafka hop
         byte[] payload = SimpleMapper.getInstance().getMapper().writeValueAsBytes(response);
 

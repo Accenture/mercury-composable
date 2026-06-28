@@ -24,6 +24,7 @@ import org.platformlambda.core.serializers.SimpleObjectMapper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +76,20 @@ class GsonTest {
         assertEquals(obj.date, po.date);
         assertEquals(obj.bigInteger, po.bigInteger);
         assertEquals(obj.bigDecimal, po.bigDecimal);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Test
+    void instantSerialization() {
+        SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
+        Instant now = Instant.now();
+        String iso = Utility.getInstance().date2str(Date.from(now));
+        // an Instant is serialized to an ISO-8601 / RFC-3339 string (like java.util.Date)
+        Map restored = mapper.readValue(mapper.writeValueAsString(Map.of("ts", now)), Map.class);
+        assertEquals(iso, restored.get("ts"));
+        // and it round-trips back to an Instant (millisecond precision)
+        Instant back = mapper.readValue(mapper.writeValueAsString(now), Instant.class);
+        assertEquals(now.toEpochMilli(), back.toEpochMilli());
     }
 
     private SimplePoJo getSample() {
