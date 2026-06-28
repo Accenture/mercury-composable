@@ -316,5 +316,43 @@ class TestContinuityHealth(unittest.TestCase):
         )
 
 
+class TestStaleMetadata(unittest.TestCase):
+    # (9) flag stored tier != tier recomputed from references (review steps 2–3 skipped).
+    STEMS = ["2026-06-01-000000", "2026-06-02-000000", "2026-06-03-000000"]
+
+    def test_flags_tier_drift(self):
+        cont = {"foo-fact": {"tier": "working", "created": "2026-01-01"}}
+        refs = [{"foo-fact"}, {"foo-fact"}, set()]  # uses 2 (bypasses working rule), sslu 1 → active
+        w = memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4)
+        self.assertEqual(len(w), 1)
+        self.assertIn("[stale-metadata]", w[0])
+        self.assertIn("should be 'active'", w[0])
+
+    def test_matching_tier_not_flagged(self):
+        cont = {"a-fact": {"tier": "active", "created": "2026-01-01"}}
+        refs = [{"a-fact"}, {"a-fact"}, set()]
+        self.assertEqual(memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4), [])
+
+    def test_core_and_superseded_exempt(self):
+        cont = {
+            "c-fact": {"tier": "core", "created": "2026-01-01"},
+            "s-fact": {"tier": "superseded", "created": "2026-01-01", "superseded-by": "a-fact"},
+        }
+        refs = [{"c-fact"}, {"s-fact"}, set()]
+        self.assertEqual(memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4), [])
+
+    def test_never_referenced_not_flagged(self):
+        cont = {"legacy-fact": {"tier": "working", "created": "2026-01-01"}}
+        refs = [set(), set(), set()]  # sslu None → can't recompute → no flag
+        self.assertEqual(memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4), [])
+
+    def test_pinned_thread_tier_not_flagged(self):
+        # v4.26.1 refinement: a pinned `- [ ]` thread never decays; the tool doesn't opine on its
+        # tier label, so a 'working'-tagged pinned thread is NOT drift (would be 'active' if unpinned).
+        cont = {"open-fact": {"tier": "working", "created": "2026-01-01"}}
+        refs = [{"open-fact"}, {"open-fact"}, set()]
+        self.assertEqual(memory_lint.check_stale_metadata(cont, {"open-fact"}, refs, self.STEMS, 3, 2, 4), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,7 @@ import {
   check_conflict_markers,
   check_continuity_health,
   sessions_since_review,
+  check_stale_metadata,
 } from "./memory-lint.mjs";
 
 // (8) advisory cadence/size triggers (v4.24.0). cont is a Map; cont.size is the fact count.
@@ -380,4 +381,43 @@ test("check_continuity_health: a healthy layer is OK", () => {
     check_continuity_health(facts(24), ["2026-06-27-120000.md"], cont_text, 490, 10, 30, 600),
     []
   );
+});
+
+const STALE_STEMS = ["2026-06-01-000000", "2026-06-02-000000", "2026-06-03-000000"];
+
+test("check_stale_metadata flags tier drift", () => {
+  const cont = new Map([["foo-fact", { tier: "working", created: "2026-01-01" }]]);
+  const refs = [new Set(["foo-fact"]), new Set(["foo-fact"]), new Set()];
+  const w = check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("[stale-metadata]"));
+  assert.ok(w[0].includes("should be 'active'"));
+});
+
+test("check_stale_metadata: matching tier not flagged", () => {
+  const cont = new Map([["a-fact", { tier: "active", created: "2026-01-01" }]]);
+  const refs = [new Set(["a-fact"]), new Set(["a-fact"]), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4), []);
+});
+
+test("check_stale_metadata: core and superseded exempt", () => {
+  const cont = new Map([
+    ["c-fact", { tier: "core", created: "2026-01-01" }],
+    ["s-fact", { tier: "superseded", created: "2026-01-01", "superseded-by": "a-fact" }],
+  ]);
+  const refs = [new Set(["c-fact"]), new Set(["s-fact"]), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4), []);
+});
+
+test("check_stale_metadata: never-referenced not flagged", () => {
+  const cont = new Map([["legacy-fact", { tier: "working", created: "2026-01-01" }]]);
+  const refs = [new Set(), new Set(), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4), []);
+});
+
+test("check_stale_metadata: a pinned thread's tier is not flagged (v4.26.1)", () => {
+  // pinned `- [ ]` thread never decays; the tool leaves its tier label alone.
+  const cont = new Map([["open-fact", { tier: "working", created: "2026-01-01" }]]);
+  const refs = [new Set(["open-fact"]), new Set(["open-fact"]), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(["open-fact"]), refs, STALE_STEMS, 3, 2, 4), []);
 });

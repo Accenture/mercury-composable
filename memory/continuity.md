@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-28T17:40:15Z | agent: Gemini CLI
+- **last_session:** 2026-06-28T18:21:25Z | agent: Claude Code
 - **last_review:** 2026-06-28 | through 2026-06-28-173142.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -266,6 +266,20 @@
 
 ## Open Threads
 
+- [x] **Upgraded agent-memory v4.25.0 → v4.26.1** (Mode B, by Claude Code from the tool checkout) — a final
+  validation round. **4.26.0** adds `refresh-metadata` (a 7th built-in: recompute `last_used`/`uses`/`tier`
+  from the session log deterministically — REVIEW.md steps 2–3, the metadata pass agents skip) + a
+  `memory-lint` `[stale-metadata]` advisory. **4.26.1** refines it: a **pinned `- [ ]` open thread's tier is
+  left alone** (pinned-ness protects it, not the label). Re-synced `memory-lint` (check 9 + refinement),
+  `REVIEW.md`, `DECAY.md`; copied the new `refresh-metadata` skill; adapters synced (7 skills → 42); stamped
+  4.26.1. **Validation result:** post-upgrade `memory-lint` flagged just **1** real drift
+  (`agent-memory-upgrade-v4250` tier active→working) — the **5 pinned threads from the prior sanity check no
+  longer flag** (the v4.26.1 refinement working). Ran `refresh-metadata` → it re-tiered the one real fact AND
+  refreshed pinned `thread-redis-kafka-rpc`'s `uses 3→6` **without touching its `tier: working`** (the
+  refinement's exact intent). Final `memory-lint`: **0 errors, 0 warnings**; py↔node parity confirmed here.
+  Working tree **uncommitted** — review + commit at the mercury team's discretion.
+  <!-- id: agent-memory-upgrade-v4261 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-182125 -->
+
 - [x] **Upgraded agent-memory v4.23.1 → v4.25.0** (Mode B, by Claude Code from the tool checkout).
   Three rungs: **4.23.2** (AGENTS.md long-session context-hygiene block), **4.24.0** (decay-policy retune +
   a `memory-lint` review-cadence/size advisory), **4.25.0** (`archive-fact` — a 6th built-in: a deterministic,
@@ -279,7 +293,7 @@
   per-fact `[overdue]` advisories — this repo's own decay backlog. **Run the `REVIEW.md` ritual** (it can now
   use `archive-fact` to perform the moves safely). Left for the mercury team to curate — the faded facts are
   mercury's domain content; agent-memory only flags, never picks. 0 lint **errors**.
-  <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: active | origin: 2026-06-28-173142 -->
+  <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-173142 -->
 
 - [ ] (planned — Eric, 2026-06-28; **next challenge**) **Schema Registry feature.** The richer Kafka
   payload-encoding layer that sits on top of minimalist-kafka's `byte[]` building block — `simple.kafka.
@@ -387,7 +401,7 @@
   decomposition). Green: minimalist-kafka 12 tests, sync-over-async 24 tests, both coverage gates met. (The
   older `evaluation_feedback_report.md` is a stale Gemini Phases-1&2 report describing pre-extraction code —
   superseded, not the Copilot review.)
-  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-26 | uses: 3 | tier: working -->
+  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-27 | uses: 6 | tier: working -->
 
 ## User Preferences
 

@@ -58,6 +58,13 @@ it never fires more often than reviews do.
 3. **Re-tier every fact.** For each fact in `continuity.md`, compute
    `sessions_since_last_used` (count files — `DECAY.md` §4) and apply the
    `DECAY.md` §5 rules in order. Record each tier change.
+   > **Preferred — steps 2–3 are pure arithmetic; run the `refresh-metadata` skill**
+   > (`agent-skills/refresh-metadata/`; Python *or* Node) to recompute every fact's
+   > `last_used` / `uses` / `tier` from the reference log and write the footers back
+   > (`--dry-run` to preview). This is the deterministic "full rebuild" below, made
+   > runnable — **don't update 30 footers by hand** (agents reliably skip this pass,
+   > leaving stale tiers; `memory-lint` flags the gap as `[stale-metadata]`). It only
+   > re-tiers — `core`/`superseded` are untouched and it never archives.
 4. **Archive.** Facts that resolve to `archived` (faded) **or** `superseded` (false):
    > **Preferred — use the `archive-fact` skill** (`agent-skills/archive-fact/`; Python *or* Node) to
    > perform the move *deterministically*. It reads `continuity.md` into memory and writes once, so the

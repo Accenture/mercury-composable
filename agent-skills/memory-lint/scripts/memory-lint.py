@@ -296,6 +296,54 @@ def sessions_since_review(sessions, cont_text):
     return sum(1 for s in stems if s > through)
 
 
+def created_sessions_ago(created, stems):
+    """How many session files are dated strictly after `created` (YYYY-MM-DD).
+    Approximate (counts by date, undercounts same-day) — only used for the
+    working-window check, where a small bias toward 'working' is the safe side."""
+    if not created:
+        return None
+    return sum(1 for s in stems if s[:10] > created)
+
+
+def expected_tier(fields, fid, sslu_val, uses_val, created_ago, pinned, ww, acw, aw):
+    """Tier a fact *should* carry, per DECAY.md §5 (first match wins). Clamps at
+    'archive-candidate' — a fact still in continuity is never 'archived' (that tier
+    means *moved*; the [overdue] check + archive-fact handle the actual move)."""
+    if fields.get("superseded-by") or fields.get("tier") == "superseded":
+        return "superseded"
+    if fields.get("tier") == "core":
+        return "core"
+    if fid in pinned:                      # unchecked Open Thread → never decays; its pinned-ness
+        return fields.get("tier")          # protects it, not the tier label — so leave the label as-is
+    if sslu_val is None:                   # never referenced — can't recompute; don't flag
+        return fields.get("tier")
+    if created_ago is not None and created_ago <= ww and uses_val <= 1:
+        return "working"
+    if sslu_val <= acw:
+        return "active"
+    return "archive-candidate"             # acw < sslu (incl. > aw, which [overdue] flags for the move)
+
+
+def check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw):
+    # (9) advisory: a fact's stored `tier` disagrees with the tier recomputed from the
+    # session reference log — i.e. review steps 2–3 (apply events / re-tier) were skipped.
+    # Catches the "did the archive but not the metadata pass" gap. core/superseded exempt.
+    out = []
+    sslu = make_sslu(refs)
+    for fid, fields in cont.items():
+        if fields.get("tier") in ("core", "superseded") or fields.get("superseded-by"):
+            continue
+        uses_val = sum(1 for ids in refs if fid in ids)
+        et = expected_tier(fields, fid, sslu(fid), uses_val, created_sessions_ago(fields.get("created"), stems), pinned, ww, acw, aw)
+        stored = fields.get("tier")
+        if et is not None and et != stored:
+            out.append(
+                f"[stale-metadata] {fid} tier '{stored}' should be '{et}' (sslu {sslu(fid)}) "
+                "— review steps 2–3 (re-tier) skipped; run refresh-metadata or a review"
+            )
+    return out
+
+
 def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines):
     # (8) advisory cadence/size triggers — what would have caught a real product repo
     # that ran 61 sessions and never archived (review never fired in the field).
@@ -361,6 +409,7 @@ def main():
         + check_version_manifest(root)
         + check_conflict_markers(root)
     )
+    stems = [os.path.basename(s)[:-3] for s in sessions]
     warns = (
         check_overdue(cont, pinned, sslu, aw)
         + check_dangling({**cont, **arch, **extra})
@@ -369,6 +418,7 @@ def main():
             cont, sessions, cont_text, cont_lines,
             w["review_every"], w["continuity_max_facts"], w["continuity_max_lines"],
         )
+        + check_stale_metadata(cont, pinned, refs, stems, w["working_window"], acw, aw)
     )
 
     return report(cont, arch, sessions, acw, aw, warns, errors, strict)

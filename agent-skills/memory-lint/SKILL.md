@@ -60,6 +60,10 @@ script, so the riskiest operation is verified against observable evidence.
    - *advisory* — **`[continuity-bloat]`**: more than `continuity_max_facts` decaying facts/threads
      (the primary lean signal — a count, immune to verbosity & session velocity), or more than
      `continuity_max_lines` lines (a coarse backstop). Both say "a review is due to lean it down."
+   - *advisory* — **`[stale-metadata]`**: a fact's stored `tier` disagrees with the tier recomputed from
+     the reference log (review steps 2–3 — apply events / re-tier — were skipped), excluding `core`,
+     `superseded`, never-referenced facts, and **pinned `- [ ]` open threads** (their tier label isn't
+     enforced — pinned-ness protects them; v4.26.1). Clear it with the **`refresh-metadata`** skill (or a review).
 3. **ERROR** (exit 1) → fix per `DECAY.md` / `REVIEW.md`: reactivate an over-archived fact (move it
    back into `continuity.md`), de-duplicate, or repair a link. **WARN** is advisory — the next review
    may act on it.

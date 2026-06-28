@@ -320,6 +320,44 @@ export function sessions_since_review(sessions, cont_text) {
   return stems.filter((s) => s > through).length;
 }
 
+export function created_sessions_ago(created, stems) {
+  // session files dated strictly after `created` (YYYY-MM-DD); approximate (by date).
+  if (!created) return null;
+  return stems.filter((s) => s.slice(0, 10) > created).length;
+}
+
+export function expected_tier(fields, fid, sslu_val, uses_val, created_ago, pinned, ww, acw, aw) {
+  // Tier a fact *should* carry per DECAY.md §5 (first match wins). Clamps at
+  // 'archive-candidate' — a fact still in continuity is never 'archived'.
+  if (fields["superseded-by"] || fields.tier === "superseded") return "superseded";
+  if (fields.tier === "core") return "core";
+  if (pinned.has(fid)) return fields.tier ?? null;  // pinned: never decays; leave the tier label as-is
+  if (sslu_val === null) return fields.tier ?? null;
+  if (created_ago !== null && created_ago <= ww && uses_val <= 1) return "working";
+  if (sslu_val <= acw) return "active";
+  return "archive-candidate";
+}
+
+export function check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw) {
+  // (9) advisory: stored `tier` disagrees with the tier recomputed from references —
+  // review steps 2–3 (apply events / re-tier) were skipped. core/superseded exempt.
+  const out = [];
+  const sslu = make_sslu(refs);
+  for (const [fid, fields] of cont) {
+    if (fields.tier === "core" || fields.tier === "superseded" || fields["superseded-by"]) continue;
+    const uses_val = refs.reduce((n, ids) => n + (ids.has(fid) ? 1 : 0), 0);
+    const et = expected_tier(fields, fid, sslu(fid), uses_val, created_sessions_ago(fields.created, stems), pinned, ww, acw, aw);
+    const stored = fields.tier;
+    if (et !== null && et !== stored) {
+      out.push(
+        `[stale-metadata] ${fid} tier '${stored}' should be '${et}' (sslu ${sslu(fid)}) ` +
+        "— review steps 2–3 (re-tier) skipped; run refresh-metadata or a review"
+      );
+    }
+  }
+  return out;
+}
+
 export function check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines) {
   // (8) advisory cadence/size triggers — what would have caught a real product repo
   // that ran 61 sessions and never archived (review never fired in the field).
@@ -391,6 +429,7 @@ export function main(argv) {
     ...check_version_manifest(root),
     ...check_conflict_markers(root),
   ];
+  const stems = sessions.map((s) => s.replace(/\.md$/, ""));
   const warns = [
     ...check_overdue(cont, pinned, sslu, aw),
     ...check_dangling(new Map([...cont, ...arch, ...extra])),
@@ -399,6 +438,7 @@ export function main(argv) {
       cont, sessions, cont_text, cont_lines,
       w.review_every, w.continuity_max_facts, w.continuity_max_lines
     ),
+    ...check_stale_metadata(cont, pinned, refs, stems, w.working_window, acw, aw),
   ];
 
   return report({ cont, arch, sessions, acw, aw, warns, errors, strict });
