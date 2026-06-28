@@ -67,6 +67,15 @@
 
 ## Key Decisions
 
+- **platform-core serializes `java.time.Instant` as first-class (2026-06-27).** Instant had no adapter and
+  round-tripped wrongly (Gson reflected it to `{seconds,nanos}`; MsgPack fell through to String/PoJo).
+  Fixed at the root in all three serialization paths — `SimpleMapper` (Gson adapter), `MsgPack` (nested
+  `case Instant`), `PayloadMapper` (top-level encode) — each mirroring `Date` via
+  `date2str(Date.from(instant))` → UTC, **millisecond-precision** ISO-8601/RFC-3339 string (same wire format
+  as Date; sub-ms precision is intentionally dropped for consistency). Prefer `Instant` over `java.util.Date`
+  in new code (also clears SonarQube `java:S2143`). Relates to `typed-io-map-or-pojo` (ADR-0003).
+  <!-- id: instant-serialization | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
+
 - **Finalized doc-style conventions** (the consistency pass after the migration was declared "done";
   3 forks decided by Eric Law 2026-06-22): (1) **ALL docs use lowercase-kebab semantic slugs** — every
   remaining ALL-CAPS file was renamed (`ARCHITECTURE`→`architecture`, `METHODOLOGY`→`methodology`,
