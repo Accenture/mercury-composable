@@ -376,6 +376,10 @@
 
 ## Open Threads
 
+- [ ] (planned — Eric, 2026-06-28; **next challenge**) **Schema Registry feature.** The richer Kafka
+  payload-encoding layer that sits on top of minimalist-kafka's `byte[]` building block — `simple.kafka.
+  notification`'s javadoc already names "a Confluent Schema Registry" as the intended layer-on-top. Scope
+  to be designed next session. Builds on [[helpers-and-worked-examples]] / the minimalist-kafka work.
 - [x] **Upgraded agent-memory v4.21.0 → v4.23.0** (in-place Mode B, 2026-06-28, by Claude Code from the
   tool checkout). **Then 4.22.4 → 4.23.0** (same day): installed the **`harvest-knowledge`** built-in skill
   (on-demand doc→memory harvest; the recurring counterpart to the enable-time curious harvest — re-scan
