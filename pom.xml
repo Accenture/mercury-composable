@@ -36,6 +36,7 @@
         <!-- Convenient standalone dev servers (no Docker required) -->
         <module>helpers/kafka-standalone</module>
         <module>helpers/redis-standalone</module>
+        <module>helpers/schema-registry-standalone</module>
 
         <!-- Executables for application examples -->
         <module>examples/lambda-example</module>

@@ -44,6 +44,8 @@ nav:
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
     - Kafka Flow Adapter: guides/kafka-flow-adapter.md
+    - Schema Registry Mock: guides/schema-registry-mock.md
+
     - Sync-over-Async: guides/sync-over-async.md
     - Minimalist Service Mesh: guides/service-mesh.md
 

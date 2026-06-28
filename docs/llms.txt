@@ -39,6 +39,8 @@
 - [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/spring-boot/): run Mercury as a Spring Boot 3/4 app.
 - [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/): cross-instance event communication.
 - [Kafka Flow Adapter](https://accenture.github.io/mercury-composable/guides/kafka-flow-adapter/): opt-in minimalist-kafka library — route Kafka topics into Event Script flows (kafka-flow-adapter.yaml: topic/flow/group/partition) and publish via simple.kafka.notification; externalized producer/consumer client templates, per-binding consumer group, partition pinning, bounded retry + per-topic dead-letter, continuous traceparent.
+- [Schema Registry Mock](https://accenture.github.io/mercury-composable/guides/schema-registry-mock/): standalone mock server for Confluent Schema Registry (Avro, JSON Schema) local development.
+
 - [Sync-over-Async](https://accenture.github.io/mercury-composable/guides/sync-over-async/): opt-in extension exposing synchronous REST request/response over an async cross-pod Kafka backend via a Redis return route keyed by correlation-id (sync.over.async.enabled, redis.* + sync.* config).
 - [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/service-mesh/): Kafka-based service discovery and routing.
 

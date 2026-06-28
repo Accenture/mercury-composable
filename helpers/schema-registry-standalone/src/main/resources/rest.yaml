@@ -1,0 +1,15 @@
+rest:
+  - service: "schema.registry.health"
+    methods:
+      - "GET"
+    url: "/"
+
+  - service: "schema.registry.register"
+    methods:
+      - "POST"
+    url: "/subjects/{subject}/versions"
+    
+  - service: "schema.registry.get"
+    methods:
+      - "GET"
+    url: "/schemas/ids/{id}"
