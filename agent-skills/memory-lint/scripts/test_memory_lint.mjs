@@ -14,7 +14,12 @@ import {
   check_session_filenames,
   check_version_manifest,
   check_conflict_markers,
+  check_continuity_health,
+  sessions_since_review,
 } from "./memory-lint.mjs";
+
+// (8) advisory cadence/size triggers (v4.24.0). cont is a Map; cont.size is the fact count.
+const facts = (n) => new Map(Array.from({ length: n }, (_, i) => [`fact-${i}`, {}]));
 
 function byCodePoint(a, b) {
   if (a < b) return -1;
@@ -323,4 +328,56 @@ test("check_conflict_markers ignores a marker in the archive (archive/ excluded)
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("check_continuity_health flags an overdue review", () => {
+  const cont_text = "- **last_review:** 2026-06-20 | through 2026-06-20-120000\n";
+  const sessions = Array.from({ length: 7 }, (_, i) => `2026-06-2${i + 1}-120000.md`);
+  const w = check_continuity_health(facts(1), sessions, cont_text, 10, 5, 30, 600);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("[review-overdue]"));
+  assert.ok(w[0].includes("7 session(s) since last review >= review_every 5"));
+});
+
+test("check_continuity_health: a recent review is OK", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  assert.deepEqual(
+    check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 10, 10, 30, 600),
+    []
+  );
+});
+
+test("check_continuity_health: never reviewed counts all sessions", () => {
+  const cont_text = "# Continuity\n(no last_review recorded yet)\n";
+  const sessions = Array.from({ length: 4 }, (_, i) => `2026-06-2${i + 1}-120000.md`);
+  const w = check_continuity_health(facts(1), sessions, cont_text, 10, 3, 30, 600);
+  assert.ok(w.some((x) => x.includes("[review-overdue]") && x.includes("4 session(s)")));
+});
+
+test("sessions_since_review prefers the 'through' token", () => {
+  const cont_text = "- **last_review:** 2026-06-20 | through 2026-06-25-120000\n";
+  const sessions = ["2026-06-24-120000.md", "2026-06-26-120000.md", "2026-06-27-120000.md"];
+  assert.equal(sessions_since_review(sessions, cont_text), 2);
+});
+
+test("check_continuity_health flags fact bloat", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  const w = check_continuity_health(facts(31), ["2026-06-27-120000.md"], cont_text, 10, 10, 30, 600);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("31 continuity facts > continuity_max_facts 30"));
+});
+
+test("check_continuity_health flags line bloat", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  const w = check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 700, 10, 30, 600);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("continuity.md 700 lines > continuity_max_lines 600"));
+});
+
+test("check_continuity_health: a healthy layer is OK", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  assert.deepEqual(
+    check_continuity_health(facts(24), ["2026-06-27-120000.md"], cont_text, 490, 10, 30, 600),
+    []
+  );
 });

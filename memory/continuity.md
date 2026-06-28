@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-28T03:33:45Z | agent: Claude Code
+- **last_session:** 2026-06-28T17:31:42Z | agent: Claude Code
 - **last_review:** 2026-06-27 | through 2026-06-27-012401.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -376,15 +376,33 @@
 
 ## Open Threads
 
+- [x] **Upgraded agent-memory v4.23.1 → v4.25.0** (Mode B, by Claude Code from the tool checkout).
+  Three rungs: **4.23.2** (AGENTS.md long-session context-hygiene block), **4.24.0** (decay-policy retune +
+  a `memory-lint` review-cadence/size advisory), **4.25.0** (`archive-fact` — a 6th built-in: a deterministic,
+  safe archive-move that reads continuity into memory and writes once, so the truncate-before-read trap can't
+  recur). Re-synced AGENTS.md, REVIEW.md, `.agent/schema.md`; merged `decay-policy.md` additively
+  (`continuity_max_facts: 30` added; `continuity_max_lines` 300→600; `verify_invariants_every` 20→40 — all
+  stock here, no custom values clobbered); copied the `memory-lint` + new `archive-fact` skills; re-synced
+  adapters (6 skills → 36); stamped `.agent/version.md` → 4.25.0.
+  **⚠️ A review is now due (lint says so):** `memory-lint` reports `[review-overdue]` (21 sessions since the
+  last review ≥ review_every 10) and `[continuity-bloat]` (41 facts > continuity_max_facts 30), plus 11
+  per-fact `[overdue]` advisories — this repo's own decay backlog. **Run the `REVIEW.md` ritual** (it can now
+  use `archive-fact` to perform the moves safely). Left for the mercury team to curate — the faded facts are
+  mercury's domain content; agent-memory only flags, never picks. 0 lint **errors**.
+  <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-173142 -->
+
 - [ ] (planned — Eric, 2026-06-28; **next challenge**) **Schema Registry feature.** The richer Kafka
   payload-encoding layer that sits on top of minimalist-kafka's `byte[]` building block — `simple.kafka.
   notification`'s javadoc already names "a Confluent Schema Registry" as the intended layer-on-top. Scope
   to be designed next session. Builds on [[helpers-and-worked-examples]] / the minimalist-kafka work.
-- [x] **Upgraded agent-memory v4.21.0 → v4.23.0** (in-place Mode B, 2026-06-28, by Claude Code from the
-  tool checkout). **Then 4.22.4 → 4.23.0** (same day): installed the **`harvest-knowledge`** built-in skill
-  (on-demand doc→memory harvest; the recurring counterpart to the enable-time curious harvest — re-scan
-  `docs/` and fold new durable facts into memory additively), re-synced adapters (now 5 skills → 30,
-  harvest-knowledge 6/6), stamped 4.23.0. Both upgrades remain in one uncommitted set.
+- [x] **Upgraded agent-memory v4.21.0 → v4.23.1** (in-place Mode B, 2026-06-28, by Claude Code from the
+  tool checkout). **Then 4.23.0 → 4.23.1** (same day): re-synced `.agent/schema.md` (Project State gains the
+  optional **`last_harvest`** field) + re-copied the `harvest-knowledge` skill (now reads `last_harvest` to
+  scope a run + stamps it on completion), stamped 4.23.1. `last_harvest` isn't set yet — it appears the next
+  time `harvest-knowledge` runs here. **Then 4.22.4 → 4.23.0** (same day): installed the **`harvest-knowledge`**
+  built-in skill (on-demand doc→memory harvest; the recurring counterpart to the enable-time curious harvest —
+  re-scan `docs/` and fold new durable facts into memory additively), re-synced adapters (5 skills → 30,
+  harvest-knowledge 6/6), stamped 4.23.0.
   **Earlier (4.21.0 → 4.22.4):** Installed **`MERGE.md`** (git-conflict resolution protocol); re-synced `REVIEW.md`
   (safe-write safeguard), `SKILLS.md` (self-healed a missing Antigravity adapter section), `.agent/schema.md`
   (Concurrency & merge-friendliness), `AGENTS.md` (status-short + lightweight-per-session); re-copied

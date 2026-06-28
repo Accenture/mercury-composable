@@ -15,7 +15,15 @@ Three triggers:
 1. **Cadence** — when `sessions_since_last_review ≥ review_every` (from
    `memory/decay-policy.md`). Checked during the post-session update.
 2. **On command** — the user says *"review memory"* / *"compact memory"*.
-3. **Size** — when `memory/continuity.md` exceeds `continuity_max_lines`.
+3. **Size** — when `memory/continuity.md` holds more than `continuity_max_facts`
+   decaying facts/threads (the primary signal — a count, immune to verbosity and session
+   velocity), **or** exceeds `continuity_max_lines` (a coarse backstop).
+
+> **The triggers don't rely on the agent remembering.** `memory-lint` surfaces all three as
+> advisories — `[review-overdue]` (cadence) and `[continuity-bloat]` (facts/lines) — so a lapsed
+> review shows up on every lint run + the CI floor, not just when someone thinks to check. (Added
+> v4.24.0, after a real product repo ran 61 sessions and never archived because the cadence
+> trigger only ever fired in the agent's head.)
 
 Within a review, one more cadence is checked — **invariant verification**: when
 `sessions_since_last_invariant_check ≥ verify_invariants_every`, the review prompts a
@@ -51,6 +59,12 @@ it never fires more often than reviews do.
    `sessions_since_last_used` (count files — `DECAY.md` §4) and apply the
    `DECAY.md` §5 rules in order. Record each tier change.
 4. **Archive.** Facts that resolve to `archived` (faded) **or** `superseded` (false):
+   > **Preferred — use the `archive-fact` skill** (`agent-skills/archive-fact/`; Python *or* Node) to
+   > perform the move *deterministically*. It reads `continuity.md` into memory and writes once, so the
+   > truncate-before-read trap can't recur. You still decide *which* ids to archive; the helper does the move:
+   > `python3 agent-skills/archive-fact/scripts/archive-fact.py --id <id> [--id <id> …] [--reason "superseded by <new>"]`
+   > (`--dry-run` to preview). It refuses if an id is missing or already archived (all-or-nothing).
+   By hand (no runtime — **use append-mode / read-into-variable, never a truncate-first write**, see Safety):
    - append the fact *with its metadata comment* to `memory/archive/<YYYY>-Q<n>.md`
      under a dated heading, noting the reason — `faded` or `superseded by <new-id>`,
    - add/refresh its line in `memory/archive/INDEX.md`

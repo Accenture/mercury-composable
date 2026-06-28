@@ -54,6 +54,12 @@ script, so the riskiest operation is verified against observable evidence.
      truth. `sessions/` and `archive/` are **excluded** (immutable/append narrative that legitimately
      *quotes* markers — e.g. a session log pasting a diff). A bare `=======` line is *not* flagged
      (it's a valid Markdown setext heading underline).
+   - *advisory* — **`[review-overdue]`**: `sessions_since_last_review ≥ review_every` (read from the
+     `last_review` Project-State stamp), so a lapsed review ritual surfaces on every lint run + CI,
+     not just when someone remembers to check;
+   - *advisory* — **`[continuity-bloat]`**: more than `continuity_max_facts` decaying facts/threads
+     (the primary lean signal — a count, immune to verbosity & session velocity), or more than
+     `continuity_max_lines` lines (a coarse backstop). Both say "a review is due to lean it down."
 3. **ERROR** (exit 1) → fix per `DECAY.md` / `REVIEW.md`: reactivate an over-archived fact (move it
    back into `continuity.md`), de-duplicate, or repair a link. **WARN** is advisory — the next review
    may act on it.

@@ -111,7 +111,17 @@ export function memref_ids(text) {
 }
 
 export function load_windows(root) {
-  const w = { working_window: 3, active_window: 8, archive_window: 20 };
+  // Defaults track the shipped templates/memory/decay-policy.md (v4.24.0): a repo
+  // whose policy omits a field falls back to these. continuity_max_facts is the
+  // primary lean signal (count > lines — verbosity/velocity-independent).
+  const w = {
+    working_window: 3,
+    active_window: 8,
+    archive_window: 20,
+    review_every: 10,
+    continuity_max_facts: 30,
+    continuity_max_lines: 600,
+  };
   const p = join(root, "memory", "decay-policy.md");
   if (existsSync(p)) {
     const t = read_text(p);
@@ -290,6 +300,54 @@ export function check_dangling(allf) {
   return out;
 }
 
+const LAST_REVIEW_RE = /^- \*\*last_review:\*\*\s*([0-9-]+)(?:\s*\|\s*through\s+([0-9][0-9-]*))?/m;
+
+// Count lines the way Python's str.splitlines() does (trailing newline adds no line).
+function count_lines(s) {
+  if (s === "") return 0;
+  const parts = s.split(/\r\n|\r|\n/);
+  if (parts[parts.length - 1] === "") parts.pop();
+  return parts.length;
+}
+
+export function sessions_since_review(sessions, cont_text) {
+  // How many session files were written after the last_review 'through' stamp.
+  // No last_review recorded (never reviewed) => every session counts as 'since'.
+  const stems = sessions.map((s) => s.replace(/\.md$/, ""));
+  const m = cont_text.match(LAST_REVIEW_RE);
+  if (!m) return stems.length;
+  const through = m[2] || m[1]; // prefer the 'through <session-file>' token
+  return stems.filter((s) => s > through).length;
+}
+
+export function check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines) {
+  // (8) advisory cadence/size triggers — what would have caught a real product repo
+  // that ran 61 sessions and never archived (review never fired in the field).
+  // All advisory (WARN): a review is a human/agent ritual, never a hard gate.
+  const out = [];
+  const ssr = sessions_since_review(sessions, cont_text);
+  if (ssr >= re_every) {
+    out.push(
+      `[review-overdue] ${ssr} session(s) since last review >= review_every ` +
+        `${re_every} — run the REVIEW.md ritual`
+    );
+  }
+  const nfacts = cont.size;
+  if (nfacts > max_facts) {
+    out.push(
+      `[continuity-bloat] ${nfacts} continuity facts > continuity_max_facts ` +
+        `${max_facts} — a review is due to lean it down`
+    );
+  }
+  if (cont_lines > max_lines) {
+    out.push(
+      `[continuity-bloat] continuity.md ${cont_lines} lines > continuity_max_lines ` +
+        `${max_lines} — a review is due to lean it down`
+    );
+  }
+  return out;
+}
+
 function report({ cont, arch, sessions, acw, aw, warns, errors, strict }) {
   console.log(
     `memory-lint: ${cont.size} continuity facts, ${arch.size} archived, ` +
@@ -324,6 +382,9 @@ export function main(argv) {
   const acw = w.active_window;
   const sslu = make_sslu(refs);
 
+  const cont_text = read_text(join(root, "memory", "continuity.md"));
+  const cont_lines = count_lines(cont_text);
+
   const errors = [
     ...check_duplicates(cont, arch),
     ...check_over_archived(arch, sslu, aw),
@@ -334,6 +395,10 @@ export function main(argv) {
     ...check_overdue(cont, pinned, sslu, aw),
     ...check_dangling(new Map([...cont, ...arch, ...extra])),
     ...check_session_filenames(sessions),
+    ...check_continuity_health(
+      cont, sessions, cont_text, cont_lines,
+      w.review_every, w.continuity_max_facts, w.continuity_max_lines
+    ),
   ];
 
   return report({ cont, arch, sessions, acw, aw, warns, errors, strict });

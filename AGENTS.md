@@ -113,9 +113,10 @@ expected (the decay math counts log files — `DECAY.md` §4).
      `Superseded: <old> → <new>` in `## Memory References`. This is a truth-state edit
      you own; the review archives it flagged "superseded" (`DECAY.md` §9).
 3. **Review cadence.** If `sessions_since_last_review ≥ review_every`
-   (`memory/decay-policy.md`), or `continuity.md` has grown past
-   `continuity_max_lines`, run the review ritual now — see `REVIEW.md`. (Also run it
-   on demand if the user says "review memory".)
+   (`memory/decay-policy.md`), or `continuity.md` has grown past `continuity_max_facts`
+   (decaying facts/threads) or `continuity_max_lines`, run the review ritual now — see
+   `REVIEW.md`. `memory-lint` flags all three (`[review-overdue]` / `[continuity-bloat]`),
+   so they don't depend on you remembering. (Also run on demand if the user says "review memory".)
 4. Remind the user: `git add memory/ && git commit -m "session YYYY-MM-DD [agent]"`.
    **Commits are deliberate and human-initiated.** When you commit at the human's direction,
    **identify yourself** the same way you do in session logs — e.g. a `Co-Authored-By: <your agent
@@ -165,6 +166,23 @@ expected (the decay math counts log files — `DECAY.md` §4).
 > empty vendor adapter dirs or `git config core.hooksPath` is unset, run **`bash .githooks/init.sh`**
 > once (regenerates adapters + activates the post-commit hook) — do this proactively, before other
 > work. (CI runs server-side regardless.)
+
+> **Long session? Keep state externalized so compaction is safe (v4.23.2).** Compaction (your tool's
+> `/compact`, an auto-compact at a context-usage threshold, or a fresh session) summarizes the
+> conversation and drops verbatim detail. The **objective** health signal is **context-window utilization —
+> tokens used vs. the model's limit** — which your harness tracks and may auto-act on; wall-clock time and
+> a "replies feel vague" sense are only proxies (the model can't reliably self-measure its own context, so
+> don't gate on a felt "fog"). You usually **can't compact yourself**, but you control the one thing that
+> makes compaction lossless:
+> - **Write the session log + any `continuity.md` update at each natural seam** — a milestone landed, a
+>   phase shift (explore → implement → verify), or before pivoting to an unrelated task — **before**
+>   compaction, not after. Externalized state reloads as context next turn; whatever lives **only** in the
+>   buffer is what a summary can lose (summaries keep the narrative, not the verbatim texture).
+> - **At a seam with high utilization, suggest compacting** (or rely on the harness's auto-compact) rather
+>   than carrying a full buffer into the next phase. **Never mid-task**, with hot, unwritten state.
+> - **After any compaction, re-verify specifics against live files** rather than trusting the paraphrase.
+> The session log *is* the seam marker: "when do I write the log?" and "when is it safe to compact?" share
+> the same beat. This is *why* the memory layer lives in **files**, not the chat buffer.
 
 ## Multi-Agent Continuity
 

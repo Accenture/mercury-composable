@@ -45,10 +45,14 @@ You may *borrow* `/init`'s analysis muscle, but the output goes to `memory/`, **
    `CONTRIBUTING*`, `RFC*`, `GLOSSARY*`, onboarding / runbook / postmortem notes. Match `.md/.markdown/.mdx/.rst/.txt/.adoc`.
    **Exclude** (not team prose): `node_modules/`, `vendor/`, `.venv`/`venv/`, `target/`, `dist/`, `build/`,
    `.git/`, generated API reference, minified/vendored files, anything already `.gitignore`d.
-2. **Prefer what's NEW or CHANGED** since the last harvest where you can tell — `git log`/mtime, or a doc
-   not yet reflected in memory — so you're not re-distilling everything. **Budget with disclosure:** cap
-   the read (prioritize roots → `docs/` → recently-modified); if the budget is hit, record a
-   `- [ ] (knowledge-harvest)` Open Thread listing what's left, so nothing vanishes silently.
+2. **Scope to what's NEW or CHANGED since the last harvest.** Read **`last_harvest`** from
+   `continuity.md` → Project State (the marker this skill stamps in step 7). If present, look only at docs
+   changed since then — `git log --since=<date>` / `git diff --name-only <since>..HEAD` over the doc paths.
+   If it's **absent** (never harvested — or the repo predates this field), treat it as a **full first pass**.
+   Either way, **budget with disclosure:** cap the read (prioritize roots → `docs/` → recently-modified);
+   if the budget is hit, record a `- [ ] (knowledge-harvest)` Open Thread listing what's left, so nothing
+   vanishes silently. (`last_harvest` only *scopes* the read — the step-4 check-existing-first guard is
+   what actually prevents duplicates, so a re-scan is always safe.)
 3. **Distill — don't transcribe — into memory, additively:**
    - conventions / architecture decisions / hard constraints → `memory/instructions.md` (and seed
      **Architectural Invariants** from explicit "must / never" rules);
@@ -65,6 +69,11 @@ You may *borrow* `/init`'s analysis muscle, but the output goes to `memory/`, **
    budget — let the human review before it's treated as settled.
 6. **Record it.** A harvest is a memory-relevant event → write a session log with a `## Memory References`
    section listing the fact ids you created / changed (it stays inside the normal after-session ritual).
+7. **Stamp `last_harvest`** in `continuity.md` → Project State: `last_harvest: <today> | through <this
+   session-file>` (create the field if absent — it sits with `last_review` / `last_invariant_check`). This
+   is what step 2 reads next time, so each run scopes incrementally. The harvest **owns** `last_harvest`,
+   the way the review owns `last_review`. Even a **no-op** run (nothing new to fold) stamps it — that
+   records "docs were checked through here." Write it safely (`REVIEW.md` → Safety: never truncate-before-read).
 
 ## Notes
 

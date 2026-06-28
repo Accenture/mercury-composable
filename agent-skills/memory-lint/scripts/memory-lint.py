@@ -103,7 +103,17 @@ def memref_ids(text):
 
 
 def load_windows(root):
-    w = {"working_window": 3, "active_window": 8, "archive_window": 20}
+    # Defaults track the shipped templates/memory/decay-policy.md (v4.24.0): a repo
+    # whose policy omits a field falls back to these. continuity_max_facts is the
+    # primary lean signal (count > lines — verbosity/velocity-independent).
+    w = {
+        "working_window": 3,
+        "active_window": 8,
+        "archive_window": 20,
+        "review_every": 10,
+        "continuity_max_facts": 30,
+        "continuity_max_lines": 600,
+    }
     p = os.path.join(root, "memory", "decay-policy.md")
     if os.path.isfile(p):
         t = read_text(p)
@@ -270,6 +280,47 @@ def check_dangling(allf):
     return out
 
 
+LAST_REVIEW_RE = re.compile(
+    r"(?m)^- \*\*last_review:\*\*\s*([0-9-]+)(?:\s*\|\s*through\s+([0-9][0-9-]*))?"
+)
+
+
+def sessions_since_review(sessions, cont_text):
+    """How many session files were written after the last_review 'through' stamp.
+    No last_review recorded (never reviewed) ⇒ every session counts as 'since'."""
+    stems = [os.path.basename(s)[:-3] for s in sessions]
+    m = LAST_REVIEW_RE.search(cont_text)
+    if not m:
+        return len(stems)
+    through = m.group(2) or m.group(1)  # prefer the 'through <session-file>' token
+    return sum(1 for s in stems if s > through)
+
+
+def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines):
+    # (8) advisory cadence/size triggers — what would have caught a real product repo
+    # that ran 61 sessions and never archived (review never fired in the field).
+    # All advisory (WARN): a review is a human/agent ritual, never a hard gate.
+    out = []
+    ssr = sessions_since_review(sessions, cont_text)
+    if ssr >= re_every:
+        out.append(
+            f"[review-overdue] {ssr} session(s) since last review >= review_every "
+            f"{re_every} — run the REVIEW.md ritual"
+        )
+    nfacts = len(cont)
+    if nfacts > max_facts:
+        out.append(
+            f"[continuity-bloat] {nfacts} continuity facts > continuity_max_facts "
+            f"{max_facts} — a review is due to lean it down"
+        )
+    if cont_lines > max_lines:
+        out.append(
+            f"[continuity-bloat] continuity.md {cont_lines} lines > continuity_max_lines "
+            f"{max_lines} — a review is due to lean it down"
+        )
+    return out
+
+
 def report(cont, arch, sessions, acw, aw, warns, errors, strict):
     print(
         f"memory-lint: {len(cont)} continuity facts, {len(arch)} archived, "
@@ -301,6 +352,9 @@ def main():
     aw, acw = w["archive_window"], w["active_window"]
     sslu = make_sslu(refs)
 
+    cont_text = read_text(os.path.join(root, "memory", "continuity.md"))
+    cont_lines = len(cont_text.splitlines())
+
     errors = (
         check_duplicates(cont, arch)
         + check_over_archived(arch, sslu, aw)
@@ -311,6 +365,10 @@ def main():
         check_overdue(cont, pinned, sslu, aw)
         + check_dangling({**cont, **arch, **extra})
         + check_session_filenames(sessions)
+        + check_continuity_health(
+            cont, sessions, cont_text, cont_lines,
+            w["review_every"], w["continuity_max_facts"], w["continuity_max_lines"],
+        )
     )
 
     return report(cont, arch, sessions, acw, aw, warns, errors, strict)

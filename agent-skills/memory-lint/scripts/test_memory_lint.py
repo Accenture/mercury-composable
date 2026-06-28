@@ -261,5 +261,60 @@ class TestConflictMarkers(unittest.TestCase):
             self.assertEqual(memory_lint.check_conflict_markers(root), [])
 
 
+class TestContinuityHealth(unittest.TestCase):
+    # (8) advisory cadence/size triggers (v4.24.0): catch a layer whose review never fired,
+    # or a continuity.md grown past the fact/line budget. All advisory (WARN).
+    @staticmethod
+    def _facts(n):
+        return {f"fact-{i}": {} for i in range(n)}
+
+    def test_review_overdue_flagged(self):
+        cont_text = "- **last_review:** 2026-06-20 | through 2026-06-20-120000\n"
+        sessions = [f"2026-06-2{d}-120000.md" for d in range(1, 8)]  # 7 strictly after the stamp
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 10, 5, 30, 600)
+        self.assertEqual(len(w), 1)
+        self.assertIn("[review-overdue]", w[0])
+        self.assertIn("7 session(s) since last review >= review_every 5", w[0])
+
+    def test_review_recent_ok(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]  # 0 strictly after
+        self.assertEqual(
+            memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 10, 10, 30, 600), []
+        )
+
+    def test_never_reviewed_counts_all_sessions(self):
+        cont_text = "# Continuity\n(no last_review recorded yet)\n"
+        sessions = [f"2026-06-2{d}-120000.md" for d in range(1, 5)]  # 4 sessions
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 10, 3, 30, 600)
+        self.assertTrue(any("[review-overdue]" in x and "4 session(s)" in x for x in w))
+
+    def test_sessions_since_review_prefers_through_token(self):
+        cont_text = "- **last_review:** 2026-06-20 | through 2026-06-25-120000\n"
+        sessions = ["2026-06-24-120000.md", "2026-06-26-120000.md", "2026-06-27-120000.md"]
+        self.assertEqual(memory_lint.sessions_since_review(sessions, cont_text), 2)
+
+    def test_fact_bloat_flagged(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        w = memory_lint.check_continuity_health(self._facts(31), sessions, cont_text, 10, 10, 30, 600)
+        self.assertEqual(len(w), 1)
+        self.assertIn("31 continuity facts > continuity_max_facts 30", w[0])
+
+    def test_line_bloat_flagged(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 700, 10, 30, 600)
+        self.assertEqual(len(w), 1)
+        self.assertIn("continuity.md 700 lines > continuity_max_lines 600", w[0])
+
+    def test_healthy_ok(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        self.assertEqual(
+            memory_lint.check_continuity_health(self._facts(24), sessions, cont_text, 490, 10, 30, 600), []
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
