@@ -23,6 +23,7 @@ import org.platformlambda.common.TestBase;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -50,6 +51,23 @@ class WorkerHandlerTest extends TestBase {
         assertEquals(Map.of("ok", true), res.getBody());
         assertNotNull(res.getSpanId(),
                 "a Mono task's response must carry the function's span_id so the next flow task can parent to it");
+    }
+
+    @Test
+    void fluxResponseForwardsSpanId() throws ExecutionException, InterruptedException {
+        // Unlike Mono, a Flux task returns its response (the x-stream-id/x-ttl handle) synchronously on the
+        // worker thread, so the span_id is forwarded normally. This guards the Flux path against regressing
+        // into the same cross-thread trace gap that affected Mono.
+        String route = "test.flux.span.forward";
+        TypedLambdaFunction<Object, Flux<Object>> f =
+                (headers, input, instance) -> Flux.just("a", "b");
+        Platform platform = Platform.getInstance();
+        platform.registerPrivate(route, f, 1);
+        PostOffice po = PostOffice.trackable("unit.test", "flux-span-1", "TEST /flux/span");
+        EventEnvelope res = po.eRequest(new EventEnvelope().setTo(route).setBody(Map.of()), 5000).get();
+        platform.release(route);
+        assertNotNull(res, "expect a response");
+        assertNotNull(res.getSpanId(), "a Flux task's response must carry the function's span_id");
     }
 
     @Test
