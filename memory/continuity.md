@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-27T02:22:32Z | agent: Claude Code
+- **last_session:** 2026-06-28T03:33:45Z | agent: Claude Code
 - **last_review:** 2026-06-27 | through 2026-06-27-012401.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
@@ -375,6 +375,22 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [x] **Upgraded agent-memory v4.21.0 → v4.23.0** (in-place Mode B, 2026-06-28, by Claude Code from the
+  tool checkout). **Then 4.22.4 → 4.23.0** (same day): installed the **`harvest-knowledge`** built-in skill
+  (on-demand doc→memory harvest; the recurring counterpart to the enable-time curious harvest — re-scan
+  `docs/` and fold new durable facts into memory additively), re-synced adapters (now 5 skills → 30,
+  harvest-knowledge 6/6), stamped 4.23.0. Both upgrades remain in one uncommitted set.
+  **Earlier (4.21.0 → 4.22.4):** Installed **`MERGE.md`** (git-conflict resolution protocol); re-synced `REVIEW.md`
+  (safe-write safeguard), `SKILLS.md` (self-healed a missing Antigravity adapter section), `.agent/schema.md`
+  (Concurrency & merge-friendliness), `AGENTS.md` (status-short + lightweight-per-session); re-copied
+  `memory-lint` (**check 7** — leftover conflict markers); replaced `.githooks/post-commit` with the
+  **per-session / 30-min-window** version (**the per-commit stubbing this repo reported is now fixed**);
+  re-synced adapters (4 skills → 24, gitignored, 6/6 each). `.agent/version.md` 4.21.0→4.22.4 (enabled_with
+  4.14.1, mode A preserved). `memory-lint`: 0 errors. **Working-tree changes uncommitted** — review + commit
+  at your discretion. (Optional doc re-harvest offered, not run; this repo's own memory review is due — 10
+  overdue facts.)
+  <!-- id: agent-memory-upgrade-v4224 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: active | origin: 2026-06-28-031106.md -->
 
 - [x] (in progress) **Layer-standardization reorg** — "Shared Foundations + lean parallel layers"
   (`docs-content-canon`). Each of the 3 layers gets the same shape: Overview → Tutorial → Grammar →

@@ -246,6 +246,36 @@ export function check_version_manifest(root) {
   return [];
 }
 
+export function check_conflict_markers(root) {
+  // (7) No leftover VCS merge-conflict markers in the LIVE top-level memory files —
+  // the ones every teammate concurrently edits and the agent reads as truth
+  // (continuity.md, instructions.md, vision.md, decay-policy.md, smoke-test.md). We scan
+  // `memory/*.md` only (non-recursive): `sessions/` and `archive/` are deliberately
+  // EXCLUDED — they are immutable/append narrative that legitimately *quotes* conflict
+  // markers (a session log pasting terminal output or a real diff to document it), so
+  // scanning them would false-positive. Match git's `<<<<<<<` / `>>>>>>>` and the diff3
+  // `|||||||` line markers; deliberately do NOT match a bare `=======` line (a valid
+  // Markdown setext heading underline).
+  const out = [];
+  const mem = join(root, "memory");
+  const marker = /^(<{7}|>{7}|\|{7})(\s|$)/;
+  if (!existsSync(mem)) return out;
+  const files = readdirSync(mem).filter((n) => n.endsWith(".md")).sort(byCodePoint);
+  for (const name of files) {
+    const lines = read_text(join(mem, name)).split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (marker.test(lines[i])) {
+        out.push(
+          `[conflict-marker] memory/${name}:${i + 1} unresolved merge-conflict marker ` +
+            "— resolve it before committing"
+        );
+        break; // one report per file is enough
+      }
+    }
+  }
+  return out;
+}
+
 export function check_dangling(allf) {
   // (4) supersession links resolve
   const out = [];
@@ -298,6 +328,7 @@ export function main(argv) {
     ...check_duplicates(cont, arch),
     ...check_over_archived(arch, sslu, aw),
     ...check_version_manifest(root),
+    ...check_conflict_markers(root),
   ];
   const warns = [
     ...check_overdue(cont, pinned, sslu, aw),

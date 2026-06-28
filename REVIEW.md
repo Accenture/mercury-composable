@@ -95,7 +95,17 @@ it never fires more often than reviews do.
    `last_invariant_check` to today + the latest session file. (Never-decay ≠
    never-checked.) If not due, skip this step.
 8. **Stamp.** Set `last_review` to today + the latest session file name.
-9. **Summarise.** Write a `## Memory Review` block into *this* session's log.
+9. **Summarise.** Write a `## Memory Review` block into *this* session's log — list the archived /
+   swept / reactivated ids **there**, in that block.
+   **⚠️ Do not list archived ids under `## Memory References`.** Archiving a fact is **not** a "use."
+   `memory-lint` (and the by-hand check) count any id under `## Memory References` as referenced
+   *this* session — so naming an archived id there sets its `sessions_since_last_used` to 0,
+   **re-arms the over-archival guard, and forces a false reactivation** (it will demand you move the
+   fact you just archived back). `## Memory References` records only the ids you genuinely
+   **relied on / created / reactivated** this session (e.g. a new `(knowledge-harvest)` or
+   invariant-reverify thread you created). The `## Memory Review` block is *not* parsed as references,
+   so archived ids belong there. *(Learned the hard way: a review summary that listed its archived ids
+   under `## Memory References` threw 13 spurious `over-archived` ERRORs.)*
 
 **Contradiction backstop.** The review reads every fact anyway, so give them a quick
 contradiction scan — the write-time check (`DECAY.md` §10) may have missed one, or two
@@ -148,6 +158,16 @@ This two-way movement is what keeps the system smart rather than merely lossy.
 ## Safety
 
 - Never delete a fact — archiving is a *move*, not a removal.
+- **Never truncate a memory file when scripting the move.** To append to the archive / `INDEX.md`,
+  use **append mode** (`>> file`, or `open(f, "a")`); to rewrite `continuity.md`, **read the whole file
+  into a variable, then write**. **Never** `open(f, "w").write(open(f).read() + …)` — opening in `"w"`
+  truncates `f` to **empty before** the inner read runs, so it silently wipes the file (this exact trap
+  has wiped a `version.md` stamp *and* this repo's archive — 50 facts → 6 — once each). Same caution for
+  any `sed -i`-style in-place rewrite.
+- **After any scripted memory mutation, run `memory-lint`.** It catches a truncation immediately — the
+  archived/continuity count drops and supersession links dangle. Every memory file is git-tracked, so
+  `git checkout HEAD -- <file>` recovers cleanly. Treat the lint as the deterministic gate on your own
+  edits, not just on the review's arithmetic.
 - Never overwrite a hand-set `tier:` (especially `core`) or a hand-set `id`.
 - Never edit past session logs — they are the immutable ledger this ritual reads.
 - Stay within the repo's `memory/` and `archive/`; never touch `~/`, `~/.claude/`,

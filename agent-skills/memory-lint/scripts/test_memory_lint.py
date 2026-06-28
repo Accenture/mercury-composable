@@ -196,5 +196,70 @@ class TestVersionManifest(unittest.TestCase):
             self.assertEqual(memory_lint.check_version_manifest(root), [])
 
 
+class TestConflictMarkers(unittest.TestCase):
+    # A leftover VCS merge-conflict marker corrupts shared memory and must be an ERROR.
+    # A bare `=======` line is a valid Markdown setext heading underline and must NOT trip.
+    @staticmethod
+    def _setup(root, files):
+        os.makedirs(os.path.join(root, "memory"), exist_ok=True)
+        for rel, body in files.items():
+            full = os.path.join(root, "memory", rel)
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            with open(full, "w", encoding="utf-8") as f:
+                f.write(body)
+
+    def test_git_markers_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\n<<<<<<< HEAD\nmine\n=======\ntheirs\n>>>>>>> branch\n",
+            })
+            errs = memory_lint.check_conflict_markers(root)
+            self.assertEqual(len(errs), 1)
+            self.assertIn("[conflict-marker]", errs[0])
+            self.assertIn("memory/continuity.md:2", errs[0])
+
+    def test_diff3_marker_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {"continuity.md": "# c\n||||||| base\n"})
+            self.assertEqual(len(memory_lint.check_conflict_markers(root)), 1)
+
+    def test_setext_heading_underline_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {"continuity.md": "Title\n=======\n\nbody\n"})
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+    def test_clean_memory_ok(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\nall good\n",
+                "sessions/2026-06-27-120000.md": "# Session\nfine\n",
+            })
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+    def test_one_report_per_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {"continuity.md": "<<<<<<< a\n>>>>>>> b\n<<<<<<< c\n"})
+            self.assertEqual(len(memory_lint.check_conflict_markers(root)), 1)
+
+    def test_session_log_marker_ignored(self):
+        # sessions/ legitimately QUOTES conflict markers (documenting a diff/terminal output);
+        # check 7 scans only top-level memory/*.md, so a marker there must NOT be flagged.
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\nclean\n",
+                "sessions/2026-06-27-120000.md": "# Session\n```\n<<<<<<< HEAD\nx\n=======\ny\n>>>>>>> b\n```\n",
+            })
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+    def test_archive_marker_ignored(self):
+        # archive/ is cold append-storage, likewise excluded from check 7.
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\nclean\n",
+                "archive/2026-Q2.md": "<<<<<<< HEAD\nx\n>>>>>>> b\n",
+            })
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+
 if __name__ == "__main__":
     unittest.main()

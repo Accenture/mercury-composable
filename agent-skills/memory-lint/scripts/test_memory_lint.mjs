@@ -13,6 +13,7 @@ import {
   check_dangling,
   check_session_filenames,
   check_version_manifest,
+  check_conflict_markers,
 } from "./memory-lint.mjs";
 
 function byCodePoint(a, b) {
@@ -230,6 +231,95 @@ test("check_version_manifest passes when version.md is missing", () => {
   const root = setupVersion(null);
   try {
     assert.deepEqual(check_version_manifest(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- conflict markers (check 7) -------------------------------------------
+function setupMemFiles(files) {
+  const root = mkdtempSync(join(tmpdir(), "memlint-"));
+  for (const [rel, body] of Object.entries(files)) {
+    const full = join(root, "memory", rel);
+    mkdirSync(join(full, ".."), { recursive: true });
+    writeFileSync(full, body);
+  }
+  return root;
+}
+
+test("check_conflict_markers flags git markers", () => {
+  const root = setupMemFiles({
+    "continuity.md": "# c\n<<<<<<< HEAD\nmine\n=======\ntheirs\n>>>>>>> branch\n",
+  });
+  try {
+    const errs = check_conflict_markers(root);
+    assert.equal(errs.length, 1);
+    assert.ok(errs[0].includes("[conflict-marker]"));
+    assert.ok(errs[0].includes("memory/continuity.md:2"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers flags diff3 marker", () => {
+  const root = setupMemFiles({ "continuity.md": "# c\n||||||| base\n" });
+  try {
+    assert.equal(check_conflict_markers(root).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers ignores a setext heading underline", () => {
+  const root = setupMemFiles({ "continuity.md": "Title\n=======\n\nbody\n" });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers passes clean memory", () => {
+  const root = setupMemFiles({
+    "continuity.md": "# c\nall good\n",
+    "sessions/2026-06-27-120000.md": "# Session\nfine\n",
+  });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers reports one per file", () => {
+  const root = setupMemFiles({ "continuity.md": "<<<<<<< a\n>>>>>>> b\n<<<<<<< c\n" });
+  try {
+    assert.equal(check_conflict_markers(root).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers ignores a marker in a session log (sessions/ excluded)", () => {
+  // sessions/ legitimately quotes markers (documenting a diff/terminal output).
+  const root = setupMemFiles({
+    "continuity.md": "# c\nclean\n",
+    "sessions/2026-06-27-120000.md": "# Session\n```\n<<<<<<< HEAD\nx\n=======\ny\n>>>>>>> b\n```\n",
+  });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers ignores a marker in the archive (archive/ excluded)", () => {
+  const root = setupMemFiles({
+    "continuity.md": "# c\nclean\n",
+    "archive/2026-Q2.md": "<<<<<<< HEAD\nx\n>>>>>>> b\n",
+  });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

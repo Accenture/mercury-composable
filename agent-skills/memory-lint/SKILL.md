@@ -48,6 +48,12 @@ script, so the riskiest operation is verified against observable evidence.
    - **`.agent/version.md`, if present, carries a parseable `- **version:** X.Y.Z` line** — an
      empty/malformed manifest breaks Mode B upgrade detection (this was a real bug: a truncating stamp
      one-liner emptied it). A *missing* file is the valid pre-versioning baseline and is not flagged.
+   - **no leftover merge-conflict markers** (`<<<<<<<` / `>>>>>>>` / diff3 `|||||||`) in the **live
+     top-level `memory/*.md`** files (`continuity.md`, `instructions.md`, `vision.md`, `decay-policy.md`,
+     `smoke-test.md`) — an unresolved conflict there silently corrupts shared memory the agent reads as
+     truth. `sessions/` and `archive/` are **excluded** (immutable/append narrative that legitimately
+     *quotes* markers — e.g. a session log pasting a diff). A bare `=======` line is *not* flagged
+     (it's a valid Markdown setext heading underline).
 3. **ERROR** (exit 1) → fix per `DECAY.md` / `REVIEW.md`: reactivate an over-archived fact (move it
    back into `continuity.md`), de-duplicate, or repair a link. **WARN** is advisory — the next review
    may act on it.

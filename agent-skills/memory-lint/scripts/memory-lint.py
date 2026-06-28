@@ -234,6 +234,31 @@ def check_version_manifest(root):
     return []
 
 
+def check_conflict_markers(root):
+    # (7) No leftover VCS merge-conflict markers in the LIVE top-level memory files —
+    # the ones every teammate concurrently edits and the agent reads as truth
+    # (continuity.md, instructions.md, vision.md, decay-policy.md, smoke-test.md). We scan
+    # `memory/*.md` only (non-recursive): `sessions/` and `archive/` are deliberately
+    # EXCLUDED — they are immutable/append narrative that legitimately *quotes* conflict
+    # markers (a session log pasting terminal output or a real diff to document it), so
+    # scanning them would false-positive. Match git's `<<<<<<<` / `>>>>>>>` and the diff3
+    # `|||||||` line markers; deliberately do NOT match a bare `=======` line (a valid
+    # Markdown setext heading underline).
+    out = []
+    mem = os.path.join(root, "memory")
+    marker = re.compile(r"^(<{7}|>{7}|\|{7})(\s|$)")
+    for path in sorted(glob.glob(os.path.join(mem, "*.md"))):
+        for i, line in enumerate(read_text(path).splitlines(), 1):
+            if marker.match(line):
+                rel = os.path.relpath(path, root)
+                out.append(
+                    f"[conflict-marker] {rel}:{i} unresolved merge-conflict marker "
+                    "— resolve it before committing"
+                )
+                break  # one report per file is enough
+    return out
+
+
 def check_dangling(allf):
     # (4) supersession links resolve
     out = []
@@ -280,6 +305,7 @@ def main():
         check_duplicates(cont, arch)
         + check_over_archived(arch, sslu, aw)
         + check_version_manifest(root)
+        + check_conflict_markers(root)
     )
     warns = (
         check_overdue(cont, pinned, sslu, aw)
