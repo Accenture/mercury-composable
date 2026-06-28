@@ -67,6 +67,17 @@
 
 ## Key Decisions
 
+- **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
+  returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
+  `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
+  finishes on a **different thread or after the worker returns** (notably a `Mono`/`Flux` completion on the
+  reactor executor) **cannot** call `getTrace(...)` to read its own span/annotations — it must **capture the
+  `TraceInfo` on the worker thread first**. This caused Mono-returning flow tasks to drop their `span_id`
+  from the response, orphaning the next task's `parent_span_id` (fixed 2026-06-28 in
+  `WorkerHandler.handleMonoResponse` via `applyTraceContext`; see `WorkerHandlerTest.monoResponseForwardsSpanId`).
+  Watch for this in any future async/reactive code that needs trace context.
+  <!-- id: trace-thread-keyed-mono-gotcha | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: core -->
+
 - **platform-core serializes `java.time.Instant` as first-class (2026-06-27).** Instant had no adapter and
   round-tripped wrongly (Gson reflected it to `{seconds,nanos}`; MsgPack fell through to String/PoJo).
   Fixed at the root in all three serialization paths — `SimpleMapper` (Gson adapter), `MsgPack` (nested
