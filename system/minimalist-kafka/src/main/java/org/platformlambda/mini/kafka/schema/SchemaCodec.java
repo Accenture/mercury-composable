@@ -18,18 +18,12 @@
 
 package org.platformlambda.mini.kafka.schema;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
-import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
-import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
-import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
-import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.common.ConfigBase;
@@ -39,11 +33,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Bridges the minimalist {@code byte[]} Kafka transport to the Confluent Schema Registry wire format
@@ -55,9 +48,10 @@ import java.util.concurrent.ConcurrentMap;
  * agnostic and a topic can carry many record types. <b>Consume</b> ({@link #decode}) reads the embedded id,
  * looks up the registered schema's {@code schemaType}, and dispatches to the matching deserializer.</p>
  *
- * <p>The shared {@link SchemaRegistryClient} is a {@link FileCachedSchemaRegistryClient}, so schema lookups
- * by id are cached on disk (TTL-bounded). This phase supports {@link SchemaType#JSON}; AVRO and PROTOBUF
- * fail clearly until their phases.</p>
+ * <p>Each {@link SchemaType} is handled by a {@link SchemaSerde} kept in {@link #serdes}; this codec just
+ * picks one (by the {@code schema-type} header on produce, by the registered type on consume). JSON and Avro
+ * are wired; Protobuf throws clearly until its phase. The shared {@link SchemaRegistryClient} is a
+ * {@link FileCachedSchemaRegistryClient}, so schema lookups by id are cached on disk (TTL-bounded).</p>
  */
 public class SchemaCodec {
     private static final Logger log = LoggerFactory.getLogger(SchemaCodec.class);
@@ -69,17 +63,13 @@ public class SchemaCodec {
     private static final String DEFAULT_CACHE_TTL = "24h";
     private static final int IDENTITY_MAP_CAPACITY = 1000;
     private static final byte MAGIC_BYTE = 0x0;
-    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final SchemaRegistryClient client;
-    private final String registryUrl;
-    // one JSON serializer per global schema id (use.schema.id is fixed at configure time)
-    private final ConcurrentMap<Integer, KafkaJsonSchemaSerializer<Object>> jsonSerializers = new ConcurrentHashMap<>();
-    private volatile KafkaJsonSchemaDeserializer<Object> jsonDeserializer;
+    private final Map<SchemaType, SchemaSerde> serdes;
 
-    SchemaCodec(SchemaRegistryClient client, String registryUrl) {
+    SchemaCodec(SchemaRegistryClient client, Map<SchemaType, SchemaSerde> serdes) {
         this.client = client;
-        this.registryUrl = registryUrl;
+        this.serdes = serdes;
     }
 
     /**
@@ -105,9 +95,14 @@ public class SchemaCodec {
         Map<String, Object> srConfig = new HashMap<>();
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         SchemaRegistryClient client = new FileCachedSchemaRegistryClient(List.of(registryUrl),
-                IDENTITY_MAP_CAPACITY, List.of(new JsonSchemaProvider()), srConfig, cacheDir, ttlMillis);
-        log.info("Schema codec ready (registry={}, cache={}, ttlMs={})", registryUrl, cacheDir, ttlMillis);
-        return new SchemaCodec(client, registryUrl);
+                IDENTITY_MAP_CAPACITY, List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
+                srConfig, cacheDir, ttlMillis);
+        Map<SchemaType, SchemaSerde> serdes = new EnumMap<>(SchemaType.class);
+        serdes.put(SchemaType.JSON, new JsonSchemaSerde(client, registryUrl));
+        serdes.put(SchemaType.AVRO, new AvroSchemaSerde(client, registryUrl));
+        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={})",
+                registryUrl, cacheDir, ttlMillis, serdes.keySet());
+        return new SchemaCodec(client, serdes);
     }
 
     /** True if the bytes are Confluent-framed (magic byte + 4-byte id + payload). */
@@ -121,63 +116,32 @@ public class SchemaCodec {
     }
 
     /**
-     * Serialize a value into the Confluent wire format for a known global schema id, using the matching
-     * Confluent serializer (this phase: JSON). The schema is fetched from the registry by id and NOT
-     * registered (auto-register off), so no subject/strategy is involved.
+     * Serialize a value into the Confluent wire format for a known global schema id, dispatching to the
+     * serde for {@code type}. The schema is fetched from the registry by id and NOT registered
+     * (auto-register off), so no subject/strategy is involved.
      */
     public byte[] serialize(String topic, SchemaType type, int schemaId, Object value) {
-        if (type != SchemaType.JSON) {
-            throw new UnsupportedOperationException("schema-type " + type + " is not yet supported (JSON only)");
-        }
-        // Envelope the value with its (pre-registered) schema, so the serializer uses that schema directly
-        // instead of DERIVING one from the value's Map<String,Object> type - the derivation can't introspect
-        // the Object-typed map values (noisy "Unable to process java.lang.Object" warnings) and is wasted
-        // work. use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
-        JsonNode node = JSON.valueToTree(value);
-        Object enveloped = JsonSchemaUtils.envelope(jsonSchemaById(schemaId), node);
-        return jsonSerializers.computeIfAbsent(schemaId, this::newJsonSerializer).serialize(topic, enveloped);
-    }
-
-    /** Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
-    private JsonSchema jsonSchemaById(int schemaId) {
-        try {
-            ParsedSchema schema = client.getSchemaById(schemaId);
-            if (schema instanceof JsonSchema jsonSchema) {
-                return jsonSchema;
-            }
-            throw new IllegalStateException("schema id " + schemaId + " is " + schema.schemaType() + ", not JSON");
-        } catch (IOException | RestClientException e) {
-            throw new IllegalStateException("Unable to resolve schema id " + schemaId + ": " + e.getMessage(), e);
-        }
-    }
-
-    private KafkaJsonSchemaSerializer<Object> newJsonSerializer(int schemaId) {
-        Map<String, Object> cfg = new HashMap<>();
-        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-        cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, false);
-        cfg.put(AbstractKafkaSchemaSerDeConfig.USE_SCHEMA_ID, schemaId);
-        // we serialize a pre-registered schema by id; do not enforce strict compatibility checks against
-        // a schema derived from the value (the registered schema is authoritative).
-        cfg.put(AbstractKafkaSchemaSerDeConfig.ID_COMPATIBILITY_STRICT, false);
-        cfg.put(AbstractKafkaSchemaSerDeConfig.LATEST_COMPATIBILITY_STRICT, false);
-        return new KafkaJsonSchemaSerializer<>(client, cfg);
+        return serde(type).serialize(topic, schemaId, value);
     }
 
     /**
      * Decode Confluent-framed bytes: read the embedded id, look up the registered {@code schemaType}, and
-     * dispatch to the matching deserializer. Returns a {@code Map} for JSON. Throws for unframed bytes or a
-     * schema type not yet supported.
+     * dispatch to the matching serde, returning a {@code Map}. Throws for unframed bytes or a schema type
+     * not yet supported.
      */
     public Object decode(String topic, byte[] data) {
         if (!isFramed(data)) {
             throw new IllegalArgumentException("payload is not Confluent schema-framed (missing magic byte)");
         }
-        SchemaType type = schemaTypeOf(schemaId(data));
-        if (type != SchemaType.JSON) {
-            throw new UnsupportedOperationException("schema-type " + type + " is not yet supported (JSON only)");
+        return serde(schemaTypeOf(schemaId(data))).decode(topic, data);
+    }
+
+    private SchemaSerde serde(SchemaType type) {
+        SchemaSerde serde = serdes.get(type);
+        if (serde == null) {
+            throw new UnsupportedOperationException("schema-type " + type + " is not yet supported");
         }
-        Object decoded = jsonDeserializer().deserialize(topic, data);
-        return toMap(decoded);
+        return serde;
     }
 
     private SchemaType schemaTypeOf(int id) {
@@ -187,30 +151,6 @@ public class SchemaCodec {
         } catch (IOException | RestClientException e) {
             throw new IllegalStateException("Unable to resolve schema id " + id + ": " + e.getMessage(), e);
         }
-    }
-
-    private KafkaJsonSchemaDeserializer<Object> jsonDeserializer() {
-        if (jsonDeserializer == null) {
-            synchronized (this) {
-                if (jsonDeserializer == null) {
-                    Map<String, Object> cfg = new HashMap<>();
-                    cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
-                    jsonDeserializer = new KafkaJsonSchemaDeserializer<>(client, cfg);
-                }
-            }
-        }
-        return jsonDeserializer;
-    }
-
-    /** Normalize the deserializer output to a {@code Map} for the flow dataset body. */
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> toMap(Object decoded) {
-        if (decoded instanceof Map) {
-            return (Map<String, Object>) decoded;
-        }
-        // JSON Schema deserializer returns a Jackson JsonNode by default; render to JSON then parse to a Map.
-        String json = decoded instanceof JsonNode node ? node.toString() : String.valueOf(decoded);
-        return SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
     }
 
     /** Visible for tests: the shared registry client (file-cached). */

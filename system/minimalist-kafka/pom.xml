@@ -93,6 +93,21 @@
             </exclusions>
         </dependency>
 
+        <!-- Confluent Avro serializer/deserializer (same role as the JSON one, for the Avro wire format).
+             It brings org.apache.avro:avro transitively (used to build/read GenericRecord). Exclude the
+             transitive kafka-clients to keep our own pinned version. -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <version>${confluent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Embedded Kafka (real KRaft broker) for integration tests. -->
         <dependency>
             <groupId>org.apache.kafka</groupId>

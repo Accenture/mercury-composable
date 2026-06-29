@@ -18,11 +18,17 @@
 
 package org.platformlambda.mini.kafka;
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,6 +55,9 @@ class SchemaCodecTest {
     private static final String TOPIC = "orders";
     private static final String JSON_SCHEMA =
             "{\"type\":\"object\",\"properties\":{\"hello\":{\"type\":\"string\"}},\"additionalProperties\":true}";
+    private static final String AVRO_SCHEMA =
+            "{\"type\":\"record\",\"name\":\"Greeting\",\"namespace\":\"test\","
+            + "\"fields\":[{\"name\":\"hello\",\"type\":\"string\"}]}";
 
     private static EmbeddedSchemaRegistry registry;
     private static SchemaCodec codec;
@@ -104,14 +113,49 @@ class SchemaCodecTest {
     }
 
     @Test
+    void serializeAvroByIdThenDecodeRoundTrips() throws Exception {
+        int id = codec.client().register(TOPIC + "-avro-value", new AvroSchema(AVRO_SCHEMA));
+
+        byte[] framed = codec.serialize(TOPIC, SchemaType.AVRO, id, Map.of("hello", "avro"));
+        assertTrue(SchemaCodec.isFramed(framed), "output is Confluent-framed (magic byte + id)");
+        assertEquals(id, SchemaCodec.schemaId(framed), "the framed id matches the pre-registered schema");
+
+        Object decoded = codec.decode(TOPIC, framed);
+        assertInstanceOf(Map.class, decoded);
+        assertEquals("avro", ((Map<?, ?>) decoded).get("hello"));
+
+        assertTrue(new File(cacheDir, id + ".json").exists(), "schema cached to disk by id");
+    }
+
+    @Test
+    void decodesMessageFromStockConfluentAvroSerializer() throws Exception {
+        // External-client stand-in: a stock KafkaAvroSerializer that auto-registers from the GenericRecord.
+        CachedSchemaRegistryClient srClient = new CachedSchemaRegistryClient(List.of(registry.baseUrl()),
+                100, List.of(new AvroSchemaProvider()), Map.of());
+        Map<String, Object> cfg = new HashMap<>();
+        cfg.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registry.baseUrl());
+        cfg.put(AbstractKafkaSchemaSerDeConfig.AUTO_REGISTER_SCHEMAS, true);
+        GenericRecord record = new GenericData.Record(new Schema.Parser().parse(AVRO_SCHEMA));
+        record.put("hello", "external-avro");
+        try (KafkaAvroSerializer serializer = new KafkaAvroSerializer(srClient, cfg)) {
+            byte[] framed = serializer.serialize(TOPIC, record);
+            Object decoded = codec.decode(TOPIC, framed);
+            assertInstanceOf(Map.class, decoded);
+            assertEquals("external-avro", ((Map<?, ?>) decoded).get("hello"),
+                    "minimalist-kafka decodes Avro messages produced by a stock Confluent serializer");
+        }
+    }
+
+    @Test
     void rejectsUnframedPayload() {
         assertThrows(IllegalArgumentException.class, () -> codec.decode(TOPIC, "{\"hello\":\"x\"}".getBytes()));
     }
 
     @Test
     void rejectsUnsupportedSchemaTypeOnSerialize() {
+        // Protobuf is not yet wired; serialize must fail clearly rather than mis-encode.
         assertThrows(UnsupportedOperationException.class,
-                () -> codec.serialize(TOPIC, SchemaType.AVRO, 1, Map.of("a", "b")));
+                () -> codec.serialize(TOPIC, SchemaType.PROTOBUF, 1, Map.of("a", "b")));
     }
 
     @Test

@@ -13,3 +13,9 @@ consumer:
     flow: 'schema-sink-flow'
     group: 'schema-test-group'
     schema.enabled: true
+  # Avro variant: a second schema-enabled binding into the same sink flow (the codec dispatches by the
+  # embedded schema id, so one flow handles both JSON- and Avro-framed values).
+  - topic: 'avro-test-topic'
+    flow: 'schema-sink-flow'
+    group: 'avro-test-group'
+    schema.enabled: true
