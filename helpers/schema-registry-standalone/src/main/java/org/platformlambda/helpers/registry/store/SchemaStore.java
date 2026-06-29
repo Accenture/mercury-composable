@@ -18,6 +18,7 @@
 
 package org.platformlambda.helpers.registry.store;
 
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.CryptoApi;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
@@ -34,15 +35,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Minimalist in-memory schema store mimicking Confluent Schema Registry.
- * Persists schemas to /tmp/mini-schema-registry/schemas.json to survive server restarts.
+ * Persists schemas to {@code schemas.json} under the configurable {@code schema.registry.data.store}
+ * directory (default {@code /tmp/schema-registry}) so schema ids survive a server restart.
  */
 public class SchemaStore {
     private static final Logger log = LoggerFactory.getLogger(SchemaStore.class);
-    private static final String STORE_DIR = "/tmp/mini-schema-registry";
-    private static final String STORE_FILE = STORE_DIR + "/schemas.json";
-    
+    // Where schemas are persisted. Configurable so a user can choose a transient (/tmp) or a durable
+    // path without dealing with filesystem-permission issues. Override with the config key
+    // 'schema.registry.data.store' or the JVM flag -Dschema.registry.data.store=<dir>.
+    private static final String STORE_DIR_KEY = "schema.registry.data.store";
+    private static final String DEFAULT_STORE_DIR = "/tmp/schema-registry";
+
     private static final SchemaStore instance = new SchemaStore();
-    
+
     public static final String AVRO_TYPE = "AVRO";
     public static final String JSON_TYPE = "JSON";
     public static final String PROTOBUF_TYPE = "PROTOBUF";
@@ -50,13 +55,18 @@ public class SchemaStore {
     private final ConcurrentMap<Integer, SchemaEntry> idToSchema = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Integer> hashToId = new ConcurrentHashMap<>();
     private final AtomicInteger idGenerator = new AtomicInteger(1);
-    
+
+    private final String storeDir;
+    private final String storeFile;
     private final Utility util = Utility.getInstance();
     private final CryptoApi crypto = new CryptoApi();
 
     public record SchemaEntry(String schema, String schemaType) {}
 
     private SchemaStore() {
+        this.storeDir = AppConfigReader.getInstance().getProperty(STORE_DIR_KEY, DEFAULT_STORE_DIR);
+        this.storeFile = storeDir + "/schemas.json";
+        log.info("Schema data store at {} (override with -D{}=<dir>)", storeDir, STORE_DIR_KEY);
         loadFromDisk();
     }
 
@@ -102,13 +112,13 @@ public class SchemaStore {
     
     @SuppressWarnings("unchecked")
     private void loadFromDisk() {
-        File dir = new File(STORE_DIR);
+        File dir = new File(storeDir);
         if (!dir.exists() && !dir.mkdirs()) {
-            log.warn("Failed to create directory: {}", STORE_DIR);
+            log.warn("Failed to create directory: {}", storeDir);
             return;
         }
-        
-        Path filePath = Path.of(STORE_FILE);
+
+        Path filePath = Path.of(storeFile);
         if (!Files.exists(filePath)) {
             return;
         }
@@ -153,7 +163,7 @@ public class SchemaStore {
     private void saveToDisk() {
         try {
             String json = org.platformlambda.core.serializers.SimpleMapper.getInstance().getMapper().writeValueAsString(idToSchema);
-            Files.writeString(Path.of(STORE_FILE), json);
+            Files.writeString(Path.of(storeFile), json);
         } catch (IOException e) {
             log.warn("Failed to save schemas to disk: {}", e.getMessage());
         }

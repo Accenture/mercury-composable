@@ -19,7 +19,7 @@
 package org.platformlambda.helpers.registry.services;
 
 import org.platformlambda.core.annotations.PreLoad;
-import org.platformlambda.core.exception.AppException;
+import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.util.Utility;
@@ -29,41 +29,36 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handles GET /schemas/ids/{id}
- * Retrieves a schema string and type by its integer ID.
+ * Faithful mock of Confluent's {@code GET /schemas/ids/{id}} (fetch a schema by its global id).
+ * <p>
+ * The REST endpoint is wired directly to this function in rest.yaml (no flow), so the input is the
+ * raw {@link AsyncHttpRequest} and the "id" comes from the path. The response is
+ * {@code {"schema": "&lt;escaped schema string&gt;"}}; {@code schemaType} is included only for non-AVRO
+ * schemas (Confluent omits it for AVRO). An unknown id returns HTTP 404 with error_code 40403.
  */
-@PreLoad(route = "schema.registry.get")
-public class GetSchemaFunction implements TypedLambdaFunction<EventEnvelope, Map<String, Object>> {
+@PreLoad(route = "schema.registry.get", instances = 10)
+public class GetSchemaFunction implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
 
     private final SchemaStore store = SchemaStore.getInstance();
     private final Utility util = Utility.getInstance();
 
     @Override
-    public Map<String, Object> handleEvent(Map<String, String> headers, EventEnvelope input, int instance) throws Exception {
-        String idStr = headers.get("id");
-        if (idStr == null || idStr.isEmpty()) {
-            throw new AppException(400, "Schema ID is required");
+    public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
+        String idStr = input.getPathParameter("id");
+        if (idStr == null || !util.isDigits(idStr)) {
+            return ApiError.of(404, ApiError.SCHEMA_NOT_FOUND, "Schema not found");
         }
-
         int id = util.str2int(idStr);
-        if (id == -1 && !idStr.equals("-1")) {
-             throw new AppException(400, "Invalid schema ID");
-        }
-
         SchemaStore.SchemaEntry entry = store.get(id);
         if (entry == null) {
-            throw new AppException(404, "Schema not found");
+            return ApiError.of(404, ApiError.SCHEMA_NOT_FOUND, "Schema " + id + " not found");
         }
-
         Map<String, Object> response = new HashMap<>();
         response.put("schema", entry.schema());
-        
-        // Avro is default, omit schemaType for it to perfectly mimic Confluent behavior,
-        // otherwise include it.
+        // Confluent omits schemaType for AVRO (the default) and includes it otherwise.
         if (!SchemaStore.AVRO_TYPE.equals(entry.schemaType())) {
             response.put("schemaType", entry.schemaType());
         }
-
-        return response;
+        return new EventEnvelope().setStatus(200).setBody(response);
     }
 }
