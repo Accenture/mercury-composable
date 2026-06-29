@@ -63,8 +63,24 @@
 
 ## Key Decisions
 
-- **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an interactive end-to-end demo and testing layer. Includes an `examples/schema-registry-demo` module.
-  <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-191114 -->
+- **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an end-to-end demo and testing layer. The worked example `examples/schema-registry-demo` is now curl + zero-dependency `.mjs` scripts (no longer a Maven module). See [[standalone-schema-registry-mock]] and [[minimalist-kafka-schema-registry]].
+  <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-28-191114 -->
+
+- **minimalist-kafka Schema Registry support — id-driven, Confluent serdes as a library (2026-06-29).**
+  To interoperate with existing client projects, `minimalist-kafka` speaks the Confluent wire format
+  (`[magic 0x00][global schema id][payload]`) using **Confluent's own serializers** (`io.confluent:kafka-json-schema-serializer`
+  8.2.0 ↔ Kafka 4.2), NOT a reinvented codec — called as a library around the unchanged String/byte[]
+  transport so DLQ + trace keep working on raw bytes. **Producer is id-driven**: `simple.kafka.notification`
+  takes optional `schema-id`/`schema-type` headers; schemas are pre-registered administratively, so the
+  serializer only does `GET /schemas/ids/{id}` (`use.schema.id` + `auto.register.schemas=false`) — no subject
+  or naming-strategy logic, which makes it agnostic to all 3 Confluent strategies and lets a topic carry many
+  record types. **Consumer** opt-in per binding (`schema.enabled` in kafka-flow-adapter.yaml): reads the magic
+  id → registered `schemaType` → matching deserializer → hands the flow a Map; decode failure dead-letters the
+  raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `FileCachedSchemaRegistryClient`
+  = on-disk schema cache by id with TTL serving the serde hot path, `SchemaType`). **JSON Schema done +
+  tested** (in-JVM `EmbeddedSchemaRegistry` test helper; decodes messages from a stock serializer); Avro +
+  Protobuf are next (see [[thread-schema-registry-avro-protobuf]]). Builds on [[standalone-schema-registry-mock]].
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 1 | tier: working | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -216,8 +232,14 @@
   mercury's domain content; agent-memory only flags, never picks. 0 lint **errors**.
   <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-173142 -->
 
-- [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble.
-  <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-191114 -->
+- [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble. (Corrected + reworked 2026-06-29 — see [[standalone-schema-registry-mock]].)
+  <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-28-191114 -->
+- [ ] (in progress — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — Avro + Protobuf phases.**
+  JSON Schema is done + committed (`7caa3434`); Eric is code-reviewing. Next: add `kafka-avro-serializer`
+  then `kafka-protobuf-serializer` and their branches in `SchemaCodec`'s serializer cache + the consumer
+  dispatcher (same id-driven structure). Also pending: document the `schema-id`/`schema-type` headers and
+  `schema.enabled` in the kafka-flow-adapter guide; push the branch when review passes. See [[minimalist-kafka-schema-registry]].
+  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 1 | tier: working | origin: 2026-06-29-010147 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
@@ -328,9 +350,14 @@
 
 (none recorded yet)
 
-- **Standalone Schema Registry mock for local development (Eric, 2026-06-28).** Implemented `helpers/schema-registry-standalone` 
-  to emulate the Confluent Schema Registry HTTP API for Avro and JSON Schema serialization. 
-  It provides a zero-dependency endpoint (`http://localhost:8081`) for `KafkaAvroSerializer` and `KafkaJsonSchemaSerializer` 
-  to register (`POST /subjects/{subject}/versions`) and fetch schemas (`GET /schemas/ids/{id}`). State is maintained 
-  in-memory and backed by `/tmp/mini-schema-registry/schemas.json` across restarts. Documented in `docs/guides/schema-registry-mock.md`.
-  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | tier: working -->
+- **Standalone Schema Registry mock for local development (Eric, 2026-06-28; corrected 2026-06-29).**
+  `helpers/schema-registry-standalone` emulates the Confluent Schema Registry HTTP API (Avro + JSON Schema),
+  a `http://localhost:8081` endpoint for `KafkaAvroSerializer`/`KafkaJsonSchemaSerializer` to register
+  (`POST /subjects/{subject}/versions`) and fetch (`GET /schemas/ids/{id}`). **platform-core only** (built-in
+  reactive HTTP server + REST automation, no `rest-spring`); each endpoint is wired in `rest.yaml` directly to
+  a function taking `AsyncHttpRequest`. Returns faithful Confluent error bodies `{error_code,message}`
+  (40403/40401/42201). Store is **configurable** via `schema.registry.data.store` (default transient
+  `/tmp/schema-registry`, `-D`-overridable for a durable dir); the server *loads* schemas on boot (never
+  wipes) so ids stay stable — the deliberate inverse of the redis/kafka helpers. Tests hit the real HTTP
+  endpoints via `async.http.request`. Documented in `docs/guides/schema-registry-mock.md`. See [[minimalist-kafka-schema-registry]].
+  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active -->
