@@ -79,13 +79,17 @@
   raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `FileCachedSchemaRegistryClient`
   = on-disk schema cache by id with TTL serving the serde hot path, cleared at startup; `SchemaType`).
   Serialize uses `JsonSchemaUtils.envelope(schema, value)` (the pre-registered schema, not a derived one) to
-  avoid the kjetland derivation WARN. **JSON Schema done, tested, and demoed end-to-end** (in-JVM
-  `EmbeddedSchemaRegistry` test helper + the sync-over-async-demo `json-topic-1/2` path, manually validated);
-  Avro + Protobuf are next (see [[thread-schema-registry-avro-protobuf]]). Shipped alongside Kafka-flow-adapter
-  hardening: a flow's own `ttl` is the deadline (no `kafka.flow.timeout.ms`); success = HTTP 200, else
-  retry→DLQ; a failed DLQ write drops-with-ERROR + commits (no recovery storm) bounded by
-  `kafka.dlq.timeout.ms`. Builds on [[standalone-schema-registry-mock]].
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-29-010147 -->
+  avoid the kjetland derivation WARN. Now a **per-type `SchemaSerde` strategy** (`JsonSchemaSerde` +
+  `AvroSchemaSerde`); the codec dispatches by the `schema-type` header on produce / the registered type on
+  consume, and the producer + consumer are type-generic, so **Protobuf is a one-class drop-in**. Avro uses
+  `AvroConversions` (Map⇄GenericRecord; serialize walks the schema so absent fields take their defaults).
+  **JSON + Avro done, tested, demoed end-to-end** (`EmbeddedSchemaRegistry` test helper + sync-over-async-demo
+  `json-topic-1/2` and `avro-topic-1/2` paths, both manually validated); only Protobuf remains (see
+  [[thread-schema-registry-avro-protobuf]]). Shipped alongside Kafka-flow-adapter hardening: a flow's own
+  `ttl` is the deadline (no `kafka.flow.timeout.ms`); success = HTTP 200, else retry→DLQ; a failed DLQ write
+  drops-with-ERROR + commits (no recovery storm) bounded by `kafka.dlq.timeout.ms`. Builds on
+  [[standalone-schema-registry-mock]].
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 3 | tier: active | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -239,14 +243,15 @@
 
 - [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble. (Corrected + reworked 2026-06-29 — see [[standalone-schema-registry-mock]].)
   <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-28-191114 -->
-- [ ] (in progress — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — Avro + Protobuf phases.**
-  JSON Schema is done, review-hardened, demoed end-to-end, and **pushed** as a milestone on
-  `feature/sync-over-async` (PR #124). Next: add `kafka-avro-serializer` then `kafka-protobuf-serializer`
-  and their branches in `SchemaCodec` (serializer cache + consumer dispatcher; same id-driven structure +
-  envelope-serialize). Also pending: document the `schema-id`/`schema-type` headers and `schema.enabled` in
-  the kafka-flow-adapter guide; **more detailed manual tests + fine-tuning planned for 2026-06-30**. See
-  [[minimalist-kafka-schema-registry]].
-  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-29-010147 -->
+- [ ] (in progress — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — Protobuf phase.**
+  JSON Schema (pushed) and **Avro** (committed `1bc2731e`/`6fc8c56c`, not yet pushed) are both done,
+  review-hardened, and demoed end-to-end on `feature/sync-over-async` (PR #124); Avro validated via Eric's
+  multi-terminal run (continuous trace). `SchemaCodec` is now a per-type `SchemaSerde` strategy, so Protobuf
+  is a one-class drop-in: add `kafka-protobuf-serializer`, a `ProtobufSchemaSerde` (+ its Map⇄DynamicMessage
+  conversion), register it in `SchemaCodec.fromConfig`, and add a parallel demo leg (`protobuf-topic-1/2`,
+  seed id 3). Also pending: document the `schema-id`/`schema-type` headers and `schema.enabled` in the
+  kafka-flow-adapter guide. See [[minimalist-kafka-schema-registry]].
+  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 3 | tier: working | origin: 2026-06-29-010147 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
