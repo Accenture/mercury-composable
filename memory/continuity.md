@@ -245,13 +245,12 @@
 
 - [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble. (Corrected + reworked 2026-06-29 — see [[standalone-schema-registry-mock]].)
   <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-28-191114 -->
-- [ ] (in progress — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — feature complete; doc +
-  push remain.** All three serde phases are **done, tested, and demoed end-to-end** on
-  `feature/sync-over-async` (PR #124): JSON Schema (**pushed**); Avro (committed `1bc2731e`/`6fc8c56c`);
-  Protobuf (committed `bdab28f3`/`bc9be976`). Avro + Protobuf each validated via Eric's multi-terminal run
-  (continuous-trace telemetry); the Avro/Protobuf commits are **not yet pushed**. Remaining: (1) document the
-  `schema-id`/`schema-type` headers + `schema.enabled` in the kafka-flow-adapter guide; (2) push PR #124 when
-  Eric decides. See [[minimalist-kafka-schema-registry]].
+- [x] (completed — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — feature COMPLETE & pushed.**
+  All three serde phases done, tested (49 tests, 85% gate), demoed end-to-end, and **pushed** to
+  `feature/sync-over-async` (PR #124, `7e2fe746..5ffb7dc7`): JSON Schema, Avro (`1bc2731e`/`6fc8c56c`),
+  Protobuf (`bdab28f3`/`bc9be976`); Avro + Protobuf each validated via Eric's multi-terminal run
+  (continuous-trace telemetry). The kafka-flow-adapter guide now documents the Schema Registry integration
+  (`5ffb7dc7`). Closed — the feature is ready for PR review/merge. See [[minimalist-kafka-schema-registry]].
   <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: working | origin: 2026-06-29-010147 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
