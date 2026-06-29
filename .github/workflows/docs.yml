@@ -1,8 +1,11 @@
 name: docs
 
-# Build the documentation site strictly and verify the MiniGraph command-grammar spec
-# stays in sync with the engine's shipped help + source. Runs only when docs, the spec,
-# the grammar checker, or the MiniGraph help/skills change.
+# Verify the documentation site builds strictly and the grammar/canon specs stay in sync
+# (anti-drift), then publish it to GitHub Pages (the gh-pages branch) on push to main.
+#
+# The 'verify' job runs on pull requests and pushes (build check only, read-only token);
+# the 'deploy' job is the only one that writes to gh-pages, and it runs only on a push to
+# main or a manual run (workflow_dispatch) - never on a pull request.
 on:
   push:
     branches: [main]
@@ -25,9 +28,14 @@ on:
       - 'system/event-script-engine/src/main/java/com/accenture/automation/**'
       - 'system/platform-core/src/main/java/org/platformlambda/automation/**'
       - '.github/workflows/docs.yml'
+  workflow_dispatch:   # manual refresh of the published site (e.g. after a docs-only merge)
+
+# Least privilege by default; only the deploy job elevates to contents: write.
+permissions:
+  contents: read
 
 jobs:
-  docs:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,3 +54,25 @@ jobs:
         run: python3 scripts/check-doc-canon.py
       - name: Build docs (strict)
         run: mkdocs build --strict
+
+  deploy:
+    # Publish to gh-pages only on push to main or a manual dispatch (never on a PR), after verify passes.
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install MkDocs
+        run: pip install mkdocs
+      - name: Build (strict) and deploy to gh-pages
+        run: mkdocs gh-deploy --force --strict
