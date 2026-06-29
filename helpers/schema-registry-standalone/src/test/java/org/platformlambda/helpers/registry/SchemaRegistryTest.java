@@ -18,6 +18,7 @@
 
 package org.platformlambda.helpers.registry;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -62,16 +63,27 @@ class SchemaRegistryTest {
     @BeforeAll
     static void setup() {
         // The store defaults to the transient /tmp/schema-registry; wipe it before boot so each run
-        // starts clean. Only ever throw away a transient (/tmp) store - never a durable path a
-        // developer may have configured.
-        String storeDir = AppConfigReader.getInstance().getProperty("schema.registry.data.store", "/tmp/schema-registry");
-        if (storeDir.startsWith("/tmp/")) {
-            Utility.getInstance().cleanupDir(new File(storeDir));
-        }
+        // starts clean. (The test shares the default store path, so it must not leave data behind.)
+        wipeTransientStore();
         // AutoStart is idempotent - it boots the platform-core runtime + REST automation HTTP server once.
         AutoStart.main(new String[0]);
         restPort = Utility.getInstance().str2int(
                 AppConfigReader.getInstance().getProperty("rest.server.port", "8383"));
+    }
+
+    @AfterAll
+    static void cleanup() {
+        // Clean up the transient store so test schemas don't linger in the default /tmp/schema-registry
+        // and get loaded by a later standalone-server run (e.g. the sync-over-async-demo).
+        wipeTransientStore();
+    }
+
+    /** Remove the configured store dir, but only when it is a transient /tmp path (never a durable one). */
+    private static void wipeTransientStore() {
+        String storeDir = AppConfigReader.getInstance().getProperty("schema.registry.data.store", "/tmp/schema-registry");
+        if (storeDir.startsWith("/tmp/")) {
+            Utility.getInstance().cleanupDir(new File(storeDir));
+        }
     }
 
     @Test

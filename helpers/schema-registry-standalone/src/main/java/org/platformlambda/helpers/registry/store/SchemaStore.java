@@ -34,9 +34,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Minimalist in-memory schema store mimicking Confluent Schema Registry.
- * Persists schemas to {@code schemas.json} under the configurable {@code schema.registry.data.store}
- * directory (default {@code /tmp/schema-registry}) so schema ids survive a server restart.
+ * Minimalist in-memory schema store mimicking Confluent Schema Registry, persisted to {@code schemas.json}
+ * under the configurable {@code schema.registry.data.store} directory (default {@code /tmp/schema-registry}).
+ *
+ * <p>The store is <b>loaded on boot and persists across restarts</b>, so schema ids stay stable - {@code
+ * schemas.json} is a convenient single-file store you can back up / seed (e.g. for a demo with known ids).
+ * The default lives under {@code /tmp} (cleared by the OS on reboot); override to a durable directory
+ * ({@code -Dschema.registry.data.store=$HOME/schema-registry}) to survive reboots.</p>
  */
 public class SchemaStore {
     private static final Logger log = LoggerFactory.getLogger(SchemaStore.class);
