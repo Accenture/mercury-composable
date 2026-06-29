@@ -16,7 +16,7 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-28T19:11:14Z | agent: Gemini CLI
+- **last_session:** 2026-06-29T23:17:47Z | agent: Claude Code (2026-06-29-231747)
 - **last_review:** 2026-06-29 | through 2026-06-29-223651.md
 - **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
@@ -157,6 +157,16 @@
   <!-- id: bp-graph-governance-lifecycle | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
 
 ## Open Threads
+
+- [x] **Upgraded agent-memory v4.26.1 → v4.27.0** (Mode B, by Claude Code from the tool checkout). Single,
+  additive rung — **standardized PR descriptions (What / Why)**: every enabled repo now ships a
+  `.github/pull_request_template.md` whose body leads with **What** + **Why** (intent, not a restatement)
+  and closes with a self-identifying `Co-Authored-By:` footer (extends the commit/session-log authorship
+  convention to the PR altitude; advisory, never a gate). Applied here: installed the template (mercury had
+  none), **additively merged** the convention + a checklist line into `AGENTS.md` (customizations preserved),
+  stamped `.agent/version.md` → 4.27.0. No memory-shape/skill/adapter change. Post-upgrade `memory-lint`:
+  **0 errors, 0 warnings**. Working tree **uncommitted** — review + commit at the mercury team's discretion.
+  <!-- id: agent-memory-upgrade-v4270 | created: 2026-06-29 | last_used: 2026-06-29 | uses: 1 | tier: working | origin: 2026-06-29-231747 -->
 
 - [x] **Upgraded agent-memory v4.25.0 → v4.26.1** (Mode B, by Claude Code from the tool checkout) — a final
   validation round. **4.26.0** adds `refresh-metadata` (a 7th built-in: recompute `last_used`/`uses`/`tier`

@@ -122,12 +122,20 @@ expected (the decay math counts log files — `DECAY.md` §4).
    **identify yourself** the same way you do in session logs — e.g. a `Co-Authored-By: <your agent
    name>` trailer — so authorship is traceable across vendors. (If your runtime already adds one,
    nothing to do.)
+   - **Opening a pull request?** Lead the description with two short sections — **What** (the
+     change) and **Why** (the intent it serves — the Blueprint gap, decision, or problem behind
+     it; substantive intent, *not* a restatement of What) — each 1–2 short paragraphs, drawn from
+     the session log(s) in the PR. Close it with the **same self-identifying `Co-Authored-By:`
+     footer** you use on commits and session logs, so PR authorship is traceable across vendors
+     too. A `.github/pull_request_template.md` seeds all of this; keep it advisory, never a gate.
+     (The *why* is a first-class artifact throughout this protocol, so a PR is no exception.)
 
 **After-session checklist** (the ritual is convention — run it each time):
 - [ ] session log written — ran `date -u +%Y-%m-%d-%H%M%S` for the filename (not `currentDate`); includes `## Memory References`
 - [ ] `continuity.md`: `last_session` set, threads checked, new facts have footers
 - [ ] review run if cadence/size triggered (`REVIEW.md`)
 - [ ] reminded the user to commit `memory/` (deliberate, human-initiated, with a self-identifying co-author trailer)
+- [ ] if a PR was opened, its description leads with **What** / **Why** (drawn from the session log)
 
 > **Lightweight mode — key the write to whether a *tracked* file changed (the *objective* test is the
 > git diff, not any filesystem write — and never a "trivial" judgment; both AI and human misjudge "trivial").**
