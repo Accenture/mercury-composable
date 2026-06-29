@@ -68,6 +68,7 @@ class SchemaCodecTest {
         if (registry != null) {
             registry.close();
         }
+        Utility.getInstance().cleanupDir(cacheDir);   // don't leave the transient schema cache behind
     }
 
     @Test

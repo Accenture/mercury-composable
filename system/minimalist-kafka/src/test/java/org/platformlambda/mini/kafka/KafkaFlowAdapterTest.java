@@ -95,6 +95,7 @@ class KafkaFlowAdapterTest {
         if (registry != null) {
             registry.close();
         }
+        Utility.getInstance().cleanupDir(new java.io.File("/tmp/schema-registry-cache-test"));   // don't leave it behind
         System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
         System.clearProperty("schema.registry.url");
     }

@@ -19,10 +19,13 @@
 package org.platformlambda.mini.kafka.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider;
+import io.confluent.kafka.schemaregistry.json.JsonSchemaUtils;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaDeserializer;
 import io.confluent.kafka.serializers.json.KafkaJsonSchemaSerializer;
@@ -66,6 +69,7 @@ public class SchemaCodec {
     private static final String DEFAULT_CACHE_TTL = "24h";
     private static final int IDENTITY_MAP_CAPACITY = 1000;
     private static final byte MAGIC_BYTE = 0x0;
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final SchemaRegistryClient client;
     private final String registryUrl;
@@ -94,6 +98,10 @@ public class SchemaCodec {
         File cacheDir = new File(config.getProperty(CACHE_DIR, DEFAULT_CACHE_DIR));
         long ttlMillis = 1000L * Utility.getInstance()
                 .getDurationInSeconds(config.getProperty(CACHE_TTL, DEFAULT_CACHE_TTL));
+        // The schema cache is rebuildable from the registry, so clear it at startup - a stale entry (e.g.
+        // after the registry's schemas changed between runs) is never served. It re-populates on demand and
+        // TTL-expires within the run. (Unlike the registry's data store, a cache has no durable mode.)
+        Utility.getInstance().cleanupDir(cacheDir);
         Map<String, Object> srConfig = new HashMap<>();
         srConfig.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, registryUrl);
         SchemaRegistryClient client = new FileCachedSchemaRegistryClient(List.of(registryUrl),
@@ -121,7 +129,26 @@ public class SchemaCodec {
         if (type != SchemaType.JSON) {
             throw new UnsupportedOperationException("schema-type " + type + " is not yet supported (JSON only)");
         }
-        return jsonSerializers.computeIfAbsent(schemaId, this::newJsonSerializer).serialize(topic, value);
+        // Envelope the value with its (pre-registered) schema, so the serializer uses that schema directly
+        // instead of DERIVING one from the value's Map<String,Object> type - the derivation can't introspect
+        // the Object-typed map values (noisy "Unable to process java.lang.Object" warnings) and is wasted
+        // work. use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
+        JsonNode node = JSON.valueToTree(value);
+        Object enveloped = JsonSchemaUtils.envelope(jsonSchemaById(schemaId), node);
+        return jsonSerializers.computeIfAbsent(schemaId, this::newJsonSerializer).serialize(topic, enveloped);
+    }
+
+    /** Resolve a pre-registered JSON schema by global id (cached by {@link FileCachedSchemaRegistryClient}). */
+    private JsonSchema jsonSchemaById(int schemaId) {
+        try {
+            ParsedSchema schema = client.getSchemaById(schemaId);
+            if (schema instanceof JsonSchema jsonSchema) {
+                return jsonSchema;
+            }
+            throw new IllegalStateException("schema id " + schemaId + " is " + schema.schemaType() + ", not JSON");
+        } catch (IOException | RestClientException e) {
+            throw new IllegalStateException("Unable to resolve schema id " + schemaId + ": " + e.getMessage(), e);
+        }
     }
 
     private KafkaJsonSchemaSerializer<Object> newJsonSerializer(int schemaId) {

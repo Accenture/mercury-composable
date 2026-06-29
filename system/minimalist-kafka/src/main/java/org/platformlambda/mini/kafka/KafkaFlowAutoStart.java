@@ -41,17 +41,21 @@ import java.util.Properties;
  * configured without code changes.</p>
  *
  * <p>Flow-failure handling is tunable via {@code application.properties}:
- * {@code kafka.flow.max.retries} (default 3), {@code kafka.flow.retry.backoff.ms} (default 500), and
+ * {@code kafka.flow.max.retries} (default 3), {@code kafka.flow.retry.backoff.ms} (default 500),
  * {@code kafka.flow.dlq.suffix} (default {@code .dlq}) - appended to each source topic to form its
- * <b>per-topic</b> DLQ ({@code orders} → {@code orders.dlq}). Only the suffix is configurable, since a
- * shared/global DLQ is an anti-pattern for reprocessing; DLQ topics must be pre-provisioned.</p>
+ * <b>per-topic</b> DLQ ({@code orders} → {@code orders.dlq}) - and {@code kafka.dlq.timeout.ms} (default
+ * 10000), the confirm-write timeout for the dead-letter publish. Only the suffix is configurable, since a
+ * shared/global DLQ is an anti-pattern for reprocessing; DLQ topics must be pre-provisioned. There is no
+ * flow-processing timeout knob: a flow's own {@code ttl} is its deadline (Kafka is asynchronous, with no
+ * inherent request timeout).</p>
  */
 @MainApplication
 public class KafkaFlowAutoStart implements EntryPoint {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaFlowAutoStart.class);
     private static final String ADAPTER_CONFIG = "yaml.kafka.flow.adapter";
-    private static final String FLOW_TIMEOUT = "kafka.flow.timeout.ms";
+    // The flow's own ttl is the deadline for processing; only the dead-letter confirm-write needs a timeout.
+    private static final String DLQ_TIMEOUT = "kafka.dlq.timeout.ms";
     private static final String MAX_RETRIES = "kafka.flow.max.retries";
     private static final String RETRY_BACKOFF = "kafka.flow.retry.backoff.ms";
     private static final String DLQ_SUFFIX = "kafka.flow.dlq.suffix";
@@ -70,7 +74,8 @@ public class KafkaFlowAutoStart implements EntryPoint {
 
         String adapterConfig = config.getProperty(ADAPTER_CONFIG);
         if (adapterConfig != null) {
-            long flowTimeoutMs = Long.parseLong(config.getProperty(FLOW_TIMEOUT, "30000"));
+            // confirm-write timeout for the dead-letter publish (broker ack); the flow wait uses flow.ttl
+            long dlqTimeout = Long.parseLong(config.getProperty(DLQ_TIMEOUT, "10000"));
             int maxRetries = Integer.parseInt(config.getProperty(MAX_RETRIES, "3"));
             long retryBackoffMs = Long.parseLong(config.getProperty(RETRY_BACKOFF, "500"));
             // per-topic DLQ: <topic><suffix>; only the suffix is configurable (no global DLQ - anti-pattern)
@@ -79,7 +84,7 @@ public class KafkaFlowAutoStart implements EntryPoint {
             RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, dlqSuffix, publisher);
             Properties consumerProps = KafkaClientConfig.consumerProperties(config);
             KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig),
-                    flowTimeoutMs, retryPolicy, schemaCodec);
+                    dlqTimeout, retryPolicy, schemaCodec);
             adapter.start();
             KafkaRuntime.setAdapter(adapter);
             log.info("Kafka flow adapter started from {}", adapterConfig);

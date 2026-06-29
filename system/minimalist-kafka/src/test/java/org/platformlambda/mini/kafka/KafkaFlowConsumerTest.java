@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -43,6 +43,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code KafkaFlowAdapterTest}; here we unit-test the record-to-dataset decoding and the retry/dead-letter
  * orchestration (by overriding the flow-invocation seam, so no running engine is needed).
  */
+// resource: these KafkaFlowConsumer fixtures are never start()ed, so the single-thread poll-loop executor
+// never submits a task and never spawns a thread - there is no live resource to close.
+@SuppressWarnings({"resource", "java:S2095"})
 class KafkaFlowConsumerTest {
 
     @Test
@@ -68,7 +71,7 @@ class KafkaFlowConsumerTest {
         RetryPolicy policy = new RetryPolicy(2, 0, ".dlq", new KafkaRequestPublisher(dlqProducer));
         AlwaysFailingConsumer consumer = new AlwaysFailingConsumer(Integer.MAX_VALUE, policy);
 
-        boolean commit = consumer.routeToFlow(record("payload"));
+        boolean commit = consumer.routeToFlow(inboundRecord());
 
         assertTrue(commit, "durably dead-lettered, so the offset is committed (not reprocessed forever)");
         assertEquals(3, consumer.attempts.get(), "1 initial attempt + 2 retries");
@@ -77,7 +80,7 @@ class KafkaFlowConsumerTest {
         assertEquals("orders.dlq", dead.topic(), "per-topic DLQ = <topic> + suffix");
         assertEquals("payload", new String(dead.value(), UTF_8));
         assertEquals("orders", new String(dead.headers().lastHeader("dlq.origin.topic").value(), UTF_8));
-        assertTrue(dead.headers().lastHeader("dlq.error") != null, "failure cause recorded on the DLQ record");
+        assertNotNull(dead.headers().lastHeader("dlq.error"), "failure cause recorded on the DLQ record");
     }
 
     @Test
@@ -91,30 +94,43 @@ class KafkaFlowConsumerTest {
     private static String deadLetterTopicFor(String suffix) {
         MockProducer<String, byte[]> dlqProducer = autoCompletingProducer();
         RetryPolicy policy = new RetryPolicy(0, 0, suffix, new KafkaRequestPublisher(dlqProducer));
-        new AlwaysFailingConsumer(Integer.MAX_VALUE, policy).routeToFlow(record("payload"));
+        new AlwaysFailingConsumer(Integer.MAX_VALUE, policy).routeToFlow(inboundRecord());
         return dlqProducer.history().getFirst().topic();
     }
 
     @Test
-    void deadLetterWriteFailureBlocksTheCommit() {
-        // a producer that never acknowledges -> the confirmed DLQ write times out
+    void deadLettersNon200FlowResponse() {
+        // a flow that replies with a non-200 status is a failure (not a thrown exception) -> dead-lettered
+        MockProducer<String, byte[]> dlqProducer = autoCompletingProducer();
+        RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", new KafkaRequestPublisher(dlqProducer));
+
+        boolean commit = new FlowErrorConsumer(policy).routeToFlow(inboundRecord());
+
+        assertTrue(commit, "a non-200 flow response is durably dead-lettered, so the offset commits");
+        assertEquals(1, dlqProducer.history().size(), "the non-200 message routed to the DLQ");
+    }
+
+    @Test
+    void dlqWriteFailureCommitsToAvoidStorm() {
+        // a producer that never acknowledges -> the confirmed DLQ write times out (the last defense fails)
         MockProducer<String, byte[]> stuckProducer =
                 new MockProducer<>(false, null, new StringSerializer(), new ByteArraySerializer());
         RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", new KafkaRequestPublisher(stuckProducer));
         AlwaysFailingConsumer consumer = new AlwaysFailingConsumer(Integer.MAX_VALUE, policy);
 
-        boolean commit = consumer.routeToFlow(record("payload"));
+        boolean commit = consumer.routeToFlow(inboundRecord());
 
-        assertFalse(commit, "a failed dead-letter write must NOT commit -> the message redelivers (no loss)");
+        assertTrue(commit, "a failed DLQ write is logged loudly and committed (message dropped) rather than "
+                + "redelivered forever -> no recovery storm");
     }
 
     @Test
-    void noDeadLetterPublisherBlocksTheCommit() {
+    void noDeadLetterPublisherCommitsToAvoidStorm() {
         RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", null);   // no publisher available
         AlwaysFailingConsumer consumer = new AlwaysFailingConsumer(Integer.MAX_VALUE, policy);
 
-        assertFalse(consumer.routeToFlow(record("payload")),
-                "no DLQ publisher -> cannot store the message -> do not commit");
+        assertTrue(consumer.routeToFlow(inboundRecord()),
+                "no DLQ publisher -> drop-with-ERROR and commit (no endless redelivery)");
     }
 
     @Test
@@ -123,7 +139,7 @@ class KafkaFlowConsumerTest {
         RetryPolicy policy = new RetryPolicy(3, 0, ".dlq", new KafkaRequestPublisher(dlqProducer));
         AlwaysFailingConsumer consumer = new AlwaysFailingConsumer(1, policy);   // fail once, then succeed
 
-        boolean commit = consumer.routeToFlow(record("payload"));
+        boolean commit = consumer.routeToFlow(inboundRecord());
 
         assertTrue(commit);
         assertEquals(2, consumer.attempts.get(), "failed once, succeeded on the retry");
@@ -152,28 +168,41 @@ class KafkaFlowConsumerTest {
         return new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
     }
 
-    private static ConsumerRecord<String, byte[]> record(String body) {
-        ConsumerRecord<String, byte[]> r = new ConsumerRecord<>("orders", 0, 7L, "k", body.getBytes(UTF_8));
+    private static ConsumerRecord<String, byte[]> inboundRecord() {
+        ConsumerRecord<String, byte[]> r = new ConsumerRecord<>("orders", 0, 7L, "k", "payload".getBytes(UTF_8));
         r.headers().add("cid", "cid-1".getBytes(UTF_8));
         return r;
     }
 
-    /** A consumer whose flow invocation fails the first {@code failTimes} attempts (engine never touched). */
+    /** A consumer whose flow invocation throws the first {@code failTimes} attempts (engine never touched). */
     private static class AlwaysFailingConsumer extends KafkaFlowConsumer {
         final AtomicInteger attempts = new AtomicInteger();
         final int failTimes;
 
         AlwaysFailingConsumer(int failTimes, RetryPolicy policy) {
-            // small flow timeout doubles as the DLQ confirm-write timeout, keeping the failure test fast
+            // 200ms = the DLQ confirm-write timeout, keeping the failed-DLQ-write test fast
             super(null, "orders", "order-flow", 200, policy, null, null);
             this.failTimes = failTimes;
         }
 
         @Override
-        void invokeFlow(EventEnvelope forward, String traceId, String tracePath) throws ExecutionException {
+        EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) throws ExecutionException {
             if (attempts.incrementAndGet() <= failTimes) {
                 throw new ExecutionException("flow failed", new RuntimeException("boom"));
             }
+            return new EventEnvelope().setStatus(200);   // success on the surviving attempt
+        }
+    }
+
+    /** A consumer whose flow always replies with a non-200 status (a flow-level failure, not an exception). */
+    private static class FlowErrorConsumer extends KafkaFlowConsumer {
+        FlowErrorConsumer(RetryPolicy policy) {
+            super(null, "orders", "order-flow", 200, policy, null, null);
+        }
+
+        @Override
+        EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+            return new EventEnvelope().setStatus(500).setBody("flow error");
         }
     }
 }

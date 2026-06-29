@@ -19,6 +19,7 @@
 package org.platformlambda.mini.kafka;
 
 import com.accenture.automation.EventScriptManager;
+import com.accenture.models.Flows;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -61,14 +62,16 @@ import java.util.concurrent.TimeoutException;
  * offset stays uncommitted and Kafka redelivers the message to a surviving instance in the group - the
  * deliberate resilience-over-throughput tradeoff for the consume side.</p>
  *
- * <p><b>Flow-failure handling.</b> A flow-level failure is retried up to {@link RetryPolicy#maxRetries()}
- * times; if it still fails, the original message is routed to the per-topic dead-letter topic
- * ({@code <topic><dlqSuffix>}, suffix default {@code .dlq}). The DLQ write is <b>confirmed</b> (the broker
- * must acknowledge it) and the offset is committed <b>only if that write succeeds</b>; if the DLQ write
- * fails - e.g. the DLQ topic does not exist (Kafka auto-creation is off in production) - the offset is
- * <b>not</b> committed, so the message redelivers rather than being silently lost. Operationally this means
- * <b>DLQ topics must be pre-provisioned</b>; a missing one stalls the partition loudly instead of dropping
- * data, which is the correct trade-off for a holding area whose purpose is reprocessing.</p>
+ * <p><b>Flow outcome.</b> A flow <b>succeeds</b> when it replies with status 200; any other status - or a
+ * thrown exception, including a timeout when it does not reply within its {@code ttl} (the flow's {@code ttl}
+ * is the deadline, since Kafka has no inherent request timeout) - is a <b>failure</b>.</p>
+ *
+ * <p><b>Flow-failure handling.</b> A failure is retried up to {@link RetryPolicy#maxRetries()} times; if it
+ * still fails, the original message is routed to the per-topic dead-letter topic ({@code <topic><dlqSuffix>},
+ * suffix default {@code .dlq}) with a <b>confirmed</b> write. <b>DLQ topics must be pre-provisioned</b> (Kafka
+ * auto-creation is off in production). If the DLQ write itself fails, the message is dropped with a loud
+ * {@code ERROR} and the offset committed - see {@link #writeToDeadLetter} for why (avoiding a recovery storm),
+ * the resulting data-loss caveat, and the planned alternative-path improvement.</p>
  *
  * <p><b>Partition pinning (opt-in).</b> When a {@code partition} is supplied for the binding, the consumer
  * <b>manually assigns</b> that one topic-partition ({@code assign}) instead of joining the consumer group
@@ -91,7 +94,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private final Consumer<String, byte[]> consumer;
     private final String topic;
     private final String flowId;
-    private final long flowTimeoutMs;
+    private final long dlqTimeout;   // confirm-write timeout for the dead-letter publish (broker ack)
     private final RetryPolicy retryPolicy;
     private final Integer partition;   // null = group-managed subscribe; non-null = pin this partition
     private final SchemaCodec schemaCodec;   // null = raw byte[] body; non-null = decode Confluent-framed value
@@ -101,12 +104,12 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private volatile boolean running;
 
     public KafkaFlowConsumer(Consumer<String, byte[]> consumer, String topic, String flowId,
-                             long flowTimeoutMs, RetryPolicy retryPolicy, Integer partition,
+                             long dlqTimeout, RetryPolicy retryPolicy, Integer partition,
                              SchemaCodec schemaCodec) {
         this.consumer = consumer;
         this.topic = topic;
         this.flowId = flowId;
-        this.flowTimeoutMs = flowTimeoutMs;
+        this.dlqTimeout = dlqTimeout;
         this.retryPolicy = retryPolicy;
         this.partition = partition;
         this.schemaCodec = schemaCodec;
@@ -183,52 +186,78 @@ public class KafkaFlowConsumer implements AutoCloseable {
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
         String[] trace = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));
         String traceId = trace != null ? trace[0] : Utility.getInstance().getUuid();
-        String parentSpanId = trace != null ? trace[1] : null;
         String tracePath = "KAFKA /" + topic;
-        String correlationId = headers.getOrDefault(KafkaHeaders.CORRELATION_ID, traceId);
+        EventEnvelope forward = toFlowRequest(dataset, headers, trace, traceId, tracePath);
+        return deliver(consumerRecord, forward, traceId, tracePath);
+    }
 
+    /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
+    private EventEnvelope toFlowRequest(Map<String, Object> dataset, Map<String, String> headers,
+                                        String[] trace, String traceId, String tracePath) {
+        String correlationId = headers.getOrDefault(KafkaHeaders.CORRELATION_ID, traceId);
         EventEnvelope forward = new EventEnvelope();
         forward.setTo(EventScriptManager.SERVICE_NAME).setHeader(FLOW_ID, flowId)
                 .setCorrelationId(correlationId).setBody(dataset)
                 .setTraceId(traceId).setTracePath(tracePath);
-        if (parentSpanId != null) {
-            // The flow chains onto the upstream span carried in the Kafka traceparent.
-            forward.setSpanId(parentSpanId);
+        if (trace != null) {
+            forward.setSpanId(trace[1]);   // chain onto the upstream span carried in the Kafka traceparent
         }
+        return forward;
+    }
+
+    /**
+     * Invoke the flow with bounded retry, then dead-letter. A failure is a non-200 reply or a thrown
+     * exception (flow/transport error, or a timeout when the flow does not reply within its ttl).
+     *
+     * @return whether the offset may be committed (see {@link #writeToDeadLetter}); false only on shutdown.
+     */
+    private boolean deliver(ConsumerRecord<String, byte[]> consumerRecord, EventEnvelope forward,
+                            String traceId, String tracePath) {
         int attempt = 0;
         while (true) {
+            Throwable cause;
             try {
-                invokeFlow(forward, traceId, tracePath);
-                return true;
+                EventEnvelope response = invokeFlow(forward, traceId, tracePath);
+                if (response.getStatus() == 200) {
+                    return true;   // the flow finished normally -> acknowledge (commit) and move on
+                }
+                cause = new IllegalStateException("flow " + flowId + " returned status " + response.getStatus());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 running = false;
                 return false;   // do not commit a message that was interrupted mid-processing
             } catch (ExecutionException e) {
-                if (attempt >= retryPolicy.maxRetries()) {
-                    log.warn("Flow {} failed for a '{}' message after {} attempt(s); routing to {}",
-                            flowId, topic, attempt + 1, deadLetterTopic, e.getCause());
-                    // commit only if the message is durably dead-lettered; otherwise redeliver (no loss)
-                    return writeToDeadLetter(consumerRecord, e.getCause());
-                }
-                attempt++;
-                log.warn("Flow {} failed for a '{}' message (attempt {}/{}); retrying",
-                        flowId, topic, attempt, retryPolicy.maxRetries(), e.getCause());
-                if (!backoff()) {
-                    return false;   // interrupted during backoff -> redeliver, do not commit
-                }
+                cause = e.getCause() != null ? e.getCause() : e;
+            }
+            if (attempt >= retryPolicy.maxRetries()) {
+                log.warn("Flow {} failed for a '{}' message after {} attempt(s); routing to {}",
+                        flowId, topic, attempt + 1, deadLetterTopic, cause);
+                return writeToDeadLetter(consumerRecord, cause);
+            }
+            attempt++;
+            log.warn("Flow {} failed for a '{}' message (attempt {}/{}); retrying",
+                    flowId, topic, attempt, retryPolicy.maxRetries(), cause);
+            if (!backoff()) {
+                return false;   // interrupted during backoff -> redeliver, do not commit
             }
         }
     }
 
     /**
-     * Send the event into the flow engine, blocking until it completes. Visible (package-private and
-     * non-final) so the retry/dead-letter orchestration can be unit-tested without a running engine.
+     * Send the event into the flow engine, blocking until it replies, and return that reply. Visible
+     * (package-private and non-final) so the retry/dead-letter orchestration can be unit-tested without a
+     * running engine.
+     *
+     * <p>The deadline is the flow's own {@code ttl} - Kafka is asynchronous, so unlike an HTTP entry it has
+     * no inherent request timeout; the flow's {@code ttl} is the authoritative deadline. If the flow does
+     * not reply within {@code ttl}, {@code po.request} throws (the 2-arg overload uses timeout-as-exception
+     * semantics), which the caller treats as a failure.</p>
      */
-    void invokeFlow(EventEnvelope forward, String traceId, String tracePath)
+    EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath)
             throws InterruptedException, ExecutionException {
         PostOffice po = PostOffice.trackable(ADAPTER_ROUTE, traceId, tracePath);
-        po.request(forward, flowTimeoutMs).get();
+        long ttl = Flows.getFlow(flowId).ttl;
+        return po.request(forward, ttl).get();
     }
 
     /** Pause between retry attempts. @return false if interrupted while waiting (caller must not commit). */
@@ -250,15 +279,29 @@ public class KafkaFlowConsumer implements AutoCloseable {
      * Park an un-processable message on {@code <topic><dlqSuffix>} with a <b>confirmed</b> write, preserving
      * its headers + body. Visible (package-private, non-final) so the commit-gating can be unit-tested.
      *
-     * @return true if the broker acknowledged the dead-letter write (safe to commit); false if it could not
-     *         be stored (no publisher, write failed, or interrupted) so the caller must not commit.
+     * <p>The DLQ is the last line of defense. If the write to it <b>fails</b>, there is no further fallback -
+     * an "exception of an exception". Refusing to commit would redeliver the same poison message, which would
+     * fail the flow and the DLQ write again, indefinitely - a self-sustaining retry/recovery storm, a known
+     * cause of prolonged outages. So instead we log a loud {@code ERROR} and commit, deliberately accepting
+     * the loss of this one message in exchange for partition liveness.</p>
+     *
+     * <p><b>Data loss:</b> when the DLQ write fails, the message is <b>dropped</b> - only the ERROR log
+     * records it. A future improvement is the classic resilience <i>alternative path</i>: on DLQ failure,
+     * persist the record to a durable store (file/object store/DB) for later replay, rather than dropping it.</p>
+     *
+     * @return true once the offset may be committed - either the message was durably dead-lettered, or it
+     *         could not be and was dropped-with-an-ERROR to avoid a recovery storm. Returns false only on a
+     *         shutdown interruption, so the in-flight message redelivers cleanly on the next start.
      */
+    // S2095: the publisher is the process-wide shared singleton owned by KafkaRuntime, NOT a resource this
+    // method opens - closing it here (try-with-resources) would tear down the shared producer for everyone.
+    @SuppressWarnings("java:S2095")
     boolean writeToDeadLetter(ConsumerRecord<String, byte[]> consumerRecord, Throwable cause) {
         KafkaRequestPublisher publisher = retryPolicy.deadLetterPublisher();
         if (publisher == null) {
-            log.error("No dead-letter publisher; NOT committing '{}' offset {} (will redeliver)",
-                    topic, consumerRecord.offset());
-            return false;
+            log.error("DATA LOSS: no dead-letter publisher; dropping '{}' offset {} after flow failure "
+                    + "(configure a DLQ to retain failed messages)", topic, consumerRecord.offset(), cause);
+            return true;
         }
         Map<String, byte[]> deadLetterHeaders = new HashMap<>();
         consumerRecord.headers().forEach(h -> deadLetterHeaders.put(h.key(), h.value()));
@@ -266,17 +309,19 @@ public class KafkaFlowConsumer implements AutoCloseable {
         deadLetterHeaders.put(DLQ_ERROR_HEADER,
                 (cause != null ? cause.toString() : "unknown").getBytes(StandardCharsets.UTF_8));
         try {
-            publisher.publishSync(deadLetterTopic, null, deadLetterHeaders, consumerRecord.value(), flowTimeoutMs);
+            publisher.publishSync(deadLetterTopic, null, deadLetterHeaders, consumerRecord.value(), dlqTimeout);
             return true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             running = false;
-            return false;
+            return false;   // shutdown in progress: redeliver on the next start, do not commit
         } catch (ExecutionException | TimeoutException e) {
-            log.error("Dead-letter write to {} failed; NOT committing '{}' offset {} (will redeliver). "
-                            + "Ensure the DLQ topic exists (Kafka auto-creation is off in production): {}",
-                    deadLetterTopic, topic, consumerRecord.offset(), e.getMessage());
-            return false;
+            // an "exception of an exception": the last line of defense failed. Drop loudly rather than
+            // block the partition retrying forever (a recovery storm). Future: an alternative-path store.
+            log.error("DATA LOSS: dead-letter write to {} failed; dropping '{}' offset {} to avoid a "
+                            + "redelivery storm (ensure the DLQ topic exists). Cause: {}",
+                    deadLetterTopic, topic, consumerRecord.offset(), e.getMessage(), cause);
+            return true;
         }
     }
 

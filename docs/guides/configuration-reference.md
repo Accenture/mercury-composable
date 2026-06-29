@@ -269,7 +269,7 @@ Kafka. See the [Kafka Flow Adapter guide](kafka-flow-adapter.md). The inbound ad
 | `yaml.kafka.flow.adapter` | `String` (path) | — | Location of the `kafka-flow-adapter.yaml` binding file (`topic -> flow`). Unset = inbound adapter disabled. |
 | `kafka.producer.properties` | `String` (comma-sep paths) | `file:/tmp/config/kafka-producer.properties, classpath:/kafka-producer.properties` | Producer client config template location(s); file path falls back to classpath. |
 | `kafka.consumer.properties` | `String` (comma-sep paths) | `file:/tmp/config/kafka-consumer.properties, classpath:/kafka-consumer.properties` | Consumer client config template location(s); file path falls back to classpath. |
-| `kafka.flow.timeout.ms` | `long` (ms) | `30000` | Per-message flow processing timeout; also bounds the confirmed dead-letter write. |
+| `kafka.dlq.timeout.ms` | `long` (ms) | `10000` | Confirm-write timeout for the dead-letter publish (broker ack). Flow processing has no timeout knob — the flow's own `ttl` is the deadline (Kafka is asynchronous). |
 | `kafka.flow.max.retries` | `int` | `3` | Retry attempts on a flow-processing failure before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `long` (ms) | `500` | Pause between retry attempts. |
 | `kafka.flow.dlq.suffix` | `String` | `.dlq` | Suffix appended to a source topic to form its per-topic dead-letter topic (`<topic><suffix>`). A blank value falls back to `.dlq`. |

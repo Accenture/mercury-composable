@@ -115,21 +115,32 @@ The consumer commits offsets **only after** the flow finishes a message, one mes
 (`max.poll.records=1`). If the instance crashes before the commit, Kafka redelivers — the deliberate
 resilience-over-throughput trade-off.
 
-On a flow-processing **failure**, the message is retried up to `kafka.flow.max.retries` times (with
+A flow **succeeds** when it replies with status `200`. Any other status — or a thrown exception, including a
+**timeout** when the flow does not reply within its own `ttl` — is a **failure**. (Kafka is asynchronous, so
+unlike an HTTP entry the adapter has no inherent request timeout: the flow's `ttl` *is* the processing
+deadline. There is no separate flow-timeout knob.)
+
+On a **failure**, the message is retried up to `kafka.flow.max.retries` times (with
 `kafka.flow.retry.backoff.ms` between attempts), then written to a **per-topic dead-letter topic**
 `<topic><suffix>` (suffix `kafka.flow.dlq.suffix`, default `.dlq`):
 
 - The DLQ is **strictly per topic** — a global/shared DLQ is an anti-pattern because mixing source schemas
   makes reprocessing (the whole point of a DLQ) hard. Only the suffix is configurable.
-- The DLQ write is **confirmed** (it blocks on broker acknowledgement); the offset commits **only if that
-  write succeeds**. If it fails — e.g. the DLQ topic does not exist — the offset is **not** committed and the
-  message redelivers, so nothing is silently lost.
-- Therefore **DLQ topics must be pre-provisioned** (Kafka auto-creation is off in production). A missing DLQ
-  stalls the partition loudly instead of dropping data — the correct trade-off for a reprocessing holding area.
-- The original record's headers are preserved, plus `dlq.origin.topic` and `dlq.error`.
+- The DLQ write is **confirmed** (it blocks on broker acknowledgement, bounded by `kafka.dlq.timeout.ms`);
+  on success the offset commits.
+- **DLQ topics must be pre-provisioned** (Kafka auto-creation is off in production). The original record's
+  headers are preserved, plus `dlq.origin.topic` and `dlq.error`.
+
+> **When the DLQ write itself fails (data loss).** The DLQ is the last line of defense; a failed write to it
+> is an *exception of an exception* with no further fallback. Blocking the partition to retry forever would
+> re-run the failing flow and re-attempt the failing DLQ write indefinitely — a self-sustaining **recovery
+> storm** (a known cause of prolonged outages). So the adapter instead logs a loud `ERROR` and **commits**,
+> deliberately **dropping that one message** to keep the partition live. This is a conscious data-loss
+> trade-off; a planned improvement is a classic resilience **alternative path** — persisting the record to a
+> durable store for later replay instead of dropping it.
 
 **Reprocessing** (read `<topic>.dlq` → fix → replay) is business-domain logic and is intentionally out of
-scope: the library guarantees durable capture, not replay.
+scope: the library guarantees durable capture (when the DLQ is reachable), not replay.
 
 ## Outbound: publishing to Kafka {#outbound}
 
@@ -164,7 +175,7 @@ The essentials:
 | `yaml.kafka.flow.adapter` | — | Adapter config location; unset = inbound adapter off. |
 | `kafka.producer.properties` | `file:/tmp/config/kafka-producer.properties,classpath:/kafka-producer.properties` | Producer template location(s). |
 | `kafka.consumer.properties` | `file:/tmp/config/kafka-consumer.properties,classpath:/kafka-consumer.properties` | Consumer template location(s). |
-| `kafka.flow.timeout.ms` | `30000` | Per-message flow timeout (also bounds the confirmed DLQ write). |
+| `kafka.dlq.timeout.ms` | `10000` | Confirm-write timeout for the dead-letter publish. (Flow processing has no timeout knob — the flow's own `ttl` is the deadline.) |
 | `kafka.flow.max.retries` | `3` | Retry attempts before dead-lettering. |
 | `kafka.flow.retry.backoff.ms` | `500` | Pause between retry attempts. |
 | `kafka.flow.dlq.suffix` | `.dlq` | Suffix appended to the source topic to form its DLQ. |

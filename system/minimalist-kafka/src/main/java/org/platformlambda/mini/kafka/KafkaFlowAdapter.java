@@ -18,6 +18,7 @@
 
 package org.platformlambda.mini.kafka;
 
+import com.accenture.models.Flows;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -81,7 +82,7 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private final List<KafkaFlowConsumer> consumers = new ArrayList<>();
     private final Properties consumerProps;
 
-    public KafkaFlowAdapter(Properties consumerProps, ConfigReader config, long flowTimeoutMs,
+    public KafkaFlowAdapter(Properties consumerProps, ConfigReader config, long dlqTimeout,
                             RetryPolicy retryPolicy, SchemaCodec schemaCodec) {
         this.consumerProps = consumerProps;
         Object entries = config.get(CONSUMER);
@@ -89,34 +90,44 @@ public class KafkaFlowAdapter implements AutoCloseable {
             throw new IllegalArgumentException("kafka-flow-adapter config must contain a non-empty 'consumer' list");
         }
         // Validate the whole config before opening any consumer, so a malformed entry fails fast and
-        // loud (the old behaviour silently skipped it) without leaking half-created consumers.
+        // loud (the old behavior silently skipped it) without leaking half-created consumers.
         for (int i = 0; i < list.size(); i++) {
-            Object item = list.get(i);
-            if (!(item instanceof Map<?, ?> entry)) {
-                throw new IllegalArgumentException("consumer[" + i + "] must be a map with 'topic' and 'flow'");
-            }
-            String topic = text(entry.get(TOPIC));
-            String flowId = text(entry.get(FLOW));
-            if (topic == null) {
-                throw new IllegalArgumentException("consumer[" + i + "] is missing a 'topic'");
-            }
-            if (flowId == null) {
-                throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') is missing a 'flow'");
-            }
-            String groupId = resolveGroupId(entry, topic);
-            Integer partition = parsePartition(entry.get(PARTITION));
-            boolean schemaEnabled = isSchemaEnabled(entry);
-            if (schemaEnabled && schemaCodec == null) {
-                throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') sets "
-                        + "schema.enabled but 'schema.registry.url' is not configured");
-            }
-            Consumer<String, byte[]> consumer = newConsumer(groupId);
-            consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs, retryPolicy, partition,
-                    schemaEnabled ? schemaCodec : null));
-            log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}'{}{})",
-                    topic, flowId, groupId, partition != null ? ", pinned to partition " + partition : "",
-                    schemaEnabled ? ", schema decode on" : "");
+            consumers.add(buildConsumer(i, list.get(i), dlqTimeout, retryPolicy, schemaCodec));
         }
+    }
+
+    /** Validate one consumer-binding entry and build its {@link KafkaFlowConsumer} (fail-fast on any error). */
+    private KafkaFlowConsumer buildConsumer(int i, Object item, long dlqTimeout, RetryPolicy retryPolicy,
+                                            SchemaCodec schemaCodec) {
+        if (!(item instanceof Map<?, ?> entry)) {
+            throw new IllegalArgumentException("consumer[" + i + "] must be a map with 'topic' and 'flow'");
+        }
+        String topic = text(entry.get(TOPIC));
+        String flowId = text(entry.get(FLOW));
+        if (topic == null) {
+            throw new IllegalArgumentException("consumer[" + i + "] is missing a 'topic'");
+        }
+        if (flowId == null) {
+            throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') is missing a 'flow'");
+        }
+        // fail fast if the binding names a flow that was never compiled (CompileFlows runs before this
+        // @MainApplication), rather than failing every message at runtime.
+        if (Flows.getFlow(flowId) == null) {
+            throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic
+                    + "') references unknown flow '" + flowId + "'");
+        }
+        boolean schemaEnabled = isSchemaEnabled(entry);
+        if (schemaEnabled && schemaCodec == null) {
+            throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') sets "
+                    + "schema.enabled but 'schema.registry.url' is not configured");
+        }
+        String groupId = resolveGroupId(entry, topic);
+        Integer partition = parsePartition(entry.get(PARTITION));
+        log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}'{}{})",
+                topic, flowId, groupId, partition != null ? ", pinned to partition " + partition : "",
+                schemaEnabled ? ", schema decode on" : "");
+        return new KafkaFlowConsumer(newConsumer(groupId), topic, flowId, dlqTimeout, retryPolicy, partition,
+                schemaEnabled ? schemaCodec : null);
     }
 
     /**
