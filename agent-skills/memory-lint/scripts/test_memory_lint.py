@@ -196,5 +196,163 @@ class TestVersionManifest(unittest.TestCase):
             self.assertEqual(memory_lint.check_version_manifest(root), [])
 
 
+class TestConflictMarkers(unittest.TestCase):
+    # A leftover VCS merge-conflict marker corrupts shared memory and must be an ERROR.
+    # A bare `=======` line is a valid Markdown setext heading underline and must NOT trip.
+    @staticmethod
+    def _setup(root, files):
+        os.makedirs(os.path.join(root, "memory"), exist_ok=True)
+        for rel, body in files.items():
+            full = os.path.join(root, "memory", rel)
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            with open(full, "w", encoding="utf-8") as f:
+                f.write(body)
+
+    def test_git_markers_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\n<<<<<<< HEAD\nmine\n=======\ntheirs\n>>>>>>> branch\n",
+            })
+            errs = memory_lint.check_conflict_markers(root)
+            self.assertEqual(len(errs), 1)
+            self.assertIn("[conflict-marker]", errs[0])
+            self.assertIn("memory/continuity.md:2", errs[0])
+
+    def test_diff3_marker_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {"continuity.md": "# c\n||||||| base\n"})
+            self.assertEqual(len(memory_lint.check_conflict_markers(root)), 1)
+
+    def test_setext_heading_underline_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {"continuity.md": "Title\n=======\n\nbody\n"})
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+    def test_clean_memory_ok(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\nall good\n",
+                "sessions/2026-06-27-120000.md": "# Session\nfine\n",
+            })
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+    def test_one_report_per_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {"continuity.md": "<<<<<<< a\n>>>>>>> b\n<<<<<<< c\n"})
+            self.assertEqual(len(memory_lint.check_conflict_markers(root)), 1)
+
+    def test_session_log_marker_ignored(self):
+        # sessions/ legitimately QUOTES conflict markers (documenting a diff/terminal output);
+        # check 7 scans only top-level memory/*.md, so a marker there must NOT be flagged.
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\nclean\n",
+                "sessions/2026-06-27-120000.md": "# Session\n```\n<<<<<<< HEAD\nx\n=======\ny\n>>>>>>> b\n```\n",
+            })
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+    def test_archive_marker_ignored(self):
+        # archive/ is cold append-storage, likewise excluded from check 7.
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root, {
+                "continuity.md": "# c\nclean\n",
+                "archive/2026-Q2.md": "<<<<<<< HEAD\nx\n>>>>>>> b\n",
+            })
+            self.assertEqual(memory_lint.check_conflict_markers(root), [])
+
+
+class TestContinuityHealth(unittest.TestCase):
+    # (8) advisory cadence/size triggers (v4.24.0): catch a layer whose review never fired,
+    # or a continuity.md grown past the fact/line budget. All advisory (WARN).
+    @staticmethod
+    def _facts(n):
+        return {f"fact-{i}": {} for i in range(n)}
+
+    def test_review_overdue_flagged(self):
+        cont_text = "- **last_review:** 2026-06-20 | through 2026-06-20-120000\n"
+        sessions = [f"2026-06-2{d}-120000.md" for d in range(1, 8)]  # 7 strictly after the stamp
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 10, 5, 30, 600)
+        self.assertEqual(len(w), 1)
+        self.assertIn("[review-overdue]", w[0])
+        self.assertIn("7 session(s) since last review >= review_every 5", w[0])
+
+    def test_review_recent_ok(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]  # 0 strictly after
+        self.assertEqual(
+            memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 10, 10, 30, 600), []
+        )
+
+    def test_never_reviewed_counts_all_sessions(self):
+        cont_text = "# Continuity\n(no last_review recorded yet)\n"
+        sessions = [f"2026-06-2{d}-120000.md" for d in range(1, 5)]  # 4 sessions
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 10, 3, 30, 600)
+        self.assertTrue(any("[review-overdue]" in x and "4 session(s)" in x for x in w))
+
+    def test_sessions_since_review_prefers_through_token(self):
+        cont_text = "- **last_review:** 2026-06-20 | through 2026-06-25-120000\n"
+        sessions = ["2026-06-24-120000.md", "2026-06-26-120000.md", "2026-06-27-120000.md"]
+        self.assertEqual(memory_lint.sessions_since_review(sessions, cont_text), 2)
+
+    def test_fact_bloat_flagged(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        w = memory_lint.check_continuity_health(self._facts(31), sessions, cont_text, 10, 10, 30, 600)
+        self.assertEqual(len(w), 1)
+        self.assertIn("31 continuity facts > continuity_max_facts 30", w[0])
+
+    def test_line_bloat_flagged(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        w = memory_lint.check_continuity_health(self._facts(1), sessions, cont_text, 700, 10, 30, 600)
+        self.assertEqual(len(w), 1)
+        self.assertIn("continuity.md 700 lines > continuity_max_lines 600", w[0])
+
+    def test_healthy_ok(self):
+        cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n"
+        sessions = ["2026-06-27-120000.md"]
+        self.assertEqual(
+            memory_lint.check_continuity_health(self._facts(24), sessions, cont_text, 490, 10, 30, 600), []
+        )
+
+
+class TestStaleMetadata(unittest.TestCase):
+    # (9) flag stored tier != tier recomputed from references (review steps 2–3 skipped).
+    STEMS = ["2026-06-01-000000", "2026-06-02-000000", "2026-06-03-000000"]
+
+    def test_flags_tier_drift(self):
+        cont = {"foo-fact": {"tier": "working", "created": "2026-01-01"}}
+        refs = [{"foo-fact"}, {"foo-fact"}, set()]  # uses 2 (bypasses working rule), sslu 1 → active
+        w = memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4)
+        self.assertEqual(len(w), 1)
+        self.assertIn("[stale-metadata]", w[0])
+        self.assertIn("should be 'active'", w[0])
+
+    def test_matching_tier_not_flagged(self):
+        cont = {"a-fact": {"tier": "active", "created": "2026-01-01"}}
+        refs = [{"a-fact"}, {"a-fact"}, set()]
+        self.assertEqual(memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4), [])
+
+    def test_core_and_superseded_exempt(self):
+        cont = {
+            "c-fact": {"tier": "core", "created": "2026-01-01"},
+            "s-fact": {"tier": "superseded", "created": "2026-01-01", "superseded-by": "a-fact"},
+        }
+        refs = [{"c-fact"}, {"s-fact"}, set()]
+        self.assertEqual(memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4), [])
+
+    def test_never_referenced_not_flagged(self):
+        cont = {"legacy-fact": {"tier": "working", "created": "2026-01-01"}}
+        refs = [set(), set(), set()]  # sslu None → can't recompute → no flag
+        self.assertEqual(memory_lint.check_stale_metadata(cont, set(), refs, self.STEMS, 3, 2, 4), [])
+
+    def test_pinned_thread_tier_not_flagged(self):
+        # v4.26.1 refinement: a pinned `- [ ]` thread never decays; the tool doesn't opine on its
+        # tier label, so a 'working'-tagged pinned thread is NOT drift (would be 'active' if unpinned).
+        cont = {"open-fact": {"tier": "working", "created": "2026-01-01"}}
+        refs = [{"open-fact"}, {"open-fact"}, set()]
+        self.assertEqual(memory_lint.check_stale_metadata(cont, {"open-fact"}, refs, self.STEMS, 3, 2, 4), [])
+
+
 if __name__ == "__main__":
     unittest.main()

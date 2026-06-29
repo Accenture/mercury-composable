@@ -1,4 +1,0 @@
-flows:
-  - 'file-csv-flow.yml'
-
-location: 'classpath:/flows/'

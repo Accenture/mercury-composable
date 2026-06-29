@@ -28,10 +28,29 @@ work="$(printf '%s\n' "$changed" | grep -vE '^(memory/|\.agent/)' | grep -v '^$'
 logged="$(printf '%s\n' "$changed" | grep -E '^memory/sessions/.*\.md$' || true)"
 
 if [ -n "$work" ] && [ -z "$logged" ]; then
-  if git status --porcelain memory/sessions/ 2>/dev/null | grep -q '^??'; then
-    echo "agent-memory: this commit changed tracked files but added no session log — an unlogged" >&2
-    echo "              session stub is already waiting in memory/sessions/; enrich + commit it." >&2
+  # A "session" is a *burst of work within a window*, not a single commit. A session log added
+  # earlier in this same session — whether already committed OR still an untracked stub — must
+  # suppress a NEW stub, or a multi-commit session piles up one near-identical stub per commit
+  # (and inflates the decay session-count). Detect it by the newest session-log FILENAME
+  # timestamp: it is immutable and clone-safe (unlike mtime, which `git clone`/checkout resets
+  # to now — that would wrongly suppress the first stub for hours after every clone). Compare,
+  # lexicographically, against a "window-ago" stamp in the same YYYY-MM-DD-HHMMSS form (which
+  # sorts chronologically). Window default 30 min — long enough to span a working session's commit
+  # cadence (incl. a short test/think gap), short enough that a genuinely NEW session (a longer pause)
+  # still gets its own stub. Override with AGENT_MEMORY_SESSION_WINDOW_MINUTES (integer minutes).
+  win="${AGENT_MEMORY_SESSION_WINDOW_MINUTES:-30}"
+  newest="$(ls memory/sessions/ 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}\.md$' | sort | tail -n1)"
+  newest="${newest%.md}"
+  threshold="$(date -u -v-"${win}"M +%Y-%m-%d-%H%M%S 2>/dev/null \
+            || date -u -d "${win} minutes ago" +%Y-%m-%d-%H%M%S 2>/dev/null || true)"
+
+  if [ -n "$newest" ] && [ -n "$threshold" ] && [[ "$newest" > "$threshold" ]]; then
+    # a session log already exists for the current working session — don't pile on another stub
+    echo "agent-memory: this commit changed tracked files but added no session log; a recent one" >&2
+    echo "              (memory/sessions/$newest.md, within ${win} min) covers this session — enrich/update" >&2
+    echo "              it if this commit added something noteworthy (one log per session, not per commit)." >&2
   else
+    # genuinely new session (no session log within the window) — stub one so the ledger never gaps
     ts="$(date -u +%Y-%m-%d-%H%M%S)"
     stub="memory/sessions/$ts.md"
     {

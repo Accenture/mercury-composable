@@ -16,8 +16,8 @@
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
-- **last_session:** 2026-06-24T22:27:52Z | agent: Claude Code
-- **last_review:** 2026-06-24 | through 2026-06-24-222752.md
+- **last_session:** 2026-06-28T19:11:14Z | agent: Gemini CLI
+- **last_review:** 2026-06-28 | through 2026-06-28-182607.md
 - **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
@@ -39,12 +39,6 @@
   <!-- id: stack-integration-spring | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Messaging: Kafka connectors; MsgPack wire serialization; customized Gson
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- Persistence: **not part of the framework core** — the framework is persistence-agnostic. The
-  `extensions/reactive-postgres` module (reactive PostgreSQL via R2DBC) is an **example/optional add-on**
-  demonstrating one persistence approach, not a built-in persistence layer. (Corrected — Eric, 2026-06-24.)
-  <!-- id: stack-persistence-r2dbc | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: active -->
-- Docs: mkdocs (`docs_dir: docs`) → accenture.github.io/mercury-composable
-  <!-- id: stack-docs-mkdocs | created: 2026-06-20 | last_used: 2026-06-22 | uses: 7 | tier: active -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 
@@ -61,96 +55,66 @@
   `List<PoJo>` at the function boundary in an Event Script flow. Layer 1 (Platform Core) uses the
   same `inputPojoClass` for external JSON-list ingestion. (ADR-0003)
   <!-- id: typed-io-map-or-pojo | created: 2026-06-20 | last_used: 2026-06-24 | uses: 8 | tier: core -->
+- Functions execute on **Java 21 virtual threads** over the Vert.x in-memory event bus; a synchronous
+  PostOffice RPC (`po.request`) suspends the virtual thread and releases its carrier, so sequential
+  blocking-style code performs on par with reactive — and a function may still return `Mono`/`Flux`.
+  This is why e.g. 250 instances of a blocking `sync.await` are cheap. (ADR-0002)
+  <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-27 | uses: 4 | tier: core -->
 
 ## Key Decisions
 
-- Java 21 virtual threads throughout; synchronous PostOffice RPC ≈ reactive perf. (ADR-0002)
-  <!-- id: virtual-threads-rpc | created: 2026-06-20 | last_used: 2026-06-22 | uses: 3 | tier: active -->
-- `pom.xml` is the source of truth for the version (drift observed across docs).
-  <!-- id: pom-version-source-of-truth | created: 2026-06-20 | last_used: 2026-06-22 | uses: 4 | tier: archive-candidate -->
-- Docs live under `docs/` (mkdocs `docs_dir: docs`): `guides/` → `docs/guides/` and
-  `arch-decisions/` → `docs/arch-decisions/`, **keeping the `guides/` subfolder so
-  published URLs stay `/guides/...`** (the MiniGraph webapp, help tutorials, and README
-  link to those absolute URLs). Root GitHub files (README/CHANGELOG/CONTRIBUTING/
-  CODE_OF_CONDUCT/INCLUSIVITY) stay at repo root as external nav links; `docs/index.md`
-  is the site Home. Verified by `mkdocs build --strict` (exit 0).
-  <!-- id: docs-dir-layout | created: 2026-06-20 | last_used: 2026-06-22 | uses: 7 | tier: archive-candidate -->
-- Documentation rewrite (the Design for `bp-docs-ai-human-rewrite`) = a **structural, layered
-  re-architecture** into Parts I–VI ascending the layers, centering **"Knowledge Graph as
-  application"** (Part IV, mostly new — the current CHAPTER-11 is a glossy stub). **Dual design:**
-  human narrative spine (why-before-how, story arc) + AI direct-discovery (`docs/llms.txt` map,
-  per-doc YAML frontmatter `summary/layer/audience/keywords/related`, consistent heading taxonomy,
-  stable anchors, "At a glance" blocks). **Semantic slug URLs** + mkdocs `redirects` for the old
-  `/guides/CHAPTER-N/` links (webapp + help tutorials reference those absolutely). **Process:** build
-  new chapters alongside old → per-layer sign-off → retire superseded docs (APPENDIX-I,
-  old CHAPTER-11) + fix nav/cross-links/baked URLs. First iteration = spine opener + Part IV.
-  Approved by Eric Law 2026-06-20 (3 forks confirmed). Lower-layer chapters (CH 1–9) are sound —
-  migrate + refresh, don't rewrite from scratch.
-  <!-- id: docs-rewrite-architecture | created: 2026-06-20 | last_used: 2026-06-22 | uses: 13 | tier: archive-candidate -->
-- Each DSL gets a deterministic **spec layer for AI agents**: a rule-based grammar reference +
-  a machine-readable catalog (JSON) + an AI-agent guide (endpoint contract + pre-send checklist) +
-  a CI **drift test** keeping the spec in sync with the shipped help + engine routes. **Validation
-  method:** a clean-context fresh AI agent must build from the spec docs ALONE (no source); the gaps
-  it flags drive doc fixes. Done for MiniGraph (`docs/guides/knowledge-graph/command-reference.md`,
-  `minigraph-commands.json`, `ai-agent-guide.md`, `scripts/check-minigraph-grammar.py`,
-  `.github/workflows/docs.yml`); 2 fresh-agent passes closed config-node-wiring, `response.*`, and
-  type-casing gaps. **Event Script** spec added too (`docs/guides/event-script/`,
-  `scripts/check-event-script-grammar.py`; drift-checks against `CompileFlows.EXECUTION_TYPES`),
-  fresh-agent-validated over 2 passes (closed whole-result capture, bare input-body target,
-  name/next resolution). **REST automation** spec added too (`docs/guides/rest-automation/`,
-  `scripts/check-rest-automation-grammar.py`; drift-checks against `RoutingEntry.VALID_METHODS`),
-  fresh-agent-validated. **All 3 DSLs (MiniGraph, Event Script, REST) now have the deterministic
-  spec kit + CI drift test.**
-  <!-- id: docs-dsl-spec | created: 2026-06-20 | last_used: 2026-06-22 | uses: 5 | tier: archive-candidate -->
-- **Finalized doc-style conventions** (the consistency pass after the migration was declared "done";
-  3 forks decided by Eric Law 2026-06-22): (1) **ALL docs use lowercase-kebab semantic slugs** — every
-  remaining ALL-CAPS file was renamed (`ARCHITECTURE`→`architecture`, `METHODOLOGY`→`methodology`,
-  `COMPOSABLE-DESIGN`→`composable-design`, `QUICKSTART`→`quickstart`, the `*-REFERENCE` set→lowercase,
-  `APPENDIX-II`→`reserved-names-and-headers`, `APPENDIX-III`→`actuators-and-http-client`, and
-  `CHAPTER-10`→`knowledge-graph/property-graph.md` (co-located into Part IV)); each old path keeps an
-  `mkdocs-redirects` entry. (2) **Every content doc carries the full pattern** — frontmatter +
-  "At a glance" + "See also"; **reference docs get At-a-glance too** (not exempt — so it is not later
-  flagged as drift). (3) **`TABLE-OF-CONTENTS` is retired** (redirect → Home; the Part I–VI sidebar
-  nav is the table of contents). The published-URL safety net is the redirect map; live sources (docs,
-  README, llms.txt) are repointed to the new slugs, CHANGELOG (historical) is left to the redirect.
-  <!-- id: docs-style-conventions | created: 2026-06-22 | last_used: 2026-06-23 | uses: 5 | tier: active -->
-- **Documentation content canon** (Design for the content-polish pass; locked with Eric Law 2026-06-22,
-  verified against source — docs are outdated, **code is source of truth**). Its layer model and
-  one-atom-four-roles framing are formalized as (ADR-0004, ADR-0005). Resolves old/new *content*
-  drift (7+ yrs, many human + AI contributors). Five decisions: (1) **"layers" = the 3 paradigm layers
-  only** — Event-driven (Platform Core) → Composable (Event Script) → Semantic (Active Knowledge Graph);
-  the runtime request flow is the **"request pipeline"** with **stages** (protocol boundary [REST automation for HTTP,
-  a Kafka listener, …] → flow adapter → Event Manager/flow engine → in-memory event bus → composable functions; for
-  each protocol a corresponding flow adapter — for HTTP, REST automation is the boundary that invokes the built-in HTTP
-  flow adapter), never "layers" (fixes
-  architecture.md's "five distinct layers"). (2) **Layer-3 vocabulary:** *Active Knowledge Graph (AKG)* =
-  the thing/model; *Knowledge Graph as Application* = the paradigm tagline; *MiniGraph* = the engine
-  (`graph.executor` + in-memory property graph + Playground); *semantic* = adjective only. (3) **Origin
-  story is told:** Scala/Akka actor model → Eclipse Vert.x event bus → Java 21 virtual threads (the *why*
-  of decoupled-functions-as-actors) — a Home one-liner + a "Where it came from" Architecture section.
-  (4) **Human–AI collaboration = cross-cutting capability** across all 3 layers (agent-ready DSL specs +
-  companion endpoint), NOT a 4th layer. (5) **"One atom, four roles":** the sole building block is the
-  route-addressed **function** (`@PreLoad` + `LambdaFunction`/`TypedLambdaFunction`, Map/PoJo I/O, private
-  by default); it is *named by how it is wired* — **function** (the atom), **service** (mapped straight to
-  HTTP via `service:` in `rest.yaml` — narrow REST role only; `RoutingEntry.java:44`), **task** (a step in
-  an Event Script flow with an `execution` type; `CompileFlows.EXECUTION_TYPES`), **skill** (attached to an
-  AKG node via the node's `skill:` property; `GraphLambdaFunction.java:116`). "Function" = the general atom,
-  "service" = the narrow REST role (Eric confirmed). **AI-discovery contract:** every doc carries
-  frontmatter + At-a-glance + See-also + stable anchors; `llms.txt` is the current by-layer map (drop the
-  "rewrite in progress / legacy" note); "generate from this page alone" claims belong ONLY to the 3 DSL
-  agent-guides, not concept pages. **Conformance order (approved):** (1) index.md + llms.txt → (2)
-  architecture.md → (3) methodology.md re-voice → (4) terminology sweep of lower/reference docs →
-  (5) persist canon as a published page + wire a light drift check. Extends `docs-style-conventions` /
-  `docs-rewrite-architecture`; serves `vision-mercury-composable`.
-  <!-- id: docs-content-canon | created: 2026-06-22 | last_used: 2026-06-23 | uses: 10 | tier: active -->
-- **No backward-compat redirects (clean rewrite).** All `mkdocs-redirects` entries removed (2026-06-22, Eric):
-  old URLs (`/guides/CHAPTER-N/`, `/APPENDIX-*/`, `/composable-design/`, `/TABLE-OF-CONTENTS/`, and the
-  case-only ones) now 404 by design — the docs are a brand-new user experience and the **navigation is the
-  source of truth**. The `redirects` plugin is dropped from `mkdocs.yml` and `mkdocs-redirects` from the CI
-  install. This reverses the "redirects as the safety net" aspect of `docs-style-conventions` /
-  `docs-content-canon` (their redirect language is now historical). The `check-doc-canon.py`
-  case-only-redirect guard stays (dormant) to reject a bad redirect if one is ever re-added.
-  <!-- id: docs-no-redirects | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: active -->
+- **Schema Registry mock server implementation.** Created `helpers/schema-registry-standalone`, providing a minimalist REST API that mimics the Confluent schema registry (`/subjects/{subject}/versions` and `/schemas/ids/{id}`). It supports both Avro and JSON Schema and serves as an end-to-end demo and testing layer. The worked example `examples/schema-registry-demo` is now curl + zero-dependency `.mjs` scripts (no longer a Maven module). See [[standalone-schema-registry-mock]] and [[minimalist-kafka-schema-registry]].
+  <!-- id: schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-28-191114 -->
+
+- **minimalist-kafka Schema Registry support — id-driven, Confluent serdes as a library (2026-06-29).**
+  To interoperate with existing client projects, `minimalist-kafka` speaks the Confluent wire format
+  (`[magic 0x00][global schema id][payload]`) using **Confluent's own serializers** (`io.confluent:kafka-json-schema-serializer`
+  8.2.0 ↔ Kafka 4.2), NOT a reinvented codec — called as a library around the unchanged String/byte[]
+  transport so DLQ + trace keep working on raw bytes. **Producer is id-driven**: `simple.kafka.notification`
+  takes optional `schema-id`/`schema-type` headers; schemas are pre-registered administratively, so the
+  serializer only does `GET /schemas/ids/{id}` (`use.schema.id` + `auto.register.schemas=false`) — no subject
+  or naming-strategy logic, which makes it agnostic to all 3 Confluent strategies and lets a topic carry many
+  record types. **Consumer** opt-in per binding (`schema.enabled` in kafka-flow-adapter.yaml): reads the magic
+  id → registered `schemaType` → matching deserializer → hands the flow a Map; decode failure dead-letters the
+  raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `FileCachedSchemaRegistryClient`
+  = on-disk schema cache by id with TTL serving the serde hot path, cleared at startup; `SchemaType`).
+  Serialize uses `JsonSchemaUtils.envelope(schema, value)` (the pre-registered schema, not a derived one) to
+  avoid the kjetland derivation WARN. Built as a **per-type `SchemaSerde` strategy** — `JsonSchemaSerde`,
+  `AvroSchemaSerde` (`AvroConversions`: Map⇄GenericRecord, serialize walks the schema so absent fields take
+  their defaults), `ProtobufSchemaSerde` (`ProtobufConversions`: Map⇄DynamicMessage reflectively, no codegen;
+  proto3 implicit defaults). The codec dispatches by the `schema-type` header on produce / the registered
+  type on consume; producer + consumer are type-generic. **All three serdes (JSON + Avro + Protobuf) done,
+  tested (49 tests, 85% gate), and demoed end-to-end** (`EmbeddedSchemaRegistry` test helper +
+  sync-over-async-demo `json/avro/protobuf-topic-1/2` paths, all three manually validated via continuous-trace
+  telemetry). Only remaining task: document the schema headers in the kafka-flow-adapter guide (see
+  [[thread-schema-registry-avro-protobuf]]). Shipped alongside Kafka-flow-adapter hardening: a flow's own
+  `ttl` is the deadline (no `kafka.flow.timeout.ms`); success = HTTP 200, else retry→DLQ; a failed DLQ write
+  drops-with-ERROR + commits (no recovery storm) bounded by `kafka.dlq.timeout.ms`. Builds on
+  [[standalone-schema-registry-mock]].
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: active | origin: 2026-06-29-010147 -->
+
+- **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
+  returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
+  `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
+  finishes on a **different thread or after the worker returns** (notably a `Mono`/`Flux` completion on the
+  reactor executor) **cannot** call `getTrace(...)` to read its own span/annotations — it must **capture the
+  `TraceInfo` on the worker thread first**. This caused Mono-returning flow tasks to drop their `span_id`
+  from the response, orphaning the next task's `parent_span_id` (fixed 2026-06-28 in
+  `WorkerHandler.handleMonoResponse` via `applyTraceContext`; see `WorkerHandlerTest.monoResponseForwardsSpanId`).
+  Watch for this in any future async/reactive code that needs trace context. The **Flux** path was checked
+  and is **safe** — it returns its response (the `x-stream-id` handle) synchronously on the worker thread, and
+  `FluxPublisher` streaming never reads the trace (guarded by `WorkerHandlerTest.fluxResponseForwardsSpanId`).
+  <!-- id: trace-thread-keyed-mono-gotcha | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: core -->
+
+- **platform-core serializes `java.time.Instant` as first-class (2026-06-27).** Instant had no adapter and
+  round-tripped wrongly (Gson reflected it to `{seconds,nanos}`; MsgPack fell through to String/PoJo).
+  Fixed at the root in all three serialization paths — `SimpleMapper` (Gson adapter), `MsgPack` (nested
+  `case Instant`), `PayloadMapper` (top-level encode) — each mirroring `Date` via
+  `date2str(Date.from(instant))` → UTC, **millisecond-precision** ISO-8601/RFC-3339 string (same wire format
+  as Date; sub-ms precision is intentionally dropped for consistency). Prefer `Instant` over `java.util.Date`
+  in new code (also clears SonarQube `java:S2143`). Relates to `typed-io-map-or-pojo` (ADR-0003).
+  <!-- id: instant-serialization | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
+
 - **ADR pattern adopted** (the agent-memory optional Architecture Decision Record log; opted in 2026-06-22, Eric). A
   human-facing governance ledger lives at `docs/arch-decisions/ADR.md`. `DESIGN-NOTES.md` — the author's design notepad — was **removed** (2026-06-23) as a drift source; the ADR
   ledger now holds the durable design rationale, and the `arch-decisions/` folder is repurposed for the ledger. Seeded
@@ -165,20 +129,7 @@
   fact, or making a new durable architecture decision, **prompts a human-gated update** to
   `docs/arch-decisions/ADR.md` (add a newer ADR; old → `Superseded`/`Deprecated`, never deleted; keep
   `formalizes:` ↔ `(ADR-NNNN)` in sync). Serves `vision-mercury-composable`.
-  <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-23 | uses: 5 | tier: active -->
-- **Request pipeline model** (Eric, 2026-06-22; stage term **"protocol boundary"** — chosen over "event boundary" for
-  precision (requests aren't events until the flow adapter mints the `EventEnvelope`) + code-groundability, and to avoid
-  colliding with Mercury's `EntryPoint`/`@MainApplication`): outside-in, `user/calling app → protocol boundary (REST automation for
-  HTTP, a Kafka listener, or other protocol) → flow adapter → event manager/flow engine → in-memory event bus →
-  composable functions`. For each protocol there is a corresponding flow adapter. **HTTP:** REST automation is the
-  boundary — it holds the request/response objects per HTTP session, does endpoint rendering/serving/routing, and
-  **invokes the built-in HTTP flow adapter** (`HttpToFlow`, route `http.flow.adapter`, in `event-script-engine`);
-  synchronous request/response, the flow's result routed back to the HTTP response object. **Kafka:** the Kafka flow
-  adapter embeds a topic listener; fully asynchronous; a reply (if any) is published to another topic by an outbound
-  **Kafka notification function**. (Earlier docs put "REST automation" as a stage *after* the flow adapter — wrong;
-  it is the boundary *in front* that invokes the adapter. Corrected in architecture.md / documentation-conventions.md /
-  ADR-0004.)
-  <!-- id: request-pipeline-model | created: 2026-06-22 | last_used: 2026-06-22 | uses: 2 | tier: active -->
+  <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-27 | uses: 6 | tier: archive-candidate -->
 - **Service mesh is opt-in, not the default.** `cloud.connector=none` is the framework default. The Kafka
   service mesh (`cloud.connector=kafka` + presence-monitor) solves exactly two problems: (1) synchronous
   request-response across application instances over Kafka (sync over async), and (2) service discovery
@@ -188,59 +139,62 @@
   advanced opt-in for specific use cases (cross-application RPC, leader selection, pod-aware broadcast).
   This preference must be front-and-center in documentation and AI guides. (ADR-0006)
   <!-- id: kafka-mesh-opt-in | created: 2026-06-23 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **Kafka flow adapter + notification function are NOT packaged in this repo** — only the built-in HTTP flow adapter
-  (`HttpToFlow` / `http.flow.adapter`) ships here. The `connectors/adapters/kafka/*` modules are the **cloud connector**
-  (event-stream mesh, `cloud.connector=kafka`) — a *different* concern, not a flow adapter that triggers Event Script
-  flows. Production installations run their own Kafka flow adapter (inbound) + Kafka notification function (outbound);
-  an in-repo minimalist version is planned (see Open Thread). Don't claim Kafka flow-triggering is built-in.
-  <!-- id: kafka-adapter-not-in-repo | created: 2026-06-22 | last_used: 2026-06-23 | uses: 3 | tier: active -->
-- **W3C OpenTelemetry distributed tracing** (`feature/open-telemetry` branch). Each function gets a 16-hex
-  `span_id` + `parent_span_id` propagated end-to-end: PostOffice/WorkerHandler stamp+emit them; Event Script
-  `TaskExecutor` threads the parent span via a `TaskReference` anchor (**virtual-thread-safe, no ThreadLocal**);
-  MiniGraph `GraphExecutor` threads it through graph traversal; the HTTP boundary uses `W3cTrace` to build/parse
-  `traceparent` (`AsyncHttpClient` injects, `HttpRouter` extracts). The trace-metrics dataset now carries
-  `span_id`/`parent_span_id`/trace id. `trace.http.legacy.header.enabled` toggles the legacy `X-Trace-Id`
-  outbound alongside `traceparent`. **Export = the open item, now done:** `distributed.trace.forwarder` is the
-  framework's extension point (`Telemetry` forwards completed trace metrics to it if registered); the new
-  **`extensions/opentelemetry-forwarder`** module is a drop-in reusable forwarder that builds OTel `SpanData`
-  **directly** (preserving Mercury's exact W3C ids — the `Tracer` API would regenerate them and break lineage)
-  and exports via **OTLP/HTTP**. Auto-registers just by adding the jar (it's under `org.platformlambda`, an
-  always-scanned base package). **Config-driven for production:** `OpenTelemetryForwarder`'s no-arg constructor
-  reads `application.properties` via `AppConfigReader` (values support `${ENV_VAR:default}` substitution) —
-  `otel.exporter.otlp.endpoint`, `otel.service.name`, `otel.trace.forwarder.enabled`, `otel.exporter.otlp.timeout`,
-  and `otel.exporter.otlp.headers`. **Credentials**: set `otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}`
-  with **no default** so no secret is hard-coded (static-analysis-safe) — an unset var resolves to null → `"null"` →
-  zero headers, which the no-auth mock accepts. A package-private 2nd constructor injects a context (in-memory
-  exporter) for unit tests; the old static install()/getInstance() singleton seam was removed. Verified green:
-  21 module tests + the existing `W3cTraceTest`/`PostOfficeTest`/`SpanPropagationTest`/`GraphSpanPropagationTest`.
-  **SonarQube/security-hardened:** `opentelemetry-proto` bumped 1.3.2-alpha → **1.10.0-alpha** so the transitive
-  `protobuf-java` is 4.34.0 (clears **CVE-2024-7254**, fixed in 4.28.2); `TraceMetricsSpanData` constructor collapsed
-  to 4 args (S107), its `StatusData` field renamed `statusData`; `OpenTelemetryForwarder` dropped redundant
-  `instances=1`, removed a plain-text-link Javadoc URL, and its no-arg (reflective `@PreLoad`) constructor now has a
-  direct test.
-  **JaCoCo coverage** (the project's 85% minimum): line 95.4% / instruction 95.4% / branch 84.6%, **enforced** by a
-  `jacoco:check` gate on LINE + INSTRUCTION ≥ 0.85 (branch not gated — its last gap is the boot-time disabled
-  constructor branch). Report at `target/site/jacoco/`.
-  Validated **end-to-end through the real forwarder → mock** at **Level-1** (`OtlpTracePipelineTest`: a traced
-  `unit.test → fun.1 → fun.2 → fun.3` PostOffice RPC chain → 3 linked spans, asserting shared trace id +
-  root/child/grandchild lineage decoded off the wire) **and Level-2** (`OtlpFlowTraceTest`: a `task.1 → task.2`
-  Event Script flow via `FlowExecutor` → the same Level-1-style task chain **plus the one synthetic
-  `task.executor` flow-summary span**, annotated with the flow id; RPC round-trip records carry no `span_id` and
-  are gracefully skipped by the mapper). Level-3 (MiniGraph `GraphExecutor`) rides the same WorkerHandler path.
-  The mock OTLP backend is built **the composable way** (Eric's preference) — a `@PreLoad`
-  `TypedLambdaFunction` `mock.otlp.collector` behind test `rest.yaml` (`POST /api/v2/otlp/v1/traces`) +
-  `application.properties` + `@MainApplication` (`MockOtlpAppMain`), booted via `AutoStart`, so a human can run
-  it from an IDE and point a real exporter/`curl` at it. `rest.yaml` maps **both** backend ingest paths to the
-  one function — `/api/v2/otlp/v1/traces` (Dynatrace) and `/v2/trace/otlp` (Splunk). The test drives the real
-  OTLP exporter against both and asserts the credential header arrives. The mock **decodes the OTLP protobuf**
-  (`io.opentelemetry.proto:opentelemetry-proto`, test scope) and logs the span key-values + asserts the
-  round-tripped trace/span/parent ids and `service.name` survived the wire — a deliberately self-explanatory
-  reviewer example (unit-test-as-documentation). **Documented** in the new **Observability** guide
-  (`docs/guides/observability.md`, nav: Operate & Integrate) — built-in tracing design across the 3 layers +
-  OpenTelemetry/OTLP export; wired into `mkdocs.yml`, `llms.txt`, and `configuration-reference.md#observability`
-  (doc-canon checker passes). Possible future: batch export.
-  <!-- id: otel-w3c-tracing | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
-
+- **Event Script config is preferred over code for orchestration.** When a step is orchestration —
+  sequencing functions, branching, failure handling, moving data — express it as Event Script YAML
+  (tasks, `execution` types, I/O data mapping, exception handler), not imperative code; code is reserved
+  for the unit of work (the function body). Two reasons: it **communicates intent** (the flow file is a
+  legible statement of the event flow — sequence, topics, fail-fast path, branches — without reading
+  Java) and it **manages dependencies** (the engine enforces control- and data-flow wiring, functions
+  stay decoupled per `functions-decoupled-routes`, reusable blocks like `simple.kafka.notification` are
+  composed by reference not duplicated). Bounded by `one-atom-four-roles`: not all code becomes YAML — an
+  intrinsically in-function concern (e.g. a blocking rendezvous that must wrap a publish) stays in code.
+  Routing vocabulary to learn: `decision` selects a `next` entry by value (`true`=`1`=first, `false`=`2`=
+  second; integer is 1-based → multi-way switch — engine `TaskExecutor.handleDecisionTask`, intentional;
+  several *derived* docs had it inverted and were corrected 2026-06-27), and `byte[]` rides through
+  `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
+  Claude Code). (ADR-0007)
+  <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
+- **Code-style conventions have a documentation home.** Soft, evolving code-organization/naming
+  recommendations live in `docs/guides/code-conventions.md` — a new page, sibling to
+  `documentation-conventions.md` in the nav meta area, linked from `llms.txt` (Reference). Altitude tier:
+  **below** ADRs (durable decisions) and `methodology.md` (the 4 principles) — if breaking a guideline
+  breaks the system, promote it to an ADR instead. Seeded with: group Event Script flow-task functions
+  under a `tasks` package (e.g. `org.platformlambda.tasks`) while runtime/coordinator classes stay in the
+  feature package and config in `support`/`config`; plus route-naming discipline and function granularity.
+  Add future code-style recs here. Established 2026-06-27 (Eric + Claude Code).
+  <!-- id: code-conventions-home | created: 2026-06-27 | last_used: 2026-06-28 | uses: 3 | tier: archive-candidate -->
+- **Standalone dev servers live in `helpers/`; worked examples teach the patterns.** `helpers/` (new
+  top-level folder, 2026-06-27) holds no-Docker standalone dev servers: `kafka-standalone` (moved here from
+  `connectors/adapters/kafka/`) and `redis-standalone` (embedded Redis via `embedded-redis`). Both pin
+  transient working files to **`/tmp/soa-redis`** / `/tmp` (cloud-native pattern); the sync-over-async
+  `RedisTestBase` uses the same `/tmp/soa-redis` dir. `examples/kafka-demo` is the minimalist-kafka
+  producer+consumer **worked example** (Java flow + kafkajs Node programs: create-topics/listen/publish),
+  validated live end-to-end. `examples/sync-over-async-demo` is the **sync-over-async worked example** (done
+  2026-06-28): one jar, two pods via Spring profile (`-Dspring.profiles.active=facade|backend`), cross-pod
+  REST-over-Kafka with a Redis return route (ADR-0006); promoted `soa.reply` into the extension. Worked
+  examples are how this project teaches pattern adoption (Eric). On `feature/sync-over-async` (PR #124).
+  <!-- id: helpers-and-worked-examples | created: 2026-06-27 | last_used: 2026-06-28 | uses: 3 | tier: archive-candidate -->
+- **Examples are kept deliberately minimal (avoid drift).** Bare-minimum examples on principle (Eric:
+  "minimalist is our design principle; too many examples drift thinking"). Retired `csv-flow-adapter` +
+  `csv-flow-demo` (2026-06-27, were not in the reactor + drifting): the built-in **HTTP flow adapter**
+  (sync) + minimalist-kafka's **`KafkaFlowAdapter`** (async) sufficiently demonstrate the flow-adapter
+  pattern, and `KafkaFlowAdapter` is the reference for writing a custom adapter (the "Writing your own Flow
+  Adapters" section of `actuators-and-http-client.md` now points there). Don't add a new example without a
+  clear, non-redundant teaching purpose. Relates to [[helpers-and-worked-examples]].
+  <!-- id: minimalist-examples | created: 2026-06-27 | last_used: 2026-06-28 | uses: 1 | tier: archive-candidate -->
+- **minimalist-kafka + sync-over-async are documented in mkdocs (2026-06-27).** Two new published guides under
+  **Operate & integrate**: `docs/guides/kafka-flow-adapter.md` (the library — adapter YAML schema
+  topic/flow/group/partition, externalized producer/consumer client templates, consumer group, partition
+  pinning, retry→DLQ, `simple.kafka.notification`, trace continuity) and `docs/guides/sync-over-async.md` (the
+  cross-pod Redis return-route pattern, reliability cornerstones, when-to-use vs the service mesh). All new
+  config keys added to `configuration-reference.md` under `#kafka-flow-adapter` + `#sync-over-async`. Nav
+  (`mkdocs.yml`) + `docs/llms.txt` updated; conforms to doc canon (frontmatter/At-a-glance/See-also, banned
+  terms). **Local mkdocs validation:** mkdocs is **not** a repo dependency (CI does `pip install mkdocs`); run
+  `uv run --with mkdocs mkdocs build --strict` (theme=readthedocs, plugins=search — both built-in; no extras).
+  Validated: doc-canon OK + `--strict` clean. Closes the "module docs" post-MVP item in [[thread-redis-kafka-rpc]].
+  Documents [[kafka-client-config-templates]], [[kafka-flow-failure-dlq]], [[kafka-partition-pinning]],
+  [[soa-config-driven-init]].
+  <!-- id: kafka-soa-docs | created: 2026-06-27 | last_used: 2026-06-27 | uses: 3 | tier: archive-candidate | origin: 2026-06-27-022232.md -->
 ## Conventions
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
@@ -248,59 +202,9 @@
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- See `examples/composable-example` (`FlowTest`) as the canonical reference.
-  <!-- id: conv-canonical-example | created: 2026-06-20 | last_used: 2026-06-22 | uses: 2 | tier: archive-candidate -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
-- [x] (blueprint) **Rewrite the documentation to be AI- and human-friendly** — the
-  user-facing surface is the Active Knowledge Graph. **This is the first iteration.** → serves: vision-mercury-composable
-  *Progress (2026-06-20): (1) structural prerequisite landed — docs consolidated into `docs/`,
-  mkdocs build fixed (see `docs-dir-layout`). (2) Design approved — the layered re-architecture
-  in `docs-rewrite-architecture`. (3) Part IV opener `guides/knowledge-graph/index.md` written
-  (code-true, grounded in the live MiniGraph engine + shipped help tutorials) + `docs/llms.txt`
-  AI map; the doc PATTERN (frontmatter, At-a-glance, narrative, stable anchors, honest
-  built-vs-roadmap) is **accepted** by Eric Law 2026-06-20. Next: deeper Part IV chapters
-  (build-a-graph walkthrough, 7-skills reference, layer-integration how-to, Playground & companion),
-  then spine refinement, then retire CH-11 behind a redirect. Lower-layer chapters migrate+refresh later.
-  (4) Part IV chapters written + committed (overview, build-your-first-graph, skills-reference,
-  composing-the-layers, playground-and-companion — all code-true, mkdocs --strict green); sent to
-  Eric for batch review. Remaining: refine spine opener (`docs/index.md`), retire CH-11 behind a
-  redirect (needs `mkdocs-redirects`), migrate+refresh lower-layer chapters (Parts I–III, V–VI).
-  (5) Added the MiniGraph **DSL spec layer** for deterministic AI generation (see `docs-dsl-spec`)
-  + the docs CI gate; fresh-agent-validated. (6) Event Script DSL spec added + fresh-agent-validated
-  (2 passes); REST automation spec added + 2-pass-validated — **all 3 DSLs done**. (7) Spine opener
-  (`docs/index.md`) refined into the paradigm story + CHAPTER-11 retired behind an mkdocs redirect
-  (`mkdocs-redirects` added to plugins + CI; `/guides/CHAPTER-11/` → `/guides/knowledge-graph/`; in-docs
-  refs repointed). (8) Lower-layer migration **started**: the whole nav is restructured into the
-  **Part I–VI skeleton** (DSL spec docs integrated into their layers), and Part I (Getting Started /
-  CHAPTER-1) refreshed (frontmatter, H1, jar version). **Pending user decision** (pinged): the
-  per-chapter pattern depth (At-a-glance + See-also footer replacing the legacy prev/next nav tables)
-  and the **slug question** — keep stable `/guides/CHAPTER-N/` URLs vs. rename to semantic slugs
-  (high cross-link churn; ~10 inbound links per chapter via the interlinked bottom-nav tables). Then
-  roll through Parts II/III/V/VI; retire APPENDIX-I (superseded by CONFIGURATION-REFERENCE).
-  (9) **DECIDED: Option 2** — semantic slugs + `mkdocs-redirects`, and remove the prev/next nav tables,
-  replacing them with meaningful "See also" footers (Eric, 2026-06-21). **Part I migrated** as the full
-  exemplar: CHAPTER-1 → `getting-started.md` (redirect; frontmatter; At-a-glance; See-also; all inbound
-  links repointed via `perl`). **Remaining (per-chapter, same pattern):** CH-2→function-execution,
-  CH-3 & CH-4 co-located into their DSL folders as `index.md` (rest-automation/, event-script/),
-  CH-5→build-test-deploy, CH-6→spring-boot, CH-7→event-over-http, CH-8→service-mesh, CH-9→api-overview;
-  refresh + retire APPENDIX-I. Mechanics: `git mv` + `perl -i` for inbound links + redirect + `--strict`.
-  **Done so far:** Part I (`getting-started`), Part II core (`function-execution`; ARCHITECTURE +
-  METHODOLOGY templated), **Part V** (`spring-boot`, `event-over-http`, `service-mesh`), and the
-  **DSL co-locations** — CH-3→`rest-automation/index.md`, CH-4→`event-script/index.md` (each folder
-  now = tutorial `index` + grammar + agent guide). **Next (the home stretch):**
-  CH-5→`build-test-deploy`, CH-9→`api-overview` (simple flat renames), template COMPOSABLE-DESIGN +
-  the reference docs (ANNOTATIONS / CONFIGURATION / EVENT-ENVELOPE / FLOW-SCHEMA / APPENDIX-II/III),
-  retire APPENDIX-I (redirect → CONFIGURATION-REFERENCE). That completes the rewrite.
-  (10) **Consistency pass (2026-06-22):** the migration above was declared "done" but left a tail of
-  old-style remnants (12 ALL-CAPS files incl. an un-migrated `CHAPTER-10`, a BOM-corrupted
-  `event-script/index.md` frontmatter, reference docs missing At-a-glance, a legacy `TABLE-OF-CONTENTS`).
-  Closed per `docs-style-conventions`: full slug-normalization + redirects, At-a-glance on every doc,
-  TOC retired, all inbound links (docs + README + llms.txt) repointed, stale prose "Chapter-N" refs and
-  a stale jar version in quickstart fixed. `mkdocs build --strict` exit 0 / 0 warnings; 3 grammar drift
-  checks pass; all redirect stubs resolve. The rewrite is now stylistically uniform old→new.*
-  <!-- id: bp-docs-ai-human-rewrite | created: 2026-06-20 | last_used: 2026-06-22 | uses: 11 | tier: working -->
 - [ ] (blueprint) Integrate a **pluggable AI companion LLM backend**; mature `POST /api/companion/{id}`
   from a dev-only command pipe into a governed collaboration layer. → serves: vision-mercury-composable
   <!-- id: bp-ai-companion-llm-backend | created: 2026-06-20 | last_used: 2026-06-21 | uses: 1 | tier: working -->
@@ -310,74 +214,44 @@
 
 ## Open Threads
 
-- [x] **Old/new doc-style inconsistency** — the rewrite was declared complete but mixed legacy
-  ALL-CAPS docs (un-migrated `CHAPTER-10`, BOM-broken `event-script/index.md` frontmatter, reference
-  docs without At-a-glance, legacy `TABLE-OF-CONTENTS`) with the new slug/frontmatter/At-a-glance/
-  See-also pattern. **Done 2026-06-22:** resolved per `docs-style-conventions` — see bp-docs progress (10).
-  <!-- id: thread-docs-style-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
-- [x] **Old/new doc-style *content* inconsistency** — beyond structure, the docs mixed old and new
-  *content* (inconsistent layer model, layer-3 naming, missing origin story, whitepaper vs product voice,
-  loose task/function terminology). **Done 2026-06-22:** locked the **Documentation Canon**
-  (`docs-content-canon`) with Eric and conformed index/llms.txt/architecture/methodology + a terminology
-  sweep; published the canon as `docs/guides/documentation-conventions.md` and added a CI drift check
-  (`scripts/check-doc-canon.py`).
-  <!-- id: thread-docs-content-consistency | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
-- [x] (in progress) **Layer-standardization reorg** — "Shared Foundations + lean parallel layers"
-  (`docs-content-canon`). Each of the 3 layers gets the same shape: Overview → Tutorial → Grammar →
-  Reference → AI guide → Integration; framework-wide pages live once in a Foundations part.
-  **Pass 1 done (2026-06-22):** Foundations part created (architecture + methodology); new Layer-1 Overview
-  (`event-driven-foundation.md`); `composable-design` absorbed into methodology + retired; nav → 7 Parts
-  with "Layer N —" labels; `build-test-deploy` → Operate. **Pass 2 done (2026-06-22):** Layer 2 Overview —
-  fronted the large `event-script/index` with an `## Overview` (places the layer in the ascent + the flow
-  mental model: flow→tasks→execution types→state machine→adapters), approach (a) (no split), per Eric.
-  **Core reorg complete:** all 3 layers now have an Overview + a consistent shape; Foundations consolidated.
-  **Pass 3 done (2026-06-22):** Layer-2 overview promoted to the section **index** (`event-script/index.md` =
-  "Composable Orchestration" overview; deep syntax moved to `event-script/syntax.md`; ~30 inbound links +
-  README + llms.txt refactored) so every layer's overview sits at the section root, matching Layer 3. Added
-  cross-layer "ascent" See-also links (Layers 1 & 2). **ALL mkdocs redirects then removed** (clean rewrite —
-  see `docs-no-redirects`). Eric verified navigation in a browser.
-  **Open (Eric's call):** Layer 1's overview is a flat page (`event-driven-foundation.md`), not a section
-  folder — fold into `guides/event-driven/` for full parallelism, or leave as the layer's lead page?
-  **Done 2026-06-23:** folded into `guides/event-driven/` (index.md + function-execution.md + write-your-first-function.md tutorial);
-  Layer 1 now fully parallel to Layers 2 & 3; all cross-references updated; mkdocs build --strict 0 warnings; deployed to gh-pages.
-  `site/` gitignored and untracked.
-  <!-- id: thread-layer-reorg | created: 2026-06-22 | last_used: 2026-06-23 | uses: 5 | tier: working -->
-- [x] (next agenda — Eric, 2026-06-22) **Content polishing round 2 + AI context discovery.** Next working
-  session with Eric: (1) **continue content polishing** (improving but "not there yet"); (2) strengthen
-  **AI context discovery** so an AI agent can collaborate with a human on **greenfield *and* brownfield**
-  mercury-composable projects across every artifact — knowledge graph, Event Script, `rest.yaml`,
-  **composable functions**, unit tests, integration tests — and **make sense of the 3 layers** to choose
-  the right one. Especially a clear on-ramp for **writing composable functions**. Key framing (Eric's hint):
-  a composable function is *just regular Java* (with or without Spring), writable in **sequential, reactive,
-  or object-oriented** style — the framework constrains *coupling* (route names + `EventEnvelope`), not
-  coding style. → serves `vision-mercury-composable` (AI-assisted semantic app dev / Human-AI collaboration).
-  **Progress (2026-06-23):** (1) content polishing largely **done** — Quickstart/Getting-Started merged,
-  the 3-layer site polished, wide reference tables fixed site-wide via `docs/css/extra.css` (wrap, not
-  per-cell `<br>`), and a code-vs-docs **drift validation** of annotations/configuration/reserved-names
-  completed + corrected. (2) AI-context-discovery on-ramp **done (2026-06-23):** created
-  `docs/guides/ai-developer-guide.md` — cross-layer guide for AI agents joining a mercury-composable
-  project (brownfield orientation, layer-choice decision tree, add-a-feature at each layer, testing,
-  invariants, DSL guide table); added to nav (Foundations) and `llms.txt` (Start here). The whole
-  rewrite is **ready for peer review** (2026-06-23); `gh pr create` is blocked for the Enterprise-Managed-User,
-  so the PR is opened **manually via the GitHub web UI** (branch is fully pushed).
-  <!-- id: thread-next-ai-context | created: 2026-06-22 | last_used: 2026-06-23 | uses: 2 | tier: working -->
-- [ ] (future — after the docs-rewrite phase; Eric, 2026-06-22) **Add a minimalist Kafka flow adapter (inbound) +
-  Kafka notification function (outbound) to this repo.** Today only the HTTP flow adapter ships here (see
-  `kafka-adapter-not-in-repo`); production installations have their own. Deferred until the documentation rewrite
-  (`bp-docs-ai-human-rewrite`) completes, then build a reference-grade minimalist pair so the Kafka path is demonstrable
-  in-repo. → serves `vision-mercury-composable`.
-  <!-- id: thread-minimalist-kafka-adapter | created: 2026-06-22 | last_used: 2026-06-22 | uses: 1 | tier: working -->
-- [x] **Re-verify invariants (first invariant check; 24 session files ≥ `verify_invariants_every` 20).**
-  Confirmed the never-decay set still holds, or supersede any that don't (`DECAY.md` §9): the Architectural
-  Invariants (`functions-decoupled-routes`, `typed-io-map-or-pojo`), the `core` Key Decision
-  `kafka-mesh-opt-in`, the **7 facts promoted to `core` this review** (`stack-language-java21`,
-  `stack-build-maven`, `stack-integration-spring`, `stack-messaging-kafka`,
-  `stack-ci-gha`, `conv-add-capability`, `conv-serialization-gotchas`), and the Vision
-  (`vision-mercury-composable`). **Done 2026-06-24 (Eric):** all 11 confirmed to hold. One content
-  correction — `stack-language-java21` Kotlin clause removed (Kotlin is only an example module, not a
-  framework language). `stack-persistence-r2dbc` had already been reclassified out of the set (demoted
-  `core`→`active` — it's an example extension).
-  <!-- id: thread-verify-invariants-2026q2 | created: 2026-06-24 | last_used: 2026-06-24 | uses: 2 | tier: working -->
+- [x] **Upgraded agent-memory v4.25.0 → v4.26.1** (Mode B, by Claude Code from the tool checkout) — a final
+  validation round. **4.26.0** adds `refresh-metadata` (a 7th built-in: recompute `last_used`/`uses`/`tier`
+  from the session log deterministically — REVIEW.md steps 2–3, the metadata pass agents skip) + a
+  `memory-lint` `[stale-metadata]` advisory. **4.26.1** refines it: a **pinned `- [ ]` open thread's tier is
+  left alone** (pinned-ness protects it, not the label). Re-synced `memory-lint` (check 9 + refinement),
+  `REVIEW.md`, `DECAY.md`; copied the new `refresh-metadata` skill; adapters synced (7 skills → 42); stamped
+  4.26.1. **Validation result:** post-upgrade `memory-lint` flagged just **1** real drift
+  (`agent-memory-upgrade-v4250` tier active→working) — the **5 pinned threads from the prior sanity check no
+  longer flag** (the v4.26.1 refinement working). Ran `refresh-metadata` → it re-tiered the one real fact AND
+  refreshed pinned `thread-redis-kafka-rpc`'s `uses 3→6` **without touching its `tier: working`** (the
+  refinement's exact intent). Final `memory-lint`: **0 errors, 0 warnings**; py↔node parity confirmed here.
+  Working tree **uncommitted** — review + commit at the mercury team's discretion.
+  <!-- id: agent-memory-upgrade-v4261 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-182125 -->
+
+- [x] **Upgraded agent-memory v4.23.1 → v4.25.0** (Mode B, by Claude Code from the tool checkout).
+  Three rungs: **4.23.2** (AGENTS.md long-session context-hygiene block), **4.24.0** (decay-policy retune +
+  a `memory-lint` review-cadence/size advisory), **4.25.0** (`archive-fact` — a 6th built-in: a deterministic,
+  safe archive-move that reads continuity into memory and writes once, so the truncate-before-read trap can't
+  recur). Re-synced AGENTS.md, REVIEW.md, `.agent/schema.md`; merged `decay-policy.md` additively
+  (`continuity_max_facts: 30` added; `continuity_max_lines` 300→600; `verify_invariants_every` 20→40 — all
+  stock here, no custom values clobbered); copied the `memory-lint` + new `archive-fact` skills; re-synced
+  adapters (6 skills → 36); stamped `.agent/version.md` → 4.25.0.
+  **⚠️ A review is now due (lint says so):** `memory-lint` reports `[review-overdue]` (21 sessions since the
+  last review ≥ review_every 10) and `[continuity-bloat]` (41 facts > continuity_max_facts 30), plus 11
+  per-fact `[overdue]` advisories — this repo's own decay backlog. **Run the `REVIEW.md` ritual** (it can now
+  use `archive-fact` to perform the moves safely). Left for the mercury team to curate — the faded facts are
+  mercury's domain content; agent-memory only flags, never picks. 0 lint **errors**.
+  <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-173142 -->
+
+- [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble. (Corrected + reworked 2026-06-29 — see [[standalone-schema-registry-mock]].)
+  <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-28-191114 -->
+- [x] (completed — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — feature COMPLETE & pushed.**
+  All three serde phases done, tested (49 tests, 85% gate), demoed end-to-end, and **pushed** to
+  `feature/sync-over-async` (PR #124, `7e2fe746..5ffb7dc7`): JSON Schema, Avro (`1bc2731e`/`6fc8c56c`),
+  Protobuf (`bdab28f3`/`bc9be976`); Avro + Protobuf each validated via Eric's multi-terminal run
+  (continuous-trace telemetry). The kafka-flow-adapter guide now documents the Schema Registry integration
+  (`5ffb7dc7`). Closed — the feature is ready for PR review/merge. See [[minimalist-kafka-schema-registry]].
+  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: working | origin: 2026-06-29-010147 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
@@ -422,14 +296,80 @@
     "build & test an app" + "author an extension" entries so an agent doesn't discover them only by reading prose.
   → serves `vision-mercury-composable`.
   <!-- id: thread-docs-improvement-backlog | created: 2026-06-24 | last_used: 2026-06-24 | uses: 1 | tier: working -->
+- [ ] (next iteration — Eric, 2026-06-24; **design + implement**) **Cross-pod request-response via Redis
+  Pub/Sub RPC + Kafka.** A distributed sync-over-async pattern (an advanced opt-in use case, cf.
+  `kafka-mesh-opt-in`): `REST sync request-response → Composable service (POD-1) → Redis Pub/Sub RPC + Kafka
+  **outbound** topic; Kafka **inbound** topic (response) → Composable service (POD-2) → Redis`. A
+  **correlation-id** is the return-path reference so Redis routes the response back to POD-1. Build:
+  (1) a composable function interfacing **Redis** + Kafka send/receive topics; (2) a **minimalist Kafka flow
+  adapter (inbound)**; (3) a **Kafka notification function (outbound)**. Items (2)+(3) are the scope of
+  `thread-minimalist-kafka-adapter` — now folded into this larger concept. → serves `vision-mercury-composable`.
+  **Prototyping started 2026-06-25 on branch `feature/sync-over-async`** (design reviewed from Eric's spec).
+  **Locked decisions:** return path = **Redis** (cloud-native REST facade for UI apps; deliberately *not* the full
+  mesh/presence discovery); Redis client = **Lettuce** (Reactor-native, matches `reactive-postgres`, battle-tested,
+  robust pub/sub + auto-reconnect); module = new self-initializing extension **`extensions/sync-over-async`**;
+  tests = **embedded Redis** (codemonstur `embedded-redis`, arm64; Testcontainers/Docker fallback) + an **embedded
+  Kafka** extracted from `connectors/adapters/kafka/kafka-standalone` (`EmbeddedKafka.java`) for unit tests, with
+  `kafka-standalone` for integration. Pod identity = `Platform.getOrigin()`. **Reliability cornerstones** (from
+  review): payload in Redis `SETEX` is the source of truth, pub/sub is wake-up only, and a **final Redis read before
+  timeout** is MVP-required (correctness independent of pub/sub); race-safe idempotent future completion.
+  **Phase plan → MVP:** P1 = return-route engine (TDD, embedded Redis, no Kafka — cross-pod return, timeout→408,
+  duplicate, orphan, missed-pubsub→final-read); P2 = Kafka legs (outbound notifier + inbound adapter, trace headers,
+  mock SoR loopback); P3 = REST facade + e2e (+ trace via the OTel forwarder); P4 (post-MVP) = guardrails/503/metrics,
+  two-JVM test, docs. **Note:** trace-across-Kafka is *not* free — needs cid + `traceparent` in Kafka headers + the
+  inbound adapter rebuilding trace context.
+  **Status (2026-06-25): scaffold + P1 ✅ done.** Module `extensions/sync-over-async` (pkg `org.platformlambda.sync`):
+  `PendingRequests` (race-safe idempotent registry + max-pending), `ReturnRouteStore` (Lettuce `SETEX`/`GET` for
+  `request:`/`response:` keys), `ReturnRouteCoordinator` (per-pod: `begin`/`awaitResponse`-with-final-read/`deliver`;
+  pub/sub callback dispatches the blocking read to a virtual thread to avoid stalling the Lettuce event loop).
+  16 tests vs embedded Redis (incl. cross-pod return, timeout, missed-notification→final-read, orphan, duplicate);
+  JaCoCo 93.6% line, **85% gate enforced**.
+  **Status (2026-06-26): MVP complete + building blocks extracted into a library** (commit `c8824519`).
+  P2 (Kafka legs) → P3 (REST facade `test.endpoint`, the composable way: `event-script-engine` + `rest.yaml` →
+  `sync-to-async` flow) → P4 (refactor the raw legs into composable **building blocks**: a drop-n-forget Kafka
+  **notification function** + a **Kafka Flow Adapter** that routes each topic into an Event Script flow,
+  one poll-loop thread per topic, synchronous request + commit-after-process = at-least-once). Full round-trip
+  proven: `REST → http.flow.adapter → sync-to-async → test.endpoint (begin+notify) → Kafka topic-1 → adapter →
+  system-of-record (echo+notify topic-2) → Kafka topic-2 → adapter → soa-reply → coordinator.deliver → Redis
+  return route → HTTP 200 / 408`. **OTel span propagation across Kafka fixed without touching `event-script-engine`**
+  (use the low-level `PostOffice` API: notification stamps its own span into the Kafka `traceparent`; the consumer
+  parses it and `forward.setSpanId(parentSpanId)` so the flow chains onto it — `WorkerHandler:103` adopts the
+  event span-id as the function's parent; validated against the telemetry log = one continuous trace, the two
+  notification hops are the bridge spans). **Then promoted the pair to a reusable library** (Eric's call) —
+  see `thread-minimalist-kafka-adapter` (now fulfilled): `system/minimalist-kafka` (`org.platformlambda.mini.kafka`,
+  depends on `event-script-engine`, 87% cov, standalone embedded-Kafka e2e); `sync-over-async` now depends on it
+  and is purely the Redis return-route engine (96% cov, 20 tests). Both green in the reactor on JDK 21.
+  **Remaining (post-MVP):** ~~Redis coordinator config-driven init~~ **done** ([[soa-config-driven-init]]),
+  ~~consumer partition-pinning~~ **done 2026-06-27** ([[kafka-partition-pinning]]), ~~module docs~~ **done
+  2026-06-27** (mkdocs guides — [[kafka-soa-docs]]); still open — 503 guardrails/metrics, two-JVM test,
+  per-module README (code-level); and Gradle build (`thread-add-gradle-build`).
+  Also done this sprint: externalized Kafka client config ([[kafka-client-config-templates]]), configurable
+  per-binding consumer group, and the Copilot-review hardening (incl. [[kafka-flow-failure-dlq]]).
+  **Review-driven hardening pass (2026-06-26, Claude Code):** applied the Copilot review
+  (`draft-design-specs/kafka-sync-over-async-review.md`) via `apply-critique` — 6 fixes across both modules:
+  mk#1 producer failure-logging callback (still drop-n-forget), mk#2 consumer retry→DLQ (`kafka-flow-failure-dlq`),
+  mk#3 fail-fast flow-adapter config validation; soa#1 atomic-reservation cap (TOCTTOU), soa#2 explicit Redis
+  DEL cleanup on success, soa#3 `start()` double-invocation guard + graceful `close()`. Deferred design nits
+  mk#4 (`KafkaRuntime` singleton), mk#5 (poll loop on platform thread — non-issue), soa#4 (coordinator
+  decomposition). Green: minimalist-kafka 12 tests, sync-over-async 24 tests, both coverage gates met. (The
+  older `evaluation_feedback_report.md` is a stale Gemini Phases-1&2 report describing pre-extraction code —
+  superseded, not the Copilot review.)
+  <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-27 | uses: 6 | tier: working -->
 
 ## User Preferences
-
-- From the documentation-rewrite effort onward, the **official Accenture GitHub repo is the
-  source of truth**; work directly here (not a separate prototyping repo) to keep a clean
-  AI–Human commit log on the official repo.
-  <!-- id: pref-github-source-of-truth | created: 2026-06-20 | last_used: 2026-06-22 | uses: 2 | tier: archive-candidate -->
 
 ## Team / Members
 
 (none recorded yet)
+
+- **Standalone Schema Registry mock for local development (Eric, 2026-06-28; corrected 2026-06-29).**
+  `helpers/schema-registry-standalone` emulates the Confluent Schema Registry HTTP API (Avro + JSON Schema),
+  a `http://localhost:8081` endpoint for `KafkaAvroSerializer`/`KafkaJsonSchemaSerializer` to register
+  (`POST /subjects/{subject}/versions`) and fetch (`GET /schemas/ids/{id}`). **platform-core only** (built-in
+  reactive HTTP server + REST automation, no `rest-spring`); each endpoint is wired in `rest.yaml` directly to
+  a function taking `AsyncHttpRequest`. Returns faithful Confluent error bodies `{error_code,message}`
+  (40403/40401/42201). Store is **configurable** via `schema.registry.data.store` (default transient
+  `/tmp/schema-registry`, `-D`-overridable for a durable dir); the server *loads* schemas on boot (never
+  wipes) so ids stay stable — the deliberate inverse of the redis/kafka helpers. Tests hit the real HTTP
+  endpoints via `async.http.request`. Documented in `docs/guides/schema-registry-mock.md`. See [[minimalist-kafka-schema-registry]].
+  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active -->

@@ -1,0 +1,5 @@
+#
+# Event Script flow manifest for the minimalist-kafka worked example.
+#
+flows:
+  - 'kafka-demo-flow.yml'

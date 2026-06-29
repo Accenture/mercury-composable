@@ -12,11 +12,15 @@
 - archive_window:   20    # not referenced for more than this → archived
 
 ## Review triggers
-- review_every:        10   # run a review this many sessions after the last one
-- continuity_max_lines: 300 # ...or when continuity.md grows past this many lines
+- review_every:         10   # run a review this many sessions after the last one
+- continuity_max_facts:  30  # ...or when continuity.md holds more than this many decaying facts/threads
+                             #    (the PRIMARY lean signal — a count, immune to verbosity & session velocity)
+- continuity_max_lines: 600  # ...or this many lines (a coarse backstop; raised from 300 in v4.24.0 — a mature,
+                             #    actively-developed layer legitimately sits ~450–600 lines even when healthy)
 
 ## Invariant verification
-- verify_invariants_every: 20  # sessions between human re-checks of core / invariants
+- verify_invariants_every: 40  # sessions between human re-checks of core / invariants (raised from 20 in
+                               # v4.24.0: anti-fatigue at burst velocity)
 
 ## Auto-core (default: off — core is human-set)
 - enabled:          false

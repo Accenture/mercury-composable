@@ -95,7 +95,7 @@ and run a standalone Kafka server like this. Note that the `mvn clean package` c
 the executable JAR should be available after the `mvn clean install` command in [Getting Started](getting-started.md).
 
 ```shell
-cd connectors/adapters/kafka/kafka-standalone
+cd helpers/kafka-standalone
 mvn clean package
 java -jar target/kafka-standalone-3.1.2.jar
 ```

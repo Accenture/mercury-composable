@@ -108,7 +108,7 @@ Each entry in the `tasks` list defines a step in the flow.
 | `output` | list of strings | **Yes** | — | Output data mapping rules. Use `[]` for no output. See [Data mapping syntax](#data-mapping-syntax). |
 | `process` | string | Conditional | — | Route name of the composable function to call, or `flow://flow-id` to invoke a subflow. Either `name` or `process` must be present. |
 | `execution` | string | **Yes** | — | Task execution type. See [Execution types](#execution-types). |
-| `next` | list of strings | Conditional | — | Route name(s) of subsequent task(s). Required for `sequential`, `parallel`, `fork`, `pipeline`. Not used for `end` or `sink`. Decision tasks: first entry = `false`/`1`, second = `true`/`2`, etc. |
+| `next` | list of strings | Conditional | — | Route name(s) of subsequent task(s). Required for `sequential`, `parallel`, `fork`, `pipeline`. Not used for `end` or `sink`. Decision tasks: first entry = `true`/`1`, second = `false`/`2`, then `3`,`4`,… (1-based). |
 | `exception` | string | No | _(flow exception)_ | Route name of a task-level exception handler. Overrides `flow.exception` for this task only. |
 | `delay` | string or int | No | — | Delay before this task executes. Integer = milliseconds; string = model variable path (e.g. `model.wait_ms`). Must be less than `flow.ttl`. |
 | `pipeline` | list of strings | Conditional | — | Ordered list of task route names. **Required** when `execution` is `pipeline`. |
@@ -222,8 +222,12 @@ holds the zero-based index:
 
 Branches to one of the `next` tasks based on a value mapped to `decision` in the output.
 
-- **Boolean decision**: `false` routes to `next[0]`, `true` routes to `next[1]`.
-- **Numeric decision**: integer `1` routes to `next[0]`, `2` to `next[1]`, etc.
+- **Boolean decision** (two-way): `true` routes to the **first** `next` entry (`next[0]`), `false` to
+  the **second** (`next[1]`).
+- **Numeric decision** (multi-way, like a `switch`): the integer is **1-based** — `1` routes to `next[0]`,
+  `2` to `next[1]`, `N` to `next[N-1]` — so a flow can branch to more than two tasks.
+
+(`true` is equivalent to `1` and `false` to `2`; both select `next[0]` and `next[1]` respectively.)
 
 | Required | Optional | Forbidden |
 |----------|----------|-----------|
@@ -239,12 +243,12 @@ Branches to one of the `next` tasks based on a value mapped to `decision` in the
     - 'result -> decision'
   execution: decision
   next:
-    - 'handle.failure'
-    - 'handle.success'
+    - 'handle.success'   # decision true  (or 1)
+    - 'handle.failure'   # decision false (or 2)
 ```
 
-The decision value `false` or `1` routes to `handle.failure`; `true` or `2` routes to
-`handle.success`.
+The decision value `true` or `1` routes to `handle.success` (the first `next` entry); `false` or `2`
+routes to `handle.failure` (the second).
 
 ---
 

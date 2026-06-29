@@ -103,7 +103,17 @@ def memref_ids(text):
 
 
 def load_windows(root):
-    w = {"working_window": 3, "active_window": 8, "archive_window": 20}
+    # Defaults track the shipped templates/memory/decay-policy.md (v4.24.0): a repo
+    # whose policy omits a field falls back to these. continuity_max_facts is the
+    # primary lean signal (count > lines — verbosity/velocity-independent).
+    w = {
+        "working_window": 3,
+        "active_window": 8,
+        "archive_window": 20,
+        "review_every": 10,
+        "continuity_max_facts": 30,
+        "continuity_max_lines": 600,
+    }
     p = os.path.join(root, "memory", "decay-policy.md")
     if os.path.isfile(p):
         t = read_text(p)
@@ -234,6 +244,31 @@ def check_version_manifest(root):
     return []
 
 
+def check_conflict_markers(root):
+    # (7) No leftover VCS merge-conflict markers in the LIVE top-level memory files —
+    # the ones every teammate concurrently edits and the agent reads as truth
+    # (continuity.md, instructions.md, vision.md, decay-policy.md, smoke-test.md). We scan
+    # `memory/*.md` only (non-recursive): `sessions/` and `archive/` are deliberately
+    # EXCLUDED — they are immutable/append narrative that legitimately *quotes* conflict
+    # markers (a session log pasting terminal output or a real diff to document it), so
+    # scanning them would false-positive. Match git's `<<<<<<<` / `>>>>>>>` and the diff3
+    # `|||||||` line markers; deliberately do NOT match a bare `=======` line (a valid
+    # Markdown setext heading underline).
+    out = []
+    mem = os.path.join(root, "memory")
+    marker = re.compile(r"^(<{7}|>{7}|\|{7})(\s|$)")
+    for path in sorted(glob.glob(os.path.join(mem, "*.md"))):
+        for i, line in enumerate(read_text(path).splitlines(), 1):
+            if marker.match(line):
+                rel = os.path.relpath(path, root)
+                out.append(
+                    f"[conflict-marker] {rel}:{i} unresolved merge-conflict marker "
+                    "— resolve it before committing"
+                )
+                break  # one report per file is enough
+    return out
+
+
 def check_dangling(allf):
     # (4) supersession links resolve
     out = []
@@ -242,6 +277,95 @@ def check_dangling(allf):
             tgt = fields.get(key)
             if tgt and tgt not in allf:
                 out.append(f"[dangling] {fid} {key} {tgt}, which has no footer anywhere")
+    return out
+
+
+LAST_REVIEW_RE = re.compile(
+    r"(?m)^- \*\*last_review:\*\*\s*([0-9-]+)(?:\s*\|\s*through\s+([0-9][0-9-]*))?"
+)
+
+
+def sessions_since_review(sessions, cont_text):
+    """How many session files were written after the last_review 'through' stamp.
+    No last_review recorded (never reviewed) ⇒ every session counts as 'since'."""
+    stems = [os.path.basename(s)[:-3] for s in sessions]
+    m = LAST_REVIEW_RE.search(cont_text)
+    if not m:
+        return len(stems)
+    through = m.group(2) or m.group(1)  # prefer the 'through <session-file>' token
+    return sum(1 for s in stems if s > through)
+
+
+def created_sessions_ago(created, stems):
+    """How many session files are dated strictly after `created` (YYYY-MM-DD).
+    Approximate (counts by date, undercounts same-day) — only used for the
+    working-window check, where a small bias toward 'working' is the safe side."""
+    if not created:
+        return None
+    return sum(1 for s in stems if s[:10] > created)
+
+
+def expected_tier(fields, fid, sslu_val, uses_val, created_ago, pinned, ww, acw, aw):
+    """Tier a fact *should* carry, per DECAY.md §5 (first match wins). Clamps at
+    'archive-candidate' — a fact still in continuity is never 'archived' (that tier
+    means *moved*; the [overdue] check + archive-fact handle the actual move)."""
+    if fields.get("superseded-by") or fields.get("tier") == "superseded":
+        return "superseded"
+    if fields.get("tier") == "core":
+        return "core"
+    if fid in pinned:                      # unchecked Open Thread → never decays; its pinned-ness
+        return fields.get("tier")          # protects it, not the tier label — so leave the label as-is
+    if sslu_val is None:                   # never referenced — can't recompute; don't flag
+        return fields.get("tier")
+    if created_ago is not None and created_ago <= ww and uses_val <= 1:
+        return "working"
+    if sslu_val <= acw:
+        return "active"
+    return "archive-candidate"             # acw < sslu (incl. > aw, which [overdue] flags for the move)
+
+
+def check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw):
+    # (9) advisory: a fact's stored `tier` disagrees with the tier recomputed from the
+    # session reference log — i.e. review steps 2–3 (apply events / re-tier) were skipped.
+    # Catches the "did the archive but not the metadata pass" gap. core/superseded exempt.
+    out = []
+    sslu = make_sslu(refs)
+    for fid, fields in cont.items():
+        if fields.get("tier") in ("core", "superseded") or fields.get("superseded-by"):
+            continue
+        uses_val = sum(1 for ids in refs if fid in ids)
+        et = expected_tier(fields, fid, sslu(fid), uses_val, created_sessions_ago(fields.get("created"), stems), pinned, ww, acw, aw)
+        stored = fields.get("tier")
+        if et is not None and et != stored:
+            out.append(
+                f"[stale-metadata] {fid} tier '{stored}' should be '{et}' (sslu {sslu(fid)}) "
+                "— review steps 2–3 (re-tier) skipped; run refresh-metadata or a review"
+            )
+    return out
+
+
+def check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines):
+    # (8) advisory cadence/size triggers — what would have caught a real product repo
+    # that ran 61 sessions and never archived (review never fired in the field).
+    # All advisory (WARN): a review is a human/agent ritual, never a hard gate.
+    out = []
+    ssr = sessions_since_review(sessions, cont_text)
+    if ssr >= re_every:
+        out.append(
+            f"[review-overdue] {ssr} session(s) since last review >= review_every "
+            f"{re_every} — run the REVIEW.md ritual"
+        )
+    nfacts = len(cont)
+    if nfacts > max_facts:
+        out.append(
+            f"[continuity-bloat] {nfacts} continuity facts > continuity_max_facts "
+            f"{max_facts} — a review is due to lean it down"
+        )
+    if cont_lines > max_lines:
+        out.append(
+            f"[continuity-bloat] continuity.md {cont_lines} lines > continuity_max_lines "
+            f"{max_lines} — a review is due to lean it down"
+        )
     return out
 
 
@@ -276,15 +400,25 @@ def main():
     aw, acw = w["archive_window"], w["active_window"]
     sslu = make_sslu(refs)
 
+    cont_text = read_text(os.path.join(root, "memory", "continuity.md"))
+    cont_lines = len(cont_text.splitlines())
+
     errors = (
         check_duplicates(cont, arch)
         + check_over_archived(arch, sslu, aw)
         + check_version_manifest(root)
+        + check_conflict_markers(root)
     )
+    stems = [os.path.basename(s)[:-3] for s in sessions]
     warns = (
         check_overdue(cont, pinned, sslu, aw)
         + check_dangling({**cont, **arch, **extra})
         + check_session_filenames(sessions)
+        + check_continuity_health(
+            cont, sessions, cont_text, cont_lines,
+            w["review_every"], w["continuity_max_facts"], w["continuity_max_lines"],
+        )
+        + check_stale_metadata(cont, pinned, refs, stems, w["working_window"], acw, aw)
     )
 
     return report(cont, arch, sessions, acw, aw, warns, errors, strict)

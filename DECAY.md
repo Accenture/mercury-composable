@@ -122,7 +122,9 @@ Windows come from `memory/decay-policy.md` (integers, in sessions).
    review archives it flagged "superseded"; it never decays back, never reactivates.
 2. `tier: core` → **stays core.** Never auto-demoted. (Human override.)
 3. Under `## Architectural Invariants` → **pinned**, treated as core.
-4. Unchecked Open Thread (`- [ ]`) → **pinned active**, never decays (incomplete work).
+4. Unchecked Open Thread (`- [ ]`) → **pinned**, never decays (incomplete work). Its **pinned-ness**
+   (being unchecked) is what protects it — **not** the tier label, which the tooling therefore leaves
+   as-is (`memory-lint` won't flag a pinned thread's tier, `refresh-metadata` won't rewrite it; v4.26.1).
 5. `created` ≤ `working_window` sessions ago AND `uses ≤ 1` → **working**.
 6. `sessions_since_last_used ≤ active_window` → **active**.
 7. `active_window < sessions_since_last_used ≤ archive_window` → **archive-candidate**.

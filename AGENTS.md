@@ -52,7 +52,7 @@ matches a skill's `description`, read and follow that `SKILL.md` (and any script
 references). The agent is the runtime — works on any vendor, no engine.
 
 Per-vendor adapters (`.claude/skills/`, `.gemini/commands/`, `.cursor/rules/`, `.kiro/skills/`,
-`.github/skills/`) are thin, gitignored, regenerated pointers — **never commit them** (only
+`.github/skills/`, `.agents/skills/`) are thin, gitignored, regenerated pointers — **never commit them** (only
 `agent-skills/` is shared); the source of truth is always `agent-skills/<name>/SKILL.md`.
 
 **Authoring, syncing, adopting, sanity-checking, or editing a tool-provided skill?** See **`SKILLS.md`**
@@ -91,6 +91,11 @@ expected (the decay math counts log files — `DECAY.md` §4).
    ritual reads — see `DECAY.md`.
 2. **Update** `memory/continuity.md`:
    - Set `last_session` to today's date and your agent name.
+   - Keep **`status` a short current-state line — never a changelog.** Don't accrete
+     per-version history onto it (that line is shared by every teammate; a long mutable
+     line is a merge-conflict bomb). History belongs in the session logs / `CHANGELOG`,
+     not `status`. One fact per line; see `.agent/schema.md` → "Concurrency &
+     merge-friendliness" for the keep-both / take-later merge conventions.
    - Mark completed Open Threads `- [x]` and **leave them in place** — the review
      sweeps them once older than `archive_window`; don't archive them by hand.
    - Add new Open Threads surfaced during the session.
@@ -108,9 +113,10 @@ expected (the decay math counts log files — `DECAY.md` §4).
      `Superseded: <old> → <new>` in `## Memory References`. This is a truth-state edit
      you own; the review archives it flagged "superseded" (`DECAY.md` §9).
 3. **Review cadence.** If `sessions_since_last_review ≥ review_every`
-   (`memory/decay-policy.md`), or `continuity.md` has grown past
-   `continuity_max_lines`, run the review ritual now — see `REVIEW.md`. (Also run it
-   on demand if the user says "review memory".)
+   (`memory/decay-policy.md`), or `continuity.md` has grown past `continuity_max_facts`
+   (decaying facts/threads) or `continuity_max_lines`, run the review ritual now — see
+   `REVIEW.md`. `memory-lint` flags all three (`[review-overdue]` / `[continuity-bloat]`),
+   so they don't depend on you remembering. (Also run on demand if the user says "review memory".)
 4. Remind the user: `git add memory/ && git commit -m "session YYYY-MM-DD [agent]"`.
    **Commits are deliberate and human-initiated.** When you commit at the human's direction,
    **identify yourself** the same way you do in session logs — e.g. a `Co-Authored-By: <your agent
@@ -135,8 +141,15 @@ expected (the decay math counts log files — `DECAY.md` §4).
 >   summary + `## Memory References` → `(none)`) and skip the rest (full template, fact-footers,
 >   continuity edits; `last_session` is derivable from the newest session file). **Don't skip the log
 >   just because it felt "trivial"** — a misjudged change that actually mattered must still be logged.
+>   **One log per working *session*, not per commit:** if you already wrote a session log earlier in
+>   *this* working session, a later **memory-neutral** commit should **enrich that existing log** (a
+>   one-line "also: …" note) rather than spawn another near-duplicate lite log — a burst of commits in
+>   one sitting is *one* session. This keeps the decay session-count honest (it counts log files) and
+>   mirrors the post-commit hook's per-session windowing (v4.22.1).
 > - **A memory-relevant event** (fact / decision / Open Thread / project-state change, or anything
->   touching Vision / Blueprint / invariant / supersession): the **full** ritual.
+>   touching Vision / Blueprint / invariant / supersession): the **full** ritual. (Distinct
+>   memory-relevant work still gets its **own** log, so a multi-task conversation may still yield several —
+>   the rule above only stops *trivial* follow-on commits from each minting a near-duplicate lite log.)
 > The ledger stays continuous for anything that touched a *tracked* file; the review treats a lite log
 > as a normal reference-free session, so usage is unaffected.
 
@@ -153,6 +166,23 @@ expected (the decay math counts log files — `DECAY.md` §4).
 > empty vendor adapter dirs or `git config core.hooksPath` is unset, run **`bash .githooks/init.sh`**
 > once (regenerates adapters + activates the post-commit hook) — do this proactively, before other
 > work. (CI runs server-side regardless.)
+
+> **Long session? Keep state externalized so compaction is safe (v4.23.2).** Compaction (your tool's
+> `/compact`, an auto-compact at a context-usage threshold, or a fresh session) summarizes the
+> conversation and drops verbatim detail. The **objective** health signal is **context-window utilization —
+> tokens used vs. the model's limit** — which your harness tracks and may auto-act on; wall-clock time and
+> a "replies feel vague" sense are only proxies (the model can't reliably self-measure its own context, so
+> don't gate on a felt "fog"). You usually **can't compact yourself**, but you control the one thing that
+> makes compaction lossless:
+> - **Write the session log + any `continuity.md` update at each natural seam** — a milestone landed, a
+>   phase shift (explore → implement → verify), or before pivoting to an unrelated task — **before**
+>   compaction, not after. Externalized state reloads as context next turn; whatever lives **only** in the
+>   buffer is what a summary can lose (summaries keep the narrative, not the verbatim texture).
+> - **At a seam with high utilization, suggest compacting** (or rely on the harness's auto-compact) rather
+>   than carrying a full buffer into the next phase. **Never mid-task**, with hot, unwritten state.
+> - **After any compaction, re-verify specifics against live files** rather than trusting the paraphrase.
+> The session log *is* the seam marker: "when do I write the log?" and "when is it safe to compact?" share
+> the same beat. This is *why* the memory layer lives in **files**, not the chat buffer.
 
 ## Multi-Agent Continuity
 

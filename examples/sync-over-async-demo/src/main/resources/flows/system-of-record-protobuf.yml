@@ -1,0 +1,42 @@
+#
+# Backend flow (backend role) - Protobuf variant of 'system-of-record'. Reached when the Kafka flow adapter
+# routes a message from 'protobuf-topic-1'. Because that binding sets schema.enabled, the adapter has already
+# decoded the Confluent Protobuf value to a Map, which 'system.of.record.protobuf' receives.
+#
+#   1. system.of.record.protobuf - the backend logic on the decoded Map; builds a FLAT reply matching the
+#                                  closed-shape protobuf SyncDemoMessage (action, status, processedBy, traceId).
+#   2. simple.kafka.notification - publish the reply to 'protobuf-topic-2' as Protobuf (schema-id=3 + type).
+#
+# schema-id 3 is the demo's pre-registered Protobuf SyncDemoMessage schema (see registry/schemas.json).
+#
+flow:
+  id: 'system-of-record-protobuf'
+  description: 'Process the Protobuf request and publish a Protobuf reply'
+  ttl: 30s
+
+first.task: 'system.of.record.protobuf'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+      - 'input.header.traceparent -> header.traceparent'
+    process: 'system.of.record.protobuf'
+    output:
+      - 'result -> model.payload'
+      - 'header.cid -> model.cid'
+    description: 'Process the decoded request'
+    execution: sequential
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(protobuf-topic-2) -> header.topic'
+      - 'text(PROTOBUF) -> header.schema-type'
+      - 'text(3) -> header.schema-id'
+      - 'model.cid -> header.cid'
+      - 'model.payload -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the reply to protobuf-topic-2 as Protobuf'
+    execution: end

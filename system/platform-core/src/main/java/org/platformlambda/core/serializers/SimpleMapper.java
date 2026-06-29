@@ -106,6 +106,9 @@ public class SimpleMapper {
         // offset datetime for database data type (TIMESTAMPTZ)
         builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeSerializer());
         builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeDeserializer());
+        // instant (the java.time replacement for java.util.Date)
+        builder.registerTypeAdapter(Instant.class, new InstantSerializer());
+        builder.registerTypeAdapter(Instant.class, new InstantDeserializer());
         // SQL timestamp, date and time for legacy database data types
         builder.registerTypeAdapter(java.sql.Timestamp.class, new SqlTimestampSerializer());
         builder.registerTypeAdapter(java.sql.Timestamp.class, new SqlTimestampDeserializer());
@@ -243,6 +246,23 @@ public class SimpleMapper {
         public OffsetDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             var date = Utility.getInstance().str2date(json.getAsString());
             return date.toInstant().atOffset(ZoneOffset.UTC);
+        }
+    }
+
+    private static class InstantSerializer implements JsonSerializer<Instant> {
+
+        @Override
+        public JsonElement serialize(Instant time, Type type, JsonSerializationContext context) {
+            // ISO-8601 / RFC-3339 string in UTC, millisecond precision (same wire format as java.util.Date)
+            return new JsonPrimitive(Utility.getInstance().date2str(Date.from(time)));
+        }
+    }
+
+    private static class InstantDeserializer implements JsonDeserializer<Instant> {
+
+        @Override
+        public Instant deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return Utility.getInstance().str2date(json.getAsString()).toInstant();
         }
     }
 

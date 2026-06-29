@@ -43,7 +43,7 @@ public class OtelForwarderContext {
     private static final Logger log = LoggerFactory.getLogger(OtelForwarderContext.class);
 
     public static final String INSTRUMENTATION_NAME = "org.platformlambda.opentelemetry-forwarder";
-    private static final String VERSION = "4.4.11";
+    private static final String VERSION = "4.5.0";
     private static final String SERVICE_NAME_KEY = "service.name";
 
     private final boolean enabled;

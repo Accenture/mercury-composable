@@ -8,6 +8,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## Version 4.5.0, 6/25/2026
+
+### Added
+
+1. W3C OpenTelemetry distributed tracing across all three layers (Platform Core, Event Script, MiniGraph):
+   every function carries a 16-hex `span_id` + `parent_span_id` propagated end-to-end, plus a new
+   `extensions/opentelemetry-forwarder` module that exports completed traces via OTLP/HTTP.
+2. New `system/minimalist-kafka` library — reusable Kafka building blocks: a drop-n-forget Kafka
+   notification function (`simple.kafka.notification`) and a Kafka Flow Adapter that routes each topic
+   into an Event Script flow (one consumer thread per topic; at-least-once via commit-after-process),
+   with W3C trace context propagated across the Kafka hops.
+3. New `extensions/sync-over-async` extension — exposes synchronous REST semantics over asynchronous
+   Kafka processing across horizontally scaled pods, using Redis to carry the cross-pod return route.
+
+### Removed
+
+N/A
+
+### Changed
+
+N/A
+
+---
 ## Version 4.4.11, 5/29/2026
 
 ### Added

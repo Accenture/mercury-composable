@@ -111,7 +111,17 @@ export function memref_ids(text) {
 }
 
 export function load_windows(root) {
-  const w = { working_window: 3, active_window: 8, archive_window: 20 };
+  // Defaults track the shipped templates/memory/decay-policy.md (v4.24.0): a repo
+  // whose policy omits a field falls back to these. continuity_max_facts is the
+  // primary lean signal (count > lines — verbosity/velocity-independent).
+  const w = {
+    working_window: 3,
+    active_window: 8,
+    archive_window: 20,
+    review_every: 10,
+    continuity_max_facts: 30,
+    continuity_max_lines: 600,
+  };
   const p = join(root, "memory", "decay-policy.md");
   if (existsSync(p)) {
     const t = read_text(p);
@@ -246,6 +256,36 @@ export function check_version_manifest(root) {
   return [];
 }
 
+export function check_conflict_markers(root) {
+  // (7) No leftover VCS merge-conflict markers in the LIVE top-level memory files —
+  // the ones every teammate concurrently edits and the agent reads as truth
+  // (continuity.md, instructions.md, vision.md, decay-policy.md, smoke-test.md). We scan
+  // `memory/*.md` only (non-recursive): `sessions/` and `archive/` are deliberately
+  // EXCLUDED — they are immutable/append narrative that legitimately *quotes* conflict
+  // markers (a session log pasting terminal output or a real diff to document it), so
+  // scanning them would false-positive. Match git's `<<<<<<<` / `>>>>>>>` and the diff3
+  // `|||||||` line markers; deliberately do NOT match a bare `=======` line (a valid
+  // Markdown setext heading underline).
+  const out = [];
+  const mem = join(root, "memory");
+  const marker = /^(<{7}|>{7}|\|{7})(\s|$)/;
+  if (!existsSync(mem)) return out;
+  const files = readdirSync(mem).filter((n) => n.endsWith(".md")).sort(byCodePoint);
+  for (const name of files) {
+    const lines = read_text(join(mem, name)).split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (marker.test(lines[i])) {
+        out.push(
+          `[conflict-marker] memory/${name}:${i + 1} unresolved merge-conflict marker ` +
+            "— resolve it before committing"
+        );
+        break; // one report per file is enough
+      }
+    }
+  }
+  return out;
+}
+
 export function check_dangling(allf) {
   // (4) supersession links resolve
   const out = [];
@@ -256,6 +296,92 @@ export function check_dangling(allf) {
         out.push(`[dangling] ${fid} ${key} ${tgt}, which has no footer anywhere`);
       }
     }
+  }
+  return out;
+}
+
+const LAST_REVIEW_RE = /^- \*\*last_review:\*\*\s*([0-9-]+)(?:\s*\|\s*through\s+([0-9][0-9-]*))?/m;
+
+// Count lines the way Python's str.splitlines() does (trailing newline adds no line).
+function count_lines(s) {
+  if (s === "") return 0;
+  const parts = s.split(/\r\n|\r|\n/);
+  if (parts[parts.length - 1] === "") parts.pop();
+  return parts.length;
+}
+
+export function sessions_since_review(sessions, cont_text) {
+  // How many session files were written after the last_review 'through' stamp.
+  // No last_review recorded (never reviewed) => every session counts as 'since'.
+  const stems = sessions.map((s) => s.replace(/\.md$/, ""));
+  const m = cont_text.match(LAST_REVIEW_RE);
+  if (!m) return stems.length;
+  const through = m[2] || m[1]; // prefer the 'through <session-file>' token
+  return stems.filter((s) => s > through).length;
+}
+
+export function created_sessions_ago(created, stems) {
+  // session files dated strictly after `created` (YYYY-MM-DD); approximate (by date).
+  if (!created) return null;
+  return stems.filter((s) => s.slice(0, 10) > created).length;
+}
+
+export function expected_tier(fields, fid, sslu_val, uses_val, created_ago, pinned, ww, acw, aw) {
+  // Tier a fact *should* carry per DECAY.md §5 (first match wins). Clamps at
+  // 'archive-candidate' — a fact still in continuity is never 'archived'.
+  if (fields["superseded-by"] || fields.tier === "superseded") return "superseded";
+  if (fields.tier === "core") return "core";
+  if (pinned.has(fid)) return fields.tier ?? null;  // pinned: never decays; leave the tier label as-is
+  if (sslu_val === null) return fields.tier ?? null;
+  if (created_ago !== null && created_ago <= ww && uses_val <= 1) return "working";
+  if (sslu_val <= acw) return "active";
+  return "archive-candidate";
+}
+
+export function check_stale_metadata(cont, pinned, refs, stems, ww, acw, aw) {
+  // (9) advisory: stored `tier` disagrees with the tier recomputed from references —
+  // review steps 2–3 (apply events / re-tier) were skipped. core/superseded exempt.
+  const out = [];
+  const sslu = make_sslu(refs);
+  for (const [fid, fields] of cont) {
+    if (fields.tier === "core" || fields.tier === "superseded" || fields["superseded-by"]) continue;
+    const uses_val = refs.reduce((n, ids) => n + (ids.has(fid) ? 1 : 0), 0);
+    const et = expected_tier(fields, fid, sslu(fid), uses_val, created_sessions_ago(fields.created, stems), pinned, ww, acw, aw);
+    const stored = fields.tier;
+    if (et !== null && et !== stored) {
+      out.push(
+        `[stale-metadata] ${fid} tier '${stored}' should be '${et}' (sslu ${sslu(fid)}) ` +
+        "— review steps 2–3 (re-tier) skipped; run refresh-metadata or a review"
+      );
+    }
+  }
+  return out;
+}
+
+export function check_continuity_health(cont, sessions, cont_text, cont_lines, re_every, max_facts, max_lines) {
+  // (8) advisory cadence/size triggers — what would have caught a real product repo
+  // that ran 61 sessions and never archived (review never fired in the field).
+  // All advisory (WARN): a review is a human/agent ritual, never a hard gate.
+  const out = [];
+  const ssr = sessions_since_review(sessions, cont_text);
+  if (ssr >= re_every) {
+    out.push(
+      `[review-overdue] ${ssr} session(s) since last review >= review_every ` +
+        `${re_every} — run the REVIEW.md ritual`
+    );
+  }
+  const nfacts = cont.size;
+  if (nfacts > max_facts) {
+    out.push(
+      `[continuity-bloat] ${nfacts} continuity facts > continuity_max_facts ` +
+        `${max_facts} — a review is due to lean it down`
+    );
+  }
+  if (cont_lines > max_lines) {
+    out.push(
+      `[continuity-bloat] continuity.md ${cont_lines} lines > continuity_max_lines ` +
+        `${max_lines} — a review is due to lean it down`
+    );
   }
   return out;
 }
@@ -294,15 +420,25 @@ export function main(argv) {
   const acw = w.active_window;
   const sslu = make_sslu(refs);
 
+  const cont_text = read_text(join(root, "memory", "continuity.md"));
+  const cont_lines = count_lines(cont_text);
+
   const errors = [
     ...check_duplicates(cont, arch),
     ...check_over_archived(arch, sslu, aw),
     ...check_version_manifest(root),
+    ...check_conflict_markers(root),
   ];
+  const stems = sessions.map((s) => s.replace(/\.md$/, ""));
   const warns = [
     ...check_overdue(cont, pinned, sslu, aw),
     ...check_dangling(new Map([...cont, ...arch, ...extra])),
     ...check_session_filenames(sessions),
+    ...check_continuity_health(
+      cont, sessions, cont_text, cont_lines,
+      w.review_every, w.continuity_max_facts, w.continuity_max_lines
+    ),
+    ...check_stale_metadata(cont, pinned, refs, stems, w.working_window, acw, aw),
   ];
 
   return report({ cont, arch, sessions, acw, aw, warns, errors, strict });

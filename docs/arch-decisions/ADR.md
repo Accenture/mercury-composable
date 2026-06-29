@@ -22,6 +22,45 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0007 — Event Script configuration is preferred over code for orchestration {#adr-0007}
+**Status:** Accepted · **Date:** 2026-06-27T15:45:00.000Z · **Serves:** vision-mercury-composable
+<!-- id: adr-0007 | status: accepted | formalizes: event-script-over-code -->
+
+**Abstract.** When a step is **orchestration** — sequencing functions, branching on a condition,
+handling a failure, or moving data between steps — express it as **Event Script YAML** (tasks,
+`execution` types, input/output data mapping, exception handler), not as imperative code inside a
+function. Code is reserved for the **unit of work** itself (the function body; ADR-0005). The
+sync-over-async refactoring that produced this ADR converted an imperative facade — a
+`PostOffice.send` publish buried in a function, with a hand-written `try/catch` mapping the failure to
+an HTTP status — into a declarative flow: `prepare → simple.kafka.notification → await`, where a publish
+failure is routed by the engine to the flow's exception handler (fail-fast → HTTP status) and a
+`decision` task expresses the drop branch. The boundary holds in the other direction too: a genuinely
+in-function concern — here, the synchronous **blocking rendezvous** that must bracket the publish —
+stays in code. Not all code becomes YAML.
+
+**Rationale.** Two properties make configuration the better home for orchestration. **(1) It
+communicates intent.** The flow file is a single, legible statement of the event flow — a reviewer sees
+the `begin → publish → await` sequence, the topic names (`text(topic-1)` / `text(topic-2)`), the
+fail-fast path, and the no-reply branch without reading Java; the imperative version hid the topic and
+the publish inside `PostOffice` calls and buried the control flow in `try/catch`. **(2) It manages
+dependencies.** Event Script declares both control-flow dependencies (task order, decision branches,
+exception routing) and data-flow dependencies (field-level mapping through `model`), and the engine
+enforces them — so functions stay fully decoupled (ADR-0001), never importing one another, with the
+only wiring in the flow. Reusable building blocks are composed **by reference, not duplicated in code**:
+the one `simple.kafka.notification` function publishes the request in one flow and the reply in another.
+Cross-cutting behavior (failure handling, status policy, `ttl` timeouts, trace propagation) becomes an
+engine concern expressed in config rather than repeated boilerplate, and orchestration changes (add a
+step, change a topic, re-route a branch) are reviewable config edits that need no recompile — the source
+of the "roughly half the code" claim in ADR-0001. The accepted consequences are the cost of the
+abstraction, not reasons to avoid it: the unit of work stays in code (a flat task chain cannot express a
+blocking await that must wrap a publish — forcing it into config is contortion), and declarative routing
+has its own vocabulary to learn — the `decision` type selects a `next` entry by value (`true` = `1` =
+first entry, `false` = `2` = second; an integer is 1-based and enables a multi-way `switch`), and `byte[]`
+payloads ride through `model` via the `*` whole-body passthrough (ADR-0003). This decision refines
+ADR-0001 (orchestration as Event Script) and is bounded by ADR-0005 (one atom, four roles).
+
+---
+
 ## ADR-0006 — Cloud-native by default; service mesh for sync-over-async and service discovery only {#adr-0006}
 **Status:** Accepted · **Date:** 2026-06-23T18:30:00.000Z · **Serves:** vision-mercury-composable
 <!-- id: adr-0006 | status: accepted | formalizes: kafka-mesh-opt-in -->

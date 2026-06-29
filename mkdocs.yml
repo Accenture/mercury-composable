@@ -43,6 +43,10 @@ nav:
     - Observability: guides/observability.md
     - Spring Boot Integration: guides/spring-boot.md
     - Event over HTTP: guides/event-over-http.md
+    - Kafka Flow Adapter: guides/kafka-flow-adapter.md
+    - Schema Registry Mock: guides/schema-registry-mock.md
+
+    - Sync-over-Async: guides/sync-over-async.md
     - Minimalist Service Mesh: guides/service-mesh.md
 
   - Reference:
@@ -55,6 +59,7 @@ nav:
     - Actuators & HTTP Client: guides/actuators-and-http-client.md
     - Release Notes: https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md
 
+  - Code Conventions: guides/code-conventions.md
   - Documentation Conventions: guides/documentation-conventions.md
   - Contributing: https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md
   - Code of Conduct: https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md

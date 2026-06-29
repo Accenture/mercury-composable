@@ -23,8 +23,18 @@ with no per-user setup, so the ritual is enforced even on a clone where the loca
 ## Hooks
 
 - **`post-commit`** — after a commit: re-syncs skill adapters if a skill changed; and if the commit did
-  real work but carried no session log, **auto-stubs one** (`memory/sessions/<ts>.md`) and nudges you to
-  enrich it. The stub guarantees the ledger never has a silent gap; the *thoughtful* summary stays the
-  agent's job (capture vs. judgment — same split as `memory-lint`).
+  real work but carried no session log, ensures the session is captured — **once per working session, not
+  per commit.** If there is **no** session log within the active-session window (default **30 min**; override
+  `AGENT_MEMORY_SESSION_WINDOW_MINUTES`) it **auto-stubs** `memory/sessions/<ts>.md`; if a recent log already
+  covers this session — committed *or* a waiting stub, detected by the newest session **filename** (immutable
+  and clone-safe, unlike mtime) — it instead **nudges you to enrich that existing log**. The stub guarantees
+  the ledger never has a silent gap; the *thoughtful* summary stays the agent's job (capture vs. judgment —
+  same split as `memory-lint`).
+
+  > **Splitting code and memory into two commits?** The advisory may fire on the code-only commit (it
+  > carries no session log) and point you at the session's existing log — **expected and benign**, not a
+  > failure, and it will **not** pile up a second stub (one log per session). To skip the nudge entirely,
+  > prefer a **single atomic commit** that includes the work *and* its session log. The hook is advisory
+  > and never blocks.
 
 To deactivate: `git config --unset core.hooksPath`.

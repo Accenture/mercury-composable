@@ -1052,7 +1052,9 @@ The "next" tag contains a list of tasks to be selected based on the decision val
 If decision value is boolean, a `true` value will select the first task. Otherwise, the second task will be selected.
 
 If decision value is an integer, the number should *start from 1* where the corresponding "next" task
-will be selected.
+will be selected (`1` selects the first task, `2` the second, `N` the N-th). An integer decision therefore
+supports more than two branches - much like a `switch` statement in code - while a boolean decision is the
+two-way special case (`true` = `1` = first, `false` = `2` = second).
 
 ```yaml
 tasks:

@@ -13,7 +13,14 @@ import {
   check_dangling,
   check_session_filenames,
   check_version_manifest,
+  check_conflict_markers,
+  check_continuity_health,
+  sessions_since_review,
+  check_stale_metadata,
 } from "./memory-lint.mjs";
+
+// (8) advisory cadence/size triggers (v4.24.0). cont is a Map; cont.size is the fact count.
+const facts = (n) => new Map(Array.from({ length: n }, (_, i) => [`fact-${i}`, {}]));
 
 function byCodePoint(a, b) {
   if (a < b) return -1;
@@ -233,4 +240,184 @@ test("check_version_manifest passes when version.md is missing", () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- conflict markers (check 7) -------------------------------------------
+function setupMemFiles(files) {
+  const root = mkdtempSync(join(tmpdir(), "memlint-"));
+  for (const [rel, body] of Object.entries(files)) {
+    const full = join(root, "memory", rel);
+    mkdirSync(join(full, ".."), { recursive: true });
+    writeFileSync(full, body);
+  }
+  return root;
+}
+
+test("check_conflict_markers flags git markers", () => {
+  const root = setupMemFiles({
+    "continuity.md": "# c\n<<<<<<< HEAD\nmine\n=======\ntheirs\n>>>>>>> branch\n",
+  });
+  try {
+    const errs = check_conflict_markers(root);
+    assert.equal(errs.length, 1);
+    assert.ok(errs[0].includes("[conflict-marker]"));
+    assert.ok(errs[0].includes("memory/continuity.md:2"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers flags diff3 marker", () => {
+  const root = setupMemFiles({ "continuity.md": "# c\n||||||| base\n" });
+  try {
+    assert.equal(check_conflict_markers(root).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers ignores a setext heading underline", () => {
+  const root = setupMemFiles({ "continuity.md": "Title\n=======\n\nbody\n" });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers passes clean memory", () => {
+  const root = setupMemFiles({
+    "continuity.md": "# c\nall good\n",
+    "sessions/2026-06-27-120000.md": "# Session\nfine\n",
+  });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers reports one per file", () => {
+  const root = setupMemFiles({ "continuity.md": "<<<<<<< a\n>>>>>>> b\n<<<<<<< c\n" });
+  try {
+    assert.equal(check_conflict_markers(root).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers ignores a marker in a session log (sessions/ excluded)", () => {
+  // sessions/ legitimately quotes markers (documenting a diff/terminal output).
+  const root = setupMemFiles({
+    "continuity.md": "# c\nclean\n",
+    "sessions/2026-06-27-120000.md": "# Session\n```\n<<<<<<< HEAD\nx\n=======\ny\n>>>>>>> b\n```\n",
+  });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_conflict_markers ignores a marker in the archive (archive/ excluded)", () => {
+  const root = setupMemFiles({
+    "continuity.md": "# c\nclean\n",
+    "archive/2026-Q2.md": "<<<<<<< HEAD\nx\n>>>>>>> b\n",
+  });
+  try {
+    assert.deepEqual(check_conflict_markers(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("check_continuity_health flags an overdue review", () => {
+  const cont_text = "- **last_review:** 2026-06-20 | through 2026-06-20-120000\n";
+  const sessions = Array.from({ length: 7 }, (_, i) => `2026-06-2${i + 1}-120000.md`);
+  const w = check_continuity_health(facts(1), sessions, cont_text, 10, 5, 30, 600);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("[review-overdue]"));
+  assert.ok(w[0].includes("7 session(s) since last review >= review_every 5"));
+});
+
+test("check_continuity_health: a recent review is OK", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  assert.deepEqual(
+    check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 10, 10, 30, 600),
+    []
+  );
+});
+
+test("check_continuity_health: never reviewed counts all sessions", () => {
+  const cont_text = "# Continuity\n(no last_review recorded yet)\n";
+  const sessions = Array.from({ length: 4 }, (_, i) => `2026-06-2${i + 1}-120000.md`);
+  const w = check_continuity_health(facts(1), sessions, cont_text, 10, 3, 30, 600);
+  assert.ok(w.some((x) => x.includes("[review-overdue]") && x.includes("4 session(s)")));
+});
+
+test("sessions_since_review prefers the 'through' token", () => {
+  const cont_text = "- **last_review:** 2026-06-20 | through 2026-06-25-120000\n";
+  const sessions = ["2026-06-24-120000.md", "2026-06-26-120000.md", "2026-06-27-120000.md"];
+  assert.equal(sessions_since_review(sessions, cont_text), 2);
+});
+
+test("check_continuity_health flags fact bloat", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  const w = check_continuity_health(facts(31), ["2026-06-27-120000.md"], cont_text, 10, 10, 30, 600);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("31 continuity facts > continuity_max_facts 30"));
+});
+
+test("check_continuity_health flags line bloat", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  const w = check_continuity_health(facts(1), ["2026-06-27-120000.md"], cont_text, 700, 10, 30, 600);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("continuity.md 700 lines > continuity_max_lines 600"));
+});
+
+test("check_continuity_health: a healthy layer is OK", () => {
+  const cont_text = "- **last_review:** 2026-06-27 | through 2026-06-27-120000\n";
+  assert.deepEqual(
+    check_continuity_health(facts(24), ["2026-06-27-120000.md"], cont_text, 490, 10, 30, 600),
+    []
+  );
+});
+
+const STALE_STEMS = ["2026-06-01-000000", "2026-06-02-000000", "2026-06-03-000000"];
+
+test("check_stale_metadata flags tier drift", () => {
+  const cont = new Map([["foo-fact", { tier: "working", created: "2026-01-01" }]]);
+  const refs = [new Set(["foo-fact"]), new Set(["foo-fact"]), new Set()];
+  const w = check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4);
+  assert.equal(w.length, 1);
+  assert.ok(w[0].includes("[stale-metadata]"));
+  assert.ok(w[0].includes("should be 'active'"));
+});
+
+test("check_stale_metadata: matching tier not flagged", () => {
+  const cont = new Map([["a-fact", { tier: "active", created: "2026-01-01" }]]);
+  const refs = [new Set(["a-fact"]), new Set(["a-fact"]), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4), []);
+});
+
+test("check_stale_metadata: core and superseded exempt", () => {
+  const cont = new Map([
+    ["c-fact", { tier: "core", created: "2026-01-01" }],
+    ["s-fact", { tier: "superseded", created: "2026-01-01", "superseded-by": "a-fact" }],
+  ]);
+  const refs = [new Set(["c-fact"]), new Set(["s-fact"]), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4), []);
+});
+
+test("check_stale_metadata: never-referenced not flagged", () => {
+  const cont = new Map([["legacy-fact", { tier: "working", created: "2026-01-01" }]]);
+  const refs = [new Set(), new Set(), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(), refs, STALE_STEMS, 3, 2, 4), []);
+});
+
+test("check_stale_metadata: a pinned thread's tier is not flagged (v4.26.1)", () => {
+  // pinned `- [ ]` thread never decays; the tool leaves its tier label alone.
+  const cont = new Map([["open-fact", { tier: "working", created: "2026-01-01" }]]);
+  const refs = [new Set(["open-fact"]), new Set(["open-fact"]), new Set()];
+  assert.deepEqual(check_stale_metadata(cont, new Set(["open-fact"]), refs, STALE_STEMS, 3, 2, 4), []);
 });

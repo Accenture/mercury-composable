@@ -88,8 +88,8 @@ A decision example (branch on a function result):
     description: 'Score and branch'
     execution: decision
     next:
-      - 'approve.task'      # decision = false -> next[0]
-      - 'review.task'       # decision = true  -> next[1]
+      - 'review.task'       # decision = true (high_risk) -> next[0] (first)
+      - 'approve.task'      # decision = false            -> next[1] (second)
 ```
 
 ## See also {#see-also}

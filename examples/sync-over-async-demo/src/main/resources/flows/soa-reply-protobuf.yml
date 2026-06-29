@@ -1,0 +1,22 @@
+#
+# Reply-delivery flow (facade role) - Protobuf variant of 'soa-reply'. Reached when the Kafka flow adapter
+# routes a message from 'protobuf-topic-2'. Because that binding sets schema.enabled, the adapter has already
+# decoded the Confluent Protobuf reply to a Map, which 'soa.reply.protobuf' hands to the return-route
+# coordinator (re-serialized to JSON) to complete the awaiting REST request.
+#
+flow:
+  id: 'soa-reply-protobuf'
+  description: 'Deliver the Protobuf async response back to the awaiting REST request'
+  ttl: 30s
+
+first.task: 'soa.reply.protobuf'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+    process: 'soa.reply.protobuf'
+    output:
+      - 'result -> output.body'
+    description: 'Bridge the decoded Kafka response to the return-route coordinator'
+    execution: end

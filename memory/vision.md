@@ -35,7 +35,7 @@ the one below:
   LLM backend is integrated in-repo yet; today the "AI" is an external session following a
   documented prompt.
 
-**Type:** Multi-module Java 21 framework / SDK (Maven reactor, `com.accenture.mercury` v4.4.11).
+**Type:** Multi-module Java 21 framework / SDK (Maven reactor, `com.accenture.mercury` v4.5.0).
 
 ## What it should become  *(TARGET)*
 

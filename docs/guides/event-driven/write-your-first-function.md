@@ -134,7 +134,7 @@ Start the application (adjust the version to match your build):
 
 ```bash
 cd examples/composable-example
-java -jar target/composable-example-4.4.11.jar
+java -jar target/composable-example-4.5.0.jar
 ```
 
 Test with `curl`:

@@ -349,6 +349,11 @@ public class WorkerHandler {
     private void handleMonoResponse(Mono mono, EventEnvelope event, EventEnvelope response, long begin, long expiry) {
         EventEmitter po = EventEmitter.getInstance();
         Platform platform = Platform.getInstance();
+        // Capture the trace context now, on the worker thread. getTrace is keyed by thread-id and its entry
+        // is removed when processEvent returns - so the Mono's completion callbacks, which run later on a
+        // different thread, cannot look it up. Capturing here lets the response still carry this function's
+        // span_id, so the next flow task can parent to it (otherwise the next task's span is orphaned).
+        final TraceInfo traceContext = po.getTrace(parentRoute, instance);
         final AtomicLong timer = new AtomicLong(-1);
         final AtomicBoolean completed = new AtomicBoolean(false);
         // For non-blocking operation, use a new virtual/kernel thread for the subscription
@@ -363,18 +368,18 @@ public class WorkerHandler {
                 }).subscribeOn(Schedulers.fromExecutor(executor))
                 .subscribe(data -> {
                     completed.set(true);
-                    sendMonoResponse(response, data, begin);
+                    sendMonoResponse(traceContext, response, data, begin);
                 }, e -> {
                     if (e instanceof Throwable ex) {
                         completed.set(true);
                         final EventEnvelope errorResponse = prepareErrorResponse(event, ex);
-                        po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(getExecTime(begin)));
+                        po.send(applyTraceContext(traceContext, errorResponse).setExecutionTime(getExecTime(begin)));
                     }
                 }, () -> {
                     // When the Mono emitter sends a null payload, Mono will not return any result.
                     // Therefore, the system must return a null body for this normal use case.
                     if (!completed.get()) {
-                        sendMonoResponse(response, null, begin);
+                        sendMonoResponse(traceContext, response, null, begin);
                     }
                 });
         // dispose a pending Mono if timeout
@@ -467,10 +472,10 @@ public class WorkerHandler {
         };
     }
 
-    private void sendMonoResponse(EventEnvelope response, Object result, long begin) {
+    private void sendMonoResponse(TraceInfo traceContext, EventEnvelope response, Object result, long begin) {
         EventEmitter po = EventEmitter.getInstance();
         updateResponse(response, result);
-        var encoded = encodeTraceAnnotations(response).setExecutionTime(getExecTime(begin));
+        var encoded = applyTraceContext(traceContext, response).setExecutionTime(getExecTime(begin));
         if (result instanceof EventEnvelope evt && evt.getType() != null) {
             encoded.setType(evt.getType());
             encoded.setBody(evt.getBody());
@@ -577,8 +582,16 @@ public class WorkerHandler {
     }
 
     private EventEnvelope encodeTraceAnnotations(EventEnvelope response) {
-        EventEmitter po = EventEmitter.getInstance();
-        TraceInfo trace = po.getTrace(parentRoute, instance);
+        return applyTraceContext(EventEmitter.getInstance().getTrace(parentRoute, instance), response);
+    }
+
+    /**
+     * Apply a (possibly pre-captured) trace context to a response. Callers on the worker thread can pass
+     * {@code getTrace(...)} directly; the Mono/async path must capture the trace on the worker thread first,
+     * because {@code getTrace} is keyed by thread-id and the entry is gone by the time the Mono completes
+     * on another thread.
+     */
+    private EventEnvelope applyTraceContext(TraceInfo trace, EventEnvelope response) {
         if (trace != null) {
             response.setAnnotations(trace.annotations);
             // Carry this function's own span_id so the caller can use it as parentSpanId for the next hop

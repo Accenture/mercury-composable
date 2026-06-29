@@ -3,7 +3,9 @@
 // Part of agent-memory (provenance: agent-memory-builtin). Node >= 18, built-in modules only.
 //
 // Idempotent. Writes ONLY the gitignored vendor adapter dirs (.claude/skills, .gemini/commands,
-// .cursor/rules, .kiro/skills, .github/skills); never edits agent-skills/ or any committed file.
+// .cursor/rules, .kiro/skills, .github/skills, .agents/skills); never edits agent-skills/ or any
+// committed file. (.agents/skills is the Agent Skills standard dir read by Google Antigravity 'agy',
+// the Gemini CLI successor — it ignores .gemini/commands.)
 // Prunes only adapters THIS tool generated (identified by their pointer signature), so a
 // hand-authored vendor skill is never deleted. Run from the repo root. `--dry-run` previews.
 //
@@ -69,7 +71,8 @@ for (const s of skills) {
   M(join(ROOT, ".cursor/rules"));          W(join(ROOT, ".cursor/rules/" + n + ".mdc"), cursorMdc(n, d));
   M(join(ROOT, ".kiro/skills/" + n));      W(join(ROOT, ".kiro/skills/" + n + "/SKILL.md"), claudeLike(n, d));
   M(join(ROOT, ".github/skills/" + n));    W(join(ROOT, ".github/skills/" + n + "/SKILL.md"), claudeLike(n, d));
-  adapters += 5;
+  M(join(ROOT, ".agents/skills/" + n));    W(join(ROOT, ".agents/skills/" + n + "/SKILL.md"), claudeLike(n, d));
+  adapters += 6;
 }
 
 // --- prune orphaned adapters we generated (signature-guarded) ---
@@ -105,6 +108,7 @@ function pruneFiles(base, ext, signature) {
 pruneDirs(".claude/skills", SIG);
 pruneDirs(".kiro/skills", SIG);
 pruneDirs(".github/skills", SIG);
+pruneDirs(".agents/skills", SIG);
 pruneFiles(".gemini/commands", ".toml", GEM_SIG);
 pruneFiles(".cursor/rules", ".mdc", CUR_SIG);
 

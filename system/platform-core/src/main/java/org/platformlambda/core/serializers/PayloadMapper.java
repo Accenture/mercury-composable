@@ -21,6 +21,7 @@ package org.platformlambda.core.serializers;
 import org.platformlambda.core.models.TypedPayload;
 import org.platformlambda.core.util.Utility;
 
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -50,6 +51,9 @@ public class PayloadMapper {
             return encodeList(items, binary);
         } else if (obj instanceof Date d) {
             return new TypedPayload(PRIMITIVE, Utility.getInstance().date2str(d));
+        } else if (obj instanceof Instant i) {
+            // Instant (java.time) is encoded as an ISO-8601 UTC string, like Date
+            return new TypedPayload(PRIMITIVE, Utility.getInstance().date2str(Date.from(i)));
         } else if (isPrimitive(obj)) {
             return new TypedPayload(PRIMITIVE, obj);
         } else {

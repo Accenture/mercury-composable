@@ -29,6 +29,7 @@ import org.platformlambda.core.util.Utility;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -228,6 +229,25 @@ class MsgPackTest {
         Object o = msgPack.unpack(b);
         // date object is serialized as UTC string
         assertEquals(Utility.getInstance().date2str(input), o);
+    }
+
+    @Test
+    void dataIsInstant() throws IOException {
+        Instant input = Instant.now();
+        byte[] b = msgPack.pack(input);
+        Object o = msgPack.unpack(b);
+        // Instant is serialized as a UTC ISO-8601 string, like Date
+        assertEquals(Utility.getInstance().date2str(Date.from(input)), o);
+    }
+
+    @Test
+    void instantInsideMap() throws IOException {
+        Instant input = Instant.now();
+        byte[] b = msgPack.pack(Map.of("ts", input));
+        Object o = msgPack.unpack(b);
+        assertInstanceOf(Map.class, o);
+        // an Instant value nested in a map is packed as the same UTC ISO-8601 string
+        assertEquals(Utility.getInstance().date2str(Date.from(input)), ((Map<?, ?>) o).get("ts"));
     }
 
     @Test

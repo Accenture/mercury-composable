@@ -127,10 +127,23 @@ drifts). For each `agent-skills/<name>/SKILL.md` (using its `name` + `descriptio
   Maintained vendor-neutrally. Read and follow `agent-skills/<name>/SKILL.md` (repo root)
   and any scripts it references.
   ```
+- **Google Antigravity (`agy`)** → `.agents/skills/<name>/SKILL.md` (Antigravity is the **Gemini CLI
+  successor** and merged custom commands into the open Agent Skills standard, so this is the **same shape
+  as the Claude / Kiro / Copilot adapter**. It reads workspace skills from `.agents/skills/` and **does
+  not** read the old `.gemini/commands/*.toml` — without this adapter, `agy` reports `/<name>` as *not
+  found* even though the Gemini TOML adapter exists):
+  ```
+  ---
+  name: <name>
+  description: <description>
+  ---
+  Maintained vendor-neutrally. Read and follow `agent-skills/<name>/SKILL.md` (repo root)
+  and any scripts it references.
+  ```
 
 **Trigger semantics differ per vendor — set expectations accordingly.** Claude / Cursor / Kiro /
-**Copilot** adapters are *description-matched* — they auto-fire when a natural-language request
-matches the `description` (Copilot CLI **also** accepts an explicit `/<name>`, so it's both). The
+**Copilot** / **Antigravity** adapters are *description-matched* — they auto-fire when a natural-language
+request matches the `description` (Copilot CLI **also** accepts an explicit `/<name>`, so it's both). The
 **Gemini** adapter is *slash-only* — it fires only on an explicit
 `/<name>`, never on a natural-language phrase. This is **not** drift or a missing adapter: every
 adapter is a thin pointer back to the **same** `agent-skills/<name>/SKILL.md`, and the
@@ -158,7 +171,7 @@ node agent-skills/sync-adapters/scripts/sync-adapters.mjs
 python3 agent-skills/sync-adapters/scripts/sync-adapters.py
 ```
 
-For **each** `agent-skills/<name>/SKILL.md` it (re)writes the five adapters defined in the recipe above
+For **each** `agent-skills/<name>/SKILL.md` it (re)writes the six adapters defined in the recipe above
 and **prunes** orphaned adapters it previously generated — *signature-guarded*, so it never deletes a
 hand-authored vendor file (only its own pointers). Idempotent; writes only the gitignored adapter dirs,
 never `agent-skills/` or a committed file; not a version change. The script ships as the built-in

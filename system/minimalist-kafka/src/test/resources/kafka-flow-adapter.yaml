@@ -1,0 +1,26 @@
+#
+# Kafka Flow Adapter configuration for the test: bind the test topic to the sink flow.
+#
+consumer:
+  - topic: 'mini-test-topic'
+    flow: 'kafka-sink-flow'
+    # exercises env-var substitution (unset -> default); group is used exactly as resolved
+    group: '${KAFKA_TEST_CONSUMER_GROUP:mini-test-group}'
+    # partition: 0                      # optional; pins this partition (manual assign, no group rebalancing)
+    # partition: '${POD_PARTITION}'     # or per-pod via env substitution
+  # Schema-aware binding: decode Confluent-framed values to a Map before routing into the flow.
+  - topic: 'schema-test-topic'
+    flow: 'schema-sink-flow'
+    group: 'schema-test-group'
+    schema.enabled: true
+  # Avro variant: a second schema-enabled binding into the same sink flow (the codec dispatches by the
+  # embedded schema id, so one flow handles both JSON- and Avro-framed values).
+  - topic: 'avro-test-topic'
+    flow: 'schema-sink-flow'
+    group: 'avro-test-group'
+    schema.enabled: true
+  # Protobuf variant: a third schema-enabled binding into the same sink flow.
+  - topic: 'protobuf-test-topic'
+    flow: 'schema-sink-flow'
+    group: 'protobuf-test-group'
+    schema.enabled: true

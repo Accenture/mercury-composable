@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger:%line - %msg%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="${env:LOG_LEVEL:-INFO}" additivity="false">
+            <AppenderRef ref="Console" />
+        </Root>
+
+        <!-- Telemetry prints the end-to-end span path of each flow -->
+        <logger name="org.platformlambda.core.services.Telemetry" level="INFO" />
+
+        <!-- Reduce Kafka client noise -->
+        <logger name="org.apache.kafka.clients.admin.internals.AdminMetadataManager" level="WARN" />
+        <logger name="org.apache.kafka.clients.admin.KafkaAdminClient" level="WARN" />
+        <logger name="org.apache.kafka.common.utils.AppInfoParser" level="WARN" />
+        <logger name="org.apache.kafka.common.config.AbstractConfig" level="WARN" />
+        <logger name="org.apache.kafka.clients.consumer.internals.ConsumerCoordinator" level="WARN" />
+    </Loggers>
+</Configuration>

@@ -6,7 +6,7 @@
     <groupId>com.accenture.mercury</groupId>
     <artifactId>parent-mercury</artifactId>
     <packaging>pom</packaging>
-    <version>4.4.11</version>
+    <version>4.5.0</version>
     <name>Parent Mercury</name>
 
     <modules>
@@ -17,10 +17,12 @@
         <module>system/event-script-engine</module>
         <module>system/minigraph-playground-engine</module>
         <module>system/mini-scheduler</module>
+        <module>system/minimalist-kafka</module>
 
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>
         <module>extensions/opentelemetry-forwarder</module>
+        <module>extensions/sync-over-async</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>
@@ -28,10 +30,13 @@
 
         <!-- connnector implementations -->
         <module>connectors/adapters/kafka/kafka-connector</module>
-        <!-- Convenient kafka standalone server for develoopment and testing -->
-        <module>connectors/adapters/kafka/kafka-standalone</module>
         <!-- Executables for cloud specific presence monitors -->
         <module>connectors/adapters/kafka/kafka-presence</module>
+
+        <!-- Convenient standalone dev servers (no Docker required) -->
+        <module>helpers/kafka-standalone</module>
+        <module>helpers/redis-standalone</module>
+        <module>helpers/schema-registry-standalone</module>
 
         <!-- Executables for application examples -->
         <module>examples/lambda-example</module>
@@ -41,6 +46,8 @@
         <module>examples/kotlin-example</module>
         <module>examples/scheduler-example</module>
         <module>examples/minigraph-playground</module>
+        <module>examples/kafka-demo</module>
+        <module>examples/sync-over-async-demo</module>
 
         <!-- Executables for benchmark tests -->
         <module>benchmark/benchmark-client</module>

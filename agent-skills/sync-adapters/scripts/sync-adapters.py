@@ -4,7 +4,9 @@
 Part of agent-memory (provenance: agent-memory-builtin). Python 3 stdlib only, no install.
 
 Idempotent. Writes ONLY the gitignored vendor adapter dirs (.claude/skills, .gemini/commands,
-.cursor/rules, .kiro/skills, .github/skills); never edits agent-skills/ or any committed file.
+.cursor/rules, .kiro/skills, .github/skills, .agents/skills); never edits agent-skills/ or any
+committed file. (.agents/skills is the Agent Skills standard dir read by Google Antigravity 'agy',
+the Gemini CLI successor — it ignores .gemini/commands.)
 Prunes only adapters THIS tool generated (identified by their pointer signature), so a
 hand-authored vendor skill is never deleted. Run from the repo root. `--dry-run` previews.
 
@@ -88,7 +90,8 @@ for s in skills:
     M(os.path.join(ROOT, ".cursor/rules"));         W(os.path.join(ROOT, ".cursor/rules/" + n + ".mdc"), cursor_mdc(n, d))
     M(os.path.join(ROOT, ".kiro/skills/" + n));     W(os.path.join(ROOT, ".kiro/skills/" + n + "/SKILL.md"), claude_like(n, d))
     M(os.path.join(ROOT, ".github/skills/" + n));   W(os.path.join(ROOT, ".github/skills/" + n + "/SKILL.md"), claude_like(n, d))
-    adapters += 5
+    M(os.path.join(ROOT, ".agents/skills/" + n));   W(os.path.join(ROOT, ".agents/skills/" + n + "/SKILL.md"), claude_like(n, d))
+    adapters += 6
 
 # --- prune orphaned adapters we generated (signature-guarded) ---
 live = set()
@@ -141,6 +144,7 @@ def prune_files(base, ext, signature):
 prune_dirs(".claude/skills", SIG)
 prune_dirs(".kiro/skills", SIG)
 prune_dirs(".github/skills", SIG)
+prune_dirs(".agents/skills", SIG)
 prune_files(".gemini/commands", ".toml", GEM_SIG)
 prune_files(".cursor/rules", ".mdc", CUR_SIG)
 
