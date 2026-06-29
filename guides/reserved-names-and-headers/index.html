@@ -117,6 +117,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -160,6 +166,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -396,8 +406,28 @@ to avoid breaking the system unintentionally.</p>
 <td style="text-align: left;">reserved for event stream clean up</td>
 <td style="text-align: left;">Service monitor</td>
 </tr>
+<tr>
+<td style="text-align: left;">simple.kafka.notification</td>
+<td style="text-align: left;">Publish an event to a Kafka topic (drop-n-forget / fail-fast)</td>
+<td style="text-align: left;">minimalist-kafka</td>
+</tr>
+<tr>
+<td style="text-align: left;">sync.prepare</td>
+<td style="text-align: left;">Sync-over-async facade: register the return route + serialize the request</td>
+<td style="text-align: left;">sync-over-async</td>
+</tr>
+<tr>
+<td style="text-align: left;">sync.await</td>
+<td style="text-align: left;">Sync-over-async facade: block for the asynchronous response</td>
+<td style="text-align: left;">sync-over-async</td>
+</tr>
 </tbody>
 </table>
+<p>Routes from the last three rows belong to <strong>opt-in extension modules</strong> (<code>minimalist-kafka</code>,
+<code>sync-over-async</code>): they are reserved only when that module is on the classpath. <code>sync.prepare</code> and
+<code>sync.await</code> are the ready-made facade tasks an application wires into its own <code>sync-to-async</code> flow (see
+<a href="../event-script/syntax/">Event Script Syntax</a>); like every reserved route, do not register your own
+function under these names.</p>
 <h2 id="optional-user-defined-functions">Optional user defined functions</h2>
 <p>The following optional route names will be detected by the system for additional user defined features.</p>
 <table>

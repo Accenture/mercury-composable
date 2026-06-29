@@ -143,6 +143,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -164,6 +170,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -250,9 +260,11 @@ takes HTTP requests routed to it by the REST automation engine, packages them as
 destined for the flow engine, and delivers the final response back to the caller. A Kafka flow adapter
 follows the same contract for stream-based sources, embedding a topic listener. The adapter API is open,
 so custom adapters can consume any event source (serverless triggers, file watchers, MQ, CSV). Each
-adapter exposes a named route — the HTTP adapter uses <code>http.flow.adapter</code>. <strong>Only the HTTP flow adapter
-is packaged in this repo today</strong>; a Kafka flow adapter (inbound) and its notification function (outbound)
-run in production installations, with a minimalist in-repo version planned for a future iteration.</p>
+adapter exposes a named route — the HTTP adapter uses <code>http.flow.adapter</code>. The <strong>HTTP flow adapter is
+built into <code>event-script-engine</code></strong> and is always available. A <strong>minimalist Kafka flow adapter (inbound)
+and Kafka notification function (outbound)</strong> ship as the opt-in <strong><code>minimalist-kafka</code></strong> library: an
+application enables them by depending on the library and pointing <code>yaml.kafka.flow.adapter</code> at a
+<code>topic → flow</code> configuration. Production installations may still run their own adapters.</p>
 <p><strong>REST Automation</strong> is the protocol boundary for HTTP, and it eliminates controller boilerplate. HTTP endpoints
 are declared in a <code>rest.yaml</code> configuration file. Each entry maps a URL pattern and HTTP method set to
 either a flow (via the <code>flow</code> key, routing through the HTTP flow adapter) or directly to a named function

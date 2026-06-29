@@ -29,7 +29,7 @@
   ],
   "execution_types": [
     { "type": "sequential", "next": "exactly 1", "requires": [], "forbids": [], "does": "run, then the one next task" },
-    { "type": "decision", "next": ">=2", "requires": ["output maps -> decision"], "forbids": ["join", "pipeline", "source"], "does": "branch on the decision value (false->next[0]/true->next[1]; or numeric 1-indexed)" },
+    { "type": "decision", "next": ">=2", "requires": ["output maps -> decision"], "forbids": ["join", "pipeline", "source"], "does": "branch on the decision value (true->next[0]/false->next[1]; or numeric 1-indexed, multi-way)" },
     { "type": "parallel", "next": ">=2", "requires": [], "forbids": ["join"], "does": "fan out to all next tasks concurrently" },
     { "type": "fork", "next": ">=1", "requires": ["join"], "forbids": ["pipeline"], "does": "run next tasks concurrently, resume at join; optional source to iterate" },
     { "type": "pipeline", "next": "exactly 1", "requires": ["pipeline list"], "forbids": ["join"], "does": "run pipeline tasks in order (optional loop), then the one next task" },

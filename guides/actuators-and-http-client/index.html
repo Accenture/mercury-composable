@@ -117,6 +117,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -174,6 +180,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -630,8 +640,18 @@ dataset.put(&quot;session&quot;, request.getSessionInfo());
 <p>For a Kafka flow adapter, the dataset should contain headers and body mapped from the Kafka event.</p>
 <p>For other flow adapters, you may use different set of key-values.</p>
 <h2 id="writing-your-own-flow-adapters">Writing your own Flow Adapters</h2>
-<p>Please browse the csv-flow-adapter and csv-flow-demo subprojects in the examples project folder for hints in
-writing your own flow adapters to address your specific requirements.</p>
+<p>A flow adapter bridges an external source (an HTTP request, a Kafka topic, a file, a queue, …) into an
+Event Script flow: it receives the input, builds the flow dataset (headers + body, as shown above), and
+invokes the target flow by its id. Two adapters in this codebase are worked references that cover both the
+synchronous and the asynchronous shapes:</p>
+<ul>
+<li>the <strong>built-in HTTP flow adapter</strong> (<code>http.flow.adapter</code>) — the synchronous request/response path; and</li>
+<li>the <strong>Kafka flow adapter</strong> in the <code>minimalist-kafka</code> library — the asynchronous, topic-driven path.
+  Its <code>KafkaFlowAdapter</code> is a minimal, complete template to model your own adapter on: a source loop that
+  maps each event to a dataset and dispatches it to a flow. See the
+  <a href="../kafka-flow-adapter/">Kafka Flow Adapter</a> guide and the runnable <code>examples/kafka-demo</code> worked example.</li>
+</ul>
+<p>Use whichever is closer to your source as the starting point.</p>
 <h2 id="application-log-format">Application log format</h2>
 <p>The system supports 3 types of log formats. You can set "log.format" parameter in application.properties to change
 the log format or override it at runtime using the Java "-D" argument. e.g.</p>
@@ -740,7 +760,7 @@ Utility class. For examples, util.str2int and util.str2long.
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../reserved-names-and-headers/" class="btn btn-neutral float-left" title="Reserved Names & Headers"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../documentation-conventions/" class="btn btn-neutral float-right" title="Documentation Conventions">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../code-conventions/" class="btn btn-neutral float-right" title="Code Conventions">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -766,7 +786,7 @@ Utility class. For examples, util.str2int and util.str2long.
       <span><a href="../reserved-names-and-headers/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../documentation-conventions/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../code-conventions/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

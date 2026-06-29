@@ -117,6 +117,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -162,6 +168,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#postgresql-reactive-postgres-extension">PostgreSQL (reactive-postgres extension)</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#kafka-flow-adapter">Kafka Flow Adapter (minimalist-kafka library)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sync-over-async">Sync-over-Async (sync-over-async extension)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#serialization-content-types">Serialization &amp; Content Types</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#data-storage">Data Storage</a>
@@ -180,6 +190,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -1016,6 +1030,178 @@ is on the classpath.</p>
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="kafka-flow-adapter">Kafka Flow Adapter (<code>minimalist-kafka</code> library)</h2>
+<p>The opt-in <code>minimalist-kafka</code> library routes Kafka topics into Event Script flows and publishes events to
+Kafka. See the <a href="../kafka-flow-adapter/">Kafka Flow Adapter guide</a>. The inbound adapter starts only when
+<code>yaml.kafka.flow.adapter</code> is set; the outbound <code>simple.kafka.notification</code> function registers automatically.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>yaml.kafka.flow.adapter</code></td>
+<td><code>String</code> (path)</td>
+<td>—</td>
+<td>Location of the <code>kafka-flow-adapter.yaml</code> binding file (<code>topic -&gt; flow</code>). Unset = inbound adapter disabled.</td>
+</tr>
+<tr>
+<td><code>kafka.producer.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/kafka-producer.properties, classpath:/kafka-producer.properties</code></td>
+<td>Producer client config template location(s); file path falls back to classpath.</td>
+</tr>
+<tr>
+<td><code>kafka.consumer.properties</code></td>
+<td><code>String</code> (comma-sep paths)</td>
+<td><code>file:/tmp/config/kafka-consumer.properties, classpath:/kafka-consumer.properties</code></td>
+<td>Consumer client config template location(s); file path falls back to classpath.</td>
+</tr>
+<tr>
+<td><code>kafka.dlq.timeout.ms</code></td>
+<td><code>long</code> (ms)</td>
+<td><code>10000</code></td>
+<td>Confirm-write timeout for the dead-letter publish (broker ack). Flow processing has no timeout knob — the flow's own <code>ttl</code> is the deadline (Kafka is asynchronous).</td>
+</tr>
+<tr>
+<td><code>kafka.flow.max.retries</code></td>
+<td><code>int</code></td>
+<td><code>3</code></td>
+<td>Retry attempts on a flow-processing failure before dead-lettering.</td>
+</tr>
+<tr>
+<td><code>kafka.flow.retry.backoff.ms</code></td>
+<td><code>long</code> (ms)</td>
+<td><code>500</code></td>
+<td>Pause between retry attempts.</td>
+</tr>
+<tr>
+<td><code>kafka.flow.dlq.suffix</code></td>
+<td><code>String</code></td>
+<td><code>.dlq</code></td>
+<td>Suffix appended to a source topic to form its per-topic dead-letter topic (<code>&lt;topic&gt;&lt;suffix&gt;</code>). A blank value falls back to <code>.dlq</code>.</td>
+</tr>
+<tr>
+<td><code>schema.registry.url</code></td>
+<td><code>String</code> (URL)</td>
+<td>—</td>
+<td>Confluent Schema Registry URL. Unset = schema features off (raw <code>byte[]</code>); set to enable the <a href="../kafka-flow-adapter/#schema">Schema Registry integration</a> (JSON Schema / Avro / Protobuf).</td>
+</tr>
+<tr>
+<td><code>schema.registry.cache.dir</code></td>
+<td><code>String</code> (path)</td>
+<td><code>/tmp/schema-registry-cache</code></td>
+<td>On-disk cache of schemas fetched by id; cleared at startup (rebuildable).</td>
+</tr>
+<tr>
+<td><code>schema.registry.cache.ttl</code></td>
+<td>duration</td>
+<td><code>24h</code></td>
+<td>Time-to-live for a cached schema entry before it is refreshed from the registry.</td>
+</tr>
+</tbody>
+</table>
+<p>The Kafka <strong>connection and security</strong> settings (<code>bootstrap.servers</code>, <code>security.protocol</code>, <code>sasl.*</code>, <code>ssl.*</code>,
+<code>acks</code>, <code>auto.offset.reset</code>) live in the <code>kafka-producer.properties</code> / <code>kafka-consumer.properties</code> template
+files — not as <code>application.properties</code> keys — so any enterprise installation is configured by editing or
+overriding those templates. All template values support <code>${ENV_VAR:default}</code> substitution; <code>bootstrap.servers</code>
+defaults to <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The library pins the (de)serializers and the
+consumer's <code>enable.auto.commit=false</code> / <code>max.poll.records=1</code>; everything else is template-owned.</p>
+<p>Per-binding fields in <code>kafka-flow-adapter.yaml</code> (all <code>${ENV_VAR:default}</code>-substitutable): <code>topic</code> (required),
+<code>flow</code> (required), <code>group</code> (optional consumer group, used verbatim; default <code>kafka-flow-adapter.&lt;topic&gt;</code>),
+<code>partition</code> (optional; pins one partition via manual assignment), and <code>schema.enabled</code> (optional <code>boolean</code>,
+default <code>false</code>; when <code>true</code>, decode the Confluent-framed value to a <code>Map</code> before routing — see the
+<a href="../kafka-flow-adapter/#schema">Schema Registry integration</a>).</p>
+<hr />
+<h2 id="sync-over-async">Sync-over-Async (<code>sync-over-async</code> extension)</h2>
+<p>The opt-in <code>sync-over-async</code> extension exposes a synchronous REST request/response over an asynchronous,
+cross-pod Kafka backend using a Redis return route. See the <a href="../sync-over-async/">Sync-over-Async guide</a>. It is
+off by default and starts (eagerly connecting to Redis) only when <code>sync.over.async.enabled=true</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sync.over.async.enabled</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Master switch. <code>true</code> starts the Redis return-route coordinator at boot.</td>
+</tr>
+<tr>
+<td><code>redis.host</code></td>
+<td><code>String</code></td>
+<td><code>127.0.0.1</code></td>
+<td>Redis host.</td>
+</tr>
+<tr>
+<td><code>redis.port</code></td>
+<td><code>int</code></td>
+<td><code>6379</code></td>
+<td>Redis port.</td>
+</tr>
+<tr>
+<td><code>redis.password</code></td>
+<td><code>String</code></td>
+<td>— (blank)</td>
+<td>Auth password; blank = no auth. Source from the environment (<code>${REDIS_PASSWORD}</code>).</td>
+</tr>
+<tr>
+<td><code>redis.ssl</code></td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+<td>Use TLS (<code>rediss://</code>).</td>
+</tr>
+<tr>
+<td><code>redis.database</code></td>
+<td><code>int</code></td>
+<td><code>0</code></td>
+<td>Logical Redis database index.</td>
+</tr>
+<tr>
+<td><code>redis.timeout.ms</code></td>
+<td><code>long</code> (ms)</td>
+<td><code>5000</code></td>
+<td>Default Redis command timeout.</td>
+</tr>
+<tr>
+<td><code>sync.return.channel.prefix</code></td>
+<td><code>String</code></td>
+<td><code>svc-return</code></td>
+<td>Prefix for the per-pod Pub/Sub return channel.</td>
+</tr>
+<tr>
+<td><code>sync.route.ttl.seconds</code></td>
+<td><code>long</code> (s)</td>
+<td><code>90</code></td>
+<td>TTL for the return-route key; should cover the REST timeout plus a buffer.</td>
+</tr>
+<tr>
+<td><code>sync.response.ttl.seconds</code></td>
+<td><code>long</code> (s)</td>
+<td><code>30</code></td>
+<td>TTL for the response key (short rendezvous window).</td>
+</tr>
+<tr>
+<td><code>sync.max.pending.requests</code></td>
+<td><code>int</code></td>
+<td><code>10000</code></td>
+<td>Per-pod ceiling on in-flight synchronous requests (backpressure).</td>
+</tr>
+</tbody>
+</table>
+<p>All <code>redis.*</code> and <code>sync.*</code> values support <code>${ENV_VAR:default}</code> substitution.</p>
 <hr />
 <h2 id="serialization-content-types">Serialization &amp; Content Types</h2>
 <table>

@@ -117,6 +117,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Minimalist Service Mesh</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#when-to-use">When to use — and when not to</a>
@@ -166,6 +172,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -287,7 +297,7 @@ any network event system "connector", thus running independently.</p>
 <p>You need a Kafka cluster as the network event stream system. For development and testing, you can build
 and run a standalone Kafka server like this. Note that the <code>mvn clean package</code> command is optional because
 the executable JAR should be available after the <code>mvn clean install</code> command in <a href="../getting-started/">Getting Started</a>.</p>
-<pre><code class="language-shell">cd connectors/adapters/kafka/kafka-standalone
+<pre><code class="language-shell">cd helpers/kafka-standalone
 mvn clean package
 java -jar target/kafka-standalone-3.1.2.jar
 </code></pre>
@@ -579,7 +589,7 @@ multicast:
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../event-over-http/" class="btn btn-neutral float-left" title="Event over HTTP"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../sync-over-async/" class="btn btn-neutral float-left" title="Sync-over-Async"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../../arch-decisions/ADR/" class="btn btn-neutral float-right" title="Architectural Decision Records">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -603,7 +613,7 @@ multicast:
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../event-over-http/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../sync-over-async/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../../arch-decisions/ADR/" style="color: #fcfcfc">Next &raquo;</a></span>

@@ -38,6 +38,10 @@
 - [Observability](https://accenture.github.io/mercury-composable/guides/observability/): built-in distributed tracing across the three layers and OpenTelemetry/OTLP export (W3C trace context, the distributed.trace.forwarder hook, the opentelemetry-forwarder extension).
 - [Spring Boot Integration](https://accenture.github.io/mercury-composable/guides/spring-boot/): run Mercury as a Spring Boot 3/4 app.
 - [Event over HTTP](https://accenture.github.io/mercury-composable/guides/event-over-http/): cross-instance event communication.
+- [Kafka Flow Adapter](https://accenture.github.io/mercury-composable/guides/kafka-flow-adapter/): opt-in minimalist-kafka library — route Kafka topics into Event Script flows (kafka-flow-adapter.yaml: topic/flow/group/partition/schema.enabled) and publish via simple.kafka.notification; externalized producer/consumer client templates, per-binding consumer group, partition pinning, bounded retry + per-topic dead-letter, continuous traceparent, and opt-in Confluent Schema Registry payloads (JSON Schema / Avro / Protobuf, id-driven via schema-id/schema-type headers).
+- [Schema Registry Mock](https://accenture.github.io/mercury-composable/guides/schema-registry-mock/): standalone, platform-core-only mock of the Confluent Schema Registry for local dev (helpers/schema-registry-standalone) — faithful REST API (GET /, POST /subjects/{subject}/versions, GET /schemas/ids/{id}), schema carried as an escaped string, global content-based ids, Confluent error_code bodies (40403/42201); worked example in examples/schema-registry-demo (curl + zero-dependency .mjs scripts).
+
+- [Sync-over-Async](https://accenture.github.io/mercury-composable/guides/sync-over-async/): opt-in extension exposing synchronous REST request/response over an async cross-pod Kafka backend via a Redis return route keyed by correlation-id (sync.over.async.enabled, redis.* + sync.* config).
 - [Minimalist Service Mesh](https://accenture.github.io/mercury-composable/guides/service-mesh/): Kafka-based service discovery and routing.
 
 ## Reference
@@ -48,3 +52,4 @@
 - [Reserved Names & Headers](https://accenture.github.io/mercury-composable/guides/reserved-names-and-headers/): system-reserved routes and headers.
 - [Actuators & HTTP Client](https://accenture.github.io/mercury-composable/guides/actuators-and-http-client/): built-in actuator endpoints and the AsyncHttpRequest API.
 - [Architecture Decision Records](https://accenture.github.io/mercury-composable/arch-decisions/ADR/): the durable architecture decisions (decoupled functions, virtual-thread engine, Map/PoJo I/O, the three paradigm layers, one-atom-four-roles) with their rationale.
+- [Code Conventions](https://accenture.github.io/mercury-composable/guides/code-conventions/): recommended code organization and naming — the `tasks` package for flow-task functions, route-naming discipline, function granularity.

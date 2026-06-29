@@ -161,6 +161,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -182,6 +188,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -256,7 +266,7 @@ mvn clean install
 </blockquote>
 <p><strong>2. Run the example app.</strong></p>
 <pre><code class="language-shell">cd examples/composable-example
-java -jar target/composable-example-4.4.11.jar
+java -jar target/composable-example-4.5.0.jar
 </code></pre>
 <p>Look for these lines to confirm it's running:</p>
 <pre><code class="language-log">CompileFlows - Loaded create-profile
@@ -297,7 +307,7 @@ lets a <strong>graph</strong> be the application — nodes execute as the engine
 model, not in code. For a 30-second taste, run the MiniGraph playground (a separate example) and call a
 built-in tutorial graph:</p>
 <pre><code class="language-shell">cd examples/minigraph-playground
-java -jar target/minigraph-playground-4.4.11.jar
+java -jar target/minigraph-playground-4.5.0.jar
 </code></pre>
 <pre><code class="language-bash">curl http://127.0.0.1:8085/api/graph/tutorial-1
 # hello world

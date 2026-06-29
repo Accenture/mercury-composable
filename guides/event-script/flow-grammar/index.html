@@ -133,6 +133,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -154,6 +160,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
@@ -360,7 +370,7 @@
 <td>≥ 2</td>
 <td>output maps <code>-&gt; decision</code></td>
 <td><code>join</code>,<code>pipeline</code>,<code>source</code></td>
-<td>branch on the <code>decision</code> value (<code>false</code>→next[0]/<code>true</code>→next[1]; or numeric 1-indexed)</td>
+<td>branch on the <code>decision</code> value (<code>true</code>→next[0]/<code>false</code>→next[1]; or numeric 1-indexed, multi-way)</td>
 </tr>
 <tr>
 <td><code>parallel</code></td>

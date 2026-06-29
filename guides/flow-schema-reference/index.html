@@ -215,6 +215,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -236,6 +242,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
@@ -471,7 +481,7 @@ tasks:
 <td>list of strings</td>
 <td>Conditional</td>
 <td>—</td>
-<td>Route name(s) of subsequent task(s). Required for <code>sequential</code>, <code>parallel</code>, <code>fork</code>, <code>pipeline</code>. Not used for <code>end</code> or <code>sink</code>. Decision tasks: first entry = <code>false</code>/<code>1</code>, second = <code>true</code>/<code>2</code>, etc.</td>
+<td>Route name(s) of subsequent task(s). Required for <code>sequential</code>, <code>parallel</code>, <code>fork</code>, <code>pipeline</code>. Not used for <code>end</code> or <code>sink</code>. Decision tasks: first entry = <code>true</code>/<code>1</code>, second = <code>false</code>/<code>2</code>, then <code>3</code>,<code>4</code>,… (1-based).</td>
 </tr>
 <tr>
 <td><code>exception</code></td>
@@ -639,9 +649,12 @@ holds the zero-based index:</p>
 <h3 id="decision"><code>decision</code></h3>
 <p>Branches to one of the <code>next</code> tasks based on a value mapped to <code>decision</code> in the output.</p>
 <ul>
-<li><strong>Boolean decision</strong>: <code>false</code> routes to <code>next[0]</code>, <code>true</code> routes to <code>next[1]</code>.</li>
-<li><strong>Numeric decision</strong>: integer <code>1</code> routes to <code>next[0]</code>, <code>2</code> to <code>next[1]</code>, etc.</li>
+<li><strong>Boolean decision</strong> (two-way): <code>true</code> routes to the <strong>first</strong> <code>next</code> entry (<code>next[0]</code>), <code>false</code> to
+  the <strong>second</strong> (<code>next[1]</code>).</li>
+<li><strong>Numeric decision</strong> (multi-way, like a <code>switch</code>): the integer is <strong>1-based</strong> — <code>1</code> routes to <code>next[0]</code>,
+  <code>2</code> to <code>next[1]</code>, <code>N</code> to <code>next[N-1]</code> — so a flow can branch to more than two tasks.</li>
 </ul>
+<p>(<code>true</code> is equivalent to <code>1</code> and <code>false</code> to <code>2</code>; both select <code>next[0]</code> and <code>next[1]</code> respectively.)</p>
 <table>
 <thead>
 <tr>
@@ -667,11 +680,11 @@ holds the zero-based index:</p>
     - 'result -&gt; decision'
   execution: decision
   next:
-    - 'handle.failure'
-    - 'handle.success'
+    - 'handle.success'   # decision true  (or 1)
+    - 'handle.failure'   # decision false (or 2)
 </code></pre>
-<p>The decision value <code>false</code> or <code>1</code> routes to <code>handle.failure</code>; <code>true</code> or <code>2</code> routes to
-<code>handle.success</code>.</p>
+<p>The decision value <code>true</code> or <code>1</code> routes to <code>handle.success</code> (the first <code>next</code> entry); <code>false</code> or <code>2</code>
+routes to <code>handle.failure</code> (the second).</p>
 <hr />
 <h3 id="response"><code>response</code></h3>
 <p>Sends an HTTP response to the caller immediately, then continues executing subsequent tasks

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/kafka-flow-adapter/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Kafka Flow Adapter - Composable for Java</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Kafka Flow Adapter";
+        var mkdocs_page_input_path = "guides/kafka-flow-adapter.md";
+        var mkdocs_page_url = "/mercury-composable/guides/kafka-flow-adapter/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Composable for Java
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Orientation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/">Getting Started</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Foundations</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../methodology/">Methodology</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-developer-guide/">AI Developer Guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 1 — Event-driven</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/write-your-first-function/">Write your first function</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/function-execution/">Function Execution Strategies</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-driven/ai-agent-guide/">Function AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/">REST Automation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/rest-grammar/">REST grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-automation/ai-agent-guide/">REST AI agent guide</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 2 — Composable</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/syntax/">Event Script Syntax</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/flow-grammar/">Flow grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-script/ai-agent-guide/">Flow AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../flow-schema-reference/">Flow Configuration Schema</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Layer 3 — Knowledge Graph</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/build-your-first-graph/">Build your first graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/skills-reference/">Built-in skills reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/command-reference/">MiniGraph command grammar</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/ai-agent-guide/">AI agent guide</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/composing-the-layers/">Composing the layers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/playground-and-companion/">Playground & AI companion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../knowledge-graph/property-graph/">Minimalist Property Graph</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Operate & integrate</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../build-test-deploy/">Build, Test & Deploy</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../observability/">Observability</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../spring-boot/">Spring Boot Integration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-over-http/">Event over HTTP</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Kafka Flow Adapter</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#enable">Enabling the library</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adapter-yaml">Inbound: the adapter YAML</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#group">Consumer group</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pinning">Partition pinning</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#client-config">Kafka client configuration</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reliability">Reliability: at-least-once, retry, and dead-letter</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#outbound">Outbound: publishing to Kafka</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#tracing">Trace continuity across Kafka</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#schema">Schema Registry: typed payloads (opt-in)</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#schema-produce">Produce: id-driven, no subject or naming strategy</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#schema-consume">Consume: decode by embedded id</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#schema-notes">Notes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#config">Configuration keys</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#see-also">See also</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../sync-over-async/">Sync-over-Async</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../service-mesh/">Minimalist Service Mesh</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../arch-decisions/ADR/">Architectural Decision Records</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../api-overview/">API Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../annotations-reference/">Annotations Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../configuration-reference/">Configuration Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../event-envelope-reference/">Event Envelope Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../reserved-names-and-headers/">Reserved Names & Headers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../actuators-and-http-client/">Actuators & HTTP Client</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../code-conventions/">Code Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../documentation-conventions/">Documentation Conventions</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md">Contributing</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md">Inclusivity</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Composable for Java</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Operate & integrate</li>
+      <li class="breadcrumb-item active">Kafka Flow Adapter</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="kafka-flow-adapter">Kafka Flow Adapter</h1>
+<p><em>Guide: route Kafka topics into Event Script flows, and publish events to Kafka, with the opt-in
+<code>minimalist-kafka</code> library.</em></p>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li><strong>What</strong> — <code>minimalist-kafka</code> is an opt-in library with two composable building blocks: an <strong>inbound</strong>
+  Kafka Flow Adapter that routes each topic into an Event Script flow (the Kafka counterpart of
+  <code>rest.yaml</code>), and an <strong>outbound</strong> notification function that publishes an event to a topic.</li>
+<li><strong>Config, not code</strong> — Kafka client connection/security comes from external <code>kafka-producer.properties</code>
+  / <code>kafka-consumer.properties</code> templates; the YAML binds topics to flows with optional consumer group and
+  partition pinning. Enterprise SASL/OAuth2/mTLS is configured, never coded.</li>
+<li><strong>Reliable</strong> — at-least-once consume (commit-after-process), bounded retry then a per-topic dead-letter
+  topic, and continuous W3C trace context across the Kafka hop.</li>
+<li><strong>For</strong> developers and operators triggering flows from Kafka, or emitting Kafka events from a flow.</li>
+</ul>
+</blockquote>
+<p>The built-in HTTP flow adapter routes HTTP requests into flows. <code>minimalist-kafka</code> does the same for Kafka:
+a topic listener mints an <code>EventEnvelope</code> and hands it to the Event Script engine, so the flow's tasks — not
+the I/O layer — do the work. It is <strong>not</strong> the <a href="../service-mesh/">service mesh</a> (<code>cloud.connector=kafka</code>),
+which is a different concern; this library is an application-level building block you opt into.</p>
+<blockquote>
+<p><strong>This is an opt-in library.</strong> Add the <code>minimalist-kafka</code> dependency and set <code>yaml.kafka.flow.adapter</code> to
+activate the inbound adapter. The outbound <code>simple.kafka.notification</code> function registers automatically.</p>
+</blockquote>
+<h2 id="enable">Enabling the library</h2>
+<ol>
+<li>Depend on <code>system/minimalist-kafka</code> (it depends on <code>event-script-engine</code>).</li>
+<li>Point <code>yaml.kafka.flow.adapter</code> at your adapter config (inbound). Without it, no consumer starts.</li>
+<li>Provide the Kafka client templates (see <a href="#client-config">client config</a>) — the classpath defaults work
+   for local dev.</li>
+</ol>
+<pre><code class="language-properties">yaml.kafka.flow.adapter=classpath:/kafka-flow-adapter.yaml
+</code></pre>
+<p>The library autoloads at startup (<code>@MainApplication</code>): it builds the shared producer and, if
+<code>yaml.kafka.flow.adapter</code> is set, starts one consumer thread per topic binding.</p>
+<h2 id="adapter-yaml">Inbound: the adapter YAML</h2>
+<p><code>kafka-flow-adapter.yaml</code> lists <code>topic -&gt; flow</code> bindings:</p>
+<pre><code class="language-yaml">consumer:
+  - topic: 'incoming-orders'
+    flow: 'process-order'
+    group: 'sales-order-group'        # optional
+  - topic: 'incoming-payments'
+    flow: 'process-payment'
+    partition: 0                      # optional
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>topic</code></td>
+<td>yes</td>
+<td>Source Kafka topic.</td>
+</tr>
+<tr>
+<td><code>flow</code></td>
+<td>yes</td>
+<td>Event Script flow id each message is routed into.</td>
+</tr>
+<tr>
+<td><code>group</code></td>
+<td>no</td>
+<td>Consumer group id (see <a href="#group">consumer group</a>). Defaults to <code>kafka-flow-adapter.&lt;topic&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>partition</code></td>
+<td>no</td>
+<td>Pins a single partition (see <a href="#pinning">partition pinning</a>). Omit for group-managed assignment.</td>
+</tr>
+<tr>
+<td><code>schema.enabled</code></td>
+<td>no</td>
+<td>When <code>true</code>, decode the Confluent-framed value into a <code>Map</code> before routing it into the flow (see <a href="#schema">Schema Registry</a>). Default <code>false</code> (raw <code>byte[]</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>The file is read by <code>ConfigReader</code>, so <strong>every value supports <code>${ENV_VAR:default}</code> substitution</strong> — e.g.
+<code>group: '${KAFKA_CONSUMER_GROUP:sales-order-group}'</code>. A malformed entry (missing <code>topic</code>/<code>flow</code>, non-map)
+fails startup fast and loud rather than being silently skipped.</p>
+<h3 id="group">Consumer group</h3>
+<p><code>group</code> is the Kafka consumer group id, used <strong>exactly as given</strong>. Enterprise DevSecOps teams typically
+provision topics, ACLs, and consumer groups administratively, so the library never decorates the value. When
+omitted it defaults to <code>kafka-flow-adapter.&lt;topic&gt;</code> for convenience in dev/test. All instances that share a
+group load-balance that topic's partitions; set it explicitly to your assigned group in production.</p>
+<h3 id="pinning">Partition pinning</h3>
+<p>When <code>partition</code> is present, the consumer <strong>manually assigns</strong> that single topic-partition instead of joining
+the consumer group for dynamic assignment. This bypasses group rebalancing — the pinned consumer reads
+exactly that partition — so you own the deployment model (one consumer per partition, or each pod pinning a
+distinct partition via <code>partition: ${POD_PARTITION}</code>). Offsets still commit under the configured group.
+Omit <code>partition</code> for normal group-managed consumption.</p>
+<h2 id="client-config">Kafka client configuration</h2>
+<p>Connection and security settings live in <strong>template files</strong>, not code, because enterprise Kafka varies
+widely (on-prem, cloud, SaaS, Confluent; SASL/PLAIN, SASL/SCRAM, OAuth2, mTLS):</p>
+<ul>
+<li><code>kafka-producer.properties</code> — used by the publisher and the dead-letter writer.</li>
+<li><code>kafka-consumer.properties</code> — base config for every adapter consumer.</li>
+</ul>
+<p>Each is loaded by <code>ConfigReader</code> from a <strong>file-then-classpath fallback</strong> location (so CI/CD can drop a
+rendered file at <code>/tmp/config</code>), with <code>${ENV_VAR:default}</code> substitution. The library <strong>pins</strong> only the
+parameters its contract depends on and lets the template own everything else:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Pinned by the library</th>
+<th>From the template</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serialization</td>
+<td>key=<code>String</code>, value=<code>byte[]</code> (de)serializers</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Delivery semantics (consumer)</td>
+<td><code>enable.auto.commit=false</code>, <code>max.poll.records=1</code></td>
+<td><code>auto.offset.reset</code></td>
+</tr>
+<tr>
+<td>Connection / security</td>
+<td>—</td>
+<td><code>bootstrap.servers</code>, <code>security.protocol</code>, <code>sasl.*</code>, <code>ssl.*</code>, <code>acks</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>bootstrap.servers</code> is template-only via <code>${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}</code>. The byte[] wire
+contract keeps the building blocks serializer-free; richer encodings layer on top via the
+<a href="#schema">Schema Registry integration</a> (JSON Schema / Avro / Protobuf), opt-in per binding.</p>
+<h2 id="reliability">Reliability: at-least-once, retry, and dead-letter</h2>
+<p>The consumer commits offsets <strong>only after</strong> the flow finishes a message, one message at a time
+(<code>max.poll.records=1</code>). If the instance crashes before the commit, Kafka redelivers — the deliberate
+resilience-over-throughput trade-off.</p>
+<p>A flow <strong>succeeds</strong> when it replies with status <code>200</code>. Any other status — or a thrown exception, including a
+<strong>timeout</strong> when the flow does not reply within its own <code>ttl</code> — is a <strong>failure</strong>. (Kafka is asynchronous, so
+unlike an HTTP entry the adapter has no inherent request timeout: the flow's <code>ttl</code> <em>is</em> the processing
+deadline. There is no separate flow-timeout knob.)</p>
+<p>On a <strong>failure</strong>, the message is retried up to <code>kafka.flow.max.retries</code> times (with
+<code>kafka.flow.retry.backoff.ms</code> between attempts), then written to a <strong>per-topic dead-letter topic</strong>
+<code>&lt;topic&gt;&lt;suffix&gt;</code> (suffix <code>kafka.flow.dlq.suffix</code>, default <code>.dlq</code>):</p>
+<ul>
+<li>The DLQ is <strong>strictly per topic</strong> — a global/shared DLQ is an anti-pattern because mixing source schemas
+  makes reprocessing (the whole point of a DLQ) hard. Only the suffix is configurable.</li>
+<li>The DLQ write is <strong>confirmed</strong> (it blocks on broker acknowledgement, bounded by <code>kafka.dlq.timeout.ms</code>);
+  on success the offset commits.</li>
+<li><strong>DLQ topics must be pre-provisioned</strong> (Kafka auto-creation is off in production). The original record's
+  headers are preserved, plus <code>dlq.origin.topic</code> and <code>dlq.error</code>.</li>
+</ul>
+<blockquote>
+<p><strong>When the DLQ write itself fails (data loss).</strong> The DLQ is the last line of defense; a failed write to it
+is an <em>exception of an exception</em> with no further fallback. Blocking the partition to retry forever would
+re-run the failing flow and re-attempt the failing DLQ write indefinitely — a self-sustaining <strong>recovery
+storm</strong> (a known cause of prolonged outages). So the adapter instead logs a loud <code>ERROR</code> and <strong>commits</strong>,
+deliberately <strong>dropping that one message</strong> to keep the partition live. This is a conscious data-loss
+trade-off; a planned improvement is a classic resilience <strong>alternative path</strong> — persisting the record to a
+durable store for later replay instead of dropping it.</p>
+</blockquote>
+<p><strong>Reprocessing</strong> (read <code>&lt;topic&gt;.dlq</code> → fix → replay) is business-domain logic and is intentionally out of
+scope: the library guarantees durable capture (when the DLQ is reachable), not replay.</p>
+<h2 id="outbound">Outbound: publishing to Kafka</h2>
+<p><code>simple.kafka.notification</code> is a composable function that publishes an event to a topic. Send it an
+<code>EventEnvelope</code> with a <code>topic</code> header (required), an optional <code>partition</code> header, a <code>byte[]</code> body, and any
+other headers (forwarded as Kafka headers):</p>
+<pre><code class="language-java">po.send(new EventEnvelope().setTo(&quot;simple.kafka.notification&quot;)
+        .setHeader(&quot;topic&quot;, &quot;outgoing-events&quot;)
+        .setHeader(&quot;cid&quot;, correlationId)
+        .setBody(payloadBytes));
+</code></pre>
+<p>Publishing is <strong>drop-n-forget</strong> (Kafka's commit log is the durable buffer), but async delivery failures are
+logged rather than silently masked.</p>
+<p>Two optional headers opt a publish into the Confluent wire format instead of raw <code>byte[]</code>: <code>schema-id</code> and
+<code>schema-type</code> (see <a href="#schema">Schema Registry</a>). They are encoding directives — consumed by the function, not
+forwarded as Kafka headers.</p>
+<h3 id="tracing">Trace continuity across Kafka</h3>
+<p>Rather than forwarding the caller's stale <code>traceparent</code>, the notification function stamps a <strong>fresh</strong> W3C
+<code>traceparent</code> from its own current span; the adapter parses it on the way in and chains the flow onto that
+span. The result is one continuous distributed trace across the asynchronous Kafka boundary — the two
+notification hops are the bridge spans. See <a href="../observability/">Observability</a>.</p>
+<h2 id="schema">Schema Registry: typed payloads (opt-in)</h2>
+<p>The default wire contract is raw <code>byte[]</code>, which keeps the building blocks serializer-free. To interoperate
+with existing Confluent client projects, the library can also speak the <strong>Confluent Schema Registry wire
+format</strong> — <code>[magic 0x00][4-byte global schema id][payload]</code> — using Confluent's <em>own</em> serializers as a
+library (not a reinvented codec). <strong>JSON Schema, Avro, and Protobuf</strong> are supported.</p>
+<p>Set <code>schema.registry.url</code> to turn the feature on (point it at a real Confluent registry or the local
+<a href="../schema-registry-mock/"><code>schema-registry-standalone</code></a> mock). When it is unset, schema features stay off and
+the library keeps its raw <code>byte[]</code> behavior.</p>
+<pre><code class="language-properties">schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
+schema.registry.cache.dir=/tmp/schema-registry-cache   # on-disk schema cache (by id)
+schema.registry.cache.ttl=24h
+</code></pre>
+<h3 id="schema-produce">Produce: id-driven, no subject or naming strategy</h3>
+<p><code>simple.kafka.notification</code> serializes the body into the wire format when you supply two headers:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema-id</code></td>
+<td>The <strong>global</strong> schema id to serialize with. The schema must be <strong>pre-registered</strong>; the producer fetches it by id (<code>GET /schemas/ids/{id}</code>) and never registers.</td>
+</tr>
+<tr>
+<td><code>schema-type</code></td>
+<td><code>JSON</code>, <code>AVRO</code>, or <code>PROTOBUF</code>. Selects the serializer. Defaults to <code>JSON</code>.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-yaml"># in a flow task that publishes via simple.kafka.notification
+input:
+  - 'text(orders) -&gt; header.topic'
+  - 'text(AVRO) -&gt; header.schema-type'
+  - 'text(42) -&gt; header.schema-id'
+  - 'model.payload -&gt; *'        # the body: a Map / JSON document
+process: 'simple.kafka.notification'
+</code></pre>
+<p>The Confluent wire format carries only the global id, never the subject — so being <strong>id-driven</strong> makes the
+producer <strong>subject-naming-strategy agnostic</strong> (TopicName / RecordName / TopicRecordName are all supported by
+construction, and a topic can carry many record types). Whoever registers the schema — CI, a client project,
+an admin tool — owns the strategy. This assumes schemas are <strong>governed artifacts registered out-of-band</strong>, as
+they are in practice; the producer never auto-registers.</p>
+<h3 id="schema-consume">Consume: decode by embedded id</h3>
+<p>Set <code>schema.enabled: true</code> on a consumer binding. The adapter reads the magic byte + embedded id, looks up
+the registered schema's type, dispatches to the matching deserializer, and hands the flow a <strong><code>Map</code></strong> as
+<code>input.body</code> (instead of <code>byte[]</code>). No flow-YAML change is needed (<code>input.body -&gt; *</code> is type-neutral); a
+schema-fed flow task simply takes <code>Map&lt;String,Object&gt;</code> instead of <code>byte[]</code>.</p>
+<pre><code class="language-yaml">consumer:
+  - topic: 'orders'
+    flow: 'process-order'
+    group: 'order-group'
+    schema.enabled: true
+</code></pre>
+<p>A <strong>decode failure is a poison message</strong> (retrying won't help), so the raw record is dead-lettered
+immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
+<h3 id="schema-notes">Notes</h3>
+<ul>
+<li><strong>One id-driven path, three formats.</strong> The producer and consumer are type-generic; only the <code>schema-type</code>
+  header (and the registered schema) differ. JSON Schema is <em>open</em> (<code>additionalProperties</code>), while Avro and
+  Protobuf records are <em>closed-shape</em> — a message must match the declared fields, and a non-schema field is
+  dropped on the wire. Avro applies declared field defaults for absent fields; Protobuf relies on proto3
+  implicit defaults. Avro/Protobuf decode to generic records (no generated classes), rendered to a <code>Map</code>.</li>
+<li><strong>Schema cache.</strong> Lookups by id are cached on disk under <code>schema.registry.cache.dir</code> (TTL
+  <code>schema.registry.cache.ttl</code>) to cut registry round-trips and tolerate a brief registry outage. The cache is
+  rebuildable, so it is <strong>cleared at startup</strong> — a schema changed between runs is never served stale.</li>
+<li><strong>Worked example.</strong> The <a href="../sync-over-async/">sync-over-async demo</a> runs the same end-to-end flow over all
+  three formats (<code>json-topic-1/2</code>, <code>avro-topic-1/2</code>, <code>protobuf-topic-1/2</code>) alongside the raw <code>byte[]</code> path.</li>
+</ul>
+<h2 id="config">Configuration keys</h2>
+<p>All keys are documented in the <a href="../configuration-reference/#kafka-flow-adapter">Configuration Reference</a>.
+The essentials:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>yaml.kafka.flow.adapter</code></td>
+<td>—</td>
+<td>Adapter config location; unset = inbound adapter off.</td>
+</tr>
+<tr>
+<td><code>kafka.producer.properties</code></td>
+<td><code>file:/tmp/config/kafka-producer.properties,classpath:/kafka-producer.properties</code></td>
+<td>Producer template location(s).</td>
+</tr>
+<tr>
+<td><code>kafka.consumer.properties</code></td>
+<td><code>file:/tmp/config/kafka-consumer.properties,classpath:/kafka-consumer.properties</code></td>
+<td>Consumer template location(s).</td>
+</tr>
+<tr>
+<td><code>kafka.dlq.timeout.ms</code></td>
+<td><code>10000</code></td>
+<td>Confirm-write timeout for the dead-letter publish. (Flow processing has no timeout knob — the flow's own <code>ttl</code> is the deadline.)</td>
+</tr>
+<tr>
+<td><code>kafka.flow.max.retries</code></td>
+<td><code>3</code></td>
+<td>Retry attempts before dead-lettering.</td>
+</tr>
+<tr>
+<td><code>kafka.flow.retry.backoff.ms</code></td>
+<td><code>500</code></td>
+<td>Pause between retry attempts.</td>
+</tr>
+<tr>
+<td><code>kafka.flow.dlq.suffix</code></td>
+<td><code>.dlq</code></td>
+<td>Suffix appended to the source topic to form its DLQ.</td>
+</tr>
+<tr>
+<td><code>schema.registry.url</code></td>
+<td>—</td>
+<td>Confluent Schema Registry URL; unset = <a href="#schema">schema features</a> off (raw <code>byte[]</code>).</td>
+</tr>
+<tr>
+<td><code>schema.registry.cache.dir</code></td>
+<td><code>/tmp/schema-registry-cache</code></td>
+<td>On-disk schema cache (by id); cleared at startup.</td>
+</tr>
+<tr>
+<td><code>schema.registry.cache.ttl</code></td>
+<td><code>24h</code></td>
+<td>Time-to-live for a cached schema entry.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="../sync-over-async/">Sync-over-Async</a> — cross-pod synchronous request/response built on this library plus a Redis return route.</li>
+<li><a href="../schema-registry-mock/">Schema Registry mock</a> — the local Confluent-compatible registry the <a href="#schema">schema integration</a> talks to.</li>
+<li><a href="../configuration-reference/#kafka-flow-adapter">Configuration Reference</a> — every Kafka flow-adapter key.</li>
+<li><a href="../observability/">Observability</a> — how trace context stays continuous across the Kafka hop.</li>
+<li><a href="../service-mesh/">Minimalist Service Mesh</a> — the <em>different</em> <code>cloud.connector=kafka</code> event mesh.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../event-over-http/" class="btn btn-neutral float-left" title="Event over HTTP"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../schema-registry-mock/" class="btn btn-neutral float-right" title="Schema Registry Mock">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../event-over-http/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../schema-registry-mock/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -251,6 +251,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -272,6 +278,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../../documentation-conventions/">Documentation Conventions</a>
@@ -1384,7 +1394,9 @@ key "user" and the HTTP request body will be mapped to the function input body.<
 <p>The "next" tag contains a list of tasks to be selected based on the decision value.</p>
 <p>If decision value is boolean, a <code>true</code> value will select the first task. Otherwise, the second task will be selected.</p>
 <p>If decision value is an integer, the number should <em>start from 1</em> where the corresponding "next" task
-will be selected.</p>
+will be selected (<code>1</code> selects the first task, <code>2</code> the second, <code>N</code> the N-th). An integer decision therefore
+supports more than two branches - much like a <code>switch</code> statement in code - while a boolean decision is the
+two-way special case (<code>true</code> = <code>1</code> = first, <code>false</code> = <code>2</code> = second).</p>
 <pre><code class="language-yaml">tasks:
   - input:
       - 'input.query.decision -&gt; decision'

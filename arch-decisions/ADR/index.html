@@ -117,6 +117,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/event-over-http/">Event over HTTP</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/kafka-flow-adapter/">Kafka Flow Adapter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/schema-registry-mock/">Schema Registry Mock</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../guides/sync-over-async/">Sync-over-Async</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../guides/service-mesh/">Minimalist Service Mesh</a>
                   </li>
               </ul>
@@ -124,6 +130,8 @@
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Architectural Decision Records</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#adr-0007">ADR-0007 — Event Script configuration is preferred over code for orchestration</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#adr-0006">ADR-0006 — Cloud-native by default; service mesh for sync-over-async and service discovery only</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#adr-0005-one-atom-four-roles">ADR-0005 — One atom, four roles</a>
@@ -152,6 +160,10 @@
                   </li>
                   <li class="toctree-l1"><a class="" href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md">Release Notes</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../guides/code-conventions/">Code Conventions</a>
+                </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../../guides/documentation-conventions/">Documentation Conventions</a>
@@ -211,6 +223,42 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0007">ADR-0007 — Event Script configuration is preferred over code for orchestration</h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-27T15:45:00.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
+<!-- id: adr-0007 | status: accepted | formalizes: event-script-over-code -->
+
+<p><strong>Abstract.</strong> When a step is <strong>orchestration</strong> — sequencing functions, branching on a condition,
+handling a failure, or moving data between steps — express it as <strong>Event Script YAML</strong> (tasks,
+<code>execution</code> types, input/output data mapping, exception handler), not as imperative code inside a
+function. Code is reserved for the <strong>unit of work</strong> itself (the function body; ADR-0005). The
+sync-over-async refactoring that produced this ADR converted an imperative facade — a
+<code>PostOffice.send</code> publish buried in a function, with a hand-written <code>try/catch</code> mapping the failure to
+an HTTP status — into a declarative flow: <code>prepare → simple.kafka.notification → await</code>, where a publish
+failure is routed by the engine to the flow's exception handler (fail-fast → HTTP status) and a
+<code>decision</code> task expresses the drop branch. The boundary holds in the other direction too: a genuinely
+in-function concern — here, the synchronous <strong>blocking rendezvous</strong> that must bracket the publish —
+stays in code. Not all code becomes YAML.</p>
+<p><strong>Rationale.</strong> Two properties make configuration the better home for orchestration. <strong>(1) It
+communicates intent.</strong> The flow file is a single, legible statement of the event flow — a reviewer sees
+the <code>begin → publish → await</code> sequence, the topic names (<code>text(topic-1)</code> / <code>text(topic-2)</code>), the
+fail-fast path, and the no-reply branch without reading Java; the imperative version hid the topic and
+the publish inside <code>PostOffice</code> calls and buried the control flow in <code>try/catch</code>. <strong>(2) It manages
+dependencies.</strong> Event Script declares both control-flow dependencies (task order, decision branches,
+exception routing) and data-flow dependencies (field-level mapping through <code>model</code>), and the engine
+enforces them — so functions stay fully decoupled (ADR-0001), never importing one another, with the
+only wiring in the flow. Reusable building blocks are composed <strong>by reference, not duplicated in code</strong>:
+the one <code>simple.kafka.notification</code> function publishes the request in one flow and the reply in another.
+Cross-cutting behavior (failure handling, status policy, <code>ttl</code> timeouts, trace propagation) becomes an
+engine concern expressed in config rather than repeated boilerplate, and orchestration changes (add a
+step, change a topic, re-route a branch) are reviewable config edits that need no recompile — the source
+of the "roughly half the code" claim in ADR-0001. The accepted consequences are the cost of the
+abstraction, not reasons to avoid it: the unit of work stays in code (a flat task chain cannot express a
+blocking await that must wrap a publish — forcing it into config is contortion), and declarative routing
+has its own vocabulary to learn — the <code>decision</code> type selects a <code>next</code> entry by value (<code>true</code> = <code>1</code> =
+first entry, <code>false</code> = <code>2</code> = second; an integer is 1-based and enables a multi-way <code>switch</code>), and <code>byte[]</code>
+payloads ride through <code>model</code> via the <code>*</code> whole-body passthrough (ADR-0003). This decision refines
+ADR-0001 (orchestration as Event Script) and is bounded by ADR-0005 (one atom, four roles).</p>
 <hr />
 <h2 id="adr-0006">ADR-0006 — Cloud-native by default; service mesh for sync-over-async and service discovery only</h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-06-23T18:30:00.000Z · <strong>Serves:</strong> vision-mercury-composable</p>
