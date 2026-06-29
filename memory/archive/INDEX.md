@@ -33,3 +33,8 @@
 - soa-config-driven-init — sync-over-async production bootstrap = config-driven init (Eric, 2026-06-26). The module's… — faded — 2026-Q2.md
 - kafka-client-config-templates — Kafka client config is externalized to template files, not hard-coded (Eric, 2026-06-27).… — faded — 2026-Q2.md
 - kafka-partition-pinning — Kafka consumer partition pinning = opt-in per binding (Eric, 2026-06-27). A `kafka-flow-ad… — faded — 2026-Q2.md
+- adr-pattern-adopted — ADR pattern adopted (the agent-memory optional Architecture Decision Record log; opted in… — faded — 2026-Q2.md
+- code-conventions-home — Code-style conventions have a documentation home. Soft, evolving code-organization/naming — faded — 2026-Q2.md
+- helpers-and-worked-examples — Standalone dev servers live in `helpers/`; worked examples teach the patterns. `helpers/`… — faded — 2026-Q2.md
+- minimalist-examples — Examples are kept deliberately minimal (avoid drift). Bare-minimum examples on principle (… — faded — 2026-Q2.md
+- kafka-soa-docs — minimalist-kafka + sync-over-async are documented in mkdocs (2026-06-27). Two new publishe… — faded — 2026-Q2.md

@@ -17,8 +17,8 @@
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **last_enabled:** 2026-06-20
 - **last_session:** 2026-06-28T19:11:14Z | agent: Gemini CLI
-- **last_review:** 2026-06-28 | through 2026-06-28-182607.md
-- **last_invariant_check:** 2026-06-24 | 2026-06-24-222752.md (confirmed by Eric — all 11 never-decay facts hold)
+- **last_review:** 2026-06-29 | through 2026-06-29-223651.md
+- **last_invariant_check:** 2026-06-29 | 2026-06-29-223651.md (re-verify prompted — cadence reset; pending Eric via Open Thread thread-reverify-invariants-2026q2)
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -91,7 +91,7 @@
   `ttl` is the deadline (no `kafka.flow.timeout.ms`); success = HTTP 200, else retry→DLQ; a failed DLQ write
   drops-with-ERROR + commits (no recovery storm) bounded by `kafka.dlq.timeout.ms`. Builds on
   [[standalone-schema-registry-mock]].
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: active | origin: 2026-06-29-010147 -->
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 5 | tier: active | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -115,21 +115,6 @@
   in new code (also clears SonarQube `java:S2143`). Relates to `typed-io-map-or-pojo` (ADR-0003).
   <!-- id: instant-serialization | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
 
-- **ADR pattern adopted** (the agent-memory optional Architecture Decision Record log; opted in 2026-06-22, Eric). A
-  human-facing governance ledger lives at `docs/arch-decisions/ADR.md`. `DESIGN-NOTES.md` — the author's design notepad — was **removed** (2026-06-23) as a drift source; the ADR
-  ledger now holds the durable design rationale, and the `arch-decisions/` folder is repurposed for the ledger. Seeded
-  **retrospectively** with 5 ADRs that **formalize** existing Design-altitude facts — ADR-0001→`functions-decoupled-routes`,
-  ADR-0002→`virtual-threads-rpc`, ADR-0003→`typed-io-map-or-pojo`, ADR-0004 & ADR-0005→`docs-content-canon` (the
-  three-paradigm-layer model + one-atom-four-roles) — each verified against `platform-core`/`event-script-engine`/
-  `minigraph-playground-engine` and the published guides (code/guides = source of truth in ambiguity). Published in the
-  mkdocs nav as the first entry under **Part VII · Reference**. ADR lifecycle: `Proposed → Accepted → Superseded/Deprecated`,
-  never deleted, monotonic numbering, newest-first; read **on demand** only. The `(ADR-NNNN)` tags now on the formalized
-  facts are human pointers, not a cue to open the ledger. **Upkeep (agent-memory upgraded 4.14.1 → 4.15.0
-  on 2026-06-22):** the ADR log is now actively maintained — superseding/invalidating an `(ADR-NNNN)`-tagged
-  fact, or making a new durable architecture decision, **prompts a human-gated update** to
-  `docs/arch-decisions/ADR.md` (add a newer ADR; old → `Superseded`/`Deprecated`, never deleted; keep
-  `formalizes:` ↔ `(ADR-NNNN)` in sync). Serves `vision-mercury-composable`.
-  <!-- id: adr-pattern-adopted | created: 2026-06-22 | last_used: 2026-06-27 | uses: 6 | tier: archive-candidate -->
 - **Service mesh is opt-in, not the default.** `cloud.connector=none` is the framework default. The Kafka
   service mesh (`cloud.connector=kafka` + presence-monitor) solves exactly two problems: (1) synchronous
   request-response across application instances over Kafka (sync over async), and (2) service discovery
@@ -154,47 +139,6 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
-- **Code-style conventions have a documentation home.** Soft, evolving code-organization/naming
-  recommendations live in `docs/guides/code-conventions.md` — a new page, sibling to
-  `documentation-conventions.md` in the nav meta area, linked from `llms.txt` (Reference). Altitude tier:
-  **below** ADRs (durable decisions) and `methodology.md` (the 4 principles) — if breaking a guideline
-  breaks the system, promote it to an ADR instead. Seeded with: group Event Script flow-task functions
-  under a `tasks` package (e.g. `org.platformlambda.tasks`) while runtime/coordinator classes stay in the
-  feature package and config in `support`/`config`; plus route-naming discipline and function granularity.
-  Add future code-style recs here. Established 2026-06-27 (Eric + Claude Code).
-  <!-- id: code-conventions-home | created: 2026-06-27 | last_used: 2026-06-28 | uses: 3 | tier: archive-candidate -->
-- **Standalone dev servers live in `helpers/`; worked examples teach the patterns.** `helpers/` (new
-  top-level folder, 2026-06-27) holds no-Docker standalone dev servers: `kafka-standalone` (moved here from
-  `connectors/adapters/kafka/`) and `redis-standalone` (embedded Redis via `embedded-redis`). Both pin
-  transient working files to **`/tmp/soa-redis`** / `/tmp` (cloud-native pattern); the sync-over-async
-  `RedisTestBase` uses the same `/tmp/soa-redis` dir. `examples/kafka-demo` is the minimalist-kafka
-  producer+consumer **worked example** (Java flow + kafkajs Node programs: create-topics/listen/publish),
-  validated live end-to-end. `examples/sync-over-async-demo` is the **sync-over-async worked example** (done
-  2026-06-28): one jar, two pods via Spring profile (`-Dspring.profiles.active=facade|backend`), cross-pod
-  REST-over-Kafka with a Redis return route (ADR-0006); promoted `soa.reply` into the extension. Worked
-  examples are how this project teaches pattern adoption (Eric). On `feature/sync-over-async` (PR #124).
-  <!-- id: helpers-and-worked-examples | created: 2026-06-27 | last_used: 2026-06-28 | uses: 3 | tier: archive-candidate -->
-- **Examples are kept deliberately minimal (avoid drift).** Bare-minimum examples on principle (Eric:
-  "minimalist is our design principle; too many examples drift thinking"). Retired `csv-flow-adapter` +
-  `csv-flow-demo` (2026-06-27, were not in the reactor + drifting): the built-in **HTTP flow adapter**
-  (sync) + minimalist-kafka's **`KafkaFlowAdapter`** (async) sufficiently demonstrate the flow-adapter
-  pattern, and `KafkaFlowAdapter` is the reference for writing a custom adapter (the "Writing your own Flow
-  Adapters" section of `actuators-and-http-client.md` now points there). Don't add a new example without a
-  clear, non-redundant teaching purpose. Relates to [[helpers-and-worked-examples]].
-  <!-- id: minimalist-examples | created: 2026-06-27 | last_used: 2026-06-28 | uses: 1 | tier: archive-candidate -->
-- **minimalist-kafka + sync-over-async are documented in mkdocs (2026-06-27).** Two new published guides under
-  **Operate & integrate**: `docs/guides/kafka-flow-adapter.md` (the library — adapter YAML schema
-  topic/flow/group/partition, externalized producer/consumer client templates, consumer group, partition
-  pinning, retry→DLQ, `simple.kafka.notification`, trace continuity) and `docs/guides/sync-over-async.md` (the
-  cross-pod Redis return-route pattern, reliability cornerstones, when-to-use vs the service mesh). All new
-  config keys added to `configuration-reference.md` under `#kafka-flow-adapter` + `#sync-over-async`. Nav
-  (`mkdocs.yml`) + `docs/llms.txt` updated; conforms to doc canon (frontmatter/At-a-glance/See-also, banned
-  terms). **Local mkdocs validation:** mkdocs is **not** a repo dependency (CI does `pip install mkdocs`); run
-  `uv run --with mkdocs mkdocs build --strict` (theme=readthedocs, plugins=search — both built-in; no extras).
-  Validated: doc-canon OK + `--strict` clean. Closes the "module docs" post-MVP item in [[thread-redis-kafka-rpc]].
-  Documents [[kafka-client-config-templates]], [[kafka-flow-failure-dlq]], [[kafka-partition-pinning]],
-  [[soa-config-driven-init]].
-  <!-- id: kafka-soa-docs | created: 2026-06-27 | last_used: 2026-06-27 | uses: 3 | tier: archive-candidate | origin: 2026-06-27-022232.md -->
 ## Conventions
 
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
@@ -226,7 +170,7 @@
   refreshed pinned `thread-redis-kafka-rpc`'s `uses 3→6` **without touching its `tier: working`** (the
   refinement's exact intent). Final `memory-lint`: **0 errors, 0 warnings**; py↔node parity confirmed here.
   Working tree **uncommitted** — review + commit at the mercury team's discretion.
-  <!-- id: agent-memory-upgrade-v4261 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-182125 -->
+  <!-- id: agent-memory-upgrade-v4261 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: archive-candidate | origin: 2026-06-28-182125 -->
 
 - [x] **Upgraded agent-memory v4.23.1 → v4.25.0** (Mode B, by Claude Code from the tool checkout).
   Three rungs: **4.23.2** (AGENTS.md long-session context-hygiene block), **4.24.0** (decay-policy retune +
@@ -241,17 +185,17 @@
   per-fact `[overdue]` advisories — this repo's own decay backlog. **Run the `REVIEW.md` ritual** (it can now
   use `archive-fact` to perform the moves safely). Left for the mercury team to curate — the faded facts are
   mercury's domain content; agent-memory only flags, never picks. 0 lint **errors**.
-  <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: working | origin: 2026-06-28-173142 -->
+  <!-- id: agent-memory-upgrade-v4250 | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: archive-candidate | origin: 2026-06-28-173142 -->
 
 - [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble. (Corrected + reworked 2026-06-29 — see [[standalone-schema-registry-mock]].)
-  <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-28-191114 -->
+  <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: active | origin: 2026-06-28-191114 -->
 - [x] (completed — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — feature COMPLETE & pushed.**
   All three serde phases done, tested (49 tests, 85% gate), demoed end-to-end, and **pushed** to
   `feature/sync-over-async` (PR #124, `7e2fe746..5ffb7dc7`): JSON Schema, Avro (`1bc2731e`/`6fc8c56c`),
   Protobuf (`bdab28f3`/`bc9be976`); Avro + Protobuf each validated via Eric's multi-terminal run
   (continuous-trace telemetry). The kafka-flow-adapter guide now documents the Schema Registry integration
   (`5ffb7dc7`). Closed — the feature is ready for PR review/merge. See [[minimalist-kafka-schema-registry]].
-  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: working | origin: 2026-06-29-010147 -->
+  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 4 | tier: active | origin: 2026-06-29-010147 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
@@ -356,6 +300,16 @@
   superseded, not the Copilot review.)
   <!-- id: thread-redis-kafka-rpc | created: 2026-06-24 | last_used: 2026-06-27 | uses: 6 | tier: working -->
 
+- [ ] **Re-verify invariants (due — 50 sessions since the last check ≥ verify_invariants_every 40).** Raised by
+  the 2026-06-29 review (cadence). Confirm each never-decay fact still holds, or supersede any that don't
+  (`DECAY.md` §9 — the review never auto-invalidates):
+  core stack — `stack-language-java21`, `stack-build-maven`, `stack-integration-spring`,
+  `stack-messaging-kafka`, `stack-ci-gha`; architectural invariants — `functions-decoupled-routes`,
+  `typed-io-map-or-pojo`, `virtual-threads-rpc`; core gotchas/decisions — `trace-thread-keyed-mono-gotcha`,
+  `instant-serialization`, `kafka-mesh-opt-in`, `event-script-over-code`, `conv-add-capability`,
+  `conv-serialization-gotchas`; and the **Vision** (`memory/vision.md`). Check off when re-confirmed.
+  <!-- id: thread-reverify-invariants-2026q2 | created: 2026-06-29 | last_used: 2026-06-29 | uses: 1 | tier: working -->
+
 ## User Preferences
 
 ## Team / Members
@@ -372,4 +326,4 @@
   `/tmp/schema-registry`, `-D`-overridable for a durable dir); the server *loads* schemas on boot (never
   wipes) so ids stay stable — the deliberate inverse of the redis/kafka helpers. Tests hit the real HTTP
   endpoints via `async.http.request`. Documented in `docs/guides/schema-registry-mock.md`. See [[minimalist-kafka-schema-registry]].
-  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: active -->
+  <!-- id: standalone-schema-registry-mock | created: 2026-06-28 | last_used: 2026-06-29 | uses: 4 | tier: active -->
