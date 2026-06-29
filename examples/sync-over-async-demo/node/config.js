@@ -3,8 +3,10 @@
 
 export default {
   brokers: (process.env.KAFKA_BOOTSTRAP_SERVERS || '127.0.0.1:9092').split(','),
-  requestTopic: 'soa.request',    // facade -> here -> backend (system-of-record)
-  responseTopic: 'soa.response',  // backend -> here -> facade (soa-reply)
+  requestTopic: 'soa.request',    // facade -> here -> backend (system-of-record)   [byte[] transport]
+  responseTopic: 'soa.response',  // backend -> here -> facade (soa-reply)          [byte[] transport]
+  jsonRequestTopic: 'json-topic-1',   // facade -> backend (system-of-record-json)  [JSON Schema]
+  jsonResponseTopic: 'json-topic-2',  // backend -> facade (soa-reply-json)         [JSON Schema]
   // Multiple partitions so the facade consumer group (soa-reply-group) can spread across more than one
   // facade instance - that is what lets you run two facades and see the Redis return route deliver each
   // reply to the pod that originated the request. (Auto-created topics get only 1 partition.)

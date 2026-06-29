@@ -9,3 +9,11 @@ rest:
     flow: 'sync-to-async'
     timeout: 30s
     tracing: true
+
+  # JSON Schema variant: same end-to-end path, but the Kafka legs use the Confluent JSON Schema wire format.
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/sync-to-async-json"
+    flow: 'sync-to-async-json'
+    timeout: 30s
+    tracing: true

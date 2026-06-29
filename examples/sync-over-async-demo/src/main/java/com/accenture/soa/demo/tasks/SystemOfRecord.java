@@ -41,6 +41,9 @@ import java.util.Map;
  * publishes it to the {@code soa.response} topic via {@code simple.kafka.notification}. The correlation-id
  * is carried through so the facade can match the reply to the awaiting request, and the {@code traceId}
  * is echoed to show the trace stayed continuous across the Kafka hops.</p>
+ *
+ * <p>This handles the raw {@code byte[]} (no schema registry) path. {@link SystemOfRecordJson} is the
+ * Confluent JSON Schema variant - it receives the decoded {@code Map} and shares {@link #process} here.</p>
  */
 @PreLoad(route = "system.of.record", instances = 50)
 public class SystemOfRecord implements TypedLambdaFunction<byte[], EventEnvelope> {
@@ -49,10 +52,19 @@ public class SystemOfRecord implements TypedLambdaFunction<byte[], EventEnvelope
     @Override
     @SuppressWarnings("unchecked")
     public EventEnvelope handleEvent(Map<String, String> headers, byte[] input, int instance) {
-        String cid = headers.get(KafkaHeaders.CORRELATION_ID);
-        PostOffice po = new PostOffice(headers, instance);
         String requestJson = new String(input, StandardCharsets.UTF_8);
         Map<String, Object> request = SimpleMapper.getInstance().getMapper().readValue(requestJson, Map.class);
+        return process(request, headers, instance);
+    }
+
+    /**
+     * The shared backend logic: echo the request with processing metadata. Returns the reply as a byte[]
+     * (JSON) EventEnvelope carrying the correlation-id - ready for {@code simple.kafka.notification} (which
+     * publishes it raw, or re-encodes it with a schema id on the JSON path).
+     */
+    static EventEnvelope process(Map<String, Object> request, Map<String, String> headers, int instance) {
+        String cid = headers.get(KafkaHeaders.CORRELATION_ID);
+        PostOffice po = new PostOffice(headers, instance);
         log.info("Processing request (cid={}): {}", cid, request);
 
         Map<String, Object> response = new HashMap<>();

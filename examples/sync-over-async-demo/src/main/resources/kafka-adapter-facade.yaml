@@ -6,3 +6,8 @@ consumer:
   - topic: 'soa.response'
     flow: 'soa-reply'
     group: '${SOA_REPLY_GROUP:soa-reply-group}'
+  # JSON Schema reply leg: decode the Confluent-framed value to a Map before routing into the flow.
+  - topic: 'json-topic-2'
+    flow: 'soa-reply-json'
+    group: '${SOA_REPLY_JSON_GROUP:soa-reply-json-group}'
+    schema.enabled: true

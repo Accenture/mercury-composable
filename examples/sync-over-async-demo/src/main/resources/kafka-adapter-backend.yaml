@@ -5,3 +5,8 @@ consumer:
   - topic: 'soa.request'
     flow: 'system-of-record'
     group: '${SOA_BACKEND_GROUP:system-of-record-group}'
+  # JSON Schema request leg: decode the Confluent-framed value to a Map before routing into the flow.
+  - topic: 'json-topic-1'
+    flow: 'system-of-record-json'
+    group: '${SOA_BACKEND_JSON_GROUP:system-of-record-json-group}'
+    schema.enabled: true

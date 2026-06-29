@@ -34,6 +34,7 @@ business logic) and [`SyncErrorHandler`](src/main/java/com/accenture/soa/demo/su
 
 - Java 21 + Maven. Build once from the repo root: `mvn -pl examples/sync-over-async-demo -am install`.
 - The `redis-standalone` and `kafka-standalone` helper jars (built by the same reactor).
+- The `schema-registry-standalone` helper jar — only for the [JSON Schema variant](#json-schema-variant-confluent-wire-format) below.
 - Node.js 18+ — only for the one-time topic-creation helper in `node/` (the app client is `curl`).
 
 ## Run it
@@ -53,10 +54,11 @@ cd examples/sync-over-async-demo/node
 npm install        # once
 node create-topics.js
 ```
-This creates `soa.request` / `soa.response` with **10 partitions** each. Don't rely on Kafka auto-creation
-here: an auto-created topic has a single partition, so the `soa-reply-group` consumer group can only place
-it on **one** facade — a second facade would stay idle. Multiple partitions let the group spread across
-facades, which is what makes the multi-facade test below meaningful.
+This creates four topics with **10 partitions** each: `soa.request` / `soa.response` (the byte[] path) and
+`json-topic-1` / `json-topic-2` (the [JSON Schema path](#json-schema-variant-confluent-wire-format)). Don't
+rely on Kafka auto-creation here: an auto-created topic has a single partition, so the `soa-reply-group`
+consumer group can only place it on **one** facade — a second facade would stay idle. Multiple partitions
+let the group spread across facades, which is what makes the multi-facade test below meaningful.
 
 > Run this **before** the apps (Terminals C/D) — otherwise the flow adapter auto-creates the topics at 1
 > partition first, and `create-topics.js` will then skip them as already existing. If they already exist at
@@ -101,6 +103,48 @@ The facade and backend logs show the same `traceId` across the Kafka hops.
        -H 'content-type: application/json' -H 'x-sync-timeout: 2000' -d '{"order":"C-300"}'
   ```
 
+## JSON Schema variant (Confluent wire format)
+
+The same end-to-end pattern, but the Kafka legs carry **Confluent JSON Schema** instead of raw byte[]. It
+runs over a parallel pair of topics — `json-topic-1` (request) and `json-topic-2` (reply) — so you can
+compare the two side by side; the byte[] path (`soa.request` / `soa.response`) is untouched.
+
+**Seed the registry, then start it.** Schemas are governed artifacts registered out-of-band, so the demo
+ships a pre-registered schema rather than self-registering at runtime. [`registry/schemas.json`](registry/schemas.json)
+defines the `SyncDemoMessage` schema as **id 1** (one permissive JSON Schema covering both legs). Copy it
+into the registry's store (default `/tmp/schema-registry`), then start the registry:
+```shell
+# Terminal F — seed + start the local Confluent-compatible Schema Registry (port 8081)
+mkdir -p /tmp/schema-registry
+cp examples/sync-over-async-demo/registry/schemas.json /tmp/schema-registry/schemas.json
+cd helpers/schema-registry-standalone && java -jar target/schema-registry-standalone-4.5.0.jar
+```
+The schema (the escaped `schema` string in the seed) is:
+```json
+{ "$schema": "http://json-schema.org/draft-07/schema#", "title": "SyncDemoMessage",
+  "type": "object",
+  "properties": { "action": {"type":"string"}, "status": {"type":"string"}, "processedBy": {"type":"string"} },
+  "additionalProperties": true }
+```
+Now call the JSON endpoint (same request shape + synchronous reply as the byte[] path):
+```shell
+curl -sS -X POST http://127.0.0.1:8400/api/sync-to-async-json \
+     -H 'content-type: application/json' -d '{"action":"create","order":"A-100"}'
+```
+
+What's different from the byte[] path (everything else — Redis return route, `sync.prepare`/`sync.await`,
+trace continuity — is identical):
+
+| Aspect | How |
+|--------|-----|
+| **Producer is id-driven** | the flows publish with `schema-id: 1` + `schema-type: JSON` headers; `simple.kafka.notification` serializes the body into the Confluent wire format using that **pre-registered** id. The producer never needs the subject or a naming strategy — see [the Kafka Flow Adapter guide](../../docs/guides/kafka-flow-adapter.md). |
+| **Schema registered out-of-band** | the registry is seeded from `registry/schemas.json` (id 1); the serializer only does `GET /schemas/ids/1`. Mirrors enterprise reality, where schemas are governed artifacts — no runtime registration in the app. |
+| **Consumer decodes by id** | the `json-topic-1` / `json-topic-2` adapter bindings set `schema.enabled: true`, so the adapter reads the embedded id, fetches the schema, and hands the flow a decoded **Map**. |
+| **Map-input task variants** | because the decoded body is a Map, `system.of.record.json` and `soa.reply.json` take a `Map` (vs the byte[] `system.of.record` / `soa.reply`); they reuse the same logic. |
+
+This lays the groundwork for **Avro** and **Protobuf**: same id-driven produce + `schema.enabled` consume,
+just a different `schema-type`.
+
 ## How it maps to the pattern
 
 | Piece | Role | What it shows |
@@ -110,6 +154,7 @@ The facade and backend logs show the same `traceId` across the Kafka hops.
 | `soa-reply.yml` (`soa.reply`) | facade | deliver the Kafka reply to the coordinator → wake the awaiting request |
 | `system-of-record.yml` (`system.of.record`) | backend | the application's async processing, on a separate pod |
 | Redis return route | facade | routes the reply back to the originating pod (cross-pod, scalable) |
+| `*-json.yml` flows + `registry/schemas.json` (id 1) | both | the [JSON Schema variant](#json-schema-variant-confluent-wire-format) over `json-topic-1` / `json-topic-2` |
 
 ## Validated runs (telemetry evidence)
 

@@ -4,3 +4,6 @@
 flows:
   - 'sync-to-async.yml'
   - 'soa-reply.yml'
+  # JSON Schema variant of the two facade flows
+  - 'sync-to-async-json.yml'
+  - 'soa-reply-json.yml'
