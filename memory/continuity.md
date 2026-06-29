@@ -77,10 +77,15 @@
   record types. **Consumer** opt-in per binding (`schema.enabled` in kafka-flow-adapter.yaml): reads the magic
   id → registered `schemaType` → matching deserializer → hands the flow a Map; decode failure dead-letters the
   raw record. Codec in `org.platformlambda.mini.kafka.schema` (`SchemaCodec`, `FileCachedSchemaRegistryClient`
-  = on-disk schema cache by id with TTL serving the serde hot path, `SchemaType`). **JSON Schema done +
-  tested** (in-JVM `EmbeddedSchemaRegistry` test helper; decodes messages from a stock serializer); Avro +
-  Protobuf are next (see [[thread-schema-registry-avro-protobuf]]). Builds on [[standalone-schema-registry-mock]].
-  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 1 | tier: working | origin: 2026-06-29-010147 -->
+  = on-disk schema cache by id with TTL serving the serde hot path, cleared at startup; `SchemaType`).
+  Serialize uses `JsonSchemaUtils.envelope(schema, value)` (the pre-registered schema, not a derived one) to
+  avoid the kjetland derivation WARN. **JSON Schema done, tested, and demoed end-to-end** (in-JVM
+  `EmbeddedSchemaRegistry` test helper + the sync-over-async-demo `json-topic-1/2` path, manually validated);
+  Avro + Protobuf are next (see [[thread-schema-registry-avro-protobuf]]). Shipped alongside Kafka-flow-adapter
+  hardening: a flow's own `ttl` is the deadline (no `kafka.flow.timeout.ms`); success = HTTP 200, else
+  retry→DLQ; a failed DLQ write drops-with-ERROR + commits (no recovery storm) bounded by
+  `kafka.dlq.timeout.ms`. Builds on [[standalone-schema-registry-mock]].
+  <!-- id: minimalist-kafka-schema-registry | created: 2026-06-29 | last_used: 2026-06-29 | uses: 2 | tier: active | origin: 2026-06-29-010147 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -235,11 +240,13 @@
 - [x] (completed — Eric, 2026-06-28) **Schema Registry feature.** Implemented `helpers/schema-registry-standalone`, a minimalist Confluent-compatible mock server (Avro and JSON Schema). Created `examples/schema-registry-demo` to showcase usage. Adds Apache 2.0 license preamble. (Corrected + reworked 2026-06-29 — see [[standalone-schema-registry-mock]].)
   <!-- id: thread-schema-registry | created: 2026-06-28 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-28-191114 -->
 - [ ] (in progress — Eric, 2026-06-29) **minimalist-kafka Schema Registry serdes — Avro + Protobuf phases.**
-  JSON Schema is done + committed (`7caa3434`); Eric is code-reviewing. Next: add `kafka-avro-serializer`
-  then `kafka-protobuf-serializer` and their branches in `SchemaCodec`'s serializer cache + the consumer
-  dispatcher (same id-driven structure). Also pending: document the `schema-id`/`schema-type` headers and
-  `schema.enabled` in the kafka-flow-adapter guide; push the branch when review passes. See [[minimalist-kafka-schema-registry]].
-  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 1 | tier: working | origin: 2026-06-29-010147 -->
+  JSON Schema is done, review-hardened, demoed end-to-end, and **pushed** as a milestone on
+  `feature/sync-over-async` (PR #124). Next: add `kafka-avro-serializer` then `kafka-protobuf-serializer`
+  and their branches in `SchemaCodec` (serializer cache + consumer dispatcher; same id-driven structure +
+  envelope-serialize). Also pending: document the `schema-id`/`schema-type` headers and `schema.enabled` in
+  the kafka-flow-adapter guide; **more detailed manual tests + fine-tuning planned for 2026-06-30**. See
+  [[minimalist-kafka-schema-registry]].
+  <!-- id: thread-schema-registry-avro-protobuf | created: 2026-06-29 | last_used: 2026-06-29 | uses: 2 | tier: working | origin: 2026-06-29-010147 -->
 - [ ] (planned — Eric, 2026-06-24) **Add Gradle build support** alongside the existing Maven reactor
   (Maven stays the current build tool; see `stack-build-maven`). Scope TBD — likely a parallel Gradle
   build for the multi-module project.
