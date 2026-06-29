@@ -2,5 +2,9 @@
   "1": {
     "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"SyncDemoMessage\",\"type\":\"object\",\"properties\":{\"action\":{\"type\":\"string\"},\"status\":{\"type\":\"string\"},\"processedBy\":{\"type\":\"string\"}},\"additionalProperties\":true}",
     "schemaType": "JSON"
+  },
+  "2": {
+    "schema": "{\"type\":\"record\",\"name\":\"SyncDemoMessage\",\"namespace\":\"com.accenture.soa.demo\",\"fields\":[{\"name\":\"action\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"status\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"processedBy\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"traceId\",\"type\":\"string\",\"default\":\"\"}]}",
+    "schemaType": "AVRO"
   }
 }

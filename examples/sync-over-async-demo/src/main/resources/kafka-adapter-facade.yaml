@@ -11,3 +11,8 @@ consumer:
     flow: 'soa-reply-json'
     group: '${SOA_REPLY_JSON_GROUP:soa-reply-json-group}'
     schema.enabled: true
+  # Avro reply leg: decode the Confluent Avro value to a Map before routing into the flow.
+  - topic: 'avro-topic-2'
+    flow: 'soa-reply-avro'
+    group: '${SOA_REPLY_AVRO_GROUP:soa-reply-avro-group}'
+    schema.enabled: true

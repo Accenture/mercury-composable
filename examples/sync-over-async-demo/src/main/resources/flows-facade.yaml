@@ -7,3 +7,6 @@ flows:
   # JSON Schema variant of the two facade flows
   - 'sync-to-async-json.yml'
   - 'soa-reply-json.yml'
+  # Avro variant of the two facade flows
+  - 'sync-to-async-avro.yml'
+  - 'soa-reply-avro.yml'

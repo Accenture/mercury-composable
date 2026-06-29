@@ -15,7 +15,8 @@ const { Kafka } = kafkajs;
   const admin = kafka.admin();
   await admin.connect();
   try {
-    const wanted = [cfg.requestTopic, cfg.responseTopic, cfg.jsonRequestTopic, cfg.jsonResponseTopic];
+    const wanted = [cfg.requestTopic, cfg.responseTopic, cfg.jsonRequestTopic, cfg.jsonResponseTopic,
+      cfg.avroRequestTopic, cfg.avroResponseTopic];
     const existing = await admin.listTopics();
     const toCreate = wanted
       .filter((t) => !existing.includes(t))

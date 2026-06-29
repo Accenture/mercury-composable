@@ -17,3 +17,11 @@ rest:
     flow: 'sync-to-async-json'
     timeout: 30s
     tracing: true
+
+  # Avro variant: same end-to-end path, but the Kafka legs use the Confluent Avro wire format.
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/sync-to-async-avro"
+    flow: 'sync-to-async-avro'
+    timeout: 30s
+    tracing: true
