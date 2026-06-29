@@ -15,3 +15,8 @@ consumer:
     flow: 'system-of-record-avro'
     group: '${SOA_BACKEND_AVRO_GROUP:system-of-record-avro-group}'
     schema.enabled: true
+  # Protobuf request leg: decode the Confluent Protobuf value to a Map before routing into the flow.
+  - topic: 'protobuf-topic-1'
+    flow: 'system-of-record-protobuf'
+    group: '${SOA_BACKEND_PROTOBUF_GROUP:system-of-record-protobuf-group}'
+    schema.enabled: true

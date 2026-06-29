@@ -6,5 +6,9 @@
   "2": {
     "schema": "{\"type\":\"record\",\"name\":\"SyncDemoMessage\",\"namespace\":\"com.accenture.soa.demo\",\"fields\":[{\"name\":\"action\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"status\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"processedBy\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"traceId\",\"type\":\"string\",\"default\":\"\"}]}",
     "schemaType": "AVRO"
+  },
+  "3": {
+    "schema": "syntax = \"proto3\";\npackage com.accenture.soa.demo;\n\nmessage SyncDemoMessage {\n  string action = 1;\n  string status = 2;\n  string processedBy = 3;\n  string traceId = 4;\n}\n",
+    "schemaType": "PROTOBUF"
   }
 }

@@ -16,3 +16,8 @@ consumer:
     flow: 'soa-reply-avro'
     group: '${SOA_REPLY_AVRO_GROUP:soa-reply-avro-group}'
     schema.enabled: true
+  # Protobuf reply leg: decode the Confluent Protobuf value to a Map before routing into the flow.
+  - topic: 'protobuf-topic-2'
+    flow: 'soa-reply-protobuf'
+    group: '${SOA_REPLY_PROTOBUF_GROUP:soa-reply-protobuf-group}'
+    schema.enabled: true
