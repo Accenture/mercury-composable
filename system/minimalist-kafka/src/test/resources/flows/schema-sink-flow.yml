@@ -1,0 +1,20 @@
+#
+# Flow reached when the Kafka flow adapter routes a SCHEMA-DECODED message from 'schema-test-topic'.
+# Because the binding sets schema.enabled, the adapter hands this flow the decoded Map as input.body.
+#
+flow:
+  id: 'schema-sink-flow'
+  description: 'Record a schema-decoded Kafka message routed by the flow adapter'
+  ttl: 30s
+
+first.task: 'schema.test.sink'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+      - 'input.header.cid -> header.cid'
+    process: 'schema.test.sink'
+    output:
+      - 'result -> output.body'
+    description: 'Record the decoded message'
+    execution: end

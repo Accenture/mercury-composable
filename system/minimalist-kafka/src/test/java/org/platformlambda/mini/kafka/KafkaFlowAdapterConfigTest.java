@@ -46,7 +46,7 @@ class KafkaFlowAdapterConfigTest {
 
     private static void build(ConfigReader config) {
         // consumer props are unused: every case here fails validation before any consumer is built
-        new KafkaFlowAdapter(new Properties(), config, 1000, POLICY);
+        new KafkaFlowAdapter(new Properties(), config, 1000, POLICY, null);
     }
 
     @Test

@@ -27,6 +27,9 @@
         <!-- Pin the Kafka client to the same version as the embedded broker used in tests
              (kafka_2.13) to avoid client/broker protocol skew. -->
         <kafka.version>4.2.0</kafka.version>
+        <!-- Confluent Platform 8.2.x aligns with Apache Kafka 4.2.x. Provides the out-of-the-box
+             Schema Registry serializers (interop with existing client projects). -->
+        <confluent.version>8.2.0</confluent.version>
     </properties>
 
     <dependencyManagement>
@@ -45,6 +48,11 @@
         <repository>
             <id>central</id>
             <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+        <!-- Confluent's Schema Registry serializers are published here, not on Maven Central. -->
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
         </repository>
     </repositories>
 
@@ -66,6 +74,21 @@
                 <exclusion>
                     <groupId>org.lz4</groupId>
                     <artifactId>lz4-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Confluent JSON Schema serializer/deserializer (used as a library to (de)serialize the
+             Confluent wire format - magic byte + global schema id + payload). We keep our own pinned
+             kafka-clients, so exclude the transitive one to avoid version skew. -->
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-json-schema-serializer</artifactId>
+            <version>${confluent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

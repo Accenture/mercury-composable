@@ -18,15 +18,19 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.platformlambda.mini.kafka.schema.SchemaCodec;
+
 /**
  * Holds the process-wide singletons the minimalist Kafka building blocks share: the thread-safe
- * {@link KafkaRequestPublisher} used by {@code simple.kafka.notification}, and the running
- * {@link KafkaFlowAdapter}. Populated once at startup by {@link KafkaFlowAutoStart}.
+ * {@link KafkaRequestPublisher} used by {@code simple.kafka.notification}, the running
+ * {@link KafkaFlowAdapter}, and (when {@code schema.registry.url} is configured) the {@link SchemaCodec}
+ * for Confluent Schema Registry (de)serialization. Populated once at startup by {@link KafkaFlowAutoStart}.
  */
 public final class KafkaRuntime {
 
     private static KafkaRequestPublisher publisher;
     private static KafkaFlowAdapter adapter;
+    private static SchemaCodec schemaCodec;
 
     private KafkaRuntime() {}
 
@@ -44,5 +48,14 @@ public final class KafkaRuntime {
 
     public static KafkaFlowAdapter adapter() {
         return adapter;
+    }
+
+    static void setSchemaCodec(SchemaCodec instance) {
+        schemaCodec = instance;
+    }
+
+    /** The schema codec, or {@code null} when {@code schema.registry.url} is not configured. */
+    public static SchemaCodec schemaCodec() {
+        return schemaCodec;
     }
 }

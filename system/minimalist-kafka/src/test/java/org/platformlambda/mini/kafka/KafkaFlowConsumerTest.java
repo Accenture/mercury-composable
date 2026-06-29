@@ -134,7 +134,7 @@ class KafkaFlowConsumerTest {
     void pinsPartitionWhenConfigured() {
         MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
         RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", null);
-        new KafkaFlowConsumer(mock, "orders", "order-flow", 1000, policy, 2).subscribeOrAssign(mock);
+        new KafkaFlowConsumer(mock, "orders", "order-flow", 1000, policy, 2, null).subscribeOrAssign(mock);
         assertEquals(Set.of(new TopicPartition("orders", 2)), mock.assignment(), "pinned via manual assign");
         assertTrue(mock.subscription().isEmpty(), "no group subscription when pinned");
     }
@@ -143,7 +143,7 @@ class KafkaFlowConsumerTest {
     void subscribesWhenNoPartition() {
         MockConsumer<String, byte[]> mock = new MockConsumer<>("earliest");
         RetryPolicy policy = new RetryPolicy(0, 0, ".dlq", null);
-        new KafkaFlowConsumer(mock, "orders", "order-flow", 1000, policy, null).subscribeOrAssign(mock);
+        new KafkaFlowConsumer(mock, "orders", "order-flow", 1000, policy, null, null).subscribeOrAssign(mock);
         assertEquals(Set.of("orders"), mock.subscription(), "group-managed subscribe when not pinned");
         assertTrue(mock.assignment().isEmpty(), "no manual assignment when subscribing");
     }
@@ -165,7 +165,7 @@ class KafkaFlowConsumerTest {
 
         AlwaysFailingConsumer(int failTimes, RetryPolicy policy) {
             // small flow timeout doubles as the DLQ confirm-write timeout, keeping the failure test fast
-            super(null, "orders", "order-flow", 200, policy, null);
+            super(null, "orders", "order-flow", 200, policy, null, null);
             this.failTimes = failTimes;
         }
 

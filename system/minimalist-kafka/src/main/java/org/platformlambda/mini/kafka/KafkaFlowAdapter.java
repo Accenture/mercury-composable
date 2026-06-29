@@ -22,6 +22,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.platformlambda.core.util.ConfigReader;
+import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,12 @@ import java.util.Properties;
  * assigns that single partition instead of joining the consumer group for dynamic assignment (see
  * {@link KafkaFlowConsumer}). Also {@code ${ENV_VAR:default}}-substitutable, so each pod can pin a distinct
  * partition. When omitted, the consumer subscribes group-managed as usual.</p>
+ *
+ * <p>{@code schema.enabled: true} opts the binding into Confluent Schema Registry decoding: the consumer
+ * reads the embedded schema id, looks up the registered {@code schemaType}, deserializes the value with the
+ * matching Confluent deserializer, and hands the flow a {@code Map} (instead of raw byte[]). Requires
+ * {@code schema.registry.url} to be configured (else the adapter fails fast at startup). When omitted, the
+ * value is delivered as raw byte[] as before.</p>
  */
 public class KafkaFlowAdapter implements AutoCloseable {
 
@@ -66,13 +73,16 @@ public class KafkaFlowAdapter implements AutoCloseable {
     private static final String FLOW = "flow";
     private static final String GROUP = "group";
     private static final String PARTITION = "partition";
+    private static final String SCHEMA = "schema";
+    private static final String SCHEMA_ENABLED_FLAT = "schema.enabled";
+    private static final String ENABLED = "enabled";
     private static final String DEFAULT_GROUP_PREFIX = "kafka-flow-adapter";
 
     private final List<KafkaFlowConsumer> consumers = new ArrayList<>();
     private final Properties consumerProps;
 
     public KafkaFlowAdapter(Properties consumerProps, ConfigReader config, long flowTimeoutMs,
-                            RetryPolicy retryPolicy) {
+                            RetryPolicy retryPolicy, SchemaCodec schemaCodec) {
         this.consumerProps = consumerProps;
         Object entries = config.get(CONSUMER);
         if (!(entries instanceof List<?> list) || list.isEmpty()) {
@@ -95,11 +105,29 @@ public class KafkaFlowAdapter implements AutoCloseable {
             }
             String groupId = resolveGroupId(entry, topic);
             Integer partition = parsePartition(entry.get(PARTITION));
+            boolean schemaEnabled = isSchemaEnabled(entry);
+            if (schemaEnabled && schemaCodec == null) {
+                throw new IllegalArgumentException("consumer[" + i + "] (topic '" + topic + "') sets "
+                        + "schema.enabled but 'schema.registry.url' is not configured");
+            }
             Consumer<String, byte[]> consumer = newConsumer(groupId);
-            consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs, retryPolicy, partition));
-            log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}'{})",
-                    topic, flowId, groupId, partition != null ? ", pinned to partition " + partition : "");
+            consumers.add(new KafkaFlowConsumer(consumer, topic, flowId, flowTimeoutMs, retryPolicy, partition,
+                    schemaEnabled ? schemaCodec : null));
+            log.info("Kafka flow adapter binding: topic '{}' -> flow '{}' (consumer group '{}'{}{})",
+                    topic, flowId, groupId, partition != null ? ", pinned to partition " + partition : "",
+                    schemaEnabled ? ", schema decode on" : "");
         }
+    }
+
+    /**
+     * Whether the binding opts into Confluent schema decoding. Accepts a flat {@code schema.enabled: true}
+     * or a nested {@code schema:\n  enabled: true} (depending on how the YAML is authored). Visible for testing.
+     */
+    static boolean isSchemaEnabled(Map<?, ?> entry) {
+        if (entry.get(SCHEMA) instanceof Map<?, ?> schema) {
+            return "true".equalsIgnoreCase(text(schema.get(ENABLED)));
+        }
+        return "true".equalsIgnoreCase(text(entry.get(SCHEMA_ENABLED_FLAT)));
     }
 
     /**

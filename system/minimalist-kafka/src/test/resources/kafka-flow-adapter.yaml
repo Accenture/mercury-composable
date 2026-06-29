@@ -8,3 +8,8 @@ consumer:
     group: '${KAFKA_TEST_CONSUMER_GROUP:mini-test-group}'
     # partition: 0                      # optional; pins this partition (manual assign, no group rebalancing)
     # partition: '${POD_PARTITION}'     # or per-pod via env substitution
+  # Schema-aware binding: decode Confluent-framed values to a Map before routing into the flow.
+  - topic: 'schema-test-topic'
+    flow: 'schema-sink-flow'
+    group: 'schema-test-group'
+    schema.enabled: true

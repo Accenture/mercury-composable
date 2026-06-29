@@ -33,5 +33,18 @@ public final class KafkaHeaders {
     /** Correlation-id convention: carried as a Kafka header and used as the flow's correlation-id. */
     public static final String CORRELATION_ID = "cid";
 
+    /**
+     * Optional for {@code simple.kafka.notification}: the global schema id (an int) to serialize the body
+     * with, using the Confluent wire format. When present, {@link #SCHEMA_TYPE} selects the serializer.
+     * Absent ⇒ the body is published as raw byte[] (the default minimalist behavior).
+     */
+    public static final String SCHEMA_ID = "schema-id";
+
+    /**
+     * Optional companion to {@link #SCHEMA_ID}: the schema type (e.g. {@code JSON}). Defaults to {@code JSON}
+     * when a {@link #SCHEMA_ID} is given without a type.
+     */
+    public static final String SCHEMA_TYPE = "schema-type";
+
     private KafkaHeaders() {}
 }

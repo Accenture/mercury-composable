@@ -21,8 +21,12 @@ package org.platformlambda.mini.kafka;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.W3cTrace;
+import org.platformlambda.mini.kafka.schema.SchemaCodec;
+import org.platformlambda.mini.kafka.schema.SchemaType;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
@@ -61,9 +65,11 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         Integer partition = parsePartition(headers.get(KafkaHeaders.PARTITION));
         Map<String, byte[]> kafkaHeaders = new HashMap<>();
         headers.forEach((key, value) -> {
-            // topic/partition are routing directives; the inbound traceparent is replaced below.
+            // topic/partition/schema-* are routing/encoding directives; the inbound traceparent is replaced below.
             if (!KafkaHeaders.TOPIC.equals(key)
                     && !KafkaHeaders.PARTITION.equals(key)
+                    && !KafkaHeaders.SCHEMA_ID.equals(key)
+                    && !KafkaHeaders.SCHEMA_TYPE.equals(key)
                     && !W3cTrace.TRACEPARENT.equals(key)) {
                 kafkaHeaders.put(key, value.getBytes(StandardCharsets.UTF_8));
             }
@@ -72,7 +78,33 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<byte[], Mono
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
         }
-        return KafkaRuntime.publisher().publish(topic, partition, kafkaHeaders, body);
+        byte[] payload = encode(topic, headers, body);
+        return KafkaRuntime.publisher().publish(topic, partition, kafkaHeaders, payload);
+    }
+
+    /**
+     * When a {@code schema-id} header is present, serialize the body into the Confluent wire format via the
+     * shared {@link SchemaCodec} (the schema is pre-registered; identified by id). Otherwise the body is
+     * published as raw byte[] - the default minimalist behavior.
+     */
+    private static byte[] encode(String topic, Map<String, String> headers, byte[] body) {
+        String schemaId = headers.get(KafkaHeaders.SCHEMA_ID);
+        if (schemaId == null) {
+            return body;
+        }
+        SchemaCodec codec = KafkaRuntime.schemaCodec();
+        if (codec == null) {
+            throw new IllegalStateException("'" + KafkaHeaders.SCHEMA_ID + "' header set but "
+                    + "'schema.registry.url' is not configured");
+        }
+        if (!Utility.getInstance().isDigits(schemaId.trim())) {
+            throw new IllegalArgumentException("'" + KafkaHeaders.SCHEMA_ID + "' must be an integer, got '"
+                    + schemaId + "'");
+        }
+        SchemaType type = SchemaType.from(headers.get(KafkaHeaders.SCHEMA_TYPE));
+        // The body is the structured value to encode (for JSON, a JSON document); parse it for the serializer.
+        Object value = SimpleMapper.getInstance().getMapper().readValue(body, Object.class);
+        return codec.serialize(topic, type, Integer.parseInt(schemaId.trim()), value);
     }
 
     /** Build a W3C traceparent from this function's current trace context (null if tracing is off). */

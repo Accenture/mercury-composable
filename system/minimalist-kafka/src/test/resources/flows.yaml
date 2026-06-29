@@ -3,3 +3,4 @@
 #
 flows:
   - 'kafka-sink-flow.yml'
+  - 'schema-sink-flow.yml'

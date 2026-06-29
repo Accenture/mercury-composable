@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.MainApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
+import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +63,11 @@ public class KafkaFlowAutoStart implements EntryPoint {
                 new KafkaRequestPublisher(new KafkaProducer<>(KafkaClientConfig.producerProperties(config)));
         KafkaRuntime.setPublisher(publisher);
 
+        // Optional Confluent Schema Registry codec (null when schema.registry.url is not configured);
+        // shared by simple.kafka.notification (produce) and the flow adapter (consume).
+        SchemaCodec schemaCodec = SchemaCodec.fromConfig(config);
+        KafkaRuntime.setSchemaCodec(schemaCodec);
+
         String adapterConfig = config.getProperty(ADAPTER_CONFIG);
         if (adapterConfig != null) {
             long flowTimeoutMs = Long.parseLong(config.getProperty(FLOW_TIMEOUT, "30000"));
@@ -72,8 +78,8 @@ public class KafkaFlowAutoStart implements EntryPoint {
             // failed messages are dead-lettered through the same shared producer
             RetryPolicy retryPolicy = new RetryPolicy(maxRetries, retryBackoffMs, dlqSuffix, publisher);
             Properties consumerProps = KafkaClientConfig.consumerProperties(config);
-            KafkaFlowAdapter adapter =
-                    new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig), flowTimeoutMs, retryPolicy);
+            KafkaFlowAdapter adapter = new KafkaFlowAdapter(consumerProps, new ConfigReader(adapterConfig),
+                    flowTimeoutMs, retryPolicy, schemaCodec);
             adapter.start();
             KafkaRuntime.setAdapter(adapter);
             log.info("Kafka flow adapter started from {}", adapterConfig);

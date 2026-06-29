@@ -29,6 +29,7 @@ import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.W3cTrace;
+import org.platformlambda.mini.kafka.schema.SchemaCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,19 +94,22 @@ public class KafkaFlowConsumer implements AutoCloseable {
     private final long flowTimeoutMs;
     private final RetryPolicy retryPolicy;
     private final Integer partition;   // null = group-managed subscribe; non-null = pin this partition
+    private final SchemaCodec schemaCodec;   // null = raw byte[] body; non-null = decode Confluent-framed value
     private final String deadLetterTopic;
     private final ExecutorService loop;
 
     private volatile boolean running;
 
     public KafkaFlowConsumer(Consumer<String, byte[]> consumer, String topic, String flowId,
-                             long flowTimeoutMs, RetryPolicy retryPolicy, Integer partition) {
+                             long flowTimeoutMs, RetryPolicy retryPolicy, Integer partition,
+                             SchemaCodec schemaCodec) {
         this.consumer = consumer;
         this.topic = topic;
         this.flowId = flowId;
         this.flowTimeoutMs = flowTimeoutMs;
         this.retryPolicy = retryPolicy;
         this.partition = partition;
+        this.schemaCodec = schemaCodec;
         // per-topic DLQ; a blank suffix falls back to .dlq so the DLQ can never equal the source topic
         String suffix = retryPolicy.dlqSuffix();
         this.deadLetterTopic = topic + (suffix == null || suffix.isBlank() ? DLQ_SUFFIX : suffix);
@@ -164,6 +168,17 @@ public class KafkaFlowConsumer implements AutoCloseable {
      */
     boolean routeToFlow(ConsumerRecord<String, byte[]> consumerRecord) {
         Map<String, Object> dataset = toDataset(consumerRecord);
+        if (schemaCodec != null) {
+            // Decode the Confluent-framed value to a Map for the flow. A decode failure is a poison
+            // message (retrying won't help), so dead-letter the RAW record immediately.
+            try {
+                dataset.put(BODY, schemaCodec.decode(topic, consumerRecord.value()));
+            } catch (RuntimeException e) {
+                log.warn("Failed to decode schema-framed message on '{}'; routing to {}",
+                        topic, deadLetterTopic, e);
+                return writeToDeadLetter(consumerRecord, e);
+            }
+        }
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
         String[] trace = W3cTrace.parse(headers.get(W3cTrace.TRACEPARENT));

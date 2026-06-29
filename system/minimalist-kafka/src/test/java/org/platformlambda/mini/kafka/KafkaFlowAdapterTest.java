@@ -18,6 +18,7 @@
 
 package org.platformlambda.mini.kafka;
 
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -47,14 +49,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class KafkaFlowAdapterTest {
 
     private static final String TOPIC = "mini-test-topic";
+    private static final String SCHEMA_TOPIC = "schema-test-topic";
+    private static final String JSON_SCHEMA =
+            "{\"type\":\"object\",\"properties\":{\"hello\":{\"type\":\"string\"}},\"additionalProperties\":true}";
     private static final String TRACE_ID = "11112222333344445555666677778888";
 
     private static EmbeddedKafka kafka;
+    private static EmbeddedSchemaRegistry registry;
 
     @BeforeAll
     static void boot() throws Exception {
         kafka = new EmbeddedKafka();
         KafkaTestSupport.createTopic(kafka.bootstrapServers(), TOPIC);
+        KafkaTestSupport.createTopic(kafka.bootstrapServers(), SCHEMA_TOPIC);
+        // self-contained, in-JVM Confluent-compatible registry on a random port. Set the exact config key
+        // as a system property (ConfigReader consults system properties before the file, at get-time) so it
+        // wins regardless of when AppConfigReader was first loaded by other tests. Start the cache clean.
+        registry = new EmbeddedSchemaRegistry();
+        Utility.getInstance().cleanupDir(new java.io.File("/tmp/schema-registry-cache-test"));
+        System.setProperty("schema.registry.url", registry.baseUrl());
         // resolved by ${KAFKA_BOOTSTRAP_SERVERS:...} in the kafka-producer/consumer.properties templates
         System.setProperty("KAFKA_BOOTSTRAP_SERVERS", kafka.bootstrapServers());
         AutoStart.main(new String[0]);
@@ -65,6 +78,7 @@ class KafkaFlowAdapterTest {
             TimeUnit.MILLISECONDS.sleep(100);
         }
         assertNotNull(KafkaRuntime.adapter(), "Kafka flow adapter should have started");
+        assertNotNull(KafkaRuntime.schemaCodec(), "schema codec should have been built from schema.registry.url");
     }
 
     @AfterAll
@@ -78,7 +92,11 @@ class KafkaFlowAdapterTest {
         if (kafka != null) {
             kafka.close();
         }
+        if (registry != null) {
+            registry.close();
+        }
         System.clearProperty("KAFKA_BOOTSTRAP_SERVERS");
+        System.clearProperty("schema.registry.url");
     }
 
     @Test
@@ -98,6 +116,34 @@ class KafkaFlowAdapterTest {
         assertNotNull(received, "the sink flow should receive the message routed by the adapter");
         assertEquals(cid, received.get("cid"), "correlation-id propagated as a Kafka header");
         assertEquals("{\"hello\":\"kafka\"}", received.get("body"), "body round-tripped through Kafka");
+        assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void schemaFramedMessageDecodedIntoFlow() throws Exception {
+        SchemaSinkTask.RECEIVED.clear();
+        // pre-register the JSON schema (governed artifact); the producer publishes by its global id
+        int schemaId = KafkaRuntime.schemaCodec().client().register(SCHEMA_TOPIC + "-value", new JsonSchema(JSON_SCHEMA));
+        String cid = Utility.getInstance().getUuid();
+
+        // publish via simple.kafka.notification with schema-id: the body is serialized into the Confluent
+        // wire format; the schema-enabled adapter binding decodes it back to a Map for the flow.
+        PostOffice po = PostOffice.trackable("unit.test", TRACE_ID, "TEST /schema");
+        po.send(new EventEnvelope().setTo("simple.kafka.notification")
+                .setHeader(KafkaHeaders.TOPIC, SCHEMA_TOPIC)
+                .setHeader(KafkaHeaders.CORRELATION_ID, cid)
+                .setHeader(KafkaHeaders.SCHEMA_ID, String.valueOf(schemaId))
+                .setHeader(KafkaHeaders.SCHEMA_TYPE, "JSON")
+                .setBody("{\"hello\":\"schema\"}".getBytes(StandardCharsets.UTF_8))
+                .setTraceId(TRACE_ID).setTracePath("TEST /schema"));
+
+        Map<String, Object> received = SchemaSinkTask.RECEIVED.poll(25, TimeUnit.SECONDS);
+        assertNotNull(received, "the schema sink flow should receive the decoded message");
+        assertEquals(cid, received.get("cid"), "correlation-id propagated as a Kafka header");
+        assertInstanceOf(Map.class, received.get("body"), "body decoded to a Map (not raw byte[])");
+        assertEquals("schema", ((Map<String, Object>) received.get("body")).get("hello"),
+                "JSON Schema message round-tripped: produced by id, decoded by the adapter");
         assertEquals(TRACE_ID, received.get("traceId"), "trace-id stayed continuous across the Kafka hop");
     }
 }
